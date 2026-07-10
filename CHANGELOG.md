@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 84.6.1
+
+- refactor: suppress peek-lock input across all windows via AllWindowsEventComponent
+- chore: mark the popout Reflect.get workaround with a TODO for 1.13 public release
+- refactor: patch onClose via MonkeyAroundComponent instead of raw around
+- fix: block the settings popout while a modal is minimized
+
 ## 84.6.0
 
 - test: drive the Shift+Enter lock test with trusted pressKey input
