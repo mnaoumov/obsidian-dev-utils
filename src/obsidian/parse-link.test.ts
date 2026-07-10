@@ -442,6 +442,14 @@ describe('parseLinks', () => {
     });
   });
 
+  it('should decode a bare file:// url like the bracketed path', () => {
+    const results = parseLinks('file:///F:%5Cd.txt');
+    const fileUrl = results.find((result) => result.isFileUrl);
+    assertNonNullable(fileUrl);
+    expect(fileUrl.url).toBe('file:///F:\\d.txt');
+    expect(fileUrl.raw).toBe('file:///F:%5Cd.txt');
+  });
+
   it('should return an empty array for text with no links', () => {
     const results = parseLinks('no links here');
     const nonExternal = results.filter((r) => !r.isExternal);

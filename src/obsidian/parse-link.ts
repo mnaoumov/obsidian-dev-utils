@@ -664,20 +664,27 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
 
   const textPart = str.slice(startOffset, endOffset + 1);
   replaceAll({
-    replacer: ({ capturedGroupArgs: [url = ''], offset }) => {
-      if (!isUrl(url)) {
+    replacer: ({ capturedGroupArgs: [rawUrl = ''], offset }) => {
+      if (!isUrl(rawUrl)) {
         return;
       }
 
+      // Decode bare `file://` URLs like the bracketed path (`parseLinkNode`) does.
+      // Offsets and `raw` stay based on the original (possibly percent-encoded) text.
+      const url = decodeUrlSafely({
+        hasAngleBrackets: false,
+        isExternal: true,
+        url: rawUrl
+      });
       textLinks.push({
         encodedUrl: encodeUrl(url),
-        endOffset: startOffset + offset + url.length,
+        endOffset: startOffset + offset + rawUrl.length,
         hasAngleBrackets: false,
         isEmbed: false,
         isExternal: true,
         isFileUrl: isFileUrl(url),
         isWikilink: false,
-        raw: url,
+        raw: rawUrl,
         startOffset: startOffset + offset,
         url
       });
