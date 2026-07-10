@@ -4,32 +4,25 @@
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
 
-## Current Task — External `file://` link normalization (obsidian-better-markdown-links #35) — frontmatter converter remaining
+## Current Task — External `file://` link normalization (obsidian-better-markdown-links #35) — only plugin wiring remaining
 
-**Body `file://` normalization is DONE and merged to `main`** (every increment 100% coverage + full gate).
-Delivered: `parse-link` module; `ParseLinkReference` + frontmatter reference types; `CachedMetadataEx` (features
-enum + gated arrays) + feature-gated `getLinks`; `getCacheSafe`/`parseMetadata` return `CachedMetadataEx` and
-parse body/frontmatter external links via `ParseCacheOptions`; `parseFrontmatterLinks`; `normalizeFileUrl`; and
-the high-level `updateFileUrlLinksInFile`/`updateFileUrlLinksInContent`.
+**Body + frontmatter `file://` normalization is DONE** (every increment 100% coverage + full gate). Body work is
+merged to `main`; the frontmatter converter is on branch `file-links-frontmatter`. Delivered: `parse-link` module;
+`ParseLinkReference` + frontmatter reference types + `isParseLinkFrontmatterReference` guard; `CachedMetadataEx`
+(features enum + gated arrays) + feature-gated `getLinks`; `getCacheSafe`/`parseMetadata` return `CachedMetadataEx`
+and parse body/frontmatter external links via `ParseCacheOptions`; `parseFrontmatterLinks`; `normalizeFileUrl`;
+`editLinks`/`editLinksInContent` `shouldEditFrontmatterExternalLinks` flag; the body-vs-frontmatter-aware
+converter (`normalizeFileUrlLink` emits a bare YAML-value url for frontmatter, a `[alias](url)` link for the
+body); and the high-level `updateFileUrlLinksInFile`/`updateFileUrlLinksInContent` (both body + frontmatter).
 
 **Origin:** FR <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/35> ("Support `file:///` links").
 Scope: `file://` scheme ONLY (leave other externals untouched). Runtime routing/resolution is CDP-confirmed
-(notes in the plugin's memory `obsidian-file-link-resolution`); the remaining work is string transforms + wiring.
+(notes in the plugin's memory `obsidian-file-link-resolution`).
 
-### Remaining follow-up 1 (this repo) — frontmatter external `file://` converter
+Optional follow-up: an `*.obsidian.integration.test.ts` round-trip (real Obsidian frontmatter write-back). The
+transform + apply paths are unit-covered; a full round-trip is not yet exercised in real Obsidian.
 
-Parsing + surfacing of frontmatter external links is DONE; the converter is not. `normalizeFileUrlLink` and the
-`shouldEditExternalLinks` flag are scoped to the note BODY only. Add a `shouldEditFrontmatterExternalLinks` flag
-plus a frontmatter-value-aware converter that emits a bare/normalized url (NOT a regenerated `[alias](url)`
-markdown link, which is only valid in the body): keep the `file://` scheme, convert `\`→`/`, decode `%5C`. Reuse
-target — `obsidian-frontmatter-markdown-links`'s `processFrontmatterLinks` is the reference frontmatter parser.
-
-**Decision (2026-07-10): proceed.** Normalization is mostly COSMETIC (every `file://` form already OPENS — the
-opener normalizes `/` vs `\` and decodes `%20`/`%5C`), but it also fixes two genuine breakages: a raw space with
-no angle brackets won't render as a link, and a `\` before a `!`-prefixed segment (`\!`) is eaten as a markdown
-escape and breaks the path (forward slashes eliminate it).
-
-### Remaining follow-up 2 (separate repo, hand-off) — plugin wiring
+### Remaining follow-up (separate repo, hand-off) — plugin wiring
 
 Back in `obsidian-better-markdown-links`: add a `shouldNormalizeFileLinks` setting (**default `true`**, per user
 2026-07-10) to `PluginSettings` + the settings tab, and wire the new converter into the existing
