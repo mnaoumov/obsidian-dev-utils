@@ -25,7 +25,6 @@ import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
 import type {
   ParseLinkFrontmatterReference,
-  ParseLinkFrontmatterReferenceWithOffsets,
   ParseLinkReference
 } from './parse-link.ts';
 
@@ -66,9 +65,10 @@ export interface CachedMetadataEx extends CachedMetadata {
   externalLinks: ParseLinkReference[];
 
   /**
-   * The external links parsed from the note frontmatter values.
+   * The external links parsed from the note frontmatter values. Entries parsed from a multi-link value
+   * additionally carry offsets and can be narrowed via {@link isFrontmatterLinkCacheWithOffsets}.
    */
-  frontmatterExternalLinks: (ParseLinkFrontmatterReference | ParseLinkFrontmatterReferenceWithOffsets)[];
+  frontmatterExternalLinks: ParseLinkFrontmatterReference[];
 }
 
 /**
