@@ -7,6 +7,7 @@
 
 import type { Link } from 'mdast';
 import type {
+  FrontmatterLinkCache,
   Loc,
   Reference,
   ReferenceCache
@@ -38,6 +39,35 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 
 const WIKILINK_DIVIDER = '|';
+
+/**
+ * A {@link FrontmatterLinkCache} for a link parsed from a single-link frontmatter value via
+ * {@link parseLinks}. It carries the full {@link ParseLinkResult} so consumers can inspect the parse
+ * details without re-parsing the link. Use this when the whole frontmatter value is a single link.
+ */
+export interface ParseLinkFrontmatterReference extends FrontmatterLinkCache {
+  /**
+   * The result of parsing the link.
+   */
+  readonly parseLinkResult: ParseLinkResult;
+}
+
+/**
+ * A {@link ParseLinkFrontmatterReference} for a link parsed from a multi-link frontmatter value via
+ * {@link parseLinks}, additionally carrying the offsets of the link within the frontmatter value. Use
+ * this when the frontmatter value holds multiple links.
+ */
+export interface ParseLinkFrontmatterReferenceWithOffsets extends ParseLinkFrontmatterReference {
+  /**
+   * An end offset of the link in the frontmatter value.
+   */
+  endOffset: number;
+
+  /**
+   * A start offset of the link in the frontmatter value.
+   */
+  startOffset: number;
+}
 
 /**
  * A {@link ReferenceCache} for a link parsed from content via {@link parseLinks}. It carries the full

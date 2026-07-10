@@ -23,6 +23,11 @@ import type { RetryOptions } from '../async.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 import type { PathOrFile } from './file-system.ts';
 import type { CombinedFrontmatter } from './frontmatter.ts';
+import type {
+  ParseLinkFrontmatterReference,
+  ParseLinkFrontmatterReferenceWithOffsets,
+  ParseLinkReference
+} from './parse-link.ts';
 
 import { CallbackDisposable } from '../disposable.ts';
 import { getNestedPropertyValue } from '../object-utils.ts';
@@ -48,6 +53,23 @@ import {
   readSafe,
   saveNote
 } from './vault.ts';
+
+/**
+ * An extended {@link CachedMetadata} that additionally carries external links parsed from the note
+ * content. The presence of {@link CachedMetadataEx.externalLinks} (even when empty) indicates the cache
+ * was computed with external-link parsing enabled.
+ */
+export interface CachedMetadataEx extends CachedMetadata {
+  /**
+   * The external links parsed from the note content body.
+   */
+  externalLinks: ParseLinkReference[];
+
+  /**
+   * The external links parsed from the note frontmatter values.
+   */
+  frontmatterExternalLinks: (ParseLinkFrontmatterReference | ParseLinkFrontmatterReferenceWithOffsets)[];
+}
 
 /**
  * Options for {@link getBacklinksForFileSafe}.
@@ -306,6 +328,17 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<Ca
 export async function getFrontmatterSafe<CustomFrontmatter = unknown>(app: App, pathOrFile: PathOrFile): Promise<CombinedFrontmatter<CustomFrontmatter>> {
   const cache = await getCacheSafe(app, pathOrFile);
   return (cache?.frontmatter ?? {}) as CombinedFrontmatter<CustomFrontmatter>;
+}
+
+/**
+ * Determines whether a cache is a {@link CachedMetadataEx} (i.e. it was computed with external-link
+ * parsing enabled).
+ *
+ * @param cache - The cache to check.
+ * @returns `true` if the cache is a {@link CachedMetadataEx}, otherwise `false`.
+ */
+export function isCachedMetadataEx(cache: CachedMetadata): cache is CachedMetadataEx {
+  return 'externalLinks' in cache;
 }
 
 /**

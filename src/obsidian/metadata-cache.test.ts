@@ -27,6 +27,7 @@ import type {
   PathOrFile
 } from './file-system.ts';
 import type { FrontmatterLinkCacheWithOffsets } from './frontmatter-link-cache-with-offsets.ts';
+import type { CachedMetadataEx } from './metadata-cache.ts';
 
 import { castTo } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
@@ -49,6 +50,7 @@ import {
   getBacklinksForFileSafe,
   getCacheSafe,
   getFrontmatterSafe,
+  isCachedMetadataEx,
   parseMetadata,
   registerFileCacheForNonExistingFile,
   registerFiles,
@@ -233,6 +235,18 @@ function setVaultEntry(targetApp: App, path: string, value: TAbstractFile): void
   const fileMap = targetApp.vault.fileMap;
   fileMap[path] = value;
 }
+
+describe('isCachedMetadataEx', () => {
+  it('should return true when externalLinks is present', () => {
+    const cache: CachedMetadataEx = { externalLinks: [], frontmatterExternalLinks: [] };
+    expect(isCachedMetadataEx(cache)).toBe(true);
+  });
+
+  it('should return false when externalLinks is absent', () => {
+    const cache: CachedMetadata = {};
+    expect(isCachedMetadataEx(cache)).toBe(false);
+  });
+});
 
 describe('getAllLinks', () => {
   it('should return empty array for empty cache', () => {
