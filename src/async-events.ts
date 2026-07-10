@@ -248,7 +248,10 @@ type GenericCallback = GenericPromisableVoidFunction<unknown[]>;
  * ```
  */
 export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventMap> = EventMapBase> implements AsyncEventSource<EventMap> {
-  private readonly eventRefsMap = new Map<string, AsyncEventRef[]>();
+  /**
+   * The registry mapping each event name to its list of registered listener references.
+   */
+  protected readonly eventRefsMap = new Map<string, AsyncEventRef[]>();
 
   /**
    * Remove an event listener.

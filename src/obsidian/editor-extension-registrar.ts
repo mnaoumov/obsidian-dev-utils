@@ -29,7 +29,7 @@ export class PluginEditorExtensionRegistrar implements EditorExtensionRegistrar 
    *
    * @param plugin - The Obsidian plugin instance.
    */
-  public constructor(private readonly plugin: Plugin) {}
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Registers an editor extension.

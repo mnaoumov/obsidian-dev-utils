@@ -27,7 +27,7 @@ export class PluginStatusBarItemRegistrar implements StatusBarItemRegistrar {
    *
    * @param plugin - The Obsidian plugin instance.
    */
-  public constructor(private readonly plugin: Plugin) {}
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Registers a status bar item.

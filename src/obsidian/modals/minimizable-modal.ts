@@ -199,10 +199,14 @@ export class MinimizableModal<TModal extends Modal> {
     return this.isMinimizedValue;
   }
 
-  // Patches the wrapped modal's `onClose` to run cleanup. Persists for the wrapper's whole life (a
-  // Modal can be reopened, so the patch must survive each close), hence a dedicated component that is
-  // Never unloaded — distinct from `peekLockComponent`, whose patches live only while minimized.
-  private readonly closePatchComponent = new MonkeyAroundComponent();
+  /**
+   * Patches the wrapped modal's `onClose` to run cleanup. Persists for the wrapper's whole life (a
+   * modal can be reopened, so the patch must survive each close), hence a dedicated component that is
+   * never unloaded — distinct from `peekLockComponent`, whose patches live only while minimized.
+   * Exposed to subclasses so they can register additional lifetime-scoped patches on the wrapper.
+   */
+  protected readonly closePatchComponent = new MonkeyAroundComponent();
+
   private isMinimizedValue = false;
   private readonly minimizeButtonEl: HTMLElement;
   private minimizedBarEl: HTMLElement | null = null;

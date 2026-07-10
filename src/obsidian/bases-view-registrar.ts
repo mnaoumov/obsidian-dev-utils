@@ -46,7 +46,7 @@ export class PluginBasesViewRegistrar implements BasesViewRegistrar {
    *
    * @param plugin - The Obsidian plugin instance.
    */
-  public constructor(private readonly plugin: Plugin) {}
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Registers a bases view

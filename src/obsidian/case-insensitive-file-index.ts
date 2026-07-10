@@ -38,7 +38,7 @@ export class CaseInsensitiveFileIndex {
    *
    * @param app - The Obsidian application instance whose vault this index mirrors.
    */
-  public constructor(private readonly app: App) {
+  public constructor(protected readonly app: App) {
   }
 
   /**

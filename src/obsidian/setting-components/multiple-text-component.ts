@@ -49,9 +49,12 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]> imp
     return this.inputEl;
   }
 
-  private simulateChangeCallback?: () => void;
+  /**
+   * The inner text area component.
+   */
+  protected readonly textAreaComponent: TextAreaComponent;
 
-  private readonly textAreaComponent: TextAreaComponent;
+  private simulateChangeCallback?: () => void;
 
   /**
    * Creates a new multiple text component.
@@ -158,7 +161,13 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]> imp
     this.simulateChangeCallback?.();
   }
 
-  private valueToString(value: readonly string[]): string {
+  /**
+   * Converts the value to the string shown in the text area. Subclasses can override to customize the serialization.
+   *
+   * @param value - The value to convert.
+   * @returns The string representation of the value.
+   */
+  protected valueToString(value: readonly string[]): string {
     return value.join('\n');
   }
 }

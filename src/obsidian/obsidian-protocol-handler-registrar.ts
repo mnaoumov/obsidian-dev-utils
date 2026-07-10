@@ -45,7 +45,10 @@ type PluginObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams
  * Obsidian protocol handler registrar in an Obsidian plugin.
  */
 export class PluginObsidianProtocolHandlerRegistrar implements ObsidianProtocolHandlerRegistrar {
-  private readonly plugin: Plugin;
+  /**
+   * The Obsidian plugin instance the protocol handlers are registered with.
+   */
+  protected readonly plugin: Plugin;
 
   /**
    * Creates a new instance of the {@link PluginObsidianProtocolHandlerRegistrar} class.

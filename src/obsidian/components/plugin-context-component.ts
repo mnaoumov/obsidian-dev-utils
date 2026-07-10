@@ -23,8 +23,15 @@ interface PluginContextComponentConstructorParams {
  * Initializes plugin context (plugin ID, debug controller, library styles) on load.
  */
 export class PluginContextComponent extends ComponentEx {
-  private readonly app: App;
-  private readonly pluginId: string;
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The plugin ID used to initialize the plugin context and debug controller.
+   */
+  protected readonly pluginId: string;
 
   /**
    * Creates a new plugin context component.

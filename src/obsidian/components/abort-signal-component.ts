@@ -27,7 +27,7 @@ export class AbortSignalComponent extends ComponentEx {
    *
    * @param pluginId - The plugin ID (used in the abort reason message).
    */
-  public constructor(private readonly pluginId: string) {
+  public constructor(protected readonly pluginId: string) {
     super();
     this.abortController = new AbortController();
   }

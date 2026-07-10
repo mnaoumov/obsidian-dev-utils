@@ -110,7 +110,7 @@ export class PluginNoticeComponent extends ComponentEx {
    *
    * @param pluginName - The plugin name (shown as prefix in notices).
    */
-  public constructor(private readonly pluginName: string) {
+  public constructor(protected readonly pluginName: string) {
     super();
   }
 

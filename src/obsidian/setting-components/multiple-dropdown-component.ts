@@ -48,7 +48,10 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
     return this.selectEl;
   }
 
-  private readonly dropdownComponent: DropdownComponent;
+  /**
+   * The inner dropdown component.
+   */
+  protected readonly dropdownComponent: DropdownComponent;
 
   private simulateChangeCallback?: () => void;
 

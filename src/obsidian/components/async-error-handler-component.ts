@@ -18,7 +18,7 @@ export class AsyncErrorHandlerComponent extends ComponentEx {
    *
    * @param pluginNoticeComponent - The notice component used to display error messages.
    */
-  public constructor(private readonly pluginNoticeComponent: PluginNoticeComponent) {
+  public constructor(protected readonly pluginNoticeComponent: PluginNoticeComponent) {
     super();
   }
 

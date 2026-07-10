@@ -225,14 +225,25 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     return this.currentState as ReadonlyPluginSettingsState<PluginSettings>;
   }
 
+  /**
+   * The data handler used to load and save the plugin settings.
+   */
+  protected readonly dataHandler: DataHandler;
+  /**
+   * The plugin event source the component listens to for external settings changes.
+   */
+  protected readonly pluginEventSource: PluginEventSource;
+
+  /**
+   * The plugin settings class used to construct settings instances.
+   */
+  protected readonly pluginSettingsClass: Constructor<PluginSettings, []>;
   private readonly asyncEvents = new AsyncEvents<PluginSettingsComponentBaseEventMap<PluginSettings>>();
   private currentState: PluginSettingsState<PluginSettings>;
-  private readonly dataHandler: DataHandler;
-  private lastSavedState: PluginSettingsState<PluginSettings>;
-  private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
 
-  private readonly pluginEventSource: PluginEventSource;
-  private readonly pluginSettingsClass: Constructor<PluginSettings, []>;
+  private lastSavedState: PluginSettingsState<PluginSettings>;
+
+  private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
   private readonly propertyNames: PropertyNames<PluginSettings>[];
 
   private readonly validators = new Map<PropertyNames<PluginSettings>, SettingsValidator<PluginSettings>>();

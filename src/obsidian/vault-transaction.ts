@@ -84,7 +84,10 @@ interface UndoStep {
  * `await using`-friendly: if neither is called, disposal rolls back.
  */
 export class VaultTransaction {
-  private readonly app: App;
+  /**
+   * The Obsidian application instance the transaction mutates.
+   */
+  protected readonly app: App;
   private hasStagingFolder = false;
   private mutationBypass: Disposable | null = null;
   private readonly stagedTrashPaths: string[] = [];

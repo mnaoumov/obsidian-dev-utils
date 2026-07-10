@@ -53,7 +53,10 @@ type PluginMarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessor
  * A registrar for markdown code block processors.
  */
 export class PluginMarkdownCodeBlockProcessorRegistrar implements MarkdownCodeBlockProcessorRegistrar {
-  private readonly plugin: Plugin;
+  /**
+   * The Obsidian plugin instance the code block processors are registered with.
+   */
+  protected readonly plugin: Plugin;
 
   /**
    * Creates a new markdown code block processor registrar.

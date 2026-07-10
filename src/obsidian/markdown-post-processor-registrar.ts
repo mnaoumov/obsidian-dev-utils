@@ -55,7 +55,7 @@ export class PluginMarkdownPostProcessorRegistrar implements MarkdownPostProcess
    *
    * @param plugin - The Obsidian plugin instance.
    */
-  public constructor(private readonly plugin: Plugin) {}
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Registers a markdown post processor.

@@ -49,11 +49,17 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
     return this.selectEl;
   }
 
-  private readonly dropdownComponent: DropdownComponent;
+  /**
+   * The inner dropdown component.
+   */
+  protected readonly dropdownComponent: DropdownComponent;
+
+  /**
+   * The list of selectable option values, indexed by their position in the dropdown.
+   */
+  protected readonly values: T[] = [];
 
   private simulateChangeCallback?: () => void;
-
-  private readonly values: T[] = [];
 
   /**
    * Creates a new multiple dropdown component.

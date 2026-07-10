@@ -31,8 +31,15 @@ export interface UnlockActiveNoteCommandHandlerConstructorParams {
  * ancestor folder. Only available while the active note is locked.
  */
 export class UnlockActiveNoteCommandHandler extends GlobalCommandHandler {
-  private readonly app: App;
-  private readonly resourceLockComponent: ResourceLockComponent;
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The resource-lock component whose lock covering the active note the command releases.
+   */
+  protected readonly resourceLockComponent: ResourceLockComponent;
 
   /**
    * Constructs a new instance.
