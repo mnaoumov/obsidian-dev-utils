@@ -4,6 +4,147 @@
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
 
+## Current Task — External `file://` link normalization (for obsidian-better-markdown-links issue #35) — LIBRARY CORE DONE
+
+**STATUS (2026-07-10): Body `file://` normalization is COMPLETE in obsidian-dev-utils** (12 commits on branch
+`file-links`, every increment 100% coverage + full gate). Delivered: `parse-link` module; `ParseLinkReference` +
+frontmatter reference types; `CachedMetadataEx` (features enum + gated arrays) + `getLinks` feature-gated
+selection; `getCacheSafe`/`parseMetadata` return `CachedMetadataEx` and parse body/frontmatter external links via
+`ParseCacheOptions`; `parseFrontmatterLinks`; `normalizeFileUrl`; and the high-level
+`updateFileUrlLinksInFile`/`updateFileUrlLinksInContent`.
+**FOLLOW-UPS:** (1) FRONTMATTER external `file://` normalization — parsing + surfacing are DONE, but the converter
+(`normalizeFileUrlLink`) and `shouldEditExternalLinks` are scoped to the note BODY only; frontmatter values need a
+frontmatter-value-aware converter (emit a bare/normalized url, not a regenerated `[alias](url)` markdown link).
+(2) The plugin wiring described under "After this lands".
+
+The detailed design record below is kept as history.
+
+**Origin:** `obsidian-better-markdown-links` FR https://github.com/mnaoumov/obsidian-better-markdown-links/issues/35 — "Support `file:///` links". The plugin should be able to normalize external `file://` links into a pretty, angle-bracketed form. The plugin delegates ALL link parsing/conversion to this library, so the core work lives here; the plugin will only add a setting + wire the new converter once this lands. This section is the resumable plan — drive it from a session started in THIS repo.
+
+**Scope (decided with the user):** `file://` scheme ONLY (leave `http(s)://` and other externals untouched).
+
+**The issue's secondary `!`-escaping note turned out to be a backslash-separator artifact — SUBSUMED by this work, no dedicated logic needed** (verified via CDP 2026-07-09). A path separator `\` immediately before `!` (a folder/file name starting with `!`) forms `\!`, which markdown consumes as an escape and DROPS the separator, merging two path segments into a broken path. Confirmed: raw `\` sep breaks it even inside angle brackets and even when the bang is written `%21` (it's the SEPARATOR, not the bang); doubling to `\\!` works (the user's manual fix); and **forward-slash separators eliminate it entirely** (`/! dir/` has no `\!` sequence). Since the normalizer already converts `\`→`/`, a raw `!` in a normalized `file://` link is harmless and resolves correctly — no `!`-specific escaping required.
+
+### Confirmed runtime behavior (Obsidian 1.13.1, Windows; verified via CDP + `obsidian-versions/obsidian.asar/main.js`)
+
+- Renderer overrides `window.open`: only strings starting with `file:` are routed to the OS opener (`ipcRenderer.send('open-url', rawHref)`); anything else falls through to native `window.open` and does NOT open a local file. The click handler passes the raw `href` **attribute**. ⇒ **the `file://` scheme is mandatory**; a scheme-less path (`<F:/dir/x.txt>`) renders as a link but Obsidian will not follow it.
+- Main process `open-url` (main.js `ipcMain.on('open-url', …)` → `$()` → `L()` → `shell.openPath`): `L(url)` = strip `^file:(\/\/)?`, drop a leading `/` on Windows, `decodeURIComponent`, `path.normalize`. So `%20`→space AND `%5C`→`\` both decode, and `/` vs `\` both normalize. **Every `file://` form resolves to the same path** and opens — the choice of slashes/encoding is purely cosmetic, not a correctness issue. (The user's current `%5C`+`%20` links already open; they're just ugly — that is the whole FR.)
+- Parse/render: a raw space with NO angle brackets breaks the markdown link (won't render). Angle brackets `<…>` permit raw spaces (Obsidian encodes them to `%20` in the href attr).
+- Vault-external files trigger a one-time "open external application?" warning dialog (format-independent, not plugin-controllable) — nothing to design around.
+
+### Target normalized output (respect the existing angle-bracket / leading-slash options)
+
+Always keep the `file://` scheme; convert backslashes → forward slashes; decode `%5C`.
+- Angle brackets ON: `[x](<file:///F:/dir/My Notes/x.txt>)` — raw spaces, readable.
+- Angle brackets OFF: `[x](file:///F:/dir/My%20Notes/x.txt)` — `%20`-encoded.
+Both are confirmed to open correctly.
+
+### Settled design (decided with the user 2026-07-09)
+
+External `file://` links are invisible to the conversion pipeline because Obsidian's metadata cache
+excludes ALL external links, and `getFileChanges` → `getAllLinks(cache)` only reads the cache. The
+library's own `parseLinks(content)` DOES parse externals (with offsets). The chosen approach bakes
+parsed externals into an extended cache object so the existing offset-splice pipeline handles them
+with no new apply logic:
+
+- **`CachedMetadataEx extends CachedMetadata`** adds `externalLinks: ParseLinkReference[]` (required —
+  property PRESENCE means "computed with externals"; a note with none gets `externalLinks: []`).
+  Guard: `isCachedMetadataEx(cache)` = `'externalLinks' in cache`.
+- **`ParseLinkReference extends ReferenceCache`** (Obsidian type) adds `parseLinkResult: ParseLinkResult`.
+  So it flows through `isReferenceCache` → `isContentChange` → offset splice unchanged, AND carries the
+  full parse result so the normalizer reads `.isFileUrl`/`.url` with NO re-parse. Built with
+  `link` = decoded `url`, `original` = `raw`, `displayText` = `alias`, `position` = offsets (line/col 0,
+  as the frontmatter-offset path already does). Guard: `isParseLinkReference(ref)` = `'parseLinkResult' in ref`.
+- **`getCacheSafe`/`parseMetadata` gain `{ shouldIncludeExternalLinks }`** (default false). When true they
+  additionally `parseLinks` the content and attach `externalLinks`, returning a `CachedMetadataEx` at
+  RUNTIME. Simple API — NO overloads; static return type stays `CachedMetadata | null`. **Must COPY, not
+  mutate** Obsidian's cached object: `{ ...cache, externalLinks }` (`getCacheSafe` returns Obsidian's own
+  object; `parseMetadata`'s `computeMetadataAsync` result is fresh and safe to attach to). `getCacheSafe`
+  reads content via `cachedRead` only when the flag is on.
+- **REVISED — features-enum model + `getLinks` (current, supersedes `getAllLinksEx`/required-arrays notes below):**
+  - `getAllLinks(cache)` is RENAMED to `getLinks(params)` (["all" is misleading once toggles select subsets]) —
+    cache-driven ONLY (NO path/content: the `Ex` cache already carries externals). Params:
+    `{ cache, shouldIncludeReferences?=true, shouldIncludeEmbeds?=true, shouldIncludeFrontmatterLinks?=true,
+    shouldIncludeExternalLinks?=false, shouldIncludeFrontmatterExternalLinks?=false,
+    shouldIncludeMultiValueFrontmatterExternalLinks?=false }`. Rename/delete callers just pass `getLinks({ cache })`.
+  - `CachedMetadataEx` records WHAT was parsed via `readonly features: CachedMetadataExFeature[]`
+    (enum `Native | ExternalLinks | FrontmatterExternalLinks | MultiValueFrontmatterExternalLinks`) plus THREE
+    OPTIONAL link arrays (`externalLinks`, `frontmatterExternalLinks`, `multiValueFrontmatterExternalLinks`), each
+    populated iff its feature is in `features`. `isCachedMetadataEx(cache)` = `'features' in cache`.
+  - `getLinks` external selection is PER-KIND and throws if that kind wasn't parsed:
+    `if (!isCachedMetadataEx(cache) || !cache.features.includes(<Feature>)) throw;` then
+    `links.push(...ensureNonNullable(cache.<array>))`.
+  - Five features: `Native` (Obsidian's native parse — internal links/embeds/frontmatter links; the baseline),
+    `ExternalLinks` (body), `FrontmatterExternalLinks` (single-value fm external),
+    `MultiValueFrontmatterExternalLinks` (multi-value fm external), `MultiValueFrontmatterLinks` (multi-value fm
+    INTERNAL — which Obsidian does NOT natively cache). Four gated arrays (`externalLinks`,
+    `frontmatterExternalLinks`, `multiValueFrontmatterExternalLinks`, `multiValueFrontmatterLinks`). Selection in
+    `getLinks` uses a data-driven `FeatureLinkSelector[]` loop (keeps complexity ≤ 20).
+  - **ALL functions that returned `CachedMetadata` now return `CachedMetadataEx`** (`getCacheSafe`, `parseMetadata`)
+    with at least `features: [Native]` (`CachedMetadata` ↔ `CachedMetadataEx { features: [Native] }`). SCOPE of
+    this sweep + its callers — confirm before implementing.
+  - STATUS: DONE — `getLinks` (91a132d4); `Ex` sweep `getCacheSafe`/`parseMetadata` → `CachedMetadataEx` [Native]
+    (71fb2517); `parseFrontmatterLinks` reusable frontmatter parser (e9788565); PARSING engine — `ParseCacheOptions`
+    (`shouldParse{ExternalLinks,FrontmatterExternalLinks,MultiValueFrontmatterExternalLinks,MultiValueFrontmatterLinks}`)
+    + `toParsedCachedMetadataEx` + `parseExternalBodyLinks` (skips frontmatter region + internal) wired into
+    `parseMetadata` (7544d1da). REMAINING: (a) wire the SAME options into `getCacheSafe` (needs a `cachedRead` for
+    body content; restructure its two returns to a single parse tail); (b) thread parse + selection flags through
+    `editLinks`/`editLinksInContent`/`getFileChanges`; (c) the `file://` normalizer + wiring.
+- **Module cycle fix (A):** `parseLinks` lives in `link.ts`, which already imports `metadata-cache.ts`,
+  so having `getCacheSafe` call `parseLinks` would close a cycle (`import-x/no-cycle` blocks it).
+  Resolution: extract the parse cluster into a NEW leaf module `src/obsidian/parse-link.ts`
+  (`parseLink`/`parseLinks`, `ParseLinkResult`, `ParseLinkReference` + guard, `encodeUrl`/`escapeAlias`/
+  `unescapeAlias`, and the private parse helpers). Both `link.ts` and `metadata-cache.ts` import from it;
+  it imports neither. NOTE: this moves public `parseLink`/`parseLinks`/`ParseLinkResult`/`encodeUrl`/… to a
+  new import path — a breaking change (acceptable; this branch is a version bump).
+- **`file://` normalizer + wiring:** library owns it (mechanism); plugin supplies only opt-in + the
+  angle-bracket option (policy). The flag threads through `editLinks`/`editLinksInContent` →
+  `getFileChanges` (which switches to `getAllLinksEx` + passes the fetched `Ex` cache). The normalizer
+  reads the attached `parseLinkResult`, does `\`→`/` on the decoded url, filters to `file:` scheme,
+  and emits via `generateRawMarkdownLink` (angle-bracket raw-space vs `%20` per the plugin's option).
+  All external links are surfaced generically; the file://-only policy lives in the converter.
+- **`toParseLinkReference({ content, parseLinkResult })`** builds the wrapper. `position` uses REAL
+  line/col computed from `content` (`offsetToLoc` counts newlines before the offset) — NOT `line: 0`.
+  So the wrapping needs the content string the offsets index into (whole note for body links; the
+  frontmatter VALUE string for frontmatter links, where offsets are value-relative).
+- **Comprehensive parsing-flag taxonomy (cover ALL parsing kinds).** On `getCacheSafe`/`parseMetadata`
+  (each opt-in, default false): `shouldIncludeExternalLinks` (parse BODY externals → `externalLinks`);
+  `shouldIncludeFrontmatterExternalLinks` (parse FRONTMATTER values for externals → append external
+  `FrontmatterLinkCacheWithOffsets` to `frontmatterLinks`); `shouldParseMultiValueFrontmatterStrings`
+  (parse frontmatter string values that hold MULTIPLE links — the `key: "url1 url2"` case — via per-value
+  `parseLinks` + `isSingleLink = parseLinkResults[0]?.raw === value`, emitting offset-carrying
+  `FrontmatterLinkCacheWithOffsets`). On `getAllLinksEx` (selection): `shouldIncludeReferences`/
+  `shouldIncludeEmbeds`/`shouldIncludeFrontmatterLinks` (default true) + `shouldIncludeExternalLinks`
+  (default false).
+- **Frontmatter parsing logic must be REUSABLE** — `obsidian-frontmatter-markdown-links`'s
+  `src/frontmatter-markdown-links-component.ts` `processFrontmatterLinks` (line ~371) is the reference
+  implementation (per-value `parseLinks`, single-vs-multi `FrontmatterLinkCache`/`WithOffsets`, currently
+  `continue`s on `isExternal`). The library helper added here should be general enough that plugin adopts
+  it later (cross-repo; plan-then-hand-off), replacing its local copy.
+
+### Increment checklist (each red-first, atomic, full gate: compile + test:coverage 100% + lint + format + spellcheck)
+
+- [x] `feat: decode file:// URLs when parsing links` (decodeUrlSafely decodes file://; `isFileUrl` in url.ts). DONE (ed9cc8dd)
+- [x] `feat: expose isFileUrl on ParseLinkResult`. DONE (f6bfc1a1)
+- [x] Extract parse cluster into `src/obsidian/parse-link.ts` (pure move; behavior-identical; parse tests → `parse-link.test.ts`). DONE (d064ae53)
+- [x] Add `ParseLinkReference` + `isParseLinkReference` + `toParseLinkReference` (real line/col via `offsetToLoc`). DONE (6de8ba84)
+- [x] Add `CachedMetadataEx` (`externalLinks` + `frontmatterExternalLinks`) + `isCachedMetadataEx`, plus frontmatter reference types `ParseLinkFrontmatterReference` / `...WithOffsets` (latter extends former). DONE (b15e44c7)
+- [ ] `getCacheSafe`/`parseMetadata` parsing flags → attach `externalLinks` (body) (copy-not-mutate).
+- [ ] Frontmatter external + multi-value parsing (reusable helper; `shouldIncludeFrontmatterExternalLinks`, `shouldParseMultiValueFrontmatterStrings`) → attach `frontmatterExternalLinks`.
+- [ ] `getAllLinksEx({ cache, …toggles })` with runtime Ex-throw.
+- [ ] Thread flags through `getFileChanges` + `editLinks`/`editLinksInContent`.
+- [ ] `file://` normalizer + wire as external-conversion behavior.
+
+### Testing
+
+- Unit tests (100% coverage) per increment. Real `file://` open behavior is ALREADY CDP-confirmed (routing
+  + `L()` resolution; notes in the plugin's memory `obsidian-file-link-resolution`) — no runtime re-check
+  needed for the string transforms. Add an `*.obsidian.integration.test.ts` only if a round-trip is wanted.
+
+### After this lands
+
+Back in `obsidian-better-markdown-links` (separate session): add a "Normalize `file://` links" setting to `PluginSettings` + settings tab, and wire the new converter into the existing modify/save/navigation triggers and the convert-in-file/folder/vault commands.
+
 ## Commands
 
 All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
