@@ -19,6 +19,8 @@ import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
 import { visit } from 'unist-util-visit';
 
+import type { GenericObject } from '../type-guards.ts';
+
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import { replaceAll } from '../string.ts';
 import { ensureNonNullable } from '../type-guards.ts';
@@ -39,6 +41,27 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 
 const WIKILINK_DIVIDER = '|';
+
+/**
+ * The result of parsing the links from a note's frontmatter via {@link parseFrontmatterLinks}. Internal
+ * single-link frontmatter values are omitted, as Obsidian natively caches them.
+ */
+export interface ParseFrontmatterLinksResult {
+  /**
+   * The external links parsed from single-link (single-value) frontmatter values.
+   */
+  readonly frontmatterExternalLinks: ParseLinkFrontmatterReference[];
+
+  /**
+   * The external links parsed from multi-link (multi-value) frontmatter values.
+   */
+  readonly multiValueFrontmatterExternalLinks: ParseLinkFrontmatterReferenceWithOffsets[];
+
+  /**
+   * The internal links parsed from multi-link (multi-value) frontmatter values.
+   */
+  readonly multiValueFrontmatterLinks: ParseLinkFrontmatterReferenceWithOffsets[];
+}
 
 /**
  * A {@link FrontmatterLinkCache} for a link parsed from a single-link frontmatter value via
@@ -226,6 +249,31 @@ export interface ToParseLinkReferenceParams {
 }
 
 /**
+ * Params for {@link FrontmatterLinksParser.categorize}.
+ */
+interface CategorizeFrontmatterLinkParams {
+  /**
+   * Whether the whole frontmatter value is a single link.
+   */
+  readonly isSingleLink: boolean;
+
+  /**
+   * The key path of the frontmatter value.
+   */
+  readonly key: string;
+
+  /**
+   * The parsed link.
+   */
+  readonly parseLinkResult: ParseLinkResult;
+
+  /**
+   * The frontmatter value the link was parsed from.
+   */
+  readonly value: string;
+}
+
+/**
  * Params for {@link decodeUrlSafely}.
  */
 interface DecodeUrlSafelyParams {
@@ -314,6 +362,72 @@ interface WikiLinkNodeData extends Record<string, unknown> {
   alias: string;
 }
 
+class FrontmatterLinksParser {
+  private readonly frontmatterExternalLinks: ParseLinkFrontmatterReference[] = [];
+  private readonly multiValueFrontmatterExternalLinks: ParseLinkFrontmatterReferenceWithOffsets[] = [];
+  private readonly multiValueFrontmatterLinks: ParseLinkFrontmatterReferenceWithOffsets[] = [];
+
+  public parse(frontmatter: unknown): ParseFrontmatterLinksResult {
+    this.parseValue(frontmatter, '');
+    return {
+      frontmatterExternalLinks: this.frontmatterExternalLinks,
+      multiValueFrontmatterExternalLinks: this.multiValueFrontmatterExternalLinks,
+      multiValueFrontmatterLinks: this.multiValueFrontmatterLinks
+    };
+  }
+
+  private categorize(params: CategorizeFrontmatterLinkParams): void {
+    const { isSingleLink, key, parseLinkResult, value } = params;
+    if (!parseLinkResult.isExternal && isSingleLink) {
+      return;
+    }
+
+    const reference: ParseLinkFrontmatterReference = {
+      displayText: parseLinkResult.alias ?? parseLinkResult.url,
+      key,
+      link: parseLinkResult.url,
+      original: value,
+      parseLinkResult
+    };
+
+    if (isSingleLink) {
+      this.frontmatterExternalLinks.push(reference);
+      return;
+    }
+
+    const referenceWithOffsets: ParseLinkFrontmatterReferenceWithOffsets = {
+      ...reference,
+      endOffset: parseLinkResult.endOffset,
+      startOffset: parseLinkResult.startOffset
+    };
+
+    if (parseLinkResult.isExternal) {
+      this.multiValueFrontmatterExternalLinks.push(referenceWithOffsets);
+    } else {
+      this.multiValueFrontmatterLinks.push(referenceWithOffsets);
+    }
+  }
+
+  private parseValue(value: unknown, key: string): void {
+    if (typeof value === 'string') {
+      const parseLinkResults = parseLinks(value);
+      const isSingleLink = parseLinkResults[0]?.raw === value;
+      for (const parseLinkResult of parseLinkResults) {
+        this.categorize({ isSingleLink, key, parseLinkResult, value });
+      }
+      return;
+    }
+
+    if (typeof value !== 'object' || value === null) {
+      return;
+    }
+
+    for (const [childKey, childValue] of Object.entries(value as GenericObject)) {
+      this.parseValue(childValue, key ? `${key}.${childKey}` : childKey);
+    }
+  }
+}
+
 /**
  * Encodes a URL.
  *
@@ -355,6 +469,18 @@ export function escapeAlias(alias: string): string {
  */
 export function isParseLinkReference(reference: Reference): reference is ParseLinkReference {
   return 'parseLinkResult' in reference;
+}
+
+/**
+ * Parses the links from a note's frontmatter. Each string value is parsed via {@link parseLinks}: a value
+ * that is a single link yields an entry without offsets, and a value that holds multiple links yields
+ * offset-carrying entries. Internal single-link values are omitted, as Obsidian natively caches them.
+ *
+ * @param frontmatter - The frontmatter to parse (a value, object, or array).
+ * @returns The parsed frontmatter links.
+ */
+export function parseFrontmatterLinks(frontmatter: unknown): ParseFrontmatterLinksResult {
+  return new FrontmatterLinksParser().parse(frontmatter);
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   encodeUrl,
   escapeAlias,
   isParseLinkReference,
+  parseFrontmatterLinks,
   parseLink,
   parseLinks,
   toParseLinkReference,
@@ -956,5 +957,60 @@ describe('isParseLinkReference', () => {
 
   it('should return false for a plain reference', () => {
     expect(isParseLinkReference({ link: 'note', original: '[[note]]' })).toBe(false);
+  });
+});
+
+describe('parseFrontmatterLinks', () => {
+  it('should parse a single-value external frontmatter link without offsets', () => {
+    const result = parseFrontmatterLinks({ url: 'file:///a.txt' });
+    expect(result.frontmatterExternalLinks).toHaveLength(1);
+    expect(result.frontmatterExternalLinks[0]?.key).toBe('url');
+    expect(result.frontmatterExternalLinks[0]?.link).toBe('file:///a.txt');
+    expect(result.multiValueFrontmatterExternalLinks).toHaveLength(0);
+    expect(result.multiValueFrontmatterLinks).toHaveLength(0);
+  });
+
+  it('should omit a single-value internal frontmatter link', () => {
+    const result = parseFrontmatterLinks({ note: '[[note]]' });
+    expect(result.frontmatterExternalLinks).toHaveLength(0);
+    expect(result.multiValueFrontmatterExternalLinks).toHaveLength(0);
+    expect(result.multiValueFrontmatterLinks).toHaveLength(0);
+  });
+
+  it('should parse multi-value external frontmatter links with offsets', () => {
+    const result = parseFrontmatterLinks({ urls: 'file:///a.txt file:///b.txt' });
+    expect(result.multiValueFrontmatterExternalLinks).toHaveLength(2);
+    expect(result.multiValueFrontmatterExternalLinks[0]?.startOffset).toBe(0);
+    expect(result.frontmatterExternalLinks).toHaveLength(0);
+  });
+
+  it('should parse multi-value internal frontmatter links with offsets', () => {
+    const result = parseFrontmatterLinks({ notes: '[[a]] [[b]]' });
+    expect(result.multiValueFrontmatterLinks).toHaveLength(2);
+    expect(result.multiValueFrontmatterExternalLinks).toHaveLength(0);
+  });
+
+  it('should recurse into nested frontmatter objects using the key path', () => {
+    const result = parseFrontmatterLinks({ meta: { url: 'file:///a.txt' } });
+    expect(result.frontmatterExternalLinks).toHaveLength(1);
+    expect(result.frontmatterExternalLinks[0]?.key).toBe('meta.url');
+  });
+
+  it('should parse frontmatter array values using the index key', () => {
+    const result = parseFrontmatterLinks({ tags: ['file:///a.txt'] });
+    expect(result.frontmatterExternalLinks).toHaveLength(1);
+    expect(result.frontmatterExternalLinks[0]?.key).toBe('tags.0');
+  });
+
+  it('should ignore non-string, non-object frontmatter values', () => {
+    const result = parseFrontmatterLinks({ count: 5, flag: null });
+    expect(result.frontmatterExternalLinks).toHaveLength(0);
+    expect(result.multiValueFrontmatterExternalLinks).toHaveLength(0);
+    expect(result.multiValueFrontmatterLinks).toHaveLength(0);
+  });
+
+  it('should return an empty result for undefined frontmatter', () => {
+    const result = parseFrontmatterLinks(undefined);
+    expect(result.frontmatterExternalLinks).toHaveLength(0);
   });
 });
