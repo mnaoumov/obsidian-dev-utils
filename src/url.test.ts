@@ -4,9 +4,38 @@ import {
   it
 } from 'vitest';
 
-import { isUrl } from './url.ts';
+import {
+  isFileUrl,
+  isUrl
+} from './url.ts';
 
 describe('url', () => {
+  describe('isFileUrl', () => {
+    it('should accept a file:// URL', () => {
+      expect(isFileUrl('file:///F:/dir/x.txt')).toBe(true);
+    });
+
+    it('should accept a file: URL without slashes', () => {
+      expect(isFileUrl('file:/F:/dir/x.txt')).toBe(true);
+    });
+
+    it('should accept an uppercase FILE scheme', () => {
+      expect(isFileUrl('FILE:///F:/dir/x.txt')).toBe(true);
+    });
+
+    it('should reject a non-file URL', () => {
+      expect(isFileUrl('https://example.com')).toBe(false);
+    });
+
+    it('should reject a string that only contains "file" later on', () => {
+      expect(isFileUrl('https://example.com/file:')).toBe(false);
+    });
+
+    it('should reject a plain path', () => {
+      expect(isFileUrl('F:/dir/x.txt')).toBe(false);
+    });
+  });
+
   describe('isUrl', () => {
     describe('valid URLs with ://', () => {
       it('should accept http URLs', () => {

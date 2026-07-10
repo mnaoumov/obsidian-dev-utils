@@ -606,6 +606,41 @@ describe('parseLink', () => {
       expect(result.isExternal).toBe(false);
     });
 
+    describe('should parse a file:// URL as a decoded external link', () => {
+      const result = parseLink('[doc](file:///F:/dir/My%20Notes/x.txt)');
+
+      it('should not be null', () => {
+        expect(result).not.toBeNull();
+      });
+
+      it('should be external', () => {
+        assertNonNullable(result);
+        expect(result.isExternal).toBe(true);
+      });
+
+      it('should have the decoded url', () => {
+        assertNonNullable(result);
+        expect(result.url).toBe('file:///F:/dir/My Notes/x.txt');
+      });
+
+      it('should re-encode the url in encodedUrl', () => {
+        assertNonNullable(result);
+        expect(result.encodedUrl).toBe('file:///F:/dir/My%20Notes/x.txt');
+      });
+    });
+
+    it('should decode %5C in a file:// URL to a backslash', () => {
+      const result = parseLink('[doc](file:///F:/dir/My%5CNotes.txt)');
+      assertNonNullable(result);
+      expect(result.url).toBe('file:///F:/dir/My\\Notes.txt');
+    });
+
+    it('should leave a non-file external URL encoded', () => {
+      const result = parseLink('[example](https://example.com/a%20b)');
+      assertNonNullable(result);
+      expect(result.url).toBe('https://example.com/a%20b');
+    });
+
     describe('should parse an embed markdown link with alias', () => {
       const result = parseLink('![my image](image.png)');
 

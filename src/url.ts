@@ -6,6 +6,18 @@
 
 const SCHEME_REG_EXP = /^[A-Za-z][A-Za-z0-9+\-.]*:\S+$/;
 
+const FILE_SCHEME_REG_EXP = /^file:/i;
+
+/**
+ * Determines whether a given string is a `file://` URL.
+ *
+ * @param str - The string to check.
+ * @returns `true` if the string uses the `file:` scheme, otherwise `false`.
+ */
+export function isFileUrl(str: string): boolean {
+  return FILE_SCHEME_REG_EXP.test(str);
+}
+
 /**
  * Determines whether a given string is a valid URL
  *

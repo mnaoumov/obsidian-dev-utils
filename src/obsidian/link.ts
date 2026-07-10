@@ -54,7 +54,10 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
-import { isUrl } from '../url.ts';
+import {
+  isFileUrl,
+  isUrl
+} from '../url.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -1778,7 +1781,9 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
 
 function decodeUrlSafely(params: DecodeUrlSafelyParams): string {
   const { hasAngleBrackets, isExternal, url } = params;
-  if (isExternal || hasAngleBrackets) {
+  // `file://` URLs are external, but their percent-encoding is purely cosmetic, so decode them like
+  // Internal links. Every other external URL is left untouched (its encoding may be significant).
+  if ((isExternal || hasAngleBrackets) && !isFileUrl(url)) {
     return url;
   }
 
