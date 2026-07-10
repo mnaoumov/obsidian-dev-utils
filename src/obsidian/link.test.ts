@@ -20,6 +20,7 @@ import {
   vi
 } from 'vitest';
 
+import type { FileChange } from './file-change.ts';
 import type { GenerateMarkdownLinkParams } from './link.ts';
 import type { CachedMetadataEx } from './metadata-cache.ts';
 import type { CanvasReference } from './reference.ts';
@@ -71,6 +72,7 @@ import {
   registerFiles
 } from './metadata-cache.ts';
 import {
+  parseFrontmatterLinks,
   parseLinks,
   toParseLinkReference
 } from './parse-link.ts';
@@ -1536,7 +1538,8 @@ describe('app-dependent functions', () => {
       const wikilinkResult = ensureNonNullable(parsed.find((parseLinkResult) => parseLinkResult.isWikilink));
       vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         externalLinks,
-        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks],
+        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
+        frontmatterExternalLinks: [],
         links: [{
           link: 'a',
           original: wikilinkResult.raw,
@@ -1549,6 +1552,47 @@ describe('app-dependent functions', () => {
 
       const result = await updateFileUrlLinksInContent({ app, content });
       expect(result).toBe(content);
+    });
+
+    it('should convert a frontmatter file:// link to a normalized bare url', async () => {
+      const frontmatterExternalLink = ensureNonNullable(parseFrontmatterLinks({ url: 'file:///F:%5Cd.txt' }).frontmatterExternalLinks[0]);
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+        externalLinks: [],
+        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
+        frontmatterExternalLinks: [frontmatterExternalLink]
+      }));
+
+      let capturedChanges: FileChange[] = [];
+      vi.mocked(applyContentChanges).mockImplementation(async ({ changesProvider, content }) => {
+        if (typeof changesProvider === 'function') {
+          capturedChanges = await (changesProvider as () => Promise<FileChange[]>)();
+        }
+        return content;
+      });
+
+      await updateFileUrlLinksInContent({ app, content: '---\nurl: file:///F:%5Cd.txt\n---' });
+      expect(capturedChanges).toHaveLength(1);
+      expect(capturedChanges[0]?.newContent).toBe('file:///F:/d.txt');
+    });
+
+    it('should skip a non-file frontmatter external link', async () => {
+      const frontmatterExternalLink = ensureNonNullable(parseFrontmatterLinks({ url: 'https://x.com' }).frontmatterExternalLinks[0]);
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+        externalLinks: [],
+        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
+        frontmatterExternalLinks: [frontmatterExternalLink]
+      }));
+
+      let capturedChanges: FileChange[] = [];
+      vi.mocked(applyContentChanges).mockImplementation(async ({ changesProvider, content }) => {
+        if (typeof changesProvider === 'function') {
+          capturedChanges = await (changesProvider as () => Promise<FileChange[]>)();
+        }
+        return content;
+      });
+
+      await updateFileUrlLinksInContent({ app, content: '---\nurl: https://x.com\n---' });
+      expect(capturedChanges).toHaveLength(0);
     });
   });
 
@@ -1564,7 +1608,8 @@ describe('app-dependent functions', () => {
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         externalLinks: [],
-        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks],
+        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
+        frontmatterExternalLinks: [],
         links: [{
           link: 'target',
           original: '[[target]]',

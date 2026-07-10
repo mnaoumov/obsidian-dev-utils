@@ -76,6 +76,7 @@ import {
 import {
   encodeUrl,
   escapeAlias,
+  isParseLinkFrontmatterReference,
   isParseLinkReference,
   parseLink
 } from './parse-link.ts';
@@ -251,6 +252,14 @@ export interface EditLinksInContentParams {
    * @default `false`
    */
   readonly shouldEditExternalLinks?: boolean;
+
+  /**
+   * Whether to also edit external links parsed from frontmatter values. When `true`, the converter also
+   * receives references for frontmatter external links.
+   *
+   * @default `false`
+   */
+  readonly shouldEditFrontmatterExternalLinks?: boolean;
 }
 
 /**
@@ -284,6 +293,14 @@ export interface EditLinksParams extends EditLinksOptions {
    * @default `false`
    */
   readonly shouldEditExternalLinks?: boolean;
+
+  /**
+   * Whether to also edit external links parsed from frontmatter values. When `true`, the converter also
+   * receives references for frontmatter external links.
+   *
+   * @default `false`
+   */
+  readonly shouldEditFrontmatterExternalLinks?: boolean;
 }
 
 /**
@@ -846,6 +863,13 @@ interface GetFileChangesParams {
    * @default `false`
    */
   readonly shouldIncludeExternalLinks?: boolean;
+
+  /**
+   * Whether to include external links (parsed from frontmatter values) in the changes.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeFrontmatterExternalLinks?: boolean;
 }
 
 interface LinkConfig {
@@ -997,12 +1021,16 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
     linkConverter,
     pathOrFile,
     shouldEditExternalLinks = false,
+    shouldEditFrontmatterExternalLinks = false,
     ...options
   } = params;
   await applyFileChanges({
     app,
     changesProvider: async ({ abortSignal, content }) => {
-      const cache = await getCacheSafe(app, pathOrFile, shouldEditExternalLinks ? { shouldParseExternalLinks: true } : {});
+      const cache = await getCacheSafe(app, pathOrFile, {
+        shouldParseExternalLinks: shouldEditExternalLinks,
+        shouldParseFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
+      });
       abortSignal.throwIfAborted();
       const file = getFile({ app, pathOrFile });
       const cachedContent = await app.vault.cachedRead(file);
@@ -1016,7 +1044,8 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
         cache,
         isCanvasFileCache: isCanvasFile(pathOrFile),
         linkConverter,
-        shouldIncludeExternalLinks: shouldEditExternalLinks
+        shouldIncludeExternalLinks: shouldEditExternalLinks,
+        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
       });
     },
     pathOrFile,
@@ -1031,7 +1060,7 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
  * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(params: EditLinksInContentParams): Promise<string> {
-  const { app, content, linkConverter, shouldEditExternalLinks = false } = params;
+  const { app, content, linkConverter, shouldEditExternalLinks = false, shouldEditFrontmatterExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1039,14 +1068,18 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
   const newContent = await applyContentChanges({
     abortSignal,
     changesProvider: async () => {
-      const cache = await parseMetadata(app, content, shouldEditExternalLinks ? { shouldParseExternalLinks: true } : {});
+      const cache = await parseMetadata(app, content, {
+        shouldParseExternalLinks: shouldEditExternalLinks,
+        shouldParseFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
+      });
       abortSignal.throwIfAborted();
       const changes = await getFileChanges({
         abortSignal,
         cache,
         isCanvasFileCache: false,
         linkConverter,
-        shouldIncludeExternalLinks: shouldEditExternalLinks
+        shouldIncludeExternalLinks: shouldEditExternalLinks,
+        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
       });
       abortSignal.throwIfAborted();
       return changes;
@@ -1327,7 +1360,8 @@ export async function updateFileUrlLinksInContent(params: UpdateFileUrlLinksInCo
     app,
     content,
     linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
-    shouldEditExternalLinks: true
+    shouldEditExternalLinks: true,
+    shouldEditFrontmatterExternalLinks: true
   }));
 }
 
@@ -1350,6 +1384,7 @@ export async function updateFileUrlLinksInFile(params: UpdateFileUrlLinksInFileP
     linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
     pathOrFile,
     shouldEditExternalLinks: true,
+    shouldEditFrontmatterExternalLinks: true,
     ...options
   });
 }
@@ -1681,7 +1716,7 @@ function generateWikiLink(params: GenerateWikiLinkParams): string {
 }
 
 async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[]> {
-  const { cache, isCanvasFileCache, linkConverter, shouldIncludeExternalLinks = false } = params;
+  const { cache, isCanvasFileCache, linkConverter, shouldIncludeExternalLinks = false, shouldIncludeFrontmatterExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1697,7 +1732,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     start: section.position.start.offset
   }));
 
-  for (const link of getLinks({ cache, shouldIncludeExternalLinks })) {
+  for (const link of getLinks({ cache, shouldIncludeExternalLinks, shouldIncludeFrontmatterExternalLinks })) {
     abortSignal.throwIfAborted();
     const newContent = await linkConverter(link, abortSignal);
     abortSignal.throwIfAborted();
@@ -1761,6 +1796,15 @@ function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
 }
 
 function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean): MaybeReturn<string> {
+  if (isParseLinkFrontmatterReference(link)) {
+    if (!link.parseLinkResult.isFileUrl) {
+      return;
+    }
+
+    // A frontmatter value holds a bare URL (re-serialized/quoted as YAML), not a `[alias](url)` markdown link.
+    return normalizeFileUrl(link.parseLinkResult.url);
+  }
+
   if (!isParseLinkReference(link)) {
     return;
   }

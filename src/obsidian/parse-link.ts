@@ -14,6 +14,7 @@ import type {
 } from 'obsidian';
 import type { Node } from 'unist';
 
+import { isFrontmatterLinkCache } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
@@ -459,6 +460,16 @@ export function escapeAlias(alias: string): string {
     searchValue: SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX,
     str: alias
   });
+}
+
+/**
+ * Determines whether a reference is a {@link ParseLinkFrontmatterReference}.
+ *
+ * @param reference - The reference to check.
+ * @returns `true` if the reference is a {@link ParseLinkFrontmatterReference}, otherwise `false`.
+ */
+export function isParseLinkFrontmatterReference(reference: Reference): reference is ParseLinkFrontmatterReference {
+  return isFrontmatterLinkCache(reference) && 'parseLinkResult' in reference;
 }
 
 /**
