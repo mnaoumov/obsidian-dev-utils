@@ -22,7 +22,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -124,8 +123,7 @@ describe('MinimizableModal', () => {
             const SETTLE_DELAY_MILLISECONDS = 300;
             await sleep(SETTLE_DELAY_MILLISECONDS);
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // Minimizing actually minimized the modal.
@@ -176,8 +174,7 @@ describe('MinimizableModal', () => {
             didOpenAfterRestore,
             didOpenWhileMinimized
           };
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The re-entrant modal is blocked while the first is minimized (the core of the reported bug).
@@ -241,8 +238,7 @@ describe('MinimizableModal', () => {
             // `obsidian-public-latest` typings model `AppSetting.popout`.
             return Boolean(Reflect.get(app.setting, 'popout'));
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // Settings never opened its popout window while the modal was minimized (no empty window).
@@ -299,8 +295,7 @@ describe('MinimizableModal', () => {
             restoredByBarClick,
             restoredByTitleClick
           };
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result.restoredByTitleClick).toBe(true);
@@ -369,8 +364,7 @@ describe('MinimizableModal', () => {
             // `rgb(r, g, b)` / `oklch(l c h)` / hex — no alpha channel serialized means fully opaque.
             return 1;
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The hovered bar's resolved background-color must be fully opaque (alpha 1). Before the fix, the

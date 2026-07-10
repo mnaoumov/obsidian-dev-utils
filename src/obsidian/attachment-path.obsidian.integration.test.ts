@@ -11,7 +11,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -25,8 +24,7 @@ describe('attachment-path', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian['attachment-path'].getAttachmentFolderPath({ app, notePathOrFile: 'test-note.md' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(typeof result).toBe('string');
@@ -50,8 +48,7 @@ describe('attachment-path', () => {
             shouldSkipDuplicateCheck: true,
             shouldSkipMissingAttachmentFolderCreation: true
           });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toContain('test-image');
@@ -78,8 +75,7 @@ describe('attachment-path', () => {
           }
 
           return Promise.all([getPath(), getPath()]);
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result).toHaveLength(2);
@@ -98,8 +94,7 @@ describe('attachment-path', () => {
             throw new Error('obsidian-dev-utils module not registered on window');
           }
           return lib.obsidian['attachment-path'].hasOwnAttachmentFolder({ app, path: 'test-note.md' });
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(typeof result).toBe('boolean');

@@ -16,7 +16,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -68,8 +67,7 @@ describe('editor', () => {
               window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
             });
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       expect(result.isReadOnlyBeforeToggle).toBe(false);

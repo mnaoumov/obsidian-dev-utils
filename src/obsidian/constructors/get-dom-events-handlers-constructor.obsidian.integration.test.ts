@@ -11,7 +11,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -59,8 +58,7 @@ describe('getDomEventsHandlersConstructor', () => {
           isHtmlElementSubclass: proto instanceof HTMLElement,
           prototypeMethodNames
         };
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(probe.isFunction).toBe(true);

@@ -21,7 +21,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -87,8 +86,7 @@ describe('VaultTransaction', () => {
             }
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result.isOriginalGoneAfterTrash).toBe(true);
@@ -129,8 +127,7 @@ describe('VaultTransaction', () => {
             }
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result.isOriginalGoneAfterTrash).toBe(true);
@@ -188,8 +185,7 @@ describe('VaultTransaction', () => {
             }
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result.areChildrenGoneAfterTrash).toBe(true);
@@ -239,8 +235,7 @@ describe('VaultTransaction', () => {
             await app.vault.adapter.rmdir(folderPath, true);
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     // The transaction mutated and rolled back a file under a mutation-blocking subtree lock.
@@ -298,8 +293,7 @@ describe('VaultTransaction', () => {
             await app.vault.adapter.trashLocal(targetPath);
           }
         }
-      },
-      vaultPath: inject('tempVaultPath')
+      }
     });
 
     expect(result.diskAfterRollbackAndSave).toBe('first\nmiddle\nlast\n');

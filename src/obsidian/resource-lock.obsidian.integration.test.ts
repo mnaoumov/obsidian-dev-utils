@@ -27,7 +27,6 @@ import { evalInObsidian } from 'obsidian-integration-testing';
 import {
   describe,
   expect,
-  inject,
   it
 } from 'vitest';
 
@@ -189,8 +188,7 @@ describe('resource-lock', () => {
               window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
             });
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The locked note is read-only in the current tab and in every future view (split, popout).
@@ -276,8 +274,7 @@ describe('resource-lock', () => {
               window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
             });
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The user cannot type into the locked note.
@@ -362,8 +359,7 @@ describe('resource-lock', () => {
               window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
             });
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // Shift+Enter cannot edit the locked note.
@@ -430,8 +426,7 @@ describe('resource-lock', () => {
               window.setTimeout(resolve, SETTLE_DELAY_MILLISECONDS);
             });
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // A note inside a subtree-locked folder is read-only, and editable again once the folder unlocks.
@@ -487,8 +482,7 @@ describe('resource-lock', () => {
             }
             return editor.cm.state.readOnly;
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The note is read-only while locked, editable once force-unlocked, and the operation was aborted.
@@ -557,8 +551,7 @@ describe('resource-lock', () => {
             wasRenameBlocked,
             wasTrashBlocked
           };
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // A mutation-blocking lock rejects real vault rename and file-manager trash with ResourceLockedError.
@@ -617,8 +610,7 @@ describe('resource-lock', () => {
             wasBypassedModifyAllowed,
             wasModifyBlockedAfterScope
           };
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The owner's mutation passes while bypassed; once the scope ends the path is blocked again.
@@ -659,8 +651,7 @@ describe('resource-lock', () => {
           } finally {
             lock[Symbol.dispose]();
           }
-        },
-        vaultPath: inject('tempVaultPath')
+        }
       });
 
       // The external delete aborted the operation holding the mutation-blocking lock.
