@@ -24,7 +24,9 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       ignored_labels: [
         '!note',
-        '!warning'
+        '!warning',
+        // Preserve markdownlint's default ignored label so GFM task-list items (`- [x]`) are not flagged as undefined shortcut references.
+        'x'
       ],
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       shortcut_syntax: true
