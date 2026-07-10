@@ -21,6 +21,7 @@ import {
 } from 'vitest';
 
 import type { GenerateMarkdownLinkParams } from './link.ts';
+import type { CachedMetadataEx } from './metadata-cache.ts';
 import type { CanvasReference } from './reference.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 
@@ -806,7 +807,7 @@ describe('app-dependent functions', () => {
 
     vi.mocked(registerFiles).mockReturnValue(new CallbackDisposable({ callback: noop }));
     vi.mocked(getCacheSafe).mockResolvedValue(null);
-    vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
+    vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({}));
     vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
       get: () => null,
       keys: () => []
@@ -1520,7 +1521,7 @@ describe('app-dependent functions', () => {
 
   describe('editLinksInContent', () => {
     it('should process links in content', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1542,7 +1543,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should handle linkConverter returning undefined (skip)', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1564,7 +1565,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should escape wikilink divider when link is inside a table', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1589,7 +1590,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should handle null cache', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>(null));
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>(null));
 
       const result = await editLinksInContent({
         app,
@@ -1623,7 +1624,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1655,7 +1656,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({}));
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({}));
 
       await editLinks({
         app,
@@ -1697,7 +1698,7 @@ describe('app-dependent functions', () => {
       );
 
       // GetCacheSafe returns a cache whose links include the backlink reference
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [backlinkRef],
@@ -1738,7 +1739,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [backlinkRef],
@@ -1761,7 +1762,7 @@ describe('app-dependent functions', () => {
 
   describe('updateLinksInContent', () => {
     it('should call editLinksInContent with convertLink callback', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({}));
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({}));
 
       const result = await updateLinksInContent({
         app,
@@ -1773,7 +1774,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should skip non-embed links when shouldUpdateEmbedOnlyLinks is true', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1796,7 +1797,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should invoke convertLink for matching links', async () => {
-      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1863,7 +1864,7 @@ describe('app-dependent functions', () => {
           }
         }
       );
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1894,7 +1895,7 @@ describe('app-dependent functions', () => {
           }
         }
       );
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{
@@ -1971,7 +1972,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: [castTo<FrontmatterLinkCache>({
           isCanvas: true,
@@ -2016,7 +2017,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadata>({
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
         links: [{

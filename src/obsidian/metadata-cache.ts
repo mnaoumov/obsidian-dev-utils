@@ -375,7 +375,7 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
  * @param fileOrPath - The file or path to retrieve the metadata for.
  * @returns The cached metadata for the file, or `null` if it doesn't exist.
  */
-export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadata | null> {
+export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<CachedMetadataEx | null> {
   const file = getFileOrNull({ app, pathOrFile: fileOrPath });
 
   try {
@@ -384,7 +384,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<Ca
     }
 
     if (file.deleted) {
-      return app.metadataCache.getFileCache(file);
+      return toNativeCachedMetadataEx(app.metadataCache.getFileCache(file));
     }
 
     await saveNote(app, file);
@@ -397,7 +397,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile): Promise<Ca
       await app.metadataCache.computeFileMetadataAsync(file);
       await ensureMetadataCacheReady(app);
     }
-    return app.metadataCache.getFileCache(file);
+    return toNativeCachedMetadataEx(app.metadataCache.getFileCache(file));
   } catch (error) {
     if (!file || file.deleted) {
       return null;
@@ -536,10 +536,11 @@ export function isCachedMetadataEx(cache: CachedMetadata): cache is CachedMetada
  * @param str - The string to parse the metadata for.
  * @returns The parsed metadata.
  */
-export async function parseMetadata(app: App, str: string): Promise<CachedMetadata> {
+export async function parseMetadata(app: App, str: string): Promise<CachedMetadataEx> {
   const encoder = new TextEncoder();
   const buffer = encoder.encode(str).buffer;
-  return await app.metadataCache.computeMetadataAsync(buffer) ?? {};
+  const cache = await app.metadataCache.computeMetadataAsync(buffer) ?? {};
+  return ensureNonNullable(toNativeCachedMetadataEx(cache));
 }
 
 /**
@@ -659,4 +660,23 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
 
 function getRegisteredFilesCounts(): Map<string, number> {
   return getObsidianDevUtilsState('registeredFilesCounts', new Map<string, number>()).value;
+}
+
+/**
+ * Wraps a plain {@link CachedMetadata} into a {@link CachedMetadataEx} that records only the native
+ * Obsidian parsing feature. A plain {@link CachedMetadata} is equivalent to a {@link CachedMetadataEx}
+ * with `features: [CachedMetadataExFeature.Native]`.
+ *
+ * @param cache - The cache to wrap, or `null`.
+ * @returns The wrapped cache, or `null` if the input was `null`.
+ */
+function toNativeCachedMetadataEx(cache: CachedMetadata | null): CachedMetadataEx | null {
+  if (cache === null) {
+    return null;
+  }
+
+  return {
+    ...cache,
+    features: [CachedMetadataExFeature.Native]
+  };
 }

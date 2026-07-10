@@ -527,14 +527,14 @@ describe('parseMetadata', () => {
     assertNonNullable(callArg);
     const decoded = new TextDecoder().decode(callArg);
     expect(decoded).toBe('test string');
-    expect(result).toBe(mockCache);
+    expect(result).toEqual({ ...mockCache, features: [CachedMetadataExFeature.Native] });
   });
 
-  it('should return empty object when computeMetadataAsync returns null', async () => {
+  it('should return native cache when computeMetadataAsync returns null', async () => {
     vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(undefined);
 
     const result = await parseMetadata(app, 'test');
-    expect(result).toEqual({});
+    expect(result).toEqual({ features: [CachedMetadataExFeature.Native] });
   });
 });
 
@@ -763,7 +763,17 @@ describe('getCacheSafe', () => {
     vi.mocked(app.metadataCache.getFileCache).mockReturnValue(mockCache);
 
     const result = await getCacheSafe(app, castTo<PathOrFile>(file));
-    expect(result).toBe(mockCache);
+    expect(result).toEqual({ ...mockCache, features: [CachedMetadataExFeature.Native] });
+  });
+
+  it('should return null when the file cache is null for a deleted file', async () => {
+    const file = { deleted: true, name: 'note.md', path: 'note.md', stat: { ctime: 0, mtime: 0, size: 0 } };
+
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>(file));
+    vi.mocked(app.metadataCache.getFileCache).mockReturnValue(null);
+
+    const result = await getCacheSafe(app, castTo<PathOrFile>(file));
+    expect(result).toBeNull();
   });
 
   it('should compute metadata if cache is not up to date', async () => {
@@ -778,7 +788,7 @@ describe('getCacheSafe', () => {
     const result = await getCacheSafe(app, castTo<PathOrFile>(file));
 
     expect(app.metadataCache.computeFileMetadataAsync).toHaveBeenCalledWith(file);
-    expect(result).toBe(mockCache);
+    expect(result).toEqual({ ...mockCache, features: [CachedMetadataExFeature.Native] });
   });
 
   it('should not recompute if cache is up to date', async () => {
@@ -794,7 +804,7 @@ describe('getCacheSafe', () => {
     const result = await getCacheSafe(app, castTo<PathOrFile>(file));
 
     expect(app.metadataCache.computeFileMetadataAsync).not.toHaveBeenCalled();
-    expect(result).toBe(mockCache);
+    expect(result).toEqual({ ...mockCache, features: [CachedMetadataExFeature.Native] });
   });
 
   it('should return null if deleted file throws an error', async () => {
