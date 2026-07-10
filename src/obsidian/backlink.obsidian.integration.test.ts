@@ -114,7 +114,7 @@ describe('backlinks via metadata cache', () => {
           if (!cache) {
             return [];
           }
-          const links = lib.obsidian['metadata-cache'].getAllLinks(cache);
+          const links = lib.obsidian['metadata-cache'].getLinks({ cache });
           return links.map((ref) => ref.link);
         } finally {
           const f = app.vault.getAbstractFileByPath('backlink-multi-linker.md');

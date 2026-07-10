@@ -5,7 +5,6 @@
  * functions to split paths, update links in files, and generate markdown links with various options.
  */
 
-import type { Link } from 'mdast';
 import type {
   App,
   CachedMetadata,
@@ -13,17 +12,12 @@ import type {
   TFile
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
-import type { Node } from 'unist';
 
 import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   normalizePath,
   parseLinktext
 } from 'obsidian';
-import { remark } from 'remark';
-import remarkParse from 'remark-parse';
-import { wikiLinkPlugin } from 'remark-wiki-link';
-import { visit } from 'unist-util-visit';
 
 import type { GenericObject } from '../type-guards.ts';
 import type { MaybeReturn } from '../type.ts';
@@ -54,7 +48,7 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
-import { isUrl } from '../url.ts';
+import { normalizeFileUrl } from '../url.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -69,9 +63,9 @@ import {
   MARKDOWN_FILE_EXTENSION
 } from './file-system.ts';
 import {
-  getAllLinks,
   getBacklinksForFileSafe,
   getCacheSafe,
+  getLinks,
   parseMetadata,
   registerFiles
 } from './metadata-cache.ts';
@@ -80,6 +74,12 @@ import {
   shouldUseWikilinks
 } from './obsidian-settings.ts';
 import {
+  encodeUrl,
+  escapeAlias,
+  isParseLinkReference,
+  parseLink
+} from './parse-link.ts';
+import {
   isCanvasFileNodeReference,
   referenceToFileChange
 } from './reference.ts';
@@ -87,22 +87,9 @@ import {
 const ESCAPED_WIKILINK_DIVIDER = '\\|';
 
 /**
- * Regular expression for special link symbols.
- */
-// eslint-disable-next-line no-control-regex -- The regular expression is written to capture control characters.
-const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
-
-/**
- * Regular expression for special markdown link symbols.
- */
-const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
-
-/**
  * Regular expression for unescaped pipes.
  */
 const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
-
-const WIKILINK_DIVIDER = '|';
 
 /**
  * A style of the link path.
@@ -256,6 +243,14 @@ export interface EditLinksInContentParams {
    * The function that converts each link.
    */
   linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+
+  /**
+   * Whether to also edit external links parsed from the note body. When `true`, the converter also
+   * receives references for external links.
+   *
+   * @default `false`
+   */
+  readonly shouldEditExternalLinks?: boolean;
 }
 
 /**
@@ -281,6 +276,14 @@ export interface EditLinksParams extends EditLinksOptions {
    * The path or file to edit the links for.
    */
   readonly pathOrFile: PathOrFile;
+
+  /**
+   * Whether to also edit external links parsed from the note body. When `true`, the converter also
+   * receives references for external links.
+   *
+   * @default `false`
+   */
+  readonly shouldEditExternalLinks?: boolean;
 }
 
 /**
@@ -531,125 +534,6 @@ export interface GenerateRawMarkdownLinkParams {
 }
 
 /**
- * A result of parsing a link.
- */
-export interface ParseLinkResult {
-  /**
-   * An alias of the link.
-   *
-   * @example
-   * ```
-   * [\*alias\*](link.md) -> \*alias\*
-   * ```
-   */
-  readonly alias?: string;
-
-  /**
-   * An encoded URL of the link.
-   *
-   * @example
-   * ```
-   * [alias](<link with space.md>) -> link%20with%20space.md
-   * ```
-   */
-  readonly encodedUrl?: string;
-
-  /**
-   * An end offset of the link in the original text.
-   */
-  readonly endOffset: number;
-
-  /**
-   * Indicates if the link has angle brackets.
-   *
-   * @example
-   * ```
-   * [alias](<link.md>) -> true
-   * [alias](link.md) -> false
-   * ```
-   */
-  readonly hasAngleBrackets?: boolean;
-
-  /**
-   * Indicates if the link is an embed link.
-   *
-   * @example
-   * ```
-   * ![[alias]] -> true
-   * [[alias]] -> false
-   * ```
-   */
-  readonly isEmbed: boolean;
-
-  /**
-   * Indicates if the link is external.
-   *
-   * @example
-   * ```
-   * [alias](https://example.com) -> true
-   * [alias](file.md) -> false
-   * ```
-   */
-  readonly isExternal: boolean;
-
-  /**
-   * Indicates if the link is a wikilink.
-   *
-   * @example
-   * ```
-   * [[alias]] -> true
-   * [alias](link.md) -> false
-   * ```
-   */
-  readonly isWikilink: boolean;
-
-  /**
-   * A raw link text.
-   *
-   * @example
-   * ```
-   * [alias](link.md) -> [alias](link.md)
-   * ```
-   */
-  readonly raw: string;
-
-  /**
-   * A start offset of the link in the original text.
-   */
-  readonly startOffset: number;
-
-  /**
-   * A title of the link.
-   *
-   * @example
-   * ```
-   * [alias](link.md "title") -> title
-   * ```
-   */
-  readonly title?: string;
-
-  /**
-   * An unescaped alias of the link.
-   *
-   * @example
-   * ```
-   * [\*alias\*](link.md) -> *alias*
-   * ```
-   */
-  readonly unescapedAlias?: string;
-
-  /**
-   * An URL of the link.
-   *
-   * @example
-   * ```
-   * [alias](link%20with%20space.md) -> link with space.md
-   * ```
-   */
-  readonly url: string;
-}
-
-/**
  * Params for {@link shouldResetAlias}.
  */
 export interface ShouldResetAliasParams {
@@ -702,6 +586,55 @@ export interface SplitSubpathResult {
    * A subpath.
    */
   readonly subpath: string;
+}
+
+/**
+ * Params for {@link updateFileUrlLinksInContent}.
+ */
+export interface UpdateFileUrlLinksInContentParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * An Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The content to normalize the `file://` links in.
+   */
+  readonly content: string;
+
+  /**
+   * Whether to emit the normalized links with angle brackets and raw spaces instead of `%20`-encoding.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+}
+
+/**
+ * Params for {@link updateFileUrlLinksInFile}.
+ */
+export interface UpdateFileUrlLinksInFileParams extends ProcessOptions {
+  /**
+   * An Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file to normalize the `file://` links in.
+   */
+  readonly pathOrFile: PathOrFile;
+
+  /**
+   * Whether to emit the normalized links with angle brackets and raw spaces instead of `%20`-encoding.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
 }
 
 /**
@@ -786,71 +719,6 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
    * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
-}
-
-/**
- * Params for {@link decodeUrlSafely}.
- */
-interface DecodeUrlSafelyParams {
-  /**
-   * Whether the link uses angle brackets.
-   */
-  readonly hasAngleBrackets: boolean;
-
-  /**
-   * Whether the link is external.
-   */
-  readonly isExternal: boolean;
-
-  /**
-   * A URL to decode.
-   */
-  readonly url: string;
-}
-
-/**
- * Params for {@link extractAlias}.
- */
-interface ExtractAliasParams {
-  /**
-   * An end offset of the alias in the string.
-   */
-  readonly aliasEndOffset: number;
-
-  /**
-   * A start offset of the alias in the string.
-   */
-  readonly aliasStartOffset: number;
-
-  /**
-   * A string to extract the alias from.
-   */
-  readonly str: string;
-}
-
-/**
- * Params for {@link extractTextLinks}.
- */
-interface ExtractTextLinksParams {
-  /**
-   * An end offset of the text part in the string.
-   */
-  readonly endOffset: number;
-
-  /**
-   * A start offset of the text part in the string.
-   */
-  readonly startOffset: number;
-
-  /**
-   * A string to extract the text links from.
-   */
-  readonly str: string;
-
-  /**
-   * A list of parsed links to append the extracted text links to.
-   */
-  readonly textLinks: ParseLinkResult[];
 }
 
 /**
@@ -971,21 +839,13 @@ interface GetFileChangesParams {
    * A function that converts each link.
    */
   linkConverter(this: void, link: Reference, abortSignal: AbortSignal): Promisable<MaybeReturn<string>>;
-}
-
-/**
- * Params for {@link hasAngleBracketsInLink}.
- */
-interface HasAngleBracketsInLinkParams {
-  /**
-   * A raw link text.
-   */
-  readonly raw: string;
 
   /**
-   * A raw URL of the link.
+   * Whether to include external links (parsed from the note body) in the changes.
+   *
+   * @default `false`
    */
-  readonly rawUrl: string;
+  readonly shouldIncludeExternalLinks?: boolean;
 }
 
 interface LinkConfig {
@@ -1065,15 +925,6 @@ interface UpdateLinksInContentParams {
   readonly shouldUpdateFileNameAlias?: boolean;
 }
 
-interface WikiLinkNode extends Node {
-  data: WikiLinkNodeData;
-  value: string;
-}
-
-interface WikiLinkNodeData extends Record<string, unknown> {
-  alias: string;
-}
-
 /**
  * Converts a link to a new path.
  *
@@ -1145,12 +996,13 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
     app,
     linkConverter,
     pathOrFile,
+    shouldEditExternalLinks = false,
     ...options
   } = params;
   await applyFileChanges({
     app,
     changesProvider: async ({ abortSignal, content }) => {
-      const cache = await getCacheSafe(app, pathOrFile);
+      const cache = await getCacheSafe(app, pathOrFile, shouldEditExternalLinks ? { shouldParseExternalLinks: true } : {});
       abortSignal.throwIfAborted();
       const file = getFile({ app, pathOrFile });
       const cachedContent = await app.vault.cachedRead(file);
@@ -1163,7 +1015,8 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
         abortSignal,
         cache,
         isCanvasFileCache: isCanvasFile(pathOrFile),
-        linkConverter
+        linkConverter,
+        shouldIncludeExternalLinks: shouldEditExternalLinks
       });
     },
     pathOrFile,
@@ -1178,7 +1031,7 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
  * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(params: EditLinksInContentParams): Promise<string> {
-  const { app, content, linkConverter } = params;
+  const { app, content, linkConverter, shouldEditExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1186,13 +1039,14 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
   const newContent = await applyContentChanges({
     abortSignal,
     changesProvider: async () => {
-      const cache = await parseMetadata(app, content);
+      const cache = await parseMetadata(app, content, shouldEditExternalLinks ? { shouldParseExternalLinks: true } : {});
       abortSignal.throwIfAborted();
       const changes = await getFileChanges({
         abortSignal,
         cache,
         isCanvasFileCache: false,
-        linkConverter
+        linkConverter,
+        shouldIncludeExternalLinks: shouldEditExternalLinks
       });
       abortSignal.throwIfAborted();
       return changes;
@@ -1205,39 +1059,6 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
   assertNonNullable(newContent, 'Failed to update links in content');
 
   return newContent;
-}
-
-/**
- * Encodes a URL.
- *
- * @param url - The URL to encode.
- * @returns The encoded URL.
- */
-export function encodeUrl(url: string): string {
-  return replaceAll({
-    replacer: ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol),
-    searchValue: SPECIAL_LINK_SYMBOLS_REGEXP,
-    str: url
-  });
-}
-
-/**
- * Escapes the alias of a markdown link.
- *
- * @param alias - An alias of a markdown link.
- * @returns An escaped alias.
- *
- * @example
- * ```ts
- * escapeAlias('**alias**') // '\\*\\*alias\\*\\*'
- * ```
- */
-export function escapeAlias(alias: string): string {
-  return replaceAll({
-    replacer: '\\$&',
-    searchValue: SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX,
-    str: alias
-  });
 }
 
 /**
@@ -1346,106 +1167,6 @@ export function generateRawMarkdownLink(params: GenerateRawMarkdownLinkParams): 
  */
 export function getGenerateMarkdownLinkDefaultParamsFns(): (() => Partial<GenerateMarkdownLinkParams>)[] {
   return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>('generateMarkdownLinkDefaultParamsFns', []).value;
-}
-
-/**
- * Parses a link into its components.
- *
- * @param str - The link to parse.
- * @returns The parsed link.
- */
-export function parseLink(str: string): null | ParseLinkResult {
-  const links = parseLinks(str);
-  return links[0]?.raw === str ? links[0] : null;
-}
-
-/**
- * Parses all links in a string.
- *
- * @param str - The string to parse the links in.
- * @returns The parsed links.
- */
-export function parseLinks(str: string): ParseLinkResult[] {
-  const embedSymbolOffsets = new Set<number>();
-
-  const EMBED_LINK_PREFIX = '![';
-  const NO_EMBED_LINK_PREFIX = '@[';
-  const DUMMY_CHARACTER = '@';
-
-  const EMBED_INSIDE_LINK_REG_EXP = /\[(?<LinkAlias>!\[.*?\]\(.+?\))\]\((?<Link>.+?)\)/g;
-  const noInsideEmbedsLinksStr = replaceAll({
-    replacer: ({ capturedGroupArgs: [linkAlias = '', link = ''] }) => {
-      const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
-      return `[${dummyAlias}](${link})`;
-    },
-    searchValue: EMBED_INSIDE_LINK_REG_EXP,
-    str
-  });
-
-  const noEmbedStr = replaceAll({
-    replacer: (args) => {
-      embedSymbolOffsets.add(args.offset);
-      return NO_EMBED_LINK_PREFIX;
-    },
-    searchValue: EMBED_LINK_PREFIX,
-    str: noInsideEmbedsLinksStr
-  });
-
-  const processor = remark().use(remarkParse).use(wikiLinkPlugin, { aliasDivider: WIKILINK_DIVIDER });
-  const root = processor.parse(noEmbedStr);
-
-  const links: ParseLinkResult[] = [];
-  const textLinks: ParseLinkResult[] = [];
-
-  visit(root, (node: Node) => {
-    let link: ParseLinkResult;
-    switch (node.type) {
-      case 'link':
-        link = parseLinkNode(node as Link, str);
-        break;
-      case 'wikiLink':
-        link = parseWikilinkNode(node as WikiLinkNode, str);
-        break;
-      default:
-        return;
-    }
-
-    if (embedSymbolOffsets.has(link.startOffset - 1)) {
-      link = {
-        ...link,
-        isEmbed: true,
-        raw: `!${link.raw}`,
-        startOffset: link.startOffset - 1
-      };
-    }
-    links.push(link);
-  });
-
-  links.sort((a, b) => a.startOffset - b.startOffset);
-
-  let textStartOffset = 0;
-
-  for (const link of links) {
-    extractTextLinks({
-      endOffset: link.startOffset - 1,
-      startOffset: textStartOffset,
-      str,
-      textLinks
-    });
-    textStartOffset = link.endOffset + 1;
-  }
-
-  extractTextLinks({
-    endOffset: str.length - 1,
-    startOffset: textStartOffset,
-    str,
-    textLinks
-  });
-
-  links.push(...textLinks);
-  links.sort((a, b) => a.startOffset - b.startOffset);
-
-  return links;
 }
 
 /**
@@ -1593,26 +1314,43 @@ export function testWikilink(link: string): boolean {
 }
 
 /**
- * Unescapes the alias of a markdown link.
+ * Normalizes the `file://` links in a content string to a pretty form, converting backslashes to forward
+ * slashes. Other links are left unchanged.
  *
- * @param escapedAlias - An escaped alias.
- * @returns An unescaped alias.
- *
- * @example
- * ```ts
- * unescapeAlias('\\*\\*alias\\*\\*') // '**alias**'
- * ```
+ * @param params - The parameters for normalizing the links.
+ * @returns A {@link Promise} that resolves to the content with normalized `file://` links.
  */
-export function unescapeAlias(escapedAlias: string): string {
-  return replaceAll({
-    replacer: ({ capturedGroupArgs: [backslashes = '', specialChar = ''] }) => {
-      const ESCAPED_BACKSLASH_LENGTH = 2;
-      const backslashCount = backslashes.length;
-      const keepCount = Math.floor(backslashCount / ESCAPED_BACKSLASH_LENGTH);
-      return '\\'.repeat(keepCount) + specialChar;
-    },
-    searchValue: /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g,
-    str: escapedAlias
+export async function updateFileUrlLinksInContent(params: UpdateFileUrlLinksInContentParams): Promise<string> {
+  const { app, content, shouldUseAngleBrackets = false } = params;
+  return await editLinksInContent(normalizeOptionalProperties<EditLinksInContentParams>({
+    abortSignal: params.abortSignal,
+    app,
+    content,
+    linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
+    shouldEditExternalLinks: true
+  }));
+}
+
+/**
+ * Normalizes the `file://` links in a file to a pretty form, converting backslashes to forward slashes.
+ * Other links are left unchanged.
+ *
+ * @param params - The parameters for normalizing the links.
+ * @returns A {@link Promise} that resolves when the links are normalized.
+ */
+export async function updateFileUrlLinksInFile(params: UpdateFileUrlLinksInFileParams): Promise<void> {
+  const {
+    app,
+    pathOrFile,
+    shouldUseAngleBrackets = false,
+    ...options
+  } = params;
+  await editLinks({
+    app,
+    linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
+    pathOrFile,
+    shouldEditExternalLinks: true,
+    ...options
   });
 }
 
@@ -1773,57 +1511,6 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
       }));
     },
     pathOrFile: newSourcePathOrFile
-  });
-}
-
-function decodeUrlSafely(params: DecodeUrlSafelyParams): string {
-  const { hasAngleBrackets, isExternal, url } = params;
-  if (isExternal || hasAngleBrackets) {
-    return url;
-  }
-
-  try {
-    return decodeURIComponent(url);
-  } catch (error) {
-    console.error(`Failed to decode URL ${url}`, error);
-    return url;
-  }
-}
-
-function extractAlias(params: ExtractAliasParams): string | undefined {
-  const { aliasEndOffset, aliasStartOffset, str } = params;
-  return aliasStartOffset < aliasEndOffset
-    ? str.slice(aliasStartOffset, aliasEndOffset)
-    : undefined;
-}
-
-function extractTextLinks(params: ExtractTextLinksParams): void {
-  const { endOffset, startOffset, str, textLinks } = params;
-  if (startOffset > endOffset) {
-    return;
-  }
-
-  const textPart = str.slice(startOffset, endOffset + 1);
-  replaceAll({
-    replacer: ({ capturedGroupArgs: [url = ''], offset }) => {
-      if (!isUrl(url)) {
-        return;
-      }
-
-      textLinks.push({
-        encodedUrl: encodeUrl(url),
-        endOffset: startOffset + offset + url.length,
-        hasAngleBrackets: false,
-        isEmbed: false,
-        isExternal: true,
-        isWikilink: false,
-        raw: url,
-        startOffset: startOffset + offset,
-        url
-      });
-    },
-    searchValue: /(?<Url>\S+)/g,
-    str: textPart
   });
 }
 
@@ -1994,7 +1681,7 @@ function generateWikiLink(params: GenerateWikiLinkParams): string {
 }
 
 async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[]> {
-  const { cache, isCanvasFileCache, linkConverter } = params;
+  const { cache, isCanvasFileCache, linkConverter, shouldIncludeExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -2010,7 +1697,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     start: section.position.start.offset
   }));
 
-  for (const link of getAllLinks(cache)) {
+  for (const link of getLinks({ cache, shouldIncludeExternalLinks })) {
     abortSignal.throwIfAborted();
     const newContent = await linkConverter(link, abortSignal);
     abortSignal.throwIfAborted();
@@ -2073,70 +1760,23 @@ function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
   };
 }
 
-function getRawLink(node: Node, str: string): string {
-  const pos = ensureNonNullable(node.position);
-  return str.slice(pos.start.offset, pos.end.offset);
-}
+function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean): MaybeReturn<string> {
+  if (!isParseLinkReference(link)) {
+    return;
+  }
 
-function hasAngleBracketsInLink(params: HasAngleBracketsInLinkParams): boolean {
-  const { raw, rawUrl } = params;
-  const OPEN_ANGLE_BRACKET = '<';
-  return raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
-}
+  const { parseLinkResult } = link;
+  if (!parseLinkResult.isFileUrl) {
+    return;
+  }
 
-function parseLinkNode(node: Link, str: string): ParseLinkResult {
-  const LINK_ALIAS_SUFFIX = '](';
-  const LINK_SUFFIX = ')';
-  const raw = getRawLink(node, str);
-  const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
-  const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
-  const position = ensureNonNullable(node.position);
-  const nodeEndOffset = ensureNonNullable(position.end.offset);
-  const nodeStartOffset = ensureNonNullable(position.start.offset);
-  const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
-  const hasAngleBrackets = hasAngleBracketsInLink({
-    raw,
-    rawUrl
-  });
-  const isExternal = isUrl(node.url);
-  const url = decodeUrlSafely({
-    hasAngleBrackets,
-    isExternal,
-    url: node.url
-  });
-  const alias = extractAlias({
-    aliasEndOffset: aliasNodeEndOffset,
-    aliasStartOffset: aliasNodeStartOffset,
-    str
-  });
-  return normalizeOptionalProperties<ParseLinkResult>({
-    alias,
-    encodedUrl: isExternal ? encodeUrl(url) : undefined,
-    endOffset: nodeEndOffset,
-    hasAngleBrackets,
-    isEmbed: false,
-    isExternal,
+  return generateRawMarkdownLink(normalizeOptionalProperties<GenerateRawMarkdownLinkParams>({
+    alias: parseLinkResult.alias,
+    isEmbed: parseLinkResult.isEmbed,
     isWikilink: false,
-    raw,
-    startOffset: nodeStartOffset,
-    title: node.title ?? undefined,
-    unescapedAlias: alias === undefined ? undefined : unescapeAlias(alias),
-    url
-  });
-}
-
-function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
-  const position = ensureNonNullable(node.position);
-  return normalizeOptionalProperties<ParseLinkResult>({
-    alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
-    endOffset: ensureNonNullable(position.end.offset),
-    isEmbed: false,
-    isExternal: false,
-    isWikilink: true,
-    raw: getRawLink(node, str),
-    startOffset: ensureNonNullable(position.start.offset),
-    url: node.value
-  });
+    shouldUseAngleBrackets,
+    url: normalizeFileUrl(parseLinkResult.url)
+  }));
 }
 
 function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathStyle {

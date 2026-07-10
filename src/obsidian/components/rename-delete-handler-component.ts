@@ -69,9 +69,9 @@ import {
   updateLinksInFile
 } from '../link.ts';
 import {
-  getAllLinks,
   getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
+  getLinks,
   registerFileCacheForNonExistingFile,
   registerFiles
 } from '../metadata-cache.ts';
@@ -343,7 +343,7 @@ class DeleteHandler {
       const cache = this.deletedMetadataCacheMap.get(this.file.path);
       this.deletedMetadataCacheMap.delete(this.file.path);
       if (cache) {
-        const links = getAllLinks(cache);
+        const links = getLinks({ cache });
 
         for (const link of links) {
           const attachmentFile = extractLinkFile({ app: this.app, link, sourcePathOrFile: this.file.path });
@@ -580,7 +580,7 @@ class RenameHandler {
     this.oldCache = params.oldCache;
     this.oldPath = params.oldPath;
     this.oldPathBacklinksMap = params.oldPathBacklinksMap;
-    this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
+    this.oldPathLinks = this.oldCache ? getLinks({ cache: this.oldCache }) : [];
     this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsManager = params.settingsManager;
   }
@@ -790,7 +790,7 @@ class RenameHandler {
 
   private async refreshLinks(): Promise<void> {
     const cache = this.app.metadataCache.getCache(this.oldPath) ?? this.app.metadataCache.getCache(this.newPath);
-    const oldPathLinksRefreshed = cache ? getAllLinks(cache) : [];
+    const oldPathLinksRefreshed = cache ? getLinks({ cache }) : [];
     const fakeOldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
     let oldPathBacklinksMapRefreshed: Map<string, Reference[]>;
     {
@@ -849,7 +849,7 @@ class RenameMap {
     this.oldCache = params.oldCache;
     this.oldPath = params.oldPath;
     this.newPath = params.newPath;
-    this.oldPathLinks = this.oldCache ? getAllLinks(this.oldCache) : [];
+    this.oldPathLinks = this.oldCache ? getLinks({ cache: this.oldCache }) : [];
   }
 
   public entries(): IterableIterator<[string, string]> {
