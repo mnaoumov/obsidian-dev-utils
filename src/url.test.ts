@@ -6,7 +6,8 @@ import {
 
 import {
   isFileUrl,
-  isUrl
+  isUrl,
+  normalizeFileUrl
 } from './url.ts';
 
 describe('url', () => {
@@ -33,6 +34,20 @@ describe('url', () => {
 
     it('should reject a plain path', () => {
       expect(isFileUrl('F:/dir/x.txt')).toBe(false);
+    });
+  });
+
+  describe('normalizeFileUrl', () => {
+    it('should convert backslashes to forward slashes in a file URL', () => {
+      expect(normalizeFileUrl('file:///F:\\dir\\x.txt')).toBe('file:///F:/dir/x.txt');
+    });
+
+    it('should leave a file URL with forward slashes unchanged', () => {
+      expect(normalizeFileUrl('file:///F:/dir/x.txt')).toBe('file:///F:/dir/x.txt');
+    });
+
+    it('should leave a non-file URL unchanged', () => {
+      expect(normalizeFileUrl('https://example.com/a\\b')).toBe('https://example.com/a\\b');
     });
   });
 

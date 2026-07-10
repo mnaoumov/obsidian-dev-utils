@@ -39,3 +39,14 @@ export function isUrl(str: string): boolean {
 
   return SCHEME_REG_EXP.test(str);
 }
+
+/**
+ * Normalizes a `file://` URL to a pretty form by converting backslashes to forward slashes. The URL is
+ * expected to already be decoded. Non-`file://` URLs are returned unchanged.
+ *
+ * @param url - The URL to normalize.
+ * @returns The normalized URL.
+ */
+export function normalizeFileUrl(url: string): string {
+  return isFileUrl(url) ? url.replaceAll('\\', '/') : url;
+}

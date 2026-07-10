@@ -57,16 +57,23 @@ import {
   testLeadingDot,
   testLeadingSlash,
   testWikilink,
+  updateFileUrlLinksInContent,
+  updateFileUrlLinksInFile,
   updateLink,
   updateLinksInContent,
   updateLinksInFile
 } from './link.ts';
 import {
+  CachedMetadataExFeature,
   getBacklinksForFileSafe,
   getCacheSafe,
   parseMetadata,
   registerFiles
 } from './metadata-cache.ts';
+import {
+  parseLinks,
+  toParseLinkReference
+} from './parse-link.ts';
 
 vi.mock('../obsidian/metadata-cache.ts', async (importOriginal) => {
   const original = await importOriginal();
@@ -1516,6 +1523,57 @@ describe('app-dependent functions', () => {
         oldTargetPathOrFile: 'note.md'
       });
       expect(result).toContain('#heading');
+    });
+  });
+
+  describe('updateFileUrlLinksInContent', () => {
+    it('should convert file:// links and skip internal and non-file external links', async () => {
+      const content = '[[a]] [b](https://x.com) [c](file:///F:%5Cd.txt)';
+      const parsed = parseLinks(content);
+      const externalLinks = parsed
+        .filter((parseLinkResult) => parseLinkResult.isExternal)
+        .map((parseLinkResult) => toParseLinkReference({ content, parseLinkResult }));
+      const wikilinkResult = ensureNonNullable(parsed.find((parseLinkResult) => parseLinkResult.isWikilink));
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+        externalLinks,
+        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks],
+        links: [{
+          link: 'a',
+          original: wikilinkResult.raw,
+          position: {
+            end: { col: 0, line: 0, offset: wikilinkResult.endOffset },
+            start: { col: 0, line: 0, offset: wikilinkResult.startOffset }
+          }
+        }]
+      }));
+
+      const result = await updateFileUrlLinksInContent({ app, content });
+      expect(result).toBe(content);
+    });
+  });
+
+  describe('updateFileUrlLinksInFile', () => {
+    it('should edit external links via editLinks', async () => {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async ({ changesProvider }) => {
+          if (typeof changesProvider === 'function') {
+            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          }
+        }
+      );
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
+        externalLinks: [],
+        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks],
+        links: [{
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+        }]
+      }));
+
+      await updateFileUrlLinksInFile({ app, pathOrFile: 'note.md', resourceLockComponent });
+      expect(applyFileChanges).toHaveBeenCalled();
     });
   });
 

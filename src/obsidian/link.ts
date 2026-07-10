@@ -48,6 +48,7 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
+import { normalizeFileUrl } from '../url.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -75,6 +76,7 @@ import {
 import {
   encodeUrl,
   escapeAlias,
+  isParseLinkReference,
   parseLink
 } from './parse-link.ts';
 import {
@@ -241,6 +243,14 @@ export interface EditLinksInContentParams {
    * The function that converts each link.
    */
   linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+
+  /**
+   * Whether to also edit external links parsed from the note body. When `true`, the converter also
+   * receives references for external links.
+   *
+   * @default `false`
+   */
+  readonly shouldEditExternalLinks?: boolean;
 }
 
 /**
@@ -266,6 +276,14 @@ export interface EditLinksParams extends EditLinksOptions {
    * The path or file to edit the links for.
    */
   readonly pathOrFile: PathOrFile;
+
+  /**
+   * Whether to also edit external links parsed from the note body. When `true`, the converter also
+   * receives references for external links.
+   *
+   * @default `false`
+   */
+  readonly shouldEditExternalLinks?: boolean;
 }
 
 /**
@@ -571,6 +589,55 @@ export interface SplitSubpathResult {
 }
 
 /**
+ * Params for {@link updateFileUrlLinksInContent}.
+ */
+export interface UpdateFileUrlLinksInContentParams {
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * An Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The content to normalize the `file://` links in.
+   */
+  readonly content: string;
+
+  /**
+   * Whether to emit the normalized links with angle brackets and raw spaces instead of `%20`-encoding.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+}
+
+/**
+ * Params for {@link updateFileUrlLinksInFile}.
+ */
+export interface UpdateFileUrlLinksInFileParams extends ProcessOptions {
+  /**
+   * An Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file to normalize the `file://` links in.
+   */
+  readonly pathOrFile: PathOrFile;
+
+  /**
+   * Whether to emit the normalized links with angle brackets and raw spaces instead of `%20`-encoding.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+}
+
+/**
  * Params for {@link updateLink}.
  */
 export interface UpdateLinkParams {
@@ -772,6 +839,13 @@ interface GetFileChangesParams {
    * A function that converts each link.
    */
   linkConverter(this: void, link: Reference, abortSignal: AbortSignal): Promisable<MaybeReturn<string>>;
+
+  /**
+   * Whether to include external links (parsed from the note body) in the changes.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeExternalLinks?: boolean;
 }
 
 interface LinkConfig {
@@ -922,12 +996,13 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
     app,
     linkConverter,
     pathOrFile,
+    shouldEditExternalLinks = false,
     ...options
   } = params;
   await applyFileChanges({
     app,
     changesProvider: async ({ abortSignal, content }) => {
-      const cache = await getCacheSafe(app, pathOrFile);
+      const cache = await getCacheSafe(app, pathOrFile, shouldEditExternalLinks ? { shouldParseExternalLinks: true } : {});
       abortSignal.throwIfAborted();
       const file = getFile({ app, pathOrFile });
       const cachedContent = await app.vault.cachedRead(file);
@@ -940,7 +1015,8 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
         abortSignal,
         cache,
         isCanvasFileCache: isCanvasFile(pathOrFile),
-        linkConverter
+        linkConverter,
+        shouldIncludeExternalLinks: shouldEditExternalLinks
       });
     },
     pathOrFile,
@@ -955,7 +1031,7 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
  * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(params: EditLinksInContentParams): Promise<string> {
-  const { app, content, linkConverter } = params;
+  const { app, content, linkConverter, shouldEditExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -963,13 +1039,14 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
   const newContent = await applyContentChanges({
     abortSignal,
     changesProvider: async () => {
-      const cache = await parseMetadata(app, content);
+      const cache = await parseMetadata(app, content, shouldEditExternalLinks ? { shouldParseExternalLinks: true } : {});
       abortSignal.throwIfAborted();
       const changes = await getFileChanges({
         abortSignal,
         cache,
         isCanvasFileCache: false,
-        linkConverter
+        linkConverter,
+        shouldIncludeExternalLinks: shouldEditExternalLinks
       });
       abortSignal.throwIfAborted();
       return changes;
@@ -1234,6 +1311,47 @@ export function testLeadingSlash(link: string): boolean {
 export function testWikilink(link: string): boolean {
   const parseLinkResult = parseLink(link);
   return parseLinkResult?.isWikilink ?? false;
+}
+
+/**
+ * Normalizes the `file://` links in a content string to a pretty form, converting backslashes to forward
+ * slashes. Other links are left unchanged.
+ *
+ * @param params - The parameters for normalizing the links.
+ * @returns A {@link Promise} that resolves to the content with normalized `file://` links.
+ */
+export async function updateFileUrlLinksInContent(params: UpdateFileUrlLinksInContentParams): Promise<string> {
+  const { app, content, shouldUseAngleBrackets = false } = params;
+  return await editLinksInContent(normalizeOptionalProperties<EditLinksInContentParams>({
+    abortSignal: params.abortSignal,
+    app,
+    content,
+    linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
+    shouldEditExternalLinks: true
+  }));
+}
+
+/**
+ * Normalizes the `file://` links in a file to a pretty form, converting backslashes to forward slashes.
+ * Other links are left unchanged.
+ *
+ * @param params - The parameters for normalizing the links.
+ * @returns A {@link Promise} that resolves when the links are normalized.
+ */
+export async function updateFileUrlLinksInFile(params: UpdateFileUrlLinksInFileParams): Promise<void> {
+  const {
+    app,
+    pathOrFile,
+    shouldUseAngleBrackets = false,
+    ...options
+  } = params;
+  await editLinks({
+    app,
+    linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
+    pathOrFile,
+    shouldEditExternalLinks: true,
+    ...options
+  });
 }
 
 /**
@@ -1563,7 +1681,7 @@ function generateWikiLink(params: GenerateWikiLinkParams): string {
 }
 
 async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[]> {
-  const { cache, isCanvasFileCache, linkConverter } = params;
+  const { cache, isCanvasFileCache, linkConverter, shouldIncludeExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1579,7 +1697,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     start: section.position.start.offset
   }));
 
-  for (const link of getLinks({ cache })) {
+  for (const link of getLinks({ cache, shouldIncludeExternalLinks })) {
     abortSignal.throwIfAborted();
     const newContent = await linkConverter(link, abortSignal);
     abortSignal.throwIfAborted();
@@ -1640,6 +1758,25 @@ function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
     shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
       ?? (params.originalLink ? testLeadingSlash(params.originalLink) : undefined) ?? false
   };
+}
+
+function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean): MaybeReturn<string> {
+  if (!isParseLinkReference(link)) {
+    return;
+  }
+
+  const { parseLinkResult } = link;
+  if (!parseLinkResult.isFileUrl) {
+    return;
+  }
+
+  return generateRawMarkdownLink(normalizeOptionalProperties<GenerateRawMarkdownLinkParams>({
+    alias: parseLinkResult.alias,
+    isEmbed: parseLinkResult.isEmbed,
+    isWikilink: false,
+    shouldUseAngleBrackets,
+    url: normalizeFileUrl(parseLinkResult.url)
+  }));
 }
 
 function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathStyle {
