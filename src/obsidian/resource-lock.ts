@@ -22,7 +22,7 @@
  * releases automatically at scope exit (including on throw):
  *
  * ```ts
- * using _lock = lockResourceForPath(app, path, this.manifest.id);
+ * using _lock = lockResourceForPath({ app, pathOrFile: path, pluginId: this.manifest.id, operationName: 'Process note' });
  * // ... long-running work (process, processFrontMatter, merge/split) ...
  * // auto-unlocked at scope exit
  * ```
@@ -75,16 +75,47 @@ const LOCK_INDICATOR_FLASH_CSS_CLASS = 'obsidian-dev-utils-lock-indicator-flash'
 const STATUS_BAR_ITEM_CSS_CLASS = 'status-bar-item';
 const STATUS_BAR_CSS_SELECTOR = '.status-bar';
 const UNLOCK_ICON_ID = 'unlock';
+const MIDDLE_MOUSE_BUTTON = 1;
 
 /**
- * Options for {@link ResourceLockComponent.lockForPath}.
+ * Parameters for {@link lockResourceForPath}.
  */
-export interface ResourceLockComponentLockForPathOptions {
+export interface LockResourceForPathParams {
   /**
-   * An optional {@link AbortController} associated with the lock. When the lock indicator is
-   * right-clicked and the user confirms an unlock (or {@link requestResourceUnlockForPath} is called for
-   * the path), this controller is aborted so the operation holding the lock can cancel itself and
-   * release the lock in its own cleanup.
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * A human-readable name of the operation taking the lock (e.g. `'Move selection'`). Shown next to
+   * the plugin name in the unlock confirmation dialog.
+   */
+  readonly operationName: string;
+
+  /**
+   * The path or file of the note to lock.
+   */
+  readonly pathOrFile: PathOrFile;
+
+  /**
+   * The id of the locking plugin (e.g. its `manifest.id`). The lock is attributed to it for
+   * reference-counting and the indicators' "locked by" tooltip.
+   */
+  readonly pluginId: string;
+}
+
+/**
+ * Parameters for {@link ResourceLockComponent.lockForPath}.
+ */
+export interface ResourceLockComponentLockForPathParams {
+  /**
+   * An optional {@link AbortController} associated with the lock. When a lock indicator is clicked (with
+   * any mouse button) and the user confirms an unlock, the "Unlock active note" command runs, or
+   * {@link ResourceLockComponent.requestUnlockForPath} / {@link requestResourceUnlockForPath} is called
+   * for the path, this controller is aborted so the operation holding the lock can cancel itself. Unless
+   * {@link ResourceLockComponentLockForPathParams.shouldReleaseOnAbort} is set, the operation is
+   * expected to release the lock in its own cleanup. When omitted, an unlock still releases the lock but
+   * cannot cancel the operation that took it.
    */
   readonly abortController?: AbortController;
 
@@ -98,6 +129,27 @@ export interface ResourceLockComponentLockForPathOptions {
   readonly mode?: ResourceLockMode;
 
   /**
+   * When provided, this callback is invoked when an unlock of the lock is requested — i.e. when the
+   * lock's {@link ResourceLockComponentLockForPathParams.abortController} is aborted (by the
+   * indicator's "Unlock" menu, the "Unlock active note" command, {@link ResourceLockComponent.requestUnlockForPath},
+   * or {@link handleExternalMutation}). Use it to clear consumer-side state that shadows the lock (e.g.
+   * a pending-operation buffer or a notice) without hand-wiring an `abort` listener. Fires at most once.
+   */
+  onUnlockRequested?(this: void): void;
+
+  /**
+   * A human-readable name of the operation that took the lock (e.g. `'Move selection'`, `'Merge
+   * notes'`). It is shown — next to the locking plugin's name — in the unlock confirmation dialog, so
+   * the user sees exactly which operation an unlock would cancel.
+   */
+  readonly operationName: string;
+
+  /**
+   * The path or file of the note to lock.
+   */
+  readonly pathOrFile: PathOrFile;
+
+  /**
    * When `true`, the lock also **blocks vault mutations** of the covered path(s): any attempt to edit,
    * delete, rename, move, or (re)create the resource through the `Vault`/`FileManager` API throws a
    * {@link ResourceLockedError}. Installed lazily on the first such lock and removed when the last one
@@ -107,6 +159,19 @@ export interface ResourceLockComponentLockForPathOptions {
    * @default `false`
    */
   readonly shouldBlockMutations?: boolean;
+
+  /**
+   * When `true`, the lock releases itself the moment its
+   * {@link ResourceLockComponentLockForPathParams.abortController} is aborted, instead of relying on
+   * the owning operation to release it in its own cleanup. Use it for a lock held **indefinitely**
+   * outside a `using` scope (so there is no `finally` to release it) — e.g. a lock that stays until the
+   * user explicitly unlocks. Leave it `false` for a transactional operation that holds the lock through
+   * its own abort-driven rollback and releases it via `using` at scope exit. Has no effect without an
+   * {@link ResourceLockComponentLockForPathParams.abortController}.
+   *
+   * @default `false`
+   */
+  readonly shouldReleaseOnAbort?: boolean;
 }
 
 /**
@@ -118,11 +183,19 @@ export interface ResourceLockComponentLockForPathOptions {
  */
 export type ResourceLockMode = 'file' | 'subtree';
 
+interface LockDescriptor {
+  readonly operationName: string;
+  readonly pluginName: string;
+}
+
 interface LockEntry {
   readonly abortController: AbortController | null;
   readonly blocksMutations: boolean;
   readonly mode: ResourceLockMode;
+  readonly onUnlockRequested: (() => void) | null;
+  readonly operationName: string;
   readonly pluginId: string;
+  readonly shouldReleaseOnAbort: boolean;
 }
 
 interface LockIndicators {
@@ -131,10 +204,16 @@ interface LockIndicators {
   readonly tabIconEl: HTMLElement | null;
 }
 
-interface ManagerLockOptions {
+interface ManagerLockParams {
   readonly abortController?: AbortController | undefined;
+  readonly app: App;
   readonly blocksMutations?: boolean | undefined;
   readonly mode?: ResourceLockMode | undefined;
+  readonly onUnlockRequested?: (() => void) | undefined;
+  readonly operationName: string;
+  readonly pathOrFile: PathOrFile;
+  readonly pluginId: string;
+  readonly shouldReleaseOnAbort?: boolean | undefined;
 }
 
 /**
@@ -355,6 +434,26 @@ class ResourceLockManager {
     });
   }
 
+  /**
+   * Fully unlocks the note at the given path. Resolves the lock covering it — the path itself when
+   * directly locked, otherwise the enclosing `subtree`-locked folder — then aborts every
+   * {@link AbortController} registered on that owner (cancelling the operations that took the locks)
+   * AND removes the owner's lock entries (releasing the lock unconditionally). Unlike
+   * {@link requestUnlock}, which only aborts the exact path's controllers and relies on each operation
+   * releasing its own lock, this resolves ancestor coverage and always releases — so a note held by an
+   * indefinitely-held lock is guaranteed to become editable. A no-op when nothing covers the path.
+   *
+   * @param app - The Obsidian app instance.
+   * @param pathOrFile - The path or file of the note to unlock.
+   */
+  public forceUnlock(app: App, pathOrFile: PathOrFile): void {
+    const ownerPath = this.resolveLockOwnerPath(app, getPath(app, pathOrFile));
+    if (ownerPath === null) {
+      return;
+    }
+    this.abortAndReleaseEntries(app, ownerPath);
+  }
+
   public isLocked(app: App, pathOrFile: PathOrFile): boolean {
     return this.isPathLocked(getPath(app, pathOrFile));
   }
@@ -393,13 +492,17 @@ class ResourceLockManager {
     return false;
   }
 
-  public lock(app: App, pathOrFile: PathOrFile, pluginId: string, options: ManagerLockOptions = {}): Disposable {
-    const path = getPath(app, pathOrFile);
+  public lock(params: ManagerLockParams): Disposable {
+    const { app } = params;
+    const path = getPath(app, params.pathOrFile);
     const entry: LockEntry = {
-      abortController: options.abortController ?? null,
-      blocksMutations: options.blocksMutations ?? false,
-      mode: options.mode ?? 'file',
-      pluginId
+      abortController: params.abortController ?? null,
+      blocksMutations: params.blocksMutations ?? false,
+      mode: params.mode ?? 'file',
+      onUnlockRequested: params.onUnlockRequested ?? null,
+      operationName: params.operationName,
+      pluginId: params.pluginId,
+      shouldReleaseOnAbort: params.shouldReleaseOnAbort ?? false
     };
     let entries = this.lockEntriesByPath.get(path);
     if (!entries) {
@@ -411,6 +514,7 @@ class ResourceLockManager {
     if (entry.blocksMutations) {
       this.ensureBlockerInstalled(app);
     }
+    this.wireReleaseOnAbort(app, path, entry);
     this.reconcile(app);
 
     return new CallbackDisposable({
@@ -469,6 +573,25 @@ class ResourceLockManager {
     this.reconcileAndCleanup(app);
   }
 
+  /**
+   * Aborts every {@link AbortController} on the given (already-resolved) owner path's lock entries —
+   * cancelling the owning operations — and removes those entries, releasing the lock. The entries
+   * snapshot is copied first because an entry's `shouldReleaseOnAbort` abort listener mutates the
+   * array as it fires. Always leaves the owner path with no entries.
+   *
+   * @param app - The Obsidian app instance.
+   * @param ownerPath - The directly-locked owner path whose entries to abort and release.
+   */
+  private abortAndReleaseEntries(app: App, ownerPath: string): void {
+    const entries = this.lockEntriesByPath.get(ownerPath);
+    assertNonNullable(entries);
+    for (const entry of [...entries]) {
+      entry.abortController?.abort();
+    }
+    this.lockEntriesByPath.delete(ownerPath);
+    this.reconcileAndCleanup(app);
+  }
+
   private addUnlockMenuItem(app: App, menu: Menu, path: string): void {
     menu.addItem((item) => {
       item
@@ -481,7 +604,8 @@ class ResourceLockManager {
             title: t(($) => $.obsidianDevUtils.resourceLock.unlockConfirmTitle)
           });
           if (isConfirmed) {
-            this.requestUnlock(app, path);
+            // `path` is the resolved owner path, so cancel its operations and release the lock outright.
+            this.abortAndReleaseEntries(app, path);
           }
         }));
     });
@@ -634,6 +758,33 @@ class ResourceLockManager {
     return (this.lockEntriesByPath.get(path)?.length ?? 0) > 0;
   }
 
+  /**
+   * Builds the deduplicated list of `(plugin name, operation name)` pairs describing the locks on a
+   * path — one per distinct plugin+operation. Drives the unlock confirmation, so the user sees exactly
+   * which operations an unlock would cancel. Only ever called for a locked path, so its entries are
+   * always present.
+   *
+   * @param app - The Obsidian app instance.
+   * @param path - The directly-locked path whose lock descriptors to build.
+   * @returns The distinct lock descriptors covering the path.
+   */
+  private lockDescriptors(app: App, path: string): LockDescriptor[] {
+    const entries = this.lockEntriesByPath.get(path);
+    assertNonNullable(entries);
+    const seen = new Set<string>();
+    const descriptors: LockDescriptor[] = [];
+    for (const entry of entries) {
+      const pluginName = app.plugins.manifests[entry.pluginId]?.name ?? entry.pluginId;
+      const key = `${pluginName}\n${entry.operationName}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      descriptors.push({ operationName: entry.operationName, pluginName });
+    }
+    return descriptors;
+  }
+
   private lockingPluginNames(app: App, path: string): string[] {
     const entries = this.lockEntriesByPath.get(path);
     // `lockingPluginNames` is only ever called for a locked path, so its entries are always present.
@@ -706,8 +857,12 @@ class ResourceLockManager {
   }
 
   private registerUnlockMenu(app: App, el: HTMLElement, getContextPath: () => string | undefined): void {
+    // A click of ANY mouse button on a lock indicator opens the same unlock context menu:
+    // `click` fires only for the primary (left) button, `contextmenu` for the right button, and
+    // `auxclick` for the middle button (the browser fires no `click` for it). `auxclick` also fires for
+    // The right button, so it is guarded to the middle button to avoid double-opening alongside `contextmenu`.
     // A plain listener dies with the element when it is `.remove()`d on unlock, so it never leaks.
-    el.addEventListener('contextmenu', (evt) => {
+    const openUnlockMenu = (evt: MouseEvent): void => {
       evt.preventDefault();
       const path = getContextPath();
       if (path === undefined) {
@@ -716,6 +871,13 @@ class ResourceLockManager {
       const menu = new Menu();
       this.addUnlockMenuItem(app, menu, path);
       menu.showAtMouseEvent(evt);
+    };
+    el.addEventListener('click', openUnlockMenu);
+    el.addEventListener('contextmenu', openUnlockMenu);
+    el.addEventListener('auxclick', (evt) => {
+      if (evt.button === MIDDLE_MOUSE_BUTTON) {
+        openUnlockMenu(evt);
+      }
     });
   }
 
@@ -776,10 +938,12 @@ class ResourceLockManager {
   private unlockConfirmMessage(app: App, path: string): DocumentFragment {
     const fragment = createFragment();
     fragment.appendText(t(($) => $.obsidianDevUtils.resourceLock.unlockConfirmMessage));
-    // A runtime-length list of the plugins currently holding a lock, each as a code block on its own line.
-    for (const name of this.lockingPluginNames(app, path)) {
+    // A runtime-length list of the locks currently held: each plugin name as a code block followed by
+    // The operation it is running, one per line.
+    for (const descriptor of this.lockDescriptors(app, path)) {
       fragment.createEl('br');
-      appendCodeBlock(fragment, name);
+      appendCodeBlock(fragment, descriptor.pluginName);
+      fragment.appendText(`: ${descriptor.operationName}`);
     }
     return fragment;
   }
@@ -819,6 +983,29 @@ class ResourceLockManager {
 
     setTooltip(this.statusBarItemEl, this.lockTooltip(app, activeOwnerPath));
   }
+
+  /**
+   * Wires an opt-in `abort` listener for a lock entry: when the entry's controller aborts, releases
+   * the entry (if {@link LockEntry.shouldReleaseOnAbort}) and/or invokes
+   * {@link LockEntry.onUnlockRequested}. A no-op when the entry has no controller or neither opt-in is
+   * set, so transactional locks keep releasing via their own cleanup.
+   *
+   * @param app - The Obsidian app instance.
+   * @param path - The exact path the entry is registered under.
+   * @param entry - The lock entry whose controller to observe.
+   */
+  private wireReleaseOnAbort(app: App, path: string, entry: LockEntry): void {
+    const { onUnlockRequested, shouldReleaseOnAbort } = entry;
+    if (!entry.abortController || (!shouldReleaseOnAbort && !onUnlockRequested)) {
+      return;
+    }
+    entry.abortController.signal.addEventListener('abort', () => {
+      if (shouldReleaseOnAbort) {
+        this.removeEntry(app, path, entry);
+      }
+      onUnlockRequested?.();
+    }, { once: true });
+  }
 }
 
 /**
@@ -854,7 +1041,7 @@ export class ResourceLockComponent extends ComponentEx {
    * mutation blocker instead of throwing {@link ResourceLockedError}. Any mutation of a blocked path
    * NOT covered by an active bypass scope is still rejected. Use it with a `using` declaration around
    * the operation that legitimately mutates resources it has locked with
-   * {@link ResourceLockComponentLockForPathOptions.shouldBlockMutations}:
+   * {@link ResourceLockComponentLockForPathParams.shouldBlockMutations}:
    *
    * ```ts
    * using _bypass = component.bypassBlockedMutations([sourceFile, targetFile]);
@@ -906,14 +1093,25 @@ export class ResourceLockComponent extends ComponentEx {
    * and future {@link MarkdownView} until the lock is released. Reference-counted: balance each call
    * with a dispose of the returned {@link Disposable} (ideally via `using`) or {@link unlockForPath}.
    *
-   * @param pathOrFile - The path or file of the note to lock.
-   * @param options - Optional locking options. Pass an
-   * {@link ResourceLockComponentLockForPathOptions.abortController} to make the lock cancelable via the
-   * indicator's right-click "unlock" menu or {@link requestResourceUnlockForPath}.
+   * @param params - Locking parameters. Its {@link ResourceLockComponentLockForPathParams.pathOrFile}
+   * and {@link ResourceLockComponentLockForPathParams.operationName} are required (the latter is shown
+   * in the unlock confirmation). Pass an {@link ResourceLockComponentLockForPathParams.abortController}
+   * to make the lock cancelable via a lock indicator's "unlock" menu, the "Unlock active note" command,
+   * or {@link requestResourceUnlockForPath}.
    * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
    */
-  public lockForPath(pathOrFile: PathOrFile, options?: ResourceLockComponentLockForPathOptions): Disposable {
-    return getManager().lock(this.app, pathOrFile, this.pluginId, { abortController: options?.abortController, blocksMutations: options?.shouldBlockMutations, mode: options?.mode });
+  public lockForPath(params: ResourceLockComponentLockForPathParams): Disposable {
+    return getManager().lock({
+      abortController: params.abortController,
+      app: this.app,
+      blocksMutations: params.shouldBlockMutations,
+      mode: params.mode,
+      onUnlockRequested: params.onUnlockRequested,
+      operationName: params.operationName,
+      pathOrFile: params.pathOrFile,
+      pluginId: this.pluginId,
+      shouldReleaseOnAbort: params.shouldReleaseOnAbort
+    });
   }
 
   /**
@@ -923,6 +1121,19 @@ export class ResourceLockComponent extends ComponentEx {
   public override onunload(): void {
     getManager().unlockAllForPlugin(this.app, this.pluginId);
     super.onunload();
+  }
+
+  /**
+   * Fully unlocks the note at the given path: resolves the lock covering it (the path itself when
+   * directly locked, otherwise a `subtree`-locked ancestor folder), cancels the operation(s) that took
+   * the lock by aborting their {@link AbortController}s, and releases the lock so the note becomes
+   * editable — regardless of which plugin holds the lock. Powers the "Unlock active note" command. A
+   * no-op when nothing covers the path.
+   *
+   * @param pathOrFile - The path or file of the note to unlock.
+   */
+  public requestUnlockForPath(pathOrFile: PathOrFile): void {
+    getManager().forceUnlock(this.app, pathOrFile);
   }
 
   /**
@@ -938,7 +1149,7 @@ export class ResourceLockComponent extends ComponentEx {
 /**
  * Thrown by the vault-mutation blocker when a plugin tries to edit, delete, rename, move, or create a
  * resource whose path is covered by a lock taken with
- * {@link ResourceLockComponentLockForPathOptions.shouldBlockMutations}.
+ * {@link ResourceLockComponentLockForPathParams.shouldBlockMutations}.
  */
 export class ResourceLockedError extends Error {
   /**
@@ -979,20 +1190,22 @@ export function isResourceLockedForPath(app: App, pathOrFile: PathOrFile): boole
  * release (either disposing the returned {@link Disposable} — ideally via a `using` declaration — or
  * a matching {@link unlockResourceForPath} call).
  *
- * @param app - The Obsidian app instance.
- * @param pathOrFile - The path or file of the note to lock.
- * @param pluginId - The id of the locking plugin (e.g. its `manifest.id`). The lock is attributed to
- * it for reference-counting and the indicators' "locked by" tooltip.
+ * @param params - The parameters for locking the note.
  * @returns A {@link Disposable} that releases this lock when disposed. Disposing more than once is a no-op.
  */
-export function lockResourceForPath(app: App, pathOrFile: PathOrFile, pluginId: string): Disposable {
-  return getManager().lock(app, pathOrFile, pluginId);
+export function lockResourceForPath(params: LockResourceForPathParams): Disposable {
+  return getManager().lock({
+    app: params.app,
+    operationName: params.operationName,
+    pathOrFile: params.pathOrFile,
+    pluginId: params.pluginId
+  });
 }
 
 /**
  * Requests an unlock of the note at the given path by aborting every {@link AbortController} that was
  * associated with a lock on it (via {@link ResourceLockComponent.lockForPath}'s
- * {@link ResourceLockComponentLockForPathOptions.abortController}). The operations holding the lock
+ * {@link ResourceLockComponentLockForPathParams.abortController}). The operations holding the lock
  * observe the abort and release their own locks. A no-op when no abortable lock is registered for the
  * path.
  *

@@ -751,7 +751,7 @@ export async function process(params: ProcessParams): Promise<void> {
   const path = getPath(app, pathOrFile);
 
   // Reference-counted lock; composes with any outer lock. Released at function scope exit.
-  using _lock = resourceLockComponent?.lockForPath(pathOrFile);
+  using _lock = resourceLockComponent?.lockForPath({ operationName: 'Process note', pathOrFile });
 
   await retryWithTimeoutNotice({
     async operationFn(abortSignal) {

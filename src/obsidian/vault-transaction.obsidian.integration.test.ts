@@ -216,7 +216,7 @@ describe('VaultTransaction', () => {
 
         const component = new ResourceLockComponent(app, 'vt-bypass-plugin');
         // Lock the whole folder subtree against mutations.
-        const lock = component.lockForPath(folderPath, { mode: 'subtree', shouldBlockMutations: true });
+        const lock = component.lockForPath({ mode: 'subtree', operationName: 'Integration test', pathOrFile: folderPath, shouldBlockMutations: true });
 
         try {
           const vaultTransaction = new VaultTransaction({

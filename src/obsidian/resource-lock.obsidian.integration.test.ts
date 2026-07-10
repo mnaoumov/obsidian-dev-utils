@@ -40,6 +40,12 @@ interface ExternalChangeResult {
   readonly wasAbortedOnExternalDelete: boolean;
 }
 
+interface ForceUnlockResult {
+  readonly isLockedAfterUnlock: boolean;
+  readonly isLockedBeforeUnlock: boolean;
+  readonly wasAborted: boolean;
+}
+
 interface LockForPathResult {
   readonly isCurrentTabLocked: boolean;
   readonly isCurrentTabLockedAfterUnlock: boolean;
@@ -122,7 +128,7 @@ describe('resource-lock', () => {
           const currentTabLeaf = app.workspace.getLeaf();
           await currentTabLeaf.openFile(lockedFile);
           await settle();
-          const disposable = lib.obsidian['resource-lock'].lockResourceForPath(app, lockedFile, 'integration-test');
+          const disposable = lib.obsidian['resource-lock'].lockResourceForPath({ app, operationName: 'Integration test', pathOrFile: lockedFile, pluginId: 'integration-test' });
           await settle();
           const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
 
@@ -220,7 +226,7 @@ describe('resource-lock', () => {
           await otherLeaf.openFile(otherFile);
           await settle();
 
-          const disposable = lib.obsidian['resource-lock'].lockResourceForPath(app, lockedFile, 'integration-test');
+          const disposable = lib.obsidian['resource-lock'].lockResourceForPath({ app, operationName: 'Integration test', pathOrFile: lockedFile, pluginId: 'integration-test' });
           await settle();
           await reconcile();
 
@@ -299,7 +305,7 @@ describe('resource-lock', () => {
           await lockedLeaf.openFile(lockedFile);
           await settle();
 
-          const disposable = lib.obsidian['resource-lock'].lockResourceForPath(app, lockedFile, 'integration-test');
+          const disposable = lib.obsidian['resource-lock'].lockResourceForPath({ app, operationName: 'Integration test', pathOrFile: lockedFile, pluginId: 'integration-test' });
           await settle();
           await reconcile();
 
@@ -391,7 +397,7 @@ describe('resource-lock', () => {
 
           // Lock the whole folder subtree; the note inside it must become read-only.
           const component = new lib.obsidian['resource-lock'].ResourceLockComponent(app, 'integration-test-subtree');
-          const disposable = component.lockForPath(folderPath, { mode: 'subtree' });
+          const disposable = component.lockForPath({ mode: 'subtree', operationName: 'Integration test', pathOrFile: folderPath });
           await settle();
           await reconcile();
           const isChildLockedUnderSubtree = readLeafReadOnly(leaf);
@@ -434,6 +440,64 @@ describe('resource-lock', () => {
     });
   });
 
+  describe('ResourceLockComponent force unlock', () => {
+    it('should abort the operation and make a locked note editable again via requestUnlockForPath', async () => {
+      const result = await evalInObsidian({
+        async fn({ app }): Promise<ForceUnlockResult> {
+          const lib = window.__obsidianDevUtilsModule__;
+          if (!lib) {
+            throw new Error('obsidian-dev-utils module not registered on window');
+          }
+
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          app.workspace.detachLeavesOfType('markdown');
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const lockedFile = await app.vault.create('resource-lock-force-unlock.md', 'locked note');
+          const leaf = app.workspace.getLeaf();
+          await leaf.openFile(lockedFile);
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const component = new lib.obsidian['resource-lock'].ResourceLockComponent(app, 'integration-force-unlock');
+          const abortController = new AbortController();
+          component.lockForPath({ abortController, operationName: 'Integration force unlock', pathOrFile: lockedFile });
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          // Re-run the manager's reconcile against the now-settled editor so the read-only re-apply takes hold.
+          app.workspace.trigger('layout-change');
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const isLockedBeforeUnlock = readLeafReadOnly(leaf);
+
+          // Force-unlock aborts the controller (cancel) AND removes the lock entry (release).
+          component.requestUnlockForPath(lockedFile);
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const isLockedAfterUnlock = readLeafReadOnly(leaf);
+          const wasAborted = abortController.signal.aborted;
+
+          return {
+            isLockedAfterUnlock,
+            isLockedBeforeUnlock,
+            wasAborted
+          };
+
+          function readLeafReadOnly(readLeaf: unknown): boolean {
+            const editor = (readLeaf as ReadableLeaf).view.editor;
+            if (!editor) {
+              throw new Error('no editor on leaf');
+            }
+            return editor.cm.state.readOnly;
+          }
+        },
+        vaultPath: inject('tempVaultPath')
+      });
+
+      // The note is read-only while locked, editable once force-unlocked, and the operation was aborted.
+      expect(result.isLockedBeforeUnlock).toBe(true);
+      expect(result.isLockedAfterUnlock).toBe(false);
+      expect(result.wasAborted).toBe(true);
+    });
+  });
+
   describe('ResourceLockComponent mutation blocker', () => {
     it('should block real vault rename and file-manager trash of a locked file, then allow them after unlock', async () => {
       const result = await evalInObsidian({
@@ -454,7 +518,7 @@ describe('resource-lock', () => {
           const file = await app.vault.create(path, 'content');
 
           const component = new ResourceLockComponent(app, 'integration-blocker');
-          const disposable = component.lockForPath(path, { shouldBlockMutations: true });
+          const disposable = component.lockForPath({ operationName: 'Integration test', pathOrFile: path, shouldBlockMutations: true });
 
           let wasRenameBlocked = false;
           let wasTrashBlocked = false;
@@ -522,7 +586,7 @@ describe('resource-lock', () => {
           const file = await app.vault.create(path, 'content');
 
           const component = new ResourceLockComponent(app, 'integration-bypass');
-          const lock = component.lockForPath(path, { shouldBlockMutations: true });
+          const lock = component.lockForPath({ operationName: 'Integration test', pathOrFile: path, shouldBlockMutations: true });
 
           let wasBypassedModifyAllowed = false;
           let wasModifyBlockedAfterScope = false;
@@ -581,7 +645,7 @@ describe('resource-lock', () => {
 
           const component = new ResourceLockComponent(app, 'integration-detector');
           const abortController = new AbortController();
-          const lock = component.lockForPath(path, { abortController, shouldBlockMutations: true });
+          const lock = component.lockForPath({ abortController, operationName: 'Integration test', pathOrFile: path, shouldBlockMutations: true });
 
           try {
             // A change that bypasses the blocker patch entirely (raw adapter delete). Obsidian's file watcher then fires vault('delete'), which the detector reconciles into an abort.

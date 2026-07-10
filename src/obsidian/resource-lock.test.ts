@@ -121,6 +121,14 @@ function createMarkdownView(path: string, hasTabStatusContainer = true): Markdow
   return view;
 }
 
+function dispatchAuxClick(el: EventTarget, button: number): void {
+  el.dispatchEvent(new MouseEvent('auxclick', { button, cancelable: true }));
+}
+
+function dispatchClick(el: EventTarget): void {
+  el.dispatchEvent(new MouseEvent('click', { cancelable: true }));
+}
+
 function dispatchContextMenu(el: EventTarget): void {
   el.dispatchEvent(new MouseEvent('contextmenu', { cancelable: true }));
 }
@@ -146,7 +154,7 @@ function stubLeaves(...leaves: WorkspaceLeafOriginal[]): void {
 describe('lockResourceForPath', () => {
   it('should mark the path as locked', () => {
     stubLeaves();
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
     expect(isResourceLockedForPath(app, 'other.md')).toBe(false);
   });
@@ -156,7 +164,7 @@ describe('lockResourceForPath', () => {
     vi.spyOn(view, 'addAction');
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\ntest-plugin', expect.any(Function));
@@ -164,7 +172,7 @@ describe('lockResourceForPath', () => {
 
   it('should ignore leaves whose view is not a MarkdownView', () => {
     stubLeaves(leafOf(strictProxy<ViewOriginal>({})));
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -173,7 +181,7 @@ describe('lockResourceForPath', () => {
     const view = MarkdownView.create2__(mockLeaf).asOriginalType7__();
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -181,7 +189,7 @@ describe('lockResourceForPath', () => {
     const view = createMarkdownView('other.md');
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
   });
 
@@ -189,7 +197,7 @@ describe('lockResourceForPath', () => {
     const view = createMarkdownView('note.md');
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     app.workspace.trigger('layout-change');
 
     // The toggle is re-applied on every reconcile (idempotent).
@@ -203,7 +211,7 @@ describe('lockResourceForPath', () => {
     stubLeaves();
     const onSpy = vi.spyOn(app.workspace, 'on');
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     expect(onSpy).toHaveBeenCalledWith('active-leaf-change', expect.any(Function));
     expect(onSpy).toHaveBeenCalledWith('layout-change', expect.any(Function));
@@ -214,15 +222,15 @@ describe('lockResourceForPath', () => {
     stubLeaves();
     const onSpy = vi.spyOn(app.workspace, 'on');
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
-    lockResourceForPath(app, 'other.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'other.md', pluginId: 'test-plugin' });
 
     expect(onSpy).toHaveBeenCalledTimes(4);
   });
 
   it('should lock a view opened after the lock via active-leaf-change', () => {
     stubLeaves();
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalled();
 
     const view = createMarkdownView('note.md');
@@ -239,7 +247,7 @@ describe('lockResourceForPath', () => {
     const removeSpy = vi.spyOn(iconEl, 'remove');
     stubLeaves(leafOf(view));
 
-    const disposable = lockResourceForPath(app, 'note.md', 'test-plugin');
+    const disposable = lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     disposable[Symbol.dispose]();
 
     expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
@@ -249,8 +257,8 @@ describe('lockResourceForPath', () => {
 
   it('should not decrement more than once when disposed repeatedly', () => {
     stubLeaves();
-    const disposable = lockResourceForPath(app, 'note.md', 'test-plugin');
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    const disposable = lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     disposable[Symbol.dispose]();
     disposable[Symbol.dispose]();
@@ -268,7 +276,7 @@ describe('unlockResourceForPath', () => {
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     unlockResourceForPath(app, 'note.md', 'test-plugin');
 
     expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
@@ -279,8 +287,8 @@ describe('unlockResourceForPath', () => {
 
   it('should keep the note locked until every lock is released', () => {
     stubLeaves();
-    lockResourceForPath(app, 'note.md', 'test-plugin');
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     unlockResourceForPath(app, 'note.md', 'test-plugin');
     expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
@@ -303,8 +311,8 @@ describe('unlockResourceForPath', () => {
     stubLeaves();
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
-    lockResourceForPath(app, 'other.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'other.md', pluginId: 'test-plugin' });
 
     unlockResourceForPath(app, 'note.md', 'test-plugin');
     expect(offrefSpy).not.toHaveBeenCalled();
@@ -316,8 +324,8 @@ describe('unlockResourceForPath', () => {
   it('should keep a note locked until every plugin that locked it releases its lock', () => {
     stubLeaves();
 
-    lockResourceForPath(app, 'note.md', 'plugin-a');
-    lockResourceForPath(app, 'note.md', 'plugin-b');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'plugin-a' });
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'plugin-b' });
 
     // The plugin-b lock is released twice; the redundant release hits the per-plugin no-op guard.
     // Plugin-a still holds its lock, so the note stays locked.
@@ -341,7 +349,7 @@ describe('lock indicators', () => {
     const view = createMarkdownView('note.md', false);
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     // A second reconcile updates tooltips on the existing indicators; with no tab icon it must not throw.
     app.workspace.trigger('layout-change');
 
@@ -355,7 +363,7 @@ describe('lock indicators', () => {
     castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     expect(vi.mocked(view.addAction)).toHaveBeenCalledWith('lock', 'Locked by\nTest Plugin', expect.any(Function));
   });
@@ -366,7 +374,7 @@ describe('lock indicators', () => {
     const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
     // A second reconcile must not duplicate the item.
@@ -382,7 +390,7 @@ describe('lock indicators', () => {
     setActiveView(view);
     stubLeaves(leafOf(view));
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     expect(view.containerEl.ownerDocument.body.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
@@ -393,7 +401,7 @@ describe('ResourceLockComponent', () => {
     stubLeaves();
     const component = new ResourceLockComponent(app, 'test-plugin');
 
-    component.lockForPath('note.md');
+    component.lockForPath({ operationName: 'Test operation', pathOrFile: 'note.md' });
     expect(component.isLockedForPath('note.md')).toBe(true);
 
     component.unlockForPath('note.md');
@@ -403,13 +411,13 @@ describe('ResourceLockComponent', () => {
   it('should release only its own plugin\'s locks when unloaded', () => {
     stubLeaves();
 
-    lockResourceForPath(app, 'other-only.md', 'other-plugin');
-    lockResourceForPath(app, 'shared.md', 'other-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'other-only.md', pluginId: 'other-plugin' });
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'shared.md', pluginId: 'other-plugin' });
 
     const component = new ResourceLockComponent(app, 'test-plugin');
     component.load();
-    component.lockForPath('shared.md');
-    component.lockForPath('own.md');
+    component.lockForPath({ operationName: 'Test operation', pathOrFile: 'shared.md' });
+    component.lockForPath({ operationName: 'Test operation', pathOrFile: 'own.md' });
 
     component.unload();
 
@@ -424,7 +432,7 @@ describe('ResourceLockComponent', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
     const abortController = new AbortController();
 
-    component.lockForPath('note.md', { abortController });
+    component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
     requestResourceUnlockForPath(app, 'note.md');
 
     expect(abortController.signal.aborted).toBe(true);
@@ -438,8 +446,8 @@ describe('requestResourceUnlockForPath', () => {
     const firstController = new AbortController();
     const secondController = new AbortController();
 
-    component.lockForPath('note.md', { abortController: firstController });
-    component.lockForPath('note.md', { abortController: secondController });
+    component.lockForPath({ abortController: firstController, operationName: 'Test operation', pathOrFile: 'note.md' });
+    component.lockForPath({ abortController: secondController, operationName: 'Test operation', pathOrFile: 'note.md' });
     requestResourceUnlockForPath(app, 'note.md');
 
     expect(firstController.signal.aborted).toBe(true);
@@ -448,7 +456,7 @@ describe('requestResourceUnlockForPath', () => {
 
   it('should be a no-op when no abortable lock is registered for the path', () => {
     stubLeaves();
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
     expect(() => {
       requestResourceUnlockForPath(app, 'note.md');
@@ -462,8 +470,8 @@ describe('requestResourceUnlockForPath', () => {
     const disposedController = new AbortController();
     const heldController = new AbortController();
 
-    const disposable = component.lockForPath('note.md', { abortController: disposedController });
-    component.lockForPath('note.md', { abortController: heldController });
+    const disposable = component.lockForPath({ abortController: disposedController, operationName: 'Test operation', pathOrFile: 'note.md' });
+    component.lockForPath({ abortController: heldController, operationName: 'Test operation', pathOrFile: 'note.md' });
     disposable[Symbol.dispose]();
 
     requestResourceUnlockForPath(app, 'note.md');
@@ -477,12 +485,136 @@ describe('requestResourceUnlockForPath', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
     const abortController = new AbortController();
 
-    const disposable = component.lockForPath('note.md', { abortController });
+    const disposable = component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
     disposable[Symbol.dispose]();
 
     requestResourceUnlockForPath(app, 'note.md');
 
     expect(abortController.signal.aborted).toBe(false);
+  });
+});
+
+describe('requestUnlockForPath (force unlock)', () => {
+  it('should abort the controller and release a directly-locked note', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const abortController = new AbortController();
+    component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
+
+    component.requestUnlockForPath('note.md');
+
+    expect(abortController.signal.aborted).toBe(true);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+
+  it('should release a lock that has no abort controller', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
+
+    component.requestUnlockForPath('note.md');
+
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+
+  it('should abort and release every plugin\'s lock covering the path', () => {
+    stubLeaves();
+    const firstController = new AbortController();
+    const secondController = new AbortController();
+    new ResourceLockComponent(app, 'plugin-a').lockForPath({ abortController: firstController, operationName: 'Op A', pathOrFile: 'note.md' });
+    new ResourceLockComponent(app, 'plugin-b').lockForPath({ abortController: secondController, operationName: 'Op B', pathOrFile: 'note.md' });
+
+    new ResourceLockComponent(app, 'test-plugin').requestUnlockForPath('note.md');
+
+    expect(firstController.signal.aborted).toBe(true);
+    expect(secondController.signal.aborted).toBe(true);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+
+  it('should release both entries even when one is wired to release itself on abort', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const selfReleasingController = new AbortController();
+    const plainController = new AbortController();
+    // The self-releasing entry removes itself mid-iteration; the snapshot copy ensures the other still aborts.
+    component.lockForPath({ abortController: selfReleasingController, operationName: 'Self releasing', pathOrFile: 'note.md', shouldReleaseOnAbort: true });
+    component.lockForPath({ abortController: plainController, operationName: 'Plain', pathOrFile: 'note.md' });
+
+    component.requestUnlockForPath('note.md');
+
+    expect(selfReleasingController.signal.aborted).toBe(true);
+    expect(plainController.signal.aborted).toBe(true);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+
+  it('should be a no-op when nothing covers the path', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+
+    expect(() => {
+      component.requestUnlockForPath('note.md');
+    }).not.toThrow();
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+});
+
+describe('release on abort', () => {
+  it('should release the lock and notify when the controller aborts and shouldReleaseOnAbort is set', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const abortController = new AbortController();
+    const onUnlockRequested = vi.fn();
+    component.lockForPath({ abortController, onUnlockRequested, operationName: 'Test operation', pathOrFile: 'note.md', shouldReleaseOnAbort: true });
+
+    abortController.abort();
+
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+    expect(onUnlockRequested).toHaveBeenCalledTimes(1);
+  });
+
+  it('should notify without releasing when only onUnlockRequested is set', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const abortController = new AbortController();
+    const onUnlockRequested = vi.fn();
+    component.lockForPath({ abortController, onUnlockRequested, operationName: 'Test operation', pathOrFile: 'note.md' });
+
+    abortController.abort();
+
+    expect(onUnlockRequested).toHaveBeenCalledTimes(1);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
+  });
+
+  it('should release without a callback when only shouldReleaseOnAbort is set', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const abortController = new AbortController();
+    component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md', shouldReleaseOnAbort: true });
+
+    abortController.abort();
+
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+
+  it('should not release on abort by default', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const abortController = new AbortController();
+    component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
+
+    abortController.abort();
+
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
+  });
+
+  it('should not wire a release listener when there is no abort controller', () => {
+    stubLeaves();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+
+    expect(() => {
+      component.lockForPath({ operationName: 'Test operation', pathOrFile: 'note.md', shouldReleaseOnAbort: true });
+    }).not.toThrow();
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
   });
 });
 
@@ -494,7 +626,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -503,6 +635,153 @@ describe('unlock context menu', () => {
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
     expect(item.icon__).toBe('unlock');
+  });
+
+  it('should build an unlock menu item on left-click', () => {
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
+    dispatchClick(iconEl);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+    expect(item.icon__).toBe('unlock');
+  });
+
+  it('should build an unlock menu item on middle-click', () => {
+    const MIDDLE_MOUSE_BUTTON = 1;
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
+    dispatchAuxClick(iconEl, MIDDLE_MOUSE_BUTTON);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    expect(item.title__).toBe('Unlock');
+  });
+
+  it('should ignore an auxclick from a non-middle button', () => {
+    const RIGHT_MOUSE_BUTTON = 2;
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
+
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
+    // The right button's auxclick is handled by the contextmenu listener, so auxclick must ignore it.
+    dispatchAuxClick(iconEl, RIGHT_MOUSE_BUTTON);
+
+    expect(showSpy).not.toHaveBeenCalled();
+  });
+
+  it('should abort and release the lock when the unlock is confirmed', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    const abortController = new AbortController();
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
+    dispatchContextMenu(iconEl);
+
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    // The unlock menu now releases the lock outright (not only aborts).
+    expect(abortController.signal.aborted).toBe(true);
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
+  });
+
+  it('should render the plugin name and operation name in the unlock confirmation', async () => {
+    vi.mocked(confirm).mockResolvedValue(false);
+    castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Move selection', pathOrFile: 'note.md' });
+    dispatchContextMenu(iconEl);
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    const message = vi.mocked(confirm).mock.calls[0]?.[0].message;
+    expect(message).toBeInstanceOf(DocumentFragment);
+    const fragment = castTo<DocumentFragment>(message);
+    expect(fragment.querySelector('code')?.textContent).toBe('Test Plugin');
+    expect(fragment.textContent).toContain('Move selection');
+  });
+
+  it('should list a repeated plugin+operation lock only once in the confirmation', async () => {
+    vi.mocked(confirm).mockResolvedValue(false);
+    castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    // The same plugin locks the same note for the same operation twice; the confirmation lists it once.
+    component.lockForPath({ abortController: new AbortController(), operationName: 'Move selection', pathOrFile: 'note.md' });
+    component.lockForPath({ abortController: new AbortController(), operationName: 'Move selection', pathOrFile: 'note.md' });
+    dispatchContextMenu(iconEl);
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    const message = vi.mocked(confirm).mock.calls[0]?.[0].message;
+    const fragment = castTo<DocumentFragment>(message);
+    expect(fragment.querySelectorAll('code')).toHaveLength(1);
+  });
+
+  it('should release a lock that has no abort controller when the unlock is confirmed', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    const view = createMarkdownView('note.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    // No abortController: the unlock cannot cancel an operation, but must still release the lock.
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ operationName: 'Test operation', pathOrFile: 'note.md' });
+    dispatchContextMenu(iconEl);
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
   });
 
   it('should abort the lock when the unlock is confirmed', async () => {
@@ -514,7 +793,7 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -537,7 +816,7 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
     dispatchContextMenu(iconEl);
 
     const menu = getMenu();
@@ -556,7 +835,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(tabIconEl);
     dispatchContextMenu(tabIconEl);
@@ -571,7 +850,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
     dispatchContextMenu(statusBarItemEl);
@@ -586,7 +865,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
-    lockResourceForPath(app, 'note.md', 'test-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
 
@@ -606,7 +885,7 @@ describe('unlock context menu', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
@@ -628,7 +907,7 @@ describe('unlock file menu', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
@@ -642,7 +921,7 @@ describe('unlock file menu', () => {
     const file = app.vault.getFileByPath('note.md');
     assertNonNullable(file);
     // Lock a different note so the events component (and its file-menu handler) is subscribed.
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('other.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'other.md' });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
@@ -650,7 +929,7 @@ describe('unlock file menu', () => {
   });
 
   it('should not add an unlock item to the file menu for a folder', () => {
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, app.vault.getRoot(), 'file-explorer-context-menu');
 
@@ -667,7 +946,7 @@ describe('lock type-attempt flash', () => {
     vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
     stubLeaves(leafOf(view));
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(tabIconEl);
     expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
@@ -685,7 +964,7 @@ describe('lock type-attempt flash', () => {
     stubLeaves(leafOf(view));
 
     const component = new ResourceLockComponent(app, 'test-plugin');
-    component.lockForPath('note.md', { abortController: new AbortController() });
+    component.lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     component.unlockForPath('note.md');
 
     view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
@@ -708,7 +987,7 @@ describe('lock type-attempt flash', () => {
     }));
 
     try {
-      new ResourceLockComponent(app, 'test-plugin').lockForPath('note.md', { abortController: new AbortController() });
+      new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
       view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
       view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
     } finally {
@@ -739,7 +1018,7 @@ describe('subtree locking', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
     expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
 
-    component.lockForPath('folder', { mode: 'subtree' });
+    component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     expect(component.isLockedByAncestorForPath('folder')).toBe(true);
     expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(true);
@@ -754,9 +1033,22 @@ describe('subtree locking', () => {
     const view = createMarkdownView('folder/a.md');
     stubLeaves(leafOf(view));
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
+  });
+
+  it('should force-unlock a note under a subtree-locked folder via requestUnlockForPath', () => {
+    stubLeaves();
+    const abortController = new AbortController();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    component.lockForPath({ abortController, mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+
+    // Resolves the covering subtree owner (`folder`), aborts it, and releases it.
+    component.requestUnlockForPath('folder/a.md');
+
+    expect(abortController.signal.aborted).toBe(true);
+    expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
 
   it('should resolve a descendant to the innermost (deepest) subtree lock', async () => {
@@ -765,8 +1057,8 @@ describe('subtree locking', () => {
     const outerController = new AbortController();
     const innerController = new AbortController();
     // Lock the outer folder first so the inner (longer) path must replace it as the resolved owner.
-    new ResourceLockComponent(app, 'outer-plugin').lockForPath('folder', { abortController: outerController, mode: 'subtree' });
-    new ResourceLockComponent(app, 'inner-plugin').lockForPath('folder/sub', { abortController: innerController, mode: 'subtree' });
+    new ResourceLockComponent(app, 'outer-plugin').lockForPath({ abortController: outerController, mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    new ResourceLockComponent(app, 'inner-plugin').lockForPath({ abortController: innerController, mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder/sub' });
 
     const file = app.vault.getFileByPath('folder/sub/b.md');
     assertNonNullable(file);
@@ -785,8 +1077,8 @@ describe('subtree locking', () => {
   it('should keep the subtree lock until every acquisition is released', () => {
     stubLeaves();
     const component = new ResourceLockComponent(app, 'test-plugin');
-    const first = component.lockForPath('folder', { mode: 'subtree' });
-    const second = component.lockForPath('folder', { mode: 'subtree' });
+    const first = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    const second = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     first[Symbol.dispose]();
     expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(true);
@@ -799,7 +1091,7 @@ describe('subtree locking', () => {
     stubLeaves();
     const component = new ResourceLockComponent(app, 'test-plugin');
     component.load();
-    component.lockForPath('folder', { mode: 'subtree' });
+    component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     component.unload();
 
@@ -808,10 +1100,10 @@ describe('subtree locking', () => {
 
   it('should keep another plugin\'s file lock when a plugin with only a subtree lock unloads', () => {
     stubLeaves();
-    lockResourceForPath(app, 'outside.md', 'file-plugin');
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'outside.md', pluginId: 'file-plugin' });
     const component = new ResourceLockComponent(app, 'subtree-plugin');
     component.load();
-    component.lockForPath('folder', { mode: 'subtree' });
+    component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     // Unloading the subtree plugin must not touch the unrelated file lock held by file-plugin.
     component.unload();
@@ -826,8 +1118,8 @@ describe('subtree locking', () => {
     const componentB = new ResourceLockComponent(app, 'plugin-b');
     componentA.load();
     componentB.load();
-    const disposableA = componentA.lockForPath('folder', { mode: 'subtree' });
-    componentB.lockForPath('folder', { mode: 'subtree' });
+    const disposableA = componentA.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    componentB.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     // Unloading A removes A but leaves B's subtree lock on the same folder (map not empty).
     componentA.unload();
@@ -845,11 +1137,11 @@ describe('subtree locking', () => {
     stubLeaves();
     const subtreeComponent = new ResourceLockComponent(app, 'subtree-plugin');
     subtreeComponent.load();
-    subtreeComponent.lockForPath('folder', { mode: 'subtree' });
+    subtreeComponent.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
     const fileComponent = new ResourceLockComponent(app, 'file-plugin');
     fileComponent.load();
-    fileComponent.lockForPath('outside.md');
+    fileComponent.lockForPath({ operationName: 'Test operation', pathOrFile: 'outside.md' });
 
     // File-plugin holds no subtree lock, so its unload's subtree-cleanup pass finds nothing to delete.
     fileComponent.unload();
@@ -865,7 +1157,7 @@ describe('subtree locking', () => {
     stubLeaves(leafOf(lockedView));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
 
@@ -880,7 +1172,7 @@ describe('subtree locking', () => {
     stubLeaves();
     const component = new ResourceLockComponent(app, 'test-plugin');
     component.load();
-    const disposable = component.lockForPath('folder', { mode: 'subtree' });
+    const disposable = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
     component.unload();
 
     expect(() => {
@@ -891,7 +1183,7 @@ describe('subtree locking', () => {
 
   it('should add an unlock item to the file menu for a subtree-locked folder', () => {
     stubLeaves();
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
     const folder = app.vault.getAbstractFileByPath('folder');
     assertNonNullable(folder);
     const menu = Menu.create2__();
@@ -904,7 +1196,7 @@ describe('subtree locking', () => {
 
   it('should add an unlock item to the file menu for a note under a subtree-locked folder', () => {
     stubLeaves();
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
     const file = app.vault.getFileByPath('folder/a.md');
     assertNonNullable(file);
     const menu = Menu.create2__();
@@ -922,7 +1214,7 @@ describe('subtree locking', () => {
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
-    new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController: new AbortController(), mode: 'subtree' });
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
     const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
     assertNonNullable(statusBarItemEl);
     dispatchContextMenu(statusBarItemEl);
@@ -961,7 +1253,7 @@ describe('mutation blocker', () => {
   });
 
   function lockTarget(): Disposable {
-    return new ResourceLockComponent(app, 'blocker-plugin').lockForPath('target.md', { shouldBlockMutations: true });
+    return new ResourceLockComponent(app, 'blocker-plugin').lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
   }
 
   function targetFile(): TFileOriginal {
@@ -972,13 +1264,13 @@ describe('mutation blocker', () => {
 
   it('should not block mutations for a read-only (non-blocking) lock', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md');
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md' });
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(false);
   });
 
   it('should block mutations only while a blocking lock is held', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    const disposable = component.lockForPath('target.md', { shouldBlockMutations: true });
+    const disposable = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
     expect(component.isMutationBlockedByAncestorForPath('other.md')).toBe(false);
 
@@ -988,7 +1280,7 @@ describe('mutation blocker', () => {
 
   it('should block a mutation under a subtree blocking lock', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('folder', { mode: 'subtree', shouldBlockMutations: true });
+    using _lock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder', shouldBlockMutations: true });
     expect(component.isMutationBlockedByAncestorForPath('folder/child.md')).toBe(true);
     expect(component.isMutationBlockedByAncestorForPath('elsewhere.md')).toBe(false);
   });
@@ -1137,7 +1429,7 @@ describe('mutation bypass scope', () => {
 
   it('should allow a mutation of a bypassed blocked path', async () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['target.md']);
 
     await expect(app.vault.modify(fileAt('target.md'), 'new content')).resolves.toBeUndefined();
@@ -1146,8 +1438,8 @@ describe('mutation bypass scope', () => {
 
   it('should keep blocking a path not covered by the active bypass scope', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lockTarget = component.lockForPath('target.md', { shouldBlockMutations: true });
-    using _lockSource = component.lockForPath('source.md', { shouldBlockMutations: true });
+    using _lockTarget = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
+    using _lockSource = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'source.md', shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['target.md']);
 
     // Target.md is bypassed; source.md is still enforced.
@@ -1157,7 +1449,7 @@ describe('mutation bypass scope', () => {
 
   it('should enforce the path again once the bypass scope ends', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     const bypass = component.bypassBlockedMutations(['target.md']);
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
@@ -1169,7 +1461,7 @@ describe('mutation bypass scope', () => {
 
   it('should let a folder bypass cover its whole subtree', async () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('folder', { mode: 'subtree', shouldBlockMutations: true });
+    using _lock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder', shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['folder']);
 
     await expect(app.vault.modify(fileAt('folder/child.md'), 'new child')).resolves.toBeUndefined();
@@ -1177,7 +1469,7 @@ describe('mutation bypass scope', () => {
 
   it('should not allow a path outside every bypass scope', () => {
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md', { shouldBlockMutations: true });
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
     using _bypassOther = component.bypassBlockedMutations(['other.md']);
 
     const file = fileAt('target.md');
@@ -1217,7 +1509,7 @@ describe('external-change detection', () => {
 
   it('should abort the owning lock when an external delete hits a mutation-blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('target.md'));
     expect(abortController.signal.aborted).toBe(true);
@@ -1225,7 +1517,7 @@ describe('external-change detection', () => {
 
   it('should abort on an external create landing on a blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     app.vault.trigger('create', fileAt('target.md'));
     expect(abortController.signal.aborted).toBe(true);
@@ -1233,7 +1525,7 @@ describe('external-change detection', () => {
 
   it('should abort when a rename touches a blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     // The file is now at target.md (a blocked path), renamed from an unblocked old path.
     app.vault.trigger('rename', fileAt('target.md'), 'was.md');
@@ -1242,7 +1534,7 @@ describe('external-change detection', () => {
 
   it('should abort on a metadataCache deleted event for a blocked path', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     app.metadataCache.trigger('deleted', fileAt('target.md'), null);
     expect(abortController.signal.aborted).toBe(true);
@@ -1250,7 +1542,7 @@ describe('external-change detection', () => {
 
   it('should abort the folder lock when a child under a blocking subtree lock changes externally', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('folder', { abortController, mode: 'subtree', shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder', shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('folder/child.md'));
     expect(abortController.signal.aborted).toBe(true);
@@ -1259,7 +1551,7 @@ describe('external-change detection', () => {
   it('should not abort for a change covered by an active bypass scope', () => {
     const abortController = new AbortController();
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lock = component.lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
     using _bypass = component.bypassBlockedMutations(['target.md']);
 
     app.vault.trigger('delete', fileAt('target.md'));
@@ -1268,7 +1560,7 @@ describe('external-change detection', () => {
 
   it('should ignore an external change on a path that is not mutation-blocked', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController, shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('other.md'));
     expect(abortController.signal.aborted).toBe(false);
@@ -1276,7 +1568,7 @@ describe('external-change detection', () => {
 
   it('should ignore an external change while only a read-only (non-blocking) lock covers the path', () => {
     const abortController = new AbortController();
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { abortController });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'target.md' });
 
     app.vault.trigger('delete', fileAt('target.md'));
     expect(abortController.signal.aborted).toBe(false);
@@ -1286,8 +1578,8 @@ describe('external-change detection', () => {
     const targetController = new AbortController();
     const sourceController = new AbortController();
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _lockTarget = component.lockForPath('target.md', { abortController: targetController, shouldBlockMutations: true });
-    using _lockSource = component.lockForPath('source.md', { abortController: sourceController, shouldBlockMutations: true });
+    using _lockTarget = component.lockForPath({ abortController: targetController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
+    using _lockSource = component.lockForPath({ abortController: sourceController, operationName: 'Test operation', pathOrFile: 'source.md', shouldBlockMutations: true });
 
     app.vault.trigger('delete', fileAt('target.md'));
     expect(targetController.signal.aborted).toBe(true);
@@ -1298,8 +1590,8 @@ describe('external-change detection', () => {
     const blockingController = new AbortController();
     const readOnlyController = new AbortController();
     const component = new ResourceLockComponent(app, 'test-plugin');
-    using _blocking = component.lockForPath('target.md', { abortController: blockingController, shouldBlockMutations: true });
-    using _readOnly = component.lockForPath('other.md', { abortController: readOnlyController });
+    using _blocking = component.lockForPath({ abortController: blockingController, operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
+    using _readOnly = component.lockForPath({ abortController: readOnlyController, operationName: 'Test operation', pathOrFile: 'other.md' });
 
     app.vault.trigger('delete', fileAt('target.md'));
     expect(blockingController.signal.aborted).toBe(true);
@@ -1307,7 +1599,7 @@ describe('external-change detection', () => {
   });
 
   it('should not throw when a covering blocking lock has no abort controller', () => {
-    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath('target.md', { shouldBlockMutations: true });
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ operationName: 'Test operation', pathOrFile: 'target.md', shouldBlockMutations: true });
 
     expect(() => {
       app.vault.trigger('delete', fileAt('target.md'));
