@@ -6,6 +6,11 @@
  */
 
 import type { Link } from 'mdast';
+import type {
+  Loc,
+  Reference,
+  ReferenceCache
+} from 'obsidian';
 import type { Node } from 'unist';
 
 import { remark } from 'remark';
@@ -33,6 +38,17 @@ const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 
 const WIKILINK_DIVIDER = '|';
+
+/**
+ * A {@link ReferenceCache} for a link parsed from content via {@link parseLinks}. It carries the full
+ * {@link ParseLinkResult} so consumers can inspect the parse details without re-parsing the link.
+ */
+export interface ParseLinkReference extends ReferenceCache {
+  /**
+   * The result of parsing the link.
+   */
+  readonly parseLinkResult: ParseLinkResult;
+}
 
 /**
  * A result of parsing a link.
@@ -165,6 +181,21 @@ export interface ParseLinkResult {
 }
 
 /**
+ * Params for {@link toParseLinkReference}.
+ */
+export interface ToParseLinkReferenceParams {
+  /**
+   * The content the parsed link's offsets index into. Used to compute the line and column.
+   */
+  readonly content: string;
+
+  /**
+   * The parsed link to wrap.
+   */
+  readonly parseLinkResult: ParseLinkResult;
+}
+
+/**
  * Params for {@link decodeUrlSafely}.
  */
 interface DecodeUrlSafelyParams {
@@ -287,6 +318,16 @@ export function escapeAlias(alias: string): string {
 }
 
 /**
+ * Determines whether a reference is a {@link ParseLinkReference}.
+ *
+ * @param reference - The reference to check.
+ * @returns `true` if the reference is a {@link ParseLinkReference}, otherwise `false`.
+ */
+export function isParseLinkReference(reference: Reference): reference is ParseLinkReference {
+  return 'parseLinkResult' in reference;
+}
+
+/**
  * Parses a link into its components.
  *
  * @param str - The link to parse.
@@ -387,6 +428,32 @@ export function parseLinks(str: string): ParseLinkResult[] {
 }
 
 /**
+ * Wraps a {@link ParseLinkResult} into a {@link ParseLinkReference} so it can flow through the
+ * reference-based file-change pipeline.
+ *
+ * @param params - The parameters for wrapping the parsed link.
+ * @returns The {@link ParseLinkReference}.
+ */
+export function toParseLinkReference(params: ToParseLinkReferenceParams): ParseLinkReference {
+  const { content, parseLinkResult } = params;
+  const reference: ParseLinkReference = {
+    link: parseLinkResult.url,
+    original: parseLinkResult.raw,
+    parseLinkResult,
+    position: {
+      end: offsetToLoc(content, parseLinkResult.endOffset),
+      start: offsetToLoc(content, parseLinkResult.startOffset)
+    }
+  };
+
+  if (parseLinkResult.alias !== undefined) {
+    reference.displayText = parseLinkResult.alias;
+  }
+
+  return reference;
+}
+
+/**
  * Unescapes the alias of a markdown link.
  *
  * @param escapedAlias - An escaped alias.
@@ -473,6 +540,17 @@ function hasAngleBracketsInLink(params: HasAngleBracketsInLinkParams): boolean {
   const { raw, rawUrl } = params;
   const OPEN_ANGLE_BRACKET = '<';
   return raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+}
+
+function offsetToLoc(content: string, offset: number): Loc {
+  const precedingContent = content.slice(0, offset);
+  const line = (precedingContent.match(/\n/g) ?? []).length;
+  const lastNewlineOffset = precedingContent.lastIndexOf('\n');
+  return {
+    col: offset - (lastNewlineOffset + 1),
+    line,
+    offset
+  };
 }
 
 function parseLinkNode(node: Link, str: string): ParseLinkResult {

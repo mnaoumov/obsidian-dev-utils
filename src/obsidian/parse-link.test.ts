@@ -9,8 +9,10 @@ import { assertNonNullable } from '../type-guards.ts';
 import {
   encodeUrl,
   escapeAlias,
+  isParseLinkReference,
   parseLink,
   parseLinks,
+  toParseLinkReference,
   unescapeAlias
 } from './parse-link.ts';
 
@@ -913,5 +915,46 @@ describe('parseLinks embed-inside-link', () => {
     const results = parseLinks('[![Alt](img.png)](note.md)');
     const mdLinks = results.filter((r) => !r.isExternal);
     expect(mdLinks.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('toParseLinkReference', () => {
+  it('should map a parsed link to a reference cache with the correct position', () => {
+    const content = 'line 0\nline 1 [doc](file:///F:/dir/x.txt) end';
+    const parseLinkResult = parseLinks(content).find((parsedLink) => parsedLink.isFileUrl);
+    assertNonNullable(parseLinkResult);
+    const reference = toParseLinkReference({ content, parseLinkResult });
+    expect(reference.link).toBe('file:///F:/dir/x.txt');
+    expect(reference.original).toBe('[doc](file:///F:/dir/x.txt)');
+    expect(reference.displayText).toBe('doc');
+    expect(reference.parseLinkResult).toBe(parseLinkResult);
+    expect(reference.position.start.offset).toBe(parseLinkResult.startOffset);
+    expect(reference.position.start.line).toBe(1);
+    expect(reference.position.start.col).toBe(7);
+    expect(reference.position.end.offset).toBe(parseLinkResult.endOffset);
+    expect(reference.position.end.line).toBe(1);
+  });
+
+  it('should compute a line and column on the first line', () => {
+    const content = 'https://example.com';
+    const parseLinkResult = parseLink(content);
+    assertNonNullable(parseLinkResult);
+    const reference = toParseLinkReference({ content, parseLinkResult });
+    expect(reference.position.start.line).toBe(0);
+    expect(reference.position.start.col).toBe(0);
+    expect(reference.displayText).toBeUndefined();
+  });
+});
+
+describe('isParseLinkReference', () => {
+  it('should return true for a parse link reference', () => {
+    const content = '[doc](file:///F:/dir/x.txt)';
+    const parseLinkResult = parseLink(content);
+    assertNonNullable(parseLinkResult);
+    expect(isParseLinkReference(toParseLinkReference({ content, parseLinkResult }))).toBe(true);
+  });
+
+  it('should return false for a plain reference', () => {
+    expect(isParseLinkReference({ link: 'note', original: '[[note]]' })).toBe(false);
   });
 });
