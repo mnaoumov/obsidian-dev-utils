@@ -10,6 +10,7 @@
 from advanced-note-composer #129) PLUS user refinements (2026-07-10). All refs are to `src/obsidian/resource-lock.ts`.
 
 **Implemented (increments a–d + API-shape refinements):**
+
 - (a) **Ancestor-aware force-unlock** — `ResourceLockManager.forceUnlock(app, pathOrFile)` resolves the covering
   owner via `resolveLockOwnerPath`, aborts every entry's controller (cancel the op) AND removes the entries
   (release), via the private `abortAndReleaseEntries(app, ownerPath)`. Exposed as
@@ -29,6 +30,7 @@ from advanced-note-composer #129) PLUS user refinements (2026-07-10). All refs a
   the same unlock context menu.
 
 **API-shape refinements (user, 2026-07-10):**
+
 - **`operationName` is REQUIRED on every lock** — carried on `ResourceLockComponentLockForPathParams`,
   `LockResourceForPathParams`, `ManagerLockParams`, and `LockEntry` (all non-null `string`). Shown next to the
   plugin name in the unlock confirmation via the new `lockDescriptors()` (one entry per distinct plugin+operation) →
@@ -67,7 +69,7 @@ frontmatter-value-aware converter (emit a bare/normalized url, not a regenerated
 
 The detailed design record below is kept as history.
 
-**Origin:** `obsidian-better-markdown-links` FR https://github.com/mnaoumov/obsidian-better-markdown-links/issues/35 — "Support `file:///` links". The plugin should be able to normalize external `file://` links into a pretty, angle-bracketed form. The plugin delegates ALL link parsing/conversion to this library, so the core work lives here; the plugin will only add a setting + wire the new converter once this lands. This section is the resumable plan — drive it from a session started in THIS repo.
+**Origin:** `obsidian-better-markdown-links` FR <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/35> — "Support `file:///` links". The plugin should be able to normalize external `file://` links into a pretty, angle-bracketed form. The plugin delegates ALL link parsing/conversion to this library, so the core work lives here; the plugin will only add a setting + wire the new converter once this lands. This section is the resumable plan — drive it from a session started in THIS repo.
 
 **Scope (decided with the user):** `file://` scheme ONLY (leave `http(s)://` and other externals untouched).
 
@@ -83,8 +85,10 @@ The detailed design record below is kept as history.
 ### Target normalized output (respect the existing angle-bracket / leading-slash options)
 
 Always keep the `file://` scheme; convert backslashes → forward slashes; decode `%5C`.
+
 - Angle brackets ON: `[x](<file:///F:/dir/My Notes/x.txt>)` — raw spaces, readable.
 - Angle brackets OFF: `[x](file:///F:/dir/My%20Notes/x.txt)` — `%20`-encoded.
+
 Both are confirmed to open correctly.
 
 ### Settled design (decided with the user 2026-07-09)
@@ -110,7 +114,7 @@ with no new apply logic:
   object; `parseMetadata`'s `computeMetadataAsync` result is fresh and safe to attach to). `getCacheSafe`
   reads content via `cachedRead` only when the flag is on.
 - **REVISED — features-enum model + `getLinks` (current, supersedes `getAllLinksEx`/required-arrays notes below):**
-  - `getAllLinks(cache)` is RENAMED to `getLinks(params)` (["all" is misleading once toggles select subsets]) —
+  - `getAllLinks(cache)` is RENAMED to `getLinks(params)` ("all" is misleading once toggles select subsets) —
     cache-driven ONLY (NO path/content: the `Ex` cache already carries externals). Params:
     `{ cache, shouldIncludeReferences?=true, shouldIncludeEmbeds?=true, shouldIncludeFrontmatterLinks?=true,
     shouldIncludeExternalLinks?=false, shouldIncludeFrontmatterExternalLinks?=false,
@@ -131,10 +135,10 @@ with no new apply logic:
   - **ALL functions that returned `CachedMetadata` now return `CachedMetadataEx`** (`getCacheSafe`, `parseMetadata`)
     with at least `features: [Native]` (`CachedMetadata` ↔ `CachedMetadataEx { features: [Native] }`). SCOPE of
     this sweep + its callers — confirm before implementing.
-  - STATUS: DONE — `getLinks` (91a132d4); `Ex` sweep `getCacheSafe`/`parseMetadata` → `CachedMetadataEx` [Native]
+  - STATUS: DONE — `getLinks` (91a132d4); `Ex` sweep `getCacheSafe`/`parseMetadata` → `CachedMetadataEx` `[Native]`
     (71fb2517); `parseFrontmatterLinks` reusable frontmatter parser (e9788565); PARSING engine — `ParseCacheOptions`
     (`shouldParse{ExternalLinks,FrontmatterExternalLinks,MultiValueFrontmatterExternalLinks,MultiValueFrontmatterLinks}`)
-    + `toParsedCachedMetadataEx` + `parseExternalBodyLinks` (skips frontmatter region + internal) wired into
+    plus `toParsedCachedMetadataEx` + `parseExternalBodyLinks` (skips frontmatter region + internal) wired into
     `parseMetadata` (7544d1da). REMAINING: (a) wire the SAME options into `getCacheSafe` (needs a `cachedRead` for
     body content; restructure its two returns to a single parse tail); (b) thread parse + selection flags through
     `editLinks`/`editLinksInContent`/`getFileChanges`; (c) the `file://` normalizer + wiring.
@@ -186,7 +190,7 @@ with no new apply logic:
 ### Testing
 
 - Unit tests (100% coverage) per increment. Real `file://` open behavior is ALREADY CDP-confirmed (routing
-  + `L()` resolution; notes in the plugin's memory `obsidian-file-link-resolution`) — no runtime re-check
+  plus `L()` resolution; notes in the plugin's memory `obsidian-file-link-resolution`) — no runtime re-check
   needed for the string transforms. Add an `*.obsidian.integration.test.ts` only if a round-trip is wanted.
 
 ### After this lands
