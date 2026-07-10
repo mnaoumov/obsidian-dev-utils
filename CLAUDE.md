@@ -41,9 +41,11 @@ from advanced-note-composer #129) PLUS user refinements (2026-07-10). All refs a
   controller (it removes the entry); it just cannot CANCEL an operation that has no controller.
 
 **Status:** code + unit tests complete (`resource-lock.test.ts` 100%; new `unlock-active-note-command-handler.test.ts`
-100%). Full gate green (compile + lint + format + spellcheck). REMAINING: confirm real behavior in Obsidian
-(G10r — force-unlock releasing a real editor lock; click-to-unlock menu) via `resource-lock.obsidian.integration.test.ts`
-(needs `npm run build` first), then commit atomically.
+100%). Full gate green (compile + full `test:coverage` 3778 passing + lint + format + spellcheck). Real behavior
+confirmed in live Obsidian via `resource-lock.obsidian.integration.test.ts` (force-unlock releases a real editor
+lock + aborts the operation). Landed in commit `feat(resource-lock)!: click/command unlock that always releases and
+cancels`. A follow-up commit dropped the now-redundant per-test `vaultPath: inject('tempVaultPath')` across all
+obsidian integration suites (the harness worker setup already wires `setVaultPathResolver(() => inject('tempVaultPath'))`).
 
 **After this lands (consumer, separate session):** advanced-note-composer drops its local
 `UnlockActiveNoteCommandHandler` + hand-wired `abortController.signal → moveSelectionBuffer.clear()`, consuming the
