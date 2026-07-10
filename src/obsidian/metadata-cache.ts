@@ -48,6 +48,11 @@ import {
 } from './frontmatter-link-cache-with-offsets.ts';
 import { parseFrontmatter } from './frontmatter.ts';
 import { t } from './i18n/i18n.ts';
+import {
+  parseFrontmatterLinks,
+  parseLinks,
+  toParseLinkReference
+} from './parse-link.ts';
 import { sortReferences } from './reference.ts';
 import {
   readSafe,
@@ -225,6 +230,46 @@ export interface GetLinksParams {
 }
 
 /**
+ * Options for the parsing performed by {@link getCacheSafe} and {@link parseMetadata} beyond Obsidian's
+ * native metadata parsing. Each option is opt-in; enabling it adds the corresponding
+ * {@link CachedMetadataExFeature} and populates the matching links array.
+ */
+export interface ParseCacheOptions {
+  /**
+   * Whether to parse the external links from the note content body.
+   *
+   * @default `false`
+   */
+  readonly shouldParseExternalLinks?: boolean;
+
+  /**
+   * Whether to parse the external links from single-link (single-value) note frontmatter values.
+   *
+   * @default `false`
+   */
+  readonly shouldParseFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to parse the external links from multi-link (multi-value) note frontmatter values.
+   *
+   * @default `false`
+   */
+  readonly shouldParseMultiValueFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to parse the internal links from multi-link (multi-value) note frontmatter values.
+   *
+   * @default `false`
+   */
+  readonly shouldParseMultiValueFrontmatterLinks?: boolean;
+}
+
+/**
+ * Options for {@link parseMetadata}.
+ */
+export type ParseMetadataOptions = ParseCacheOptions;
+
+/**
  * Parameters for {@link registerFileCacheForNonExistingFile}.
  */
 export interface RegisterFileCacheForNonExistingFileParams {
@@ -267,6 +312,26 @@ interface FeatureLinkSelector {
    * Whether to include this category.
    */
   readonly shouldInclude: boolean;
+}
+
+/**
+ * Params for {@link toParsedCachedMetadataEx}.
+ */
+interface ToParsedCachedMetadataExParams {
+  /**
+   * The plain cached metadata to wrap.
+   */
+  readonly cache: CachedMetadata;
+
+  /**
+   * The note content the offsets index into, used for body external-link parsing.
+   */
+  readonly content: string;
+
+  /**
+   * The parse options controlling which links to parse.
+   */
+  readonly options: ParseCacheOptions;
 }
 
 /**
@@ -534,13 +599,14 @@ export function isCachedMetadataEx(cache: CachedMetadata): cache is CachedMetada
  *
  * @param app - The Obsidian app instance.
  * @param str - The string to parse the metadata for.
+ * @param options - The parse options controlling which additional links to parse.
  * @returns The parsed metadata.
  */
-export async function parseMetadata(app: App, str: string): Promise<CachedMetadataEx> {
+export async function parseMetadata(app: App, str: string, options: ParseMetadataOptions = {}): Promise<CachedMetadataEx> {
   const encoder = new TextEncoder();
   const buffer = encoder.encode(str).buffer;
   const cache = await app.metadataCache.computeMetadataAsync(buffer) ?? {};
-  return ensureNonNullable(toNativeCachedMetadataEx(cache));
+  return toParsedCachedMetadataEx({ cache, content: str, options });
 }
 
 /**
@@ -662,14 +728,13 @@ function getRegisteredFilesCounts(): Map<string, number> {
   return getObsidianDevUtilsState('registeredFilesCounts', new Map<string, number>()).value;
 }
 
-/**
- * Wraps a plain {@link CachedMetadata} into a {@link CachedMetadataEx} that records only the native
- * Obsidian parsing feature. A plain {@link CachedMetadata} is equivalent to a {@link CachedMetadataEx}
- * with `features: [CachedMetadataExFeature.Native]`.
- *
- * @param cache - The cache to wrap, or `null`.
- * @returns The wrapped cache, or `null` if the input was `null`.
- */
+function parseExternalBodyLinks(content: string, cache: CachedMetadata): ParseLinkReference[] {
+  const frontmatterEndOffset = cache.frontmatterPosition?.end.offset ?? 0;
+  return parseLinks(content)
+    .filter((parseLinkResult) => parseLinkResult.isExternal && parseLinkResult.startOffset >= frontmatterEndOffset)
+    .map((parseLinkResult) => toParseLinkReference({ content, parseLinkResult }));
+}
+
 function toNativeCachedMetadataEx(cache: CachedMetadata | null): CachedMetadataEx | null {
   if (cache === null) {
     return null;
@@ -679,4 +744,40 @@ function toNativeCachedMetadataEx(cache: CachedMetadata | null): CachedMetadataE
     ...cache,
     features: [CachedMetadataExFeature.Native]
   };
+}
+
+function toParsedCachedMetadataEx(params: ToParsedCachedMetadataExParams): CachedMetadataEx {
+  const { cache, content, options } = params;
+  const features: CachedMetadataExFeature[] = [CachedMetadataExFeature.Native];
+  const result: CachedMetadataEx = { ...cache, features };
+
+  if (options.shouldParseExternalLinks) {
+    result.externalLinks = parseExternalBodyLinks(content, cache);
+    features.push(CachedMetadataExFeature.ExternalLinks);
+  }
+
+  if (
+    options.shouldParseFrontmatterExternalLinks
+    || options.shouldParseMultiValueFrontmatterExternalLinks
+    || options.shouldParseMultiValueFrontmatterLinks
+  ) {
+    const frontmatterLinks = parseFrontmatterLinks(cache.frontmatter);
+
+    if (options.shouldParseFrontmatterExternalLinks) {
+      result.frontmatterExternalLinks = frontmatterLinks.frontmatterExternalLinks;
+      features.push(CachedMetadataExFeature.FrontmatterExternalLinks);
+    }
+
+    if (options.shouldParseMultiValueFrontmatterExternalLinks) {
+      result.multiValueFrontmatterExternalLinks = frontmatterLinks.multiValueFrontmatterExternalLinks;
+      features.push(CachedMetadataExFeature.MultiValueFrontmatterExternalLinks);
+    }
+
+    if (options.shouldParseMultiValueFrontmatterLinks) {
+      result.multiValueFrontmatterLinks = frontmatterLinks.multiValueFrontmatterLinks;
+      features.push(CachedMetadataExFeature.MultiValueFrontmatterLinks);
+    }
+  }
+
+  return result;
 }

@@ -536,6 +536,56 @@ describe('parseMetadata', () => {
     const result = await parseMetadata(app, 'test');
     expect(result).toEqual({ features: [CachedMetadataExFeature.Native] });
   });
+
+  it('should parse body external links when enabled, skipping frontmatter and internal links', async () => {
+    const content = '---\nfile:///fm.txt\n---\n[x](file:///body.txt) [[note]]';
+    vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(castTo<CachedMetadata>({
+      frontmatterPosition: { end: { col: 0, line: 2, offset: 23 }, start: { col: 0, line: 0, offset: 0 } }
+    }));
+
+    const result = await parseMetadata(app, content, { shouldParseExternalLinks: true });
+    expect(result.features).toContain(CachedMetadataExFeature.ExternalLinks);
+    expect(result.externalLinks).toHaveLength(1);
+    expect(result.externalLinks?.[0]?.link).toBe('file:///body.txt');
+  });
+
+  it('should parse body external links when the note has no frontmatter', async () => {
+    vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(castTo<CachedMetadata>({}));
+
+    const result = await parseMetadata(app, '[x](file:///a.txt)', { shouldParseExternalLinks: true });
+    expect(result.externalLinks).toHaveLength(1);
+    expect(result.externalLinks?.[0]?.link).toBe('file:///a.txt');
+  });
+
+  it('should parse single-value frontmatter external links when enabled', async () => {
+    vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(castTo<CachedMetadata>({
+      frontmatter: { url: 'file:///a.txt' }
+    }));
+
+    const result = await parseMetadata(app, '', { shouldParseFrontmatterExternalLinks: true });
+    expect(result.features).toContain(CachedMetadataExFeature.FrontmatterExternalLinks);
+    expect(result.frontmatterExternalLinks).toHaveLength(1);
+  });
+
+  it('should parse multi-value frontmatter external links when enabled', async () => {
+    vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(castTo<CachedMetadata>({
+      frontmatter: { urls: 'file:///a.txt file:///b.txt' }
+    }));
+
+    const result = await parseMetadata(app, '', { shouldParseMultiValueFrontmatterExternalLinks: true });
+    expect(result.features).toContain(CachedMetadataExFeature.MultiValueFrontmatterExternalLinks);
+    expect(result.multiValueFrontmatterExternalLinks).toHaveLength(2);
+  });
+
+  it('should parse multi-value frontmatter internal links when enabled', async () => {
+    vi.mocked(app.metadataCache.computeMetadataAsync).mockResolvedValue(castTo<CachedMetadata>({
+      frontmatter: { notes: '[[a]] [[b]]' }
+    }));
+
+    const result = await parseMetadata(app, '', { shouldParseMultiValueFrontmatterLinks: true });
+    expect(result.features).toContain(CachedMetadataExFeature.MultiValueFrontmatterLinks);
+    expect(result.multiValueFrontmatterLinks).toHaveLength(2);
+  });
 });
 
 describe('registerFileCacheForNonExistingFile', () => {
