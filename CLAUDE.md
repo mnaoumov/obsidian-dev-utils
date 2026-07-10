@@ -17,10 +17,8 @@ body); and the high-level `updateFileUrlLinksInFile`/`updateFileUrlLinksInConten
 
 **Origin:** FR <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/35> ("Support `file:///` links").
 Scope: `file://` scheme ONLY (leave other externals untouched). Runtime routing/resolution is CDP-confirmed
-(notes in the plugin's memory `obsidian-file-link-resolution`).
-
-Optional follow-up: an `*.obsidian.integration.test.ts` round-trip (real Obsidian frontmatter write-back). The
-transform + apply paths are unit-covered; a full round-trip is not yet exercised in real Obsidian.
+(notes in the plugin's memory `obsidian-file-link-resolution`); the full round-trip (real Obsidian frontmatter +
+body write-back) is confirmed by `link.obsidian.integration.test.ts`.
 
 ### Remaining follow-up (separate repo, hand-off) — plugin wiring
 
