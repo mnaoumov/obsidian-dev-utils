@@ -4,6 +4,52 @@
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
 
+## Current Task — resource-lock: click-to-unlock + always release + cancel (branch `lock`)
+
+**Origin:** the parked plan in the global CLAUDE.md ("resource-lock: reusable unlock active note + release-on-abort",
+from advanced-note-composer #129) PLUS two user refinements (2026-07-10). All refs are to
+`src/obsidian/resource-lock.ts`.
+
+**User refinements:**
+1. **Clicking a lock icon (3 are rendered) must act like a context menu showing an `Unlock` option.** Today the
+   lock indicator opens its unlock menu on RIGHT-click (`registerUnlockMenu` ~L814) / file-menu (`handleFileMenu`
+   ~L596); make a LEFT-click also open the same context menu with `Unlock`.
+2. **`Unlock` must ALWAYS release the lock from the file OR its covering subtree AND cancel the operation that
+   caused the lock** — i.e. resolve the covering owner (direct or ancestor) via `resolveLockOwnerPath`, abort its
+   controllers (cancel the op), AND remove the lock entry (release), for both direct and subtree/ancestor locks.
+
+**Gaps (from parked plan):**
+- (1) Public unlock is direct-path only: `ResourceLockManager.requestUnlock` (~L433) + free
+  `requestResourceUnlockForPath` (~L1005) look up `lockEntriesByPath.get(exactPath)`; they do NOT resolve
+  subtree/ancestor owners (the indicator right-click/file-menu DO, via `resolveLockOwnerPath` ~L747).
+- (2) Abort does NOT release: `requestUnlock` only `entry.abortController?.abort()`s; `lock()` (~L396) registers no
+  release-on-abort. CAVEAT: do NOT blanket auto-release — transactional ops hold the lock through abort-driven
+  rollback (`handleExternalMutation` ~L576 also aborts for intruder detection). Release-on-abort must be OPT-IN.
+
+**Plan (increments; each red-first, atomic, full gate: compile + test:coverage 100% + lint + format + spellcheck):**
+- (a) **Ancestor-aware unlock** — manager method resolving the covering owner via `resolveLockOwnerPath`, aborting
+  its controllers AND removing the entry (release), exposed as `ResourceLockComponent.requestUnlockForPath(pathOrFile)`
+  (+ free variant). NEW method (don't change `requestUnlock` exact-path semantics unless a deliberate bugfix; if so,
+  update its + the free-function docstring ~L992). This satisfies user #2 (release file/subtree + cancel).
+- (b) **Opt-in release-on-abort + notify** — extend `ResourceLockComponentLockForPathOptions` (~L82) with
+  `shouldReleaseOnAbort?: boolean` (`@default false`) + `onUnlockRequested?: () => void`. When set, `lock()` wires
+  `options.abortController?.signal.addEventListener('abort', …, { once: true })` → `removeEntry` (release) + callback.
+  Double-dispose safe (`MultipleDisposeBehavior.Ignore` ~L420).
+- (c) **`UnlockActiveNoteCommandHandler`** — `src/obsidian/command-handlers/unlock-active-note-command-handler.ts`
+  mirroring `open-settings-command-handler.ts`; `GlobalCommandHandler` taking `{ app, resourceLockComponent }`;
+  `canExecute` = active file exists AND (`isResourceLockedForPath` OR `isLockedByAncestorForPath`); `execute` = (a)
+  on the active note. Export from `command-handlers/index.ts`.
+- (d) **Click-to-unlock (user #1)** — the lock indicator's click handler opens the same context menu that
+  `registerUnlockMenu` builds (with the ancestor-aware `Unlock` from (a)). Find where the 3 lock icons render.
+- **Tests:** extend `resource-lock.test.ts` (ancestor-aware unlock; opt-in release-on-abort + callback; click menu);
+  add `unlock-active-note-command-handler.test.ts` (mirror `open-settings-command-handler.test.ts` +
+  `global-command-handler.test.ts`); cover in `resource-lock.obsidian.integration.test.ts`. `@default`-tag + test-backing.
+
+**After this lands (consumer, separate session):** advanced-note-composer drops its local
+`UnlockActiveNoteCommandHandler` + hand-wired `abortController.signal → moveSelectionBuffer.clear()`, consuming the
+library command + `lockForPath(…, { shouldReleaseOnAbort: true, onUnlockRequested: () => moveSelectionBuffer.clear() })`.
+Then remove the parked entry from the global CLAUDE.md.
+
 ## Commands
 
 All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
