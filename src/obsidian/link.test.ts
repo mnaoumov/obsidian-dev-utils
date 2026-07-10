@@ -594,6 +594,11 @@ describe('parseLink', () => {
         expect(result.isExternal).toBe(true);
       });
 
+      it('should not be a file url', () => {
+        assertNonNullable(result);
+        expect(result.isFileUrl).toBe(false);
+      });
+
       it('should have the correct url', () => {
         assertNonNullable(result);
         expect(result.url).toBe('https://example.com');
@@ -606,6 +611,18 @@ describe('parseLink', () => {
       expect(result.isExternal).toBe(false);
     });
 
+    it('should mark an internal link as not a file url', () => {
+      const result = parseLink('[link](note.md)');
+      assertNonNullable(result);
+      expect(result.isFileUrl).toBe(false);
+    });
+
+    it('should mark a wikilink as not a file url', () => {
+      const result = parseLink('[[note]]');
+      assertNonNullable(result);
+      expect(result.isFileUrl).toBe(false);
+    });
+
     describe('should parse a file:// URL as a decoded external link', () => {
       const result = parseLink('[doc](file:///F:/dir/My%20Notes/x.txt)');
 
@@ -616,6 +633,11 @@ describe('parseLink', () => {
       it('should be external', () => {
         assertNonNullable(result);
         expect(result.isExternal).toBe(true);
+      });
+
+      it('should be a file url', () => {
+        assertNonNullable(result);
+        expect(result.isFileUrl).toBe(true);
       });
 
       it('should have the decoded url', () => {

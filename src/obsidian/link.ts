@@ -596,6 +596,17 @@ export interface ParseLinkResult {
   readonly isExternal: boolean;
 
   /**
+   * Indicates if the link is a `file://` URL.
+   *
+   * @example
+   * ```
+   * [alias](file:///C:/x.txt) -> true
+   * [alias](https://example.com) -> false
+   * ```
+   */
+  readonly isFileUrl: boolean;
+
+  /**
    * Indicates if the link is a wikilink.
    *
    * @example
@@ -1821,6 +1832,7 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
         hasAngleBrackets: false,
         isEmbed: false,
         isExternal: true,
+        isFileUrl: isFileUrl(url),
         isWikilink: false,
         raw: url,
         startOffset: startOffset + offset,
@@ -2121,6 +2133,7 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
     hasAngleBrackets,
     isEmbed: false,
     isExternal,
+    isFileUrl: isFileUrl(url),
     isWikilink: false,
     raw,
     startOffset: nodeStartOffset,
@@ -2137,6 +2150,7 @@ function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
     endOffset: ensureNonNullable(position.end.offset),
     isEmbed: false,
     isExternal: false,
+    isFileUrl: false,
     isWikilink: true,
     raw: getRawLink(node, str),
     startOffset: ensureNonNullable(position.start.offset),
