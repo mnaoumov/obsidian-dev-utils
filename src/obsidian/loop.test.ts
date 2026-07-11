@@ -11,6 +11,7 @@ import {
 
 import type { CustomStackTraceErrorConstructorParams } from '../error.ts';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+import type { LoopBuildNoticeMessageParams } from './loop.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
 import {
@@ -148,8 +149,8 @@ describe('loop', () => {
     });
 
     expect(buildNoticeMessage).toHaveBeenCalledTimes(2);
-    expect(buildNoticeMessage).toHaveBeenCalledWith('x', '# 1 / 2');
-    expect(buildNoticeMessage).toHaveBeenCalledWith('y', '# 2 / 2');
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'x', iterationStr: '# 1 / 2' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'y', iterationStr: '# 2 / 2' });
   });
 
   it('should stop processing when abortSignal is already aborted', async () => {
@@ -343,7 +344,7 @@ describe('loop', () => {
     const items = [1, 2, 3];
 
     await loop({
-      buildNoticeMessage: vi.fn((_item: number, iterationStr: string) => `Processing ${iterationStr}`),
+      buildNoticeMessage: vi.fn((params: LoopBuildNoticeMessageParams<number>) => `Processing ${params.iterationStr}`),
       items,
       pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
@@ -534,7 +535,7 @@ describe('loop', () => {
 
     expect(processItem).toHaveBeenCalledTimes(1);
     expect(processItem).toHaveBeenCalledWith('only');
-    expect(buildNoticeMessage).toHaveBeenCalledWith('only', '# 1 / 1');
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'only', iterationStr: '# 1 / 1' });
   });
 
   it('should call requestAnimationFrameAsync when UI update threshold is exceeded', async () => {

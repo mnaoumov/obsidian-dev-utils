@@ -26,6 +26,23 @@ import { noop } from '../function.ts';
 import { addPluginCssClasses } from './plugin/plugin-context.ts';
 
 /**
+ * Parameters for the {@link LoopParams.buildNoticeMessage} callback.
+ *
+ * @typeParam T - The type of the items to loop over.
+ */
+export interface LoopBuildNoticeMessageParams<T> {
+  /**
+   * The current item.
+   */
+  readonly item: T;
+
+  /**
+   * A string representing the current iteration.
+   */
+  readonly iterationStr: string;
+}
+
+/**
  * Options for {@link loop}.
  *
  * @typeParam T - The type of the items to loop over.
@@ -39,11 +56,10 @@ export interface LoopParams<T> {
   /**
    * Build a notice message for each item.
    *
-   * @param item - The current item.
-   * @param iterationStr - A string representing the current iteration.
+   * @param params - The parameters for building the notice message.
    * @returns A string to display in the notice.
    */
-  buildNoticeMessage(item: T, iterationStr: string): string;
+  buildNoticeMessage(params: LoopBuildNoticeMessageParams<T>): string;
 
   /**
    * Items to loop over.
@@ -167,7 +183,7 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
     }
     iterationCount++;
     const iterationStr = `# ${String(iterationCount)} / ${String(items.length)}`;
-    const message = fullOptions.buildNoticeMessage(item, iterationStr);
+    const message = fullOptions.buildNoticeMessage({ item, iterationStr });
     if (!fullOptions.shouldShowProgressBar) {
       notice?.setMessage(message);
     }
