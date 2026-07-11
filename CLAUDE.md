@@ -27,6 +27,20 @@ Back in `obsidian-better-markdown-links`: add a `shouldNormalizeFileLinks` setti
 modify/save/navigation triggers and the convert-in-file/folder/vault commands. Default-on means the plugin
 rewrites existing `file://` links automatically on those triggers — intended.
 
+## Current Task — Reusable "Unlock active note" + release-on-abort in `resource-lock` (from advanced-note-composer #129) — DONE in dev-utils, pending consumer follow-up
+
+**Landed** (`src/obsidian/resource-lock.ts`, commit `408f9fe0 feat(resource-lock)!: click/command unlock that always releases and cancels`): (a) ancestor-aware unlock — `ResourceLockManager.forceUnlock` resolves the covering owner via `resolveLockOwnerPath`, aborts its controllers AND removes its entries, exposed as `ResourceLockComponent.requestUnlockForPath(pathOrFile)`; (b) opt-in `shouldReleaseOnAbort` + `onUnlockRequested` on `ResourceLockComponentLockForPathParams`, wired by `wireReleaseOnAbort` (both `@default false`, test-backed); (c) `UnlockActiveNoteCommandHandler` (`src/obsidian/command-handlers/unlock-active-note-command-handler.ts`) + barrel export + `unlock-active-note-command-handler.test.ts`. Tests extended (`resource-lock.test.ts`, `resource-lock.obsidian.integration.test.ts`).
+
+**Consumer follow-up (advanced-note-composer, after release):** replace the plugin-local `UnlockActiveNoteCommandHandler` with the library one; replace the `markSelectionToMove()` helper's hand-wired `abortController.signal → moveSelectionBuffer.clear()` with `lockForPath(…, { shouldReleaseOnAbort: true, onUnlockRequested: () => moveSelectionBuffer.clear() })`. Keep the plugin-specific buffer/notice/highlight cleanup + the identity guard (`get() === markedSelection`, stale-controller safety). The plugin's all-notes lock (a `subtree` lock on the vault root) is covered by the library `canExecute` via `isLockedByAncestorForPath`.
+
+## Current Task — `loop()`: `buildNoticeMessage` callback takes a params object — DONE in dev-utils, pending release + consumer follow-up
+
+**Landed** (`src/obsidian/loop.ts`, commit `refactor(loop)!: pass buildNoticeMessage a params object`): `buildNoticeMessage(item, iterationStr)` → `buildNoticeMessage(params)` where `params: LoopBuildNoticeMessageParams<T> = { item; iterationStr }`, on `LoopParams<T>` (the actual type is `LoopParams`, not `LoopOptions`). Call site + `loop.test.ts` updated; full gate green (100% coverage). (`loop.d.ts` is a gitignored build artifact — regenerated, not hand-edited.)
+
+**Remaining:** cut the **major** release (breaking API change), then the consumer follow-up. The user approved this breaking change (2026-07-10, over leaving the callbacks as thin adapters).
+
+**Consumer follow-up (after release):** update the 15 `buildNoticeMessage: (item, iterationStr) => …` arrows to `buildNoticeMessage: ({ item, iterationStr }) => …` across: `backlink-cache` (2), `better-markdown-links` (1), `consistent-attachments-and-links` (7), `custom-attachment-location` (2), `external-rename-handler` (2), `frontmatter-markdown-links` (1). Bump dev-utils in each and adjust. Full checklist: `F:/tmp/g10d-refactor-todo.md` (§3).
+
 ## Commands
 
 All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
