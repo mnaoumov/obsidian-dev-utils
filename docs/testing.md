@@ -67,3 +67,45 @@ it('drains fire-and-forget work before asserting', async () => {
 ```
 
 Operations scheduled while awaiting are also awaited, so cascading fire-and-forget chains are fully drained. Calling `waitForAllAsyncOperations()` without tracking enabled throws, rather than silently resolving and masking a missing setup.
+
+## Silenced console output
+
+The same per-test setup replaces every `console` method with a no-op before each test and restores the originals afterward, so incidental `console.log` / `warn` / `error` output does not pollute the test report. A test that needs to assert on console output re-instruments the method it cares about — the spy transparently overrides the no-op:
+
+```typescript
+import { vi } from 'vitest';
+
+it('logs an error', () => {
+  const errorSpy = vi.spyOn(console, 'error');
+  doSomethingThatLogs();
+  expect(errorSpy).toHaveBeenCalledWith('boom');
+});
+```
+
+## `localStorage` in tests
+
+Node 22+ exposes an experimental Web Storage `localStorage`, but it is unavailable (and emits an `ExperimentalWarning`) unless node is started with `--localstorage-file`. Real Obsidian (Electron) always has `localStorage`, so when you run tests through the `Obsidian Dev Utils` runner (the `test` script backed by `exec`), it automatically appends `--localstorage-file=:memory:` to `NODE_OPTIONS` for every spawned process — but only when the running node actually supports the flag. This gives each worker a working, non-persistent `localStorage` (no file on disk, no state shared between processes), and the per-test setup clears it before each test. If you launch `vitest` directly, bypassing the runner, pass the flag yourself:
+
+```shell
+NODE_OPTIONS=--localstorage-file=:memory: vitest
+```
+
+## Warnings as errors
+
+`obsidian-dev-utils/warnings-as-errors-setup` turns any Node process warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`, …) into a test failure, so warnings get fixed at the source instead of scrolling past unread. It is a separate, opt-in setup file — adopting the standard per-test setup does not silently make every warning a hard failure — so add it to `setupFiles` alongside the standard setup:
+
+```typescript
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    setupFiles: [
+      'obsidian-dev-utils/vitest-setup',
+      'obsidian-dev-utils/warnings-as-errors-setup'
+    ]
+  }
+});
+```
+
+Or call `installWarningsAsErrors()` from `obsidian-dev-utils/script-utils/warnings-as-errors` directly. Because a run that does not provide `localStorage` emits an `ExperimentalWarning`, pair this with the `--localstorage-file` setup above (which the runner already applies).
