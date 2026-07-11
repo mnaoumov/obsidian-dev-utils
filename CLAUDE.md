@@ -233,12 +233,46 @@ export function myFunction(param: Type): ReturnType {
   `setup({ beforeEach, afterEach })`), `obsidian-dev-utils/vitest-setup`, and
   `obsidian-dev-utils/jest-setup`.
   Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
-  accumulated state does not leak between tests) and enables async-operation tracking; after each test
-  it disables tracking, so tests can `await waitForAllAsyncOperations()` against isolated state. The
-  Vitest/Jest files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The
-  top-level `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see
+  accumulated state does not leak between tests), enables async-operation tracking, silences every
+  `console` method (replacing each with a no-op via `silenceConsole()`, so incidental log/warn/error
+  output does not pollute the test report), and clears `localStorage` (so per-worker Web Storage does
+  not leak between tests); after each test it disables tracking and restores the original `console`
+  methods (`restoreConsole()`), so tests can `await waitForAllAsyncOperations()` against isolated
+  state. A test that needs to assert on console output re-instruments the method it cares about (e.g.
+  `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test. The Vitest/Jest
+  files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The top-level
+  `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see
   `scripts/build-generate-index.ts`) so a production `import 'obsidian-dev-utils'` never pulls in
   `vitest`/`@jest/globals`.
+
+### `localStorage` in tests (`--localstorage-file`)
+
+- Node 22+ exposes an experimental Web Storage `localStorage`, but touching it without the
+  `--localstorage-file` CLI flag emits an `ExperimentalWarning` and leaves `localStorage` unavailable
+  (`undefined`). In real Obsidian (Electron) `localStorage` exists, so the root-cause fix is to provide
+  it in tests — not to suppress the warning.
+- `exec()` (`src/script-utils/exec.ts`) therefore appends `--localstorage-file=:memory:` to every spawned
+  child process's `NODE_OPTIONS` (via `CHILD_ENV`, the same env-injection point already used for
+  `DEBUG_COLORS`; existing `NODE_OPTIONS` are preserved by `appendNodeOption()`). `:memory:` gives each
+  process a working, non-persistent `localStorage` — no file on disk, no state shared between processes.
+  Because the flag rides on `NODE_OPTIONS`, it reaches Vitest's forked workers (Vitest ignores
+  `poolOptions.*.execArgv` for this) whenever tests are launched through the runner (`npm test` →
+  `test()` → `exec`). Running `vitest` **directly** (bare `npx vitest`) bypasses `exec`, so `localStorage`
+  is absent there — run tests via the npm scripts.
+
+### Warnings as errors
+
+- `installWarningsAsErrors()` (`src/script-utils/warnings-as-errors.ts`) registers a process `'warning'` listener that
+  rethrows, so any Node warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`,
+  …) surfaces as an uncaught error and **fails the run** (non-zero exit). This forces warnings to be fixed
+  at the source rather than scrolling past unread.
+- It is installed by the standard `setup()` (`src/setup.ts`), so **every** consumer of
+  `obsidian-dev-utils/vitest-setup`, `obsidian-dev-utils/jest-setup`, or the agnostic
+  `obsidian-dev-utils/setup` gets it — it is forced, not opt-in. `installWarningsAsErrors()` is
+  idempotent, so the repeated `setup()` calls across setup files register the listener at most once.
+  Note this pairs with the `--localstorage-file` fix above: with warnings-as-errors on, a run that does
+  **not** provide `localStorage` fails on the `ExperimentalWarning` — so tests must be launched through
+  the runner (which supplies the flag) or with `--localstorage-file` set.
 
 ### Framework
 
@@ -281,6 +315,13 @@ describe('MyModule', () => {
 - For mock-specific APIs (`create__`, `createConfigured__`, etc.), import from `'obsidian-test-mocks/obsidian'` directly
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
+- The shared setup silences all `console` methods per-test (see "Test setup"); a test that must assert
+  on console output re-instruments the method (`vi.spyOn(console, 'error')`), which overrides the no-op.
+- The `eslint-plugin-obsidianmd` `no-console` rule flags `console.<member>` access (e.g. `console.log`)
+  but NOT bare `console` identifier references. So when a test needs to inspect a console method itself
+  (identity/replacement checks), read it via a descriptor — `Object.getOwnPropertyDescriptor(console,
+  name)?.value` — which stays lint-clean instead of scattering `eslint-disable no-console` comments
+  (`no-console` disables do not even match the obsidian rule's custom message).
 
 ### Integration test timing
 

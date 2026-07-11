@@ -148,6 +148,46 @@ interface ExecStringParams {
   readonly rawArgs?: string[];
 }
 /**
+ * Appends a single `node` CLI option to a `NODE_OPTIONS` string, preserving any options already present.
+ *
+ * @param existingNodeOptions - The current `NODE_OPTIONS` value (e.g. `process.env.NODE_OPTIONS`), if any.
+ * @param option - The `node` CLI option to append (e.g. `--localstorage-file=:memory:`).
+ * @returns The combined `NODE_OPTIONS` string. If `option` is already present, the value is returned unchanged.
+ */
+export function appendNodeOption(existingNodeOptions: string | undefined, option: string): string {
+  const trimmed = (existingNodeOptions ?? '').trim();
+  if (trimmed === '') {
+    return option;
+  }
+  if (trimmed.split(/\s+/).includes(option)) {
+    return trimmed;
+  }
+  return `${trimmed} ${option}`;
+}
+
+/**
+ * Builds the environment for child processes: the parent environment plus `DEBUG_COLORS`, and — when
+ * the running `node` supports it — {@link LOCAL_STORAGE_NODE_OPTION} appended to `NODE_OPTIONS`.
+ *
+ * The support check guards against older `node` (< 22): passing an option `node` does not recognize via
+ * `NODE_OPTIONS` makes it exit before running, which would break every spawned tool.
+ *
+ * @param baseEnv - The parent environment to extend (typically `process.env`).
+ * @param allowedNodeEnvironmentFlags - The `node` options accepted via `NODE_OPTIONS` (typically `process.allowedNodeEnvironmentFlags`).
+ * @returns The environment to pass to spawned child processes.
+ */
+export function buildChildEnv(baseEnv: NodeJS.ProcessEnv, allowedNodeEnvironmentFlags: ReadonlySet<string>): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    DEBUG_COLORS: '1',
+    ...baseEnv
+  };
+  if (allowedNodeEnvironmentFlags.has('--localstorage-file')) {
+    env['NODE_OPTIONS'] = appendNodeOption(baseEnv['NODE_OPTIONS'], LOCAL_STORAGE_NODE_OPTION);
+  }
+  return env;
+}
+
+/**
  * Executes a command.
  *
  * @param command - The command to execute. It can be a string or an array of strings.
@@ -327,12 +367,23 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 }
 
 /**
+ * A `node` CLI option (passed via `NODE_OPTIONS`) that provides an in-memory `localStorage` to every
+ * spawned `node` process. Node 22+ exposes an experimental Web Storage `localStorage`, but accessing it
+ * without `--localstorage-file` emits an `ExperimentalWarning` and leaves `localStorage` unavailable.
+ * Pointing it at the special `:memory:` database gives each process a working, non-persistent
+ * `localStorage` (no file on disk, no state shared between processes) — matching the real Obsidian
+ * (Electron) runtime and silencing the warning by addressing its root cause rather than suppressing it.
+ *
+ * It is applied only when the running `node` actually supports it (see {@link buildChildEnv}): passing
+ * an option `node` does not recognize via `NODE_OPTIONS` makes it refuse to start, so an older `node`
+ * (< 22) must be left untouched.
+ */
+const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
+
+/**
  * Default environment variables passed to child processes.
  */
-const CHILD_ENV = {
-  DEBUG_COLORS: '1',
-  ...process.env
-};
+const CHILD_ENV = buildChildEnv(process.env, process.allowedNodeEnvironmentFlags);
 
 /**
  * Parameters for {@link executeBatches}.

@@ -9,7 +9,11 @@ import {
 } from 'vitest';
 
 import { assertNonNullable } from '../type-guards.ts';
-import { exec } from './exec.ts';
+import {
+  appendNodeOption,
+  buildChildEnv,
+  exec
+} from './exec.ts';
 
 vi.mock('../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
@@ -19,6 +23,10 @@ interface MockChild extends EventEmitter {
   stderr: PassThrough;
   stdin: PassThrough;
   stdout: PassThrough;
+}
+
+interface SpawnCallOptions {
+  readonly env?: NodeJS.ProcessEnv;
 }
 
 function createMockChild(): MockChild {
@@ -457,5 +465,66 @@ describe('exec', () => {
       stderr: 'warning',
       stdout: 'output'
     });
+  });
+
+  it('should spawn child processes with an in-memory localStorage NODE_OPTIONS', async () => {
+    const child = createMockChild();
+    mockSpawn.mockReturnValue(child);
+
+    const promise = exec('cmd', { isQuiet: true });
+
+    child.stdout.end();
+    child.stderr.end();
+    child.emit('close', 0, null);
+
+    await promise;
+
+    const firstCall = mockSpawn.mock.calls[0];
+    assertNonNullable(firstCall);
+    const spawnOptions = firstCall[2] as SpawnCallOptions;
+    expect(spawnOptions.env?.['NODE_OPTIONS']).toContain('--localstorage-file=:memory:');
+  });
+});
+
+describe('appendNodeOption', () => {
+  it('should return the option alone when there are no existing options', () => {
+    expect(appendNodeOption(undefined, '--localstorage-file=:memory:')).toBe('--localstorage-file=:memory:');
+    expect(appendNodeOption('   ', '--localstorage-file=:memory:')).toBe('--localstorage-file=:memory:');
+  });
+
+  it('should append the option, preserving existing options', () => {
+    expect(appendNodeOption('--max-old-space-size=4096', '--localstorage-file=:memory:'))
+      .toBe('--max-old-space-size=4096 --localstorage-file=:memory:');
+  });
+
+  it('should not duplicate an option that is already present', () => {
+    expect(appendNodeOption('--localstorage-file=:memory:', '--localstorage-file=:memory:'))
+      .toBe('--localstorage-file=:memory:');
+    expect(appendNodeOption('--foo --localstorage-file=:memory: --bar', '--localstorage-file=:memory:'))
+      .toBe('--foo --localstorage-file=:memory: --bar');
+  });
+});
+
+describe('buildChildEnv', () => {
+  it('should append the localStorage option to NODE_OPTIONS when node supports it', () => {
+    const env = buildChildEnv({ NODE_OPTIONS: '--max-old-space-size=4096' }, new Set(['--localstorage-file']));
+    expect(env['DEBUG_COLORS']).toBe('1');
+    expect(env['NODE_OPTIONS']).toBe('--max-old-space-size=4096 --localstorage-file=:memory:');
+  });
+
+  it('should set the localStorage option as the sole NODE_OPTIONS when none exist', () => {
+    const env = buildChildEnv({}, new Set(['--localstorage-file']));
+    expect(env['NODE_OPTIONS']).toBe('--localstorage-file=:memory:');
+  });
+
+  it('should leave an existing NODE_OPTIONS untouched when node does not support the localStorage option', () => {
+    const env = buildChildEnv({ NODE_OPTIONS: '--max-old-space-size=4096' }, new Set());
+    expect(env['DEBUG_COLORS']).toBe('1');
+    expect(env['NODE_OPTIONS']).toBe('--max-old-space-size=4096');
+  });
+
+  it('should not add NODE_OPTIONS when node does not support the option and none exist', () => {
+    const env = buildChildEnv({}, new Set());
+    expect('NODE_OPTIONS' in env).toBe(false);
   });
 });
