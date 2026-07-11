@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 85.0.0
+
+- refactor!: loop() signature
+- refactor: expose protected members for overrides
+- feat: process file links in frontmatter
+- fix(markdownlint): restore default "x" ignored label for MD052
+- feat: improve lock
+- feat: add support for `file://` links
+- chore: update libs
+
 ## 84.6.1
 
 - refactor: suppress peek-lock input across all windows via AllWindowsEventComponent
