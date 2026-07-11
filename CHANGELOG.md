@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 85.1.0
+
+- chore: update libs
+- docs: mark multi-value frontmatter file:// task done, pending release
+- feat(link): normalize file:// links in multi-link frontmatter values
+
 ## 85.0.0
 
 - refactor!: loop() signature
