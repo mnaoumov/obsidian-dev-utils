@@ -87,7 +87,7 @@ export const join = posix.join;
  * @param path - The path to normalize.
  * @returns The normalized path.
  */
-export const normalize = posix.normalize;
+export const normalizePath = posix.normalize;
 
 /**
  * Parses a path string into a path object.

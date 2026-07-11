@@ -430,7 +430,7 @@ export function makeValidVariableName(str: string): string {
  * @param str - The string to normalize.
  * @returns The normalized string.
  */
-export function normalize(str: string): string {
+export function normalizeString(str: string): string {
   return replaceAll({
     replacer: ' ',
     searchValue: /\u00A0|\u202F/g,

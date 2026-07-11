@@ -16,7 +16,7 @@ import {
   indent,
   insertAt,
   makeValidVariableName,
-  normalize,
+  normalizeString,
   replace,
   replaceAll,
   replaceAllAsync,
@@ -398,28 +398,28 @@ describe('makeValidVariableName', () => {
   });
 });
 
-describe('normalize', () => {
+describe('normalizeString', () => {
   it('should replace non-breaking spaces with regular spaces', () => {
-    expect(normalize('hello\u00A0world')).toBe('hello world');
+    expect(normalizeString('hello\u00A0world')).toBe('hello world');
   });
 
   it('should replace narrow non-breaking spaces', () => {
-    expect(normalize('hello\u202Fworld')).toBe('hello world');
+    expect(normalizeString('hello\u202Fworld')).toBe('hello world');
   });
 
   it('should return NFC-normalized string', () => {
     // E + combining acute accent should become a single character
     const input = 'e\u0301';
-    const result = normalize(input);
+    const result = normalizeString(input);
     expect(result).toBe(input.normalize('NFC'));
   });
 
   it('should handle empty string', () => {
-    expect(normalize('')).toBe('');
+    expect(normalizeString('')).toBe('');
   });
 
   it('should handle string with no special characters', () => {
-    expect(normalize('hello world')).toBe('hello world');
+    expect(normalizeString('hello world')).toBe('hello world');
   });
 });
 
