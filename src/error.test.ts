@@ -1,4 +1,5 @@
 import {
+  afterEach,
   describe,
   expect,
   it,
@@ -11,9 +12,13 @@ import {
   emitAsyncErrorEvent,
   errorToString,
   getStackTrace,
+  isAsyncErrorIgnoreContextActive,
   printError,
   registerAsyncErrorEventHandler,
   SilentError,
+  startAsyncErrorIgnoreContext,
+  startCollectingUnhandledAsyncErrors,
+  stopCollectingUnhandledAsyncErrors,
   throwExpression
 } from './error.ts';
 import { strictProxy } from './strict-proxy.ts';
@@ -525,6 +530,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 
     registration[Symbol.dispose]();
 
+    // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
+    using _ignore = startAsyncErrorIgnoreContext();
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
   });
@@ -535,6 +542,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
       using _registration = registerAsyncErrorEventHandler(handler);
     }
 
+    // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
+    using _ignore = startAsyncErrorIgnoreContext();
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
   });
@@ -577,5 +586,90 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 
     emitAsyncErrorEvent(value);
     expect(handler).toHaveBeenCalledWith(value);
+  });
+});
+
+describe('unhandled async error collection', () => {
+  afterEach(() => {
+    // Close any window a test left open so it cannot leak into the global per-test harness.
+    stopCollectingUnhandledAsyncErrors();
+  });
+
+  it('should collect an async error emitted while no consumer handler is registered', () => {
+    startCollectingUnhandledAsyncErrors();
+    const error = new Error('unhandled');
+
+    emitAsyncErrorEvent(error);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([error]);
+  });
+
+  it('should not collect an async error while a consumer handler is registered', () => {
+    startCollectingUnhandledAsyncErrors();
+    using _registration = registerAsyncErrorEventHandler(vi.fn());
+
+    emitAsyncErrorEvent(new Error('handled'));
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+
+  it('should not collect an async error while no collection window is open', () => {
+    stopCollectingUnhandledAsyncErrors();
+
+    emitAsyncErrorEvent(new Error('no window'));
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+
+  it('should discard errors from a previous window when a new one is started', () => {
+    startCollectingUnhandledAsyncErrors();
+    emitAsyncErrorEvent(new Error('first window'));
+
+    startCollectingUnhandledAsyncErrors();
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+
+  it('should not collect an async error emitted with shouldIgnore set', () => {
+    startCollectingUnhandledAsyncErrors();
+
+    emitAsyncErrorEvent(new Error('ignored'), true);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+});
+
+describe('startAsyncErrorIgnoreContext', () => {
+  afterEach(() => {
+    stopCollectingUnhandledAsyncErrors();
+  });
+
+  it('should report whether an ignore context is active, including nesting', () => {
+    expect(isAsyncErrorIgnoreContextActive()).toBe(false);
+    {
+      using _outer = startAsyncErrorIgnoreContext();
+      expect(isAsyncErrorIgnoreContextActive()).toBe(true);
+      {
+        using _inner = startAsyncErrorIgnoreContext();
+        expect(isAsyncErrorIgnoreContextActive()).toBe(true);
+      }
+      // Still active — the outer context has not been disposed yet.
+      expect(isAsyncErrorIgnoreContextActive()).toBe(true);
+    }
+    expect(isAsyncErrorIgnoreContextActive()).toBe(false);
+  });
+
+  it('should not collect an async error emitted within the context, but collect one emitted after it', () => {
+    startCollectingUnhandledAsyncErrors();
+    {
+      using _ignore = startAsyncErrorIgnoreContext();
+      emitAsyncErrorEvent(new Error('ignored'));
+    }
+
+    // Once the context exits, a later emit is collected again.
+    const laterError = new Error('collected');
+    emitAsyncErrorEvent(laterError);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([laterError]);
   });
 });

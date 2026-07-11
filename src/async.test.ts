@@ -24,6 +24,7 @@ import {
   ignoreError,
   invokeAsyncSafely,
   invokeAsyncSafelyAfterDelay,
+  isAsyncOperationTrackingEnabled,
   marksAsTerminateRetry,
   neverEnds,
   nextTickAsync,
@@ -43,7 +44,10 @@ import {
 } from './async.ts';
 import {
   registerAsyncErrorEventHandler,
-  SilentError
+  SilentError,
+  startAsyncErrorIgnoreContext,
+  startCollectingUnhandledAsyncErrors,
+  stopCollectingUnhandledAsyncErrors
 } from './error.ts';
 import {
   noop,
@@ -1165,7 +1169,9 @@ describe('Async', () => {
     });
 
     it('should not throw when the async function rejects', () => {
-      // It should catch errors internally via addErrorHandler
+      // It should catch errors internally via addErrorHandler. The ignore context, captured at schedule
+      // Time, keeps the deferred rejection from being reported as unhandled — no manual drain needed.
+      using _ignore = startAsyncErrorIgnoreContext();
       expect(() => {
         invokeAsyncSafely(async () => {
           await noopAsync();
@@ -1283,6 +1289,50 @@ describe('Async', () => {
         await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
       }
       await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
+    });
+
+    it('should report whether tracking is currently enabled', () => {
+      disableAsyncOperationTracking();
+      expect(isAsyncOperationTrackingEnabled()).toBe(false);
+
+      enableAsyncOperationTracking();
+      expect(isAsyncOperationTrackingEnabled()).toBe(true);
+
+      disableAsyncOperationTracking();
+      expect(isAsyncOperationTrackingEnabled()).toBe(false);
+    });
+  });
+
+  describe('addErrorHandler ignore context', () => {
+    afterEach(() => {
+      stopCollectingUnhandledAsyncErrors();
+      disableAsyncOperationTracking();
+    });
+
+    it('should ignore a fire-and-forget rejection scheduled within an ignore context', async () => {
+      enableAsyncOperationTracking();
+      startCollectingUnhandledAsyncErrors();
+      {
+        using _ignore = startAsyncErrorIgnoreContext();
+        invokeAsyncSafely(() => Promise.reject(new Error('scheduled within context')));
+      }
+
+      // The context has already exited, but the deferred rejection is still ignored because
+      // AddErrorHandler captured the active ignore context at schedule time.
+      await waitForAllAsyncOperations();
+
+      expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+    });
+
+    it('should collect a fire-and-forget rejection scheduled outside any ignore context', async () => {
+      enableAsyncOperationTracking();
+      startCollectingUnhandledAsyncErrors();
+
+      invokeAsyncSafely(() => Promise.reject(new Error('scheduled outside context')));
+
+      await waitForAllAsyncOperations();
+
+      expect(stopCollectingUnhandledAsyncErrors()).toHaveLength(1);
     });
   });
 
@@ -1414,6 +1464,8 @@ describe('Async', () => {
     });
 
     it('should not throw synchronously when the async function rejects', () => {
+      using _ignore = startAsyncErrorIgnoreContext();
+
       async function asyncFn(): Promise<never> {
         await noopAsync();
         throw new Error('async boom');

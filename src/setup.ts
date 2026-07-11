@@ -8,10 +8,12 @@
  * accumulated state such as debuggers, queues, and registered handlers does not leak between tests),
  * resets the injected {@link Library} state (so the next test can re-initialize), enables
  * async-operation tracking, silences every `console` method (so incidental log/warn/error output
- * does not pollute the test report), and clears `localStorage` (so per-worker Web Storage state does
- * not leak between tests); after each test it disables tracking and restores the original `console`
- * methods. It also installs {@link installWarningsAsErrors} once, so any Node process warning fails the
- * run. Tests can therefore `await waitForAllAsyncOperations()` against a clean, isolated state, and a
+ * does not pollute the test report), clears `localStorage` (so per-worker Web Storage state does not
+ * leak between tests), and starts collecting unhandled async errors; after each test it drains any
+ * tracked fire-and-forget operations, disables tracking, restores the original `console` methods, and
+ * fails the test with an `AggregateError` if any unhandled async error was emitted while no consumer
+ * handler was registered. It also installs {@link installWarningsAsErrors} once, so any Node process
+ * warning fails the run. Tests can therefore `await waitForAllAsyncOperations()` against a clean, isolated state, and a
  * test that needs to assert on console output can re-instrument the method it cares about (e.g.
  * `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test.
  *
@@ -22,8 +24,14 @@
 
 import {
   disableAsyncOperationTracking,
-  enableAsyncOperationTracking
+  enableAsyncOperationTracking,
+  isAsyncOperationTrackingEnabled,
+  waitForAllAsyncOperations
 } from './async.ts';
+import {
+  startCollectingUnhandledAsyncErrors,
+  stopCollectingUnhandledAsyncErrors
+} from './error.ts';
 import { noop } from './function.ts';
 import { Library } from './library.ts';
 import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
@@ -35,7 +43,7 @@ import { ensureNonNullable } from './type-guards.ts';
  *
  * @param fn - The callback to register with the hook.
  */
-export type HookRegistrar = (fn: () => void) => void;
+export type HookRegistrar = (fn: () => Promise<void> | void) => void;
 
 /**
  * Parameters for {@link setup}.
@@ -91,9 +99,10 @@ export function restoreConsole(): void {
  *
  * Installs {@link installWarningsAsErrors} (once) so any Node process warning fails the run. Before
  * each test (via the supplied `beforeEach`) it resets the shared-state bag and the injected
- * {@link Library} state, enables async-operation tracking, silences the `console`, and clears
- * `localStorage`; after each test (via the supplied `afterEach`) it disables tracking and restores the
- * `console`.
+ * {@link Library} state, enables async-operation tracking, silences the `console`, clears
+ * `localStorage`, and starts collecting unhandled async errors; after each test (via the supplied
+ * `afterEach`) it drains tracked fire-and-forget operations, disables tracking, restores the `console`,
+ * and fails the test if any unhandled async error was emitted.
  *
  * @param params - The lifecycle hook registrars to wire setup into.
  */
@@ -126,9 +135,22 @@ export function silenceConsole(): void {
   }
 }
 
-function afterEachHandler(): void {
+async function afterEachHandler(): Promise<void> {
+  // Drain fire-and-forget operations first so any that reject emit their async error before we check.
+  // Skip when a test disabled tracking itself, since waitForAllAsyncOperations would then throw.
+  if (isAsyncOperationTrackingEnabled()) {
+    await waitForAllAsyncOperations();
+  }
   disableAsyncOperationTracking();
   restoreConsole();
+
+  const swallowedAsyncErrors = stopCollectingUnhandledAsyncErrors();
+  if (swallowedAsyncErrors.length > 0) {
+    throw new AggregateError(
+      swallowedAsyncErrors,
+      `${String(swallowedAsyncErrors.length)} unhandled async error(s) occurred during the test.`
+    );
+  }
 }
 
 function beforeEachHandler(): void {
@@ -137,6 +159,7 @@ function beforeEachHandler(): void {
   enableAsyncOperationTracking();
   silenceConsole();
   clearLocalStorage();
+  startCollectingUnhandledAsyncErrors();
 }
 
 function clearLocalStorage(): void {
