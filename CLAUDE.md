@@ -233,9 +233,13 @@ export function myFunction(param: Type): ReturnType {
   `setup({ beforeEach, afterEach })`), `obsidian-dev-utils/vitest-setup`, and
   `obsidian-dev-utils/jest-setup`.
   Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
-  accumulated state does not leak between tests) and enables async-operation tracking; after each test
-  it disables tracking, so tests can `await waitForAllAsyncOperations()` against isolated state. The
-  Vitest/Jest files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The
+  accumulated state does not leak between tests), enables async-operation tracking, and silences every
+  `console` method (replacing each with a no-op via `silenceConsole()`, so incidental log/warn/error
+  output does not pollute the test report); after each test it disables tracking and restores the
+  original `console` methods (`restoreConsole()`), so tests can `await waitForAllAsyncOperations()`
+  against isolated state. A test that needs to assert on console output re-instruments the method it
+  cares about (e.g. `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that
+  test. The Vitest/Jest files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The
   top-level `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see
   `scripts/build-generate-index.ts`) so a production `import 'obsidian-dev-utils'` never pulls in
   `vitest`/`@jest/globals`.
