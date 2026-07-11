@@ -12,10 +12,11 @@ import {
   emitAsyncErrorEvent,
   errorToString,
   getStackTrace,
-  ignoreUnhandledAsyncErrors,
+  isAsyncErrorIgnoreContextActive,
   printError,
   registerAsyncErrorEventHandler,
   SilentError,
+  startAsyncErrorIgnoreContext,
   startCollectingUnhandledAsyncErrors,
   stopCollectingUnhandledAsyncErrors,
   throwExpression
@@ -530,7 +531,7 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     registration[Symbol.dispose]();
 
     // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
-    using _ignore = ignoreUnhandledAsyncErrors();
+    using _ignore = startAsyncErrorIgnoreContext();
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
   });
@@ -542,7 +543,7 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     }
 
     // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
-    using _ignore = ignoreUnhandledAsyncErrors();
+    using _ignore = startAsyncErrorIgnoreContext();
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
   });
@@ -629,14 +630,43 @@ describe('unhandled async error collection', () => {
     expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
   });
 
-  it('should not treat an emit inside ignoreUnhandledAsyncErrors as unhandled', () => {
+  it('should not collect an async error emitted with shouldIgnore set', () => {
+    startCollectingUnhandledAsyncErrors();
+
+    emitAsyncErrorEvent(new Error('ignored'), true);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+});
+
+describe('startAsyncErrorIgnoreContext', () => {
+  afterEach(() => {
+    stopCollectingUnhandledAsyncErrors();
+  });
+
+  it('should report whether an ignore context is active, including nesting', () => {
+    expect(isAsyncErrorIgnoreContextActive()).toBe(false);
+    {
+      using _outer = startAsyncErrorIgnoreContext();
+      expect(isAsyncErrorIgnoreContextActive()).toBe(true);
+      {
+        using _inner = startAsyncErrorIgnoreContext();
+        expect(isAsyncErrorIgnoreContextActive()).toBe(true);
+      }
+      // Still active — the outer context has not been disposed yet.
+      expect(isAsyncErrorIgnoreContextActive()).toBe(true);
+    }
+    expect(isAsyncErrorIgnoreContextActive()).toBe(false);
+  });
+
+  it('should not collect an async error emitted within the context, but collect one emitted after it', () => {
     startCollectingUnhandledAsyncErrors();
     {
-      using _ignore = ignoreUnhandledAsyncErrors();
+      using _ignore = startAsyncErrorIgnoreContext();
       emitAsyncErrorEvent(new Error('ignored'));
     }
 
-    // Once the scope exits the no-op consumer is gone, so a later emit is collected again.
+    // Once the context exits, a later emit is collected again.
     const laterError = new Error('collected');
     emitAsyncErrorEvent(laterError);
 

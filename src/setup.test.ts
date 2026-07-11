@@ -15,7 +15,8 @@ import {
 } from './async.ts';
 import {
   emitAsyncErrorEvent,
-  registerAsyncErrorEventHandler
+  registerAsyncErrorEventHandler,
+  startAsyncErrorIgnoreContext
 } from './error.ts';
 import {
   noop,
@@ -169,6 +170,18 @@ describe('setup', () => {
 
     expect(thrown).toBeInstanceOf(AggregateError);
     expect((thrown as AggregateError).errors).toHaveLength(1);
+  });
+
+  it('should not report a fire-and-forget rejection scheduled within an ignore context', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    {
+      using _ignore = startAsyncErrorIgnoreContext();
+      invokeAsyncSafely(() => Promise.reject(new Error('ignored fire-and-forget')));
+    }
+
+    await expect(afterEachCallback()).resolves.toBeUndefined();
   });
 
   it('should not report an async error consumed by a registered handler', async () => {

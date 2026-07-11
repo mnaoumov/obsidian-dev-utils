@@ -289,11 +289,14 @@ export function myFunction(param: Type): ReturnType {
   `registerAsyncErrorEventHandler()` is active at emit time (the built-in `handleAsyncError` printer is
   registered directly on the event source and is deliberately not counted). So the many existing tests
   that register a handler and assert on the emitted error are auto-exempt and needed no changes.
-- A test that deliberately emits an async error with no consumer handler wraps the emit in
-  `using _ = ignoreUnhandledAsyncErrors()` (a no-op consumer registration). Because a `using` scope
-  exits before `afterEach` runs, a test that schedules a fire-and-forget rejection must also drain it
-  within that scope (`await waitForAllAsyncOperations()`), otherwise the rejection emits during the
-  `afterEach` drain when the ignore scope is already gone.
+- A test that deliberately triggers an async error with no consumer handler opens an ignore context:
+  `using _ = startAsyncErrorIgnoreContext()` (an `asyncErrorIgnoreContextDepth` counter checked by
+  `emitAsyncErrorEvent`, exposed via `isAsyncErrorIgnoreContextActive()`). Crucially this also covers
+  **fire-and-forget** operations: `addErrorHandler` (`src/async.ts`) captures the active ignore context
+  synchronously at schedule time and passes it as `emitAsyncErrorEvent(error, shouldIgnore)`, so a
+  rejection that settles during the `afterEach` drain — after the `using` scope has exited — is still
+  ignored. No manual `waitForAllAsyncOperations()` in the test is needed. Only operations scheduled
+  *inside* the context are ignored; one scheduled outside is still reported.
 
 ### Framework
 

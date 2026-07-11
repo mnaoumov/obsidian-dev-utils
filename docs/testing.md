@@ -74,21 +74,28 @@ The same per-test setup fails a test if a fire-and-forget async operation emitte
 
 An async error counts as *handled* (and is never reported) whenever a consumer handler is registered at the moment it is emitted, mirroring Node's `unhandledRejection` model — registering a handler means you have taken responsibility for async errors. So a test that already asserts on an emitted async error through a registered handler needs no changes.
 
-When a test deliberately emits an async error with no consumer handler registered — for example exercising a fire-and-forget error path — wrap the emit in `ignoreUnhandledAsyncErrors()` so the harness does not fail the test:
+When a test deliberately triggers an async error with no consumer handler registered — for example exercising a fire-and-forget error path — open an ignore context with `startAsyncErrorIgnoreContext()` so the harness does not fail the test. A fire-and-forget operation *scheduled* within the context is ignored even when its rejection settles later (the schedule-time context is captured), so no manual draining is required:
 
 ```typescript
-import { ignoreUnhandledAsyncErrors } from 'obsidian-dev-utils/error';
-import {
-  invokeAsyncSafely,
-  waitForAllAsyncOperations
-} from 'obsidian-dev-utils/async';
+import { startAsyncErrorIgnoreContext } from 'obsidian-dev-utils/error';
+import { invokeAsyncSafely } from 'obsidian-dev-utils/async';
 
-it('swallows the rejection without throwing synchronously', async () => {
-  using _ignore = ignoreUnhandledAsyncErrors();
-  invokeAsyncSafely(async () => {
-    throw new Error('deliberately swallowed');
-  });
-  await waitForAllAsyncOperations();
+it('swallows the rejection without throwing synchronously', () => {
+  using _ignore = startAsyncErrorIgnoreContext();
+  invokeAsyncSafely(() => Promise.reject(new Error('deliberately swallowed')));
+});
+```
+
+Only operations scheduled *inside* the context are ignored — an operation scheduled outside it is still reported, even if another was ignored:
+
+```typescript
+it('still fails on an unignored rejection', () => {
+  (() => {
+    using _ignore = startAsyncErrorIgnoreContext();
+    invokeAsyncSafely(() => Promise.reject(new Error('ignored')));
+  })();
+
+  invokeAsyncSafely(() => Promise.reject(new Error('reported — fails the test')));
 });
 ```
 

@@ -28,6 +28,7 @@ import {
   CustomStackTraceError,
   emitAsyncErrorEvent,
   getStackTrace,
+  isAsyncErrorIgnoreContextActive,
   printError,
   SilentError
 } from './error.ts';
@@ -89,6 +90,8 @@ export interface RetryOptions {
  */
 export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrace?: string): Promise<void> {
   stackTrace ??= getStackTrace(1);
+  // Capture the ignore context synchronously at schedule time, so a deferred rejection settling after the scope exits is still ignored.
+  const wasScheduledWithinIgnoreContext = isAsyncErrorIgnoreContextActive();
   try {
     await asyncFn();
   } catch (asyncError) {
@@ -100,7 +103,7 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrac
     if (handleSilentError(wrappedError)) {
       return;
     }
-    emitAsyncErrorEvent(wrappedError);
+    emitAsyncErrorEvent(wrappedError, wasScheduledWithinIgnoreContext);
   }
 }
 
