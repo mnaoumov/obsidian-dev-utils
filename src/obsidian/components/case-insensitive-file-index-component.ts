@@ -20,8 +20,15 @@ import { ComponentEx } from './component-ex.ts';
  * falls back to the native O(vault)-on-miss lookup.
  */
 export class CaseInsensitiveFileIndexComponent extends ComponentEx {
-  private readonly app: App;
-  private readonly index: CaseInsensitiveFileIndex;
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The case-insensitive file index installed for the vault and kept in sync while this component is loaded.
+   */
+  protected readonly index: CaseInsensitiveFileIndex;
 
   /**
    * Creates a new case-insensitive file index component.

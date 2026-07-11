@@ -55,7 +55,7 @@ export class CallbackLayoutReadyComponent extends LayoutReadyComponent {
    * @param app - The Obsidian App instance.
    * @param callback - The callback to invoke when layout is ready.
    */
-  public constructor(app: App, private readonly callback: () => Promisable<void>) {
+  public constructor(app: App, protected readonly callback: () => Promisable<void>) {
     super(app);
   }
 

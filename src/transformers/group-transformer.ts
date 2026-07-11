@@ -28,7 +28,7 @@ export class GroupTransformer extends Transformer {
    *
    * @param transformers - The transformers to combine.
    */
-  public constructor(private readonly transformers: Transformer[]) {
+  public constructor(protected readonly transformers: Transformer[]) {
     super();
   }
 

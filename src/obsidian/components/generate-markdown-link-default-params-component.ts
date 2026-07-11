@@ -29,7 +29,10 @@ export interface GenerateMarkdownLinkDefaultParamsComponentConstructorParams {
  * removed. Later registrations take precedence over the built-in defaults but never over explicitly passed params.
  */
 export class GenerateMarkdownLinkDefaultParamsComponent extends ComponentEx {
-  private readonly getDefaultParams: (this: void) => Partial<GenerateMarkdownLinkParams>;
+  /**
+   * Returns the default {@link GenerateMarkdownLinkParams} registered while this component is loaded.
+   */
+  protected readonly getDefaultParams: (this: void) => Partial<GenerateMarkdownLinkParams>;
 
   /**
    * Creates a new component.

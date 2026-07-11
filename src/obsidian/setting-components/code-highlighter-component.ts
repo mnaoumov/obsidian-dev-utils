@@ -55,12 +55,24 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     return this.inputEl;
   }
 
-  private readonly codeEl: HTMLElement;
+  /**
+   * The `<code>` element that renders the syntax-highlighted overlay. Subclasses customizing the highlighting can target it.
+   */
+  protected readonly codeEl: HTMLElement;
+
+  /**
+   * The `<pre>` element that wraps the highlighted code overlay. Subclasses customizing the highlighting can target it.
+   */
+  protected readonly preEl: HTMLElement;
+
+  /**
+   * The inner text area component.
+   */
+  protected readonly textAreaComponent: TextAreaComponent;
+
   private placeholder = '';
-  private readonly preEl: HTMLElement;
   private simulateChangeCallback?: () => void;
   private tabSize: number;
-  private readonly textAreaComponent: TextAreaComponent;
 
   /**
    * Creates a new multiple text component.
@@ -219,6 +231,23 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     this.simulateChangeCallback?.();
   }
 
+  /**
+   * Re-renders the highlighted code overlay from the current text area value. Subclasses can override to customize the render.
+   */
+  protected async updateHighlightedCode(): Promise<void> {
+    this.codeEl.textContent = this.inputEl.value || this.placeholder;
+    const prism = await loadPrism();
+    prism.highlightElement(this.codeEl);
+    this.preEl.toggleClass(CssClass.IsPlaceholder, this.isEmpty());
+    window.requestAnimationFrame(() => {
+      const gap = Math.max(0, this.inputEl.scrollHeight - this.preEl.scrollHeight);
+      this.preEl.setCssProps({
+        '--bottom-gap': toPx(gap)
+      });
+      this.handleScroll();
+    });
+  }
+
   private handleKeyDown(evt: KeyboardEvent): void {
     if (evt.key !== 'Tab') {
       return;
@@ -262,19 +291,5 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
   private handleScroll(): void {
     this.preEl.scrollTop = this.inputEl.scrollTop;
     this.preEl.scrollLeft = this.inputEl.scrollLeft;
-  }
-
-  private async updateHighlightedCode(): Promise<void> {
-    this.codeEl.textContent = this.inputEl.value || this.placeholder;
-    const prism = await loadPrism();
-    prism.highlightElement(this.codeEl);
-    this.preEl.toggleClass(CssClass.IsPlaceholder, this.isEmpty());
-    window.requestAnimationFrame(() => {
-      const gap = Math.max(0, this.inputEl.scrollHeight - this.preEl.scrollHeight);
-      this.preEl.setCssProps({
-        '--bottom-gap': toPx(gap)
-      });
-      this.handleScroll();
-    });
   }
 }

@@ -27,40 +27,6 @@ Back in `obsidian-better-markdown-links`: add a `shouldNormalizeFileLinks` setti
 modify/save/navigation triggers and the convert-in-file/folder/vault commands. Default-on means the plugin
 rewrites existing `file://` links automatically on those triggers — intended.
 
-## Current Task — expose component `app` as `protected` (not `private`) so subclasses can reuse it
-
-**Origin:** `obsidian-advanced-note-composer` needed a `MoveNoticeComponent` that registers a DOM
-`selectionchange` event across all windows, so it should extend `AllWindowsEventComponent`. But that base
-declares its app as a constructor parameter-property `public constructor(private readonly app: App)`
-(`src/obsidian/components/all-windows-event-component.ts:72`), so a subclass that also needs `this.app`
-(e.g. for `app.workspace.on('active-leaf-change', …)`) cannot access the inherited field and is forced to
-shadow it with its own `private readonly app`, which then **collides** (TS2415 "incorrectly extends" +
-TS4114). The consumer worked around it by extending `ComponentEx` + `registerDomEvent(activeDocument, …)`
-instead, losing the multi-window DOM coverage `AllWindowsEventComponent` provides.
-
-**Change:** make the stored `app` **`protected readonly`** instead of `private readonly` so subclasses can
-reuse it without shadowing.
-
-- Primary: `AllWindowsEventComponent` — `public constructor(private readonly app: App)` →
-  `public constructor(protected readonly app: App)`.
-- Audit the other lifecycle components for the same `private readonly app` parameter-property /
-  field and promote to `protected` where a subclass would reasonably need it (e.g.
-  `ResourceLockComponent`, `MinimizableModal`, and any other `Component`/`ComponentEx` subclass storing
-  `app` privately). Keep genuinely-internal fields private; only promote `app` (and similar collaborators a
-  subclass would legitimately reuse).
-- `ComponentEx` itself has **no** `app` field (a `ComponentEx` subclass can already declare its own
-  `private readonly app` with no collision), so no change is needed there — this is specifically about the
-  bases that take `app` in their constructor.
-- Tests: promoting `private`→`protected` is source-compatible; existing tests should be unaffected. Add/keep
-  a subclass-reuse check only if a natural one exists. Run the full gate (compile + `test:coverage` + lint +
-  format + spellcheck).
-
-**Consumer follow-up (advanced-note-composer, after this releases):** switch `MoveNoticeComponent` back to
-`extends AllWindowsEventComponent`, drop its own `app` field (use the inherited `protected app`), and replace
-`registerDomEvent(activeDocument, 'selectionchange', …)` with
-`registerAllDocumentsDomEvent({ type: 'selectionchange', callback: () => this.refreshButtons() })` so the
-notice buttons also refresh on caret moves in popout windows. Keep the `active-leaf-change` `registerEvent`.
-
 ## Commands
 
 All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
@@ -197,6 +163,14 @@ export function myFunction(param: Type): ReturnType {
 - This applies transitively: any helper that awaits a delay (like `sleep` awaiting `abortSignalTimeout`) inherits the (un)controllability of the underlying timer, so the requirement is on the lowest-level primitive.
 - When reimplementing a native timing primitive this way, mirror the native abort reason so consumers see identical behavior: `abortSignalTimeout` aborts with a `DOMException` named `TimeoutError` (as native `AbortSignal.timeout` does), not a plain `Error`.
 - (cannot be forced by ESLint — a custom `no-restricted-syntax` selector could flag `AbortSignal.timeout` usage in `src/`)
+
+### L3. Expose extendable members as `protected`, documented with TSDoc
+
+- On an **exported** class that a consumer could reasonably subclass, a member a subclass would legitimately reuse must be `protected`, not `private`, so the subclass can access the inherited member without shadowing/colliding on it. Promote generously — this is the deliberate counterweight to the `find-overexposed` linter, which narrows in the opposite direction.
+- **Promote to `protected readonly`** (preserving `readonly`): constructor-injected collaborators and identities (`app`, `plugin`, `pluginId`, `pluginName`, injected services/registrars/providers/components, builder/converter callbacks), owned domain objects a subclass reads (an index, a registry, the selectable-values list, a wrapped inner component), and natural override/extension hook methods.
+- **Keep `private`**: transient internal state (caches/maps/sets/accumulators, timestamps, flags, counters); a field that merely backs an existing public/protected accessor (the `_x` + `get x()` pattern — the accessor is the exposure, so promoting the backing field only duplicates surface); pure internal helper methods that are not override points; and every member of a **non-exported** class (a consumer cannot subclass it, and TypeScript forbids a `protected` member whose type is a non-exported class).
+- **Every promoted `protected` member must carry a TSDoc comment.** For a constructor parameter-property (`protected readonly x` in the constructor signature), the constructor's `@param x` tag is its documentation; for a field declaration, add a `/** ... */` block above it.
+- (cannot be forced by ESLint — the promote-vs-keep decision is a judgment call; the TSDoc requirement on non-private members could be partially checked by a custom `jsdoc/require-jsdoc` context)
 
 ## Testing
 

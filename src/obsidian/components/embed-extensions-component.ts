@@ -22,7 +22,7 @@ export class EmbedExtensionsComponent extends ComponentEx {
    *
    * @param app - The Obsidian app instance.
    */
-  public constructor(private readonly app: App) {
+  public constructor(protected readonly app: App) {
     super();
   }
 

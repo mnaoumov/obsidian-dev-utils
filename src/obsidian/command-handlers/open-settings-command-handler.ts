@@ -30,8 +30,15 @@ export interface OpenSettingsCommandHandlerConstructorParams {
  * A command handler that opens the settings tab for a plugin.
  */
 export class OpenSettingsCommandHandler extends GlobalCommandHandler {
-  private readonly app: App;
-  private readonly settingTab: SettingTab;
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The setting tab to open.
+   */
+  protected readonly settingTab: SettingTab;
 
   /**
    * Constructs a new instance.

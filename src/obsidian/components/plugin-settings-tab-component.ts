@@ -21,8 +21,15 @@ interface PluginSettingsTabComponentConstructorParams {
  * Also registers an "Open Settings" command to open the settings tab from the command palette.
  */
 export class PluginSettingsTabComponent extends ComponentEx {
-  private readonly plugin: Plugin;
-  private readonly pluginSettingsTab: PluginSettingTab;
+  /**
+   * The plugin the settings tab is registered with.
+   */
+  protected readonly plugin: Plugin;
+
+  /**
+   * The plugin settings tab wrapped and registered with Obsidian on load.
+   */
+  protected readonly pluginSettingsTab: PluginSettingTab;
 
   /**
    * Creates a new plugin settings tab component.

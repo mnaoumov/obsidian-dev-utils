@@ -1019,8 +1019,16 @@ class ResourceLockManager {
  * among the plugins currently holding a lock.
  */
 export class ResourceLockComponent extends ComponentEx {
-  private readonly app: App;
-  private readonly pluginId: string;
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The id of the owning plugin (e.g. its `manifest.id`). Locks are attributed to it for
+   * reference-counting and the indicators' "locked by" tooltip.
+   */
+  protected readonly pluginId: string;
 
   /**
    * Creates an resource-lock handle owned by a plugin.

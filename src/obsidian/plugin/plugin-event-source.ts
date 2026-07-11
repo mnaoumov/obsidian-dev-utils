@@ -35,7 +35,7 @@ export class PluginEventSourceImpl implements PluginEventSource {
    *
    * @param plugin - The plugin to create the event source for.
    */
-  public constructor(private readonly plugin: PluginBase) {}
+  public constructor(protected readonly plugin: PluginBase) {}
 
   /**
    * Remove an event listener.

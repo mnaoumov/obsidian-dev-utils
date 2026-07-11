@@ -20,7 +20,7 @@ export class ConsoleDebugComponent extends ComponentEx {
    *
    * @param pluginId - The plugin ID (used as the debugger namespace).
    */
-  public constructor(private readonly pluginId: string) {
+  public constructor(protected readonly pluginId: string) {
     super();
   }
 

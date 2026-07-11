@@ -37,7 +37,7 @@ export class PluginCommandRegistrar implements CommandRegistrar {
    *
    * @param plugin - The plugin to add commands to.
    */
-  public constructor(private readonly plugin: Plugin) {}
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Adds a command to the plugin.

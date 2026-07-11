@@ -1031,16 +1031,43 @@ class RenameMap {
  * It also handles edge cases such as case-only renames and collisions with existing files.
  */
 export class RenameDeleteHandlerComponent extends ComponentEx {
-  private readonly abortSignalComponent: AbortSignalComponent;
-  private readonly app: App;
+  /**
+   * The abort signal component whose signal cancels in-flight rename operations.
+   */
+  protected readonly abortSignalComponent: AbortSignalComponent;
+
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+  /**
+   * The plugin ID used to identify this handler among the registered rename/delete handlers.
+   */
+  protected readonly pluginId: string;
+  /**
+   * The notice component used to report updated links to the user.
+   */
+  protected readonly pluginNoticeComponent: PluginNoticeComponent;
+  /**
+   * The resource lock component used to guard link updates, or `null` if none is used.
+   */
+  protected readonly resourceLockComponent: null | ResourceLockComponent;
+
+  /**
+   * Builds this plugin's rename/delete handler settings.
+   */
+  protected readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
+
+  /**
+   * The manager that aggregates rename/delete handler settings across registered plugins.
+   */
+  protected readonly settingsManager: SettingsManager;
+
   private readonly deletedMetadataCacheMap = new Map<string, CachedMetadata>();
+
   private readonly handledRenames = new HandledRenames();
+
   private readonly interruptedRenamesMap = new Map<string, InterruptedRename[]>();
-  private readonly pluginId: string;
-  private readonly pluginNoticeComponent: PluginNoticeComponent;
-  private readonly resourceLockComponent: null | ResourceLockComponent;
-  private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
-  private readonly settingsManager: SettingsManager;
 
   /**
    * Creates an instance of RenameDeleteHandlerComponent.

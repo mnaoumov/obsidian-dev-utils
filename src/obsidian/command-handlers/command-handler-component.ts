@@ -26,11 +26,30 @@ interface CommandHandlerComponentConstructorParams {
  * Wraps a {@link CommandHandler} and registers it with Obsidian on load.
  */
 export class CommandHandlerComponent extends ComponentEx {
-  private readonly activeFileProvider: ActiveFileProvider;
-  private readonly commandHandlers: CommandHandler[];
-  private readonly commandRegistrar: CommandRegistrar;
-  private readonly menuEventRegistrar: MenuEventRegistrar;
-  private readonly pluginName: string;
+  /**
+   * Provider for accessing the currently active file.
+   */
+  protected readonly activeFileProvider: ActiveFileProvider;
+
+  /**
+   * The command handlers to register with Obsidian.
+   */
+  protected readonly commandHandlers: CommandHandler[];
+
+  /**
+   * Registrar used to add and remove commands with Obsidian.
+   */
+  protected readonly commandRegistrar: CommandRegistrar;
+
+  /**
+   * Registrar for menu event handlers.
+   */
+  protected readonly menuEventRegistrar: MenuEventRegistrar;
+
+  /**
+   * The name of the plugin that owns the commands.
+   */
+  protected readonly pluginName: string;
 
   /**
    * Creates a new command handler component.
