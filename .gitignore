@@ -25,6 +25,7 @@ dist
 coverage
 
 index.ts
+__merged.ts
 _dependencies.ts
 
 *.tsbuildinfo
