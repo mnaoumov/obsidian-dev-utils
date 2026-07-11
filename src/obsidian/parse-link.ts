@@ -14,6 +14,7 @@ import type {
 } from 'obsidian';
 import type { Node } from 'unist';
 
+import { isFrontmatterLinkCache } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { remark } from 'remark';
 import remarkParse from 'remark-parse';
 import { wikiLinkPlugin } from 'remark-wiki-link';
@@ -462,6 +463,16 @@ export function escapeAlias(alias: string): string {
 }
 
 /**
+ * Determines whether a reference is a {@link ParseLinkFrontmatterReference}.
+ *
+ * @param reference - The reference to check.
+ * @returns `true` if the reference is a {@link ParseLinkFrontmatterReference}, otherwise `false`.
+ */
+export function isParseLinkFrontmatterReference(reference: Reference): reference is ParseLinkFrontmatterReference {
+  return isFrontmatterLinkCache(reference) && 'parseLinkResult' in reference;
+}
+
+/**
  * Determines whether a reference is a {@link ParseLinkReference}.
  *
  * @param reference - The reference to check.
@@ -664,20 +675,27 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
 
   const textPart = str.slice(startOffset, endOffset + 1);
   replaceAll({
-    replacer: ({ capturedGroupArgs: [url = ''], offset }) => {
-      if (!isUrl(url)) {
+    replacer: ({ capturedGroupArgs: [rawUrl = ''], offset }) => {
+      if (!isUrl(rawUrl)) {
         return;
       }
 
+      // Decode bare `file://` URLs like the bracketed path (`parseLinkNode`) does.
+      // Offsets and `raw` stay based on the original (possibly percent-encoded) text.
+      const url = decodeUrlSafely({
+        hasAngleBrackets: false,
+        isExternal: true,
+        url: rawUrl
+      });
       textLinks.push({
         encodedUrl: encodeUrl(url),
-        endOffset: startOffset + offset + url.length,
+        endOffset: startOffset + offset + rawUrl.length,
         hasAngleBrackets: false,
         isEmbed: false,
         isExternal: true,
         isFileUrl: isFileUrl(url),
         isWikilink: false,
-        raw: url,
+        raw: rawUrl,
         startOffset: startOffset + offset,
         url
       });

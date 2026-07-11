@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import type { FrontmatterLinkCache as FrontmatterLinkCacheOriginal } from 'obsidian';
+
 import {
   describe,
   expect,
@@ -9,6 +11,7 @@ import { assertNonNullable } from '../type-guards.ts';
 import {
   encodeUrl,
   escapeAlias,
+  isParseLinkFrontmatterReference,
   isParseLinkReference,
   parseFrontmatterLinks,
   parseLink,
@@ -440,6 +443,14 @@ describe('parseLinks', () => {
     it('should find 1 markdown link', () => {
       expect(mdLinks.length).toBe(1);
     });
+  });
+
+  it('should decode a bare file:// url like the bracketed path', () => {
+    const results = parseLinks('file:///F:%5Cd.txt');
+    const fileUrl = results.find((result) => result.isFileUrl);
+    assertNonNullable(fileUrl);
+    expect(fileUrl.url).toBe('file:///F:\\d.txt');
+    expect(fileUrl.raw).toBe('file:///F:%5Cd.txt');
   });
 
   it('should return an empty array for text with no links', () => {
@@ -944,6 +955,26 @@ describe('toParseLinkReference', () => {
     expect(reference.position.start.line).toBe(0);
     expect(reference.position.start.col).toBe(0);
     expect(reference.displayText).toBeUndefined();
+  });
+});
+
+describe('isParseLinkFrontmatterReference', () => {
+  it('should return true for a parse link frontmatter reference', () => {
+    const reference = parseFrontmatterLinks({ url: 'file:///a.txt' }).frontmatterExternalLinks[0];
+    assertNonNullable(reference);
+    expect(isParseLinkFrontmatterReference(reference)).toBe(true);
+  });
+
+  it('should return false for a body parse link reference', () => {
+    const content = '[doc](file:///F:/dir/x.txt)';
+    const parseLinkResult = parseLink(content);
+    assertNonNullable(parseLinkResult);
+    expect(isParseLinkFrontmatterReference(toParseLinkReference({ content, parseLinkResult }))).toBe(false);
+  });
+
+  it('should return false for a plain frontmatter link cache', () => {
+    const reference: FrontmatterLinkCacheOriginal = { key: 'url', link: 'note', original: '[[note]]' };
+    expect(isParseLinkFrontmatterReference(reference)).toBe(false);
   });
 });
 
