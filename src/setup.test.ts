@@ -18,6 +18,8 @@ import {
   setup,
   silenceConsole
 } from './setup.ts';
+import { strictProxy } from './strict-proxy.ts';
+import { assertNonNullable } from './type-guards.ts';
 
 describe('setup', () => {
   afterEach(() => {
@@ -73,6 +75,41 @@ describe('setup', () => {
 
     afterEachCallback?.();
     await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
+  });
+
+  it('should clear localStorage via beforeEach, and tolerate localStorage being absent', () => {
+    let beforeEachCallback: (() => void) | undefined;
+
+    setup({
+      afterEach: noop,
+      beforeEach: (fn) => {
+        beforeEachCallback = fn;
+      }
+    });
+    assertNonNullable(beforeEachCallback);
+
+    const store = new Map<string, string>();
+    const fakeStorage = strictProxy<Storage>({
+      clear: () => {
+        store.clear();
+      },
+      getItem: (key) => store.get(key) ?? null,
+      setItem: (key, value) => {
+        store.set(key, value);
+      }
+    });
+
+    // Present: beforeEach clears whatever a previous test left behind.
+    vi.stubGlobal('localStorage', fakeStorage);
+    fakeStorage.setItem('leftover', 'stale');
+    beforeEachCallback();
+    expect(fakeStorage.getItem('leftover')).toBeNull();
+
+    // Absent: clearing is a no-op that does not throw.
+    vi.stubGlobal('localStorage', undefined);
+    expect(beforeEachCallback).not.toThrow();
+
+    vi.unstubAllGlobals();
   });
 });
 

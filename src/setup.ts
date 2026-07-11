@@ -7,11 +7,12 @@
  * hooks. Before each test it resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
  * accumulated state such as debuggers, queues, and registered handlers does not leak between tests),
  * resets the injected {@link Library} state (so the next test can re-initialize), enables
- * async-operation tracking, and silences every `console` method (so incidental log/warn/error output
- * does not pollute the test report); after each test it disables tracking and restores the original
- * `console` methods. Tests can therefore `await waitForAllAsyncOperations()` against a clean, isolated
- * state, and a test that needs to assert on console output can re-instrument the method it cares about
- * (e.g. `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test.
+ * async-operation tracking, silences every `console` method (so incidental log/warn/error output
+ * does not pollute the test report), and clears `localStorage` (so per-worker Web Storage state does
+ * not leak between tests); after each test it disables tracking and restores the original `console`
+ * methods. Tests can therefore `await waitForAllAsyncOperations()` against a clean, isolated state, and
+ * a test that needs to assert on console output can re-instrument the method it cares about (e.g.
+ * `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test.
  *
  * This module has no import-time side effects and no dependency on any specific test framework. The
  * thin Vitest/Jest setup files (`vitest-setup.ts` / `jest-setup.ts`) call {@link setup} with the
@@ -87,8 +88,9 @@ export function restoreConsole(): void {
  * Registers `obsidian-dev-utils` per-test setup with a test framework's lifecycle hooks.
  *
  * Before each test (via the supplied `beforeEach`) it resets the shared-state bag and the injected
- * {@link Library} state, enables async-operation tracking, and silences the `console`; after each
- * test (via the supplied `afterEach`) it disables tracking and restores the `console`.
+ * {@link Library} state, enables async-operation tracking, silences the `console`, and clears
+ * `localStorage`; after each test (via the supplied `afterEach`) it disables tracking and restores the
+ * `console`.
  *
  * @param params - The lifecycle hook registrars to wire setup into.
  */
@@ -130,4 +132,13 @@ function beforeEachHandler(): void {
   Library.resetToDefault();
   enableAsyncOperationTracking();
   silenceConsole();
+  clearLocalStorage();
+}
+
+function clearLocalStorage(): void {
+  // eslint-disable-next-line no-restricted-globals, n/no-unsupported-features/node-builtins -- Test setup: clearing per-worker localStorage; guarded, and provided only where node supports it.
+  if (typeof localStorage !== 'undefined') {
+    // eslint-disable-next-line no-restricted-globals, n/no-unsupported-features/node-builtins -- Test setup: clearing per-worker localStorage.
+    localStorage.clear();
+  }
 }
