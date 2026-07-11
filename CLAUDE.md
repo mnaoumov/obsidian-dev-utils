@@ -235,10 +235,12 @@ export function myFunction(param: Type): ReturnType {
   Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
   accumulated state does not leak between tests), enables async-operation tracking, silences every
   `console` method (replacing each with a no-op via `silenceConsole()`, so incidental log/warn/error
-  output does not pollute the test report), and clears `localStorage` (so per-worker Web Storage does
-  not leak between tests); after each test it disables tracking and restores the original `console`
-  methods (`restoreConsole()`), so tests can `await waitForAllAsyncOperations()` against isolated
-  state. A test that needs to assert on console output re-instruments the method it cares about (e.g.
+  output does not pollute the test report), clears `localStorage` (so per-worker Web Storage does
+  not leak between tests), and starts collecting unhandled async errors; after each test it drains any
+  tracked fire-and-forget operations, disables tracking, restores the original `console` methods
+  (`restoreConsole()`), and fails the test with an `AggregateError` if any unhandled async error was
+  emitted (see "Unhandled async errors" below), so tests can `await waitForAllAsyncOperations()` against
+  isolated state. A test that needs to assert on console output re-instruments the method it cares about (e.g.
   `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test. The Vitest/Jest
   files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The top-level
   `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see
@@ -273,6 +275,25 @@ export function myFunction(param: Type): ReturnType {
   Note this pairs with the `--localstorage-file` fix above: with warnings-as-errors on, a run that does
   **not** provide `localStorage` fails on the `ExperimentalWarning` — so tests must be launched through
   the runner (which supplies the flag) or with `--localstorage-file` set.
+
+### Unhandled async errors
+
+- The standard `setup()` also fails a test if a fire-and-forget async operation emitted an async error
+  that no consumer handler was there to receive — the "no swallowed async errors" harness. `beforeEach`
+  calls `startCollectingUnhandledAsyncErrors()` (`src/error.ts`); `afterEach` drains tracked operations
+  via `waitForAllAsyncOperations()` (guarded by `isAsyncOperationTrackingEnabled()`, so a test that
+  disabled tracking itself does not trip the drain), then throws an `AggregateError` of whatever
+  `stopCollectingUnhandledAsyncErrors()` returns. It is forced, not opt-in.
+- "Unhandled" is decided the Node `unhandledRejection` way: `emitAsyncErrorEvent()` collects an error
+  only when `asyncErrorHandlerCount === 0` — i.e. no handler registered via
+  `registerAsyncErrorEventHandler()` is active at emit time (the built-in `handleAsyncError` printer is
+  registered directly on the event source and is deliberately not counted). So the many existing tests
+  that register a handler and assert on the emitted error are auto-exempt and needed no changes.
+- A test that deliberately emits an async error with no consumer handler wraps the emit in
+  `using _ = ignoreUnhandledAsyncErrors()` (a no-op consumer registration). Because a `using` scope
+  exits before `afterEach` runs, a test that schedules a fire-and-forget rejection must also drain it
+  within that scope (`await waitForAllAsyncOperations()`), otherwise the rejection emits during the
+  `afterEach` drain when the ignore scope is already gone.
 
 ### Framework
 

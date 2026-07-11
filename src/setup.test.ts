@@ -6,11 +6,21 @@ import {
   vi
 } from 'vitest';
 
+import type { HookRegistrar } from './setup.ts';
+
 import {
   disableAsyncOperationTracking,
+  invokeAsyncSafely,
   waitForAllAsyncOperations
 } from './async.ts';
-import { noop } from './function.ts';
+import {
+  emitAsyncErrorEvent,
+  registerAsyncErrorEventHandler
+} from './error.ts';
+import {
+  noop,
+  noopAsync
+} from './function.ts';
 import { Library } from './library.ts';
 import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 import {
@@ -21,14 +31,23 @@ import {
 import { strictProxy } from './strict-proxy.ts';
 import { assertNonNullable } from './type-guards.ts';
 
+type CapturedHook = HookFn | undefined;
+
+interface CapturedSetupHooks {
+  afterEachCallback(): ReturnType<HookFn>;
+  beforeEachCallback(): ReturnType<HookFn>;
+}
+
+type HookFn = Parameters<HookRegistrar>[0];
+
 describe('setup', () => {
   afterEach(() => {
     disableAsyncOperationTracking();
   });
 
   it('should register handlers with the provided hooks', () => {
-    const beforeEachRegistrar = vi.fn<(fn: () => void) => void>();
-    const afterEachRegistrar = vi.fn<(fn: () => void) => void>();
+    const beforeEachRegistrar = vi.fn<HookRegistrar>();
+    const afterEachRegistrar = vi.fn<HookRegistrar>();
 
     setup({
       afterEach: afterEachRegistrar,
@@ -42,13 +61,13 @@ describe('setup', () => {
   });
 
   it('should reset state and enable tracking via beforeEach, and disable tracking via afterEach', async () => {
-    let beforeEachCallback: (() => void) | undefined;
-    let afterEachCallback: (() => void) | undefined;
+    let beforeEachCallback: CapturedHook;
+    let afterEachCallback: CapturedHook;
 
-    const beforeEachRegistrar = vi.fn<(fn: () => void) => void>((fn) => {
+    const beforeEachRegistrar = vi.fn<HookRegistrar>((fn) => {
       beforeEachCallback = fn;
     });
-    const afterEachRegistrar = vi.fn<(fn: () => void) => void>((fn) => {
+    const afterEachRegistrar = vi.fn<HookRegistrar>((fn) => {
       afterEachCallback = fn;
     });
 
@@ -64,7 +83,7 @@ describe('setup', () => {
     before.value = 'mutated';
     Library.init({ cssClassScope: 'mutated-scope', debugPrefixNamespace: '', shouldPrintStackTrace: false });
 
-    beforeEachCallback?.();
+    await beforeEachCallback?.();
 
     const after = getObsidianDevUtilsState('setup-test-key', 'b');
     expect(after).not.toBe(before);
@@ -73,12 +92,12 @@ describe('setup', () => {
 
     await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
 
-    afterEachCallback?.();
+    await afterEachCallback?.();
     await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
   });
 
-  it('should clear localStorage via beforeEach, and tolerate localStorage being absent', () => {
-    let beforeEachCallback: (() => void) | undefined;
+  it('should clear localStorage via beforeEach, and tolerate localStorage being absent', async () => {
+    let beforeEachCallback: CapturedHook;
 
     setup({
       afterEach: noop,
@@ -102,7 +121,7 @@ describe('setup', () => {
     // Present: beforeEach clears whatever a previous test left behind.
     vi.stubGlobal('localStorage', fakeStorage);
     fakeStorage.setItem('leftover', 'stale');
-    beforeEachCallback();
+    await beforeEachCallback();
     expect(fakeStorage.getItem('leftover')).toBeNull();
 
     // Absent: clearing is a no-op that does not throw.
@@ -110,6 +129,65 @@ describe('setup', () => {
     expect(beforeEachCallback).not.toThrow();
 
     vi.unstubAllGlobals();
+  });
+
+  it('should fail via afterEach with an AggregateError when an unhandled async error is emitted', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    const error = new Error('boom');
+    emitAsyncErrorEvent(error);
+
+    let thrown: unknown;
+    try {
+      await afterEachCallback();
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).message).toContain('1 unhandled async error');
+    expect((thrown as AggregateError).errors).toStrictEqual([error]);
+  });
+
+  it('should drain fire-and-forget rejections before reporting them via afterEach', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    // Scheduled but deliberately not awaited — the afterEach harness must drain it so it rejects first.
+    invokeAsyncSafely(async () => {
+      await noopAsync();
+      throw new Error('fire-and-forget');
+    });
+
+    let thrown: unknown;
+    try {
+      await afterEachCallback();
+    } catch (e) {
+      thrown = e;
+    }
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).errors).toHaveLength(1);
+  });
+
+  it('should not report an async error consumed by a registered handler', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    using _registration = registerAsyncErrorEventHandler(vi.fn());
+    emitAsyncErrorEvent(new Error('handled'));
+
+    await expect(afterEachCallback()).resolves.toBeUndefined();
+  });
+
+  it('should tolerate a test that disabled async-operation tracking itself', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    disableAsyncOperationTracking();
+
+    await expect(afterEachCallback()).resolves.toBeUndefined();
   });
 });
 
@@ -139,3 +217,21 @@ describe('silenceConsole / restoreConsole', () => {
     expect(Object.getOwnPropertyDescriptor(console, 'info')?.value).toBe(originalInfoDescriptor?.value);
   });
 });
+
+function captureSetupHooks(): CapturedSetupHooks {
+  let beforeEachCallback: CapturedHook;
+  let afterEachCallback: CapturedHook;
+
+  setup({
+    afterEach: (fn) => {
+      afterEachCallback = fn;
+    },
+    beforeEach: (fn) => {
+      beforeEachCallback = fn;
+    }
+  });
+
+  assertNonNullable(beforeEachCallback);
+  assertNonNullable(afterEachCallback);
+  return { afterEachCallback, beforeEachCallback };
+}

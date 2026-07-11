@@ -1,4 +1,5 @@
 import {
+  afterEach,
   describe,
   expect,
   it,
@@ -11,9 +12,12 @@ import {
   emitAsyncErrorEvent,
   errorToString,
   getStackTrace,
+  ignoreUnhandledAsyncErrors,
   printError,
   registerAsyncErrorEventHandler,
   SilentError,
+  startCollectingUnhandledAsyncErrors,
+  stopCollectingUnhandledAsyncErrors,
   throwExpression
 } from './error.ts';
 import { strictProxy } from './strict-proxy.ts';
@@ -525,6 +529,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 
     registration[Symbol.dispose]();
 
+    // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
+    using _ignore = ignoreUnhandledAsyncErrors();
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
   });
@@ -535,6 +541,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
       using _registration = registerAsyncErrorEventHandler(handler);
     }
 
+    // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
+    using _ignore = ignoreUnhandledAsyncErrors();
     emitAsyncErrorEvent(new Error('should not reach handler'));
     expect(handler).not.toHaveBeenCalled();
   });
@@ -577,5 +585,61 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 
     emitAsyncErrorEvent(value);
     expect(handler).toHaveBeenCalledWith(value);
+  });
+});
+
+describe('unhandled async error collection', () => {
+  afterEach(() => {
+    // Close any window a test left open so it cannot leak into the global per-test harness.
+    stopCollectingUnhandledAsyncErrors();
+  });
+
+  it('should collect an async error emitted while no consumer handler is registered', () => {
+    startCollectingUnhandledAsyncErrors();
+    const error = new Error('unhandled');
+
+    emitAsyncErrorEvent(error);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([error]);
+  });
+
+  it('should not collect an async error while a consumer handler is registered', () => {
+    startCollectingUnhandledAsyncErrors();
+    using _registration = registerAsyncErrorEventHandler(vi.fn());
+
+    emitAsyncErrorEvent(new Error('handled'));
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+
+  it('should not collect an async error while no collection window is open', () => {
+    stopCollectingUnhandledAsyncErrors();
+
+    emitAsyncErrorEvent(new Error('no window'));
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+
+  it('should discard errors from a previous window when a new one is started', () => {
+    startCollectingUnhandledAsyncErrors();
+    emitAsyncErrorEvent(new Error('first window'));
+
+    startCollectingUnhandledAsyncErrors();
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+  });
+
+  it('should not treat an emit inside ignoreUnhandledAsyncErrors as unhandled', () => {
+    startCollectingUnhandledAsyncErrors();
+    {
+      using _ignore = ignoreUnhandledAsyncErrors();
+      emitAsyncErrorEvent(new Error('ignored'));
+    }
+
+    // Once the scope exits the no-op consumer is gone, so a later emit is collected again.
+    const laterError = new Error('collected');
+    emitAsyncErrorEvent(laterError);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([laterError]);
   });
 });

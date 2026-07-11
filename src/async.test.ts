@@ -24,6 +24,7 @@ import {
   ignoreError,
   invokeAsyncSafely,
   invokeAsyncSafelyAfterDelay,
+  isAsyncOperationTrackingEnabled,
   marksAsTerminateRetry,
   neverEnds,
   nextTickAsync,
@@ -42,6 +43,7 @@ import {
   waitForAllAsyncOperations
 } from './async.ts';
 import {
+  ignoreUnhandledAsyncErrors,
   registerAsyncErrorEventHandler,
   SilentError
 } from './error.ts';
@@ -1164,14 +1166,18 @@ describe('Async', () => {
       }).not.toThrow();
     });
 
-    it('should not throw when the async function rejects', () => {
+    it('should not throw when the async function rejects', async () => {
       // It should catch errors internally via addErrorHandler
+      using _ignore = ignoreUnhandledAsyncErrors();
       expect(() => {
         invokeAsyncSafely(async () => {
           await noopAsync();
           throw new Error('should be caught');
         });
       }).not.toThrow();
+
+      // Drain the deliberate fire-and-forget rejection here so it settles within the ignore scope.
+      await waitForAllAsyncOperations();
     });
 
     it('should emit async error event when function throws', async () => {
@@ -1283,6 +1289,17 @@ describe('Async', () => {
         await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
       }
       await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
+    });
+
+    it('should report whether tracking is currently enabled', () => {
+      disableAsyncOperationTracking();
+      expect(isAsyncOperationTrackingEnabled()).toBe(false);
+
+      enableAsyncOperationTracking();
+      expect(isAsyncOperationTrackingEnabled()).toBe(true);
+
+      disableAsyncOperationTracking();
+      expect(isAsyncOperationTrackingEnabled()).toBe(false);
     });
   });
 
@@ -1413,7 +1430,9 @@ describe('Async', () => {
       expect(asyncFn).toHaveBeenCalledWith(5, 'hello');
     });
 
-    it('should not throw synchronously when the async function rejects', () => {
+    it('should not throw synchronously when the async function rejects', async () => {
+      using _ignore = ignoreUnhandledAsyncErrors();
+
       async function asyncFn(): Promise<never> {
         await noopAsync();
         throw new Error('async boom');
@@ -1423,6 +1442,9 @@ describe('Async', () => {
       expect(() => {
         syncFn();
       }).not.toThrow();
+
+      // Drain the deliberate fire-and-forget rejection here so it settles within the ignore scope.
+      await waitForAllAsyncOperations();
     });
 
     it('should emit async error event when async function rejects', async () => {
