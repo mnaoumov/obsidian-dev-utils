@@ -10,8 +10,9 @@
  * async-operation tracking, silences every `console` method (so incidental log/warn/error output
  * does not pollute the test report), and clears `localStorage` (so per-worker Web Storage state does
  * not leak between tests); after each test it disables tracking and restores the original `console`
- * methods. Tests can therefore `await waitForAllAsyncOperations()` against a clean, isolated state, and
- * a test that needs to assert on console output can re-instrument the method it cares about (e.g.
+ * methods. It also installs {@link installWarningsAsErrors} once, so any Node process warning fails the
+ * run. Tests can therefore `await waitForAllAsyncOperations()` against a clean, isolated state, and a
+ * test that needs to assert on console output can re-instrument the method it cares about (e.g.
  * `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test.
  *
  * This module has no import-time side effects and no dependency on any specific test framework. The
@@ -26,6 +27,7 @@ import {
 import { noop } from './function.ts';
 import { Library } from './library.ts';
 import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+import { installWarningsAsErrors } from './script-utils/warnings-as-errors.ts';
 import { ensureNonNullable } from './type-guards.ts';
 
 /**
@@ -87,7 +89,8 @@ export function restoreConsole(): void {
 /**
  * Registers `obsidian-dev-utils` per-test setup with a test framework's lifecycle hooks.
  *
- * Before each test (via the supplied `beforeEach`) it resets the shared-state bag and the injected
+ * Installs {@link installWarningsAsErrors} (once) so any Node process warning fails the run. Before
+ * each test (via the supplied `beforeEach`) it resets the shared-state bag and the injected
  * {@link Library} state, enables async-operation tracking, silences the `console`, and clears
  * `localStorage`; after each test (via the supplied `afterEach`) it disables tracking and restores the
  * `console`.
@@ -95,6 +98,7 @@ export function restoreConsole(): void {
  * @param params - The lifecycle hook registrars to wire setup into.
  */
 export function setup(params: SetupParams): void {
+  installWarningsAsErrors();
   params.beforeEach(beforeEachHandler);
   params.afterEach(afterEachHandler);
 }

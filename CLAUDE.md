@@ -266,12 +266,13 @@ export function myFunction(param: Type): ReturnType {
   rethrows, so any Node warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`,
   …) surfaces as an uncaught error and **fails the run** (non-zero exit). This forces warnings to be fixed
   at the source rather than scrolling past unread.
-- It is wired into this repo's `unit-tests:obsidian` project via the `./src/warnings-as-errors-setup.ts`
-  setup file (kept **separate** from `vitest-setup.ts`/`jest-setup.ts` so it stays opt-in — adopting the
-  standard per-test setup does not silently turn every existing consumer warning into a hard failure).
-  Consumers opt in by adding `obsidian-dev-utils/warnings-as-errors-setup` to their `setupFiles` (or
-  calling `installWarningsAsErrors()`). Note this pairs with the `--localstorage-file` fix above: with
-  warnings-as-errors on, a run that does **not** provide `localStorage` fails on the `ExperimentalWarning`.
+- It is installed by the standard `setup()` (`src/setup.ts`), so **every** consumer of
+  `obsidian-dev-utils/vitest-setup`, `obsidian-dev-utils/jest-setup`, or the agnostic
+  `obsidian-dev-utils/setup` gets it — it is forced, not opt-in. `installWarningsAsErrors()` is
+  idempotent, so the repeated `setup()` calls across setup files register the listener at most once.
+  Note this pairs with the `--localstorage-file` fix above: with warnings-as-errors on, a run that does
+  **not** provide `localStorage` fails on the `ExperimentalWarning` — so tests must be launched through
+  the runner (which supplies the flag) or with `--localstorage-file` set.
 
 ### Framework
 

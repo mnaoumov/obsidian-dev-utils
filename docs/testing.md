@@ -92,20 +92,6 @@ NODE_OPTIONS=--localstorage-file=:memory: vitest
 
 ## Warnings as errors
 
-`obsidian-dev-utils/warnings-as-errors-setup` turns any Node process warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`, …) into a test failure, so warnings get fixed at the source instead of scrolling past unread. It is a separate, opt-in setup file — adopting the standard per-test setup does not silently make every warning a hard failure — so add it to `setupFiles` alongside the standard setup:
+The standard per-test setup also turns any Node process warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`, …) into a test failure, so warnings get fixed at the source instead of scrolling past unread. This is **not** opt-in — wiring in any of the setup endpoints above (`vitest-setup`, `jest-setup`, or the agnostic `setup`) enables it automatically.
 
-```typescript
-// vitest.config.ts
-import { defineConfig } from 'vitest/config';
-
-export default defineConfig({
-  test: {
-    setupFiles: [
-      'obsidian-dev-utils/vitest-setup',
-      'obsidian-dev-utils/warnings-as-errors-setup'
-    ]
-  }
-});
-```
-
-Or call `installWarningsAsErrors()` from `obsidian-dev-utils/script-utils/warnings-as-errors` directly. Because a run that does not provide `localStorage` emits an `ExperimentalWarning`, pair this with the `--localstorage-file` setup above (which the runner already applies).
+Because a run that does not provide `localStorage` emits an `ExperimentalWarning`, this pairs with the `--localstorage-file` behavior above: launch tests through the `Obsidian Dev Utils` runner (which supplies the flag) or set `NODE_OPTIONS=--localstorage-file=:memory:` yourself. If you need the guard elsewhere, call `installWarningsAsErrors()` from `obsidian-dev-utils/script-utils/warnings-as-errors` directly.
