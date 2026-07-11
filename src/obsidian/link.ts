@@ -260,6 +260,15 @@ export interface EditLinksInContentParams {
    * @default `false`
    */
   readonly shouldEditFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to also edit external links parsed from multi-link (multi-value) frontmatter values. When
+   * `true`, the converter also receives references for each external link within a multi-link frontmatter
+   * value (each located by its offsets, so only that link is spliced back in place).
+   *
+   * @default `false`
+   */
+  readonly shouldEditMultiValueFrontmatterExternalLinks?: boolean;
 }
 
 /**
@@ -301,6 +310,15 @@ export interface EditLinksParams extends EditLinksOptions {
    * @default `false`
    */
   readonly shouldEditFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to also edit external links parsed from multi-link (multi-value) frontmatter values. When
+   * `true`, the converter also receives references for each external link within a multi-link frontmatter
+   * value (each located by its offsets, so only that link is spliced back in place).
+   *
+   * @default `false`
+   */
+  readonly shouldEditMultiValueFrontmatterExternalLinks?: boolean;
 }
 
 /**
@@ -870,6 +888,13 @@ interface GetFileChangesParams {
    * @default `false`
    */
   readonly shouldIncludeFrontmatterExternalLinks?: boolean;
+
+  /**
+   * Whether to include external links (parsed from multi-link frontmatter values) in the changes.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeMultiValueFrontmatterExternalLinks?: boolean;
 }
 
 interface LinkConfig {
@@ -1022,6 +1047,7 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
     pathOrFile,
     shouldEditExternalLinks = false,
     shouldEditFrontmatterExternalLinks = false,
+    shouldEditMultiValueFrontmatterExternalLinks = false,
     ...options
   } = params;
   await applyFileChanges({
@@ -1029,7 +1055,8 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
     changesProvider: async ({ abortSignal, content }) => {
       const cache = await getCacheSafe(app, pathOrFile, {
         shouldParseExternalLinks: shouldEditExternalLinks,
-        shouldParseFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
+        shouldParseFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
+        shouldParseMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
       });
       abortSignal.throwIfAborted();
       const file = getFile({ app, pathOrFile });
@@ -1045,7 +1072,8 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
         isCanvasFileCache: isCanvasFile(pathOrFile),
         linkConverter,
         shouldIncludeExternalLinks: shouldEditExternalLinks,
-        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
+        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
+        shouldIncludeMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
       });
     },
     pathOrFile,
@@ -1060,7 +1088,7 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
  * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(params: EditLinksInContentParams): Promise<string> {
-  const { app, content, linkConverter, shouldEditExternalLinks = false, shouldEditFrontmatterExternalLinks = false } = params;
+  const { app, content, linkConverter, shouldEditExternalLinks = false, shouldEditFrontmatterExternalLinks = false, shouldEditMultiValueFrontmatterExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1070,7 +1098,8 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
     changesProvider: async () => {
       const cache = await parseMetadata(app, content, {
         shouldParseExternalLinks: shouldEditExternalLinks,
-        shouldParseFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
+        shouldParseFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
+        shouldParseMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
       });
       abortSignal.throwIfAborted();
       const changes = await getFileChanges({
@@ -1079,7 +1108,8 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
         isCanvasFileCache: false,
         linkConverter,
         shouldIncludeExternalLinks: shouldEditExternalLinks,
-        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks
+        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
+        shouldIncludeMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
       });
       abortSignal.throwIfAborted();
       return changes;
@@ -1361,7 +1391,8 @@ export async function updateFileUrlLinksInContent(params: UpdateFileUrlLinksInCo
     content,
     linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
     shouldEditExternalLinks: true,
-    shouldEditFrontmatterExternalLinks: true
+    shouldEditFrontmatterExternalLinks: true,
+    shouldEditMultiValueFrontmatterExternalLinks: true
   }));
 }
 
@@ -1385,6 +1416,7 @@ export async function updateFileUrlLinksInFile(params: UpdateFileUrlLinksInFileP
     pathOrFile,
     shouldEditExternalLinks: true,
     shouldEditFrontmatterExternalLinks: true,
+    shouldEditMultiValueFrontmatterExternalLinks: true,
     ...options
   });
 }
@@ -1716,7 +1748,14 @@ function generateWikiLink(params: GenerateWikiLinkParams): string {
 }
 
 async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[]> {
-  const { cache, isCanvasFileCache, linkConverter, shouldIncludeExternalLinks = false, shouldIncludeFrontmatterExternalLinks = false } = params;
+  const {
+    cache,
+    isCanvasFileCache,
+    linkConverter,
+    shouldIncludeExternalLinks = false,
+    shouldIncludeFrontmatterExternalLinks = false,
+    shouldIncludeMultiValueFrontmatterExternalLinks = false
+  } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
@@ -1732,7 +1771,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     start: section.position.start.offset
   }));
 
-  for (const link of getLinks({ cache, shouldIncludeExternalLinks, shouldIncludeFrontmatterExternalLinks })) {
+  for (const link of getLinks({ cache, shouldIncludeExternalLinks, shouldIncludeFrontmatterExternalLinks, shouldIncludeMultiValueFrontmatterExternalLinks })) {
     abortSignal.throwIfAborted();
     const newContent = await linkConverter(link, abortSignal);
     abortSignal.throwIfAborted();

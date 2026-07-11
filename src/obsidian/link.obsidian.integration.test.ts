@@ -41,4 +41,23 @@ describe('file:// link normalization', () => {
     expect(result).toContain('[body](file:///F:/over/age.txt)');
     expect(result).not.toContain('%5C');
   });
+
+  it('should normalize each file:// link within a multi-link frontmatter value', async () => {
+    const { result } = await evalInObsidian<Record<string, never>, NormalizeResult>({
+      async fn({ app }) {
+        const lib = window.__obsidianDevUtilsModule__;
+        if (!lib) {
+          throw new Error('obsidian-dev-utils module not registered on window');
+        }
+
+        const content = '---\nurls: "file:///F:%5Ca%5Cx.txt file:///F:%5Cb%5Cy.txt"\n---\n';
+        const normalized = await lib.obsidian.link.updateFileUrlLinksInContent({ app, content });
+        return { result: normalized };
+      }
+    });
+
+    expect(result).toContain('file:///F:/a/x.txt');
+    expect(result).toContain('file:///F:/b/y.txt');
+    expect(result).not.toContain('%5C');
+  });
 });

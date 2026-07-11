@@ -1538,7 +1538,12 @@ describe('app-dependent functions', () => {
       const wikilinkResult = ensureNonNullable(parsed.find((parseLinkResult) => parseLinkResult.isWikilink));
       vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         externalLinks,
-        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
+        features: [
+          CachedMetadataExFeature.Native,
+          CachedMetadataExFeature.ExternalLinks,
+          CachedMetadataExFeature.FrontmatterExternalLinks,
+          CachedMetadataExFeature.MultiValueFrontmatterExternalLinks
+        ],
         frontmatterExternalLinks: [],
         links: [{
           link: 'a',
@@ -1547,7 +1552,8 @@ describe('app-dependent functions', () => {
             end: { col: 0, line: 0, offset: wikilinkResult.endOffset },
             start: { col: 0, line: 0, offset: wikilinkResult.startOffset }
           }
-        }]
+        }],
+        multiValueFrontmatterExternalLinks: []
       }));
 
       const result = await updateFileUrlLinksInContent({ app, content });
@@ -1558,8 +1564,14 @@ describe('app-dependent functions', () => {
       const frontmatterExternalLink = ensureNonNullable(parseFrontmatterLinks({ url: 'file:///F:%5Cd.txt' }).frontmatterExternalLinks[0]);
       vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         externalLinks: [],
-        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
-        frontmatterExternalLinks: [frontmatterExternalLink]
+        features: [
+          CachedMetadataExFeature.Native,
+          CachedMetadataExFeature.ExternalLinks,
+          CachedMetadataExFeature.FrontmatterExternalLinks,
+          CachedMetadataExFeature.MultiValueFrontmatterExternalLinks
+        ],
+        frontmatterExternalLinks: [frontmatterExternalLink],
+        multiValueFrontmatterExternalLinks: []
       }));
 
       let capturedChanges: FileChange[] = [];
@@ -1575,12 +1587,49 @@ describe('app-dependent functions', () => {
       expect(capturedChanges[0]?.newContent).toBe('file:///F:/d.txt');
     });
 
+    it('should convert each file:// link within a multi-link frontmatter value', async () => {
+      const value = 'file:///F:%5Ca.txt file:///F:%5Cb.txt';
+      const multiValueFrontmatterExternalLinks = parseFrontmatterLinks({ key: value }).multiValueFrontmatterExternalLinks;
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+        externalLinks: [],
+        features: [
+          CachedMetadataExFeature.Native,
+          CachedMetadataExFeature.ExternalLinks,
+          CachedMetadataExFeature.FrontmatterExternalLinks,
+          CachedMetadataExFeature.MultiValueFrontmatterExternalLinks
+        ],
+        frontmatterExternalLinks: [],
+        multiValueFrontmatterExternalLinks
+      }));
+
+      let capturedChanges: FileChange[] = [];
+      vi.mocked(applyContentChanges).mockImplementation(async ({ changesProvider, content }) => {
+        if (typeof changesProvider === 'function') {
+          capturedChanges = await (changesProvider as () => Promise<FileChange[]>)();
+        }
+        return content;
+      });
+
+      await updateFileUrlLinksInContent({ app, content: `---\nkey: "${value}"\n---` });
+      expect(capturedChanges).toHaveLength(2);
+      expect(capturedChanges[0]?.oldContent).toBe('file:///F:%5Ca.txt');
+      expect(capturedChanges[0]?.newContent).toBe('file:///F:/a.txt');
+      expect(capturedChanges[1]?.oldContent).toBe('file:///F:%5Cb.txt');
+      expect(capturedChanges[1]?.newContent).toBe('file:///F:/b.txt');
+    });
+
     it('should skip a non-file frontmatter external link', async () => {
       const frontmatterExternalLink = ensureNonNullable(parseFrontmatterLinks({ url: 'https://x.com' }).frontmatterExternalLinks[0]);
       vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         externalLinks: [],
-        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
-        frontmatterExternalLinks: [frontmatterExternalLink]
+        features: [
+          CachedMetadataExFeature.Native,
+          CachedMetadataExFeature.ExternalLinks,
+          CachedMetadataExFeature.FrontmatterExternalLinks,
+          CachedMetadataExFeature.MultiValueFrontmatterExternalLinks
+        ],
+        frontmatterExternalLinks: [frontmatterExternalLink],
+        multiValueFrontmatterExternalLinks: []
       }));
 
       let capturedChanges: FileChange[] = [];
@@ -1608,13 +1657,19 @@ describe('app-dependent functions', () => {
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         externalLinks: [],
-        features: [CachedMetadataExFeature.Native, CachedMetadataExFeature.ExternalLinks, CachedMetadataExFeature.FrontmatterExternalLinks],
+        features: [
+          CachedMetadataExFeature.Native,
+          CachedMetadataExFeature.ExternalLinks,
+          CachedMetadataExFeature.FrontmatterExternalLinks,
+          CachedMetadataExFeature.MultiValueFrontmatterExternalLinks
+        ],
         frontmatterExternalLinks: [],
         links: [{
           link: 'target',
           original: '[[target]]',
           position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
-        }]
+        }],
+        multiValueFrontmatterExternalLinks: []
       }));
 
       await updateFileUrlLinksInFile({ app, pathOrFile: 'note.md', resourceLockComponent });
