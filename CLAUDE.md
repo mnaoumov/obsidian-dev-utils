@@ -4,6 +4,39 @@
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
 
+## Current Task — Bug: `file://` normalization skips multi-link frontmatter values — DONE in dev-utils, pending release + consumer follow-up
+
+**Landed** (`src/obsidian/link.ts`): `updateFileUrlLinksInFile` / `updateFileUrlLinksInContent` now also normalize
+`file://` links inside a frontmatter value that holds **more than one link** (the
+`MultiValueFrontmatterExternalLinks` feature — each link located by `startOffset`/`endOffset` within the value
+via `ParseLinkFrontmatterReferenceWithOffsets`). Previously left unchanged:
+
+```yaml
+key: "file:///C:\path\to\a.md file:///C:\path\to\b.md"
+```
+
+Delivered: a new `shouldEditMultiValueFrontmatterExternalLinks` option on `EditLinksParams` /
+`EditLinksInContentParams` (default `false`, mirroring `shouldEditFrontmatterExternalLinks`), threaded through
+`editLinks` → `getCacheSafe` (`shouldParseMultiValueFrontmatterExternalLinks`), `editLinksInContent` →
+`parseMetadata`, and `getFileChanges` (`shouldIncludeMultiValueFrontmatterExternalLinks` → `getLinks`);
+`updateFileUrlLinksInContent`/`updateFileUrlLinksInFile` pass it `true`. The offset-aware splicing (each
+normalized URL spliced back in place without disturbing surrounding text or the other links in the same value)
+was already fully handled by the existing `referenceToFileChange` / `applyContentChanges` /
+`applyFrontmatterChangesWithOffsets` pipeline and `normalizeFileUrlLink`'s frontmatter branch — no change needed
+there. Tests extended: `link.test.ts` (multi-link value, offset splicing/round-trip; existing `updateFileUrl*`
+mocks updated to include the new feature + array) + `link.obsidian.integration.test.ts` (real-Obsidian
+round-trip). Full gate green (100% coverage on `link.ts`, compile, lint, format, spellcheck, integration).
+
+**Consumer follow-up (obsidian-better-markdown-links, after release).** The plugin's trigger-path gate in
+`better-markdown-links-component.ts` (`hasFileUrlLink`) currently checks only `cache.externalLinks` +
+`cache.frontmatterExternalLinks`, and `processFile` requests `getCacheSafe(..., { shouldParseExternalLinks,
+shouldParseFrontmatterExternalLinks })`. Once the library normalizes multi-value frontmatter file links, extend
+both: request `shouldParseMultiValueFrontmatterExternalLinks` and include `cache.multiValueFrontmatterExternalLinks`
+in `hasFileUrlLink`, so a note whose only `file://` link lives in a multi-link frontmatter value still triggers on modify/save/navigation.
+(Deliberately omitted for now so the gate matches exactly what the library normalizes — avoids no-op conversion churn.)
+
+**Origin.** Surfaced by the user while wiring `file://` normalization into obsidian-better-markdown-links (#35).
+
 ## Current Task — External `file://` link normalization (obsidian-better-markdown-links #35) — only plugin wiring remaining
 
 **Body + frontmatter `file://` normalization is DONE** (every increment 100% coverage + full gate). Body work is
