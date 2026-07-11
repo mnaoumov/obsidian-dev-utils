@@ -285,6 +285,13 @@ describe('MyModule', () => {
 - For mock-specific APIs (`create__`, `createConfigured__`, etc.), import from `'obsidian-test-mocks/obsidian'` directly
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
+- The shared setup silences all `console` methods per-test (see "Test setup"); a test that must assert
+  on console output re-instruments the method (`vi.spyOn(console, 'error')`), which overrides the no-op.
+- The `eslint-plugin-obsidianmd` `no-console` rule flags `console.<member>` access (e.g. `console.log`)
+  but NOT bare `console` identifier references. So when a test needs to inspect a console method itself
+  (identity/replacement checks), read it via a descriptor — `Object.getOwnPropertyDescriptor(console,
+  name)?.value` — which stays lint-clean instead of scattering `eslint-disable no-console` comments
+  (`no-console` disables do not even match the obsidian rule's custom message).
 
 ### Integration test timing
 
