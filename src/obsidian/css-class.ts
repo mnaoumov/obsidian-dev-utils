@@ -176,6 +176,11 @@ export enum CssClass {
   SelectItemModal = 'select-item-modal',
 
   /**
+   * A CSS class for the select option modal.
+   */
+  SelectOptionModal = 'select-option-modal',
+
+  /**
    * A CSS class for the setting component wrapper.
    */
   SettingComponentWrapper = 'setting-component-wrapper',
