@@ -4,76 +4,6 @@
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
 
-## Current Task — Bug: `file://` normalization skips multi-link frontmatter values — DONE in dev-utils, pending release + consumer follow-up
-
-**Landed** (`src/obsidian/link.ts`): `updateFileUrlLinksInFile` / `updateFileUrlLinksInContent` now also normalize
-`file://` links inside a frontmatter value that holds **more than one link** (the
-`MultiValueFrontmatterExternalLinks` feature — each link located by `startOffset`/`endOffset` within the value
-via `ParseLinkFrontmatterReferenceWithOffsets`). Previously left unchanged:
-
-```yaml
-key: "file:///C:\path\to\a.md file:///C:\path\to\b.md"
-```
-
-Delivered: a new `shouldEditMultiValueFrontmatterExternalLinks` option on `EditLinksParams` /
-`EditLinksInContentParams` (default `false`, mirroring `shouldEditFrontmatterExternalLinks`), threaded through
-`editLinks` → `getCacheSafe` (`shouldParseMultiValueFrontmatterExternalLinks`), `editLinksInContent` →
-`parseMetadata`, and `getFileChanges` (`shouldIncludeMultiValueFrontmatterExternalLinks` → `getLinks`);
-`updateFileUrlLinksInContent`/`updateFileUrlLinksInFile` pass it `true`. The offset-aware splicing (each
-normalized URL spliced back in place without disturbing surrounding text or the other links in the same value)
-was already fully handled by the existing `referenceToFileChange` / `applyContentChanges` /
-`applyFrontmatterChangesWithOffsets` pipeline and `normalizeFileUrlLink`'s frontmatter branch — no change needed
-there. Tests extended: `link.test.ts` (multi-link value, offset splicing/round-trip; existing `updateFileUrl*`
-mocks updated to include the new feature + array) + `link.obsidian.integration.test.ts` (real-Obsidian
-round-trip). Full gate green (100% coverage on `link.ts`, compile, lint, format, spellcheck, integration).
-
-**Consumer follow-up (obsidian-better-markdown-links, after release).** The plugin's trigger-path gate in
-`better-markdown-links-component.ts` (`hasFileUrlLink`) currently checks only `cache.externalLinks` +
-`cache.frontmatterExternalLinks`, and `processFile` requests `getCacheSafe(..., { shouldParseExternalLinks,
-shouldParseFrontmatterExternalLinks })`. Once the library normalizes multi-value frontmatter file links, extend
-both: request `shouldParseMultiValueFrontmatterExternalLinks` and include `cache.multiValueFrontmatterExternalLinks`
-in `hasFileUrlLink`, so a note whose only `file://` link lives in a multi-link frontmatter value still triggers on modify/save/navigation.
-(Deliberately omitted for now so the gate matches exactly what the library normalizes — avoids no-op conversion churn.)
-
-**Origin.** Surfaced by the user while wiring `file://` normalization into obsidian-better-markdown-links (#35).
-
-## Current Task — External `file://` link normalization (obsidian-better-markdown-links #35) — only plugin wiring remaining
-
-**Body + frontmatter `file://` normalization is DONE** (every increment 100% coverage + full gate). Body work is
-merged to `main`; the frontmatter converter is on branch `file-links-frontmatter`. Delivered: `parse-link` module;
-`ParseLinkReference` + frontmatter reference types + `isParseLinkFrontmatterReference` guard; `CachedMetadataEx`
-(features enum + gated arrays) + feature-gated `getLinks`; `getCacheSafe`/`parseMetadata` return `CachedMetadataEx`
-and parse body/frontmatter external links via `ParseCacheOptions`; `parseFrontmatterLinks`; `normalizeFileUrl`;
-`editLinks`/`editLinksInContent` `shouldEditFrontmatterExternalLinks` flag; the body-vs-frontmatter-aware
-converter (`normalizeFileUrlLink` emits a bare YAML-value url for frontmatter, a `[alias](url)` link for the
-body); and the high-level `updateFileUrlLinksInFile`/`updateFileUrlLinksInContent` (both body + frontmatter).
-
-**Origin:** FR <https://github.com/mnaoumov/obsidian-better-markdown-links/issues/35> ("Support `file:///` links").
-Scope: `file://` scheme ONLY (leave other externals untouched). Runtime routing/resolution is CDP-confirmed
-(notes in the plugin's memory `obsidian-file-link-resolution`); the full round-trip (real Obsidian frontmatter +
-body write-back) is confirmed by `link.obsidian.integration.test.ts`.
-
-### Remaining follow-up (separate repo, hand-off) — plugin wiring
-
-Back in `obsidian-better-markdown-links`: add a `shouldNormalizeFileLinks` setting (**default `true`**, per user
-2026-07-10) to `PluginSettings` + the settings tab, and wire the new converter into the existing
-modify/save/navigation triggers and the convert-in-file/folder/vault commands. Default-on means the plugin
-rewrites existing `file://` links automatically on those triggers — intended.
-
-## Current Task — Reusable "Unlock active note" + release-on-abort in `resource-lock` (from advanced-note-composer #129) — DONE in dev-utils, pending consumer follow-up
-
-**Landed** (`src/obsidian/resource-lock.ts`, commit `408f9fe0 feat(resource-lock)!: click/command unlock that always releases and cancels`): (a) ancestor-aware unlock — `ResourceLockManager.forceUnlock` resolves the covering owner via `resolveLockOwnerPath`, aborts its controllers AND removes its entries, exposed as `ResourceLockComponent.requestUnlockForPath(pathOrFile)`; (b) opt-in `shouldReleaseOnAbort` + `onUnlockRequested` on `ResourceLockComponentLockForPathParams`, wired by `wireReleaseOnAbort` (both `@default false`, test-backed); (c) `UnlockActiveNoteCommandHandler` (`src/obsidian/command-handlers/unlock-active-note-command-handler.ts`) + barrel export + `unlock-active-note-command-handler.test.ts`. Tests extended (`resource-lock.test.ts`, `resource-lock.obsidian.integration.test.ts`).
-
-**Consumer follow-up (advanced-note-composer, after release):** replace the plugin-local `UnlockActiveNoteCommandHandler` with the library one; replace the `markSelectionToMove()` helper's hand-wired `abortController.signal → moveSelectionBuffer.clear()` with `lockForPath(…, { shouldReleaseOnAbort: true, onUnlockRequested: () => moveSelectionBuffer.clear() })`. Keep the plugin-specific buffer/notice/highlight cleanup + the identity guard (`get() === markedSelection`, stale-controller safety). The plugin's all-notes lock (a `subtree` lock on the vault root) is covered by the library `canExecute` via `isLockedByAncestorForPath`.
-
-## Current Task — `loop()`: `buildNoticeMessage` callback takes a params object — DONE in dev-utils, pending release + consumer follow-up
-
-**Landed** (`src/obsidian/loop.ts`, commit `refactor(loop)!: pass buildNoticeMessage a params object`): `buildNoticeMessage(item, iterationStr)` → `buildNoticeMessage(params)` where `params: LoopBuildNoticeMessageParams<T> = { item; iterationStr }`, on `LoopParams<T>` (the actual type is `LoopParams`, not `LoopOptions`). Call site + `loop.test.ts` updated; full gate green (100% coverage). (`loop.d.ts` is a gitignored build artifact — regenerated, not hand-edited.)
-
-**Remaining:** cut the **major** release (breaking API change), then the consumer follow-up. The user approved this breaking change (2026-07-10, over leaving the callbacks as thin adapters).
-
-**Consumer follow-up (after release):** update the 15 `buildNoticeMessage: (item, iterationStr) => …` arrows to `buildNoticeMessage: ({ item, iterationStr }) => …` across: `backlink-cache` (2), `better-markdown-links` (1), `consistent-attachments-and-links` (7), `custom-attachment-location` (2), `external-rename-handler` (2), `frontmatter-markdown-links` (1). Bump dev-utils in each and adjust. Full checklist: `F:/tmp/g10d-refactor-todo.md` (§3).
-
 ## Commands
 
 All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
@@ -129,6 +59,14 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - esbuild for bundling (ESM + CJS dual output)
 - `src/**/index.ts` files are auto-generated — do NOT edit them manually
 - `package.json` exports are auto-generated via `build:generate-exports`
+- `src/__merged.ts` is an auto-generated flat re-export barrel of every renderer-safe **value** export
+  (gitignored + eslint-ignored, exactly like `index.ts`; produced by `build:generate-merged`, which runs
+  before `build:generate-index`). It backs the `obsidian-dev-utils/__merged` subpath and the `lib` bag
+  injected into `evalInObsidian` closures — wired via `registerLibResolver` in
+  `scripts/integration-test-obsidian-setup.ts` plus the `Lib` augmentation in
+  `src/@types/obsidian-integration-testing.d.ts`. The generator **fails the build if two modules export
+  the same value name**: every public value export must be unique (this is why `path.ts` / `string.ts`
+  `normalize` were renamed to `normalizePath` / `normalizeString`). Do NOT edit `__merged.ts` manually.
 
 ### Type Validation (manual `skipLibCheck` wrapper)
 

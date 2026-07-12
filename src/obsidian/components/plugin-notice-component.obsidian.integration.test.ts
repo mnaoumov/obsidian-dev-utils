@@ -19,13 +19,7 @@ import {
 describe('PluginNoticeComponent styling', () => {
   it('should render the plugin name with the accent color and bold weight, distinct from the body', async () => {
     const result = await evalInObsidian({
-      fn() {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
-        const { PluginNoticeComponent } = lib.obsidian.components['plugin-notice-component'];
+      fn({ lib: { PluginNoticeComponent } }) {
         const component = new PluginNoticeComponent('My Test Plugin');
         const notice = component.showNotice('Body text');
 
@@ -83,14 +77,7 @@ describe('PluginNoticeComponent styling', () => {
 describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   it('shows a cancellable notice after the delay whose interactive click does not dismiss it', async () => {
     const result = await evalInObsidian({
-      async fn() {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
-        const { PluginNoticeComponent } = lib.obsidian.components['plugin-notice-component'];
-
+      async fn({ lib: { PluginNoticeComponent } }) {
         const DELAY_IN_MILLISECONDS = 50;
         const SETTLE_IN_MILLISECONDS = 250;
 

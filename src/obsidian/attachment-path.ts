@@ -24,7 +24,7 @@ import {
   makeFileName
 } from '../path.ts';
 import {
-  normalize,
+  normalizeString,
   replaceAll,
   trimStart
 } from '../string.ts';
@@ -354,8 +354,8 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
     attachmentFolderPath = (noteFileOrNull ? noteFileOrNull.parent?.getParentPrefix() ?? '' : '') + relativePath;
   }
 
-  attachmentFolderPath = normalize(normalizeSlashes(attachmentFolderPath));
-  const attachmentFileBaseName = normalize(normalizeSlashes(params.attachmentFileBaseName));
+  attachmentFolderPath = normalizeString(normalizeSlashes(attachmentFolderPath));
+  const attachmentFileBaseName = normalizeString(normalizeSlashes(params.attachmentFileBaseName));
 
   let folder = getFolderOrNull({ app, isCaseInsensitive: true, pathOrFolder: attachmentFolderPath });
 

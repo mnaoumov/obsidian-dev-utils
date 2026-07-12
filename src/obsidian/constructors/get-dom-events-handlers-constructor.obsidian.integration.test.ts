@@ -33,12 +33,8 @@ const CORE_HANDLER_METHOD = 'onInternalLinkClick';
 describe('getDomEventsHandlersConstructor', () => {
   it('should extract the DomEventsHandlers constructor, not the container element constructor', async () => {
     const probe = await evalInObsidian<Record<string, never>, ConstructorProbe>({
-      async fn({ app }) {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-        const ctor = await lib.obsidian.constructors['get-dom-events-handlers-constructor'].getDomEventsHandlersConstructor(app);
+      async fn({ app, lib: { getDomEventsHandlersConstructor } }) {
+        const ctor = await getDomEventsHandlersConstructor(app);
         const proto: object = ctor.prototype;
         const prototypeMethodNames = Object.getOwnPropertyNames(proto)
           .filter((name) => {

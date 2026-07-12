@@ -106,6 +106,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Markdownlint CLI2 configuration schema TypeScript declaration file. */
   MarkdownlintTypesMarkdownlintCli2ConfigSchemaDts = 'src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts',
 
+  /** Generated flat re-export barrel file. */
+  MergedTs = '__merged.ts',
+
   /** ESM JavaScript file extension. */
   MjsExtension = '.mjs',
 

@@ -30,12 +30,7 @@ describe('editor', () => {
   describe('toggleEditorReadOnly', () => {
     it('should make the editor read-only when toggled on and editable again when toggled off', async () => {
       const result = await evalInObsidian<Record<string, never>, ToggleReadOnlyResult>({
-        async fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-
+        async fn({ app, lib: { toggleEditorReadOnly } }) {
           const file = await app.vault.create('editor-toggle-read-only-integration.md', 'hello world');
           await app.workspace.getLeaf().openFile(file);
           // The CodeMirror instance is not fully wired up the instant `openFile` resolves.
@@ -48,10 +43,10 @@ describe('editor', () => {
           }
 
           const isReadOnlyBeforeToggle = editor.cm.state.readOnly;
-          lib.obsidian.editor.toggleEditorReadOnly(editor, true);
+          toggleEditorReadOnly(editor, true);
           const isReadOnlyWhileToggledOn = editor.cm.state.readOnly;
           const contentEditableWhileReadOnly = editor.cm.contentDOM.contentEditable;
-          lib.obsidian.editor.toggleEditorReadOnly(editor, false);
+          toggleEditorReadOnly(editor, false);
           const isReadOnlyAfterToggleOff = editor.cm.state.readOnly;
 
           return {

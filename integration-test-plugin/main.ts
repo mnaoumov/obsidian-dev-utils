@@ -20,10 +20,10 @@ import { Plugin } from 'obsidian';
  */
 export default class IntegrationTestPlugin extends Plugin {
   public override onload(): void {
-    window.__obsidianDevUtilsModule__ = obsidianDevUtils;
+    window.__obsidianDevUtilsModule = obsidianDevUtils;
   }
 
   public override onunload(): void {
-    delete window.__obsidianDevUtilsModule__;
+    delete window.__obsidianDevUtilsModule;
   }
 }

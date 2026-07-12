@@ -39,7 +39,7 @@ import {
   relative
 } from '../path.ts';
 import {
-  normalize,
+  normalizeString,
   replaceAll,
   trimEnd
 } from '../string.ts';
@@ -1307,7 +1307,7 @@ export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
  * @returns An object containing the link path and subpath.
  */
 export function splitSubpath(link: string): SplitSubpathResult {
-  const parsed = parseLinktext(normalize(link));
+  const parsed = parseLinktext(normalizeString(link));
   return {
     linkPath: parsed.path,
     subpath: parsed.subpath

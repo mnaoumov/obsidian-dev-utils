@@ -18,12 +18,8 @@ describe('attachment-path', () => {
   describe('getAttachmentFolderPath', () => {
     it('should return the attachment folder path for a note', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian['attachment-path'].getAttachmentFolderPath({ app, notePathOrFile: 'test-note.md' });
+        fn({ app, lib: { getAttachmentFolderPath } }) {
+          return getAttachmentFolderPath({ app, notePathOrFile: 'test-note.md' });
         }
       });
 
@@ -35,12 +31,8 @@ describe('attachment-path', () => {
   describe('getAvailablePathForAttachments', () => {
     it('should return a valid path for a new attachment', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian['attachment-path'].getAvailablePathForAttachments({
+        fn({ app, lib: { getAvailablePathForAttachments } }) {
+          return getAvailablePathForAttachments({
             app,
             attachmentFileBaseName: 'test-image',
             attachmentFileExtension: 'png',
@@ -57,15 +49,9 @@ describe('attachment-path', () => {
 
     it('should generate unique paths when duplicates exist', async () => {
       const result = await evalInObsidian<Record<string, never>, string[]>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          const checkedLib = lib;
-
+        fn({ app, lib: { getAvailablePathForAttachments } }) {
           function getPath(): Promise<string> {
-            return checkedLib.obsidian['attachment-path'].getAvailablePathForAttachments({
+            return getAvailablePathForAttachments({
               app,
               attachmentFileBaseName: 'unique-test',
               attachmentFileExtension: 'txt',
@@ -88,12 +74,8 @@ describe('attachment-path', () => {
   describe('hasOwnAttachmentFolder', () => {
     it('should return a boolean indicating own attachment folder', async () => {
       const result = await evalInObsidian<Record<string, never>, boolean>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian['attachment-path'].hasOwnAttachmentFolder({ app, path: 'test-note.md' });
+        fn({ app, lib: { hasOwnAttachmentFolder } }) {
+          return hasOwnAttachmentFolder({ app, path: 'test-note.md' });
         }
       });
 

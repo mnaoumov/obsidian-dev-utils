@@ -59,6 +59,7 @@ function getIgnoreConfigs(): Linter.Config[] {
   return defineConfig([
     globalIgnores([
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.IndexTs),
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.MergedTs),
       ObsidianDevUtilsRepoPaths.DataviewTypes,
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
       join(ObsidianDevUtilsRepoPaths.Templates, ObsidianDevUtilsRepoPaths.AnyPath)

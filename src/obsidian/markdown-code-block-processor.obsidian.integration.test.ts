@@ -23,62 +23,6 @@ interface ReadNoteContent {
 type ReadNoteContentArgs = GenericObject<ReadNoteContent>;
 
 describe('markdown-code-block-processor', () => {
-  it('should export getCodeBlockMarkdownInfo function', async () => {
-    const result = await evalInObsidian<Record<string, never>, boolean>({
-      fn() {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-        return typeof lib.obsidian['markdown-code-block-processor'].getCodeBlockMarkdownInfo === 'function';
-      }
-    });
-
-    expect(result).toBe(true);
-  });
-
-  it('should export replaceCodeBlock function', async () => {
-    const result = await evalInObsidian<Record<string, never>, boolean>({
-      fn() {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-        return typeof lib.obsidian['markdown-code-block-processor'].replaceCodeBlock === 'function';
-      }
-    });
-
-    expect(result).toBe(true);
-  });
-
-  it('should export insertAfterCodeBlock function', async () => {
-    const result = await evalInObsidian<Record<string, never>, boolean>({
-      fn() {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-        return typeof lib.obsidian['markdown-code-block-processor'].insertAfterCodeBlock === 'function';
-      }
-    });
-
-    expect(result).toBe(true);
-  });
-
-  it('should export removeCodeBlock function', async () => {
-    const result = await evalInObsidian<Record<string, never>, boolean>({
-      fn() {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-        return typeof lib.obsidian['markdown-code-block-processor'].removeCodeBlock === 'function';
-      }
-    });
-
-    expect(result).toBe(true);
-  });
-
   it('should read note content with code block from vault', async () => {
     const content = `${dedent`
         # Test Note
