@@ -38,6 +38,9 @@ export enum ObsidianPluginRepoPaths {
   /** Current folder. */
   CurrentFolder = '.',
 
+  /** Demo vault folder shipped in a plugin repo root. */
+  DemoVault = 'demo-vault',
+
   /** Distribution folder. */
   Dist = 'dist',
 
@@ -46,6 +49,10 @@ export enum ObsidianPluginRepoPaths {
 
   /** Development folder within the {@link Dist} folder. */
   DistDev = 'dist/dev',
+
+  /** Obsidian configuration folder within a vault. */
+  // eslint-disable-next-line obsidianmd/hardcoded-config-path -- This is the default config folder name baked into a shipped demo-vault skeleton, not a lookup against a live vault.
+  DotObsidian = '.obsidian',
 
   /** CommonJS ESLint configuration file. */
   EslintConfigCjs = 'eslint.config.cjs',
@@ -127,6 +134,9 @@ export enum ObsidianPluginRepoPaths {
 
   /** Package-lock JSON file. */
   PackageLockJson = 'package-lock.json',
+
+  /** Plugins folder within an Obsidian configuration folder. */
+  Plugins = 'plugins',
 
   /** Scripts folder. */
   Scripts = 'scripts',

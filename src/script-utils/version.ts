@@ -34,6 +34,7 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
+import { archivePluginDemoVault } from './demo-vault.ts';
 import { readdirPosix } from './fs.ts';
 import { editJson } from './json.ts';
 import {
@@ -105,6 +106,14 @@ export interface UpdateVersionOptions {
    * @returns A {@link Promise} that resolves when the GitHub release has been prepared.
    */
   prepareGitHubRelease?(this: void, newVersion: string): Promise<void>;
+
+  /**
+   * Whether to archive the plugin's demo vault (`demo-vault/` in the repo root) as a release
+   * artifact. Only applies to Obsidian plugins; ignored when the repo has no `demo-vault/` folder.
+   *
+   * @default `true`
+   */
+  readonly shouldArchiveDemoVault?: boolean;
 
   /**
    * Whether to run the build step. The build is a publishing prerequisite, not a verification check,
@@ -424,6 +433,7 @@ export async function gitPush(): Promise<void> {
  * - `--no-changelog-editing` — generate the changelog without opening it for manual review.
  * - `--no-checks` — skip the clean-repo check, format, spellcheck, lint, over-exposure analysis, and tests (the build still runs).
  * - `--no-commit-verification` — pass `--no-verify` to the release commit, skipping the pre-commit hook.
+ * - `--no-demo-vault` — skip archiving the plugin's demo vault (`demo-vault/`) as a release artifact.
  * - `--no-release` — run all local steps but skip the push and the GitHub release.
  *
  * @param args - The command-line arguments to parse (typically `process.argv.slice(2)`).
@@ -438,12 +448,14 @@ export function parseVersionArgs(args: string[]): ParsedVersionArgs {
       'no-changelog-editing': { type: 'boolean' },
       'no-checks': { type: 'boolean' },
       'no-commit-verification': { type: 'boolean' },
+      'no-demo-vault': { type: 'boolean' },
       'no-release': { type: 'boolean' }
     }
   });
 
   return {
     options: {
+      shouldArchiveDemoVault: !(values['no-demo-vault'] ?? false),
       shouldBuild: !(values['no-build'] ?? false),
       shouldEditChangelog: !(values['no-changelog-editing'] ?? false),
       shouldRelease: !(values['no-release'] ?? false),
@@ -595,6 +607,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
 export async function updateVersion(versionUpdateType?: string, options: UpdateVersionOptions = {}): Promise<void> {
   const {
     prepareGitHubRelease,
+    shouldArchiveDemoVault = true,
     shouldBuild = true,
     shouldEditChangelog = true,
     shouldRelease = true,
@@ -658,6 +671,9 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
 
   await gitPush();
   await prepareGitHubRelease?.(newVersion);
+  if (isObsidianPlugin && shouldArchiveDemoVault) {
+    await archivePluginDemoVault(newVersion);
+  }
   await publishGitHubRelease(newVersion, isObsidianPlugin);
 }
 
