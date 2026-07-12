@@ -36,6 +36,7 @@ npm install obsidian-dev-utils
 - [Modals](./docs/modals.md)
 - [Debugging](./docs/debugging.md)
 - [Plugin Helpers](./docs/plugin-helpers.md)
+- [Demo Vault](./docs/demo-vault.md)
 - [Testing](./docs/testing.md)
 
 ## Support

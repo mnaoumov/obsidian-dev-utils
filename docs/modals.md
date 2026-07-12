@@ -68,3 +68,22 @@ await selectItem({
 ```
 
 ![Select Item](./images/modals/select-item.png)
+
+## Select Option
+
+Unlike [Select Item](#select-item) (a fuzzy-search picker over an arbitrary list), `selectOption` renders one button per option — useful for a small, fixed set of mutually-exclusive choices where each choice has its own label and resolved value. One option can be marked as the call-to-action (primary) button. It resolves with the chosen value, or `null` if the modal is dismissed without a choice.
+
+```ts
+import { selectOption } from 'obsidian-dev-utils/obsidian/modals/select-option';
+
+const chosen = await selectOption({
+  app,
+  message: 'Sample select option message',
+  options: [
+    { isCta: true, text: 'Yes', value: 'yes' },
+    { text: 'No', value: 'no' },
+    { text: 'Cancel', value: null }
+  ],
+  title: 'Sample select option title'
+});
+```
