@@ -129,6 +129,14 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - esbuild for bundling (ESM + CJS dual output)
 - `src/**/index.ts` files are auto-generated — do NOT edit them manually
 - `package.json` exports are auto-generated via `build:generate-exports`
+- `src/__merged.ts` is an auto-generated flat re-export barrel of every renderer-safe **value** export
+  (gitignored + eslint-ignored, exactly like `index.ts`; produced by `build:generate-merged`, which runs
+  before `build:generate-index`). It backs the `obsidian-dev-utils/__merged` subpath and the `lib` bag
+  injected into `evalInObsidian` closures — wired via `registerLibResolver` in
+  `scripts/integration-test-obsidian-setup.ts` plus the `Lib` augmentation in
+  `src/@types/obsidian-integration-testing.d.ts`. The generator **fails the build if two modules export
+  the same value name**: every public value export must be unique (this is why `path.ts` / `string.ts`
+  `normalize` were renamed to `normalizePath` / `normalizeString`). Do NOT edit `__merged.ts` manually.
 
 ### Type Validation (manual `skipLibCheck` wrapper)
 
