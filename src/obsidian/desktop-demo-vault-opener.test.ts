@@ -16,12 +16,12 @@ import {
 } from 'vitest';
 
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
-import type { OpenDemoVaultParams } from './demo-vault-opener.ts';
+import type { OpenDemoVaultParams } from './desktop-demo-vault-opener.ts';
 import type { SelectOptionParams } from './modals/select-option.ts';
 
 import { join } from '../path.ts';
 import { strictProxy } from '../strict-proxy.ts';
-import { openDemoVault } from './demo-vault-opener.ts';
+import { openDemoVault } from './desktop-demo-vault-opener.ts';
 
 const {
   mockExistsSync,

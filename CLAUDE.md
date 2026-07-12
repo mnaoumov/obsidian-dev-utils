@@ -163,6 +163,28 @@ export function myFunction(param: Type): ReturnType {
 - The copies are deliberately **not byte-identical** (a serialized closure vs a real module): here they call the ambient global `sleep(ms)`, read `Platform.isMacOS` via `import { Platform } from 'obsidian'`, and `moveMouse` / `pressKey` are **synchronous** (`void`) with the pointer primitive folded into `moveMouse` (no separate `moveMouseTo`); the harness closure instead uses its runtime `sleep` / `ns.obsidianModule` and — until it ships its matching major — may still type these `Promise<void>` (harmless: `() => Promise<void>` is assignable to the `() => void` base, so the `Lib` augmentation compiles either way). So the sync obligation is **behavioral**, not textual.
 - (cannot be forced by ESLint — a cross-repo hand-sync convention)
 
+### L5. Platform-only modules carry a `desktop-` / `mobile-` filename prefix
+
+- A module that only works on (or is only meant for) **desktop** must have a `desktop-` filename
+  prefix; a **mobile**-only module must have a `mobile-` prefix. The prefix marks the file, not its
+  exports — e.g. `desktop-trusted-input.ts` exports `typeIntoEditor`, not `desktopTypeIntoEditor`.
+- "Platform-only" means the module directly uses a platform-restricted API (Node builtins,
+  `window.electron`, mobile-only APIs), or is desktop/mobile-only in function and transitively imports
+  such a module. Examples: `desktop-trusted-input.ts` (`window.electron` trusted input),
+  `desktop-demo-vault-opener.ts` (`node:fs`/`node:os` + `window.electron`),
+  `desktop-open-demo-vault-command-handler.ts` (desktop-gated command that imports the opener). A
+  module using only cross-platform APIs (e.g. `community-plugins.ts`, which uses `requestUrl`) gets no
+  prefix.
+- The prefix is **especially important when the module has a static top-level import of a
+  platform-only builtin** (e.g. `import { existsSync } from 'node:fs'`). Such an import is evaluated at
+  **module-load** time, so a mobile bundle merely *loading* the module — not just calling it — can fail
+  on the missing builtin, even behind a `Platform.isDesktopApp` runtime guard. The `desktop-` prefix
+  flags that the module (and anything importing it) must be kept off the mobile load path; the
+  alternative is to defer the platform-only access to call time (e.g. lazy `window.require(...)`).
+- No `mobile-` example exists yet; the rule is stated for symmetry.
+- (cannot be forced by ESLint — a filename convention; a custom check could flag `node:`/`window.electron`
+  usage in a non-`desktop-` file)
+
 ## Testing
 
 ### Goals

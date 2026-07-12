@@ -46,7 +46,7 @@ const zipPath = await archivePluginDemoVault('1.2.3');
 The runtime side is opt-in. Register `OpenDemoVaultCommandHandler` from your plugin (for example in your `CommandHandlerComponent`'s command handlers):
 
 ```ts
-import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
+import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/desktop-open-demo-vault-command-handler';
 
 new OpenDemoVaultCommandHandler({
   app: this.app,

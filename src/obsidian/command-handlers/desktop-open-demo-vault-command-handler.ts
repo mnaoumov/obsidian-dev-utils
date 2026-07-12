@@ -13,7 +13,7 @@ import { Platform } from 'obsidian';
 
 import type { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 
-import { openDemoVault } from '../demo-vault-opener.ts';
+import { openDemoVault } from '../desktop-demo-vault-opener.ts';
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
 /**

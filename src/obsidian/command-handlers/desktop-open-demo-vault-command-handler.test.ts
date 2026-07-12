@@ -17,7 +17,7 @@ import type { PluginNoticeComponent } from '../components/plugin-notice-componen
 
 import { waitForAllAsyncOperations } from '../../async.ts';
 import { strictProxy } from '../../strict-proxy.ts';
-import { OpenDemoVaultCommandHandler } from './open-demo-vault-command-handler.ts';
+import { OpenDemoVaultCommandHandler } from './desktop-open-demo-vault-command-handler.ts';
 
 const { mockOpenDemoVault, platformState } = vi.hoisted(() => ({
   mockOpenDemoVault: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('obsidian', async (importOriginal) => {
   };
 });
 
-vi.mock('../demo-vault-opener.ts', () => ({
+vi.mock('../desktop-demo-vault-opener.ts', () => ({
   openDemoVault: mockOpenDemoVault
 }));
 
