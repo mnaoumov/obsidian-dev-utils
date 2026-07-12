@@ -157,6 +157,12 @@ export function myFunction(param: Type): ReturnType {
 - **Every promoted `protected` member must carry a TSDoc comment.** For a constructor parameter-property (`protected readonly x` in the constructor signature), the constructor's `@param x` tag is its documentation; for a field declaration, add a `/** ... */` block above it.
 - (cannot be forced by ESLint — the promote-vs-keep decision is a judgment call; the TSDoc requirement on non-private members could be partially checked by a custom `jsdoc/require-jsdoc` context)
 
+### L4. Trusted-input & layout helpers are hand-synced with `obsidian-integration-testing`
+
+- `src/obsidian/desktop-trusted-input.ts` (`typeIntoEditor`, `pressKey`, `moveMouse`, `hoverElement`, `unhoverElement`) and `ensureLayoutReady` (`src/obsidian/workspace.ts`) are importable-module **twins** of helpers the `obsidian-integration-testing` harness seeds into its `evalInObsidian` `lib` bag (its `namespace-bootstrap.ts`). `errorToString` (`src/error.ts`) is likewise mirrored by the harness's own error-to-string helper. The harness must never depend on this library, so each is an intentional **duplicate kept in sync by hand — there is no automated drift check.** Any behavior change to one of these helpers must be mirrored in the harness in the same coordinated cross-repo change (and vice-versa); the harness carries the counterpart rule.
+- The copies are deliberately **not byte-identical** (a serialized closure vs a real module): here they call the ambient global `sleep(ms)`, read `Platform.isMacOS` via `import { Platform } from 'obsidian'`, and `moveMouse` / `pressKey` are **synchronous** (`void`) with the pointer primitive folded into `moveMouse` (no separate `moveMouseTo`); the harness closure instead uses its runtime `sleep` / `ns.obsidianModule` and — until it ships its matching major — may still type these `Promise<void>` (harmless: `() => Promise<void>` is assignable to the `() => void` base, so the `Lib` augmentation compiles either way). So the sync obligation is **behavioral**, not textual.
+- (cannot be forced by ESLint — a cross-repo hand-sync convention)
+
 ## Testing
 
 ### Goals
@@ -359,10 +365,6 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 `templates/scripts/*-config.ts`, which ships alongside it — so the copied templates resolve without
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
-
-## Known Issues
-
-- None currently.
 
 ## Commits
 

@@ -12,6 +12,7 @@ import {
 
 import { strictProxy } from '../strict-proxy.ts';
 import {
+  ensureLayoutReady,
   getAllContainers,
   getAllDomWindows
 } from './workspace.ts';
@@ -36,6 +37,41 @@ function createMockApp(containers: WorkspaceContainer[]): App {
 function createMockContainer(win: Window): WorkspaceContainer {
   return strictProxy<WorkspaceContainer>({ win });
 }
+
+describe('ensureLayoutReady', () => {
+  it('should resolve once the layout-ready callback fires', async () => {
+    let layoutReadyCallback: (() => void) | undefined;
+    const app = strictProxy<App>({
+      workspace: {
+        onLayoutReady: (callback: () => void): void => {
+          layoutReadyCallback = callback;
+        }
+      }
+    });
+
+    let isResolved = false;
+    const promise = ensureLayoutReady(app).then(() => {
+      isResolved = true;
+    });
+
+    expect(isResolved).toBe(false);
+    layoutReadyCallback?.();
+    await promise;
+    expect(isResolved).toBe(true);
+  });
+
+  it('should resolve when the layout is already ready', async () => {
+    const app = strictProxy<App>({
+      workspace: {
+        onLayoutReady: (callback: () => void): void => {
+          callback();
+        }
+      }
+    });
+
+    await expect(ensureLayoutReady(app)).resolves.toBeUndefined();
+  });
+});
 
 describe('getAllContainers', () => {
   it('should return all unique containers', () => {
