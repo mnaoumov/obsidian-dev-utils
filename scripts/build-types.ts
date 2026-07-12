@@ -39,7 +39,10 @@ const BARE_INLINE_IMPORT_TYPE_REG_EXP = /import\("(?<Specifier>[^."][^"]*)"\)/g;
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.types.json');
   const STATIC_IMPORT_REG_EXP = /from '(?<ImportPath>.+?)\.ts';/gm;
-  const DYNAMIC_IMPORT_REG_EXP = /import\("(?<ImportPath>.+?)\.ts"\)/gm;
+  // Inline import-type nodes (`typeof import('./foo.ts')`) preserve the source quote style.
+  // Hand-authored `.d.ts` files emit single quotes; tsc-generated declarations emit double quotes.
+  // Capture the quote and reuse it in the replacement so both styles are rewritten.
+  const DYNAMIC_IMPORT_REG_EXP = /import\((?<Quote>['"])(?<ImportPath>.+?)\.ts\k<Quote>\)/gm;
 
   const allLibs = await collectAllLibs();
   const allTypes = await collectAllTypes();
@@ -72,7 +75,7 @@ await wrapCliTask(async () => {
       str: content
     });
     ctsContent = replaceAll({
-      replacer: 'import("$<ImportPath>.cjs")',
+      replacer: 'import($<Quote>$<ImportPath>.cjs$<Quote>)',
       searchValue: DYNAMIC_IMPORT_REG_EXP,
       str: ctsContent
     });
@@ -98,7 +101,7 @@ await wrapCliTask(async () => {
       str: content
     });
     mtsContent = replaceAll({
-      replacer: 'import("$<ImportPath>.mjs")',
+      replacer: 'import($<Quote>$<ImportPath>.mjs$<Quote>)',
       searchValue: DYNAMIC_IMPORT_REG_EXP,
       str: mtsContent
     });
