@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Component that wraps a {@link CommandHandler} and manages its registration with Obsidian.
+ * Component that registers {@link CommandHandler}s with Obsidian and ties their removal to its lifecycle.
  */
 
 import type { ActiveFileProvider } from '../active-file-provider.ts';
@@ -12,29 +12,32 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
+import { invokeAsyncSafely } from '../../async.ts';
+import {
+  CallbackDisposable,
+  MultipleDisposeBehavior
+} from '../../disposable.ts';
 import { ComponentEx } from '../components/component-ex.ts';
 
 interface CommandHandlerComponentConstructorParams {
   readonly activeFileProvider: ActiveFileProvider;
-  readonly commandHandlers: CommandHandler[];
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly pluginName: string;
 }
 
 /**
- * Wraps a {@link CommandHandler} and registers it with Obsidian on load.
+ * Registers {@link CommandHandler}s with Obsidian and manages their lifecycle.
+ *
+ * Call {@link registerCommandHandlers} to register a batch of handlers on demand (as many times as
+ * needed while the component is alive); dispose the returned {@link Disposable} to unregister exactly
+ * those handlers, or let the component unload to remove every command still registered through it.
  */
 export class CommandHandlerComponent extends ComponentEx {
   /**
    * Provider for accessing the currently active file.
    */
   protected readonly activeFileProvider: ActiveFileProvider;
-
-  /**
-   * The command handlers to register with Obsidian.
-   */
-  protected readonly commandHandlers: CommandHandler[];
 
   /**
    * Registrar used to add and remove commands with Obsidian.
@@ -58,7 +61,6 @@ export class CommandHandlerComponent extends ComponentEx {
    */
   public constructor(params: CommandHandlerComponentConstructorParams) {
     super();
-    this.commandHandlers = params.commandHandlers;
     this.activeFileProvider = params.activeFileProvider;
     this.menuEventRegistrar = params.menuEventRegistrar;
     this.commandRegistrar = params.commandRegistrar;
@@ -66,22 +68,46 @@ export class CommandHandlerComponent extends ComponentEx {
   }
 
   /**
-   * Registers the command with Obsidian and provides runtime context to the handler.
+   * Registers the given command handlers with Obsidian and provides each its runtime registration
+   * context. Each handler's command is added immediately; the returned {@link Disposable} removes the
+   * commands registered by this call when disposed. Any command still registered when the component
+   * unloads is removed automatically.
+   *
+   * @param commandHandlers - The command handlers to register.
+   * @returns A {@link Disposable} that unregisters the handlers passed to this call.
    */
-  public override async onloadAsync(): Promise<void> {
+  public registerCommandHandlers(commandHandlers: CommandHandler[]): Disposable {
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: this.activeFileProvider,
       menuEventRegistrar: this.menuEventRegistrar,
       pluginName: this.pluginName
     };
 
-    for (const commandHandler of this.commandHandlers) {
+    const disposables: Disposable[] = [];
+    for (const commandHandler of commandHandlers) {
       const command = commandHandler.buildCommand();
       this.commandRegistrar.addCommand(command);
-      this.register(() => {
-        this.commandRegistrar.removeCommand(command.id);
+      const disposable = new CallbackDisposable({
+        callback: (): void => {
+          this.commandRegistrar.removeCommand(command.id);
+        },
+        multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
       });
-      await commandHandler.onRegistered(context);
+      disposables.push(disposable);
+      // Tie removal to the component's unload, so a command never outlives the component.
+      this.register(() => {
+        disposable[Symbol.dispose]();
+      });
+      invokeAsyncSafely(() => commandHandler.onRegistered(context));
     }
+
+    return new CallbackDisposable({
+      callback: (): void => {
+        for (const disposable of disposables) {
+          disposable[Symbol.dispose]();
+        }
+      },
+      multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
+    });
   }
 }

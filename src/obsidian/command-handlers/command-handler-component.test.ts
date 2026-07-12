@@ -21,6 +21,7 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
+import { waitForAllAsyncOperations } from '../../async.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { CommandHandlerComponent } from './command-handler-component.ts';
 import { CommandHandler } from './command-handler.ts';
@@ -40,6 +41,15 @@ class TestHandler extends CommandHandler {
     await super.onRegistered(context);
     this.registeredContext = context;
   }
+}
+
+function createComponent(commandRegistrar: CommandRegistrar): CommandHandlerComponent {
+  return new CommandHandlerComponent({
+    activeFileProvider: createMockActiveFileProvider(),
+    commandRegistrar,
+    menuEventRegistrar: createMockMenuEventRegistrar(),
+    pluginName: 'Test Plugin'
+  });
 }
 
 function createMockActiveFileProvider(): ActiveFileProvider {
@@ -67,18 +77,11 @@ function createParams(overrides?: Partial<CommandHandlerConstructorParams>): Com
 }
 
 describe('CommandHandlerComponent', () => {
-  it('should call plugin.addCommand with built command on load', async () => {
-    const commandHandler = new TestHandler(createParams());
+  it('should add the built command via the registrar when handlers are registered', () => {
     const commandRegistrar = createMockCommandRegistrar();
-    const component = new CommandHandlerComponent({
-      activeFileProvider: createMockActiveFileProvider(),
-      commandHandlers: [commandHandler],
-      commandRegistrar,
-      menuEventRegistrar: createMockMenuEventRegistrar(),
-      pluginName: 'Test Plugin'
-    });
+    const component = createComponent(commandRegistrar);
 
-    await component.loadWithPromises();
+    component.registerCommandHandlers([new TestHandler(createParams())]);
 
     expect(commandRegistrar.addCommand).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -90,58 +93,52 @@ describe('CommandHandlerComponent', () => {
 
   it('should provide registration context with activeFileProvider and menuEventRegistrar', async () => {
     const commandHandler = new TestHandler(createParams());
-    const component = new CommandHandlerComponent({
-      activeFileProvider: createMockActiveFileProvider(),
-      commandHandlers: [commandHandler],
-      commandRegistrar: createMockCommandRegistrar(),
-      menuEventRegistrar: createMockMenuEventRegistrar(),
-      pluginName: 'Test Plugin'
-    });
+    const component = createComponent(createMockCommandRegistrar());
 
-    await component.loadWithPromises();
+    component.registerCommandHandlers([commandHandler]);
+    await waitForAllAsyncOperations();
 
     expect(commandHandler.registeredContext).toBeDefined();
     expect(commandHandler.registeredContext?.activeFileProvider).toBeDefined();
     expect(commandHandler.registeredContext?.menuEventRegistrar).toBeDefined();
   });
 
-  it('should not mutate handler id/name after addCommand', async () => {
-    const addCommand = vi.fn((cmd: Command) => {
-      // Simulate Obsidian mutating the command
-      cmd.id = 'modified-id';
-      cmd.name = 'Modified Name';
+  it('should not mutate handler id/name after addCommand', () => {
+    const addCommand = vi.fn((command: Command) => {
+      // Simulate Obsidian mutating the command.
+      command.id = 'modified-id';
+      command.name = 'Modified Name';
     });
-
     const commandRegistrar = createMockCommandRegistrar();
     vi.mocked(commandRegistrar.addCommand).mockImplementation(addCommand);
     const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
-    const component = new CommandHandlerComponent({
-      activeFileProvider: createMockActiveFileProvider(),
-      commandHandlers: [commandHandler],
-      commandRegistrar,
-      menuEventRegistrar: createMockMenuEventRegistrar(),
-      pluginName: 'Test Plugin'
-    });
+    const component = createComponent(commandRegistrar);
 
-    await component.loadWithPromises();
+    component.registerCommandHandlers([commandHandler]);
 
-    // Handler should be unaffected
+    // Handler should be unaffected.
     expect(commandHandler.buildCommand().id).toBe('original-id');
     expect(commandHandler.buildCommand().name).toBe('Original Name');
   });
 
-  it('should call removeCommand on unload', async () => {
-    const commandHandler = new TestHandler(createParams({ id: 'my-cmd' }));
+  it('should removeCommand when the returned disposable is disposed', () => {
     const commandRegistrar = createMockCommandRegistrar();
-    const component = new CommandHandlerComponent({
-      activeFileProvider: createMockActiveFileProvider(),
-      commandHandlers: [commandHandler],
-      commandRegistrar,
-      menuEventRegistrar: createMockMenuEventRegistrar(),
-      pluginName: 'Test Plugin'
-    });
+    const component = createComponent(commandRegistrar);
 
-    await component.loadWithPromises();
+    const disposable = component.registerCommandHandlers([new TestHandler(createParams({ id: 'my-cmd' }))]);
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+
+    disposable[Symbol.dispose]();
+
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
+  });
+
+  it('should removeCommand on component unload', () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = createComponent(commandRegistrar);
+    component.load();
+
+    component.registerCommandHandlers([new TestHandler(createParams({ id: 'my-cmd' }))]);
     component.unload();
 
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
