@@ -266,8 +266,7 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
 }
 
 function getWebContents(): WebContentsWithSendInputEvent {
-  // TODO: Drop this assertion once `@obsidian-typings` models Electron's stable `sendInputEvent` on the
-  // `getCurrentWebContents()` return type (it is omitted today). See the project CLAUDE.md.
-
+  // TODO(T13): drop this cast once T12 adds Electron's stable `sendInputEvent` to `@obsidian-typings`'
+  // `getCurrentWebContents()` return type (it is omitted today).
   return window.electron.remote.getCurrentWebContents() as WebContentsWithSendInputEvent;
 }
