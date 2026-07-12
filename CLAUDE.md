@@ -205,8 +205,8 @@ export function myFunction(param: Type): ReturnType {
   command hides on mobile and `execute` runs only on desktop), and `execute` does
   `const { openDemoVault } = await import('../desktop-demo-vault-opener.ts')` — so the desktop-only
   opener (static `node:fs` imports) is never on the mobile load path, yet the consumer writes no platform
-  guard. The dynamic import carries `// eslint-disable-next-line no-restricted-syntax -- Need conditional
-  import …`.
+  guard. The dynamic `import()` needs no `eslint-disable` (the `no-restricted-syntax` `ImportExpression`
+  ban was removed from the shared config — see R2 G10a); keep the literal path so esbuild can bundle it.
 - The rule constrains what the library **forces**, not what a consumer **may** import. A consumer is
   free to import a `desktop-*` / `mobile-*` module directly — that is a **deliberate platform
   commitment**: correct for a desktop-only plugin (or a G80 facade), and a knowingly-wrong choice for a

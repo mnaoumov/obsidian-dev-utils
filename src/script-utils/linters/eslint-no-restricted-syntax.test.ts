@@ -254,18 +254,6 @@ describe('noRestrictedSyntaxRuleEntries', () => {
     });
   });
 
-  describe('ImportExpression', () => {
-    const MESSAGE = 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading.';
-
-    it('flags dynamic `import()` calls', () => {
-      expectFires('async function f() { await import("./foo.ts"); }', MESSAGE);
-    });
-
-    it('allows static `import` statements', () => {
-      expectDoesNotFire('import { foo } from "./foo.ts";', MESSAGE);
-    });
-  });
-
   describe('PropertyDefinition[declare=true]', () => {
     const MESSAGE = 'Do not use `declare` on class properties. Initialize the property or use a regular type annotation.';
 

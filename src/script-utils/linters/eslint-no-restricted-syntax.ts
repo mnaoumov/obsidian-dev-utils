@@ -68,10 +68,6 @@ export const noRestrictedSyntaxRuleEntries: readonly NoRestrictedSyntaxRuleEntry
     selector: 'ImportSpecifier[local.name=/Mock/]:not([imported.name=/Mock/])'
   },
   {
-    message: 'Avoid dynamic import(). Use static imports instead. Only use dynamic imports for lazy/conditional loading.',
-    selector: 'ImportExpression'
-  },
-  {
     message: 'Do not use `declare` on class properties. Initialize the property or use a regular type annotation.',
     selector: 'PropertyDefinition[declare=true]'
   }

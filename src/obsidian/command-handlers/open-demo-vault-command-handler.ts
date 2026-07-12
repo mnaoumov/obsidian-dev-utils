@@ -81,7 +81,7 @@ export class OpenDemoVaultCommandHandler extends GlobalCommandHandler {
    * Executes the command, opening the plugin's demo vault.
    */
   public override async execute(): Promise<void> {
-    // eslint-disable-next-line no-restricted-syntax -- Need conditional import of the desktop-only opener; this runs only on desktop (gated by `canExecute`), keeping its static Node-builtin imports off the mobile load path.
+    // Conditional import of the desktop-only opener; this runs only on desktop (gated by `canExecute`), keeping its static Node-builtin imports off the mobile load path.
     const { openDemoVault } = await import('../desktop-demo-vault-opener.ts');
     await openDemoVault({
       app: this.app,
