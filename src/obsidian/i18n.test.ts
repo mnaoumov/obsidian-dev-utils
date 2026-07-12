@@ -74,7 +74,6 @@ vi.mock('../obsidian/i18n/locales/translations-map.ts', () => ({
 }));
 
 async function reloadI18N(): Promise<typeof import('./i18n/i18n.ts')> {
-  // eslint-disable-next-line no-restricted-syntax -- We need to reload i18n dynamically.
   return await import('./i18n/i18n.ts');
 }
 

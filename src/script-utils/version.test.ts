@@ -31,6 +31,7 @@ import {
 } from './version.ts';
 
 const {
+  mockArchivePluginDemoVault,
   mockCp,
   mockCreateInterface,
   mockEditJson,
@@ -48,6 +49,7 @@ const {
   mockRm,
   mockWriteFile
 } = vi.hoisted(() => ({
+  mockArchivePluginDemoVault: vi.fn(),
   mockCp: vi.fn(),
   mockCreateInterface: vi.fn(),
   mockEditJson: vi.fn(),
@@ -64,6 +66,10 @@ const {
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
   mockRm: vi.fn(),
   mockWriteFile: vi.fn()
+}));
+
+vi.mock('./demo-vault.ts', () => ({
+  archivePluginDemoVault: mockArchivePluginDemoVault
 }));
 
 vi.mock('../script-utils/npm.ts', () => ({
@@ -134,6 +140,7 @@ beforeEach(() => {
   mockNpmRun.mockResolvedValue(undefined);
   mockNpmRunOptional.mockResolvedValue(undefined);
   mockWriteFile.mockResolvedValue(undefined);
+  mockArchivePluginDemoVault.mockResolvedValue(null);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockExistsSync.mockReturnValue(false);
 });
@@ -716,6 +723,7 @@ describe('parseVersionArgs', () => {
     const { options, versionUpdateType } = parseVersionArgs(['patch']);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
+      shouldArchiveDemoVault: true,
       shouldBuild: true,
       shouldEditChangelog: true,
       shouldRelease: true,
@@ -731,16 +739,24 @@ describe('parseVersionArgs', () => {
       '--no-changelog-editing',
       '--no-checks',
       '--no-commit-verification',
+      '--no-demo-vault',
       '--no-release'
     ]);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
+      shouldArchiveDemoVault: false,
       shouldBuild: false,
       shouldEditChangelog: false,
       shouldRelease: false,
       shouldRunChecks: false,
       shouldVerifyCommit: false
     });
+  });
+
+  it('should disable demo-vault archiving with --no-demo-vault', () => {
+    const { options } = parseVersionArgs(['patch', '--no-demo-vault']);
+    expect(options.shouldArchiveDemoVault).toBe(false);
+    expect(options.shouldBuild).toBe(true);
   });
 
   it('should return undefined version update type when no positional is provided', () => {
@@ -929,5 +945,39 @@ describe('updateVersion', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('should archive the demo vault for an obsidian plugin release', async () => {
+    setupFullMocks();
+    mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
+    mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('prerelease');
+    expect(mockArchivePluginDemoVault).toHaveBeenCalledWith('1.0.1-beta.0');
+  });
+
+  it('should not archive the demo vault when shouldArchiveDemoVault is false', async () => {
+    setupFullMocks();
+    mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
+    mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('prerelease', { shouldArchiveDemoVault: false });
+    expect(mockArchivePluginDemoVault).not.toHaveBeenCalled();
+  });
+
+  it('should not archive the demo vault for a non-plugin project', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch');
+    expect(mockArchivePluginDemoVault).not.toHaveBeenCalled();
+  });
+
+  it('should not archive the demo vault when the release is skipped', async () => {
+    setupFullMocks();
+    mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
+    mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('prerelease', { shouldRelease: false });
+    expect(mockArchivePluginDemoVault).not.toHaveBeenCalled();
   });
 });
