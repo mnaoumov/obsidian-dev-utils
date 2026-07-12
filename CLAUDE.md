@@ -1,5 +1,176 @@
 # CLAUDE.md
 
+## Current Task
+
+### T1 — Demo-vault release artifact + `OpenDemoVault` command
+
+**Branch.** Do this work on a new `demo-vault` branch (off `main`). This repo is currently on
+`migrate-funcs`; if `demo-vault` is cut from `main`, re-add this entry there. Not yet started — plan
+only.
+
+**Context.** Consuming Obsidian plugins release through `updateVersion(...)`
+(`src/script-utils/version.ts`); a plugin release currently uploads only the loose plugin files from
+`dist/build/`. We add two cooperating features so a plugin can ship a **demo vault** — a curated
+vault at `demo-vault/` in the plugin repo root — and let users open it in one step.
+
+**Locked decisions.**
+
+- Demo-vault folder: fixed `demo-vault/` at the plugin repo root; absent → skip silently.
+- Archive format: `.zip` (adds `adm-zip`; no zip dep exists today).
+- Git tracking: the built plugin copied into `demo-vault/.obsidian/plugins/<id>/` is gitignored by
+  the consumer; installed fresh at release time so nothing built lands in git.
+- Runtime repo resolution: fetch
+  `https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json`, find
+  the entry whose `id` matches the plugin, read its `repo` (`owner/name`). This is authoritative —
+  `app.plugins.manifests[pluginId]` carries no repo (verified against Obsidian's asar runtime).
+- Up-to-date UX: open directly, no dialog (like Open sandbox vault). Dialog only when current < latest.
+
+**Grounding (verified during planning).**
+
+- Open a folder as a vault in a new window: `window.electron.ipcRenderer.sendSync('vault-open',
+  vaultPath, false)` — fully typed via obsidian-typings; registers the folder in `obsidian.json` and
+  opens a new window. Desktop-only.
+- Runtime HTTP: Obsidian's `requestUrl` (bypasses CORS; `.arrayBuffer` for the zip). `fetch` is
+  script-only here.
+- Command stack: `GlobalCommandHandler` (async `execute()`) + `CommandHandlerComponent` +
+  `PluginCommandRegistrar`.
+- Modals: `ModalBase<Value>` + `showModal` exist; `confirm`/`alert`/`prompt`/`selectItem` are
+  fixed-shape — no N-button primitive, so build a reusable `selectOption`.
+- Version compare: `compare-versions` (already a runtime dep); installed = `manifest.version`.
+
+#### Feature 1 — release side: archive the demo vault
+
+1. Deps: add `adm-zip` (`^0.5.x`) to `dependencies`, `@types/adm-zip` to `devDependencies` (reused by
+   Feature 2). `sort-package-json`; add `adm-zip` to `cspell.json` if flagged.
+2. New `src/script-utils/demo-vault.ts` → `archivePluginDemoVault(newVersion): Promise<string | null>`:
+   return `null` if `demo-vault/` absent; else read plugin `id` from root `manifest.json`,
+   `mkdir -p demo-vault/.obsidian/plugins/<id>`, `cp(dist/build, thatFolder, {recursive:true})` (same
+   pattern as `copy-to-obsidian-plugins-folder-plugin.ts`), zip the whole `demo-vault/` to
+   `dist/build/demo-vault-<version>.zip` via `adm-zip`, return that path. Reuse
+   `resolvePathFromRootSafe`, `ObsidianPluginRepoPaths.DistBuild`/`ManifestJson`, `join`, `cp`/`mkdir`,
+   `existsSync`.
+3. Hook in `updateVersion`: after the `if (!shouldRelease) return;` guard, after `gitPush()`, before
+   `publishGitHubRelease(...)`:
+   `if (isObsidianPlugin && shouldArchiveDemoVault) { await archivePluginDemoVault(newVersion); }`.
+   The zip lands in `dist/build/`, so the existing `publishGitHubRelease` (uploads every file there)
+   attaches it automatically — no signature change.
+4. CLI flag `--no-demo-vault` (default on): add `'no-demo-vault'` to `parseVersionArgs`, expose
+   `shouldArchiveDemoVault: !(values['no-demo-vault'] ?? false)`, read it in `updateVersion`
+   (`shouldArchiveDemoVault = true`).
+
+Enabling the plugin in the archived vault is the consumer's committed
+`demo-vault/.obsidian/community-plugins.json` = `["<id>"]` — the release step touches no tracked file.
+
+#### Feature 2 — runtime `OpenDemoVault` command (reusable in dev-utils, opt-in per plugin)
+
+1. `src/obsidian/community-plugins.ts` → `getCommunityPluginRepo(pluginId): Promise<string | null>`:
+   `requestUrl` the `obsidian-releases/HEAD/community-plugins.json`, find `entry.id === pluginId`,
+   return `entry.repo` or `null`; cache the parsed list. Local interface `{ id; name; author;
+   description; repo }`.
+2. `src/obsidian/modals/select-option.ts` → `selectOption<T>(params): Promise<T | null>`: extends
+   `ModalBase<T | null>`, one `ButtonComponent` per option (label + value, optional CTA), resolves the
+   chosen value or `null` on dismiss. Mirrors `confirm.ts`; exported via the modals barrel.
+3. `src/obsidian/demo-vault-opener.ts` → `openDemoVault({ app, manifest })` (only invoked on desktop):
+   resolve `repo` (notice + return if `null`); `currentVersion = manifest.version`, `latestVersion` =
+   `requestUrl` `api.github.com/repos/<repo>/releases/latest` → `tag_name` (bare version);
+   `compareVersions` → `>= 0` open current directly, `< 0` show `selectOption` dialog (message
+   `Current version of plugin <name> v<current> is not the latest (v<latest>)`, buttons
+   `Open demo vault for latest version (v<latest>)` CTA / `Open demo vault for current version
+   (v<current>)` / `Cancel`); for the chosen version, cache dir
+   `join(tmpdir(), 'obsidian-demo-vaults', <id>, <version>)` (reuse if extracted, else
+   `requestUrl(<asset-url>).arrayBuffer` → `new AdmZip(Buffer).extractAllTo(dir, true)`; asset
+   `https://github.com/<repo>/releases/download/<version>/demo-vault-<version>.zip`, 404 → notice);
+   open via `window.electron.ipcRenderer.sendSync('vault-open', <cacheDir>, false)`.
+4. `src/obsidian/command-handlers/open-demo-vault-command-handler.ts` →
+   `OpenDemoVaultCommandHandler extends GlobalCommandHandler` (id `open-demo-vault`, name
+   `Open demo vault`, icon `download`): `execute()` → `openDemoVault(...)`; `canExecute()` →
+   `Platform.isDesktopApp` (via `checkCallback` this hides the command on mobile — no mobile notice).
+   Opt-in: the plugin adds it to its `CommandHandlerComponent` `commandHandlers`. Notices via
+   `pluginNoticeComponent.showNotice`.
+
+**Consumer setup (documented, per-plugin, future).** Create `demo-vault/` with curated notes +
+`.obsidian/`; gitignore `demo-vault/.obsidian/plugins/<id>/` (+ `workspace*.json`); commit
+`community-plugins.json` = `["<id>"]`; register `OpenDemoVaultCommandHandler`. Document in
+`README.md`/`docs/`.
+
+**Tests (unit — fs/network/adm-zip/`window.electron` mocked).** `demo-vault.test.ts` (absent → null;
+present → `cp`+`adm-zip` right paths, returns zip path); `version.test.ts` (flag/non-plugin skip
+paths); `community-plugins.test.ts` (hit/miss/cache); `select-option.test.ts` (renders N buttons via
+real test-mocks `ButtonComponent`, resolves chosen, null on dismiss — mirror `confirm.test.ts`);
+`demo-vault-opener.test.ts` (up-to-date → direct; behind → dialog + each button; cache hit skips
+download; missing asset / not-in-registry → notice + no open; `sendSync('vault-open', dir, false)`
+fires); `open-demo-vault-command-handler.test.ts` (id/name/icon; `checkCallback` invokes; `canExecute`
+gates desktop — drive the real base). Run the full gate before each commit.
+
+**Verification (real behavior).** Release side: throwaway `demo-vault/` + real `dist/build`, call
+`archivePluginDemoVault('9.9.9')` from a node one-liner, unzip, confirm the note +
+`.obsidian/plugins/<id>/main.js`+`manifest.json`; clean up. Runtime side: desktop CDP/`evalInObsidian`
+probe drives the command, asserts the `selectOption` 3 buttons render with exact labels when
+current < latest; confirm the actual new-window open manually via CDP (IPC stubbed in unit tests).
+
+**Commits (atomic):** (1) `chore(deps): add adm-zip`; (2) `feat(script-utils): archive plugin demo
+vault as a release artifact`; (3) `feat(obsidian): add reusable selectOption modal`; (4)
+`feat(obsidian): add OpenDemoVault command`; (5) `docs: document the demo-vault feature`.
+
+### T2 — Migrate reusable helpers from `obsidian-integration-testing` (OIT) into ODU
+
+**Branch.** In progress on `migrate-funcs`. This entry is the self-contained source of truth (G77).
+
+**Goal.** Migrate the useful helpers from OIT's `namespace-bootstrap.ts` (the serialized-closure `lib`
+helpers) into ODU as real importable modules — usable in plugin code AND surfaced in the injected `lib`
+bag via `__merged`. OIT must never depend on ODU, so every shared helper is a hand-synced **duplicate**;
+sync is behavioral (closures vs modules can't be byte-identical), governed by ODU **L18** + OIT **L17**,
+no automated drift check.
+
+**Dispositions (settled with user).**
+
+- **Migrate → `src/obsidian/desktop-trusted-input.ts`:** `typeIntoEditor`, `pressKey`, `moveMouse`,
+  `hoverElement`, `unhoverElement` (+ the six param interfaces from OIT `eval-in-obsidian.ts`).
+  - `moveMouse` and `pressKey` become **sync** (`void`) — their bodies only fire `sendInputEvent`; the
+    private `moveMouseTo` is **removed** (folded into `moveMouse`). This is a **breaking `Lib` change in
+    OIT** (see hand-off) — prerequisite for ODU's compile.
+  - Delays use the **ambient global `sleep(ms)`** (declared in `obsidian.d.ts`), NOT ODU's params-object
+    `sleep` — matches the serialized-closure originals. See the open R1 rule below.
+  - `Platform.isMacOS` via `import { Platform } from 'obsidian'` (not `ns.obsidianModule`). Trusted input
+    via `window.electron.remote.getCurrentWebContents().sendInputEvent` (typed by `obsidian-typings`; if a
+    member is missing, report per G66 + `// TODO`).
+- **Migrate → `src/obsidian/workspace.ts`:** bare `ensureLayoutReady(app): Promise<void>`. **DONE**
+  (committed `220afbeb`).
+- **REUSE existing:** `#7 waitUntil` → NOT migrated; poll with the existing `retryWithTimeout` (already in
+  `__merged`/`lib`). `serializeError` → reuse `errorToString` (`src/error.ts`, already richer:
+  handles `AggregateError`). OIT renames/enriches its own copy (hand-off).
+- **SKIP:** `destroyCurrentWindow` + `ipcSendSync` (cut — niche in plugin code; `sendSync` is a one-liner
+  callers use directly), plus harness-only `app` getter, `evalWrapper`, `getObsidianModule`,
+  `pollVaultBasePath`, `setLocalStorageItem`.
+
+**Sync set (L18/L17):** `typeIntoEditor`, `pressKey`, `moveMouse`, `hoverElement`, `unhoverElement`,
+`ensureLayoutReady`, `errorToString`.
+
+**Tests.** ODU is the **source of truth** for these helpers' integration coverage — do NOT duplicate the
+integration tests in OIT. ODU adds unit tests (100%) + `*.obsidian.integration.test.ts` (desktop) driving
+the real app; OIT sheds the now-redundant trusted-input integration tests (hand-off).
+
+**OIT hand-off = OIT T1 (G55, cross-repo — driven from an OIT session; plan already written into OIT `CLAUDE.md`).**
+(1) make `moveMouse`/`pressKey` sync + remove `moveMouseTo` + `Lib` signatures `Promise<void>`→`void`
+(**breaking → release 8.0.0**, prerequisite for ODU); (2) rename `serializeError`→`errorToString` +
+enrich with `AggregateError`; (3) `// do-not-migrate` TSDoc on the SKIP members; (4) revise L17 to the
+sync set (drop `waitUntil`, note `moveMouseTo` fold); (5) drop trusted-input integration tests ODU now
+owns. After 8.0.0, ODU bumps `obsidian-integration-testing` to `^8.0.0`.
+
+**Open — R1 sleep rule (needs user confirmation of wording).** R1 already mandates `sleep` (G71 + the
+"prefer `sleep`" convention, which routes unit/Node code to ODU's `sleep({ milliseconds })` and closures
+to the global `sleep(ms)`). The new rule must add the case "production **renderer-module** code → global
+`sleep(ms)`" without contradicting the existing "import ODU `sleep`" guidance — confirm wording before
+writing.
+
+**Status.** OIT hand-off (= OIT T1) written into OIT `CLAUDE.md` (uncommitted, for an OIT session).
+`ensureLayoutReady` **DONE** (committed `220afbeb`, full gate green). `waitUntil` drafted then reverted
+(reuse `retryWithTimeout`). `destroyCurrentWindow`/`ipcSendSync` cut. **All remaining ODU work is blocked
+on OIT 8.0.0** — the `desktop-trusted-input.ts` module, the `L18` mirror rule, the `^8.0.0` dep bump, and
+the R1 `sleep(ms)` rule (its only ODU consumer is that module). Once OIT ships 8.0.0: bump dep, write
+`desktop-trusted-input.ts` (sync `moveMouse`/`pressKey`), add integration tests, add L18, confirm + write
+the R1 rule.
+
 ## Project Overview
 
 `obsidian-dev-utils` is a TypeScript utility library for Obsidian plugin development. It publishes as a dual-format (ESM + CJS) npm package.
