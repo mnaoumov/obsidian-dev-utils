@@ -169,21 +169,53 @@ export function myFunction(param: Type): ReturnType {
   prefix; a **mobile**-only module must have a `mobile-` prefix. The prefix marks the file, not its
   exports — e.g. `desktop-trusted-input.ts` exports `typeIntoEditor`, not `desktopTypeIntoEditor`.
 - "Platform-only" means the module directly uses a platform-restricted API (Node builtins,
-  `window.electron`, mobile-only APIs), or is desktop/mobile-only in function and transitively imports
-  such a module. Examples: `desktop-trusted-input.ts` (`window.electron` trusted input),
-  `desktop-demo-vault-opener.ts` (`node:fs`/`node:os` + `window.electron`),
-  `desktop-open-demo-vault-command-handler.ts` (desktop-gated command that imports the opener). A
-  module using only cross-platform APIs (e.g. `community-plugins.ts`, which uses `requestUrl`) gets no
-  prefix.
+  `window.electron`, mobile-only APIs) at the **top level** (so importing the module loads that API).
+  Examples: `desktop-trusted-input.ts` (`window.electron` trusted input), `desktop-demo-vault-opener.ts`
+  (`node:fs`/`node:os` + `window.electron`). A module using only cross-platform APIs at the top level
+  gets no prefix — e.g. `community-plugins.ts` (uses `requestUrl`), and `open-demo-vault-command-handler.ts`,
+  which is desktop-*gated* but stays cross-platform-loadable by dynamic-importing the desktop-only opener
+  (see **L6**).
 - The prefix is **especially important when the module has a static top-level import of a
   platform-only builtin** (e.g. `import { existsSync } from 'node:fs'`). Such an import is evaluated at
   **module-load** time, so a mobile bundle merely *loading* the module — not just calling it — can fail
   on the missing builtin, even behind a `Platform.isDesktopApp` runtime guard. The `desktop-` prefix
-  flags that the module (and anything importing it) must be kept off the mobile load path; the
-  alternative is to defer the platform-only access to call time (e.g. lazy `window.require(...)`).
+  flags that the module (and anything importing it) must be kept off the mobile load path — but a
+  **public-facing** module must instead be made cross-platform-loadable (see **L6**), not exposed with
+  a `desktop-` prefix and pushed onto the consumer.
 - No `mobile-` example exists yet; the rule is stated for symmetry.
 - (cannot be forced by ESLint — a filename convention; a custom check could flag `node:`/`window.electron`
   usage in a non-`desktop-` file)
+
+### L6. Public-facing APIs must be cross-platform-loadable — internalize the platform split
+
+- No **public-facing** API (anything a consuming plugin imports and uses — a command handler, a
+  component, a helper it registers) may force the consumer to write a platform check
+  (`if (Platform.isDesktop) { … }`) or a dynamic `import()` around it. That is too much hassle and leaks
+  an implementation detail. The public entry point must be **cross-platform-loadable**: importing it
+  never loads a platform-only module, so a plugin registers it directly (`new FooCommandHandler({ … })`)
+  on any platform.
+- The library **internalizes the platform split**: the public module keeps only cross-platform top-level
+  imports, and defers the desktop-/mobile-only work to a `Platform`-gated **dynamic `import()`** of a
+  `desktop-`/`mobile-` prefixed module (L5) at **call time** — inside a method that only runs on the
+  right platform. This is the library-owned counterpart to the consumer-side R1 rule (a dual-platform
+  plugin reaching a `desktop-*` module uses a dynamic import); here the library does it so the consumer
+  never has to.
+- Reference: `OpenDemoVaultCommandHandler` (`command-handlers/open-demo-vault-command-handler.ts`, no
+  prefix) is registered directly by any plugin; its `canExecute` gates on `Platform.isDesktopApp` (so the
+  command hides on mobile and `execute` runs only on desktop), and `execute` does
+  `const { openDemoVault } = await import('../desktop-demo-vault-opener.ts')` — so the desktop-only
+  opener (static `node:fs` imports) is never on the mobile load path, yet the consumer writes no platform
+  guard. The dynamic import carries `// eslint-disable-next-line no-restricted-syntax -- Need conditional
+  import …`.
+- The rule constrains what the library **forces**, not what a consumer **may** import. A consumer is
+  free to import a `desktop-*` / `mobile-*` module directly — that is a **deliberate platform
+  commitment**: correct for a desktop-only plugin (or a G80 facade), and a knowingly-wrong choice for a
+  cross-platform plugin (it will break that plugin's load on the other platform). What L6 forbids is the
+  library shipping its **cross-platform-intended** public API as a `desktop-*`/`mobile-*` module, thereby
+  forcing every consumer into a platform guard. So: prefer a cross-platform facade as the primary,
+  documented entry point; still expose the `desktop-*`/`mobile-*` modules for consumers who deliberately
+  opt in.
+- (cannot be forced by ESLint — an API-design convention)
 
 ## Testing
 

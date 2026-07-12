@@ -13,7 +13,6 @@ import { Platform } from 'obsidian';
 
 import type { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 
-import { openDemoVault } from '../desktop-demo-vault-opener.ts';
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
 /**
@@ -40,6 +39,10 @@ export interface OpenDemoVaultCommandHandlerConstructorParams {
  * A command handler that downloads and opens the plugin's shipped demo vault in a new window. Only
  * available on desktop — {@link canExecute} returns `false` on mobile, so the command is hidden there
  * (no mobile notice).
+ *
+ * This module stays cross-platform-loadable so a plugin can register it directly without a platform
+ * guard: the desktop-only opener (which statically imports Node builtins) is loaded via a dynamic
+ * `import()` inside {@link execute}, which only ever runs on desktop.
  */
 export class OpenDemoVaultCommandHandler extends GlobalCommandHandler {
   /**
@@ -78,6 +81,8 @@ export class OpenDemoVaultCommandHandler extends GlobalCommandHandler {
    * Executes the command, opening the plugin's demo vault.
    */
   public override async execute(): Promise<void> {
+    // eslint-disable-next-line no-restricted-syntax -- Need conditional import of the desktop-only opener; this runs only on desktop (gated by `canExecute`), keeping its static Node-builtin imports off the mobile load path.
+    const { openDemoVault } = await import('../desktop-demo-vault-opener.ts');
     await openDemoVault({
       app: this.app,
       manifest: this.manifest,

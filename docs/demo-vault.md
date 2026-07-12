@@ -43,10 +43,10 @@ const zipPath = await archivePluginDemoVault('1.2.3');
 
 ## Runtime side: the `Open demo vault` command
 
-The runtime side is opt-in. Register `OpenDemoVaultCommandHandler` from your plugin (for example in your `CommandHandlerComponent`'s command handlers):
+The runtime side is opt-in. Register `OpenDemoVaultCommandHandler` directly from your plugin (for example in your `CommandHandlerComponent`'s command handlers) — no platform guard is needed, even in a plugin that also runs on mobile:
 
 ```ts
-import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/desktop-open-demo-vault-command-handler';
+import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command-handlers/open-demo-vault-command-handler';
 
 new OpenDemoVaultCommandHandler({
   app: this.app,
@@ -55,7 +55,7 @@ new OpenDemoVaultCommandHandler({
 });
 ```
 
-The command is **desktop only** — it is hidden on mobile (no mobile notice). When invoked it:
+The command is **desktop only** — it hides itself on mobile (its `canExecute` gates on `Platform.isDesktopApp`, so no mobile notice is ever shown), and the desktop-only machinery is loaded lazily (only when the command runs on desktop), so registering the handler is safe on every platform. When invoked the command:
 
 1. Resolves the plugin's GitHub repository from Obsidian's community registry (see [`getCommunityPluginRepo`](#getcommunitypluginrepo)).
 2. Reads the latest release version. If the installed version is the latest (or newer), its demo vault opens directly; otherwise the user is offered a choice between the latest and the currently-installed version via a [Select Option](./modals.md#select-option) dialog.
