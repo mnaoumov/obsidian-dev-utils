@@ -27,20 +27,15 @@ interface BacklinksResult {
 describe('backlinks via metadata cache', () => {
   it('should find backlinks to a target note', async () => {
     const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
-      async fn({ app }) {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { ensureMetadataCacheReady, getBacklinksForFileSafe } }) {
         await app.vault.create('backlink-target.md', '# Target\n\nThis is the target note.\n');
         await app.vault.create('backlink-linker-a.md', '# Linker A\n\nLinks to [[backlink-target]].\n');
         await app.vault.create('backlink-linker-b.md', '# Linker B\n\nAlso links to [[backlink-target]].\n');
 
-        await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
+        await ensureMetadataCacheReady(app);
 
         try {
-          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe({ app, pathOrFile: 'backlink-target.md' });
+          const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: 'backlink-target.md' });
           return {
             backlinkCount: backlinks.count(),
             backlinkKeys: backlinks.keys()
@@ -64,18 +59,13 @@ describe('backlinks via metadata cache', () => {
 
   it('should return empty backlinks for a note with no incoming links', async () => {
     const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
-      async fn({ app }) {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { ensureMetadataCacheReady, getBacklinksForFileSafe } }) {
         await app.vault.create('backlink-isolated.md', '# Isolated\n\nNo one links here.\n');
 
-        await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
+        await ensureMetadataCacheReady(app);
 
         try {
-          const backlinks = await lib.obsidian['metadata-cache'].getBacklinksForFileSafe({ app, pathOrFile: 'backlink-isolated.md' });
+          const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: 'backlink-isolated.md' });
           return {
             backlinkCount: backlinks.count(),
             backlinkKeys: backlinks.keys()
@@ -96,22 +86,17 @@ describe('backlinks via metadata cache', () => {
 
   it('should detect links in the metadata cache', async () => {
     const result = await evalInObsidian<Record<string, never>, string[]>({
-      async fn({ app }) {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { ensureMetadataCacheReady, getLinks } }) {
         await app.vault.create('backlink-multi-linker.md', '# Multi\n\nLinks to [[alpha]] and [[beta]].\n');
 
-        await lib.obsidian['metadata-cache'].ensureMetadataCacheReady(app);
+        await ensureMetadataCacheReady(app);
 
         try {
           const cache = app.metadataCache.getCache('backlink-multi-linker.md');
           if (!cache) {
             return [];
           }
-          const links = lib.obsidian['metadata-cache'].getLinks({ cache });
+          const links = getLinks({ cache });
           return links.map((ref) => ref.link);
         } finally {
           const f = app.vault.getAbstractFileByPath('backlink-multi-linker.md');

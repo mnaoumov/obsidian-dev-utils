@@ -56,18 +56,13 @@ describe('VaultTransaction', () => {
   it('should soft-delete a file on trash and restore it with its original content on rollback', async () => {
     const result = await evalInObsidian({
       args: { stagingFolderPath: STAGING_FOLDER_PATH },
-      async fn({ app, stagingFolderPath }): Promise<TrashRollbackResult> {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<TrashRollbackResult> {
         const adapter = app.vault.adapter;
         const targetPath = 'vt-trash-target.md';
         const originalContent = 'original content';
         await app.vault.create(targetPath, originalContent);
 
-        const vaultTransaction = new lib.obsidian['vault-transaction'].VaultTransaction({ app });
+        const vaultTransaction = new VaultTransaction({ app });
         try {
           await vaultTransaction.trash(targetPath);
           const isOriginalGoneAfterTrash = !await adapter.exists(targetPath);
@@ -96,17 +91,12 @@ describe('VaultTransaction', () => {
   it('should remove a soft-deleted file for real and drop the staging folder on commit', async () => {
     const result = await evalInObsidian({
       args: { stagingFolderPath: STAGING_FOLDER_PATH },
-      async fn({ app, stagingFolderPath }): Promise<CommitResult> {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<CommitResult> {
         const adapter = app.vault.adapter;
         const targetPath = 'vt-commit-target.md';
         await app.vault.create(targetPath, 'to be committed away');
 
-        const vaultTransaction = new lib.obsidian['vault-transaction'].VaultTransaction({ app });
+        const vaultTransaction = new VaultTransaction({ app });
         try {
           await vaultTransaction.trash(targetPath);
           const isOriginalGoneAfterTrash = !await adapter.exists(targetPath);
@@ -138,12 +128,7 @@ describe('VaultTransaction', () => {
   it('should soft-delete a whole folder subtree on trash and restore it on rollback', async () => {
     const result = await evalInObsidian({
       args: { stagingFolderPath: STAGING_FOLDER_PATH },
-      async fn({ app, stagingFolderPath }): Promise<SubtreeRollbackResult> {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<SubtreeRollbackResult> {
         const adapter = app.vault.adapter;
         const folderPath = 'vt-subtree';
         const childPaths = ['vt-subtree/a.md', 'vt-subtree/nested/c.md'];
@@ -160,7 +145,7 @@ describe('VaultTransaction', () => {
           await app.vault.create(path, content);
         }
 
-        const vaultTransaction = new lib.obsidian['vault-transaction'].VaultTransaction({ app });
+        const vaultTransaction = new VaultTransaction({ app });
         try {
           await vaultTransaction.trash(folderPath);
           const goneFlags = await Promise.all(childPaths.map(async (path) => !await adapter.exists(path)));
@@ -194,14 +179,7 @@ describe('VaultTransaction', () => {
 
   it('should mutate and roll back a mutation-blocked file when given an openMutationBypass', async () => {
     const result = await evalInObsidian({
-      async fn({ app }): Promise<BypassResult> {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
-        const { ResourceLockComponent } = lib.obsidian['resource-lock'];
-        const { VaultTransaction } = lib.obsidian['vault-transaction'];
+      async fn({ app, lib: { ResourceLockComponent, VaultTransaction } }): Promise<BypassResult> {
         const folderPath = 'vt-bypass-folder';
         const filePath = `${folderPath}/note.md`;
         if (await app.vault.adapter.exists(folderPath)) {
@@ -245,14 +223,8 @@ describe('VaultTransaction', () => {
 
   it('should leave both disk and an open editor at the restored content after rollback', async () => {
     const result = await evalInObsidian({
-      async fn({ app, obsidianModule }): Promise<EditorClobberResult> {
-        const lib = window.__obsidianDevUtilsModule__;
-        if (!lib) {
-          throw new Error('obsidian-dev-utils module not registered on window');
-        }
-
+      async fn({ app, lib: { VaultTransaction }, obsidianModule }): Promise<EditorClobberResult> {
         const { MarkdownView } = obsidianModule;
-        const { VaultTransaction } = lib.obsidian['vault-transaction'];
         const targetPath = 'vt-editor-clobber.md';
         const originalContent = 'first\nmiddle\nlast\n';
         const extractedContent = 'first\n\nlast\n';

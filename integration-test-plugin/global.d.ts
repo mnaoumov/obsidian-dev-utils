@@ -10,6 +10,6 @@ import type * as obsidianDevUtils from '../src/index.ts';
 
 declare global {
   interface Window {
-    __obsidianDevUtilsModule__?: typeof obsidianDevUtils;
+    __obsidianDevUtilsModule?: typeof obsidianDevUtils;
   }
 }

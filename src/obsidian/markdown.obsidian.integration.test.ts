@@ -18,12 +18,8 @@ describe('markdown', () => {
   describe('markdownToHtml', () => {
     it('should convert simple markdown to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '**bold** and *italic*' });
+        fn({ app, lib: { markdownToHtml } }) {
+          return markdownToHtml({ app, markdown: '**bold** and *italic*' });
         }
       });
 
@@ -33,12 +29,8 @@ describe('markdown', () => {
 
     it('should convert headings to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '# Heading 1\n## Heading 2' });
+        fn({ app, lib: { markdownToHtml } }) {
+          return markdownToHtml({ app, markdown: '# Heading 1\n## Heading 2' });
         }
       });
 
@@ -48,12 +40,8 @@ describe('markdown', () => {
 
     it('should convert a list to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '- item 1\n- item 2\n- item 3' });
+        fn({ app, lib: { markdownToHtml } }) {
+          return markdownToHtml({ app, markdown: '- item 1\n- item 2\n- item 3' });
         }
       });
 
@@ -65,12 +53,8 @@ describe('markdown', () => {
 
     it('should convert inline code to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian.markdown.markdownToHtml({ app, markdown: 'use `console.log()` here' });
+        fn({ app, lib: { markdownToHtml } }) {
+          return markdownToHtml({ app, markdown: 'use `console.log()` here' });
         }
       });
 
@@ -80,12 +64,8 @@ describe('markdown', () => {
 
     it('should handle empty markdown', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-          return lib.obsidian.markdown.markdownToHtml({ app, markdown: '' });
+        fn({ app, lib: { markdownToHtml } }) {
+          return markdownToHtml({ app, markdown: '' });
         }
       });
 
@@ -96,13 +76,9 @@ describe('markdown', () => {
   describe('fullRender', () => {
     it('should render markdown into an element', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        async fn({ app }) {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
+        async fn({ app, lib: { fullRender } }) {
           const el = createDiv();
-          await lib.obsidian.markdown.fullRender({
+          await fullRender({
             app,
             el,
             markdown: 'Hello **world**'

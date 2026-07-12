@@ -57,12 +57,7 @@ describe('MinimizableModal', () => {
   describe('minimize', () => {
     it('should block the keyboard while minimized and allow typing again after restore', async () => {
       const result = await evalInObsidian({
-        async fn({ app, obsidianModule, typeIntoEditor }): Promise<TypingWhileMinimizedResult> {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-
+        async fn({ app, lib: { MinimizableModal, typeIntoEditor }, obsidianModule }): Promise<TypingWhileMinimizedResult> {
           // This file shares its live Obsidian instance with the other integration suites.
           // Start from a clean workspace so only the view this test opens is around.
           app.workspace.detachLeavesOfType('markdown');
@@ -77,7 +72,7 @@ describe('MinimizableModal', () => {
           // Open a plain blocking modal and wrap it so it can be minimized.
           const modal = new obsidianModule.Modal(app);
           modal.setTitle('Working');
-          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          const minimizable = new MinimizableModal(modal);
           minimizable.modal.open();
           await settle();
 
@@ -136,17 +131,12 @@ describe('MinimizableModal', () => {
 
     it('should block opening another modal while minimized and allow it again after restore', async () => {
       const result = await evalInObsidian({
-        async fn({ app, obsidianModule }): Promise<ModalOpenBlockedResult> {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-
+        async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<ModalOpenBlockedResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
           const modal = new obsidianModule.Modal(app);
           modal.setTitle('Working');
-          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          const minimizable = new MinimizableModal(modal);
           minimizable.modal.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
           minimizable.minimize();
@@ -185,12 +175,7 @@ describe('MinimizableModal', () => {
 
     it('should block opening the settings popout while minimized so no empty settings window appears', async () => {
       const result = await evalInObsidian({
-        async fn({ app, obsidianModule }): Promise<SettingsPopoutBlockedResult> {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-
+        async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<SettingsPopoutBlockedResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
           // Start from a clean state so a settings window a prior suite left open cannot skew the read.
@@ -199,7 +184,7 @@ describe('MinimizableModal', () => {
 
           const modal = new obsidianModule.Modal(app);
           modal.setTitle('Working');
-          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          const minimizable = new MinimizableModal(modal);
           minimizable.modal.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
           minimizable.minimize();
@@ -251,19 +236,14 @@ describe('MinimizableModal', () => {
   describe('restore', () => {
     it('should restore when the minimized bar body or its title is clicked, not only the restore button', async () => {
       const result = await evalInObsidian({
-        async fn({ app, obsidianModule }): Promise<RestoreByClickResult> {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-
+        async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<RestoreByClickResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const TITLE_SELECTOR = '.minimized-modal-bar .minimized-modal-bar-title';
           const SETTLE_DELAY_MILLISECONDS = 300;
 
           const modal = new obsidianModule.Modal(app);
           modal.setTitle('Working');
-          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          const minimizable = new MinimizableModal(modal);
           minimizable.modal.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
@@ -308,18 +288,13 @@ describe('MinimizableModal', () => {
   describe('hover', () => {
     it('should keep the minimized bar opaque on hover so editor content behind it never bleeds through', async () => {
       const result = await evalInObsidian({
-        async fn({ app, hoverElement, obsidianModule, unhoverElement }): Promise<HoverOpacityResult> {
-          const lib = window.__obsidianDevUtilsModule__;
-          if (!lib) {
-            throw new Error('obsidian-dev-utils module not registered on window');
-          }
-
+        async fn({ app, lib: { hoverElement, MinimizableModal, unhoverElement }, obsidianModule }): Promise<HoverOpacityResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const SETTLE_DELAY_MILLISECONDS = 300;
 
           const modal = new obsidianModule.Modal(app);
           modal.setTitle('Working');
-          const minimizable = new lib.obsidian.modals['minimizable-modal'].MinimizableModal(modal);
+          const minimizable = new MinimizableModal(modal);
           minimizable.modal.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
