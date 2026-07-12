@@ -12,6 +12,21 @@ import type {
 } from 'obsidian';
 
 /**
+ * Waits until the workspace layout is ready.
+ *
+ * Resolves immediately when the layout is already ready; otherwise resolves once Obsidian fires the
+ * layout-ready event.
+ *
+ * @param app - The Obsidian app.
+ * @returns A {@link Promise} that resolves once the workspace layout is ready.
+ */
+export async function ensureLayoutReady(app: App): Promise<void> {
+  await new Promise<void>((resolve) => {
+    app.workspace.onLayoutReady(resolve);
+  });
+}
+
+/**
  * Returns all containers in the workspace.
  *
  * @param app - The Obsidian app.
