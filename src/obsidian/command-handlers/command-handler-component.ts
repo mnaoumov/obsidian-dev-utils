@@ -86,10 +86,14 @@ export class CommandHandlerComponent extends ComponentEx {
     const disposables: Disposable[] = [];
     for (const commandHandler of commandHandlers) {
       const command = commandHandler.buildCommand();
+      // Capture the id before registering. `Plugin.addCommand` mutates `command.id` (prefixing it with
+      // `this.manifest.id`), while `Plugin.removeCommand` re-prefixes — so removal needs the original id.
+      // Reading `command.id` after `addCommand` would double-prefix it, so the command is never removed.
+      const commandId = command.id;
       this.commandRegistrar.addCommand(command);
       const disposable = new CallbackDisposable({
         callback: (): void => {
-          this.commandRegistrar.removeCommand(command.id);
+          this.commandRegistrar.removeCommand(commandId);
         },
         multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
       });

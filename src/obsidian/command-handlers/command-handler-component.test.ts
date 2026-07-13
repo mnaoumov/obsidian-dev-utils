@@ -121,8 +121,12 @@ describe('CommandHandlerComponent', () => {
     expect(commandHandler.buildCommand().name).toBe('Original Name');
   });
 
-  it('should removeCommand when the returned disposable is disposed', () => {
+  it('should removeCommand with the pre-registration id even after addCommand prefixes command.id', () => {
     const commandRegistrar = createMockCommandRegistrar();
+    // Mirror Obsidian's Plugin.addCommand, which mutates command.id by prefixing it with the plugin id.
+    vi.mocked(commandRegistrar.addCommand).mockImplementation((command: Command) => {
+      command.id = `test-plugin:${command.id}`;
+    });
     const component = createComponent(commandRegistrar);
 
     const disposable = component.registerCommandHandlers([new TestHandler(createParams({ id: 'my-cmd' }))]);
@@ -130,6 +134,7 @@ describe('CommandHandlerComponent', () => {
 
     disposable[Symbol.dispose]();
 
+    // Plugin.removeCommand re-prefixes, so it must receive the original unprefixed id, not the mutated one.
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
   });
 
