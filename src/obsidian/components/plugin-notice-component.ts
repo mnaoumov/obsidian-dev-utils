@@ -92,6 +92,20 @@ export interface PluginNoticeComponentShowNoticeOptions {
    * @default `false`
    */
   readonly isPermanent?: boolean;
+
+  /**
+   * Whether the notice occupies the single per-plugin reusable slot.
+   *
+   * A reusable notice takes the shared slot: the next reusable notice hides it, and it is hidden on unload.
+   * A non-reusable (standalone) notice is not placed in the slot — it never hides, and is never hidden by, a
+   * reusable notice; multiple standalone notices coexist. Standalone notices are still hidden together on unload.
+   *
+   * A permanent notice must be reusable ({@link PluginNoticeComponentShowNoticeOptions.isPermanent} implies
+   * `isReusable`); passing `isReusable: false` together with `isPermanent: true` throws.
+   *
+   * @default `true`
+   */
+  readonly isReusable?: boolean;
 }
 
 interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
@@ -103,6 +117,13 @@ interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
 interface PluginNoticeComponentConstructorParams {
   readonly app: App;
   readonly pluginName: string;
+}
+
+interface PluginNoticeComponentShowNoticeWithDurationParams {
+  readonly durationInMilliseconds: null | number;
+  readonly isReusable: boolean;
+  readonly message: DocumentFragment | string;
+  readonly shouldRegisterAsPermanent: boolean;
 }
 
 /**
@@ -121,6 +142,7 @@ export class PluginNoticeComponent extends ComponentEx {
 
   private notice: Notice | null = null;
   private readonly pendingTimerCancellations = new Set<() => void>();
+  private readonly standaloneNotices = new Set<Notice>();
 
   /**
    * Creates a new plugin notice component.
@@ -154,6 +176,10 @@ export class PluginNoticeComponent extends ComponentEx {
     if (this.getPermanentNotice() !== this.notice) {
       this.notice?.hide();
     }
+    for (const standaloneNotice of this.standaloneNotices) {
+      standaloneNotice.hide();
+    }
+    this.standaloneNotices.clear();
   }
 
   /**
@@ -165,7 +191,19 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     const isPermanent = options?.isPermanent ?? false;
-    return this.showNoticeWithDuration(message, isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : undefined, isPermanent);
+    const isReusable = options?.isReusable ?? true;
+
+    if (options?.isReusable === false && isPermanent) {
+      throw new Error('A permanent notice must be reusable.');
+    }
+
+    const durationInMilliseconds = isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
+    return this.showNoticeWithDuration({
+      durationInMilliseconds,
+      isReusable,
+      message,
+      shouldRegisterAsPermanent: isPermanent
+    });
   }
 
   /**
@@ -215,7 +253,12 @@ export class PluginNoticeComponent extends ComponentEx {
         if (isDisposed) {
           return;
         }
-        shownNotice = this.showNoticeWithDuration(buildDelayedMessage(resolvedContent), PERMANENT_NOTICE_DURATION_IN_MILLISECONDS, false);
+        shownNotice = this.showNoticeWithDuration({
+          durationInMilliseconds: PERMANENT_NOTICE_DURATION_IN_MILLISECONDS,
+          isReusable: true,
+          message: buildDelayedMessage(resolvedContent),
+          shouldRegisterAsPermanent: false
+        });
       });
     }, params.delayInMilliseconds ?? DEFAULT_DELAY_BEFORE_SHOW_IN_MILLISECONDS);
 
@@ -335,19 +378,28 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   /**
-   * Shows a notice with the given duration, replacing the current notice, and optionally registers it
-   * as this plugin's permanent notice.
+   * Shows a notice with the given duration. A reusable notice replaces the current reusable notice (and
+   * is optionally registered as this plugin's permanent notice); a standalone notice is tracked
+   * separately, leaving the reusable slot untouched.
    *
-   * @param message - The message to display.
-   * @param durationInMilliseconds - The notice duration; `0` keeps it until it is hidden explicitly.
-   * @param shouldRegisterAsPermanent - Whether to track the notice as this plugin's permanent notice.
+   * @param params - The parameters.
    * @returns The created notice.
    */
-  private showNoticeWithDuration(message: DocumentFragment | string, durationInMilliseconds: number | undefined, shouldRegisterAsPermanent: boolean): Notice {
-    this.notice?.hide();
-
+  private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): Notice {
+    const { durationInMilliseconds, isReusable, message, shouldRegisterAsPermanent } = params;
     const content = this.buildNoticeContent(message);
-    this.notice = new Notice(content, durationInMilliseconds);
+    // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
+    // Duration" value to `undefined`.
+    const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
+
+    if (!isReusable) {
+      const standaloneNotice = new Notice(content, noticeDurationInMilliseconds);
+      this.standaloneNotices.add(standaloneNotice);
+      return standaloneNotice;
+    }
+
+    this.notice?.hide();
+    this.notice = new Notice(content, noticeDurationInMilliseconds);
 
     if (shouldRegisterAsPermanent) {
       this.setPermanentNotice(this.notice);

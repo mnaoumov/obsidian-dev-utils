@@ -283,6 +283,60 @@ describe('PluginNoticeComponent', () => {
     expect(getPermanentNotices().has(PLUGIN_NAME)).toBe(false);
   });
 
+  it('should not hide a standalone notice when a reusable notice is shown', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Standalone', { isReusable: false });
+    const standaloneNotice = mocks.instances[0];
+
+    component.showNotice('Reusable');
+
+    expect(standaloneNotice?.hide).not.toHaveBeenCalled();
+  });
+
+  it('should not hide the current reusable notice when a standalone notice is shown', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Reusable');
+    const reusableNotice = mocks.instances[0];
+
+    component.showNotice('Standalone', { isReusable: false });
+
+    expect(reusableNotice?.hide).not.toHaveBeenCalled();
+  });
+
+  it('should let multiple standalone notices coexist', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('First', { isReusable: false });
+    const firstNotice = mocks.instances[0];
+
+    component.showNotice('Second', { isReusable: false });
+
+    expect(firstNotice?.hide).not.toHaveBeenCalled();
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('should hide standalone notices on unload', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Standalone', { isReusable: false });
+    const standaloneNotice = mocks.instances[0];
+
+    component.unload();
+
+    expect(standaloneNotice?.hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw when a permanent notice is explicitly marked non-reusable', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    expect(() => {
+      component.showNotice('Bad', { isPermanent: true, isReusable: false });
+    }).toThrow();
+  });
+
   it('should support a document fragment message', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
