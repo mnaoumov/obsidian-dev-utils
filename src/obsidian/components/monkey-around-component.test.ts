@@ -8,7 +8,8 @@ import {
   describe,
   expect,
   expectTypeOf,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import type { MaybeReturn } from '../../type.ts';
@@ -22,11 +23,16 @@ import type {
 } from './monkey-around-component.ts';
 
 import { noop } from '../../function.ts';
+import { castTo } from '../../object-utils.ts';
 import {
   around,
   hasPatchToken,
   MonkeyAroundComponent
 } from './monkey-around-component.ts';
+
+interface MarkedGreet {
+  marker: string;
+}
 
 interface TestObj {
   greet(name: string): string;
@@ -454,6 +460,89 @@ describe('MonkeyAroundComponent', () => {
       expect(obj.greet('x')).toBe('member: hello x');
       component.unload();
       expect(obj.greet('x')).toBe('hello x');
+    });
+  });
+
+  describe('once', () => {
+    it('should intercept a method only on the first call, then restore the original', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      let callCount = 0;
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        once: true,
+        patchHandler: ({ fallback }) => {
+          callCount++;
+          return `once: ${fallback()}`;
+        }
+      });
+
+      expect(obj.greet('a')).toBe('once: hello a');
+      expect(obj.greet('b')).toBe('hello b');
+      expect(callCount).toBe(1);
+    });
+
+    it('should intercept a function member only on the first call, then restore the original', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      let callCount = 0;
+
+      component.registerFunctionPatch<TestObj, 'greet'>({
+        functionName: 'greet',
+        obj,
+        once: true,
+        patchHandler: (originalGreet) => (name: string): string => {
+          callCount++;
+          return `once: ${originalGreet(name)}`;
+        }
+      });
+
+      expect(obj.greet('a')).toBe('once: hello a');
+      expect(obj.greet('b')).toBe('hello b');
+      expect(callCount).toBe(1);
+    });
+
+    it('should unload the component after the first invocation of a once patch', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+      const unloadSpy = vi.spyOn(component, 'unload');
+
+      component.registerMethodPatch<TestObj, 'greet'>({
+        methodName: 'greet',
+        obj,
+        once: true,
+        patchHandler: ({ fallback }) => fallback()
+      });
+
+      expect(unloadSpy).not.toHaveBeenCalled();
+      obj.greet('a');
+      expect(unloadSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should preserve own members of a function-like patched value under once', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const obj = createTestObj();
+
+      component.registerFunctionPatch<TestObj, 'greet'>({
+        functionName: 'greet',
+        obj,
+        once: true,
+        patchHandler: (originalGreet) => {
+          function patched(name: string): string {
+            return `once: ${originalGreet(name)}`;
+          }
+          return Object.assign(patched, { marker: 'kept' });
+        }
+      });
+
+      expect(castTo<MarkedGreet>(obj.greet).marker).toBe('kept');
+      expect(obj.greet('a')).toBe('once: hello a');
     });
   });
 
