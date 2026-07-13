@@ -217,6 +217,23 @@ export function myFunction(param: Type): ReturnType {
   opt in.
 - (cannot be forced by ESLint — an API-design convention)
 
+### L7. Register/unregister commands by their pre-registration id (Obsidian mutates `command.id`)
+
+- Obsidian's `Plugin.addCommand(command)` **mutates the passed object**, prefixing `command.id` (and
+  `command.name`) with the plugin id/name; `Plugin.removeCommand(commandId)` then **re-prefixes** the id
+  it is handed. So a command must be removed by its ORIGINAL, unprefixed id — the id it had **before**
+  `addCommand`. Reading `command.id` *after* registration yields the already-prefixed id, which
+  `removeCommand` prefixes again, so the command is never removed (a silent leak).
+- `CommandHandlerComponent.registerCommandHandlers` captures the id before `addCommand` for exactly this
+  reason. Any other add/remove pairing routed through a `CommandRegistrar` / `Plugin` must do the same.
+- The `obsidian-test-mocks` `Plugin` does NOT prefix ids, so a unit test cannot catch this — it only
+  surfaces against real Obsidian. Confirm command register/unregister with a
+  `*.obsidian.integration.test.ts` using the real `PluginCommandRegistrar` (via the harness plugin
+  `obsidian-dev-utils-integration-test`) and asserting on `app.commands.commands['<pluginId>:<id>']`.
+  This is exactly how the leak in the ad-hoc `registerCommandHandlers` was found and fixed.
+- (cannot be forced by ESLint — a runtime-behavior gotcha; a custom rule could flag reading `command.id`
+  after an `addCommand` call, but not reliably)
+
 ## Testing
 
 ### Goals

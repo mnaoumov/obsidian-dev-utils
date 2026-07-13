@@ -21,10 +21,15 @@ import { mixinAsyncEvents } from '../../async-events.ts';
 import { printError } from '../../error.ts';
 import { noopAsync } from '../../function.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
+import { AppActiveFileProvider } from '../active-file-provider.ts';
+import { CommandHandlerComponent } from '../command-handlers/command-handler-component.ts';
+import { UnlockActiveNoteCommandHandler } from '../command-handlers/unlock-active-note-command-handler.ts';
+import { PluginCommandRegistrar } from '../command-registrar.ts';
 import { AbortSignalComponent } from '../components/abort-signal-component.ts';
 import { AsyncErrorHandlerComponent } from '../components/async-error-handler-component.ts';
 import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
+import { MenuEventRegistrarComponent } from '../components/menu-event-registrar-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 import { initI18N } from '../i18n/i18n.ts';
@@ -72,6 +77,27 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    */
   protected set asyncErrorHandlerComponent(value: AsyncErrorHandlerComponent) {
     this._asyncErrorHandlerComponent = value;
+  }
+
+  /**
+   * Gets the shared command handler component. Register a plugin's commands on it via
+   * {@link CommandHandlerComponent.registerCommandHandlers} rather than constructing your own
+   * {@link CommandHandlerComponent} — the app-backed active-file provider, command registrar, menu
+   * event registrar, and plugin name are already wired.
+   *
+   * @returns The command handler component.
+   */
+  protected get commandHandlerComponent(): CommandHandlerComponent {
+    return ensureNonNullable(this._commandHandlerComponent);
+  }
+
+  /**
+   * Sets the command handler component.
+   *
+   * @param value - The command handler component.
+   */
+  protected set commandHandlerComponent(value: CommandHandlerComponent) {
+    this._commandHandlerComponent = value;
   }
 
   /**
@@ -151,6 +177,8 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
 
   private _asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
 
+  private _commandHandlerComponent?: CommandHandlerComponent;
+
   private _consoleDebugComponent?: ConsoleDebugComponent;
 
   private _pluginContextComponent?: PluginContextComponent;
@@ -207,6 +235,21 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
       this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
       this.resourceLockComponent = this.addChild(new ResourceLockComponent(this.app, this.manifest.id));
+      this.commandHandlerComponent = this.addChild(
+        new CommandHandlerComponent({
+          activeFileProvider: new AppActiveFileProvider(this.app),
+          commandRegistrar: new PluginCommandRegistrar(this),
+          menuEventRegistrar: this.addChild(new MenuEventRegistrarComponent(this.app)),
+          pluginName: this.manifest.name
+        })
+      );
+      // Always available; the command's own `canExecute` hides it unless the active note is locked.
+      this.commandHandlerComponent.registerCommandHandlers([
+        new UnlockActiveNoteCommandHandler({
+          app: this.app,
+          resourceLockComponent: this.resourceLockComponent
+        })
+      ]);
 
       await this.onloadImpl();
 
