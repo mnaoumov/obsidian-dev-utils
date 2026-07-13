@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
-import type { Editor as EditorOriginal } from 'obsidian';
+import type {
+  Editor as EditorOriginal,
+  Modifier
+} from 'obsidian';
 
 import { Platform } from 'obsidian';
 import {
@@ -12,6 +15,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
   hoverElement,
@@ -96,6 +100,19 @@ describe('pressKey', () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
     pressKey({ key: 'a', modifiers: ['Shift', 'Alt'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['shift', 'alt'], type: 'keyDown' });
+  });
+
+  it('should map Meta to meta', () => {
+    vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
+    pressKey({ key: 'a', modifiers: ['Meta'] });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['meta'], type: 'keyDown' });
+  });
+
+  it('should throw for an unknown modifier', () => {
+    vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
+    expect(() => {
+      pressKey({ key: 'a', modifiers: [castTo<Modifier>('Unknown')] });
+    }).toThrow();
   });
 });
 
