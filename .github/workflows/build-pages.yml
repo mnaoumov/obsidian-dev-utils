@@ -1,0 +1,51 @@
+name: Build GitHub Pages
+
+# Builds the Astro + Starlight documentation site (guides + the API reference generated from the TSDoc)
+# and deploys it to GitHub Pages. Requires Pages to be enabled with "GitHub Actions" as the source
+# (repo Settings -> Pages -> Build and deployment -> Source: GitHub Actions).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - src/**
+      - astro.config.ts
+      - package.json
+      - .github/workflows/build-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  pages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build documentation site
+        run: npm run docs:build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
