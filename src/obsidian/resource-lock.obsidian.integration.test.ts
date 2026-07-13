@@ -103,6 +103,14 @@ interface TypingResult {
   readonly didUnlockedNoteAcceptTyping: boolean;
 }
 
+interface UnlockCommandResult {
+  readonly canExecuteWhileNotLocked: boolean;
+  readonly hasCheckCallback: boolean;
+  readonly isRegisteredAfterDispose: boolean;
+  readonly isRegisteredBefore: boolean;
+  readonly isRegisteredWhileActive: boolean;
+}
+
 describe('resource-lock', () => {
   describe('lockResourceForPath', () => {
     it('should lock the current tab, auto-lock a future split and popout of the same note, and leave other notes editable', async () => {
@@ -613,6 +621,64 @@ describe('resource-lock', () => {
 
       // The external delete aborted the operation holding the mutation-blocking lock.
       expect(result.wasAbortedOnExternalDelete).toBe(true);
+    });
+  });
+
+  describe('unlock-active-note command', () => {
+    it('should register the "Unlock active note" command (with a checkCallback) via the real registrar and remove it on dispose', async () => {
+      const result = await evalInObsidian({
+        fn({ app, lib: { AppActiveFileProvider, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, ResourceLockComponent, UnlockActiveNoteCommandHandler } }): UnlockCommandResult {
+          const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
+          const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
+          if (!harnessPlugin) {
+            throw new Error(`Harness plugin "${HARNESS_PLUGIN_ID}" is not loaded`);
+          }
+          const commandId = `${HARNESS_PLUGIN_ID}:unlock-active-note`;
+
+          // Register the command as PluginBase does (a CommandHandlerComponent + the unlock handler), via
+          // `PluginCommandRegistrar` so Obsidian's real add/remove id-prefixing is exercised.
+          const resourceLockComponent = new ResourceLockComponent(app, HARNESS_PLUGIN_ID);
+          resourceLockComponent.load();
+          const commandHandlerComponent = new CommandHandlerComponent({
+            activeFileProvider: new AppActiveFileProvider(app),
+            commandRegistrar: new PluginCommandRegistrar(harnessPlugin),
+            menuEventRegistrar: new MenuEventRegistrarComponent(app),
+            pluginName: harnessPlugin.manifest.name
+          });
+          commandHandlerComponent.load();
+
+          try {
+            const isRegisteredBefore = Boolean(app.commands.commands[commandId]);
+            const disposable = commandHandlerComponent.registerCommandHandlers([
+              new UnlockActiveNoteCommandHandler({ app, resourceLockComponent })
+            ]);
+
+            const command = app.commands.commands[commandId];
+            const isRegisteredWhileActive = Boolean(command);
+            const hasCheckCallback = typeof command?.checkCallback === 'function';
+            // No note is locked, so the command's checkCallback reports it as not executable.
+            const canExecuteWhileNotLocked = command?.checkCallback?.(true) ?? false;
+
+            // Disposing removes the command — this is the real-Obsidian removeCommand path that a mock cannot cover.
+            disposable[Symbol.dispose]();
+            const isRegisteredAfterDispose = Boolean(app.commands.commands[commandId]);
+
+            return { canExecuteWhileNotLocked, hasCheckCallback, isRegisteredAfterDispose, isRegisteredBefore, isRegisteredWhileActive };
+          } finally {
+            commandHandlerComponent.unload();
+            resourceLockComponent.unload();
+          }
+        }
+      });
+
+      // Absent before registration; present with a checkCallback after; gone once the handle is disposed.
+      expect(result).toEqual({
+        canExecuteWhileNotLocked: false,
+        hasCheckCallback: true,
+        isRegisteredAfterDispose: false,
+        isRegisteredBefore: false,
+        isRegisteredWhileActive: true
+      });
     });
   });
 });

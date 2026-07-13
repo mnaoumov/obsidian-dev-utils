@@ -123,6 +123,10 @@ class TestPlugin extends PluginBase {
     return this.asyncErrorHandlerComponent;
   }
 
+  public getCommandHandlerComponent(): typeof this.commandHandlerComponent {
+    return this.commandHandlerComponent;
+  }
+
   public getConsoleDebugComponent(): typeof this.consoleDebugComponent {
     return this.consoleDebugComponent;
   }
@@ -159,6 +163,14 @@ describe('PluginBase', () => {
     expect(plugin.getResourceLockComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
     expect(plugin.getPluginContextComponent()).toBeDefined();
+  });
+
+  it('should create the command handler component and register the unlock active note command on load', async () => {
+    const plugin = new TestPlugin(app, manifest);
+    const addCommandSpy = vi.spyOn(plugin, 'addCommand');
+    await plugin.onload();
+    expect(plugin.getCommandHandlerComponent()).toBeDefined();
+    expect(addCommandSpy).toHaveBeenCalledWith(expect.objectContaining({ id: 'unlock-active-note' }));
   });
 
   it('should initialize i18n with the default translations map on load', async () => {
