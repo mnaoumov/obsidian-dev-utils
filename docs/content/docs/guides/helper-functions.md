@@ -1,4 +1,6 @@
-# Helper Functions
+---
+title: Helper Functions
+---
 
 `Obsidian Dev Utils` provides a range of general-purpose and Obsidian-specific helper functions.
 

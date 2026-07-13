@@ -1,4 +1,6 @@
-# Styling
+---
+title: Styling
+---
 
 `Obsidian Dev Utils` provides some extensible styles that you can use to style your plugin UI controls.
 

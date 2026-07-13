@@ -1,4 +1,6 @@
-# Debugging
+---
+title: Debugging
+---
 
 By default, console debug messages are not shown. To enable them you have to enable `Verbose` mode in the console settings.
 

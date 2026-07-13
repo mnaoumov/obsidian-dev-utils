@@ -1,4 +1,6 @@
-# Modals
+---
+title: Modals
+---
 
 `Obsidian Dev Utils` provides some modals that you can use in your plugin.
 

@@ -1,4 +1,6 @@
-# Plugin Helpers
+---
+title: Plugin Helpers
+---
 
 `Obsidian Dev Utils` provides some helpers to simplify your own Obsidian plugin.
 
@@ -27,7 +29,7 @@
 
 The links below contains the full documentation. Here in the docs we mention only the most important ones.
 
-## [PluginBase](../src/obsidian/plugin/plugin.ts)
+## [PluginBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/plugin/plugin.ts)
 
 `PluginBase` is a base class for plugins, that has some additional useful features to standard [Obsidian Plugin class](https://docs.obsidian.md/Reference/TypeScript+API/Plugin).
 
@@ -46,7 +48,7 @@ The most important methods in the execution order:
 - `onExternalSettingsChange()` - usually you don't need to override it.
 - `onunload()` - usually you don't need to override it.
 
-## [PluginNoticeComponent](../src/obsidian/components/plugin-notice-component.ts)
+## [PluginNoticeComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/plugin-notice-component.ts)
 
 `plugin.pluginNoticeComponent` shows notices prefixed with the plugin name and tied to the plugin lifecycle. Prefer it over constructing an Obsidian `Notice` directly.
 
@@ -66,7 +68,7 @@ The implication rules are enforced — a contradictory combination throws:
 - A permanent notice must be reusable, so `isPermanent: true` together with `isReusable: false` throws.
 - A hard-to-close notice is standalone, so `requiresCloseConfirmation: true` together with `isReusable: true` throws.
 
-## [PluginSettingsComponentBase](../src/obsidian/components/plugin-settings-component.ts)
+## [PluginSettingsComponentBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/plugin-settings-component.ts)
 
 ```ts
 export class FooPluginSettingsComponent extends PluginSettingsComponentBase<FooPluginSettings> {
@@ -80,7 +82,7 @@ The most important methods in the execution order:
 - `onLoadRecord()`
 - `onSavingRecord()`
 
-## [PluginSettingsTabBase](../src/obsidian/plugin/plugin-settings-tab.ts)
+## [PluginSettingsTabBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/plugin/plugin-settings-tab.ts)
 
 ```ts
 export class FooPluginSettingsTab extends PluginSettingsTabBase<FooPluginSettings> {
