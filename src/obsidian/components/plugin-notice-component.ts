@@ -8,7 +8,8 @@ import type { App } from 'obsidian';
 
 import {
   ButtonComponent,
-  Notice
+  Notice,
+  setIcon
 } from 'obsidian';
 
 import type { ValueProvider } from '../../value-provider.ts';
@@ -16,9 +17,11 @@ import type { ValueProvider } from '../../value-provider.ts';
 import { invokeAsyncSafely } from '../../async.ts';
 import { normalizeOptionalProperties } from '../../object-utils.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { resolveValue } from '../../value-provider.ts';
 import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
+import { confirm } from '../modals/confirm.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { ComponentEx } from './component-ex.ts';
 
@@ -106,12 +109,47 @@ export interface PluginNoticeComponentShowNoticeOptions {
    * @default `true`
    */
   readonly isReusable?: boolean;
+
+  /**
+   * Whether the notice is hard to close: it does not dismiss on any stray click, and instead shows a
+   * close (X) button whose click opens a confirmation modal, dismissing the notice only if confirmed.
+   *
+   * A hard-to-close notice is shown with an infinite duration and is standalone (implies
+   * {@link PluginNoticeComponentShowNoticeOptions.isReusable} `= false`), so a later notice never
+   * silently replaces it; passing `isReusable: true` together with `requiresCloseConfirmation: true`
+   * throws.
+   *
+   * @default `false`
+   */
+  readonly requiresCloseConfirmation?: boolean;
 }
 
 interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
   readonly abortController?: AbortController;
   readonly cancelButtonText?: string;
   readonly content: DocumentFragment | string;
+}
+
+interface PluginNoticeComponentBuildNoticeContentParams {
+  /**
+   * Resolves the notice this content belongs to, used by the close button's handler. The notice does
+   * not exist yet when the content is built, so it is resolved lazily at click time. Required when
+   * {@link PluginNoticeComponentBuildNoticeContentParams.requiresCloseConfirmation} is `true`.
+   */
+  getNotice?(this: void): Notice | null;
+
+  /**
+   * The message to display after the plugin name prefix.
+   */
+  readonly message: DocumentFragment | string;
+
+  /**
+   * Whether the notice is hard to close: stops every click from dismissing it and adds a close button
+   * guarded by a confirmation modal.
+   *
+   * @default `false`
+   */
+  readonly requiresCloseConfirmation?: boolean;
 }
 
 interface PluginNoticeComponentConstructorParams {
@@ -123,6 +161,7 @@ interface PluginNoticeComponentShowNoticeWithDurationParams {
   readonly durationInMilliseconds: null | number;
   readonly isReusable: boolean;
   readonly message: DocumentFragment | string;
+  readonly requiresCloseConfirmation: boolean;
   readonly shouldRegisterAsPermanent: boolean;
 }
 
@@ -191,17 +230,22 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     const isPermanent = options?.isPermanent ?? false;
-    const isReusable = options?.isReusable ?? true;
+    const requiresCloseConfirmation = options?.requiresCloseConfirmation ?? false;
+    const isReusable = options?.isReusable ?? !requiresCloseConfirmation;
 
+    if (options?.isReusable === true && requiresCloseConfirmation) {
+      throw new Error('A notice that requires close confirmation cannot be reusable.');
+    }
     if (options?.isReusable === false && isPermanent) {
       throw new Error('A permanent notice must be reusable.');
     }
 
-    const durationInMilliseconds = isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
+    const durationInMilliseconds = isPermanent || requiresCloseConfirmation ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
     return this.showNoticeWithDuration({
       durationInMilliseconds,
       isReusable,
       message,
+      requiresCloseConfirmation,
       shouldRegisterAsPermanent: isPermanent
     });
   }
@@ -257,6 +301,7 @@ export class PluginNoticeComponent extends ComponentEx {
           durationInMilliseconds: PERMANENT_NOTICE_DURATION_IN_MILLISECONDS,
           isReusable: true,
           message: buildDelayedMessage(resolvedContent),
+          requiresCloseConfirmation: false,
           shouldRegisterAsPermanent: false
         });
       });
@@ -268,7 +313,7 @@ export class PluginNoticeComponent extends ComponentEx {
       setContent: (content: DocumentFragment | string): void => {
         currentContent = content;
         // Re-wrap so the prefix, interactive guard, and Cancel button survive the content swap.
-        shownNotice?.setMessage(this.buildNoticeContent(buildDelayedMessage(content)));
+        shownNotice?.setMessage(this.buildNoticeContent({ message: buildDelayedMessage(content) }));
       },
       [Symbol.dispose]: (): void => {
         isDisposed = true;
@@ -279,6 +324,36 @@ export class PluginNoticeComponent extends ComponentEx {
         }
       }
     };
+  }
+
+  /**
+   * Appends a close (X) button to the notice content. Clicking it opens a confirmation modal and, only
+   * if confirmed, hides the notice and drops it from the standalone-notice tracking set.
+   *
+   * @param contentEl - The notice content wrapper to append the button to.
+   * @param getNotice - Resolves the notice to hide when the close is confirmed.
+   */
+  private appendCloseButton(contentEl: HTMLElement, getNotice: () => Notice | null): void {
+    const closeButtonEl = contentEl.createEl('button', {
+      attr: { 'aria-label': t(($) => $.obsidianDevUtils.notices.closeAriaLabel) }
+    });
+    addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
+    setIcon(closeButtonEl, 'x');
+    closeButtonEl.addEventListener('click', (evt) => {
+      evt.stopPropagation();
+      invokeAsyncSafely(async () => {
+        const isConfirmed = await confirm({
+          app: this.app,
+          message: t(($) => $.obsidianDevUtils.notices.closeConfirmMessage)
+        });
+        if (!isConfirmed) {
+          return;
+        }
+        const notice = ensureNonNullable(getNotice());
+        notice.hide();
+        this.standaloneNotices.delete(notice);
+      });
+    });
   }
 
   /**
@@ -320,19 +395,30 @@ export class PluginNoticeComponent extends ComponentEx {
    * element; the container intercepts clicks originating on an interactive element (a link, button,
    * input, etc.) and stops them there, so the element's own handler still runs but the notice stays.
    *
-   * @param message - The message to display after the plugin name prefix.
+   * @param params - The parameters.
    * @returns A {@link DocumentFragment} holding the wrapped, prefixed notice content.
    */
-  private buildNoticeContent(message: DocumentFragment | string): DocumentFragment {
+  private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): DocumentFragment {
+    const { getNotice, message, requiresCloseConfirmation = false } = params;
     const fragment = createFragment();
     const contentEl = fragment.createDiv();
     addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
     contentEl.appendChild(this.buildPrefixedMessage(message));
     contentEl.addEventListener('click', (evt) => {
+      // A hard-to-close notice must not dismiss on any stray click; only its close button (via the
+      // Confirmation modal) may dismiss it.
+      if (requiresCloseConfirmation) {
+        evt.stopPropagation();
+        return;
+      }
       if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
         evt.stopPropagation();
       }
     });
+
+    if (requiresCloseConfirmation) {
+      this.appendCloseButton(contentEl, ensureNonNullable(getNotice));
+    }
     return fragment;
   }
 
@@ -368,6 +454,32 @@ export class PluginNoticeComponent extends ComponentEx {
     return getObsidianDevUtilsState<Map<string, Notice>>(PERMANENT_NOTICES_STATE_KEY, new Map<string, Notice>()).value;
   }
 
+  /**
+   * Makes a notice hard to close: marks its outer element (so the CSS neutralizes its padding) and
+   * installs a capture-phase click guard that stops every click except on the close button from
+   * reaching Obsidian's own dismiss handler.
+   *
+   * @param notice - The notice to guard.
+   * @param requiresCloseConfirmation - Whether the notice requires close confirmation; when `false`,
+   * nothing is installed.
+   */
+  private installCloseConfirmationGuards(notice: Notice, requiresCloseConfirmation: boolean): void {
+    if (!requiresCloseConfirmation) {
+      return;
+    }
+    // The outer `.notice` element (`containerEl`) carries Obsidian's dismiss-on-click handler and the
+    // Padding a stray click could land on; mark it so the stylesheet drops that padding.
+    addPluginCssClasses(notice.containerEl, CssClass.PluginNoticeRequiresConfirmation);
+    // Stop every click on the notice — except on the close button — from reaching Obsidian's dismiss
+    // Handler. Registered in the capture phase on the outermost element so it always runs first.
+    notice.containerEl.addEventListener('click', (evt) => {
+      if (evt.target instanceof Element && evt.target.closest(`.${CssClass.PluginNoticeCloseButton}`)) {
+        return;
+      }
+      evt.stopPropagation();
+    }, { capture: true });
+  }
+
   private setPermanentNotice(notice: Notice | null): void {
     const map = this.getPermanentNotices();
     if (notice) {
@@ -386,26 +498,38 @@ export class PluginNoticeComponent extends ComponentEx {
    * @returns The created notice.
    */
   private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): Notice {
-    const { durationInMilliseconds, isReusable, message, shouldRegisterAsPermanent } = params;
-    const content = this.buildNoticeContent(message);
+    const { durationInMilliseconds, isReusable, message, requiresCloseConfirmation, shouldRegisterAsPermanent } = params;
     // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
     // Duration" value to `undefined`.
     const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
 
+    // The close button's confirm handler needs the `Notice`, which does not exist until it is built from
+    // This content; capture it lazily via a holder resolved at click time. The getter is created only
+    // For a hard-to-close notice — the only kind that has a close button.
+    let builtNotice: Notice | null = null;
+    const content = this.buildNoticeContent(normalizeOptionalProperties<PluginNoticeComponentBuildNoticeContentParams>({
+      getNotice: requiresCloseConfirmation ? (): Notice | null => builtNotice : undefined,
+      message,
+      requiresCloseConfirmation
+    }));
+
     if (!isReusable) {
-      const standaloneNotice = new Notice(content, noticeDurationInMilliseconds);
-      this.standaloneNotices.add(standaloneNotice);
-      return standaloneNotice;
+      builtNotice = new Notice(content, noticeDurationInMilliseconds);
+      this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+      this.standaloneNotices.add(builtNotice);
+      return builtNotice;
     }
 
     this.notice?.hide();
-    this.notice = new Notice(content, noticeDurationInMilliseconds);
+    builtNotice = new Notice(content, noticeDurationInMilliseconds);
+    this.notice = builtNotice;
+    this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
 
     if (shouldRegisterAsPermanent) {
-      this.setPermanentNotice(this.notice);
+      this.setPermanentNotice(builtNotice);
     } else {
       this.setPermanentNotice(null);
     }
-    return this.notice;
+    return builtNotice;
   }
 }

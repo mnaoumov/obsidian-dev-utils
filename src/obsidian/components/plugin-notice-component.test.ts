@@ -12,15 +12,19 @@ import {
   vi
 } from 'vitest';
 
+import { waitForAllAsyncOperations } from '../../async.ts';
 import { noop } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
+import { confirm } from '../modals/confirm.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 interface NoticeInstance {
+  containerEl: HTMLElement;
   hide: ReturnType<typeof vi.fn>;
+  messageEl: HTMLElement;
   setMessage: ReturnType<typeof vi.fn>;
 }
 
@@ -39,6 +43,9 @@ const mocks = vi.hoisted(() => {
   const NoticeMock = vi.fn(function noticeMock(this: NoticeInstance, ..._args: unknown[]) {
     this.hide = vi.fn();
     this.setMessage = vi.fn();
+    this.messageEl = createDiv();
+    this.containerEl = createDiv();
+    this.containerEl.appendChild(this.messageEl);
     instances.push(this);
   });
   return { instances, NoticeMock };
@@ -56,6 +63,10 @@ vi.mock('obsidian', async (importOriginal) => {
     Notice: castTo<typeof NoticeOriginal>(mocks.NoticeMock)
   };
 });
+
+vi.mock('../modals/confirm.ts', () => ({
+  confirm: vi.fn()
+}));
 
 vi.mock('../../obsidian-dev-utils-state.ts', () => ({
   getObsidianDevUtilsState: vi.fn((key: string, defaultValue: unknown) => {
@@ -273,7 +284,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should dismiss a permanent notice left over from a previous load', () => {
-    const staleNotice: NoticeInstance = { hide: vi.fn(), setMessage: vi.fn() };
+    const staleNotice: NoticeInstance = { containerEl: createDiv(), hide: vi.fn(), messageEl: createDiv(), setMessage: vi.fn() };
     stateMocks.store.set(PERMANENT_NOTICES_STATE_KEY, { value: new Map([[PLUGIN_NAME, staleNotice]]) });
 
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
@@ -334,6 +345,158 @@ describe('PluginNoticeComponent', () => {
 
     expect(() => {
       component.showNotice('Bad', { isPermanent: true, isReusable: false });
+    }).toThrow();
+  });
+
+  it('should show a requires-close-confirmation notice with an infinite duration', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+
+    const [, duration] = mocks.NoticeMock.mock.calls[0] ?? [];
+    expect(duration).toBe(0);
+  });
+
+  it('should make a requires-close-confirmation notice standalone by default', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Reusable');
+    const reusableNotice = mocks.instances[0];
+
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+
+    expect(reusableNotice?.hide).not.toHaveBeenCalled();
+  });
+
+  it('should stop any click from dismissing a requires-close-confirmation notice', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const noticeElStub = createDiv();
+    noticeElStub.appendChild(fragment);
+    const dismissListener = vi.fn();
+    noticeElStub.addEventListener('click', dismissListener);
+
+    // Even a non-interactive element (the plugin-name prefix) must not dismiss it.
+    const nameEl = ensureNonNullable(noticeElStub.querySelector('span'));
+    nameEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
+  it('should render a close button on a requires-close-confirmation notice', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const closeButton = fragment.querySelector(`.${CssClass.PluginNoticeCloseButton}`);
+    expect(closeButton).not.toBeNull();
+  });
+
+  it('should mark the notice container with the requires-confirmation class', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+
+    const notice = ensureNonNullable(mocks.instances[0]);
+    expect(notice.containerEl.classList.contains(CssClass.PluginNoticeRequiresConfirmation)).toBe(true);
+  });
+
+  it('should stop a click on the notice container from reaching the dismiss handler', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+
+    const notice = ensureNonNullable(mocks.instances[0]);
+    const outerStub = createDiv();
+    outerStub.appendChild(notice.containerEl);
+    const dismissListener = vi.fn();
+    outerStub.addEventListener('click', dismissListener);
+
+    notice.containerEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
+  it('should let a click on the close button pass through the container guard to the confirmation', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+    const notice = ensureNonNullable(mocks.instances[0]);
+
+    // Simulate Obsidian inserting the notice content into the container, so the close button becomes a
+    // Descendant of the container's capture-phase guard.
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    notice.messageEl.appendChild(fragment);
+
+    const closeButton = ensureNonNullable(notice.containerEl.querySelector(`.${CssClass.PluginNoticeCloseButton}`));
+    closeButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await waitForAllAsyncOperations();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(notice.hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should stop a non-element click target on the container from dismissing the notice', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+    const notice = ensureNonNullable(mocks.instances[0]);
+
+    const outerStub = createDiv();
+    outerStub.appendChild(notice.containerEl);
+    const dismissListener = vi.fn();
+    outerStub.addEventListener('click', dismissListener);
+
+    // A text node is not an `Element`, exercising the guard's non-element branch.
+    const textNode = notice.messageEl.appendChild(document.createTextNode('text'));
+    textNode.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
+  it('should hide the notice when the close is confirmed', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+    const notice = ensureNonNullable(mocks.instances[0]);
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const closeButton = ensureNonNullable(fragment.querySelector(`.${CssClass.PluginNoticeCloseButton}`));
+    closeButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await waitForAllAsyncOperations();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(notice.hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not hide the notice when the close is not confirmed', async () => {
+    vi.mocked(confirm).mockResolvedValue(false);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Locked', { requiresCloseConfirmation: true });
+    const notice = ensureNonNullable(mocks.instances[0]);
+
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    const closeButton = ensureNonNullable(fragment.querySelector(`.${CssClass.PluginNoticeCloseButton}`));
+    closeButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    await waitForAllAsyncOperations();
+
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(notice.hide).not.toHaveBeenCalled();
+  });
+
+  it('should throw when a reusable notice also requires close confirmation', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    expect(() => {
+      component.showNotice('Bad', { isReusable: true, requiresCloseConfirmation: true });
     }).toThrow();
   });
 

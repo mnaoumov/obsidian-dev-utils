@@ -74,6 +74,115 @@ describe('PluginNoticeComponent styling', () => {
   });
 });
 
+describe('PluginNoticeComponent hard-to-close notice', () => {
+  it('should not dismiss on stray clicks and close only after confirming', async () => {
+    const result = await evalInObsidian({
+      async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
+        const SETTLE_IN_MILLISECONDS = 250;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+
+        function findLockedContentEl(): HTMLElement | null {
+          const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
+          return els.find((el) => el.textContent.includes('Locked action')) ?? null;
+        }
+
+        const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
+        const notice = component.showNotice('Locked action', { requiresCloseConfirmation: true });
+
+        try {
+          await waitUntil({
+            message: 'the hard-to-close notice should render',
+            predicate: () => findLockedContentEl() !== null,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+
+          const contentEl = findLockedContentEl();
+          const { containerEl, messageEl } = notice;
+          const closeButtonEl = contentEl?.querySelector<HTMLElement>('.obsidian-dev-utils.plugin-notice-close-button') ?? null;
+          const hasCloseButton = closeButtonEl !== null;
+          const hasRequiresConfirmationClass = containerEl.classList.contains('plugin-notice-requires-confirmation');
+
+          // A stray click on the notice body must NOT dismiss it.
+          contentEl?.click();
+          await sleep(SETTLE_IN_MILLISECONDS);
+          const isShownAfterBodyClick = findLockedContentEl() !== null;
+
+          // A click on the inner message element (a descendant) must NOT dismiss it — the capture-phase
+          // Guard on the container stops it before Obsidian's dismiss handler runs.
+          messageEl.click();
+          await sleep(SETTLE_IN_MILLISECONDS);
+          const isShownAfterMessageClick = findLockedContentEl() !== null;
+
+          // A real click at the notice's very corner (where the padding used to be) must land on the
+          // Guarded content and NOT dismiss it.
+          const rect = containerEl.getBoundingClientRect();
+          const cornerEl = activeDocument.elementFromPoint(rect.left + 2, rect.top + 2);
+          cornerEl?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          await sleep(SETTLE_IN_MILLISECONDS);
+          const isShownAfterPaddingClick = findLockedContentEl() !== null;
+
+          // A following ordinary notice must NOT hide the standalone hard-to-close notice.
+          const ordinaryNotice = component.showNotice('Ordinary notice');
+          await sleep(SETTLE_IN_MILLISECONDS);
+          const isShownAfterOtherNotice = findLockedContentEl() !== null;
+          ordinaryNotice.hide();
+
+          // Clicking the close button opens the confirmation modal.
+          closeButtonEl?.click();
+          await waitUntil({
+            message: 'the confirmation modal should open',
+            predicate: () => activeDocument.querySelector('.obsidian-dev-utils.confirm-modal') !== null,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+          const modalEl = activeDocument.querySelector('.obsidian-dev-utils.confirm-modal');
+          const modalMessage = modalEl?.querySelector('p')?.textContent ?? '';
+          const okButtonEl = modalEl?.querySelector<HTMLElement>('.ok-button') ?? null;
+          const hasOkButton = okButtonEl !== null;
+
+          // Confirming (OK) dismisses the notice.
+          okButtonEl?.click();
+          await waitUntil({
+            message: 'the notice should be gone after confirming',
+            predicate: () => findLockedContentEl() === null,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+          const isShownAfterConfirm = findLockedContentEl() !== null;
+
+          return {
+            hasCloseButton,
+            hasOkButton,
+            hasRequiresConfirmationClass,
+            isShownAfterBodyClick,
+            isShownAfterConfirm,
+            isShownAfterMessageClick,
+            isShownAfterOtherNotice,
+            isShownAfterPaddingClick,
+            modalMessage
+          };
+        } finally {
+          notice.hide();
+        }
+      }
+    });
+
+    expect(result.hasCloseButton).toBe(true);
+    expect(result.hasRequiresConfirmationClass).toBe(true);
+
+    // Stray clicks (body, inner message, corner) and a following ordinary notice all leave it shown.
+    expect(result.isShownAfterBodyClick).toBe(true);
+    expect(result.isShownAfterMessageClick).toBe(true);
+    expect(result.isShownAfterPaddingClick).toBe(true);
+    expect(result.isShownAfterOtherNotice).toBe(true);
+
+    // The confirmation modal carries the documented message and an OK button.
+    expect(result.hasOkButton).toBe(true);
+    expect(result.modalMessage).toBe('Are you sure you want to close the notice?');
+
+    // Confirming closes the notice.
+    expect(result.isShownAfterConfirm).toBe(false);
+  });
+});
+
 describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   it('shows a cancellable notice after the delay whose interactive click does not dismiss it', async () => {
     const result = await evalInObsidian({
