@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 
 import { isDisposable } from '../../disposable.ts';
+import { castTo } from '../../object-utils.ts';
 import { asDisposableComponent } from './disposable-component.ts';
 
 describe('asDisposableComponent', () => {
@@ -25,6 +26,26 @@ describe('asDisposableComponent', () => {
     const unloadSpy = vi.spyOn(component, 'unload');
     wrapped[Symbol.dispose]();
     expect(unloadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('should unload the component via the dispose() convenience method', () => {
+    const component = new Component();
+    const wrapped = asDisposableComponent(component);
+
+    const unloadSpy = vi.spyOn(component, 'unload');
+    wrapped.dispose();
+    expect(unloadSpy).toHaveBeenCalledOnce();
+  });
+
+  it('should preserve an existing Symbol.dispose and add a delegating dispose()', () => {
+    const component = new Component();
+    const existingDispose = vi.fn();
+    castTo<Partial<Disposable>>(component)[Symbol.dispose] = existingDispose;
+
+    const wrapped = asDisposableComponent(component);
+    wrapped.dispose();
+
+    expect(existingDispose).toHaveBeenCalledOnce();
   });
 
   it('should return the same component if already disposable', () => {
