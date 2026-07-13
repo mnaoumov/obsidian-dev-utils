@@ -24,6 +24,11 @@ data.json
 dist
 coverage
 
+# Astro documentation site
+.astro
+docs/dist
+docs/content/docs/api
+
 index.ts
 __merged.ts
 _dependencies.ts

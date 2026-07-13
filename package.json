@@ -623,6 +623,9 @@
     "build:types": "jiti scripts/build-types.ts",
     "build:validate-declarations": "jiti scripts/build-validate-declarations.ts",
     "commit": "jiti scripts/commit.ts",
+    "docs:build": "jiti scripts/docs-build.ts",
+    "docs:dev": "jiti scripts/docs-dev.ts",
+    "docs:preview": "jiti scripts/docs-preview.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",
     "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",
     "format": "jiti scripts/format.ts",
@@ -721,6 +724,7 @@
     "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
+    "@astrojs/starlight": "^0.41.3",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@commitlint/types": "^21.2.0",
@@ -730,6 +734,7 @@
     "@typescript-eslint/rule-tester": "^8.63.0",
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/runner": "^4.1.10",
+    "astro": "^7.0.8",
     "better-typescript-lib": "^2.12.0",
     "czg": "^1.13.1",
     "dedent": "^1.7.2",
@@ -740,7 +745,10 @@
     "nano-staged": "^1.0.2",
     "obsidian-integration-testing": "^8.1.0",
     "obsidian-test-mocks": "^3.6.0",
+    "starlight-typedoc": "^0.23.0",
     "ts-declaration-location": "^1.0.7",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0",
     "vitest": "^4.1.10",
     "yaml": "^2.9.0"
   },
