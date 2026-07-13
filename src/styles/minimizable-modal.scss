@@ -89,7 +89,8 @@
       font-weight: var(--font-medium);
     }
 
-    .restore-button {
+    .restore-button,
+    .cancel-button {
       display: flex;
       align-items: center;
       justify-content: center;

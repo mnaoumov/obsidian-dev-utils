@@ -8,8 +8,9 @@
  * the modal is dismissed. {@link MinimizableModal} wraps any modal instance (plain `Modal`,
  * `FuzzySuggestModal`, the library's `ModalBase`, your own subclass, … — including modals you do not
  * own) and adds a minimize button. Minimizing hides the modal and its blocking backdrop and shows a
- * small floating bar with a restore button, so the user can peek at the notes/folders the operation
- * involves — but the modal is NOT dismissed, so its blocking contract must be preserved.
+ * small floating bar with a restore button (and, by default, a Cancel button that closes the wrapped
+ * modal — pass `{ shouldShowCancelButton: false }` to hide it), so the user can peek at the
+ * notes/folders the operation involves — but the modal is NOT dismissed, so its blocking contract must be preserved.
  *
  * To keep that contract while minimized, the wrapper puts the app into a **peek-only lock**: the user
  * may mouse-click and scroll to inspect content, but cannot start anything new. While any modal is
@@ -45,7 +46,8 @@ import type { App } from 'obsidian';
 
 import {
   Modal,
-  setIcon
+  setIcon,
+  setTooltip
 } from 'obsidian';
 
 import { Beeper } from '../../beeper.ts';
@@ -56,6 +58,7 @@ import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 
 const MINIMIZE_ICON_ID = 'minus';
 const RESTORE_ICON_ID = 'maximize-2';
+const CANCEL_ICON_ID = 'x';
 
 // Navigation keys pass through while minimized so the user can move the cursor and scroll to read.
 // None of them mutate the document — text changes are caught separately by the `beforeinput` guard.
@@ -105,6 +108,19 @@ interface PeekLockEntry {
 
 const peekLockEntries = new Set<PeekLockEntry>();
 const beeper = new Beeper();
+
+/**
+ * Options for constructing a {@link MinimizableModal}.
+ */
+export interface MinimizableModalConstructorOptions {
+  /**
+   * Whether the minimized bar shows a Cancel button that closes the wrapped modal. Closing lets the
+   * wrapped modal's own `onClose` define what "cancel" means (e.g. releasing a held lock).
+   *
+   * @default `true`
+   */
+  readonly shouldShowCancelButton?: boolean;
+}
 
 /**
  * Installs the peek-only lock's `open` patches while at least one modal is minimized. Being a
@@ -212,14 +228,17 @@ export class MinimizableModal<TModal extends Modal> {
   private minimizedBarEl: HTMLElement | null = null;
   private peekLockComponent: null | PeekLockComponent = null;
   private peekLockEntry: null | PeekLockEntry = null;
+  private readonly shouldShowCancelButton: boolean;
 
   /**
    * Wraps the given modal, adding a minimize button and wiring up cleanup on close.
    *
    * @param modal - The modal instance to make minimizable.
+   * @param options - Options controlling the minimized bar. See {@link MinimizableModalConstructorOptions}.
    */
-  public constructor(modal: TModal) {
+  public constructor(modal: TModal, options: MinimizableModalConstructorOptions = {}) {
     this.modal = modal;
+    this.shouldShowCancelButton = options.shouldShowCancelButton ?? true;
     addPluginCssClasses(modal.containerEl, [CssClass.MinimizableModal]);
     this.minimizeButtonEl = this.createMinimizeButton();
     this.closePatchComponent.load();
@@ -284,6 +303,18 @@ export class MinimizableModal<TModal extends Modal> {
     });
     const restoreButtonEl = barEl.createEl('button', { cls: CssClass.RestoreButton });
     setIcon(restoreButtonEl, RESTORE_ICON_ID);
+    if (this.shouldShowCancelButton) {
+      const cancelButtonEl = barEl.createEl('button', { cls: CssClass.CancelButton });
+      setIcon(cancelButtonEl, CANCEL_ICON_ID);
+      setTooltip(cancelButtonEl, 'Cancel');
+      cancelButtonEl.addEventListener('click', (evt) => {
+        // The whole bar restores on click; stop propagation so Cancel closes the modal instead of
+        // Restoring it. Closing runs the wrapped modal's onClose (peek lock lifted, bar removed), so
+        // The consumer's onClose decides what "cancel" means (e.g. releasing a held lock).
+        evt.stopPropagation();
+        this.modal.close();
+      });
+    }
     // The whole bar restores on click, not just the restore button — a larger, easier click target.
     // `restore()` guards against a double invocation, so the restore button's own click bubbling up
     // Here is a no-op. The restore button stays purely as a visual affordance for the click target.
