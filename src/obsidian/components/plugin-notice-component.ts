@@ -4,6 +4,8 @@
  * Component that manages displaying notices to the user.
  */
 
+import type { App } from 'obsidian';
+
 import {
   ButtonComponent,
   Notice
@@ -98,20 +100,37 @@ interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
   readonly content: DocumentFragment | string;
 }
 
+interface PluginNoticeComponentConstructorParams {
+  readonly app: App;
+  readonly pluginName: string;
+}
+
 /**
  * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.
  */
 export class PluginNoticeComponent extends ComponentEx {
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The plugin name (shown as prefix in notices).
+   */
+  protected readonly pluginName: string;
+
   private notice: Notice | null = null;
   private readonly pendingTimerCancellations = new Set<() => void>();
 
   /**
    * Creates a new plugin notice component.
    *
-   * @param pluginName - The plugin name (shown as prefix in notices).
+   * @param params - The constructor parameters.
    */
-  public constructor(protected readonly pluginName: string) {
+  public constructor(params: PluginNoticeComponentConstructorParams) {
     super();
+    this.app = params.app;
+    this.pluginName = params.pluginName;
   }
 
   /**

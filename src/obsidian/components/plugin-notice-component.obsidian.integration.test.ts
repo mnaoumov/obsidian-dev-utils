@@ -19,8 +19,8 @@ import {
 describe('PluginNoticeComponent styling', () => {
   it('should render the plugin name with the accent color and bold weight, distinct from the body', async () => {
     const result = await evalInObsidian({
-      fn({ lib: { PluginNoticeComponent } }) {
-        const component = new PluginNoticeComponent('My Test Plugin');
+      fn({ app, lib: { PluginNoticeComponent } }) {
+        const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         const notice = component.showNotice('Body text');
 
         try {
@@ -77,7 +77,7 @@ describe('PluginNoticeComponent styling', () => {
 describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   it('shows a cancellable notice after the delay whose interactive click does not dismiss it', async () => {
     const result = await evalInObsidian({
-      async fn({ lib: { PluginNoticeComponent } }) {
+      async fn({ app, lib: { PluginNoticeComponent } }) {
         const DELAY_IN_MILLISECONDS = 50;
         const SETTLE_IN_MILLISECONDS = 250;
 
@@ -94,7 +94,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
           return els.find((el) => el.textContent.includes(textIncludes)) ?? null;
         }
 
-        const component = new PluginNoticeComponent('My Test Plugin');
+        const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         const abortController = new AbortController();
         const handle = component.showNoticeAfterDelay({
           abortController,

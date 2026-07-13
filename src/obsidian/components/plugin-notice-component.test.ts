@@ -1,4 +1,7 @@
-import type { Notice as NoticeOriginal } from 'obsidian';
+import type {
+  App as AppOriginal,
+  Notice as NoticeOriginal
+} from 'obsidian';
 
 import {
   afterEach,
@@ -11,6 +14,7 @@ import {
 
 import { noop } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
@@ -26,6 +30,9 @@ interface StateWrapper {
 
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PLUGIN_NAME = 'My Plugin';
+// Nothing dereferences the app in these tests (the confirm modal is stubbed), so a strict proxy over an
+// Empty object is enough to satisfy the constructor's type.
+const app = strictProxy<AppOriginal>({});
 
 const mocks = vi.hoisted(() => {
   const instances: NoticeInstance[] = [];
@@ -74,7 +81,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should show a notice with plugin name prefix', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Something happened');
 
@@ -85,7 +92,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should render the plugin name in a styled element distinct from the message body', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Something happened');
 
@@ -97,7 +104,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should wrap the notice content in a container carrying the plugin-notice-content class', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Something happened');
 
@@ -109,7 +116,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should keep the notice open when an interactive element inside it is clicked', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     const messageFragment = createFragment((f) => {
       f.createEl('a', { text: 'Link' });
@@ -130,7 +137,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should dismiss the notice when a non-interactive element inside it is clicked', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Something happened');
 
@@ -148,7 +155,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should dismiss the notice when the click target is not an element (e.g. a text node)', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Something happened');
 
@@ -166,14 +173,14 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should return the created notice', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     const notice = component.showNotice('Something happened');
     expect(notice).toBe(mocks.instances[0]);
   });
 
   it('should mark the notice as unloaded when shown while not loaded', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.showNotice('Something happened');
 
     const content = mocks.NoticeMock.mock.calls[0]?.[0];
@@ -182,7 +189,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should hide previous notice when showing a new one', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     component.showNotice('First');
@@ -194,14 +201,14 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should not call hide if no previous notice exists', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('First');
     expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
   });
 
   it('should hide the current notice on unload', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Persistent');
     const notice = mocks.instances[0];
@@ -212,7 +219,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should not throw on unload when no notice was shown', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     expect(() => {
@@ -221,7 +228,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should hide the current notice when a permanent notice is shown', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Usual');
     const usualNotice = mocks.instances[0];
@@ -232,7 +239,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should show a permanent notice with an infinite duration and store it by plugin name', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Persistent', { isPermanent: true });
 
@@ -244,7 +251,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should not hide a permanent notice on unload', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Persistent', { isPermanent: true });
     const notice = mocks.instances[0];
@@ -255,7 +262,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should hide the previous permanent notice when another notice is shown', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('First', { isPermanent: true });
     const firstPermanentNotice = mocks.instances[0];
@@ -269,7 +276,7 @@ describe('PluginNoticeComponent', () => {
     const staleNotice: NoticeInstance = { hide: vi.fn(), setMessage: vi.fn() };
     stateMocks.store.set(PERMANENT_NOTICES_STATE_KEY, { value: new Map([[PLUGIN_NAME, staleNotice]]) });
 
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     expect(staleNotice.hide).toHaveBeenCalledTimes(1);
@@ -277,7 +284,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should support a document fragment message', () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const fragment = createFragment((f) => {
@@ -306,7 +313,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should not show a notice when disposed before the delay elapses', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
@@ -317,7 +324,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should show the notice after the delay and hide it on dispose', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
@@ -333,7 +340,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should use the default delay of 500 ms when none is provided', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     component.showNoticeAfterDelay({ content: 'Working' });
@@ -345,7 +352,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should show a Cancel button that aborts the controller without dismissing the notice', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     const abortController = new AbortController();
 
@@ -368,7 +375,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should use a custom Cancel button text', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     component.showNoticeAfterDelay({
@@ -384,7 +391,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should accept a document-fragment content', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const contentFragment = createFragment((f) => {
@@ -398,7 +405,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should not show the notice when disposed while the content is resolving', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     let resolveContent: (value: string) => void = noop;
@@ -419,7 +426,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should cancel a pending delayed notice on unload', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
@@ -430,7 +437,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should update the shown notice content via setContent', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const handle = component.showNoticeAfterDelay({ content: 'Merging 1/10', delayInMilliseconds: DELAY_IN_MILLISECONDS });
@@ -445,7 +452,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should show the latest content when setContent is called before the delay elapses', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const handle = component.showNoticeAfterDelay({ content: 'Initial', delayInMilliseconds: DELAY_IN_MILLISECONDS });
@@ -459,7 +466,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   it('should not clear a newer notice when the delayed handle is disposed after being replaced', async () => {
-    const component = new PluginNoticeComponent(PLUGIN_NAME);
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
