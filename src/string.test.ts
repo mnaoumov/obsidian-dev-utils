@@ -7,6 +7,7 @@ import {
 import { noopAsync } from './function.ts';
 import { castTo } from './object-utils.ts';
 import {
+  EMPTY,
   ensureEndsWith,
   ensureLfEndings,
   ensureStartsWith,
@@ -25,6 +26,12 @@ import {
   unescape,
   unindent
 } from './string.ts';
+
+describe('EMPTY', () => {
+  it('should be an empty string', () => {
+    expect(EMPTY).toBe('');
+  });
+});
 
 describe('ensureEndsWith', () => {
   it('should add the suffix if not already present', () => {
