@@ -18,6 +18,8 @@ import type {
 
 import { Platform } from 'obsidian';
 
+import { assertNever } from '../type-guards.ts';
+
 /**
  * Parameters for {@link hoverElement}.
  */
@@ -91,21 +93,9 @@ export interface UnhoverElementParams {
 
 type CurrentWebContents = ReturnType<Window['electron']['remote']['getCurrentWebContents']>;
 
-interface SendInputEventKeyboardInput {
-  keyCode: string;
-  modifiers?: string[];
-  type: 'char' | 'keyDown' | 'keyUp';
-}
-
-interface SendInputEventMouseInput {
-  type: 'mouseMove';
-  x: number;
-  y: number;
-}
-
-interface WebContentsWithSendInputEvent extends CurrentWebContents {
-  sendInputEvent(inputEvent: SendInputEventKeyboardInput | SendInputEventMouseInput): void;
-}
+// The Electron modifier-key names `sendInputEvent` accepts (e.g. 'meta', 'control', 'shift', 'alt').
+// The type is derived from the web-contents type so it stays in sync with the Electron typings.
+type ElectronModifier = NonNullable<Parameters<CurrentWebContents['sendInputEvent']>[0]['modifiers']>[number];
 
 /**
  * Interval (in ms) between polls while waiting for a trusted input event to take effect (the editor
@@ -181,14 +171,21 @@ export function pressKey(params: PressKeyParams): void {
   const isMacOS = Platform.isMacOS;
 
   // Map Obsidian's `Modifier` names to Electron's lowercase `sendInputEvent` modifier names.
-  const electronModifiers = modifiers.map((modifier): string => {
-    if (modifier === 'Mod') {
-      return isMacOS ? 'meta' : 'control';
+  const electronModifiers = modifiers.map((modifier): ElectronModifier => {
+    switch (modifier) {
+      case 'Alt':
+        return 'alt';
+      case 'Ctrl':
+        return 'control';
+      case 'Meta':
+        return 'meta';
+      case 'Mod':
+        return isMacOS ? 'meta' : 'control';
+      case 'Shift':
+        return 'shift';
+      default:
+        return assertNever(modifier);
     }
-    if (modifier === 'Ctrl') {
-      return 'control';
-    }
-    return modifier.toLowerCase();
   });
 
   const webContents = getWebContents();
@@ -265,8 +262,6 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
   }
 }
 
-function getWebContents(): WebContentsWithSendInputEvent {
-  // TODO(T13): drop this cast once T12 adds Electron's stable `sendInputEvent` to `@obsidian-typings`'
-  // `getCurrentWebContents()` return type (it is omitted today).
-  return window.electron.remote.getCurrentWebContents() as WebContentsWithSendInputEvent;
+function getWebContents(): CurrentWebContents {
+  return window.electron.remote.getCurrentWebContents();
 }
