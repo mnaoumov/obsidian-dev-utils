@@ -27,6 +27,7 @@ interface MockChild extends EventEmitter {
 
 interface SpawnCallOptions {
   readonly env?: NodeJS.ProcessEnv;
+  readonly stdio?: string;
 }
 
 function createMockChild(): MockChild {
@@ -483,6 +484,41 @@ describe('exec', () => {
     assertNonNullable(firstCall);
     const spawnOptions = firstCall[2] as SpawnCallOptions;
     expect(spawnOptions.env?.['NODE_OPTIONS']).toContain('--localstorage-file=:memory:');
+  });
+
+  it('should merge the env option over the inherited child environment', async () => {
+    const child = createMockChild();
+    mockSpawn.mockReturnValue(child);
+
+    const promise = exec(['echo', 'hi'], {
+      env: { MY_CUSTOM_VAR: 'custom-value' },
+      isQuiet: true
+    });
+
+    child.stdout.end('hi');
+    child.stderr.end('');
+    child.emit('close', 0, null);
+
+    await expect(promise).resolves.toBe('hi');
+    const firstCall = mockSpawn.mock.calls[0];
+    assertNonNullable(firstCall);
+    const spawnOptions = firstCall[2] as SpawnCallOptions;
+    expect(spawnOptions.env?.['MY_CUSTOM_VAR']).toBe('custom-value');
+  });
+
+  it('should attach stdio to the terminal and not capture output when isInteractive is true', async () => {
+    const child = createMockChild();
+    mockSpawn.mockReturnValue(child);
+
+    const promise = exec(['astro', 'dev'], { isInteractive: true });
+
+    child.emit('close', 0, null);
+
+    await expect(promise).resolves.toBe('');
+    const firstCall = mockSpawn.mock.calls[0];
+    assertNonNullable(firstCall);
+    const spawnOptions = firstCall[2] as SpawnCallOptions;
+    expect(spawnOptions.stdio).toBe('inherit');
   });
 });
 

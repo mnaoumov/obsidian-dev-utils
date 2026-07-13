@@ -4,7 +4,7 @@
  * Contains utility functions for executing commands.
  */
 
-import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
 
 import { spawn } from 'node:child_process';
 import process from 'node:process';
@@ -53,6 +53,22 @@ export interface ExecOptions {
    * A current working folder for the command execution.
    */
   readonly cwd?: string;
+
+  /**
+   * Additional environment variables for the child process, merged over the inherited environment.
+   *
+   * @default `{}`
+   */
+  readonly env?: NodeJS.ProcessEnv;
+
+  /**
+   * If `true`, attaches the child process's stdio directly to the terminal (`stdio: 'inherit'`) instead
+   * of capturing it. Use for long-running or interactive commands such as dev servers and watch mode.
+   * Because the output is not captured, the resolved stdout is an empty string.
+   *
+   * @default `false`
+   */
+  readonly isInteractive?: boolean;
 
   /**
    * If `true`, suppresses the output of the command.
@@ -278,6 +294,8 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
   } = params;
   const {
     cwd = process.cwd(),
+    env,
+    isInteractive = false,
     isQuiet: quiet = false,
     shouldIgnoreExitCode: ignoreExitCode = false,
     shouldIncludeDetails = false,
@@ -290,42 +308,56 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
     const child = spawnViaShell(normalizeOptionalProperties<SpawnViaShellParams>({
       command,
       cwd,
+      env,
+      isInteractive,
       rawArgs
     }));
 
     let stdout = '';
     let stderr = '';
 
-    child.stdin.write(stdin);
-    child.stdin.end();
+    // In interactive mode the child's stdio is inherited by the terminal, so there are no streams to read and nothing is captured.
+    if (!isInteractive) {
+      const {
+        stderr: childStderr,
+        stdin: childStdin,
+        stdout: childStdout
+      } = child;
+      assertNonNullable(childStdin, 'Child process stdin is not available');
+      assertNonNullable(childStdout, 'Child process stdout is not available');
+      assertNonNullable(childStderr, 'Child process stderr is not available');
 
-    child.stdout.on('data', (data: Buffer) => {
-      if (!quiet) {
-        process.stdout.write(data);
-      }
-      stdout += data.toString('utf-8');
-    });
+      childStdin.write(stdin);
+      childStdin.end();
 
-    child.stdout.on('end', () => {
-      stdout = trimEnd({
-        str: stdout,
-        suffix: '\n'
+      childStdout.on('data', (data: Buffer) => {
+        if (!quiet) {
+          process.stdout.write(data);
+        }
+        stdout += data.toString('utf-8');
       });
-    });
 
-    child.stderr.on('data', (data: Buffer) => {
-      if (!quiet) {
-        process.stderr.write(data);
-      }
-      stderr += data.toString('utf-8');
-    });
-
-    child.stderr.on('end', () => {
-      stderr = trimEnd({
-        str: stderr,
-        suffix: '\n'
+      childStdout.on('end', () => {
+        stdout = trimEnd({
+          str: stdout,
+          suffix: '\n'
+        });
       });
-    });
+
+      childStderr.on('data', (data: Buffer) => {
+        if (!quiet) {
+          process.stderr.write(data);
+        }
+        stderr += data.toString('utf-8');
+      });
+
+      childStderr.on('end', () => {
+        stderr = trimEnd({
+          str: stderr,
+          suffix: '\n'
+        });
+      });
+    }
 
     child.on('close', (exitCode, exitSignal) => {
       if (exitCode !== 0 && !ignoreExitCode) {
@@ -418,6 +450,16 @@ interface SpawnViaShellParams {
    * The working directory.
    */
   readonly cwd: string;
+
+  /**
+   * Additional environment variables merged over the inherited child environment.
+   */
+  readonly env?: NodeJS.ProcessEnv;
+
+  /**
+   * If `true`, attaches the child's stdio to the terminal instead of piping it.
+   */
+  readonly isInteractive?: boolean;
 
   /**
    * The original argument array (if available).
@@ -552,8 +594,13 @@ function isExecArg(part: CommandPart): part is ExecArg {
  * @param params - The parameters for spawning the child process.
  * @returns The spawned child process.
  */
-function spawnViaShell(params: SpawnViaShellParams): ChildProcessWithoutNullStreams {
-  const { command, cwd, rawArgs } = params;
+function spawnViaShell(params: SpawnViaShellParams): ChildProcess {
+  const { command, cwd, env: extraEnv, isInteractive = false, rawArgs } = params;
+  const env: NodeJS.ProcessEnv = {
+    ...CHILD_ENV,
+    ...extraEnv
+  };
+  const stdio: 'inherit' | 'pipe' = isInteractive ? 'inherit' : 'pipe';
   if (process.platform === 'win32' && command.includes('\n')) {
     if (!rawArgs) {
       throw new Error('Commands containing newlines cannot be executed through cmd.exe on Windows. Pass an argument array instead of a string.');
@@ -562,16 +609,16 @@ function spawnViaShell(params: SpawnViaShellParams): ChildProcessWithoutNullStre
     assertNonNullable(program, 'Command array must not be empty');
     return spawn(program, args, {
       cwd,
-      env: CHILD_ENV,
-      stdio: 'pipe'
+      env,
+      stdio
     });
   }
 
   const shellCommand = process.platform === 'win32' ? cmdEscapeCommandLine(command) : command;
   return spawn(shellCommand, [], {
     cwd,
-    env: CHILD_ENV,
+    env,
     shell: true,
-    stdio: 'pipe'
+    stdio
   });
 }
