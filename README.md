@@ -29,15 +29,20 @@ npm install obsidian-dev-utils
 
 ## Usage
 
-- [Commands](./docs/cli-commands.md)
-- [Helper Functions](./docs/helper-functions.md)
-- [Styling](./docs/styling.md)
-- [Setting Components](./docs/setting-components.md)
-- [Modals](./docs/modals.md)
-- [Debugging](./docs/debugging.md)
-- [Plugin Helpers](./docs/plugin-helpers.md)
-- [Demo Vault](./docs/demo-vault.md)
-- [Testing](./docs/testing.md)
+The full documentation — guides plus the complete, searchable **API reference** generated from the
+library's TSDoc — is published at
+[mnaoumov.dev/obsidian-dev-utils](https://mnaoumov.dev/obsidian-dev-utils/).
+
+- [API reference](https://mnaoumov.dev/obsidian-dev-utils/api/)
+- [Commands](https://mnaoumov.dev/obsidian-dev-utils/guides/cli-commands/)
+- [Helper Functions](https://mnaoumov.dev/obsidian-dev-utils/guides/helper-functions/)
+- [Styling](https://mnaoumov.dev/obsidian-dev-utils/guides/styling/)
+- [Setting Components](https://mnaoumov.dev/obsidian-dev-utils/guides/setting-components/)
+- [Modals](https://mnaoumov.dev/obsidian-dev-utils/guides/modals/)
+- [Debugging](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/)
+- [Plugin Helpers](https://mnaoumov.dev/obsidian-dev-utils/guides/plugin-helpers/)
+- [Demo Vault](https://mnaoumov.dev/obsidian-dev-utils/guides/demo-vault/)
+- [Testing](https://mnaoumov.dev/obsidian-dev-utils/guides/testing/)
 
 ## Support
 
