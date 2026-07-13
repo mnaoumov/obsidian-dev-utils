@@ -4,7 +4,10 @@
  * AbortController utilities.
  */
 
-import { CallbackDisposable } from './disposable.ts';
+import {
+  CallbackDisposable,
+  CombineDisposable
+} from './disposable.ts';
 import { noop } from './function.ts';
 
 /**
@@ -49,13 +52,12 @@ export function abortSignalAny(...maybeAbortSignals: (AbortSignal | undefined)[]
     abortHandlerDisposables.push(onAbort(abortSignal, handleAbort));
   }
 
+  const combinedAbortHandlerDisposable = new CombineDisposable({ disposables: abortHandlerDisposables });
+
   return abortController.signal;
 
   function handleAbort(abortSignal: AbortSignal): void {
-    for (const abortHandlerDisposable of abortHandlerDisposables) {
-      abortHandlerDisposable[Symbol.dispose]();
-    }
-
+    combinedAbortHandlerDisposable.dispose();
     abortController.abort(abortSignal.reason);
   }
 }

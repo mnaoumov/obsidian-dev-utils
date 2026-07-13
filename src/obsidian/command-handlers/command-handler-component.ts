@@ -15,6 +15,7 @@ import type {
 import { invokeAsyncSafely } from '../../async.ts';
 import {
   CallbackDisposable,
+  CombineDisposable,
   MultipleDisposeBehavior
 } from '../../disposable.ts';
 import { ComponentEx } from '../components/component-ex.ts';
@@ -100,17 +101,13 @@ export class CommandHandlerComponent extends ComponentEx {
       disposables.push(disposable);
       // Tie removal to the component's unload, so a command never outlives the component.
       this.register(() => {
-        disposable[Symbol.dispose]();
+        disposable.dispose();
       });
       invokeAsyncSafely(() => commandHandler.onRegistered(context));
     }
 
-    return new CallbackDisposable({
-      callback: (): void => {
-        for (const disposable of disposables) {
-          disposable[Symbol.dispose]();
-        }
-      },
+    return new CombineDisposable({
+      disposables,
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
   }
