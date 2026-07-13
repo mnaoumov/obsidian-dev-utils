@@ -16,6 +16,17 @@ import {
 import { resolveValue } from './value-provider.ts';
 
 /**
+ * An empty string constant.
+ *
+ * A shared sentinel for the `${EMPTY}` prefix that silences the `obsidianmd/ui/sentence-case` ESLint
+ * false positive on legitimate lower-case UI text (e.g. `cursor` colliding with the `Cursor` brand).
+ * `setName(`${EMPTY}...at cursor...`)` renders byte-identical `''` at runtime while the `{...}`
+ * placeholder makes the rule skip the string. Consumers import this instead of redefining a per-file
+ * `const EMPTY = ''`.
+ */
+export const EMPTY = '';
+
+/**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  *
  * @typeParam CapturedGroupArgs - The types of the captured group arguments.
