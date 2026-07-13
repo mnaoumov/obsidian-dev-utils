@@ -500,6 +500,43 @@ describe('PluginNoticeComponent', () => {
     }).toThrow();
   });
 
+  it('should invoke onHide when the notice is hidden by a replacing notice', async () => {
+    const onHide = vi.fn();
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('First', { onHide });
+
+    component.showNotice('Second');
+    await waitForAllAsyncOperations();
+
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should invoke onHide on unload', async () => {
+    const onHide = vi.fn();
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('Persistent', { onHide });
+
+    component.unload();
+    await waitForAllAsyncOperations();
+
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should invoke onHide at most once when the notice is hidden more than once', async () => {
+    const onHide = vi.fn();
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    const notice = component.showNotice('First', { onHide });
+
+    notice.hide();
+    notice.hide();
+    await waitForAllAsyncOperations();
+
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
   it('should support a document fragment message', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();

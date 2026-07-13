@@ -87,7 +87,13 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
-        const notice = component.showNotice('Locked action', { requiresCloseConfirmation: true });
+        let onHideCallCount = 0;
+        const notice = component.showNotice('Locked action', {
+          onHide: () => {
+            onHideCallCount += 1;
+          },
+          requiresCloseConfirmation: true
+        });
 
         try {
           await waitUntil({
@@ -147,6 +153,8 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
           const isShownAfterConfirm = findLockedContentEl() !== null;
+          // Let the fire-and-forget onHide callback settle after the notice was hidden.
+          await sleep(SETTLE_IN_MILLISECONDS);
 
           return {
             hasCloseButton,
@@ -157,7 +165,8 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
             isShownAfterMessageClick,
             isShownAfterOtherNotice,
             isShownAfterPaddingClick,
-            modalMessage
+            modalMessage,
+            onHideCallCount
           };
         } finally {
           notice.hide();
@@ -178,8 +187,9 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
     expect(result.hasOkButton).toBe(true);
     expect(result.modalMessage).toBe('Are you sure you want to close the notice?');
 
-    // Confirming closes the notice.
+    // Confirming closes the notice, and the onHide callback fires exactly once.
     expect(result.isShownAfterConfirm).toBe(false);
+    expect(result.onHideCallCount).toBe(1);
   });
 });
 

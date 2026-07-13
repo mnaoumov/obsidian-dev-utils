@@ -5,6 +5,7 @@
  */
 
 import type { App } from 'obsidian';
+import type { Promisable } from 'type-fest';
 
 import {
   ButtonComponent,
@@ -24,6 +25,7 @@ import { t } from '../i18n/i18n.ts';
 import { confirm } from '../modals/confirm.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { ComponentEx } from './component-ex.ts';
+import { MonkeyAroundComponent } from './monkey-around-component.ts';
 
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
@@ -111,6 +113,14 @@ export interface PluginNoticeComponentShowNoticeOptions {
   readonly isReusable?: boolean;
 
   /**
+   * A callback invoked when the notice is hidden — whether by the user closing it, by a later reusable
+   * notice replacing it, by its duration elapsing, or on component unload. It runs at most once per
+   * notice. An async callback is run fire-and-forget (its rejection surfaces through the async-error
+   * pipeline).
+   */
+  onHide?(this: void): Promisable<void>;
+
+  /**
    * Whether the notice is hard to close: it does not dismiss on any stray click, and instead shows a
    * close (X) button whose click opens a confirmation modal, dismissing the notice only if confirmed.
    *
@@ -161,6 +171,7 @@ interface PluginNoticeComponentShowNoticeWithDurationParams {
   readonly durationInMilliseconds: null | number;
   readonly isReusable: boolean;
   readonly message: DocumentFragment | string;
+  readonly onHide: (() => Promisable<void>) | undefined;
   readonly requiresCloseConfirmation: boolean;
   readonly shouldRegisterAsPermanent: boolean;
 }
@@ -245,6 +256,7 @@ export class PluginNoticeComponent extends ComponentEx {
       durationInMilliseconds,
       isReusable,
       message,
+      onHide: options?.onHide,
       requiresCloseConfirmation,
       shouldRegisterAsPermanent: isPermanent
     });
@@ -301,6 +313,7 @@ export class PluginNoticeComponent extends ComponentEx {
           durationInMilliseconds: PERMANENT_NOTICE_DURATION_IN_MILLISECONDS,
           isReusable: true,
           message: buildDelayedMessage(resolvedContent),
+          onHide: undefined,
           requiresCloseConfirmation: false,
           shouldRegisterAsPermanent: false
         });
@@ -498,7 +511,7 @@ export class PluginNoticeComponent extends ComponentEx {
    * @returns The created notice.
    */
   private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): Notice {
-    const { durationInMilliseconds, isReusable, message, requiresCloseConfirmation, shouldRegisterAsPermanent } = params;
+    const { durationInMilliseconds, isReusable, message, onHide, requiresCloseConfirmation, shouldRegisterAsPermanent } = params;
     // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
     // Duration" value to `undefined`.
     const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
@@ -516,6 +529,7 @@ export class PluginNoticeComponent extends ComponentEx {
     if (!isReusable) {
       builtNotice = new Notice(content, noticeDurationInMilliseconds);
       this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+      this.wireOnHide(builtNotice, onHide);
       this.standaloneNotices.add(builtNotice);
       return builtNotice;
     }
@@ -524,6 +538,7 @@ export class PluginNoticeComponent extends ComponentEx {
     builtNotice = new Notice(content, noticeDurationInMilliseconds);
     this.notice = builtNotice;
     this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+    this.wireOnHide(builtNotice, onHide);
 
     if (shouldRegisterAsPermanent) {
       this.setPermanentNotice(builtNotice);
@@ -531,5 +546,35 @@ export class PluginNoticeComponent extends ComponentEx {
       this.setPermanentNotice(null);
     }
     return builtNotice;
+  }
+
+  /**
+   * Wraps a notice's `hide` so the given callback runs the first time the notice is hidden — by the
+   * user, by a replacing notice, by its duration elapsing, or on unload. Does nothing when no callback
+   * is given.
+   *
+   * @param notice - The notice whose `hide` to wrap.
+   * @param onHide - The callback to invoke on the first hide, or `undefined` to skip wrapping.
+   */
+  private wireOnHide(notice: Notice, onHide: (() => Promisable<void>) | undefined): void {
+    if (!onHide) {
+      return;
+    }
+    // Run `onHide` the first time the notice is hidden. A `once` patch on `hide` intercepts exactly one
+    // Call then uninstalls itself (unloading this dedicated component), so there is no manual
+    // Single-fire bookkeeping and no lingering patch on the transient notice.
+    const patchComponent = new MonkeyAroundComponent();
+    patchComponent.load();
+    patchComponent.registerMethodPatch({
+      methodName: 'hide',
+      obj: notice,
+      once: true,
+      patchHandler: ({ fallback }) => {
+        fallback();
+        invokeAsyncSafely(async () => {
+          await onHide();
+        });
+      }
+    });
   }
 }
