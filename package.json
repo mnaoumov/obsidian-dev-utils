@@ -746,9 +746,5 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  },
-  "allowScripts": {
-    "obsidian-integration-testing@4.2.3": true,
-    "obsidian-test-mocks@3.1.0": true
   }
 }
