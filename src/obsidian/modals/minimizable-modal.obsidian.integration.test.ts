@@ -25,6 +25,12 @@ import {
   it
 } from 'vitest';
 
+interface CancelByClickResult {
+  readonly barGone: boolean;
+  readonly isMinimized: boolean;
+  readonly isModalConnected: boolean;
+}
+
 interface HoverOpacityResult {
   readonly alphaWhileHovered: number;
   readonly backgroundColorWhileHovered: string;
@@ -282,6 +288,47 @@ describe('MinimizableModal', () => {
       expect(result.barGoneAfterTitleClick).toBe(true);
       expect(result.restoredByBarClick).toBe(true);
       expect(result.barGoneAfterBarClick).toBe(true);
+    });
+  });
+
+  describe('cancel', () => {
+    it('should close the modal (not merely restore it) when the bar cancel button is clicked', async () => {
+      const result = await evalInObsidian({
+        async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<CancelByClickResult> {
+          const BAR_SELECTOR = '.minimized-modal-bar';
+          const CANCEL_SELECTOR = '.minimized-modal-bar .cancel-button';
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new MinimizableModal(modal);
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          minimizable.minimize();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const cancelButtonEl = document.body.querySelector(CANCEL_SELECTOR);
+          if (!cancelButtonEl) {
+            throw new Error('minimized bar cancel button not found');
+          }
+          // Clicking Cancel must close the wrapped modal, not trigger the bar-level restore handler.
+          cancelButtonEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          return {
+            barGone: document.body.querySelector(BAR_SELECTOR) === null,
+            isMinimized: minimizable.isMinimized,
+            isModalConnected: minimizable.modal.containerEl.isConnected
+          };
+        }
+      });
+
+      // The modal is no longer minimized and its bar is gone.
+      expect(result.isMinimized).toBe(false);
+      expect(result.barGone).toBe(true);
+      // Cancel CLOSED the modal (its container left the DOM) rather than merely restoring it.
+      expect(result.isModalConnected).toBe(false);
     });
   });
 

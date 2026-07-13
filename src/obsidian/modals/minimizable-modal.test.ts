@@ -69,6 +69,10 @@ function getBar(): HTMLElement | null {
   return activeDocument.body.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBar}`);
 }
 
+function getCancelButton(): HTMLElement | null {
+  return getBar()?.querySelector<HTMLElement>(`.${CssClass.CancelButton}`) ?? null;
+}
+
 function getMinimizeButton(modal: Modal): HTMLElement {
   const buttonEl = modal.modalEl.querySelector<HTMLElement>(`.${CssClass.MinimizeButton}`);
   assertNonNullable(buttonEl);
@@ -216,6 +220,38 @@ describe('MinimizableModal', () => {
 
       expect(minimizable.isMinimized).toBe(false);
       expect(getBar()).toBeNull();
+    });
+  });
+
+  describe('cancel button', () => {
+    it('should show a cancel button on the bar by default', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      expect(getCancelButton()).not.toBeNull();
+    });
+
+    it('should close the modal (not merely restore it) when the cancel button is clicked', () => {
+      const modal = new TrackingModal(app);
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      const cancelButtonEl = getCancelButton();
+      assertNonNullable(cancelButtonEl);
+      cancelButtonEl.click();
+
+      expect(modal.wasClosed).toBe(true);
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+
+    it('should not show a cancel button when shouldShowCancelButton is false', () => {
+      const minimizable = new MinimizableModal(new Modal(app), { shouldShowCancelButton: false });
+      minimizable.minimize();
+
+      expect(getCancelButton()).toBeNull();
+      // The restore button is still there — only the cancel button is opted out.
+      expect(getBar()?.querySelector(`.${CssClass.RestoreButton}`)).not.toBeNull();
     });
   });
 
