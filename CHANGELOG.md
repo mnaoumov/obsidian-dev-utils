@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## 86.0.0
+
+- feat: close button on minimized modal
+- feat: add EMPTY - common workaround to fight false-negatives with eslint
+- refactor: disposables
+- chore: update libs
+- refactor: input events
+- feat!: add hard to close notices
+- refactor!: add `unlock current note` command to each plugin
+- fix: build
+- feat: demo vaults
+- feat: migrate funcs from obsidian-integration-testing
+- test: expose lib
+- test: ensure not async errors during tests
+- test: force clean test output
+
 ## 85.1.0
 
 - chore: update libs
