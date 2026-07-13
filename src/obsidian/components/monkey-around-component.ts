@@ -58,6 +58,16 @@ export interface MonkeyAroundComponentRegisterFunctionPatchParams<Obj extends ob
   readonly obj: Obj;
 
   /**
+   * When `true`, the patch uninstalls itself the first time the patched function is invoked (by
+   * unloading this component), restoring the original — so the interception happens exactly once.
+   * Intended for a component dedicated to this single patch. Existing callers that omit it are
+   * unaffected.
+   *
+   * @default `false`
+   */
+  readonly once?: boolean;
+
+  /**
    * Patch handler function that takes the original value and returns the patched value.
    *
    * @param originalValue - The original value of the function.
@@ -82,6 +92,15 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends obje
    * The object to patch.
    */
   readonly obj: Obj;
+
+  /**
+   * When `true`, the patch uninstalls itself the first time the patched method is invoked, restoring
+   * the original — so the interception happens exactly once. Existing callers that omit it are
+   * unaffected.
+   *
+   * @default `false`
+   */
+  readonly once?: boolean;
 
   /**
    * The patch handler function.
@@ -200,7 +219,27 @@ export class MonkeyAroundComponent extends ComponentEx {
 
     const factories: Factories<Obj> = {};
     factories[params.functionName] = (originalValue: Obj[FunctionName]): Obj[FunctionName] => {
-      return params.patchHandler(originalValue);
+      const patchedValue = params.patchHandler(originalValue);
+      if (!params.once) {
+        return patchedValue;
+      }
+
+      // A `once` patch unloads this component after the first invocation — running the registered
+      // Uninstaller and restoring the original. `unloadComponent` is an arrow so it captures the
+      // Component `this`; the nested `oncePatchedValue` must be a function to receive the call-time
+      // `this`. Own members (e.g. a `Debouncer`'s `cancel`/`run`) are copied onto it so function-like
+      // Values keep working.
+      const unloadComponent = (): void => {
+        this.unload();
+      };
+      function oncePatchedValue(this: unknown, ...args: unknown[]): unknown {
+        try {
+          return Reflect.apply(patchedValue, this, args);
+        } finally {
+          unloadComponent();
+        }
+      }
+      return Object.assign(oncePatchedValue, patchedValue) as Obj[FunctionName];
     };
 
     this.registerPatch(params.obj, factories);
@@ -228,6 +267,7 @@ export class MonkeyAroundComponent extends ComponentEx {
     this.registerFunctionPatch({
       functionName: params.methodName,
       obj: params.obj,
+      once: params.once ?? false,
       patchHandler: (originalMethodRaw) => {
         const originalMethod = originalMethodRaw as Fn;
         const finalPatchedMethod = params.postPatchHandler?.({

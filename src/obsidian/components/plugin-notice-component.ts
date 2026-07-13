@@ -4,9 +4,13 @@
  * Component that manages displaying notices to the user.
  */
 
+import type { App } from 'obsidian';
+import type { Promisable } from 'type-fest';
+
 import {
   ButtonComponent,
-  Notice
+  Notice,
+  setIcon
 } from 'obsidian';
 
 import type { ValueProvider } from '../../value-provider.ts';
@@ -14,11 +18,14 @@ import type { ValueProvider } from '../../value-provider.ts';
 import { invokeAsyncSafely } from '../../async.ts';
 import { normalizeOptionalProperties } from '../../object-utils.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
+import { ensureNonNullable } from '../../type-guards.ts';
 import { resolveValue } from '../../value-provider.ts';
 import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
+import { confirm } from '../modals/confirm.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { ComponentEx } from './component-ex.ts';
+import { MonkeyAroundComponent } from './monkey-around-component.ts';
 
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
@@ -90,6 +97,41 @@ export interface PluginNoticeComponentShowNoticeOptions {
    * @default `false`
    */
   readonly isPermanent?: boolean;
+
+  /**
+   * Whether the notice occupies the single per-plugin reusable slot.
+   *
+   * A reusable notice takes the shared slot: the next reusable notice hides it, and it is hidden on unload.
+   * A non-reusable (standalone) notice is not placed in the slot — it never hides, and is never hidden by, a
+   * reusable notice; multiple standalone notices coexist. Standalone notices are still hidden together on unload.
+   *
+   * A permanent notice must be reusable ({@link PluginNoticeComponentShowNoticeOptions.isPermanent} implies
+   * `isReusable`); passing `isReusable: false` together with `isPermanent: true` throws.
+   *
+   * @default `true`
+   */
+  readonly isReusable?: boolean;
+
+  /**
+   * A callback invoked when the notice is hidden — whether by the user closing it, by a later reusable
+   * notice replacing it, by its duration elapsing, or on component unload. It runs at most once per
+   * notice. An async callback is run fire-and-forget (its rejection surfaces through the async-error
+   * pipeline).
+   */
+  onHide?(this: void): Promisable<void>;
+
+  /**
+   * Whether the notice is hard to close: it does not dismiss on any stray click, and instead shows a
+   * close (X) button whose click opens a confirmation modal, dismissing the notice only if confirmed.
+   *
+   * A hard-to-close notice is shown with an infinite duration and is standalone (implies
+   * {@link PluginNoticeComponentShowNoticeOptions.isReusable} `= false`), so a later notice never
+   * silently replaces it; passing `isReusable: true` together with `requiresCloseConfirmation: true`
+   * throws.
+   *
+   * @default `false`
+   */
+  readonly requiresCloseConfirmation?: boolean;
 }
 
 interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
@@ -98,20 +140,69 @@ interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
   readonly content: DocumentFragment | string;
 }
 
+interface PluginNoticeComponentBuildNoticeContentParams {
+  /**
+   * Resolves the notice this content belongs to, used by the close button's handler. The notice does
+   * not exist yet when the content is built, so it is resolved lazily at click time. Required when
+   * {@link PluginNoticeComponentBuildNoticeContentParams.requiresCloseConfirmation} is `true`.
+   */
+  getNotice?(this: void): Notice | null;
+
+  /**
+   * The message to display after the plugin name prefix.
+   */
+  readonly message: DocumentFragment | string;
+
+  /**
+   * Whether the notice is hard to close: stops every click from dismissing it and adds a close button
+   * guarded by a confirmation modal.
+   *
+   * @default `false`
+   */
+  readonly requiresCloseConfirmation?: boolean;
+}
+
+interface PluginNoticeComponentConstructorParams {
+  readonly app: App;
+  readonly pluginName: string;
+}
+
+interface PluginNoticeComponentShowNoticeWithDurationParams {
+  readonly durationInMilliseconds: null | number;
+  readonly isReusable: boolean;
+  readonly message: DocumentFragment | string;
+  readonly onHide: (() => Promisable<void>) | undefined;
+  readonly requiresCloseConfirmation: boolean;
+  readonly shouldRegisterAsPermanent: boolean;
+}
+
 /**
  * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.
  */
 export class PluginNoticeComponent extends ComponentEx {
+  /**
+   * The Obsidian app instance.
+   */
+  protected readonly app: App;
+
+  /**
+   * The plugin name (shown as prefix in notices).
+   */
+  protected readonly pluginName: string;
+
   private notice: Notice | null = null;
   private readonly pendingTimerCancellations = new Set<() => void>();
+  private readonly standaloneNotices = new Set<Notice>();
 
   /**
    * Creates a new plugin notice component.
    *
-   * @param pluginName - The plugin name (shown as prefix in notices).
+   * @param params - The constructor parameters.
    */
-  public constructor(protected readonly pluginName: string) {
+  public constructor(params: PluginNoticeComponentConstructorParams) {
     super();
+    this.app = params.app;
+    this.pluginName = params.pluginName;
   }
 
   /**
@@ -135,6 +226,10 @@ export class PluginNoticeComponent extends ComponentEx {
     if (this.getPermanentNotice() !== this.notice) {
       this.notice?.hide();
     }
+    for (const standaloneNotice of this.standaloneNotices) {
+      standaloneNotice.hide();
+    }
+    this.standaloneNotices.clear();
   }
 
   /**
@@ -146,7 +241,25 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     const isPermanent = options?.isPermanent ?? false;
-    return this.showNoticeWithDuration(message, isPermanent ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : undefined, isPermanent);
+    const requiresCloseConfirmation = options?.requiresCloseConfirmation ?? false;
+    const isReusable = options?.isReusable ?? !requiresCloseConfirmation;
+
+    if (options?.isReusable === true && requiresCloseConfirmation) {
+      throw new Error('A notice that requires close confirmation cannot be reusable.');
+    }
+    if (options?.isReusable === false && isPermanent) {
+      throw new Error('A permanent notice must be reusable.');
+    }
+
+    const durationInMilliseconds = isPermanent || requiresCloseConfirmation ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
+    return this.showNoticeWithDuration({
+      durationInMilliseconds,
+      isReusable,
+      message,
+      onHide: options?.onHide,
+      requiresCloseConfirmation,
+      shouldRegisterAsPermanent: isPermanent
+    });
   }
 
   /**
@@ -196,7 +309,14 @@ export class PluginNoticeComponent extends ComponentEx {
         if (isDisposed) {
           return;
         }
-        shownNotice = this.showNoticeWithDuration(buildDelayedMessage(resolvedContent), PERMANENT_NOTICE_DURATION_IN_MILLISECONDS, false);
+        shownNotice = this.showNoticeWithDuration({
+          durationInMilliseconds: PERMANENT_NOTICE_DURATION_IN_MILLISECONDS,
+          isReusable: true,
+          message: buildDelayedMessage(resolvedContent),
+          onHide: undefined,
+          requiresCloseConfirmation: false,
+          shouldRegisterAsPermanent: false
+        });
       });
     }, params.delayInMilliseconds ?? DEFAULT_DELAY_BEFORE_SHOW_IN_MILLISECONDS);
 
@@ -206,7 +326,7 @@ export class PluginNoticeComponent extends ComponentEx {
       setContent: (content: DocumentFragment | string): void => {
         currentContent = content;
         // Re-wrap so the prefix, interactive guard, and Cancel button survive the content swap.
-        shownNotice?.setMessage(this.buildNoticeContent(buildDelayedMessage(content)));
+        shownNotice?.setMessage(this.buildNoticeContent({ message: buildDelayedMessage(content) }));
       },
       [Symbol.dispose]: (): void => {
         isDisposed = true;
@@ -217,6 +337,36 @@ export class PluginNoticeComponent extends ComponentEx {
         }
       }
     };
+  }
+
+  /**
+   * Appends a close (X) button to the notice content. Clicking it opens a confirmation modal and, only
+   * if confirmed, hides the notice and drops it from the standalone-notice tracking set.
+   *
+   * @param contentEl - The notice content wrapper to append the button to.
+   * @param getNotice - Resolves the notice to hide when the close is confirmed.
+   */
+  private appendCloseButton(contentEl: HTMLElement, getNotice: () => Notice | null): void {
+    const closeButtonEl = contentEl.createEl('button', {
+      attr: { 'aria-label': t(($) => $.obsidianDevUtils.notices.closeAriaLabel) }
+    });
+    addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
+    setIcon(closeButtonEl, 'x');
+    closeButtonEl.addEventListener('click', (evt) => {
+      evt.stopPropagation();
+      invokeAsyncSafely(async () => {
+        const isConfirmed = await confirm({
+          app: this.app,
+          message: t(($) => $.obsidianDevUtils.notices.closeConfirmMessage)
+        });
+        if (!isConfirmed) {
+          return;
+        }
+        const notice = ensureNonNullable(getNotice());
+        notice.hide();
+        this.standaloneNotices.delete(notice);
+      });
+    });
   }
 
   /**
@@ -258,19 +408,30 @@ export class PluginNoticeComponent extends ComponentEx {
    * element; the container intercepts clicks originating on an interactive element (a link, button,
    * input, etc.) and stops them there, so the element's own handler still runs but the notice stays.
    *
-   * @param message - The message to display after the plugin name prefix.
+   * @param params - The parameters.
    * @returns A {@link DocumentFragment} holding the wrapped, prefixed notice content.
    */
-  private buildNoticeContent(message: DocumentFragment | string): DocumentFragment {
+  private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): DocumentFragment {
+    const { getNotice, message, requiresCloseConfirmation = false } = params;
     const fragment = createFragment();
     const contentEl = fragment.createDiv();
     addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
     contentEl.appendChild(this.buildPrefixedMessage(message));
     contentEl.addEventListener('click', (evt) => {
+      // A hard-to-close notice must not dismiss on any stray click; only its close button (via the
+      // Confirmation modal) may dismiss it.
+      if (requiresCloseConfirmation) {
+        evt.stopPropagation();
+        return;
+      }
       if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
         evt.stopPropagation();
       }
     });
+
+    if (requiresCloseConfirmation) {
+      this.appendCloseButton(contentEl, ensureNonNullable(getNotice));
+    }
     return fragment;
   }
 
@@ -306,6 +467,32 @@ export class PluginNoticeComponent extends ComponentEx {
     return getObsidianDevUtilsState<Map<string, Notice>>(PERMANENT_NOTICES_STATE_KEY, new Map<string, Notice>()).value;
   }
 
+  /**
+   * Makes a notice hard to close: marks its outer element (so the CSS neutralizes its padding) and
+   * installs a capture-phase click guard that stops every click except on the close button from
+   * reaching Obsidian's own dismiss handler.
+   *
+   * @param notice - The notice to guard.
+   * @param requiresCloseConfirmation - Whether the notice requires close confirmation; when `false`,
+   * nothing is installed.
+   */
+  private installCloseConfirmationGuards(notice: Notice, requiresCloseConfirmation: boolean): void {
+    if (!requiresCloseConfirmation) {
+      return;
+    }
+    // The outer `.notice` element (`containerEl`) carries Obsidian's dismiss-on-click handler and the
+    // Padding a stray click could land on; mark it so the stylesheet drops that padding.
+    addPluginCssClasses(notice.containerEl, CssClass.PluginNoticeRequiresConfirmation);
+    // Stop every click on the notice — except on the close button — from reaching Obsidian's dismiss
+    // Handler. Registered in the capture phase on the outermost element so it always runs first.
+    notice.containerEl.addEventListener('click', (evt) => {
+      if (evt.target instanceof Element && evt.target.closest(`.${CssClass.PluginNoticeCloseButton}`)) {
+        return;
+      }
+      evt.stopPropagation();
+    }, { capture: true });
+  }
+
   private setPermanentNotice(notice: Notice | null): void {
     const map = this.getPermanentNotices();
     if (notice) {
@@ -316,25 +503,78 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   /**
-   * Shows a notice with the given duration, replacing the current notice, and optionally registers it
-   * as this plugin's permanent notice.
+   * Shows a notice with the given duration. A reusable notice replaces the current reusable notice (and
+   * is optionally registered as this plugin's permanent notice); a standalone notice is tracked
+   * separately, leaving the reusable slot untouched.
    *
-   * @param message - The message to display.
-   * @param durationInMilliseconds - The notice duration; `0` keeps it until it is hidden explicitly.
-   * @param shouldRegisterAsPermanent - Whether to track the notice as this plugin's permanent notice.
+   * @param params - The parameters.
    * @returns The created notice.
    */
-  private showNoticeWithDuration(message: DocumentFragment | string, durationInMilliseconds: number | undefined, shouldRegisterAsPermanent: boolean): Notice {
-    this.notice?.hide();
+  private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): Notice {
+    const { durationInMilliseconds, isReusable, message, onHide, requiresCloseConfirmation, shouldRegisterAsPermanent } = params;
+    // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
+    // Duration" value to `undefined`.
+    const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
 
-    const content = this.buildNoticeContent(message);
-    this.notice = new Notice(content, durationInMilliseconds);
+    // The close button's confirm handler needs the `Notice`, which does not exist until it is built from
+    // This content; capture it lazily via a holder resolved at click time. The getter is created only
+    // For a hard-to-close notice — the only kind that has a close button.
+    let builtNotice: Notice | null = null;
+    const content = this.buildNoticeContent(normalizeOptionalProperties<PluginNoticeComponentBuildNoticeContentParams>({
+      getNotice: requiresCloseConfirmation ? (): Notice | null => builtNotice : undefined,
+      message,
+      requiresCloseConfirmation
+    }));
+
+    if (!isReusable) {
+      builtNotice = new Notice(content, noticeDurationInMilliseconds);
+      this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+      this.wireOnHide(builtNotice, onHide);
+      this.standaloneNotices.add(builtNotice);
+      return builtNotice;
+    }
+
+    this.notice?.hide();
+    builtNotice = new Notice(content, noticeDurationInMilliseconds);
+    this.notice = builtNotice;
+    this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+    this.wireOnHide(builtNotice, onHide);
 
     if (shouldRegisterAsPermanent) {
-      this.setPermanentNotice(this.notice);
+      this.setPermanentNotice(builtNotice);
     } else {
       this.setPermanentNotice(null);
     }
-    return this.notice;
+    return builtNotice;
+  }
+
+  /**
+   * Wraps a notice's `hide` so the given callback runs the first time the notice is hidden — by the
+   * user, by a replacing notice, by its duration elapsing, or on unload. Does nothing when no callback
+   * is given.
+   *
+   * @param notice - The notice whose `hide` to wrap.
+   * @param onHide - The callback to invoke on the first hide, or `undefined` to skip wrapping.
+   */
+  private wireOnHide(notice: Notice, onHide: (() => Promisable<void>) | undefined): void {
+    if (!onHide) {
+      return;
+    }
+    // Run `onHide` the first time the notice is hidden. A `once` patch on `hide` intercepts exactly one
+    // Call then uninstalls itself (unloading this dedicated component), so there is no manual
+    // Single-fire bookkeeping and no lingering patch on the transient notice.
+    const patchComponent = new MonkeyAroundComponent();
+    patchComponent.load();
+    patchComponent.registerMethodPatch({
+      methodName: 'hide',
+      obj: notice,
+      once: true,
+      patchHandler: ({ fallback }) => {
+        fallback();
+        invokeAsyncSafely(async () => {
+          await onHide();
+        });
+      }
+    });
   }
 }

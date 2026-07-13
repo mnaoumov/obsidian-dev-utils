@@ -230,7 +230,12 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
           pluginId: this.manifest.id
         })
       );
-      this.pluginNoticeComponent = this.addChild(new PluginNoticeComponent(this.manifest.name));
+      this.pluginNoticeComponent = this.addChild(
+        new PluginNoticeComponent({
+          app: this.app,
+          pluginName: this.manifest.name
+        })
+      );
       this.asyncErrorHandlerComponent = this.addChild(new AsyncErrorHandlerComponent(this.pluginNoticeComponent));
       this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
       this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
@@ -321,7 +326,10 @@ export async function reloadPlugin(plugin: Plugin): Promise<void> {
  * @returns A {@link Promise} that resolves when the plugin is disabled.
  */
 export async function showErrorAndDisablePlugin(plugin: Plugin, message: string): Promise<void> {
-  const pluginNoticeComponent = new PluginNoticeComponent(plugin.manifest.name);
+  const pluginNoticeComponent = new PluginNoticeComponent({
+    app: plugin.app,
+    pluginName: plugin.manifest.name
+  });
   pluginNoticeComponent.showNotice(message);
   printError(new Error(message));
   await plugin.app.plugins.disablePlugin(plugin.manifest.id);

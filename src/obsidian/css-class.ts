@@ -145,6 +145,11 @@ export enum CssClass {
   PasswordComponent = 'password-component',
 
   /**
+   * A CSS class for the close button of a notice that requires close confirmation.
+   */
+  PluginNoticeCloseButton = 'plugin-notice-close-button',
+
+  /**
    * A CSS class for the container wrapping a notice's content, used to keep the notice open when an
    * interactive element inside it is clicked.
    */
@@ -154,6 +159,12 @@ export enum CssClass {
    * A CSS class for the plugin name shown as the prefix of a notice.
    */
   PluginNoticeName = 'plugin-notice-name',
+
+  /**
+   * A CSS class applied to the notice element of a notice that requires close confirmation, used to
+   * make its whole area non-dismissible.
+   */
+  PluginNoticeRequiresConfirmation = 'plugin-notice-requires-confirmation',
 
   /**
    * A CSS class for the plugin settings tab.

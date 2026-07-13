@@ -1,3 +1,5 @@
+import type { App as AppOriginal } from 'obsidian';
+
 import {
   describe,
   expect,
@@ -8,10 +10,13 @@ import {
 import { CallbackDisposable } from '../../disposable.ts';
 import { noop } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
+import { strictProxy } from '../../strict-proxy.ts';
 import { AsyncErrorHandlerComponent } from './async-error-handler-component.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 type TranslationsArg = Parameters<Parameters<typeof import('../i18n/i18n.ts')['t']>[0]>[0];
+
+const app = strictProxy<AppOriginal>({});
 
 const mocks = vi.hoisted(() => ({
   registerAsyncErrorEventHandler: vi.fn<(handler: (error: unknown) => void) => Disposable>(),
@@ -37,7 +42,7 @@ vi.mock('../i18n/i18n.ts', () => ({
 describe('AsyncErrorHandlerComponent', () => {
   it('should register error handler on load', () => {
     mocks.registerAsyncErrorEventHandler.mockReturnValue(new CallbackDisposable({ callback: noop }));
-    const noticeComponent = new PluginNoticeComponent('Test');
+    const noticeComponent = new PluginNoticeComponent({ app, pluginName: 'Test' });
     const component = new AsyncErrorHandlerComponent(noticeComponent);
     const registerSpy = vi.spyOn(component, 'register');
 
@@ -50,7 +55,7 @@ describe('AsyncErrorHandlerComponent', () => {
   it('should dispose the registration when unloaded', () => {
     const disposeSpy = vi.fn();
     mocks.registerAsyncErrorEventHandler.mockReturnValue(new CallbackDisposable({ callback: disposeSpy }));
-    const noticeComponent = new PluginNoticeComponent('Test');
+    const noticeComponent = new PluginNoticeComponent({ app, pluginName: 'Test' });
     const component = new AsyncErrorHandlerComponent(noticeComponent);
 
     component.load();
@@ -60,7 +65,7 @@ describe('AsyncErrorHandlerComponent', () => {
   });
 
   it('should show notice when async error occurs', () => {
-    const noticeComponent = new PluginNoticeComponent('Test');
+    const noticeComponent = new PluginNoticeComponent({ app, pluginName: 'Test' });
     noticeComponent.load();
     const showNoticeSpy = vi.spyOn(noticeComponent, 'showNotice');
     const component = new AsyncErrorHandlerComponent(noticeComponent);
