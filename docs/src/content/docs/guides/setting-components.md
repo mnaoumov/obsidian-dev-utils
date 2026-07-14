@@ -4,7 +4,7 @@ title: Setting Components
 
 `Obsidian Dev Utils` provides some setting components that you can use in your plugin.
 
-In order for components to look properly, their styles has to be initialized. See [Styling](./styling.md) for more details.
+In order for components to look properly, their styles has to be initialized. See [Styling](/obsidian-dev-utils/guides/styling/) for more details.
 
 ## CheckboxComponent
 

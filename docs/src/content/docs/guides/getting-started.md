@@ -34,8 +34,8 @@ const name = await prompt({
 ```
 
 Helpers are grouped by file and folder, and each group is reachable through several import styles (deep
-path, namespace, or a single flat barrel). See [Helper Functions](./helper-functions/) for the full set
-of import styles, including the flat [`__merged`](./helper-functions/#flat-imports-via-__merged) barrel.
+path, namespace, or a single flat barrel). See [Helper Functions](/obsidian-dev-utils/guides/helper-functions/) for the full set
+of import styles, including the flat [`__merged`](/obsidian-dev-utils/guides/helper-functions/#flat-imports-via-__merged) barrel.
 
 ## Your first build script
 
@@ -60,13 +60,13 @@ Then wire it into `package.json`:
 }
 ```
 
-See [Commands](./cli-commands/) for the complete list of build and tooling entry points.
+See [Commands](/obsidian-dev-utils/guides/cli-commands/) for the complete list of build and tooling entry points.
 
 ## Where to go next
 
-- [Helper Functions](./helper-functions/) — general-purpose and Obsidian-specific helpers, and the ways to import them.
-- [Setting Components](./setting-components/) — ready-made settings-tab controls.
-- [Modals](./modals/) — alert, confirm, prompt, and select modals with an async API.
-- [Plugin Helpers](./plugin-helpers/) — building blocks to simplify your own plugin class.
-- [Commands](./cli-commands/) — the build, lint, format, and test tooling.
-- [API reference](../api/) — the complete, searchable API generated from the library's TSDoc.
+- [Helper Functions](/obsidian-dev-utils/guides/helper-functions/) — general-purpose and Obsidian-specific helpers, and the ways to import them.
+- [Setting Components](/obsidian-dev-utils/guides/setting-components/) — ready-made settings-tab controls.
+- [Modals](/obsidian-dev-utils/guides/modals/) — alert, confirm, prompt, and select modals with an async API.
+- [Plugin Helpers](/obsidian-dev-utils/guides/plugin-helpers/) — building blocks to simplify your own plugin class.
+- [Commands](/obsidian-dev-utils/guides/cli-commands/) — the build, lint, format, and test tooling.
+- [API reference](/obsidian-dev-utils/api/) — the complete, searchable API generated from the library's TSDoc.

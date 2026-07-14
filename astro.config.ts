@@ -30,7 +30,7 @@ export default defineConfig({
         './docs/src/styles/global.css'
       ],
       editLink: {
-        baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/tree/main/docs/src/content/docs/'
+        baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/edit/main/'
       },
       favicon: '/favicon.svg',
       routeMiddleware: './docs/src/route-data.ts',

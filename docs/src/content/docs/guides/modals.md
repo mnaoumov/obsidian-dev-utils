@@ -4,7 +4,7 @@ title: Modals
 
 `Obsidian Dev Utils` provides some modals that you can use in your plugin.
 
-In order for models to look properly, their styles have to be initialized. See [Styling](./styling.md) for more details.
+In order for models to look properly, their styles have to be initialized. See [Styling](/obsidian-dev-utils/guides/styling/) for more details.
 
 ## Alert
 
