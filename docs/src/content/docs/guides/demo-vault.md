@@ -9,7 +9,7 @@ title: Demo Vault
 
 ## Release side: archiving the demo vault
 
-Put a curated vault at `demo-vault/` in your plugin repo root (a normal vault, including its `.obsidian/` config). When you release with [`updateVersion`](./cli-commands.md), the demo vault is archived automatically for Obsidian plugins:
+Put a curated vault at `demo-vault/` in your plugin repo root (a normal vault, including its `.obsidian/` config). When you release with [`updateVersion`](/obsidian-dev-utils/guides/cli-commands/), the demo vault is archived automatically for Obsidian plugins:
 
 1. The freshly built plugin (from `dist/build/`) is installed into `demo-vault/.obsidian/plugins/<plugin-id>/`.
 2. The whole `demo-vault/` folder is zipped to `dist/build/demo-vault-<version>.zip`.
@@ -60,7 +60,7 @@ new OpenDemoVaultCommandHandler({
 The command is **desktop only** — it hides itself on mobile (its `canExecute` gates on `Platform.isDesktopApp`, so no mobile notice is ever shown), and the desktop-only machinery is loaded lazily (only when the command runs on desktop), so registering the handler is safe on every platform. When invoked the command:
 
 1. Resolves the plugin's GitHub repository from Obsidian's community registry (see [`getCommunityPluginRepo`](#getcommunitypluginrepo)).
-2. Reads the latest release version. If the installed version is the latest (or newer), its demo vault opens directly; otherwise the user is offered a choice between the latest and the currently-installed version via a [Select Option](./modals.md#select-option) dialog.
+2. Reads the latest release version. If the installed version is the latest (or newer), its demo vault opens directly; otherwise the user is offered a choice between the latest and the currently-installed version via a [Select Option](/obsidian-dev-utils/guides/modals/#select-option) dialog.
 3. Downloads and extracts the chosen version's `demo-vault-<version>.zip` to a per-version cache folder (under the OS temp directory, reused if already extracted).
 4. Opens that folder as a vault in a new window.
 
