@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 86.1.2
+
+- docs: render GitHub alerts as Starlight asides
+- docs: migrate to AGENTS.md
+- ci: make docs deploy from main only
+
 ## 86.1.1
 
 - docs: fix links
