@@ -31,7 +31,8 @@ import type {
 import {
   CACHE_FILE,
   OUTPUT_DIR,
-  ROOT_DIR
+  ROOT_DIR,
+  SIDEBAR_FILE
 } from './helpers/api-doc-constants.ts';
 import { extractFileOverview } from './helpers/api-doc-jsdoc.ts';
 import {
@@ -68,7 +69,7 @@ async function main(): Promise<void> {
 
   // Check cache — skip generation if nothing changed
   const currentHash = computeCacheHash(entryFiles);
-  if (existsSync(CACHE_FILE) && readFileSync(CACHE_FILE, 'utf-8').trim() === currentHash) {
+  if (existsSync(CACHE_FILE) && existsSync(SIDEBAR_FILE) && readFileSync(CACHE_FILE, 'utf-8').trim() === currentHash) {
     console.warn('Source files and generator unchanged — skipping generation.');
     return;
   }

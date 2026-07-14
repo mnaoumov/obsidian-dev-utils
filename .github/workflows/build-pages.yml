@@ -58,6 +58,7 @@ jobs:
         with:
           path: |
             docs/src/content/docs/api
+            docs/src/generated-sidebar.json
             docs/public/og
           key: docs-gen-${{ hashFiles('src/**/*.ts', 'scripts/docs-gen/**', 'docs/src/content/docs/**/*.md', 'docs/src/content/docs/**/*.mdx', 'astro.config.ts', 'package-lock.json') }}
           restore-keys: |

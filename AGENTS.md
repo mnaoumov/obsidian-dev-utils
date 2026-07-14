@@ -78,9 +78,10 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
   ignores) — it follows Starlight's own conventions and is validated by `astro build`. cspell excludes the
   generated `docs/content/docs/api` and `docs/dist`/`.astro`. `linkinator.config.json` skips the
   `mnaoumov.dev/obsidian-dev-utils` links (the site is not reachable until the first Pages deploy).
-- `.github/workflows/build-pages.yml` — builds and deploys the site to GitHub Pages on push to `main`
-  (touching `docs/**`, `src/**`, `astro.config.ts`, or `package.json`) and on `workflow_dispatch`.
-  Requires Pages to be enabled with **GitHub Actions** as the source.
+- `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`,
+  which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages,
+  `docs/src/generated-sidebar.json`, and OG images; the generator only skips regeneration when its cache
+  hash and sidebar file both exist. Requires Pages to be enabled with **GitHub Actions** as the source.
 
 ### TypeScript
 
