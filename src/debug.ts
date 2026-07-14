@@ -162,7 +162,7 @@ export function showInitialDebugMessage(pluginId: string): void {
   const namespaces = getNamespaces();
   setNamespaces(pluginId);
   getDebugger(pluginId)(
-    `Debug messages for plugin ${pluginId} are ${state}. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md how to ${changeAction} them.`
+    `Debug messages for plugin ${pluginId} are ${state}. See https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/ how to ${changeAction} them.`
   );
   setNamespaces(namespaces);
 }
@@ -242,7 +242,7 @@ function logWithCaller(params: LogWithCallerParams): void {
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {
   return new CustomStackTraceError({
     cause: undefined,
-    message: 'Debug mode: intentional placeholder error. See https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md.',
+    message: 'Debug mode: intentional placeholder error. See https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/.',
     stackTrace
   });
 }

@@ -12,7 +12,7 @@ import { ComponentEx } from './component-ex.ts';
  *
  * Messages are not shown by default — enable the plugin's debugger namespace to see them.
  *
- * @see {@link https://github.com/mnaoumov/obsidian-dev-utils/blob/main/docs/debugging.md} for more information.
+ * @see {@link https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/} for more information.
  */
 export class ConsoleDebugComponent extends ComponentEx {
   /**
