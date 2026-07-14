@@ -5,31 +5,35 @@ name: Build GitHub Pages
 # (repo Settings -> Pages -> Build and deployment -> Source: GitHub Actions).
 
 on:
-  # Regenerate on a new library release (the API docs reflect the released version), on doc-site source
-  # changes (guides / theme / generator / config), and on manual runs — NOT on every code push to `src`.
+  # A release event runs from its tag, which the github-pages environment does not allow to deploy.
+  # Dispatch a second invocation on `main` so the deployment uses the protected branch instead.
   release:
     types: [published]
-  push:
-    branches: [main]
-    paths:
-      - docs/**
-      - astro.config.ts
-      - scripts/docs-gen/**
-      - .github/workflows/build-pages.yml
   workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write
-  pages: write
 
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  dispatch-from-main:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch deployment from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build-pages.yml --ref main
+
+  build-and-deploy:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pages: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
