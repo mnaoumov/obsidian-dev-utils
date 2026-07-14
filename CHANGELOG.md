@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 86.1.3
+
+- fix(ci): dispatch Pages deployment with repository
+
 ## 86.1.2
 
 - docs: render GitHub alerts as Starlight asides
