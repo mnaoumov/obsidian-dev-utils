@@ -36,6 +36,7 @@ import {
 import { extractFileOverview } from './helpers/api-doc-jsdoc.ts';
 import {
   loadExternalTypeMaps,
+  registerMemberPages,
   registerRouteSegments
 } from './helpers/api-doc-link-rendering.ts';
 import {
@@ -106,6 +107,7 @@ async function main(): Promise<void> {
   registerGenericTypeParams(types);
 
   registerRouteSegments(types);
+  registerMemberPages(types);
 
   await rm(OUTPUT_DIR, { force: true, recursive: true });
   await mkdir(OUTPUT_DIR, { recursive: true });

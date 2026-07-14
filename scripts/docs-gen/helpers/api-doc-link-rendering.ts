@@ -27,6 +27,7 @@ import {
   getNamespaceDir,
   memberRouteSegment,
   memberSlug,
+  overloadRouteSegment,
   overloadSlug,
   segmentMarkdown,
   toRouteSegment,
@@ -40,6 +41,44 @@ let webApiTypes: Record<string, unknown> = {};
 const typeFileSegments = new Map<string, string>();
 /** Case-preserved URL/route segment per qualified type key (`${namespace}#${name}`). */
 const typeRouteSegments = new Map<string, string>();
+
+/**
+ * Route-segment keys of the member pages that `generateMemberPages` will actually emit, as
+ * `${namespace}#${TypeName}#${routeSegment}`. Only NON-inherited properties and non-inherited method
+ * overload keys get a page, so this lets link emitters avoid pointing at a member page that is never
+ * generated (an inherited member, an enum member, an options-interface member) — which would 404.
+ */
+const generatedMemberPages = new Set<string>();
+
+/**
+ * Populate {@link memberPageExists}. Mirrors `generateMemberPages`'s own filtering exactly (one page
+ * per non-inherited property, one per non-inherited method overload key). Must run once before any
+ * link is rendered.
+ */
+export function registerMemberPages(types: Map<string, TypeInfo>): void {
+  generatedMemberPages.clear();
+  for (const info of types.values()) {
+    for (const prop of info.properties) {
+      if (!prop.inheritedFrom) {
+        generatedMemberPages.add(`${info.namespace}#${info.name}#${memberRouteSegment(prop.name)}`);
+      }
+    }
+    const overloadKeys = new Set<string>();
+    for (const method of info.methods) {
+      if (!method.inheritedFrom) {
+        overloadKeys.add(method.overloadKey);
+      }
+    }
+    for (const overloadKey of overloadKeys) {
+      generatedMemberPages.add(`${info.namespace}#${info.name}#${overloadRouteSegment(overloadKey)}`);
+    }
+  }
+}
+
+/** Whether a member page will be generated for `routeSegment` on the given type. */
+export function memberPageExists(namespace: string, typeName: string, routeSegment: string): boolean {
+  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
+}
 
 /**
  * For every documented type assign BOTH:
@@ -165,7 +204,14 @@ export function markdownToHtml(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, '<a href="$<url>">$<text></a>')
+    .replace(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, (_match: string, text: string, url: string) => {
+      if (/^(?:https?:\/\/|\/|#|mailto:)/.test(url)) {
+        return `<a href="${url}">${text}</a>`;
+      }
+      // A relative URL here is an illustrative example path in TSDoc (e.g. `[foo](foo.png)`), not a
+      // real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
+      return `<code>[${text}](${url})</code>`;
+    })
     .replace(/`(?<code>[^`]+)`/g, '<code>$<code></code>')
     .replace(/\n/g, '<br/>');
 }
@@ -173,11 +219,14 @@ export function markdownToHtml(text: string): string {
 /** Build the href for a member, pointing to the parent type's page if inherited */
 export function memberHref(memberSlugStr: string, inheritedFrom: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   if (!inheritedFrom) {
+    // Own (non-inherited) member — `generateMemberPages` always emits its page on this same page.
     return `./${memberSlugStr}/`;
   }
   const parentInfo = findType(allTypes, inheritedFrom, currentNamespace);
-  if (!parentInfo) {
-    return `./${memberSlugStr}/`;
+  if (!parentInfo || !memberPageExists(parentInfo.namespace, parentInfo.name, memberSlugStr)) {
+    // The declaring parent has no generated page for this member (it inherited the member too, or is
+    // undocumented). Return no href so the caller renders plain text instead of a broken link.
+    return '';
   }
   const parentNsDir = getNamespaceDir(parentInfo.namespace);
   return `${BASE_PATH}/api/${parentNsDir}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugStr}/`;
@@ -297,7 +346,7 @@ export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, self
       const typeName = dotMatch.groups['typeName'] ?? '';
       const memberName = dotMatch.groups['memberName'] ?? '';
       const typeInfo = findType(allTypes, typeName, selfNamespace);
-      if (typeInfo) {
+      if (typeInfo && memberPageExists(typeInfo.namespace, typeInfo.name, memberRouteSegment(memberName))) {
         const targetNsDir = getNamespaceDir(typeInfo.namespace);
         return `[${display}](${BASE_PATH}/api/${targetNsDir}/${toTypeRouteSegment(typeInfo.namespace, typeInfo.name)}/${memberRouteSegment(memberName)}/)`;
       }

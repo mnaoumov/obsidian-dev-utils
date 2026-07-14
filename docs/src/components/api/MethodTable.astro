@@ -35,7 +35,7 @@ const { rows } = Astro.props;
         : '';
       return (
         <tr>
-          <td style="text-align: left"><a href={row.href} set:html={row.signature} /></td>
+          <td style="text-align: left">{row.href ? <a href={row.href} set:html={row.signature} /> : <span set:html={row.signature} />}</td>
           <td style="text-align: left" set:html={row.returns} />
           <td style="text-align: left" set:html={row.description + inherited} />
         </tr>

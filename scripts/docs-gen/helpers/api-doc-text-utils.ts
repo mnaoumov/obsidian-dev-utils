@@ -249,6 +249,11 @@ function slugifyMemberName(name: string): string {
     .replace(/[^a-zA-Z0-9]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
+  if (cleaned === 'index') {
+    // A member literally named `index` would write `index.mdx`, colliding with the type-overview
+    // `index.mdx` in the same directory (one silently overwrites the other, 404-ing the loser).
+    return 'index-member';
+  }
   return cleaned || 'unnamed';
 }
 

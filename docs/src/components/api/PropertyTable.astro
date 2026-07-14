@@ -35,7 +35,7 @@ const { rows } = Astro.props;
         : '';
       return (
         <tr>
-          <td style="text-align: left"><a href={row.href}>{row.name}</a></td>
+          <td style="text-align: left">{row.href ? <a href={row.href}>{row.name}</a> : row.name}</td>
           <td style="text-align: left" set:html={row.type} />
           <td style="text-align: left" set:html={row.description + inherited} />
         </tr>
