@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 86.1.0
+
+- docs: add generator
+
 ## 86.0.0
 
 - feat: close button on minimized modal
