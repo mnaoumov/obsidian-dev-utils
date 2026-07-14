@@ -31,7 +31,7 @@ docs/src/content/docs/api
 docs/src/generated-sidebar.json
 docs/public/og
 
-index.ts
+/src/**/index.ts
 __merged.ts
 _dependencies.ts
 
