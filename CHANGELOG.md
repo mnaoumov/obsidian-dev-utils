@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 86.1.1
+
+- docs: fix links
+- fix(docs): eliminate broken links in the generated API pages
+- fix(docs): resolve guide cross-links and the edit-page link
+- feat(docs): add Getting started guide, __merged examples, and hero logo
+- fix(docs): repair the Pages build — track the API barrel, bump cache action
+
 ## 86.1.0
 
 - docs: add generator
