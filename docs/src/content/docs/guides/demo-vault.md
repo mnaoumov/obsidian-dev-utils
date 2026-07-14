@@ -1,4 +1,6 @@
-# Demo Vault
+---
+title: Demo Vault
+---
 
 `Obsidian Dev Utils` lets a plugin ship a **demo vault** — a curated Obsidian vault, committed to the plugin repo, that showcases the plugin — and lets users open it in one step. There are two cooperating parts:
 
@@ -25,7 +27,7 @@ Archiving is on by default. Pass `--no-demo-vault` to skip it for a release, or 
 - Commit `demo-vault/.obsidian/community-plugins.json` containing `["<plugin-id>"]` so the plugin is enabled when the demo vault is opened.
 - Gitignore the installed build so nothing built lands in git:
 
-  ```gitignore
+  ```text
   demo-vault/.obsidian/plugins/<plugin-id>/
   demo-vault/.obsidian/workspace*.json
   ```

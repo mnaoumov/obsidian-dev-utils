@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Obsidian Dev Utils">
+  <defs>
+    <clipPath id="screen">
+      <rect x="7.9" y="4.1" width="16.2" height="11.6" rx="1.1" />
+    </clipPath>
+  </defs>
+
+  <!-- laptop deck (MacBook silver) -->
+  <path d="M6.6 16.6 H25.4 L28.7 25.3 q0.5 1.3 -0.9 1.3 H4.2 q-1.4 0 -0.9 -1.3 Z" fill="#c7cbd1" />
+  <!-- keyboard keys -->
+  <g fill="#8f949c">
+    <rect x="9.3" y="18" width="1.5" height="1.05" rx="0.25" /><rect x="11.2" y="18" width="1.5" height="1.05" rx="0.25" /><rect x="13.1" y="18" width="1.5" height="1.05" rx="0.25" /><rect x="15" y="18" width="1.5" height="1.05" rx="0.25" /><rect x="16.9" y="18" width="1.5" height="1.05" rx="0.25" /><rect x="18.8" y="18" width="1.5" height="1.05" rx="0.25" /><rect x="20.7" y="18" width="1.5" height="1.05" rx="0.25" />
+    <rect x="9.1" y="19.6" width="1.5" height="1.05" rx="0.25" /><rect x="11" y="19.6" width="1.5" height="1.05" rx="0.25" /><rect x="12.9" y="19.6" width="1.5" height="1.05" rx="0.25" /><rect x="14.8" y="19.6" width="1.5" height="1.05" rx="0.25" /><rect x="16.7" y="19.6" width="1.5" height="1.05" rx="0.25" /><rect x="18.6" y="19.6" width="1.5" height="1.05" rx="0.25" /><rect x="20.5" y="19.6" width="1.5" height="1.05" rx="0.25" />
+    <rect x="8.9" y="21.2" width="1.5" height="1.05" rx="0.25" /><rect x="10.8" y="21.2" width="1.5" height="1.05" rx="0.25" /><rect x="12.7" y="21.2" width="1.5" height="1.05" rx="0.25" /><rect x="14.6" y="21.2" width="1.5" height="1.05" rx="0.25" /><rect x="16.5" y="21.2" width="1.5" height="1.05" rx="0.25" /><rect x="18.4" y="21.2" width="1.5" height="1.05" rx="0.25" /><rect x="20.3" y="21.2" width="1.5" height="1.05" rx="0.25" />
+  </g>
+  <!-- touchpad -->
+  <rect x="12.7" y="23" width="6.6" height="2.1" rx="0.5" fill="#bcc1c8" stroke="#9aa0a8" stroke-width="0.35" />
+
+  <!-- laptop screen -->
+  <rect x="6.8" y="3.1" width="18.4" height="13.6" rx="2" fill="#04120a" stroke="#c7cbd1" stroke-width="1.6" />
+  <!-- Matrix digital rain (green numbers) -->
+  <g clip-path="url(#screen)" font-family="monospace" font-size="2.7" font-weight="700" text-anchor="middle">
+    <text x="9.7" y="5.6" fill="#056C03">7</text><text x="9.7" y="8.1" fill="#056C03">3</text><text x="9.7" y="10.6" fill="#0CC40C">0</text><text x="9.7" y="13.1" fill="#d4ffdd">1</text>
+    <text x="12.9" y="4.8" fill="#056C03">1</text><text x="12.9" y="7.3" fill="#056C03">9</text><text x="12.9" y="9.8" fill="#0CC40C">4</text><text x="12.9" y="12.3" fill="#0CC40C">7</text><text x="12.9" y="14.8" fill="#d4ffdd">2</text>
+    <text x="16.1" y="6.2" fill="#056C03">8</text><text x="16.1" y="8.7" fill="#0CC40C">0</text><text x="16.1" y="11.2" fill="#0CC40C">6</text><text x="16.1" y="13.7" fill="#d4ffdd">1</text>
+    <text x="19.3" y="5.2" fill="#056C03">3</text><text x="19.3" y="7.7" fill="#056C03">1</text><text x="19.3" y="10.2" fill="#0CC40C">5</text><text x="19.3" y="12.7" fill="#d4ffdd">0</text>
+    <text x="22.5" y="4.9" fill="#056C03">0</text><text x="22.5" y="7.4" fill="#056C03">7</text><text x="22.5" y="9.9" fill="#0CC40C">2</text><text x="22.5" y="12.4" fill="#0CC40C">9</text><text x="22.5" y="14.9" fill="#d4ffdd">1</text>
+  </g>
+  <!-- Obsidian gem on top, two-tone violet -->
+  <path d="M16 5.4 L12.1 9 L14.7 14.8 L16 14.8 Z" fill="#c4b5fd" />
+  <path d="M16 5.4 L19.9 9 L17.3 14.8 L16 14.8 Z" fill="#8b5cf6" />
+</svg>

@@ -1,0 +1,76 @@
+---
+title: Obsidian Dev Utils
+description: Essential utilities for building Obsidian plugins.
+template: splash
+editUrl: false
+lastUpdated: false
+hero:
+    title: Obsidian Dev Utils
+    tagline: Essential utilities for building Obsidian plugins.
+    actions:
+        - text: Get started
+          link: /obsidian-dev-utils/guides/cli-commands/
+          icon: rocket
+        - text: API reference
+          link: /obsidian-dev-utils/api/
+          icon: open-book
+          variant: secondary
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components'
+
+## Features
+
+<CardGrid stagger>
+    <Card title="Dual-format package" icon="puzzle">
+        Ships as a dual-format (ESM + CJS) npm package, so it works in any Obsidian plugin toolchain out of the box.
+    </Card>
+
+    <Card title="Rich Obsidian helpers" icon="open-book">
+        Battle-tested helpers for vaults, files, links, metadata, the editor, and the workspace — the tedious parts of plugin development, done for you.
+    </Card>
+
+    <Card title="Settings components" icon="setting">
+        Ready-made settings-tab components (dropdowns, files, dates, emails, and more) that plug straight into your plugin's settings UI.
+    </Card>
+
+    <Card title="Modals" icon="approve-check">
+        Alert, confirm, prompt, and select modals with a simple async API — no boilerplate.
+    </Card>
+
+    <Card title="Testing utilities" icon="rocket">
+        Test setup and utilities that mock the Obsidian API so you can unit-test plugin logic without a real vault.
+    </Card>
+</CardGrid>
+
+## Guides
+
+<CardGrid stagger>
+    <Card title="Commands" icon="seti:powershell">
+        [CLI commands](./guides/cli-commands/) exposed by the library for building, linting, and testing plugins.
+    </Card>
+    <Card title="Helper functions" icon="open-book">
+        [General-purpose and Obsidian-specific helpers](./guides/helper-functions/) for everyday plugin tasks.
+    </Card>
+    <Card title="Styling" icon="pencil">
+        [Extensible styles](./guides/styling/) for plugin UI controls.
+    </Card>
+    <Card title="Setting components" icon="setting">
+        [Ready-made settings-tab components](./guides/setting-components/) for your plugin's settings.
+    </Card>
+    <Card title="Modals" icon="approve-check">
+        [Alert / confirm / prompt / select modals](./guides/modals/) with an async API.
+    </Card>
+    <Card title="Debugging" icon="warning">
+        [Enable and use debug output](./guides/debugging/) while developing your plugin.
+    </Card>
+    <Card title="Plugin helpers" icon="puzzle">
+        [Helpers to simplify your own plugin](./guides/plugin-helpers/).
+    </Card>
+    <Card title="Demo vault" icon="document">
+        [Ship and open a demo vault](./guides/demo-vault/) alongside your plugin.
+    </Card>
+    <Card title="Testing" icon="rocket">
+        [Test setup and utilities](./guides/testing/) for unit-testing plugin logic.
+    </Card>
+</CardGrid>

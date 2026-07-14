@@ -1,4 +1,6 @@
-# Setting Components
+---
+title: Setting Components
+---
 
 `Obsidian Dev Utils` provides some setting components that you can use in your plugin.
 

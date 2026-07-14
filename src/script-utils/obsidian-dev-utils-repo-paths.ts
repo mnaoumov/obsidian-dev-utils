@@ -34,6 +34,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Any TypeScript file. */
   AnyTs = '*.ts',
 
+  /** Astro configuration file (documentation site) at the repo root. */
+  AstroConfigTs = 'astro.config.ts',
+
   /** CommonJS folder. */
   Cjs = 'cjs',
 
@@ -63,6 +66,12 @@ export enum ObsidianDevUtilsRepoPaths {
 
   /** ESM TypeScript declaration file extension. */
   DmtsExtension = '.d.mts',
+
+  /** Documentation site folder (Astro + Starlight API-docs sub-project). */
+  Docs = 'docs',
+
+  /** Build output folder of the documentation site. */
+  DocsDist = 'docs/dist',
 
   /** Dprint configuration file. */
   DprintJson = 'dprint.json',

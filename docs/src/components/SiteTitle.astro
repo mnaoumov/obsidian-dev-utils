@@ -1,0 +1,45 @@
+---
+/**
+ * Site-title override: renders the title Starlight passes in, plus the current library version as an
+ * always-visible badge (read from the root package.json at build time). obsidian-dev-utils has no logo
+ * and no public/catalyst channel switcher.
+ */
+import pkg from '../../../package.json';
+
+const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
+const version = `v${pkg.version}`;
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+	<span translate="no">{siteTitle}</span>
+	<span class="site-version" translate="no">{version}</span>
+</a>
+
+<style>
+	@layer starlight.core {
+		.site-title {
+			align-items: center;
+			gap: 0.5rem;
+			font-size: var(--sl-text-h4);
+			font-weight: 600;
+			color: var(--sl-color-text-accent);
+			text-decoration: none;
+			white-space: nowrap;
+			min-width: 0;
+		}
+		span:first-child {
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.site-version {
+			flex: none;
+			font-size: var(--sl-text-xs);
+			font-weight: 500;
+			line-height: 1.5;
+			color: var(--sl-color-gray-1);
+			background: var(--sl-color-gray-6);
+			padding: 0.05rem 0.45rem;
+			border-radius: 999px;
+		}
+	}
+</style>

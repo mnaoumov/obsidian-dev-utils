@@ -1,4 +1,6 @@
-# Commands
+---
+title: Commands
+---
 
 `Obsidian Dev Utils` exposes command functions from tool-specific modules. Each tool is identified by its import path. You can import and call them directly:
 

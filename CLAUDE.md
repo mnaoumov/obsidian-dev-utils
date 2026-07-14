@@ -24,6 +24,9 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `npm run spellcheck` — spell check with cspell
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version
+- `npm run docs:dev` — start the documentation site dev server (Astro)
+- `npm run docs:build` — build the documentation site to `docs/dist`
+- `npm run docs:preview` — serve the built documentation site locally
 
 ## Architecture
 
@@ -47,6 +50,37 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `src/script-utils/commitlint-config.ts` — shared commitlint configuration
 - `src/script-utils/nano-staged-config.ts` — shared nano-staged pre-commit configuration
 - `dist/` — compiled output (ESM `.mjs` + CJS `.cjs` + type declarations)
+
+### Documentation Site
+
+The API-reference + guides site is a self-contained **Astro + Starlight** project deployed to **GitHub
+Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom domain aliases
+`mnaoumov.github.io`). It is NOT a separate npm package — its dependencies live in the root
+`package.json` and it is driven by the root `docs:dev`/`docs:build`/`docs:preview` scripts.
+
+- `astro.config.ts` (repo root) — the Astro config. `srcDir` is set to `./docs` so the site's content
+  tree never collides with the library's own `src/`; output goes to `docs/dist`. The Starlight
+  integration wires the `starlight-typedoc` plugin, which runs TypeDoc (`typedoc-plugin-markdown`)
+  during the build to generate the API reference from the library's TSDoc.
+- `docs/content.config.ts` — Starlight content-collection config.
+- `docs/content/docs/` — site content: `index.mdx` (landing), `guides/` (the hand-written topic guides,
+  each with Starlight frontmatter; co-located screenshots under `guides/images/`), and the generated
+  `api/` (gitignored — regenerated on every build).
+- `docs/api-readme.md` — the API section landing content. Passed to TypeDoc as `readme`; a real readme
+  (not `'none'`) is REQUIRED, otherwise `starlight-typedoc` deletes every generated module overview page.
+- `docs/typedoc-file-overview.ts` — a small TypeDoc plugin that re-attaches each module's `@file`
+  overview as the module comment. TypeDoc only treats a top-of-file comment as the module comment when it
+  carries `@packageDocumentation`/`@module`, so without this the repo's `@file` overviews would be
+  dropped. TypeDoc entry points use `entryPointStrategy: 'expand'` over `./src` (one module per source
+  file, matching the `./*` subpath exports), excluding tests/barrels/`__merged`/`@types`/`.d.ts`.
+- **Tooling scope:** the whole docs sub-project (`astro.config.ts` + `docs/**`) is excluded from this
+  repo's ESLint (`scripts/eslint-config.ts` global ignores) and markdownlint (`scripts/markdownlint-cli2-config.ts`
+  ignores) — it follows Starlight's own conventions and is validated by `astro build`. cspell excludes the
+  generated `docs/content/docs/api` and `docs/dist`/`.astro`. `linkinator.config.json` skips the
+  `mnaoumov.dev/obsidian-dev-utils` links (the site is not reachable until the first Pages deploy).
+- `.github/workflows/build-pages.yml` — builds and deploys the site to GitHub Pages on push to `main`
+  (touching `docs/**`, `src/**`, `astro.config.ts`, or `package.json`) and on `workflow_dispatch`.
+  Requires Pages to be enabled with **GitHub Actions** as the source.
 
 ### TypeScript
 
