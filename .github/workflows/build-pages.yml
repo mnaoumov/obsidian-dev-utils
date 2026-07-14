@@ -5,13 +5,16 @@ name: Build GitHub Pages
 # (repo Settings -> Pages -> Build and deployment -> Source: GitHub Actions).
 
 on:
+  # Regenerate on a new library release (the API docs reflect the released version), on doc-site source
+  # changes (guides / theme / generator / config), and on manual runs — NOT on every code push to `src`.
+  release:
+    types: [published]
   push:
     branches: [main]
     paths:
       - docs/**
-      - src/**
       - astro.config.ts
-      - package.json
+      - scripts/docs-gen/**
       - .github/workflows/build-pages.yml
   workflow_dispatch:
 
@@ -19,6 +22,10 @@ permissions:
   contents: read
   id-token: write
   pages: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -34,9 +41,23 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
+
+      # Cache the slow-to-produce generated artifacts (the ts-morph API markdown + the satori OG images),
+      # keyed by the sources that determine them. On a hit the generator's own cache-hash skips regeneration
+      # and the OG content-hash manifest reuses unchanged cards; restore-keys give a warm partial cache.
+      - name: Restore generated docs cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            docs/src/content/docs/api
+            docs/public/og
+          key: docs-gen-${{ hashFiles('src/**/*.ts', 'scripts/docs-gen/**', 'docs/src/content/docs/**/*.md', 'docs/src/content/docs/**/*.mdx', 'astro.config.ts', 'package-lock.json') }}
+          restore-keys: |
+            docs-gen-
 
       - name: Build documentation site
         run: npm run docs:build
