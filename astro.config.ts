@@ -5,6 +5,7 @@ import {
   readFileSync
 } from 'node:fs';
 import { resolve } from 'node:path';
+import starlightGitHubAlerts from 'starlight-github-alerts';
 
 import { remarkRelativeLinks } from './scripts/docs-gen/helpers/remark-plugins/remark-relative-links.ts';
 
@@ -33,6 +34,7 @@ export default defineConfig({
         baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/edit/main/'
       },
       favicon: '/favicon.svg',
+      plugins: [starlightGitHubAlerts()],
       routeMiddleware: './docs/src/route-data.ts',
       sidebar: [
         {

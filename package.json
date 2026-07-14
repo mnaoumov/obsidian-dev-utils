@@ -750,6 +750,7 @@
     "obsidian-integration-testing": "^8.1.0",
     "obsidian-test-mocks": "^3.6.0",
     "satori": "^0.26.0",
+    "starlight-github-alerts": "^0.4.0",
     "starlight-package-managers": "^0.12.0",
     "ts-declaration-location": "^1.0.7",
     "ts-morph": "^28.0.0",

@@ -60,8 +60,8 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
 
 - `astro.config.ts` (repo root) — the Astro config. `srcDir` is set to `./docs` so the site's content
   tree never collides with the library's own `src/`; output goes to `docs/dist`. The Starlight
-  integration wires the `starlight-typedoc` plugin, which runs TypeDoc (`typedoc-plugin-markdown`)
-  during the build to generate the API reference from the library's TSDoc.
+  integration uses `starlight-github-alerts` to render GitHub-style Markdown alerts as native
+  Starlight asides.
 - `docs/content.config.ts` — Starlight content-collection config.
 - `docs/content/docs/` — site content: `index.mdx` (landing), `guides/` (the hand-written topic guides,
   each with Starlight frontmatter; co-located screenshots under `guides/images/`), and the generated
