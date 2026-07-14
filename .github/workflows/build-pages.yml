@@ -50,7 +50,7 @@ jobs:
       # keyed by the sources that determine them. On a hit the generator's own cache-hash skips regeneration
       # and the OG content-hash manifest reuses unchanged cards; restore-keys give a warm partial cache.
       - name: Restore generated docs cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             docs/src/content/docs/api
