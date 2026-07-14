@@ -1,0 +1,12 @@
+---
+import { Code } from '@astrojs/starlight/components';
+
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<p><strong>Import:</strong></p>
+<Code code={text} lang="ts" />

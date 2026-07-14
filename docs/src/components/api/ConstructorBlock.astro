@@ -1,0 +1,16 @@
+---
+import { Code } from '@astrojs/starlight/components';
+
+interface Props {
+  description?: string;
+  signature: string;
+}
+
+const { signature, description } = Astro.props;
+---
+
+<div class="filterable-block" data-inherited="false">
+  <h2><span class="icon-own" title="Defined on this type"></span> Constructor</h2>
+  <Code code={signature} lang="ts" />
+  {description && <p set:html={description} />}
+</div>

@@ -1,0 +1,96 @@
+---
+import { Code } from '@astrojs/starlight/components';
+
+import type { ParameterInfo } from './types.ts';
+
+interface Props {
+  description?: string;
+  examples?: string[];
+  parameters?: ParameterInfo[];
+  remarks?: string;
+  returnDescription?: string;
+  returnType?: string;
+  signature?: string;
+  since?: string;
+  type?: string;
+}
+
+const {
+  type,
+  description,
+  signature,
+  parameters = [],
+  returnType,
+  returnDescription,
+  remarks,
+  examples = [],
+  since
+} = Astro.props;
+
+/** Strip markdown code fence markers and extract language + code */
+function parseCodeFence(raw: string): { code: string; lang: string } {
+  const match = /^```(\w*)\n([\s\S]*?)(?:\n```)?$/.exec(raw.trim());
+  if (match) {
+    return { code: match[2]?.trimEnd() ?? '', lang: match[1] || 'ts' };
+  }
+  return { code: raw.trim(), lang: 'ts' };
+}
+const parsedExamples = examples.map(parseCodeFence);
+---
+
+{type && <p><strong>Type:</strong> <span set:html={type} /></p>}
+
+{description && <Fragment set:html={description} />}
+
+{signature && (
+  <>
+    <p><strong>Signature:</strong></p>
+    <Code code={signature} lang="ts" />
+  </>
+)}
+
+{parameters.length > 0 && (
+  <>
+    <p><strong>Parameters:</strong></p>
+    <table>
+      <thead>
+        <tr>
+          <th style="text-align: left">Parameter</th>
+          <th style="text-align: left">Type</th>
+          <th style="text-align: left">Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {parameters.map((param) => (
+          <tr>
+            <td style="text-align: left">{param.name}</td>
+            <td style="text-align: left" set:html={param.type} />
+            <td style="text-align: left" set:html={param.description} />
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </>
+)}
+
+{returnType && (
+  <p><strong>Returns:</strong> <span set:html={returnType} />
+    {returnDescription && <> — <span set:html={returnDescription} /></>}
+  </p>
+)}
+
+{since && <p><strong>Since:</strong> {since}</p>}
+
+{remarks && (
+  <>
+    <p><strong>Remarks:</strong></p>
+    <Fragment set:html={remarks} />
+  </>
+)}
+
+{parsedExamples.map(({ code, lang }) => (
+  <>
+    <p><strong>Example:</strong></p>
+    <Code code={code} lang={lang} />
+  </>
+))}

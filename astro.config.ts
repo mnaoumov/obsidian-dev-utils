@@ -1,73 +1,62 @@
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
-import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
+import {
+  existsSync,
+  readFileSync
+} from 'node:fs';
+import { resolve } from 'node:path';
 
-// The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/`
+import { remarkRelativeLinks } from './scripts/docs-gen/helpers/remark-plugins/remark-relative-links.ts';
+
+// The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/src`
 // (`srcDir`) so it never collides with the library's own `src/` and `dist/`. The API reference is
-// generated from the library's TSDoc by `starlight-typedoc` (TypeDoc + `typedoc-plugin-markdown`) during
-// the Astro build. See `scripts/docs-build.ts` / the `docs:*` npm scripts.
+// generated from the library's TSDoc by the custom generator (`scripts/docs-gen`, ts-morph) into
+// `docs/src/content/docs/api`, with a matching `docs/src/generated-sidebar.json` consumed below.
+const BASE = '/obsidian-dev-utils';
+
 export default defineConfig({
-  base: '/obsidian-dev-utils',
+  base: BASE,
   outDir: './docs/dist',
   publicDir: './docs/public',
   site: 'https://mnaoumov.dev',
-  srcDir: './docs',
+  srcDir: './docs/src',
   trailingSlash: 'always',
   integrations: [
     starlight({
-      editLink: {
-        baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/tree/main/docs/'
+      components: {
+        SiteTitle: './docs/src/components/SiteTitle.astro'
       },
-      plugins: [
-        starlightTypeDoc({
-          entryPoints: ['./src'],
-          sidebar: {
-            collapsed: true,
-            label: 'API reference'
-          },
-          tsconfig: './tsconfig.json',
-          typeDoc: {
-            // Document every public source module (one per file) so the site mirrors the many `./*`
-            // subpath exports.
-            entryPointStrategy: 'expand',
-            exclude: [
-              '**/*.test.ts',
-              '**/index.ts',
-              '**/__merged.ts',
-              '**/setup.ts',
-              '**/*-setup.ts',
-              '**/@types/**',
-              '**/styles/**',
-              '**/test-helpers/**',
-              '**/*.d.ts'
-            ],
-            excludeInternal: true,
-            // Protected members are part of the extendable API (documented with TSDoc for subclassers),
-            // so include them even though starlight-typedoc excludes them by default.
-            excludeProtected: false,
-            // Re-attach the `@file` module overviews that TypeDoc would otherwise drop.
-            plugin: ['./docs/typedoc-file-overview.ts'],
-            // A real readme keeps `starlight-typedoc` from deleting every module overview page (it drops all
-            // `README.md` pages when `readme` is `'none'`).
-            readme: './docs/api-readme.md'
-          }
-        })
+      customCss: [
+        './docs/src/styles/global.css'
       ],
+      editLink: {
+        baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/tree/main/docs/src/content/docs/'
+      },
+      favicon: '/favicon.svg',
+      routeMiddleware: './docs/src/route-data.ts',
       sidebar: [
         {
           items: [{ autogenerate: { directory: 'guides' } }],
           label: 'Guides'
         },
-        typeDocSidebarGroup
+        ...getApiSidebar()
       ],
       social: [
-        {
-          href: 'https://github.com/mnaoumov/obsidian-dev-utils',
-          icon: 'github',
-          label: 'GitHub'
-        }
+        { href: 'https://github.com/mnaoumov/obsidian-dev-utils', icon: 'github', label: 'GitHub' }
       ],
       title: 'Obsidian Dev Utils'
     })
-  ]
+  ],
+  markdown: {
+    remarkPlugins: [remarkRelativeLinks(BASE)]
+  }
 });
+
+function getApiSidebar() {
+  const sidebarPath = resolve(import.meta.dirname, 'docs/src/generated-sidebar.json');
+  if (!existsSync(sidebarPath)) {
+    console.warn('[astro.config] generated-sidebar.json not found. Run the generator first (npm run docs:build).');
+    return [];
+  }
+  return JSON.parse(readFileSync(sidebarPath, 'utf-8'));
+}
