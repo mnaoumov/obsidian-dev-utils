@@ -25,7 +25,7 @@ jobs:
       - name: Dispatch deployment from main
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run build-pages.yml --ref main
+        run: gh workflow run build-pages.yml --repo "$GITHUB_REPOSITORY" --ref main
 
   build-and-deploy:
     if: github.event_name == 'workflow_dispatch'
