@@ -5,9 +5,12 @@
     ".env",
     "coverage",
     "dist",
-    "docs/content/docs/api",
     "docs/dist",
+    "docs/src/components",
+    "docs/src/content/docs/api",
+    "docs/src/styles",
     "node_modules",
+    "scripts/docs-gen",
     "tsconfig.tsbuildinfo"
   ],
   "dictionaryDefinitions": [],

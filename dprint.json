@@ -16,6 +16,7 @@
     "dist",
     "docs/dist",
     ".astro",
+    "scripts/docs-gen",
     "**/node_modules",
     "**/*-lock.json",
     "**/*.md"

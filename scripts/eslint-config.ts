@@ -63,10 +63,11 @@ function getIgnoreConfigs(): Linter.Config[] {
       ObsidianDevUtilsRepoPaths.DataviewTypes,
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
       join(ObsidianDevUtilsRepoPaths.Templates, ObsidianDevUtilsRepoPaths.AnyPath),
-      // Self-contained Astro + Starlight documentation site (root `astro.config.ts` + the `docs/` tree);
-      // `astro build` validates it, not this repo's ESLint.
+      // Self-contained Astro + Starlight documentation site (root `astro.config.ts`, the `docs/` tree,
+      // and the ported `scripts/docs-gen` generator); `astro build` validates it, not this repo's ESLint.
       ObsidianDevUtilsRepoPaths.AstroConfigTs,
-      join(ObsidianDevUtilsRepoPaths.Docs, ObsidianDevUtilsRepoPaths.AnyPath)
+      join(ObsidianDevUtilsRepoPaths.Docs, ObsidianDevUtilsRepoPaths.AnyPath),
+      join(ObsidianDevUtilsRepoPaths.Scripts, 'docs-gen', ObsidianDevUtilsRepoPaths.AnyPath)
     ])
   ]);
 }
