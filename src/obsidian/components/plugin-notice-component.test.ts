@@ -441,6 +441,36 @@ describe('PluginNoticeComponent', () => {
     expect(notice.hide).toHaveBeenCalledTimes(1);
   });
 
+  it('should let a click on an interactive button in the message run its handler without dismissing the notice', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    // A consumer embeds an action button in the message fragment. Its click is wired via
+    // `addEventListener` so a dispatched DOM click drives it directly.
+    const message = createFragment();
+    const actionButton = message.createEl('button', { text: 'Action' });
+    const buttonClickListener = vi.fn();
+    actionButton.addEventListener('click', buttonClickListener);
+
+    component.showNotice(message, { requiresCloseConfirmation: true });
+    const notice = ensureNonNullable(mocks.instances[0]);
+
+    // Simulate Obsidian inserting the notice content into the container, so the button becomes a
+    // Descendant of the container's capture-phase guard.
+    const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    notice.messageEl.appendChild(fragment);
+
+    const outerStub = createDiv();
+    outerStub.appendChild(notice.containerEl);
+    const dismissListener = vi.fn();
+    outerStub.addEventListener('click', dismissListener);
+
+    actionButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(buttonClickListener).toHaveBeenCalledTimes(1);
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
   it('should stop a non-element click target on the container from dismissing the notice', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
