@@ -9,14 +9,12 @@ import {
   readFile,
   writeFile
 } from 'node:fs/promises';
-import {
-  dirname,
-  relative
-} from 'node:path/posix';
+import { dirname } from 'node:path/posix';
 import { fileURLToPath } from 'node:url';
 
 import type { OgImageParams } from './helpers/og-image.ts';
 
+import { getOgImagePageSlug } from './helpers/og-image-page.ts';
 import {
   computeOgHash,
   loadFonts,
@@ -55,14 +53,6 @@ async function collectPages(contentDocsDir: string): Promise<PageEntry[]> {
   const pages: PageEntry[] = [];
   await walkDir(contentDocsDir, contentDocsDir, pages);
   return pages;
-}
-
-function filePathToSlug(filePath: string, contentDocsDir: string): string {
-  let slug = relative(contentDocsDir, filePath);
-  slug = slug.replaceAll('\\', '/');
-  slug = slug.replace(/\.\w+$/, '');
-  slug = slug.replace(/\/index$/, '');
-  return slug || 'index';
 }
 
 async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
@@ -184,7 +174,7 @@ async function parsePage(filePath: string, contentDocsDir: string): Promise<null
     | undefined;
   const badgeText = badge?.['text'];
 
-  const slug = (data['slug'] as string | undefined) ?? filePathToSlug(filePath, contentDocsDir);
+  const slug = getOgImagePageSlug(data, filePath, contentDocsDir);
   const params: OgImageParams = {
     badge: badgeText,
     description,

@@ -25,7 +25,7 @@ All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each 
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version
 - `npm run docs:dev` — start the documentation site dev server (Astro)
-- `npm run docs:build` — build the documentation site to `docs/dist`
+- `npm run docs:build` — build the documentation site to `docs/dist`, then validate its internal links, assets, and anchors offline plus its (deduplicated) external links for 404s (`scripts/docs-link-check.ts`)
 - `npm run docs:preview` — serve the built documentation site locally
 
 ## Architecture

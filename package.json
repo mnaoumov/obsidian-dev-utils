@@ -697,7 +697,6 @@
     "globals": "^17.7.0",
     "i18next": "^26.3.6",
     "jiti": "^2.7.0",
-    "linkinator": "^7.6.1",
     "localforage": "^1.10.0",
     "lru-cache": "^11.5.2",
     "markdownlint": "^0.41.0",

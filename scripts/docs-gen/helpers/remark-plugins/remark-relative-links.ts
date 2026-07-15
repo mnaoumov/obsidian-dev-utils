@@ -49,6 +49,14 @@ export function remarkRelativeLinks(base: string): () => (tree: Root, file: VFil
         // Use the slug itself as the "directory" — each page gets its own URL directory
         // E.g., slug "api/.../someFunction" → URL "/api/.../someFunction/"
         let relativePath = posix.relative(currentSlug, targetSlug);
+        if (relativePath === '') {
+          // Self-link: the target IS the current page (e.g. a function linking `this` to its own page).
+          // Preserve a same-page fragment, otherwise point at the current directory. Building `./` and
+          // `/` here would emit `.//`, which resolves to a non-existent `page//` URL and 404s.
+          node.url = anchor === '' ? './' : anchor;
+          return;
+        }
+
         if (!relativePath.startsWith('.')) {
           relativePath = `./${relativePath}`;
         }

@@ -100,7 +100,9 @@ export function foldTsDocParagraphs(text: string): string {
         .map((paragraph) => paragraph.replace(/\n/g, ' '))
         .join('\n\n');
     })
-    .join('\n');
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+    .join('\n\n');
 }
 
 /**

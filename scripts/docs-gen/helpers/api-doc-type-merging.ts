@@ -86,7 +86,9 @@ export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
       }
 
       for (const method of baseInfo.methods) {
-        if (!info.methods.some((m) => m.name === method.name && m.signature === method.signature)) {
+        const hasOwnMethod = info.methods.some((m) => m.name === method.name && m.signature === method.signature);
+        const hasInheritedMethod = info.methods.some((m) => m.inheritedFrom === baseInfo.name && m.overloadKey === method.overloadKey);
+        if (!hasOwnMethod && !hasInheritedMethod) {
           info.methods.push(substituteMemberTypes({ ...method, inheritedFrom: baseInfo.name }, typeParamMap));
         }
       }

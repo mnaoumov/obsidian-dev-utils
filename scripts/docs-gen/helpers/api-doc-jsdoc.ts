@@ -14,10 +14,11 @@ import type {
   MethodSignature,
   PropertyDeclaration,
   PropertySignature,
-  Scope,
   SourceFile,
   TypeAliasDeclaration
 } from 'ts-morph';
+
+import { Scope } from 'ts-morph';
 
 import type {
   EnumMemberInfo,

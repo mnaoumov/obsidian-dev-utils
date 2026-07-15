@@ -32,6 +32,9 @@ const SCRIPT_UTILS_TEST_FILES = 'src/script-utils/**/*.test.ts';
 const ESLINT_TYPECHECK_TEST_FILES = 'src/script-utils/linters/eslint-rules/*.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
+const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
+const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
+const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
 export const config = defineConfig({
@@ -42,6 +45,24 @@ export const config = defineConfig({
     globals: false,
     onConsoleLog: (): false => false,
     projects: [
+      {
+        test: {
+          environment: 'node',
+          exclude: [...SHARED_EXCLUDE],
+          include: [DOCS_GENERATOR_TEST_FILES, DOCS_SITE_TEST_FILES],
+          name: 'unit-tests:docs-generator',
+          setupFiles: []
+        }
+      },
+      {
+        test: {
+          environment: 'node',
+          exclude: [...SHARED_EXCLUDE],
+          include: [BUILD_SCRIPT_HELPERS_TEST_FILES],
+          name: 'unit-tests:build-scripts',
+          setupFiles: []
+        }
+      },
       {
         resolve: SHARED_RESOLVE,
         test: {

@@ -193,10 +193,14 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
     const usedRouteSegments = new Set<string>();
     const sorted = [...infos].sort((alpha, bravo) => alpha.name.localeCompare(bravo.name));
     for (const info of sorted) {
-      typeFileSegments.set(`${namespace}#${info.name}`, disambiguate(toRouteSegment(info.name), usedFileSegments));
+      typeFileSegments.set(`${namespace}#${info.name}`, disambiguate(toRouteSegment(info.name), usedFileSegments, (segment) => segment));
 
       const routeBase = toRouteSegmentPreserveCase(info.name);
-      const routeSegment = disambiguate(routeBase, usedRouteSegments);
+      // Disambiguate ROUTES case-INSENSITIVELY: the slug becomes Astro's on-disk output path, so
+      // `TypeAsserter` and `typeAsserter` (same name modulo case) would collide when the site is built
+      // On a case-insensitive filesystem (Windows/macOS), silently overwriting one page so every link
+      // To it 404s. Comparing lowercased keys forces the second occurrence to take a `-2` suffix.
+      const routeSegment = disambiguate(routeBase, usedRouteSegments, (segment) => segment.toLowerCase());
       typeRouteSegments.set(`${namespace}#${info.name}`, routeSegment);
       if (routeSegment !== routeBase) {
         console.warn(`Disambiguated ROUTE for "${namespace}#${info.name}": "${routeBase}" -> "${routeSegment}" (slug collision).`);
@@ -205,15 +209,15 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
     }
   }
 
-  function disambiguate(base: string, used: Set<string>): string {
+  function disambiguate(base: string, used: Set<string>, keyOf: (segment: string) => string): string {
     let segment = base;
     const FIRST_DISAMBIGUATION_SUFFIX = 2;
     let suffix = FIRST_DISAMBIGUATION_SUFFIX;
-    while (used.has(segment)) {
+    while (used.has(keyOf(segment))) {
       segment = `${base}-${String(suffix)}`;
       suffix++;
     }
-    used.add(segment);
+    used.add(keyOf(segment));
     return segment;
   }
 }
