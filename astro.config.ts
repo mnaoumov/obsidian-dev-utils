@@ -1,3 +1,4 @@
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `StarlightIntegration` is too verbose.
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 import {
@@ -11,17 +12,12 @@ import { remarkRelativeLinks } from './scripts/docs-gen/helpers/remark-plugins/r
 
 // The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/src`
 // (`srcDir`) so it never collides with the library's own `src/` and `dist/`. The API reference is
-// generated from the library's TSDoc by the custom generator (`scripts/docs-gen`, ts-morph) into
+// Generated from the library's TSDoc by the custom generator (`scripts/docs-gen`, ts-morph) into
 // `docs/src/content/docs/api`, with a matching `docs/src/generated-sidebar.json` consumed below.
 const BASE = '/obsidian-dev-utils';
 
 export default defineConfig({
   base: BASE,
-  outDir: './docs/dist',
-  publicDir: './docs/public',
-  site: 'https://mnaoumov.dev',
-  srcDir: './docs/src',
-  trailingSlash: 'always',
   integrations: [
     starlight({
       components: {
@@ -51,14 +47,20 @@ export default defineConfig({
   ],
   markdown: {
     remarkPlugins: [remarkRelativeLinks(BASE)]
-  }
+  },
+  outDir: './docs/dist',
+  publicDir: './docs/public',
+  site: 'https://mnaoumov.dev',
+  srcDir: './docs/src',
+  trailingSlash: 'always'
 });
 
-function getApiSidebar() {
+function getApiSidebar(): unknown[] {
   const sidebarPath = resolve(import.meta.dirname, 'docs/src/generated-sidebar.json');
   if (!existsSync(sidebarPath)) {
     console.warn('[astro.config] generated-sidebar.json not found. Run the generator first (npm run docs:build).');
     return [];
   }
-  return JSON.parse(readFileSync(sidebarPath, 'utf-8'));
+  const parsed: unknown = JSON.parse(readFileSync(sidebarPath, 'utf-8'));
+  return Array.isArray(parsed) ? parsed : [];
 }

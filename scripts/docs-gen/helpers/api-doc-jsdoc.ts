@@ -14,6 +14,7 @@ import type {
   MethodSignature,
   PropertyDeclaration,
   PropertySignature,
+  Scope,
   SourceFile,
   TypeAliasDeclaration
 } from 'ts-morph';
@@ -33,7 +34,7 @@ import {
 
 export function extractClassInfo(cls: ClassDeclaration, namespace: string): TypeInfo {
   const name = cls.getName() ?? 'Unknown';
-  const constructor = cls.getConstructors().find((c) => c.getScope() !== 'private');
+  const constructor = cls.getConstructors().find((c) => c.getScope() !== Scope.Private);
   return {
     baseTypes: cls.getExtends() ? [cls.getExtends()?.getText() ?? ''] : [],
     constructorInfo: constructor ? extractConstructorInfo(constructor) : undefined,
@@ -42,10 +43,10 @@ export function extractClassInfo(cls: ClassDeclaration, namespace: string): Type
     examples: getExamples(cls),
     implementsTypes: cls.getImplements().map((i) => i.getText()),
     kind: 'class',
-    methods: cls.getMethods().filter((m) => m.getScope() !== 'private').map((m) => extractMethodInfo(m)),
+    methods: cls.getMethods().filter((m) => m.getScope() !== Scope.Private).map((m) => extractMethodInfo(m)),
     name,
     namespace,
-    properties: cls.getProperties().filter((p) => p.getScope() !== 'private').map((p) => extractPropertyInfo(p)),
+    properties: cls.getProperties().filter((p) => p.getScope() !== Scope.Private).map((p) => extractPropertyInfo(p)),
     remarks: getRemarks(cls),
     typeParameters: cls.getTypeParameters().map((tp) => tp.getText())
   };

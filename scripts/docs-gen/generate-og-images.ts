@@ -35,7 +35,7 @@ interface PageEntry {
 const CONCURRENCY = 10;
 const PROGRESS_LOG_INTERVAL = 100;
 
-// gray-matter's default YAML engine calls js-yaml's `safeLoad`, which was removed in js-yaml v4
+// Gray-matter's default YAML engine calls js-yaml's `safeLoad`, which was removed in js-yaml v4
 // (the version installed here), so the default `matter(content)` throws. Supply v4's `load` explicitly.
 const GRAY_MATTER_OPTIONS = {
   engines: {
@@ -49,10 +49,6 @@ interface GenerateOptions {
   readonly logoDataUri: null | string;
   readonly manifest: CacheManifest;
   readonly outputDir: string;
-}
-
-function toPosixPath(filePath: string): string {
-  return filePath.replaceAll('\\', '/');
 }
 
 async function collectPages(contentDocsDir: string): Promise<PageEntry[]> {
@@ -111,7 +107,7 @@ async function loadCacheManifest(manifestPath: string): Promise<CacheManifest> {
 }
 
 async function main(): Promise<void> {
-  // scripts/docs-gen/generate-og-images.ts → repo root is three levels up.
+  // Scripts/docs-gen/generate-og-images.ts → repo root is three levels up.
   const scriptDir = dirname(toPosixPath(fileURLToPath(import.meta.url)));
   const repoRoot = dirname(dirname(scriptDir));
   const docsDir = `${repoRoot}/docs`;
@@ -188,7 +184,7 @@ async function parsePage(filePath: string, contentDocsDir: string): Promise<null
     | undefined;
   const badgeText = badge?.['text'];
 
-  const slug = filePathToSlug(filePath, contentDocsDir);
+  const slug = (data['slug'] as string | undefined) ?? filePathToSlug(filePath, contentDocsDir);
   const params: OgImageParams = {
     badge: badgeText,
     description,
@@ -201,6 +197,10 @@ async function parsePage(filePath: string, contentDocsDir: string): Promise<null
     params,
     slug
   };
+}
+
+function toPosixPath(filePath: string): string {
+  return filePath.replaceAll('\\', '/');
 }
 
 async function walkDir(dir: string, contentDocsDir: string, pages: PageEntry[]): Promise<void> {

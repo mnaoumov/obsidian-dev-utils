@@ -51,94 +51,6 @@ const typeRouteSegments = new Map<string, string>();
 const generatedMemberPages = new Set<string>();
 
 /**
- * Populate {@link memberPageExists}. Mirrors `generateMemberPages`'s own filtering exactly (one page
- * per non-inherited property, one per non-inherited method overload key). Must run once before any
- * link is rendered.
- */
-export function registerMemberPages(types: Map<string, TypeInfo>): void {
-  generatedMemberPages.clear();
-  for (const info of types.values()) {
-    for (const prop of info.properties) {
-      if (!prop.inheritedFrom) {
-        generatedMemberPages.add(`${info.namespace}#${info.name}#${memberRouteSegment(prop.name)}`);
-      }
-    }
-    const overloadKeys = new Set<string>();
-    for (const method of info.methods) {
-      if (!method.inheritedFrom) {
-        overloadKeys.add(method.overloadKey);
-      }
-    }
-    for (const overloadKey of overloadKeys) {
-      generatedMemberPages.add(`${info.namespace}#${info.name}#${overloadRouteSegment(overloadKey)}`);
-    }
-  }
-}
-
-/** Whether a member page will be generated for `routeSegment` on the given type. */
-export function memberPageExists(namespace: string, typeName: string, routeSegment: string): boolean {
-  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
-}
-
-/**
- * For every documented type assign BOTH:
- *  - a lowercased, numerically-disambiguated FILE segment (so `TypeAsserter` vs `typeAsserter`, which
- *    both lowercase to `typeasserter`, become `typeasserter` / `typeasserter-2` on disk and never
- *    collide on Windows' case-insensitive filesystem), and
- *  - a case-PRESERVED ROUTE segment (`TypeAsserter` / `typeAsserter`) used for the explicit `slug:`
- *    frontmatter and every internal link, so the URLs stay pretty and naturally distinct.
- * The route decouples from the file path via the `slug:` frontmatter, so no `-2` suffix leaks into
- * URLs. Also warns about member-slug collisions within a type. Must run once before any page/link.
- */
-export function registerRouteSegments(types: Map<string, TypeInfo>): void {
-  typeFileSegments.clear();
-  typeRouteSegments.clear();
-  const byNamespace = new Map<string, TypeInfo[]>();
-  for (const info of types.values()) {
-    const list = byNamespace.get(info.namespace) ?? [];
-    list.push(info);
-    byNamespace.set(info.namespace, list);
-  }
-  for (const [namespace, infos] of byNamespace) {
-    const usedFileSegments = new Set<string>();
-    const usedRouteSegments = new Set<string>();
-    const sorted = [...infos].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-    for (const info of sorted) {
-      typeFileSegments.set(`${namespace}#${info.name}`, disambiguate(toRouteSegment(info.name), usedFileSegments));
-
-      const routeBase = toRouteSegmentPreserveCase(info.name);
-      const routeSegment = disambiguate(routeBase, usedRouteSegments);
-      typeRouteSegments.set(`${namespace}#${info.name}`, routeSegment);
-      if (routeSegment !== routeBase) {
-        console.warn(`Disambiguated ROUTE for "${namespace}#${info.name}": "${routeBase}" -> "${routeSegment}" (slug collision).`);
-      }
-      warnMemberSlugCollisions(info, namespace);
-    }
-  }
-
-  function disambiguate(base: string, used: Set<string>): string {
-    let segment = base;
-    let suffix = 2;
-    while (used.has(segment)) {
-      segment = `${base}-${String(suffix)}`;
-      suffix++;
-    }
-    used.add(segment);
-    return segment;
-  }
-}
-
-/** Resolve the lowercased ON-DISK segment for a type (file path + component-import relative path). */
-export function toTypeFileSegment(namespace: string, name: string): string {
-  return typeFileSegments.get(`${namespace}#${name}`) ?? toRouteSegment(name);
-}
-
-/** Resolve the case-preserved URL/ROUTE segment for a type (slug frontmatter + internal links). */
-export function toTypeRouteSegment(namespace: string, name: string): string {
-  return typeRouteSegments.get(`${namespace}#${name}`) ?? toRouteSegmentPreserveCase(name);
-}
-
-/**
  * Resolve a bare type name to a documented `TypeInfo`.
  *
  * The model map is keyed by a qualified `${namespace}#${name}` identity, because obsidian-dev-utils
@@ -166,11 +78,6 @@ export function findType(allTypes: Map<string, TypeInfo>, name: string, currentN
     }
   }
   return matchCount === 1 ? found : undefined;
-}
-
-/** Absolute link to a type's overview page. */
-export function typeHref(info: TypeInfo): string {
-  return `${BASE_PATH}/api/${getNamespaceDir(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
 }
 
 /**
@@ -204,13 +111,13 @@ export function markdownToHtml(text: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, (_match: string, text: string, url: string) => {
+    .replace(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, (_match: string, linkText: string, url: string) => {
       if (/^(?:https?:\/\/|\/|#|mailto:)/.test(url)) {
-        return `<a href="${url}">${text}</a>`;
+        return `<a href="${url}">${linkText}</a>`;
       }
       // A relative URL here is an illustrative example path in TSDoc (e.g. `[foo](foo.png)`), not a
-      // real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
-      return `<code>[${text}](${url})</code>`;
+      // Real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
+      return `<code>[${linkText}](${url})</code>`;
     })
     .replace(/`(?<code>[^`]+)`/g, '<code>$<code></code>')
     .replace(/\n/g, '<br/>');
@@ -225,11 +132,123 @@ export function memberHref(memberSlugStr: string, inheritedFrom: string, allType
   const parentInfo = findType(allTypes, inheritedFrom, currentNamespace);
   if (!parentInfo || !memberPageExists(parentInfo.namespace, parentInfo.name, memberSlugStr)) {
     // The declaring parent has no generated page for this member (it inherited the member too, or is
-    // undocumented). Return no href so the caller renders plain text instead of a broken link.
+    // Undocumented). Return no href so the caller renders plain text instead of a broken link.
     return '';
   }
   const parentNsDir = getNamespaceDir(parentInfo.namespace);
   return `${BASE_PATH}/api/${parentNsDir}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugStr}/`;
+}
+
+/** Whether a member page will be generated for `routeSegment` on the given type. */
+export function memberPageExists(namespace: string, typeName: string, routeSegment: string): boolean {
+  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
+}
+
+/**
+ * Populate {@link memberPageExists}. Mirrors `generateMemberPages`'s own filtering exactly (one page
+ * per non-inherited property, one per non-inherited method overload key). Must run once before any
+ * link is rendered.
+ */
+export function registerMemberPages(types: Map<string, TypeInfo>): void {
+  generatedMemberPages.clear();
+  for (const info of types.values()) {
+    for (const prop of info.properties) {
+      if (!prop.inheritedFrom) {
+        generatedMemberPages.add(`${info.namespace}#${info.name}#${memberRouteSegment(prop.name)}`);
+      }
+    }
+    const overloadKeys = new Set<string>();
+    for (const method of info.methods) {
+      if (!method.inheritedFrom) {
+        overloadKeys.add(method.overloadKey);
+      }
+    }
+    for (const overloadKey of overloadKeys) {
+      generatedMemberPages.add(`${info.namespace}#${info.name}#${overloadRouteSegment(overloadKey)}`);
+    }
+  }
+}
+
+/**
+ * For every documented type assign BOTH:
+ *  - a lowercased, numerically-disambiguated FILE segment (so `TypeAsserter` vs `typeAsserter`, which
+ *    both lowercase to `typeasserter`, become `typeasserter` / `typeasserter-2` on disk and never
+ *    collide on Windows' case-insensitive filesystem), and
+ *  - a case-PRESERVED ROUTE segment (`TypeAsserter` / `typeAsserter`) used for the explicit `slug:`
+ *    frontmatter and every internal link, so the URLs stay pretty and naturally distinct.
+ * The route decouples from the file path via the `slug:` frontmatter, so no `-2` suffix leaks into
+ * URLs. Also warns about member-slug collisions within a type. Must run once before any page/link.
+ */
+export function registerRouteSegments(types: Map<string, TypeInfo>): void {
+  typeFileSegments.clear();
+  typeRouteSegments.clear();
+  const byNamespace = new Map<string, TypeInfo[]>();
+  for (const info of types.values()) {
+    const list = byNamespace.get(info.namespace) ?? [];
+    list.push(info);
+    byNamespace.set(info.namespace, list);
+  }
+  for (const [namespace, infos] of byNamespace) {
+    const usedFileSegments = new Set<string>();
+    const usedRouteSegments = new Set<string>();
+    const sorted = [...infos].sort((alpha, bravo) => alpha.name.localeCompare(bravo.name));
+    for (const info of sorted) {
+      typeFileSegments.set(`${namespace}#${info.name}`, disambiguate(toRouteSegment(info.name), usedFileSegments));
+
+      const routeBase = toRouteSegmentPreserveCase(info.name);
+      const routeSegment = disambiguate(routeBase, usedRouteSegments);
+      typeRouteSegments.set(`${namespace}#${info.name}`, routeSegment);
+      if (routeSegment !== routeBase) {
+        console.warn(`Disambiguated ROUTE for "${namespace}#${info.name}": "${routeBase}" -> "${routeSegment}" (slug collision).`);
+      }
+      warnMemberSlugCollisions(info, namespace);
+    }
+  }
+
+  function disambiguate(base: string, used: Set<string>): string {
+    let segment = base;
+    const FIRST_DISAMBIGUATION_SUFFIX = 2;
+    let suffix = FIRST_DISAMBIGUATION_SUFFIX;
+    while (used.has(segment)) {
+      segment = `${base}-${String(suffix)}`;
+      suffix++;
+    }
+    used.add(segment);
+    return segment;
+  }
+}
+
+/**
+ * Render an `@example` block as MDX. If the example already contains a fenced code block, it is
+ * normalized through {@link renderMdxProse} (code preserved raw, surrounding prose escaped);
+ * otherwise the raw example text is wrapped in a `ts` code fence so it is emitted literally.
+ */
+export function renderExampleMdx(example: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
+  if (/(?:^|\n)\s*(?:```|~~~)/.test(example)) {
+    return renderMdxProse(example, allTypes, selfNamespace);
+  }
+  return `\`\`\`ts\n${example}\n\`\`\``;
+}
+
+/**
+ * Render markdown block text (a description, remarks, or module overview) as MDX-safe markdown.
+ * Fenced code blocks are re-emitted verbatim (surrounded by blank lines, with a language); prose
+ * segments have their `{@link}` tags resolved and their MDX-unsafe characters escaped.
+ */
+export function renderMdxProse(text: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
+  const out: string[] = [];
+  for (const seg of segmentMarkdown(text)) {
+    if (seg.type === 'code') {
+      out.push('');
+      out.push(`\`\`\`${seg.lang ?? 'ts'}`);
+      out.push(seg.text);
+      out.push('```');
+      out.push('');
+    } else {
+      out.push(escapeMdxProse(resolveLinks(seg.text, allTypes, selfNamespace)));
+    }
+  }
+  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 /** Render a type string with clickable links for known types */
@@ -300,39 +319,6 @@ export function renderTypeWithLinks(typeText: string, allTypes: Map<string, Type
   );
 }
 
-/**
- * Render an `@example` block as MDX. If the example already contains a fenced code block, it is
- * normalized through {@link renderMdxProse} (code preserved raw, surrounding prose escaped);
- * otherwise the raw example text is wrapped in a `ts` code fence so it is emitted literally.
- */
-export function renderExampleMdx(example: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
-  if (/(?:^|\n)\s*(?:```|~~~)/.test(example)) {
-    return renderMdxProse(example, allTypes, selfNamespace);
-  }
-  return `\`\`\`ts\n${example}\n\`\`\``;
-}
-
-/**
- * Render markdown block text (a description, remarks, or module overview) as MDX-safe markdown.
- * Fenced code blocks are re-emitted verbatim (surrounded by blank lines, with a language); prose
- * segments have their `{@link}` tags resolved and their MDX-unsafe characters escaped.
- */
-export function renderMdxProse(text: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
-  const out: string[] = [];
-  for (const seg of segmentMarkdown(text)) {
-    if (seg.type === 'code') {
-      out.push('');
-      out.push(`\`\`\`${seg.lang || 'ts'}`);
-      out.push(seg.text);
-      out.push('```');
-      out.push('');
-    } else {
-      out.push(escapeMdxProse(resolveLinks(seg.text, allTypes, selfNamespace)));
-    }
-  }
-  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
-}
-
 /** Resolve {@link Name} and {@link Name | display text} tags in description text */
 export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
   return text.replace(/\{@link\s+(?<target>[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...args) => {
@@ -393,6 +379,21 @@ export function resolveWebApiUrl(name: string): string | undefined {
   return undefined;
 }
 
+/** Resolve the lowercased ON-DISK segment for a type (file path + component-import relative path). */
+export function toTypeFileSegment(namespace: string, name: string): string {
+  return typeFileSegments.get(`${namespace}#${name}`) ?? toRouteSegment(name);
+}
+
+/** Resolve the case-preserved URL/ROUTE segment for a type (slug frontmatter + internal links). */
+export function toTypeRouteSegment(namespace: string, name: string): string {
+  return typeRouteSegments.get(`${namespace}#${name}`) ?? toRouteSegmentPreserveCase(name);
+}
+
+/** Absolute link to a type's overview page. */
+export function typeHref(info: TypeInfo): string {
+  return `${BASE_PATH}/api/${getNamespaceDir(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
+}
+
 /** Create an absolute link to a type page */
 export function typeLink(typeName: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   const cleanName = typeName.replace(/<.*>$/, '').trim();
@@ -410,7 +411,7 @@ export function typeLink(typeName: string, allTypes: Map<string, TypeInfo>, curr
  */
 function warnMemberSlugCollisions(info: TypeInfo, namespace: string): void {
   const seen = new Map<string, string>();
-  const check = (slug: string, original: string): void => {
+  function check(slug: string, original: string): void {
     const normalized = original.replace(/\?$/, '');
     const existing = seen.get(slug);
     if (existing !== undefined && existing !== normalized) {
@@ -418,7 +419,7 @@ function warnMemberSlugCollisions(info: TypeInfo, namespace: string): void {
       return;
     }
     seen.set(slug, normalized);
-  };
+  }
   for (const prop of info.properties) {
     check(memberSlug(prop.name), prop.name);
   }

@@ -61,15 +61,26 @@ export function escapeYaml(text: string): string {
 const SIGNATURE_MAX_LENGTH = 160;
 
 /**
- * Normalize a code signature for the `signature:` frontmatter / OG card: collapse whitespace to
- * single spaces and truncate to a card-friendly length with an ellipsis.
+ * Escape MDX-unsafe characters (`<`, `{`, `}`) in prose text, while leaving inline code spans
+ * (`` `code` ``) and markdown links (`[text](url)`) untouched. MDX parses bare `<`/`{` in prose as
+ * JSX/expressions, so they must be backslash-escaped to render as literal text.
  */
-export function truncateSignature(signature: string): string {
-  const collapsed = signature.replace(/\s+/g, ' ').trim();
-  if (collapsed.length <= SIGNATURE_MAX_LENGTH) {
-    return collapsed;
+export function escapeMdxProse(text: string): string {
+  const protectedPattern = /`[^`]*`|\[[^\]]*\]\([^)]*\)/g;
+  let result = '';
+  let lastIndex = 0;
+  for (const match of text.matchAll(protectedPattern)) {
+    const index = match.index;
+    result += escapeMdxProseChars(text.slice(lastIndex, index));
+    result += match[0];
+    lastIndex = index + match[0].length;
   }
-  return `${collapsed.slice(0, SIGNATURE_MAX_LENGTH - 1).trimEnd()}…`;
+  result += escapeMdxProseChars(text.slice(lastIndex));
+  return result;
+
+  function escapeMdxProseChars(chunk: string): string {
+    return chunk.replace(/[<{}]/g, (char) => `\\${char}`);
+  }
 }
 
 /**
@@ -93,26 +104,65 @@ export function foldTsDocParagraphs(text: string): string {
 }
 
 /**
- * Escape MDX-unsafe characters (`<`, `{`, `}`) in prose text, while leaving inline code spans
- * (`` `code` ``) and markdown links (`[text](url)`) untouched. MDX parses bare `<`/`{` in prose as
- * JSX/expressions, so they must be backslash-escaped to render as literal text.
+ * Compute the relative import path from a generated page to the components directory.
+ *
+ * Page is at:       docs/src/content/docs/api/{nsDir}/{typeDir}/index.mdx
+ * Components are at: docs/src/components/api/
+ *
+ * So we walk up from content/docs/api/{nsDir}/{typeDir}/ to docs/src/, then into components/api.
  */
-export function escapeMdxProse(text: string): string {
-  const protectedPattern = /`[^`]*`|\[[^\]]*\]\([^)]*\)/g;
-  let result = '';
-  let lastIndex = 0;
-  for (const match of text.matchAll(protectedPattern)) {
-    const index = match.index;
-    result += escapeMdxProseChars(text.slice(lastIndex, index));
-    result += match[0];
-    lastIndex = index + match[0].length;
-  }
-  result += escapeMdxProseChars(text.slice(lastIndex));
-  return result;
+export function getComponentImportPath(nsDir: string, typeDir: string): string {
+  const segments = ['content', 'docs', 'api', ...nsDir.split('/'), ...typeDir.split('/')].filter(Boolean);
+  const ups = '../'.repeat(segments.length);
+  return `${ups}components/api`;
+}
 
-  function escapeMdxProseChars(chunk: string): string {
-    return chunk.replace(/[<{}]/g, (char) => `\\${char}`);
+export function getDisplayName(name: string, info: TypeInfo): string {
+  if (info.typeParameters.length === 0) {
+    return name;
   }
+  const bareParams = info.typeParameters.map((tp) => tp.replace(/\s+extends\s+.*$/, ''));
+  return `${name}<${bareParams.join(', ')}>`;
+}
+
+/**
+ * Emit the import statement for a documented export.
+ *
+ * The subpath equals the type's namespace (its source path relative to `src`), so
+ * `src/string.ts` → `obsidian-dev-utils/string`, `src/obsidian/modals/alert.ts` →
+ * `obsidian-dev-utils/obsidian/modals/alert`.
+ *
+ * Interfaces / type aliases / enums are imported with `import type`; classes / functions /
+ * variables with a value `import`.
+ */
+export function getImportStatement(info: TypeInfo): string | undefined {
+  const isTypeOnly = info.kind === 'interface' || info.kind === 'type' || info.kind === 'enum';
+  const importKeyword = isTypeOnly ? 'import type' : 'import';
+  return `${importKeyword} { ${info.name} } from 'obsidian-dev-utils/${info.namespace}';`;
+}
+
+export function getNamespaceDir(namespace: string): string {
+  return namespace;
+}
+
+/** Sanitize a member name for use in a case-PRESERVED URL/route segment (e.g. `showNotice`). */
+export function memberRouteSegment(name: string): string {
+  return slugifyMemberName(name);
+}
+
+/** Sanitize a member name for use as an on-disk FILENAME (lowercased, collision-safe). */
+export function memberSlug(name: string): string {
+  return toRouteSegment(slugifyMemberName(name));
+}
+
+/** Slugify an overload key for a case-PRESERVED URL/route segment: on("changed") -> on-changed. */
+export function overloadRouteSegment(overloadKey: string): string {
+  return slugifyOverloadKey(overloadKey);
+}
+
+/** Slugify an overload key for an on-disk FILENAME: on("changed") -> on-changed (lowercased). */
+export function overloadSlug(overloadKey: string): string {
+  return toRouteSegment(slugifyOverloadKey(overloadKey));
 }
 
 /**
@@ -161,46 +211,10 @@ export function segmentMarkdown(text: string): MarkdownSegment[] {
   }
 }
 
-/**
- * Compute the relative import path from a generated page to the components directory.
- *
- * Page is at:       docs/src/content/docs/api/{nsDir}/{typeDir}/index.mdx
- * Components are at: docs/src/components/api/
- *
- * So we walk up from content/docs/api/{nsDir}/{typeDir}/ to docs/src/, then into components/api.
- */
-export function getComponentImportPath(nsDir: string, typeDir: string): string {
-  const segments = ['content', 'docs', 'api', ...nsDir.split('/'), ...typeDir.split('/')].filter(Boolean);
-  const ups = '../'.repeat(segments.length);
-  return `${ups}components/api`;
-}
-
-export function getDisplayName(name: string, info: TypeInfo): string {
-  if (info.typeParameters.length === 0) {
-    return name;
-  }
-  const bareParams = info.typeParameters.map((tp) => tp.replace(/\s+extends\s+.*$/, ''));
-  return `${name}<${bareParams.join(', ')}>`;
-}
-
-/**
- * Emit the import statement for a documented export.
- *
- * The subpath equals the type's namespace (its source path relative to `src`), so
- * `src/string.ts` → `obsidian-dev-utils/string`, `src/obsidian/modals/alert.ts` →
- * `obsidian-dev-utils/obsidian/modals/alert`.
- *
- * Interfaces / type aliases / enums are imported with `import type`; classes / functions /
- * variables with a value `import`.
- */
-export function getImportStatement(info: TypeInfo): string | undefined {
-  const isTypeOnly = info.kind === 'interface' || info.kind === 'type' || info.kind === 'enum';
-  const importKeyword = isTypeOnly ? 'import type' : 'import';
-  return `${importKeyword} { ${info.name} } from 'obsidian-dev-utils/${info.namespace}';`;
-}
-
-export function getNamespaceDir(namespace: string): string {
-  return namespace;
+export function simplifyType(typeText: string): string {
+  return typeText
+    .replace(/import\("[^"]+"\)\./g, '')
+    .replace(/import\('[^']+'\)\./g, '');
 }
 
 /**
@@ -223,24 +237,16 @@ export function toRouteSegmentPreserveCase(segment: string): string {
   return cleaned || 'unnamed';
 }
 
-/** Sanitize a member name for use as an on-disk FILENAME (lowercased, collision-safe). */
-export function memberSlug(name: string): string {
-  return toRouteSegment(slugifyMemberName(name));
-}
-
-/** Sanitize a member name for use in a case-PRESERVED URL/route segment (e.g. `showNotice`). */
-export function memberRouteSegment(name: string): string {
-  return slugifyMemberName(name);
-}
-
-/** Slugify an overload key for an on-disk FILENAME: on("changed") -> on-changed (lowercased). */
-export function overloadSlug(overloadKey: string): string {
-  return toRouteSegment(slugifyOverloadKey(overloadKey));
-}
-
-/** Slugify an overload key for a case-PRESERVED URL/route segment: on("changed") -> on-changed. */
-export function overloadRouteSegment(overloadKey: string): string {
-  return slugifyOverloadKey(overloadKey);
+/**
+ * Normalize a code signature for the `signature:` frontmatter / OG card: collapse whitespace to
+ * single spaces and truncate to a card-friendly length with an ellipsis.
+ */
+export function truncateSignature(signature: string): string {
+  const collapsed = signature.replace(/\s+/g, ' ').trim();
+  if (collapsed.length <= SIGNATURE_MAX_LENGTH) {
+    return collapsed;
+  }
+  return `${collapsed.slice(0, SIGNATURE_MAX_LENGTH - 1).trimEnd()}…`;
 }
 
 function slugifyMemberName(name: string): string {
@@ -263,12 +269,6 @@ function slugifyOverloadKey(overloadKey: string): string {
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .trim()
     .replace(/\s+/g, '-');
-}
-
-export function simplifyType(typeText: string): string {
-  return typeText
-    .replace(/import\("[^"]+"\)\./g, '')
-    .replace(/import\('[^']+'\)\./g, '');
 }
 
 const OG_DESCRIPTION_MAX_LENGTH = 160;

@@ -73,10 +73,11 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
   carries `@packageDocumentation`/`@module`, so without this the repo's `@file` overviews would be
   dropped. TypeDoc entry points use `entryPointStrategy: 'expand'` over `./src` (one module per source
   file, matching the `./*` subpath exports), excluding tests/barrels/`__merged`/`@types`/`.d.ts`.
-- **Tooling scope:** the whole docs sub-project (`astro.config.ts` + `docs/**`) is excluded from this
-  repo's ESLint (`scripts/eslint-config.ts` global ignores) and markdownlint (`scripts/markdownlint-cli2-config.ts`
-  ignores) — it follows Starlight's own conventions and is validated by `astro build`. cspell excludes the
-  generated `docs/content/docs/api` and `docs/dist`/`.astro`. `linkinator.config.json` skips the
+- **Tooling scope:** ESLint validates `astro.config.ts`, `docs/src/**/*.ts`, `docs/**/*.astro`, and the
+  documentation generator under `scripts/docs-gen/`; `npm run lint` explicitly supplies the `.astro` glob
+  because ESLint does not discover that extension by default. Markdownlint excludes the whole docs sub-project
+  because Starlight's MDX follows its own conventions, while `astro build` validates the site. cspell excludes
+  the generated `docs/content/docs/api` and `docs/dist`/`.astro`. `linkinator.config.json` skips the
   `mnaoumov.dev/obsidian-dev-utils` links (the site is not reachable until the first Pages deploy).
 - `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`,
   which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages,

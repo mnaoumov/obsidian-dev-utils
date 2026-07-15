@@ -93,7 +93,7 @@ export function buildBacklinksFromContent(
 ): Map<string, string[]> {
   const backlinks = new Map<string, string[]>();
   // Emitted URLs lowercase the type segment (see toRouteSegment), so map each lowercased route
-  // identity back to its original qualified type key.
+  // Identity back to its original qualified type key.
   const routeKeyToTypeKey = new Map<string, string>();
   for (const [typeKey, info] of allTypes) {
     routeKeyToTypeKey.set(`${getNamespaceDir(info.namespace)}#${toTypeRouteSegment(info.namespace, info.name)}`, typeKey);
@@ -143,6 +143,25 @@ export function buildSidebarTree(types: Map<string, TypeInfo>): SidebarTreeNode 
     node.types.push(info);
   }
   return root;
+}
+
+/**
+ * The raw code signature shown on a type-overview page's OG card, for the kinds that render a single
+ * signature line (function / type alias / variable). Classes, interfaces and enums render member
+ * tables instead, so they get no signature block.
+ */
+export function computeOverviewSignature(name: string, info: TypeInfo): string | undefined {
+  if (info.kind === 'function') {
+    const fn = info.methods[0];
+    return fn ? `function ${fn.signature}: ${fn.returnType}` : undefined;
+  }
+  if (info.kind === 'type') {
+    return `type ${getDisplayName(info.name, info)} = ${info.typeAliasText ?? 'unknown'}`;
+  }
+  if (info.kind === 'variable') {
+    return `${info.variableKeyword ?? 'let'} ${name}: ${info.variableType ?? 'unknown'}`;
+  }
+  return undefined;
 }
 
 export async function generateMemberPages(name: string, info: TypeInfo, allTypes: Map<string, TypeInfo>): Promise<void> {
@@ -473,25 +492,6 @@ export function renderEnumPage(lines: string[], info: TypeInfo, allTypes: Map<st
   lines.push('');
 }
 
-/**
- * The raw code signature shown on a type-overview page's OG card, for the kinds that render a single
- * signature line (function / type alias / variable). Classes, interfaces and enums render member
- * tables instead, so they get no signature block.
- */
-export function computeOverviewSignature(name: string, info: TypeInfo): string | undefined {
-  if (info.kind === 'function') {
-    const fn = info.methods[0];
-    return fn ? `function ${fn.signature}: ${fn.returnType}` : undefined;
-  }
-  if (info.kind === 'type') {
-    return `type ${getDisplayName(info.name, info)} = ${info.typeAliasText ?? 'unknown'}`;
-  }
-  if (info.kind === 'variable') {
-    return `${info.variableKeyword ?? 'let'} ${name}: ${info.variableType ?? 'unknown'}`;
-  }
-  return undefined;
-}
-
 export function renderFunctionPage(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
   const fn = info.methods[0];
   if (!fn) {
@@ -655,7 +655,7 @@ export function sidebarTreeToEntries(node: SidebarTreeNode, label: string): Side
 
   // This module's own overview page + type/function pages (individual members are not listed).
   // Sidebar `link` fields must NOT embed BASE_PATH: Starlight prepends the config `base` to every
-  // sidebar link itself, so including it here would double the base (e.g. `/base/base/api/...` → 404).
+  // Sidebar link itself, so including it here would double the base (e.g. `/base/base/api/...` → 404).
   // This differs from in-content links, which are raw anchors that Starlight does not base-prepend.
   if (node.types.length > 0) {
     const namespace = node.types[0]?.namespace ?? '';

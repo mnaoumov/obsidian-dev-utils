@@ -154,6 +154,11 @@ export function computeCacheHash(entryFiles: string[]): string {
   return hash.digest('hex');
 }
 
+/** Compute the namespace (POSIX path relative to `src`, no extension) for a source file. */
+export function computeNamespace(srcDir: string, filePath: string): string {
+  return relative(srcDir, filePath).replace(/\\/g, '/').replace(/\.ts$/, '');
+}
+
 /**
  * Recursively find all documentable `*.ts` entry files under `src`.
  *
@@ -175,11 +180,6 @@ export function findEntryFiles(dir: string): string[] {
     }
   }
   return results;
-}
-
-/** Compute the namespace (POSIX path relative to `src`, no extension) for a source file. */
-export function computeNamespace(srcDir: string, filePath: string): string {
-  return relative(srcDir, filePath).replace(/\\/g, '/').replace(/\.ts$/, '');
 }
 
 export function processSourceFile(src: SourceFile, types: Map<string, TypeInfo>, namespace: string): void {
@@ -258,7 +258,7 @@ function isEntryFile(name: string): boolean {
     return false;
   }
   // Covers *.test.ts, *.browser.test.ts, *.integration.test.ts
-  if (/\.test\.ts$/.test(name)) {
+  if (name.endsWith('.test.ts')) {
     return false;
   }
   return true;

@@ -6,6 +6,8 @@
 
 import type { Linter } from 'eslint';
 
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
+import astro from 'eslint-plugin-astro';
 // eslint-disable-next-line import-x/no-rename-default, import-x/no-named-as-default -- The default export name `index` is too confusing.
 import jsdoc from 'eslint-plugin-jsdoc';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
@@ -23,6 +25,7 @@ import {
   EslintConfigContext
 } from '../src/script-utils/linters/eslint-config.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { getRootFolder } from '../src/script-utils/root.ts';
 
 function getAgnosticCoreBoundaryConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
@@ -46,6 +49,24 @@ function getAgnosticCoreBoundaryConfigs(context: EslintConfigContext): Linter.Co
   ]);
 }
 
+function getAstroConfigs(): Linter.Config[] {
+  // eslint-disable-next-line import-x/no-named-as-default-member -- `configs` is the plugin's configuration namespace.
+  return defineConfig(astro.configs.recommended);
+}
+
+function getAstroConfigTypeCheckingConfigs(): Linter.Config[] {
+  return defineConfig({
+    files: [ObsidianDevUtilsRepoPaths.AstroConfigTs],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.astro.json',
+        projectService: false,
+        tsconfigRootDir: getRootFolder() ?? ''
+      }
+    }
+  });
+}
+
 function getDependConfigs(): Linter.Config[] {
   return defineConfig({
     files: [ObsidianDevUtilsRepoPaths.PackageJson],
@@ -62,12 +83,7 @@ function getIgnoreConfigs(): Linter.Config[] {
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.MergedTs),
       ObsidianDevUtilsRepoPaths.DataviewTypes,
       join(ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyDts),
-      join(ObsidianDevUtilsRepoPaths.Templates, ObsidianDevUtilsRepoPaths.AnyPath),
-      // Self-contained Astro + Starlight documentation site: the root `astro.config.ts`, the `docs/` tree,
-      // `scripts/docs-gen` generator. `astro build` validates it, not this repo's ESLint.
-      ObsidianDevUtilsRepoPaths.AstroConfigTs,
-      join(ObsidianDevUtilsRepoPaths.Docs, ObsidianDevUtilsRepoPaths.AnyPath),
-      join(ObsidianDevUtilsRepoPaths.Scripts, 'docs-gen', ObsidianDevUtilsRepoPaths.AnyPath)
+      join(ObsidianDevUtilsRepoPaths.Templates, ObsidianDevUtilsRepoPaths.AnyPath)
     ])
   ]);
 }
@@ -238,6 +254,8 @@ export const configs: Linter.Config[] = defineEslintConfigs({
   customConfigs(context) {
     return defineConfig([
       ...getIgnoreConfigs(),
+      ...getAstroConfigs(),
+      ...getAstroConfigTypeCheckingConfigs(),
       ...getTsdocsConfigs(context),
       ...getJsdocsConfigs(context),
       ...getNoRestrictedSyntaxOverrideConfigs(),
@@ -248,10 +266,15 @@ export const configs: Linter.Config[] = defineEslintConfigs({
   },
 
   editContext(context) {
+    context.rootConfigFiles.push(ObsidianDevUtilsRepoPaths.AstroConfigTs);
+    context.sourceFiles.push(
+      join(ObsidianDevUtilsRepoPaths.Docs, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+    );
     context.testFiles.push(
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.TestHelpers, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
     );
     context.scriptFiles.push(
+      ObsidianDevUtilsRepoPaths.AstroConfigTs,
       join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.ScriptUtils, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
     );
   }

@@ -48,7 +48,10 @@ export interface OgImageParams {
   readonly title: string;
 }
 
-export function computeOgHash(params: OgImageParams): string {
+type ComputeOgHashParams = OgImageParams;
+type RenderOgImageOptions = OgImageParams;
+
+export function computeOgHash(params: ComputeOgHashParams): string {
   const input = JSON.stringify({
     badge: params.badge ?? '',
     description: params.description ?? '',
@@ -57,21 +60,6 @@ export function computeOgHash(params: OgImageParams): string {
   });
   const HASH_LENGTH = 16;
   return createHash('sha256').update(input).digest('hex').slice(0, HASH_LENGTH);
-}
-
-/**
- * Rasterize an SVG favicon to a PNG data URI via resvg for embedding in the satori layout (satori's
- * `<img>` needs a raster/data-URI source). Returns `null` when the file is missing so the caller can
- * render the card without a logo. Call this ONCE and reuse the result across all cards.
- */
-export async function loadLogoDataUri(faviconPath: string): Promise<null | string> {
-  if (!existsSync(faviconPath)) {
-    return null;
-  }
-  const svg = await readFile(faviconPath, 'utf-8');
-  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LOGO_RASTER_SIZE } });
-  const png = resvg.render().asPng();
-  return `data:image/png;base64,${png.toString('base64')}`;
 }
 
 /**
@@ -112,7 +100,22 @@ export async function loadFonts(fontsDir: string): Promise<Font[] | null> {
   return null;
 }
 
-export async function renderOgImage(params: OgImageParams, fonts: Font[], logoDataUri?: null | string): Promise<Buffer> {
+/**
+ * Rasterize an SVG favicon to a PNG data URI via resvg for embedding in the satori layout (satori's
+ * `<img>` needs a raster/data-URI source). Returns `null` when the file is missing so the caller can
+ * render the card without a logo. Call this ONCE and reuse the result across all cards.
+ */
+export async function loadLogoDataUri(faviconPath: string): Promise<null | string> {
+  if (!existsSync(faviconPath)) {
+    return null;
+  }
+  const svg = await readFile(faviconPath, 'utf-8');
+  const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: LOGO_RASTER_SIZE } });
+  const png = resvg.render().asPng();
+  return `data:image/png;base64,${png.toString('base64')}`;
+}
+
+export async function renderOgImage(params: RenderOgImageOptions, fonts: Font[], logoDataUri?: null | string): Promise<Buffer> {
   const markup = buildOgImageMarkup(params, logoDataUri ?? null);
   const svg = await satori(markup, {
     fonts,
@@ -157,28 +160,6 @@ function buildLogoMarkup(logoDataUri: string): Record<string, unknown> {
       width: LOGO_DISPLAY_SIZE
     },
     type: 'img'
-  };
-}
-
-function buildSignatureMarkup(signature: string): Record<string, unknown> {
-  return {
-    props: {
-      children: signature,
-      style: {
-        background: SIGNATURE_BG,
-        borderRadius: '12px',
-        color: ACCENT_COLOR,
-        display: '-webkit-box',
-        fontFamily: 'monospace',
-        fontSize: `${String(SIGNATURE_FONT_SIZE)}px`,
-        lineClamp: SIGNATURE_MAX_LINES,
-        lineHeight: SIGNATURE_LINE_HEIGHT,
-        marginBottom: '28px',
-        overflow: 'hidden',
-        padding: '16px 24px'
-      }
-    },
-    type: 'div'
   };
 }
 
@@ -294,6 +275,28 @@ function buildOgImageMarkup(params: OgImageParams, logoDataUri: null | string): 
         justifyContent: 'space-between',
         padding: `${String(PADDING_TOP)}px ${String(PADDING_X)}px ${String(PADDING_BOTTOM)}px ${String(PADDING_X)}px`,
         width: '100%'
+      }
+    },
+    type: 'div'
+  };
+}
+
+function buildSignatureMarkup(signature: string): Record<string, unknown> {
+  return {
+    props: {
+      children: signature,
+      style: {
+        background: SIGNATURE_BG,
+        borderRadius: '12px',
+        color: ACCENT_COLOR,
+        display: '-webkit-box',
+        fontFamily: 'monospace',
+        fontSize: `${String(SIGNATURE_FONT_SIZE)}px`,
+        lineClamp: SIGNATURE_MAX_LINES,
+        lineHeight: SIGNATURE_LINE_HEIGHT,
+        marginBottom: '28px',
+        overflow: 'hidden',
+        padding: '16px 24px'
       }
     },
     type: 'div'

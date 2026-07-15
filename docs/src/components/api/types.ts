@@ -1,4 +1,6 @@
 /**
+ * @file
+ *
  * Shared types for the API reference components.
  *
  * Unlike obsidian-typings, obsidian-dev-utils has no official/unofficial axis,
@@ -6,6 +8,7 @@
  * for cross-component API types.
  */
 
+/** A rendered API parameter. */
 export interface ParameterInfo {
   description: string;
   name: string;
