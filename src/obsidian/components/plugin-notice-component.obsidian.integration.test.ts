@@ -191,6 +191,75 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
     expect(result.isShownAfterConfirm).toBe(false);
     expect(result.onHideCallCount).toBe(1);
   });
+
+  it('should run an interactive button handler in the message without dismissing the notice', async () => {
+    const result = await evalInObsidian({
+      async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
+        const SETTLE_IN_MILLISECONDS = 250;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+
+        function findActionContentEl(): HTMLElement | null {
+          const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
+          return els.find((el) => el.textContent.includes('Action notice')) ?? null;
+        }
+
+        const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
+
+        // A consumer embeds an action button in the message fragment.
+        const message = createFragment();
+        message.appendText('Action notice');
+        const actionButtonEl = message.createEl('button', { attr: { 'data-action-button': 'true' }, text: 'Do it' });
+        let buttonClickCount = 0;
+        actionButtonEl.addEventListener('click', () => {
+          buttonClickCount += 1;
+        });
+
+        let onHideCallCount = 0;
+        const notice = component.showNotice(message, {
+          onHide: () => {
+            onHideCallCount += 1;
+          },
+          requiresCloseConfirmation: true
+        });
+
+        try {
+          await waitUntil({
+            message: 'the hard-to-close notice with the action button should render',
+            predicate: () => Boolean(findActionContentEl()?.querySelector('[data-action-button]')),
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+
+          const renderedButtonEl = findActionContentEl()?.querySelector<HTMLElement>('[data-action-button]') ?? null;
+          const hasButton = renderedButtonEl !== null;
+
+          // Clicking the action button must run its own handler AND leave the notice shown — the
+          // Capture-phase guard lets the click reach the button, and the content wrapper's bubble
+          // Guard then stops it from reaching Obsidian's dismiss handler.
+          renderedButtonEl?.click();
+          await sleep(SETTLE_IN_MILLISECONDS);
+          const isShownAfterButtonClick = findActionContentEl() !== null;
+
+          return {
+            buttonClickCount,
+            hasButton,
+            isShownAfterButtonClick,
+            onHideCallCount
+          };
+        } finally {
+          notice.hide();
+        }
+      }
+    });
+
+    expect(result.hasButton).toBe(true);
+
+    // The button's own handler ran exactly once...
+    expect(result.buttonClickCount).toBe(1);
+
+    // ...and its click did not dismiss the hard-to-close notice.
+    expect(result.isShownAfterButtonClick).toBe(true);
+    expect(result.onHideCallCount).toBe(0);
+  });
 });
 
 describe('PluginNoticeComponent.showNoticeAfterDelay', () => {

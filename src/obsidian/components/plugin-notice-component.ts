@@ -469,8 +469,9 @@ export class PluginNoticeComponent extends ComponentEx {
 
   /**
    * Makes a notice hard to close: marks its outer element (so the CSS neutralizes its padding) and
-   * installs a capture-phase click guard that stops every click except on the close button from
-   * reaching Obsidian's own dismiss handler.
+   * installs a capture-phase click guard that stops every click except on an interactive element (a
+   * button, link, the close button, etc.) from reaching Obsidian's own dismiss handler — so an
+   * interactive child's own handler still runs while a stray click cannot dismiss the notice.
    *
    * @param notice - The notice to guard.
    * @param requiresCloseConfirmation - Whether the notice requires close confirmation; when `false`,
@@ -483,10 +484,13 @@ export class PluginNoticeComponent extends ComponentEx {
     // The outer `.notice` element (`containerEl`) carries Obsidian's dismiss-on-click handler and the
     // Padding a stray click could land on; mark it so the stylesheet drops that padding.
     addPluginCssClasses(notice.containerEl, CssClass.PluginNoticeRequiresConfirmation);
-    // Stop every click on the notice — except on the close button — from reaching Obsidian's dismiss
-    // Handler. Registered in the capture phase on the outermost element so it always runs first.
+    // Stop every click on the notice — except on an interactive element — from reaching Obsidian's
+    // Dismiss handler. Registered in the capture phase on the outermost element so it always runs first.
+    // Letting a click reach an interactive child (a button, link, the close button, etc.) is what keeps
+    // Its own handler working; the bubble-phase guard on the content wrapper then stops that click from
+    // Bubbling up to Obsidian's dismiss handler, so the notice still stays open.
     notice.containerEl.addEventListener('click', (evt) => {
-      if (evt.target instanceof Element && evt.target.closest(`.${CssClass.PluginNoticeCloseButton}`)) {
+      if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
         return;
       }
       evt.stopPropagation();
