@@ -12,7 +12,7 @@ import type {
   StringKeys
 } from './type.ts';
 
-import { typeAsserter } from './type.ts';
+import { TypeAsserter } from './type.ts';
 
 describe('StringKeys', () => {
   it('should extract string keys from an object type', () => {
@@ -75,14 +75,14 @@ describe('ExactKeys', () => {
   });
 });
 
-describe('typeAsserter().assertAllKeys', () => {
+describe('new TypeAsserter().assertAllKeys', () => {
   it('should return frozen array of keys for a matching type', () => {
     interface TestType {
       a: number;
       b: string;
       c: boolean;
     }
-    const keys = typeAsserter<TestType>().assertAllKeys(['a', 'b', 'c']);
+    const keys = new TypeAsserter<TestType>().assertAllKeys(['a', 'b', 'c']);
     expect(keys).toEqual(['a', 'b', 'c']);
   });
 
@@ -91,7 +91,7 @@ describe('typeAsserter().assertAllKeys', () => {
       x: number;
       y: string;
     }
-    const keys = typeAsserter<TestType>().assertAllKeys(['x', 'y']);
+    const keys = new TypeAsserter<TestType>().assertAllKeys(['x', 'y']);
     expect(Object.isFrozen(keys)).toBe(true);
   });
 
@@ -101,7 +101,7 @@ describe('typeAsserter().assertAllKeys', () => {
       b: string;
       c: boolean;
     }
-    const keys = typeAsserter<TestType>().assertAllKeys(['c', 'a', 'b']);
+    const keys = new TypeAsserter<TestType>().assertAllKeys(['c', 'a', 'b']);
     expect(keys).toEqual(['c', 'a', 'b']);
   });
 
@@ -110,39 +110,54 @@ describe('typeAsserter().assertAllKeys', () => {
       a: number;
     }
     const original = ['a'] as const;
-    const keys = typeAsserter<TestType>().assertAllKeys(original);
+    const keys = new TypeAsserter<TestType>().assertAllKeys(original);
     expect(keys).not.toBe(original);
   });
 });
 
-describe('typeAsserter().assertAllMembers', () => {
+describe('new TypeAsserter().assertAllMembers', () => {
   it('should return frozen array of members for a matching union', () => {
     type TestUnion = 'a' | 'b' | 'c';
-    const members = typeAsserter<TestUnion>().assertAllMembers(['a', 'b', 'c']);
+    const members = new TypeAsserter<TestUnion>().assertAllMembers(['a', 'b', 'c']);
     expect(members).toEqual(['a', 'b', 'c']);
   });
 
   it('should return a frozen array', () => {
     type TestUnion = 1 | 2;
-    const members = typeAsserter<TestUnion>().assertAllMembers([1, 2]);
+    const members = new TypeAsserter<TestUnion>().assertAllMembers([1, 2]);
     expect(Object.isFrozen(members)).toBe(true);
   });
 
   it('should accept members in any order', () => {
     type TestUnion = 'x' | 'y' | 'z';
-    const members = typeAsserter<TestUnion>().assertAllMembers(['z', 'x', 'y']);
+    const members = new TypeAsserter<TestUnion>().assertAllMembers(['z', 'x', 'y']);
     expect(members).toEqual(['z', 'x', 'y']);
   });
 
   it('should handle numeric union members', () => {
     type NumericUnion = 1 | 2 | 3;
-    const members = typeAsserter<NumericUnion>().assertAllMembers([1, 2, 3]);
+    const members = new TypeAsserter<NumericUnion>().assertAllMembers([1, 2, 3]);
     expect(members).toEqual([1, 2, 3]);
   });
 
   it('should handle mixed string and number union members', () => {
     type MixedUnion = 'a' | 1;
-    const members = typeAsserter<MixedUnion>().assertAllMembers([1, 'a']);
+    const members = new TypeAsserter<MixedUnion>().assertAllMembers([1, 'a']);
     expect(members).toEqual([1, 'a']);
+  });
+});
+
+describe('TypeAsserter method availability', () => {
+  it('exposes assertAllKeys but disables assertAllMembers for an object type', () => {
+    interface ObjectShape {
+      a: 1;
+    }
+    expectTypeOf<TypeAsserter<ObjectShape>['assertAllKeys']>().not.toBeNever();
+    expectTypeOf<TypeAsserter<ObjectShape>['assertAllMembers']>().toBeNever();
+  });
+
+  it('exposes assertAllMembers but disables assertAllKeys for a literal-key union', () => {
+    expectTypeOf<TypeAsserter<'a' | 'b'>['assertAllMembers']>().not.toBeNever();
+    expectTypeOf<TypeAsserter<'a' | 'b'>['assertAllKeys']>().toBeNever();
   });
 });

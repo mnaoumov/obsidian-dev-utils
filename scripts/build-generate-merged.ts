@@ -32,6 +32,10 @@ import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import { generate } from '../src/script-utils/code-generator.ts';
 import { readdirPosix } from '../src/script-utils/fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import {
+  findExportNameCollisions,
+  formatExportNameCollisions
+} from './helpers/export-name-collisions.ts';
 
 const SKIP_DIRS = new Set<string>([
   ObsidianDevUtilsRepoPaths.ScriptUtils,
@@ -56,6 +60,20 @@ await wrapCliTask(async () => {
 
   await generateMerged(leafFiles);
 });
+
+function assertNoCaseInsensitiveExportCollisions(exportNamesByModule: Map<string, string[]>): void {
+  const nameCollisions = findExportNameCollisions(exportNamesByModule);
+  if (nameCollisions.length === 0) {
+    return;
+  }
+
+  throw new Error(
+    'The library exports names that collide case-insensitively within a module, which would overwrite '
+      + 'each other on the documentation site when it is built on a case-insensitive filesystem:\n'
+      + `${formatExportNameCollisions(nameCollisions)}\n`
+      + 'Rename one side so no two exports in a module differ only by case.'
+  );
+}
 
 async function collectLeafFiles(dir: string): Promise<string[]> {
   const out: string[] = [];
@@ -99,6 +117,7 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
   const checker = program.getTypeChecker();
 
   const valueExportsByModule = new Map<string, string[]>();
+  const exportNamesByModule = new Map<string, string[]>();
   const originByName = new Map<string, ExportOrigin>();
   const collisionMessages: string[] = [];
 
@@ -118,6 +137,13 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
       if (name === 'default') {
         continue;
       }
+
+      // Track EVERY export (types included) for the case-collision guard below — each documented
+      // Export becomes a filesystem directory on the docs site, so a case-only clash within a module
+      // Breaks the site on a case-insensitive filesystem even when only one side is a runtime value.
+      const moduleExportNames = exportNamesByModule.get(moduleSpecifier) ?? [];
+      moduleExportNames.push(name);
+      exportNamesByModule.set(moduleSpecifier, moduleExportNames);
 
       // Type-only re-exports (`export type { … }`) carry no runtime value, so they never belong in the flat
       // `lib` bag — `typeof import('…/__merged')` only sees value exports anyway.
@@ -148,6 +174,8 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
       valueExportsByModule.set(moduleSpecifier, names);
     }
   }
+
+  assertNoCaseInsensitiveExportCollisions(exportNamesByModule);
 
   if (collisionMessages.length > 0) {
     throw new Error(

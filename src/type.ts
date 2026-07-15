@@ -50,51 +50,6 @@ export type PropertyValues<T extends object> = T[StringKeys<T>];
  */
 export type StringKeys<T extends object> = Extract<keyof T, string>;
 
-/**
- * A helper that captures a type parameter and provides methods for compile-time exhaustiveness checks.
- *
- * @typeParam Type - The captured type.
- *
- * @remarks
- * - `assertAllKeys` is available when `Type` is an object type.
- * - `assertAllMembers` is available when `Type` is a literal key union (`string | number`).
- *
- * @example
- * ```ts
- * type A = { a: 1, b: 2, c: 3 };
- * typeAsserter<A>().assertAllKeys(['a', 'b', 'c']); // OK
- * typeAsserter<A>().assertAllKeys(['c', 'a', 'b']); // OK, order is ignored
- * typeAsserter<A>().assertAllKeys(['a', 'b', 'c', 'd']); // Error: Invalid members: d
- * typeAsserter<A>().assertAllKeys(['a', 'b']); // Error: Missing members: c
- *
- * type B = 1 | 2 | 3 | 'a';
- * typeAsserter<B>().assertAllMembers([1, 2, 3, 'a']); // OK
- * typeAsserter<B>().assertAllMembers([1, 2, 3, 'a', 4]); // Error: Invalid members: 4
- * typeAsserter<B>().assertAllMembers([1, 2, 3]); // Error: Missing members: a
- * ```
- */
-export interface TypeAsserter<Type> {
-  /**
-   * Asserts that all keys of an object type are present in a list of keys.
-   *
-   * @remarks Only available when `[Type] extends [object]`.
-   */
-  assertAllKeys: [Type] extends [object] ? <const Keys extends readonly string[]>(
-      keys: ExactMembers<StringKeys<Type>, Keys>
-    ) => readonly (keyof Type)[]
-    : never;
-
-  /**
-   * Asserts that all members of a union type are present in a list of members.
-   *
-   * @remarks Only available when `[Type] extends [LiteralKey]`.
-   */
-  assertAllMembers: [Type] extends [LiteralKey] ? <const Keys extends readonly LiteralKey[]>(
-      keys: ExactMembers<Type, Keys>
-    ) => readonly Type[]
-    : never;
-}
-
 type Duplicates<
   T extends readonly unknown[],
   Seen extends readonly unknown[] = [],
@@ -122,37 +77,82 @@ type TupleToCSV<Tuple extends readonly unknown[]> = Tuple extends readonly [infe
   : never
   : '';
 
+/**
+ * Internal method shapes for {@link TypeAsserter}: a conditional type disables each method when the
+ * captured type does not support it.
+ *
+ * @typeParam Type - The captured type.
+ */
+interface TypeAssertions<Type> {
+  assertAllKeys: [Type] extends [object] ? <const Keys extends readonly string[]>(
+      keys: ExactMembers<StringKeys<Type>, Keys>
+    ) => readonly (keyof Type)[]
+    : never;
+  assertAllMembers: [Type] extends [LiteralKey] ? <const Keys extends readonly LiteralKey[]>(
+      keys: ExactMembers<Type, Keys>
+    ) => readonly Type[]
+    : never;
+}
+
 type UnionToIntersection<Union> = (Union extends unknown ? (key: Union) => void : never) extends (key: infer Intersection) => void ? Intersection : never;
 
 type UnionToTuple<Union, Last = LastInUnion<Union>> = [Union] extends [never] ? [] : [...UnionToTuple<Exclude<Union, Last>>, Last];
 
 /**
- * Creates a type helper that captures a type parameter for compile-time exhaustiveness checks.
+ * A helper that captures a type parameter and provides methods for compile-time exhaustiveness checks.
  *
- * @typeParam Type - The type to capture.
- * @returns A {@link TypeAsserter} with `assertAllKeys` and `assertAllMembers` methods.
+ * @typeParam Type - The captured type.
+ *
+ * @remarks
+ * - `assertAllKeys` is available when `Type` is an object type.
+ * - `assertAllMembers` is available when `Type` is a literal key union (`string | number`).
  *
  * @example
  * ```ts
  * type A = { a: 1, b: 2, c: 3 };
- * typeAsserter<A>().assertAllKeys(['a', 'b', 'c']); // OK
- * typeAsserter<A>().assertAllKeys(['c', 'a', 'b']); // OK, order is ignored
+ * new TypeAsserter<A>().assertAllKeys(['a', 'b', 'c']); // OK
+ * new TypeAsserter<A>().assertAllKeys(['c', 'a', 'b']); // OK, order is ignored
+ * new TypeAsserter<A>().assertAllKeys(['a', 'b', 'c', 'd']); // Error: Invalid members: d
+ * new TypeAsserter<A>().assertAllKeys(['a', 'b']); // Error: Missing members: c
  *
  * type B = 1 | 2 | 3 | 'a';
- * typeAsserter<B>().assertAllMembers([1, 2, 3, 'a']); // OK
+ * new TypeAsserter<B>().assertAllMembers([1, 2, 3, 'a']); // OK
+ * new TypeAsserter<B>().assertAllMembers([1, 2, 3, 'a', 4]); // Error: Invalid members: 4
+ * new TypeAsserter<B>().assertAllMembers([1, 2, 3]); // Error: Missing members: a
  * ```
  */
-export function typeAsserter<Type>(): TypeAsserter<Type> {
-  return castTo<TypeAsserter<Type>>({
-    assertAllKeys<const Keys extends readonly string[]>(
-      keys: ExactMembers<StringKeys<object & Type>, Keys>
-    ): readonly (keyof (object & Type))[] {
-      return Object.freeze(keys.slice() as (keyof (object & Type))[]);
-    },
-    assertAllMembers<const Keys extends readonly LiteralKey[]>(
-      keys: ExactMembers<LiteralKey & Type, Keys>
-    ): readonly (LiteralKey & Type)[] {
-      return Object.freeze(keys.slice() as (LiteralKey & Type)[]);
-    }
-  });
+export class TypeAsserter<Type> {
+  /**
+   * Asserts that all keys of an object type are present in a list of keys.
+   *
+   * @remarks Only available when `[Type] extends [object]`.
+   */
+  public readonly assertAllKeys: TypeAssertions<Type>['assertAllKeys'];
+
+  /**
+   * Asserts that all members of a union type are present in a list of members.
+   *
+   * @remarks Only available when `[Type] extends [LiteralKey]`.
+   */
+  public readonly assertAllMembers: TypeAssertions<Type>['assertAllMembers'];
+
+  /**
+   * Creates a type asserter that captures {@link Type} for compile-time exhaustiveness checks.
+   */
+  public constructor() {
+    const assertions = castTo<TypeAssertions<Type>>({
+      assertAllKeys<const Keys extends readonly string[]>(
+        keys: ExactMembers<StringKeys<object & Type>, Keys>
+      ): readonly (keyof (object & Type))[] {
+        return Object.freeze(keys.slice() as (keyof (object & Type))[]);
+      },
+      assertAllMembers<const Keys extends readonly LiteralKey[]>(
+        keys: ExactMembers<LiteralKey & Type, Keys>
+      ): readonly (LiteralKey & Type)[] {
+        return Object.freeze(keys.slice() as (LiteralKey & Type)[]);
+      }
+    });
+    this.assertAllKeys = assertions.assertAllKeys;
+    this.assertAllMembers = assertions.assertAllMembers;
+  }
 }
