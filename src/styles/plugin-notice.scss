@@ -16,23 +16,19 @@
       width: fit-content;
     }
 
-    // The close button reuses Obsidian's `clickable-icon` class for its look and hover.
-    // Only corner positioning and the round hover background are set here.
+    // The close button reuses Obsidian's `modal-header-button` + `clickable-icon` classes so it matches
+    // The native modal close button (box + hover); only its corner position is set here.
     .obsidian-dev-utils.plugin-notice-close-button {
-      border-radius: 50%;
-      height: var(--size-4-6);
-      padding: 0;
       position: absolute;
-      right: 0;
-      top: 0;
-      width: var(--size-4-6);
+      right: var(--size-4-3);
+      top: var(--size-4-3);
     }
   }
 
   // Move the notice's own padding onto the content wrapper so the wrapper covers the whole clickable
   // Area — otherwise a click landing on the notice's bare padding (outside the wrapper) would bypass the
   // Stop-propagation guard and dismiss the hard-to-close notice.
-  &.plugin-notice-requires-confirmation.notice {
+  &.plugin-notice-requires-explicit-close.notice {
     padding: 0;
 
     .obsidian-dev-utils.plugin-notice-content {

@@ -22,7 +22,6 @@ import { ensureNonNullable } from '../../type-guards.ts';
 import { resolveValue } from '../../value-provider.ts';
 import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
-import { confirm } from '../modals/confirm.ts';
 import { addPluginCssClasses } from '../plugin/plugin-context.ts';
 import { ComponentEx } from './component-ex.ts';
 import { MonkeyAroundComponent } from './monkey-around-component.ts';
@@ -34,6 +33,17 @@ const DEFAULT_DELAY_BEFORE_SHOW_IN_MILLISECONDS = 500;
 // Elements a user clicks to act on them rather than to dismiss the notice. A click landing on (or
 // Inside) one of these is kept from bubbling to the notice, so the notice stays open.
 const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, select, textarea, label, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="tab"], [role="menuitem"]';
+
+/**
+ * The event passed to {@link PluginNoticeComponentShowNoticeOptions.onCloseClick} when the notice's
+ * close (X) button is clicked.
+ */
+export interface PluginNoticeCloseClickEvent {
+  /**
+   * Cancels the close, leaving the notice open.
+   */
+  cancel(): void;
+}
 
 /**
  * A handle to a delayed notice created by {@link PluginNoticeComponent.showNoticeAfterDelay}. It is a
@@ -113,25 +123,72 @@ export interface PluginNoticeComponentShowNoticeOptions {
   readonly isReusable?: boolean;
 
   /**
-   * A callback invoked when the notice is hidden — whether by the user closing it, by a later reusable
-   * notice replacing it, by its duration elapsing, or on component unload. It runs at most once per
-   * notice. An async callback is run fire-and-forget (its rejection surfaces through the async-error
-   * pipeline).
+   * A callback invoked when the user clicks the close (X) button, before the notice is hidden. Call
+   * {@link PluginNoticeCloseClickEvent.cancel} on the event to cancel the close and keep the notice
+   * open — for example after your own confirmation declines. An async callback is awaited before the
+   * notice is hidden. Runs only when a close button is shown (both
+   * {@link PluginNoticeComponentShowNoticeOptions.shouldHideOnClick} `= false` and
+   * {@link PluginNoticeComponentShowNoticeOptions.shouldShowCloseButton} are set).
    */
-  onHide?(this: void): Promisable<void>;
+  onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
 
   /**
-   * Whether the notice is hard to close: it does not dismiss on any stray click, and instead shows a
-   * close (X) button whose click opens a confirmation modal, dismissing the notice only if confirmed.
-   *
-   * A hard-to-close notice is shown with an infinite duration and is standalone (implies
-   * {@link PluginNoticeComponentShowNoticeOptions.isReusable} `= false`), so a later notice never
-   * silently replaces it; passing `isReusable: true` together with `requiresCloseConfirmation: true`
-   * throws.
-   *
-   * @default `false`
+   * A callback invoked when the notice is hidden — whether by the user closing it, by a later reusable
+   * notice replacing it, by its duration elapsing, or on component unload. It runs at most once per
+   * notice. The {@link PluginNoticeHideInfo} argument distinguishes a user close (the close button) from
+   * a programmatic hide. An async callback is run fire-and-forget (its rejection surfaces through the
+   * async-error pipeline).
    */
-  readonly requiresCloseConfirmation?: boolean;
+  onHide?(this: void, info: PluginNoticeHideInfo): Promisable<void>;
+
+  /**
+   * Whether clicking the notice hides it. When `true` (the default), the notice dismisses on click like
+   * a normal Obsidian notice. When `false`, the notice is hard to close: it does not dismiss on any stray
+   * click, and instead shows a close (X) button that hides it directly (see
+   * {@link PluginNoticeComponentShowNoticeOptions.shouldShowCloseButton} and
+   * {@link PluginNoticeComponentShowNoticeOptions.onCloseClick}).
+   *
+   * A `shouldHideOnClick: false` notice is shown with an infinite duration and is standalone (implies
+   * {@link PluginNoticeComponentShowNoticeOptions.isReusable} `= false`), so a later notice never
+   * silently replaces it; passing `isReusable: true` together with `shouldHideOnClick: false` throws.
+   *
+   * @default `true`
+   */
+  readonly shouldHideOnClick?: boolean;
+
+  /**
+   * Whether the close (X) button is shown on a hard-to-close notice
+   * ({@link PluginNoticeComponentShowNoticeOptions.shouldHideOnClick} `= false`). When `false`, no close
+   * button is rendered and the notice can only be hidden programmatically. Ignored unless
+   * `shouldHideOnClick` is `false`.
+   *
+   * @default `true`
+   */
+  readonly shouldShowCloseButton?: boolean;
+}
+
+/**
+ * Describes why a notice was hidden, passed to {@link PluginNoticeComponentShowNoticeOptions.onHide}.
+ */
+export interface PluginNoticeHideInfo {
+  /**
+   * Whether the notice was hidden by the user clicking its close (X) button specifically. Always implies
+   * {@link PluginNoticeHideInfo.isUserAction}.
+   */
+  readonly isCloseButtonClicked: boolean;
+
+  /**
+   * Whether the notice was hidden by a user action — clicking the close (X) button, or clicking a
+   * dismissible notice to dismiss it — as opposed to programmatically (a later reusable notice replacing
+   * it, an explicit `hide()`, the duration elapsing, or component unload).
+   */
+  readonly isUserAction: boolean;
+}
+
+interface PluginNoticeComponentAppendCloseButtonParams {
+  readonly contentEl: HTMLElement;
+  getNotice(this: void): Notice | null;
+  onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
 }
 
 interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
@@ -143,8 +200,8 @@ interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
 interface PluginNoticeComponentBuildNoticeContentParams {
   /**
    * Resolves the notice this content belongs to, used by the close button's handler. The notice does
-   * not exist yet when the content is built, so it is resolved lazily at click time. Required when
-   * {@link PluginNoticeComponentBuildNoticeContentParams.requiresCloseConfirmation} is `true`.
+   * not exist yet when the content is built, so it is resolved lazily at click time. Required when a
+   * close button is shown.
    */
   getNotice?(this: void): Notice | null;
 
@@ -154,12 +211,25 @@ interface PluginNoticeComponentBuildNoticeContentParams {
   readonly message: DocumentFragment | string;
 
   /**
-   * Whether the notice is hard to close: stops every click from dismissing it and adds a close button
-   * guarded by a confirmation modal.
+   * Invoked when the close button is clicked; may cancel the close. See
+   * {@link PluginNoticeComponentShowNoticeOptions.onCloseClick}.
+   */
+  onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
+
+  /**
+   * Whether the notice is hard to close: stops every click from dismissing it and, unless suppressed by
+   * {@link PluginNoticeComponentBuildNoticeContentParams.shouldShowCloseButton}, adds a close button.
    *
    * @default `false`
    */
-  readonly requiresCloseConfirmation?: boolean;
+  readonly requiresExplicitClose?: boolean;
+
+  /**
+   * Whether to render the close button when {@link PluginNoticeComponentBuildNoticeContentParams.requiresExplicitClose}.
+   *
+   * @default `true`
+   */
+  readonly shouldShowCloseButton?: boolean;
 }
 
 interface PluginNoticeComponentConstructorParams {
@@ -171,9 +241,11 @@ interface PluginNoticeComponentShowNoticeWithDurationParams {
   readonly durationInMilliseconds: null | number;
   readonly isReusable: boolean;
   readonly message: DocumentFragment | string;
-  readonly onHide: (() => Promisable<void>) | undefined;
-  readonly requiresCloseConfirmation: boolean;
+  readonly onCloseClick: ((this: void, event: PluginNoticeCloseClickEvent) => Promisable<void>) | undefined;
+  readonly onHide: ((this: void, info: PluginNoticeHideInfo) => Promisable<void>) | undefined;
+  readonly requiresExplicitClose: boolean;
   readonly shouldRegisterAsPermanent: boolean;
+  readonly shouldShowCloseButton: boolean;
 }
 
 /**
@@ -190,9 +262,11 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   protected readonly pluginName: string;
 
+  private readonly closeButtonClickedNotices = new WeakSet<Notice>();
   private notice: Notice | null = null;
   private readonly pendingTimerCancellations = new Set<() => void>();
   private readonly standaloneNotices = new Set<Notice>();
+  private readonly userClickedNotices = new WeakSet<Notice>();
 
   /**
    * Creates a new plugin notice component.
@@ -241,24 +315,27 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   public showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
     const isPermanent = options?.isPermanent ?? false;
-    const requiresCloseConfirmation = options?.requiresCloseConfirmation ?? false;
-    const isReusable = options?.isReusable ?? !requiresCloseConfirmation;
+    const shouldHideOnClick = options?.shouldHideOnClick ?? true;
+    const requiresExplicitClose = !shouldHideOnClick;
+    const isReusable = options?.isReusable ?? !requiresExplicitClose;
 
-    if (options?.isReusable === true && requiresCloseConfirmation) {
-      throw new Error('A notice that requires close confirmation cannot be reusable.');
+    if (options?.isReusable === true && requiresExplicitClose) {
+      throw new Error('A notice that does not hide on click cannot be reusable.');
     }
     if (options?.isReusable === false && isPermanent) {
       throw new Error('A permanent notice must be reusable.');
     }
 
-    const durationInMilliseconds = isPermanent || requiresCloseConfirmation ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
+    const durationInMilliseconds = isPermanent || requiresExplicitClose ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
     return this.showNoticeWithDuration({
       durationInMilliseconds,
       isReusable,
       message,
+      onCloseClick: options?.onCloseClick,
       onHide: options?.onHide,
-      requiresCloseConfirmation,
-      shouldRegisterAsPermanent: isPermanent
+      requiresExplicitClose,
+      shouldRegisterAsPermanent: isPermanent,
+      shouldShowCloseButton: options?.shouldShowCloseButton ?? true
     });
   }
 
@@ -313,9 +390,11 @@ export class PluginNoticeComponent extends ComponentEx {
           durationInMilliseconds: PERMANENT_NOTICE_DURATION_IN_MILLISECONDS,
           isReusable: true,
           message: buildDelayedMessage(resolvedContent),
+          onCloseClick: undefined,
           onHide: undefined,
-          requiresCloseConfirmation: false,
-          shouldRegisterAsPermanent: false
+          requiresExplicitClose: false,
+          shouldRegisterAsPermanent: false,
+          shouldShowCloseButton: true
         });
       });
     }, params.delayInMilliseconds ?? DEFAULT_DELAY_BEFORE_SHOW_IN_MILLISECONDS);
@@ -340,31 +419,38 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   /**
-   * Appends a close (X) button to the notice content. Clicking it opens a confirmation modal and, only
-   * if confirmed, hides the notice and drops it from the standalone-notice tracking set.
+   * Appends a close (X) button to the notice content. Clicking it fires
+   * {@link PluginNoticeComponentAppendCloseButtonParams.onCloseClick} (which may cancel the close); if
+   * not cancelled, it hides the notice and drops it from the standalone-notice tracking set. The hide is
+   * marked as a close-button click so {@link PluginNoticeComponentShowNoticeOptions.onHide} can
+   * distinguish it.
    *
-   * @param contentEl - The notice content wrapper to append the button to.
-   * @param getNotice - Resolves the notice to hide when the close is confirmed.
+   * @param params - The parameters.
    */
-  private appendCloseButton(contentEl: HTMLElement, getNotice: () => Notice | null): void {
+  private appendCloseButton(params: PluginNoticeComponentAppendCloseButtonParams): void {
+    const { contentEl, getNotice, onCloseClick } = params;
     const closeButtonEl = contentEl.createEl('button', {
       attr: { 'aria-label': t(($) => $.obsidianDevUtils.notices.closeAriaLabel) }
     });
+    // Reuse Obsidian's modal close-button classes so this button matches the native modal close button
+    // (look and hover); the stylesheet only positions it in the notice corner.
     addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
-    // Reuse Obsidian's own icon-button class for the hover background and icon-color treatment.
-    closeButtonEl.addClass(CssClass.ClickableIcon);
+    closeButtonEl.addClasses([CssClass.ClickableIcon, CssClass.ModalHeaderButton]);
     setIcon(closeButtonEl, 'x');
     closeButtonEl.addEventListener('click', (evt) => {
       evt.stopPropagation();
       invokeAsyncSafely(async () => {
-        const isConfirmed = await confirm({
-          app: this.app,
-          message: t(($) => $.obsidianDevUtils.notices.closeConfirmMessage)
+        let isCancelled = false;
+        await onCloseClick?.({
+          cancel: (): void => {
+            isCancelled = true;
+          }
         });
-        if (!isConfirmed) {
+        if (isCancelled) {
           return;
         }
         const notice = ensureNonNullable(getNotice());
+        this.closeButtonClickedNotices.add(notice);
         notice.hide();
         this.standaloneNotices.delete(notice);
       });
@@ -414,15 +500,14 @@ export class PluginNoticeComponent extends ComponentEx {
    * @returns A {@link DocumentFragment} holding the wrapped, prefixed notice content.
    */
   private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): DocumentFragment {
-    const { getNotice, message, requiresCloseConfirmation = false } = params;
+    const { getNotice, message, onCloseClick, requiresExplicitClose = false, shouldShowCloseButton = true } = params;
     const fragment = createFragment();
     const contentEl = fragment.createDiv();
     addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
     contentEl.appendChild(this.buildPrefixedMessage(message));
     contentEl.addEventListener('click', (evt) => {
-      // A hard-to-close notice must not dismiss on any stray click; only its close button (via the
-      // Confirmation modal) may dismiss it.
-      if (requiresCloseConfirmation) {
+      // A hard-to-close notice must not dismiss on any stray click; only its close button may hide it.
+      if (requiresExplicitClose) {
         evt.stopPropagation();
         return;
       }
@@ -431,8 +516,12 @@ export class PluginNoticeComponent extends ComponentEx {
       }
     });
 
-    if (requiresCloseConfirmation) {
-      this.appendCloseButton(contentEl, ensureNonNullable(getNotice));
+    if (requiresExplicitClose && shouldShowCloseButton) {
+      this.appendCloseButton(normalizeOptionalProperties<PluginNoticeComponentAppendCloseButtonParams>({
+        contentEl,
+        getNotice: ensureNonNullable(getNotice),
+        onCloseClick
+      }));
     }
     return fragment;
   }
@@ -476,16 +565,16 @@ export class PluginNoticeComponent extends ComponentEx {
    * interactive child's own handler still runs while a stray click cannot dismiss the notice.
    *
    * @param notice - The notice to guard.
-   * @param requiresCloseConfirmation - Whether the notice requires close confirmation; when `false`,
-   * nothing is installed.
+   * @param requiresExplicitClose - Whether the notice requires explicit close; when `false`, nothing is
+   * installed.
    */
-  private installCloseConfirmationGuards(notice: Notice, requiresCloseConfirmation: boolean): void {
-    if (!requiresCloseConfirmation) {
+  private installExplicitCloseGuards(notice: Notice, requiresExplicitClose: boolean): void {
+    if (!requiresExplicitClose) {
       return;
     }
     // The outer `.notice` element (`containerEl`) carries Obsidian's dismiss-on-click handler and the
     // Padding a stray click could land on; mark it so the stylesheet drops that padding.
-    addPluginCssClasses(notice.containerEl, CssClass.PluginNoticeRequiresConfirmation);
+    addPluginCssClasses(notice.containerEl, CssClass.PluginNoticeRequiresExplicitClose);
     // Stop every click on the notice — except on an interactive element — from reaching Obsidian's
     // Dismiss handler. Registered in the capture phase on the outermost element so it always runs first.
     // Letting a click reach an interactive child (a button, link, the close button, etc.) is what keeps
@@ -496,6 +585,27 @@ export class PluginNoticeComponent extends ComponentEx {
         return;
       }
       evt.stopPropagation();
+    }, { capture: true });
+  }
+
+  /**
+   * Tracks a click on the notice so {@link PluginNoticeComponentShowNoticeOptions.onHide} can report a
+   * user dismissal. Obsidian hides a dismissible notice synchronously during the click, so a
+   * capture-phase listener marks the notice before that hide runs; the mark is cleared after the event
+   * so a later programmatic hide is not misattributed. A close-button click is tracked separately (see
+   * {@link PluginNoticeComponent.appendCloseButton}).
+   *
+   * @param notice - The notice to track.
+   */
+  private installUserClickTracking(notice: Notice): void {
+    notice.containerEl.addEventListener('click', () => {
+      // Obsidian dismisses a dismissible notice synchronously during this click, so mark it now (before
+      // That hide runs) and clear it on the next microtask — after any synchronous dismiss, but before a
+      // Later programmatic hide, so that hide is not misattributed as a user action.
+      this.userClickedNotices.add(notice);
+      queueMicrotask(() => {
+        this.userClickedNotices.delete(notice);
+      });
     }, { capture: true });
   }
 
@@ -517,24 +627,28 @@ export class PluginNoticeComponent extends ComponentEx {
    * @returns The created notice.
    */
   private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): Notice {
-    const { durationInMilliseconds, isReusable, message, onHide, requiresCloseConfirmation, shouldRegisterAsPermanent } = params;
+    const { durationInMilliseconds, isReusable, message, onCloseClick, onHide, requiresExplicitClose, shouldRegisterAsPermanent, shouldShowCloseButton } = params;
     // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
     // Duration" value to `undefined`.
     const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
 
-    // The close button's confirm handler needs the `Notice`, which does not exist until it is built from
+    const hasCloseButton = requiresExplicitClose && shouldShowCloseButton;
+    // The close button's click handler needs the `Notice`, which does not exist until it is built from
     // This content; capture it lazily via a holder resolved at click time. The getter is created only
-    // For a hard-to-close notice — the only kind that has a close button.
+    // When a close button is shown.
     let builtNotice: Notice | null = null;
     const content = this.buildNoticeContent(normalizeOptionalProperties<PluginNoticeComponentBuildNoticeContentParams>({
-      getNotice: requiresCloseConfirmation ? (): Notice | null => builtNotice : undefined,
+      getNotice: hasCloseButton ? (): Notice | null => builtNotice : undefined,
       message,
-      requiresCloseConfirmation
+      onCloseClick,
+      requiresExplicitClose,
+      shouldShowCloseButton
     }));
 
     if (!isReusable) {
       builtNotice = new Notice(content, noticeDurationInMilliseconds);
-      this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+      this.installExplicitCloseGuards(builtNotice, requiresExplicitClose);
+      this.installUserClickTracking(builtNotice);
       this.wireOnHide(builtNotice, onHide);
       this.standaloneNotices.add(builtNotice);
       return builtNotice;
@@ -543,7 +657,8 @@ export class PluginNoticeComponent extends ComponentEx {
     this.notice?.hide();
     builtNotice = new Notice(content, noticeDurationInMilliseconds);
     this.notice = builtNotice;
-    this.installCloseConfirmationGuards(builtNotice, requiresCloseConfirmation);
+    this.installExplicitCloseGuards(builtNotice, requiresExplicitClose);
+    this.installUserClickTracking(builtNotice);
     this.wireOnHide(builtNotice, onHide);
 
     if (shouldRegisterAsPermanent) {
@@ -562,13 +677,15 @@ export class PluginNoticeComponent extends ComponentEx {
    * @param notice - The notice whose `hide` to wrap.
    * @param onHide - The callback to invoke on the first hide, or `undefined` to skip wrapping.
    */
-  private wireOnHide(notice: Notice, onHide: (() => Promisable<void>) | undefined): void {
+  private wireOnHide(notice: Notice, onHide: ((this: void, info: PluginNoticeHideInfo) => Promisable<void>) | undefined): void {
     if (!onHide) {
       return;
     }
     // Run `onHide` the first time the notice is hidden. A `once` patch on `hide` intercepts exactly one
     // Call then uninstalls itself (unloading this dedicated component), so there is no manual
-    // Single-fire bookkeeping and no lingering patch on the transient notice.
+    // Single-fire bookkeeping and no lingering patch on the transient notice. The user-close flags were
+    // Set before `hide()` was invoked (see `appendCloseButton` / `installUserClickTracking`), so they
+    // Still hold when read here after `fallback()`.
     const patchComponent = new MonkeyAroundComponent();
     patchComponent.load();
     patchComponent.registerMethodPatch({
@@ -577,8 +694,10 @@ export class PluginNoticeComponent extends ComponentEx {
       once: true,
       patchHandler: ({ fallback }) => {
         fallback();
+        const isCloseButtonClicked = this.closeButtonClickedNotices.has(notice);
+        const isUserAction = isCloseButtonClicked || this.userClickedNotices.has(notice);
         invokeAsyncSafely(async () => {
-          await onHide();
+          await onHide({ isCloseButtonClicked, isUserAction });
         });
       }
     });

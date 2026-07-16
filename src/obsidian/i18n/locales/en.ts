@@ -34,7 +34,6 @@ export const en = {
     notices: {
       attachmentIsStillUsed: 'Attachment {{attachmentPath}} is still used by other notes. It will not be deleted.',
       closeAriaLabel: 'Close',
-      closeConfirmMessage: 'Are you sure you want to close the notice?',
       unhandledError: 'An unhandled error occurred. Please check the console for more information.'
     },
     queue: {

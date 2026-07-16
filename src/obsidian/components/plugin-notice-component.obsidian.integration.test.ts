@@ -75,7 +75,7 @@ describe('PluginNoticeComponent styling', () => {
 });
 
 describe('PluginNoticeComponent hard-to-close notice', () => {
-  it('should not dismiss on stray clicks and close only after confirming', async () => {
+  it('should not dismiss on stray clicks and close directly via the close button', async () => {
     const result = await evalInObsidian({
       async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
         const SETTLE_IN_MILLISECONDS = 250;
@@ -88,11 +88,15 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         let onHideCallCount = 0;
+        let onHideIsUserAction = false;
+        let onHideIsCloseButtonClicked = false;
         const notice = component.showNotice('Locked action', {
-          onHide: () => {
+          onHide: (info) => {
+            onHideIsUserAction = info.isUserAction;
+            onHideIsCloseButtonClicked = info.isCloseButtonClicked;
             onHideCallCount += 1;
           },
-          requiresCloseConfirmation: true
+          shouldHideOnClick: false
         });
 
         try {
@@ -106,7 +110,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           const { containerEl, messageEl } = notice;
           const closeButtonEl = contentEl?.querySelector<HTMLElement>('.obsidian-dev-utils.plugin-notice-close-button') ?? null;
           const hasCloseButton = closeButtonEl !== null;
-          const hasRequiresConfirmationClass = containerEl.classList.contains('plugin-notice-requires-confirmation');
+          const hasRequiresExplicitCloseClass = containerEl.classList.contains('plugin-notice-requires-explicit-close');
 
           // A stray click on the notice body must NOT dismiss it.
           contentEl?.click();
@@ -133,40 +137,30 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           const isShownAfterOtherNotice = findLockedContentEl() !== null;
           ordinaryNotice.hide();
 
-          // Clicking the close button opens the confirmation modal.
+          // Clicking the close button hides the notice directly — no confirmation modal.
           closeButtonEl?.click();
           await waitUntil({
-            message: 'the confirmation modal should open',
-            predicate: () => activeDocument.querySelector('.obsidian-dev-utils.confirm-modal') !== null,
-            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-          });
-          const modalEl = activeDocument.querySelector('.obsidian-dev-utils.confirm-modal');
-          const modalMessage = modalEl?.querySelector('p')?.textContent ?? '';
-          const okButtonEl = modalEl?.querySelector<HTMLElement>('.ok-button') ?? null;
-          const hasOkButton = okButtonEl !== null;
-
-          // Confirming (OK) dismisses the notice.
-          okButtonEl?.click();
-          await waitUntil({
-            message: 'the notice should be gone after confirming',
+            message: 'the notice should be gone after clicking the close button',
             predicate: () => findLockedContentEl() === null,
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
-          const isShownAfterConfirm = findLockedContentEl() !== null;
+          const isShownAfterClose = findLockedContentEl() !== null;
+          const hasConfirmModal = activeDocument.querySelector('.obsidian-dev-utils.confirm-modal') !== null;
           // Let the fire-and-forget onHide callback settle after the notice was hidden.
           await sleep(SETTLE_IN_MILLISECONDS);
 
           return {
             hasCloseButton,
-            hasOkButton,
-            hasRequiresConfirmationClass,
+            hasConfirmModal,
+            hasRequiresExplicitCloseClass,
             isShownAfterBodyClick,
-            isShownAfterConfirm,
+            isShownAfterClose,
             isShownAfterMessageClick,
             isShownAfterOtherNotice,
             isShownAfterPaddingClick,
-            modalMessage,
-            onHideCallCount
+            onHideCallCount,
+            onHideIsCloseButtonClicked,
+            onHideIsUserAction
           };
         } finally {
           notice.hide();
@@ -175,7 +169,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
     });
 
     expect(result.hasCloseButton).toBe(true);
-    expect(result.hasRequiresConfirmationClass).toBe(true);
+    expect(result.hasRequiresExplicitCloseClass).toBe(true);
 
     // Stray clicks (body, inner message, corner) and a following ordinary notice all leave it shown.
     expect(result.isShownAfterBodyClick).toBe(true);
@@ -183,13 +177,14 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
     expect(result.isShownAfterPaddingClick).toBe(true);
     expect(result.isShownAfterOtherNotice).toBe(true);
 
-    // The confirmation modal carries the documented message and an OK button.
-    expect(result.hasOkButton).toBe(true);
-    expect(result.modalMessage).toBe('Are you sure you want to close the notice?');
+    // Clicking the close button hides it directly, with no confirmation modal...
+    expect(result.hasConfirmModal).toBe(false);
+    expect(result.isShownAfterClose).toBe(false);
 
-    // Confirming closes the notice, and the onHide callback fires exactly once.
-    expect(result.isShownAfterConfirm).toBe(false);
+    // ...and onHide fires exactly once, reporting a close-button user action.
     expect(result.onHideCallCount).toBe(1);
+    expect(result.onHideIsUserAction).toBe(true);
+    expect(result.onHideIsCloseButtonClicked).toBe(true);
   });
 
   it('should run an interactive button handler in the message without dismissing the notice', async () => {
@@ -219,7 +214,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           onHide: () => {
             onHideCallCount += 1;
           },
-          requiresCloseConfirmation: true
+          shouldHideOnClick: false
         });
 
         try {

@@ -105,6 +105,12 @@ export enum CssClass {
   MinimizedModalBarTitle = 'minimized-modal-bar-title',
 
   /**
+   * Obsidian's class for a modal header button (e.g. the modal close button), reused to match the
+   * native modal close button's box and hover.
+   */
+  ModalHeaderButton = 'modal-header-button',
+
+  /**
    * A CSS class for the month component.
    */
   MonthComponent = 'month-component',
@@ -166,10 +172,10 @@ export enum CssClass {
   PluginNoticeName = 'plugin-notice-name',
 
   /**
-   * A CSS class applied to the notice element of a notice that requires close confirmation, used to
-   * make its whole area non-dismissible.
+   * A CSS class applied to the notice element of a notice that requires an explicit close, used to make
+   * its whole area non-dismissible.
    */
-  PluginNoticeRequiresConfirmation = 'plugin-notice-requires-confirmation',
+  PluginNoticeRequiresExplicitClose = 'plugin-notice-requires-explicit-close',
 
   /**
    * A CSS class for the plugin settings tab.
