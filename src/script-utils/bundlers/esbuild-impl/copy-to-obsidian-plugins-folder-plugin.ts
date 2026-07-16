@@ -173,6 +173,13 @@ async function getOrLaunchDevInstance(vaultPath: string): Promise<ObsidianTransp
  * runs against the owned instance over CDP; any failure surfaces (the dev build reports it) rather than
  * being silently swallowed.
  *
+ * The install-if-missing / enable-if-disabled logic below intentionally mirrors the public
+ * `installCommunityPlugin` / `enableCommunityPlugin` helpers in `src/obsidian/community-plugins.ts`. It
+ * cannot import and call them: the `fn` is serialized (`toString()`) and executed in the renderer, and
+ * this build-owned Obsidian instance is bare — it has no dev-utils `lib` provider wired (that resolver is
+ * registered only in the integration-test setup, whose fixture publishes the merged surface on `window`),
+ * so the closure has no access to the library surface and must inline the equivalent steps.
+ *
  * @param params - The {@link InstallAndEnableHotReloadParams}.
  * @returns A {@link Promise} that resolves once HotReload and the built plugin are installed and enabled.
  */

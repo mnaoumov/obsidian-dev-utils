@@ -29,7 +29,10 @@ import { requestUrl } from 'obsidian';
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import { join } from '../path.ts';
-import { getCommunityPluginRepo } from './community-plugins.ts';
+import {
+  getCommunityPluginRepo,
+  getLatestReleaseVersion
+} from './community-plugins.ts';
 import { selectOption } from './modals/select-option.ts';
 
 /**
@@ -59,13 +62,6 @@ interface DownloadAndExtractDemoVaultParams {
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly repo: string;
   readonly version: string;
-}
-
-interface GitHubRelease {
-  /**
-   * The release tag, a bare version such as `1.2.3`.
-   */
-  readonly tag_name: string;
 }
 
 const DEMO_VAULTS_CACHE_FOLDER = 'obsidian-demo-vaults';
@@ -167,10 +163,4 @@ async function downloadAndExtractDemoVault(params: DownloadAndExtractDemoVaultPa
   const zip = new AdmZip(Buffer.from(response.arrayBuffer));
   zip.extractAllTo(cacheDir, true);
   return true;
-}
-
-async function getLatestReleaseVersion(repo: string): Promise<string> {
-  const response = await requestUrl(`https://api.github.com/repos/${repo}/releases/latest`);
-  const release = response.json as GitHubRelease;
-  return release.tag_name;
 }
