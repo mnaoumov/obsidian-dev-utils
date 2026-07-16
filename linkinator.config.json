@@ -1,0 +1,5 @@
+{
+  "skip": [
+    "localhost:[0-9]+/obsidian-dev-utils/(guides|api)/"
+  ]
+}
