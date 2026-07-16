@@ -19,6 +19,7 @@ import {
   getCommunityPluginRepo,
   getLatestReleaseVersion,
   installCommunityPlugin,
+  searchCommunityPlugins,
   toggleEnableCommunityPlugin,
   toggleInstallCommunityPlugin,
   uninstallCommunityPlugin
@@ -254,5 +255,68 @@ describe('toggleEnableCommunityPlugin', () => {
     const { app, disablePluginAndSave } = createApp({ enabledIds: ['plugin-a'] });
     await toggleEnableCommunityPlugin({ app, isEnabled: false, pluginId: 'plugin-a' });
     expect(disablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+  });
+});
+
+describe('selecting a plugin by name', () => {
+  it('should install by pluginName', async () => {
+    mockRegistryAndReleases();
+    const { app, installPlugin } = createApp();
+    await installCommunityPlugin({ app, pluginName: 'Plugin A' });
+    expect(installPlugin).toHaveBeenCalledWith('owner-a/plugin-a', LATEST_VERSION, MANIFEST);
+  });
+
+  it('should enable by pluginName', async () => {
+    const { app, enablePluginAndSave } = createApp();
+    await enableCommunityPlugin({ app, pluginName: 'Plugin A' });
+    expect(enablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+  });
+
+  it('should uninstall by pluginName', async () => {
+    const { app, uninstallPlugin } = createApp({ installedIds: ['plugin-a'] });
+    await uninstallCommunityPlugin({ app, pluginName: 'Plugin A' });
+    expect(uninstallPlugin).toHaveBeenCalledWith('plugin-a');
+  });
+
+  it('should toggle-install by pluginName', async () => {
+    mockRegistryAndReleases();
+    const { app, installPlugin } = createApp();
+    await toggleInstallCommunityPlugin({ app, isInstalled: true, pluginName: 'Plugin A' });
+    expect(installPlugin).toHaveBeenCalledWith('owner-a/plugin-a', LATEST_VERSION, MANIFEST);
+  });
+
+  it('should throw when the pluginName is not in the registry', async () => {
+    const { app } = createApp();
+    await expect(enableCommunityPlugin({ app, pluginName: 'No Such Plugin' }))
+      .rejects.toThrow('Plugin named \'No Such Plugin\' was not found in the Obsidian community plugins registry.');
+  });
+});
+
+describe('searchCommunityPlugins', () => {
+  it('should match by id', async () => {
+    expect(await searchCommunityPlugins('plugin-a')).toStrictEqual([{ id: 'plugin-a', name: 'Plugin A' }]);
+  });
+
+  it('should match by name', async () => {
+    expect(await searchCommunityPlugins('Plugin B')).toStrictEqual([{ id: 'plugin-b', name: 'Plugin B' }]);
+  });
+
+  it('should match by author case-insensitively', async () => {
+    expect(await searchCommunityPlugins('author a')).toStrictEqual([{ id: 'plugin-a', name: 'Plugin A' }]);
+  });
+
+  it('should match by description', async () => {
+    expect(await searchCommunityPlugins('Description B')).toStrictEqual([{ id: 'plugin-b', name: 'Plugin B' }]);
+  });
+
+  it('should return an empty list when nothing matches', async () => {
+    expect(await searchCommunityPlugins('no-such-plugin')).toStrictEqual([]);
+  });
+
+  it('should return every plugin for an empty query', async () => {
+    expect(await searchCommunityPlugins('')).toStrictEqual([
+      { id: 'plugin-a', name: 'Plugin A' },
+      { id: 'plugin-b', name: 'Plugin B' }
+    ]);
   });
 });
