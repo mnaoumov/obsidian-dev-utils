@@ -1,5 +1,23 @@
 # CHANGELOG
 
+## 86.2.0
+
+- fix: remove unreachable abstract definite-assignment lint rule
+- chore: lint
+- fix: build
+- chore: update libs
+- feat: install community plugin
+- refactor: CommandHandlerComponent
+- fix(dev): install/enable HotReload via the owned Obsidian instance
+- fix(notices): let interactive buttons on a hard-to-close notice receive clicks
+- fix: dynamic import
+- chore: fix pre-existing repo-gate failures
+- build: pin the dev Node version to 26 and make CI follow .nvmrc
+- feat(docs): validate built-site links and expand generator test coverage
+- refactor(type)!: replace the typeAsserter() factory with a TypeAsserter class
+- chore: lint docs
+- fix(docs): restore cached API sidebar
+
 ## 86.1.3
 
 - fix(ci): dispatch Pages deployment with repository
