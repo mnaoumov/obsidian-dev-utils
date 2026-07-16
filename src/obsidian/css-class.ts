@@ -24,6 +24,11 @@ export enum CssClass {
   CheckboxComponent = 'checkbox-component',
 
   /**
+   * Obsidian's class for a clickable icon button, giving it the hover background and icon-color treatment.
+   */
+  ClickableIcon = 'clickable-icon',
+
+  /**
    * Obsidian's class for an inline code element (used by `appendCodeBlock`).
    */
   Code = 'code',

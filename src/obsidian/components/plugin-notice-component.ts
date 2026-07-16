@@ -351,6 +351,8 @@ export class PluginNoticeComponent extends ComponentEx {
       attr: { 'aria-label': t(($) => $.obsidianDevUtils.notices.closeAriaLabel) }
     });
     addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
+    // Reuse Obsidian's own icon-button class for the hover background and icon-color treatment.
+    closeButtonEl.addClass(CssClass.ClickableIcon);
     setIcon(closeButtonEl, 'x');
     closeButtonEl.addEventListener('click', (evt) => {
       evt.stopPropagation();

@@ -16,24 +16,16 @@
       width: fit-content;
     }
 
+    // The close button reuses Obsidian's `clickable-icon` class for its look and hover.
+    // Only corner positioning and the round hover background are set here.
     .obsidian-dev-utils.plugin-notice-close-button {
-      align-items: center;
-      background-color: transparent;
-      box-shadow: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: inline-flex;
-      height: var(--size-4-5);
-      justify-content: center;
+      border-radius: 50%;
+      height: var(--size-4-6);
       padding: 0;
       position: absolute;
       right: 0;
       top: 0;
-      width: var(--size-4-5);
-
-      &:hover {
-        color: var(--text-normal);
-      }
+      width: var(--size-4-6);
     }
   }
 
