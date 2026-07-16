@@ -32,10 +32,6 @@ export const noRestrictedSyntaxRuleEntries: readonly NoRestrictedSyntaxRuleEntry
     selector: 'PropertyDefinition[definite=true]'
   },
   {
-    message: 'Do not use definite assignment assertions (!) on abstract fields.',
-    selector: 'TSAbstractPropertyDefinition[definite=true]'
-  },
-  {
     message: 'Do not use anonymous inline object types. Define a named interface or `type` alias instead.',
     selector: 'TSTypeLiteral:not(TSTypeAliasDeclaration > TSTypeLiteral)'
   },

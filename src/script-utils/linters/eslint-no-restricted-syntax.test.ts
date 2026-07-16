@@ -86,18 +86,6 @@ describe('noRestrictedSyntaxRuleEntries', () => {
     });
   });
 
-  describe('TSAbstractPropertyDefinition[definite=true]', () => {
-    const MESSAGE = 'Do not use definite assignment assertions (!) on abstract fields.';
-
-    it('flags `!` on an abstract class field', () => {
-      expectFires('abstract class C { abstract foo!: string; }', MESSAGE);
-    });
-
-    it('allows abstract fields without `!`', () => {
-      expectDoesNotFire('abstract class C { abstract foo: string; }', MESSAGE);
-    });
-  });
-
   describe('TSTypeLiteral:not(TSTypeAliasDeclaration > TSTypeLiteral)', () => {
     const MESSAGE = 'Do not use anonymous inline object types. Define a named interface or `type` alias instead.';
 
