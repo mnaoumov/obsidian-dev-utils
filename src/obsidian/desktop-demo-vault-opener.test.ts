@@ -67,9 +67,13 @@ vi.mock('adm-zip', () => ({
   }
 }));
 
-vi.mock('./community-plugins.ts', () => ({
-  getCommunityPluginRepo: mockGetCommunityPluginRepo
-}));
+vi.mock('./community-plugins.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./community-plugins.ts')>();
+  return {
+    ...actual,
+    getCommunityPluginRepo: mockGetCommunityPluginRepo
+  };
+});
 
 vi.mock('./modals/select-option.ts', () => ({
   selectOption: mockSelectOption
