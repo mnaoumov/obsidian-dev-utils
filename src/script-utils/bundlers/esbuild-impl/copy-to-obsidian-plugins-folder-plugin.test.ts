@@ -21,15 +21,9 @@ interface EvalInObsidianCall {
   vaultPath: string;
 }
 
-vi.mock('node:fs', () => ({
-  existsSync: vi.fn().mockReturnValue(true)
-}));
-
 vi.mock('node:fs/promises', () => ({
   cp: vi.fn().mockResolvedValue(undefined),
-  mkdir: vi.fn().mockResolvedValue(undefined),
-  readFile: vi.fn().mockResolvedValue('[]'),
-  writeFile: vi.fn().mockResolvedValue(undefined)
+  mkdir: vi.fn().mockResolvedValue(undefined)
 }));
 
 const { mockEvalInObsidian, mockRegisterVault } = vi.hoisted(() => ({
@@ -74,8 +68,8 @@ describe('copyToObsidianPluginsFolderPlugin', () => {
       warnings: []
     });
 
-    expect(mockEvalInObsidian).toHaveBeenCalledTimes(2);
-    // The owned dev instance is launched once and reused across both enable calls.
+    expect(mockEvalInObsidian).toHaveBeenCalledTimes(1);
+    // The owned dev instance is launched once for the single install-and-enable round-trip.
     expect(mockRegisterVault).toHaveBeenCalledTimes(1);
     expect(mockRegisterVault).toHaveBeenCalledWith(EXPECTED_VAULT_ROOT);
 

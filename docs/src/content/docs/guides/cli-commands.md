@@ -67,7 +67,7 @@ each file name (e.g. `eslint.config.mts.template` is copied as `eslint.config.mt
 import { dev } from 'obsidian-dev-utils/script-utils/bundlers/esbuild/obsidian-plugin-builder';
 ```
 
-Compiles the development version of your plugin into the `dist/dev` folder. The `OBSIDIAN_CONFIG_FOLDER` can be set either as an environment variable or specified in a `.env` file (e.g., `path/to/my/vault/.obsidian`). The command automatically copies the compiled plugin to the specified Obsidian configuration folder and triggers the [Hot Reload] plugin, if it is enabled. If the [Hot Reload] plugin is not installed, it will be installed automatically, and you will need to enable it manually.
+Compiles the development version of your plugin into the `dist/dev` folder. The `OBSIDIAN_CONFIG_FOLDER` can be set either as an environment variable or specified in a `.env` file (e.g., `path/to/my/vault/.obsidian`). The command automatically copies the compiled plugin to the specified Obsidian configuration folder. It then launches a dedicated Obsidian instance and, through it, installs the [Hot Reload] plugin from the official community store if it is not already installed, enables it if it is disabled, and enables your plugin — so [Hot Reload] automatically refreshes your plugin on every rebuild.
 
 ### Format Code
 

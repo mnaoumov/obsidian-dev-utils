@@ -10,14 +10,12 @@
 /* v8 ignore start -- esbuild plugin that copies build output to Obsidian plugins folder; requires a live esbuild context. */
 
 import type { Plugin } from 'esbuild';
+import type { PluginManifest } from 'obsidian';
 import type { ObsidianTransport } from 'obsidian-integration-testing';
 
-import { existsSync } from 'node:fs';
 import {
   cp,
-  mkdir,
-  readFile,
-  writeFile
+  mkdir
 } from 'node:fs/promises';
 import process from 'node:process';
 import {
@@ -58,18 +56,43 @@ export interface CopyToObsidianPluginsFolderPluginParams {
 }
 
 /**
- * Parameters for {@link enableCommunityPlugin}.
+ * A single entry in Obsidian's community plugins registry (`community-plugins.json`).
  */
-interface EnableCommunityPluginParams {
+interface CommunityPluginRegistryEntry {
+  /**
+   * The plugin id.
+   */
+  readonly id: string;
+
+  /**
+   * The `owner/name` GitHub repository the plugin is published from.
+   */
+  readonly repo: string;
+}
+
+/**
+ * The subset of a GitHub release we read.
+ */
+interface GitHubRelease {
+  /**
+   * The release tag, a bare version such as `1.2.3`.
+   */
+  readonly tag_name: string;
+}
+
+/**
+ * Parameters for {@link installAndEnableHotReload}.
+ */
+interface InstallAndEnableHotReloadParams {
   /**
    * The folder of the Obsidian configuration.
    */
   readonly obsidianConfigFolder: string;
 
   /**
-   * The ID of the community plugin to enable.
+   * The name of the built Obsidian plugin to enable once HotReload is in place.
    */
-  readonly pluginId: string;
+  readonly pluginName: string;
 }
 
 // The `npm run dev`-owned Obsidian instance: launched on the first rebuild and reused across rebuilds.
@@ -111,78 +134,16 @@ export function copyToObsidianPluginsFolderPlugin(params: CopyToObsidianPluginsF
         obsidianConfigFolder = toPosixPath(obsidianConfigFolder);
 
         const pluginFolder = join(obsidianConfigFolder, 'plugins', pluginName);
-
-        if (!existsSync(pluginFolder)) {
-          await mkdir(pluginFolder, { recursive: true });
-        }
-
+        await mkdir(pluginFolder, { recursive: true });
         await cp(distFolder, pluginFolder, { recursive: true });
 
-        const hotReloadFolder = join(obsidianConfigFolder, 'plugins/hot-reload');
-        if (!existsSync(hotReloadFolder)) {
-          await mkdir(hotReloadFolder, { recursive: true });
-          const hotReloadRepoUrl = 'https://raw.githubusercontent.com/pjeby/hot-reload/master/';
-          for (const fileName of ['main.js', 'manifest.json']) {
-            const fileUrl = hotReloadRepoUrl + fileName;
-            // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
-            const response = await fetch(fileUrl);
-            const text = await response.text();
-            await writeFile(join(hotReloadFolder, fileName), text);
-          }
-        }
-
-        await enableCommunityPlugin({
+        await installAndEnableHotReload({
           obsidianConfigFolder,
-          pluginId: 'hot-reload'
-        });
-        await enableCommunityPlugin({
-          obsidianConfigFolder,
-          pluginId: pluginName
+          pluginName
         });
       });
     }
   };
-}
-
-/**
- * Enables a community plugin in the Obsidian configuration.
- *
- * @param params - The parameters for enabling the community plugin.
- * @returns A {@link Promise} that resolves when the plugin is enabled.
- */
-async function enableCommunityPlugin(params: EnableCommunityPluginParams): Promise<void> {
-  const { obsidianConfigFolder, pluginId } = params;
-  const communityPluginsPath = join(obsidianConfigFolder, 'community-plugins.json');
-  let plugins: string[] = [];
-  if (existsSync(communityPluginsPath)) {
-    const content = await readFile(communityPluginsPath, 'utf-8');
-    plugins = JSON.parse(content) as string[];
-  }
-
-  if (!plugins.includes(pluginId)) {
-    plugins.push(pluginId);
-    const JSON_INDENT = 2;
-    await writeFile(communityPluginsPath, JSON.stringify(plugins, null, JSON_INDENT), 'utf-8');
-  }
-
-  const vaultPath = dirname(obsidianConfigFolder);
-
-  // Live-enabling is best-effort: the plugin is already registered in `community-plugins.json`, so it is enabled on the next vault open even if this fails (and hot-reload picks up rebuilds meanwhile).
-  try {
-    const transport = await getOrLaunchDevInstance(vaultPath);
-    await evalInObsidian({
-      args: { pluginId },
-      // eslint-disable-next-line no-shadow -- No actual shadowing as the function is executed externally.
-      async fn({ app, pluginId }) {
-        await app.plugins.enablePluginAndSave(pluginId);
-      },
-      shouldSkipPreflightChecks: true,
-      transport,
-      vaultPath
-    });
-  } catch (e: unknown) {
-    getLibDebugger('copyToObsidianPluginsFolderPlugin')(`Failed to live-enable plugin '${pluginId}'. It will be enabled on the next vault open.`, e);
-  }
 }
 
 /**
@@ -201,6 +162,58 @@ async function getOrLaunchDevInstance(vaultPath: string): Promise<ObsidianTransp
     devInstanceTransportPromise = undefined;
     throw e;
   }
+}
+
+/**
+ * Installs the HotReload plugin from the official community store (if not already installed), enables it
+ * (if not already enabled), and enables the freshly-built plugin — all through the `npm run dev`-owned
+ * Obsidian instance, so HotReload then auto-refreshes the deployed plugin on every rebuild.
+ *
+ * The install goes through Obsidian's own `installPlugin` (the community-store mechanism), and every step
+ * runs against the owned instance over CDP; any failure surfaces (the dev build reports it) rather than
+ * being silently swallowed.
+ *
+ * @param params - The {@link InstallAndEnableHotReloadParams}.
+ * @returns A {@link Promise} that resolves once HotReload and the built plugin are installed and enabled.
+ */
+async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams): Promise<void> {
+  const {
+    obsidianConfigFolder,
+    pluginName
+  } = params;
+  const vaultPath = dirname(obsidianConfigFolder);
+  const transport = await getOrLaunchDevInstance(vaultPath);
+  await evalInObsidian({
+    args: { pluginName },
+    // eslint-disable-next-line no-shadow -- No actual shadowing as the function is executed externally.
+    async fn({ app, obsidianModule, pluginName }) {
+      const HOT_RELOAD_PLUGIN_ID = 'hot-reload';
+      const COMMUNITY_PLUGINS_REGISTRY_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json';
+      const { requestUrl } = obsidianModule;
+
+      if (!app.plugins.manifests[HOT_RELOAD_PLUGIN_ID]) {
+        const registryEntries = (await requestUrl(COMMUNITY_PLUGINS_REGISTRY_URL)).json as CommunityPluginRegistryEntry[];
+        const entry = registryEntries.find((candidate) => candidate.id === HOT_RELOAD_PLUGIN_ID);
+        if (!entry) {
+          throw new Error(`Plugin '${HOT_RELOAD_PLUGIN_ID}' was not found in the Obsidian community plugins registry.`);
+        }
+
+        const latestRelease = (await requestUrl(`https://api.github.com/repos/${entry.repo}/releases/latest`)).json as GitHubRelease;
+        const version = latestRelease.tag_name;
+        const manifest = (await requestUrl(`https://github.com/${entry.repo}/releases/download/${version}/manifest.json`)).json as PluginManifest;
+        await app.plugins.installPlugin(entry.repo, version, manifest);
+      }
+
+      if (!app.plugins.enabledPlugins.has(HOT_RELOAD_PLUGIN_ID)) {
+        await app.plugins.enablePluginAndSave(HOT_RELOAD_PLUGIN_ID);
+      }
+
+      await app.plugins.enablePluginAndSave(pluginName);
+    },
+    shouldSkipPreflightChecks: true,
+    transport,
+    vaultPath
+  });
 }
 
 /**
