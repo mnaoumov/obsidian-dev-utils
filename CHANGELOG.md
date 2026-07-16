@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 87.0.0
+
+- feat!: rework hard-to-close notice close API
+- fix: style the notice close button as a round clickable-icon
+
 ## 86.2.0
 
 - fix: remove unreachable abstract definite-assignment lint rule
