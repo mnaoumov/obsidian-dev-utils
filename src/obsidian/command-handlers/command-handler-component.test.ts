@@ -13,18 +13,63 @@ import {
   vi
 } from 'vitest';
 
+import type { DisposableEx } from '../../disposable.ts';
 import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type { CommandRegistrar } from '../command-registrar.ts';
-import type { MenuEventRegistrar } from '../menu-event-registrar.ts';
+import type {
+  FileMenuEventHandler,
+  MenuEventRegistrar
+} from '../menu-event-registrar.ts';
 import type {
   CommandHandlerConstructorParams,
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
 import { waitForAllAsyncOperations } from '../../async.ts';
+import { CallbackDisposable } from '../../disposable.ts';
 import { strictProxy } from '../../strict-proxy.ts';
+import { assertNonNullable } from '../../type-guards.ts';
 import { CommandHandlerComponent } from './command-handler-component.ts';
 import { CommandHandler } from './command-handler.ts';
+
+interface TrackedMenuEventRegistrar {
+  menuDisposeSpies: ReturnType<typeof vi.fn>[];
+  registrar: MenuEventRegistrar;
+}
+
+class AllMenusRegisteringHandler extends CommandHandler {
+  public override buildCommand(): Command {
+    return {
+      icon: this.icon,
+      id: this.id,
+      name: this.name
+    };
+  }
+
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
+    context.menuEventRegistrar.registerEditorMenuEventHandler(vi.fn());
+    context.menuEventRegistrar.registerFileMenuEventHandler(vi.fn());
+    context.menuEventRegistrar.registerFilesMenuEventHandler(vi.fn());
+  }
+}
+
+class MenuRegisteringHandler extends CommandHandler {
+  public readonly menuHandler: FileMenuEventHandler = vi.fn();
+
+  public override buildCommand(): Command {
+    return {
+      icon: this.icon,
+      id: this.id,
+      name: this.name
+    };
+  }
+
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
+    context.menuEventRegistrar.registerFileMenuEventHandler(this.menuHandler);
+  }
+}
 
 class TestHandler extends CommandHandler {
   public registeredContext?: CommandHandlerRegistrationContext;
@@ -52,6 +97,15 @@ function createComponent(commandRegistrar: CommandRegistrar): CommandHandlerComp
   });
 }
 
+function createComponentWith(commandRegistrar: CommandRegistrar, menuEventRegistrar: MenuEventRegistrar): CommandHandlerComponent {
+  return new CommandHandlerComponent({
+    activeFileProvider: createMockActiveFileProvider(),
+    commandRegistrar,
+    menuEventRegistrar,
+    pluginName: 'Test Plugin'
+  });
+}
+
 function createMockActiveFileProvider(): ActiveFileProvider {
   return strictProxy<ActiveFileProvider>({});
 }
@@ -73,6 +127,27 @@ function createParams(overrides?: Partial<CommandHandlerConstructorParams>): Com
     id: 'test-cmd',
     name: 'Test Command',
     ...overrides
+  };
+}
+
+function createTrackedMenuEventRegistrar(): TrackedMenuEventRegistrar {
+  const menuDisposeSpies: ReturnType<typeof vi.fn>[] = [];
+
+  function make(): DisposableEx {
+    const spy = vi.fn();
+    menuDisposeSpies.push(spy);
+    return new CallbackDisposable({ callback: spy });
+  }
+
+  const registrar = strictProxy<MenuEventRegistrar>({
+    registerEditorMenuEventHandler: () => make(),
+    registerFileMenuEventHandler: () => make(),
+    registerFilesMenuEventHandler: () => make()
+  });
+
+  return {
+    menuDisposeSpies,
+    registrar
   };
 }
 
@@ -147,5 +222,70 @@ describe('CommandHandlerComponent', () => {
     component.unload();
 
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
+  });
+
+  it('should dispose a command\'s menu-event registrations when the returned disposable is disposed', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    const disposable = component.registerCommandHandlers([new MenuRegisteringHandler(createParams())]);
+    await waitForAllAsyncOperations();
+
+    expect(menuDisposeSpies).toHaveLength(1);
+    const menuDisposeSpy = menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).not.toHaveBeenCalled();
+
+    disposable[Symbol.dispose]();
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not dispose another command\'s menu events when one command is disposed', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    const disposableA = component.registerCommandHandlers([new MenuRegisteringHandler(createParams({ id: 'a' }))]);
+    component.registerCommandHandlers([new MenuRegisteringHandler(createParams({ id: 'b' }))]);
+    await waitForAllAsyncOperations();
+
+    expect(menuDisposeSpies).toHaveLength(2);
+    const menuDisposeSpyA = menuDisposeSpies[0];
+    const menuDisposeSpyB = menuDisposeSpies[1];
+    assertNonNullable(menuDisposeSpyA);
+    assertNonNullable(menuDisposeSpyB);
+
+    disposableA[Symbol.dispose]();
+    expect(menuDisposeSpyA).toHaveBeenCalledTimes(1);
+    expect(menuDisposeSpyB).not.toHaveBeenCalled();
+  });
+
+  it('should dispose a menu event registered after the returned disposable was already disposed', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    // Dispose the batch before the fire-and-forget onRegistered has run.
+    const disposable = component.registerCommandHandlers([new MenuRegisteringHandler(createParams())]);
+    disposable[Symbol.dispose]();
+
+    await waitForAllAsyncOperations();
+
+    expect(menuDisposeSpies).toHaveLength(1);
+    const menuDisposeSpy = menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should dispose editor-, file-, and files-menu registrations for a command', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    const disposable = component.registerCommandHandlers([new AllMenusRegisteringHandler(createParams())]);
+    await waitForAllAsyncOperations();
+
+    expect(menuDisposeSpies).toHaveLength(3);
+    disposable[Symbol.dispose]();
+    for (const menuDisposeSpy of menuDisposeSpies) {
+      expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+    }
   });
 });

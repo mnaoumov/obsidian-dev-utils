@@ -23,6 +23,7 @@ import {
   vi
 } from 'vitest';
 
+import type { DisposableEx } from '../../disposable.ts';
 import type { ActiveFileProvider } from '../active-file-provider.ts';
 import type {
   FileMenuEventHandler,
@@ -89,11 +90,13 @@ function createMockContext(activeFile?: TAbstractFileOriginal): MockContext {
       activeFileProvider,
       menuEventRegistrar: {
         registerEditorMenuEventHandler: vi.fn(),
-        registerFileMenuEventHandler: (handler: FileMenuEventHandler): void => {
+        registerFileMenuEventHandler: (handler: FileMenuEventHandler): DisposableEx => {
           fileMenuHandlers.push(handler);
+          return strictProxy<DisposableEx>({});
         },
-        registerFilesMenuEventHandler: (handler: FilesMenuEventHandler): void => {
+        registerFilesMenuEventHandler: (handler: FilesMenuEventHandler): DisposableEx => {
           filesMenuHandlers.push(handler);
+          return strictProxy<DisposableEx>({});
         }
       },
       pluginName: 'Test Plugin'

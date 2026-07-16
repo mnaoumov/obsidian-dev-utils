@@ -7,9 +7,11 @@ import {
 
 import {
   AsyncCallbackDisposable,
+  AsyncDisposableBase,
   CallbackDisposable,
   CombineAsyncDisposable,
   CombineDisposable,
+  DisposableBase,
   DisposeErrorBehavior,
   DisposeOrder,
   isAsyncDisposable,
@@ -41,12 +43,12 @@ describe('CallbackDisposable', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  it('should invoke the callback on each dispose by default', () => {
+  it('should invoke the callback only once on repeated dispose by default', () => {
     const callback = vi.fn();
     const disposable = new CallbackDisposable({ callback });
     disposable[Symbol.dispose]();
     disposable[Symbol.dispose]();
-    expect(callback).toHaveBeenCalledTimes(2);
+    expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('should invoke the callback on each dispose when behavior is Invoke', () => {
@@ -112,12 +114,12 @@ describe('AsyncCallbackDisposable', () => {
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
-  it('should invoke the callback on each dispose by default', async () => {
+  it('should invoke the callback only once on repeated dispose by default', async () => {
     const callback = vi.fn();
     const disposable = new AsyncCallbackDisposable({ callback });
     await disposable[Symbol.asyncDispose]();
     await disposable[Symbol.asyncDispose]();
-    expect(callback).toHaveBeenCalledTimes(2);
+    expect(callback).toHaveBeenCalledTimes(1);
   });
 
   it('should invoke the callback on each dispose when behavior is Invoke', async () => {
@@ -281,12 +283,12 @@ describe('CombineDisposable', () => {
     expect(order).toEqual(['a', 'b']);
   });
 
-  it('should re-dispose children by default', () => {
+  it('should dispose children only once on repeated dispose by default', () => {
     const a = vi.fn();
     const combined = new CombineDisposable({ disposables: [{ [Symbol.dispose]: a }] });
     combined[Symbol.dispose]();
     combined[Symbol.dispose]();
-    expect(a).toHaveBeenCalledTimes(2);
+    expect(a).toHaveBeenCalledTimes(1);
   });
 
   it('should dispose children only once when behavior is Ignore', () => {
@@ -433,12 +435,12 @@ describe('CombineAsyncDisposable', () => {
     expect(order).toEqual(['a', 'b']);
   });
 
-  it('should re-dispose children by default', async () => {
+  it('should dispose children only once on repeated dispose by default', async () => {
     const a = vi.fn(() => noopAsync());
     const combined = new CombineAsyncDisposable({ asyncDisposables: [{ [Symbol.asyncDispose]: a }] });
     await combined[Symbol.asyncDispose]();
     await combined[Symbol.asyncDispose]();
-    expect(a).toHaveBeenCalledTimes(2);
+    expect(a).toHaveBeenCalledTimes(1);
   });
 
   it('should dispose children only once when behavior is Ignore', async () => {
@@ -513,5 +515,49 @@ describe('CombineAsyncDisposable', () => {
     await expect(combined[Symbol.asyncDispose]()).rejects.toThrow('a failed');
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).not.toHaveBeenCalled();
+  });
+});
+
+describe('DisposableBase', () => {
+  class TestDisposableBase extends DisposableBase {
+    public disposeCount = 0;
+
+    public getIsDisposed(): boolean {
+      return this.isDisposed;
+    }
+
+    protected override performDispose(): void {
+      this.disposeCount++;
+    }
+  }
+
+  it('should expose isDisposed to subclasses and run performDispose on dispose', () => {
+    const disposable = new TestDisposableBase();
+    expect(disposable.getIsDisposed()).toBe(false);
+    disposable.dispose();
+    expect(disposable.getIsDisposed()).toBe(true);
+    expect(disposable.disposeCount).toBe(1);
+  });
+});
+
+describe('AsyncDisposableBase', () => {
+  class TestAsyncDisposableBase extends AsyncDisposableBase {
+    public disposeCount = 0;
+
+    public getIsDisposed(): boolean {
+      return this.isDisposed;
+    }
+
+    protected override performDisposeAsync(): void {
+      this.disposeCount++;
+    }
+  }
+
+  it('should expose isDisposed to subclasses and run performDisposeAsync on dispose', async () => {
+    const disposable = new TestAsyncDisposableBase();
+    expect(disposable.getIsDisposed()).toBe(false);
+    await disposable.asyncDispose();
+    expect(disposable.getIsDisposed()).toBe(true);
+    expect(disposable.disposeCount).toBe(1);
   });
 });

@@ -8,11 +8,27 @@ import {
 import type {
   ExactKeys,
   ExactMembers,
+  ExtractEventMap,
   PropertyValues,
   StringKeys
 } from './type.ts';
 
 import { TypeAsserter } from './type.ts';
+
+interface TestEvents {
+  on(name: 'bar', callback: (flag: boolean) => void): void;
+  on(name: 'foo', callback: (a: string, b: number) => void): void;
+  on(name: string, callback: (...data: unknown[]) => unknown): void;
+}
+
+describe('ExtractEventMap', () => {
+  it('should derive an event map from the overloaded on method, dropping the wide catch-all', () => {
+    expectTypeOf<ExtractEventMap<TestEvents>['foo']>().toEqualTypeOf<[string, number]>();
+    expectTypeOf<ExtractEventMap<TestEvents>['bar']>().toEqualTypeOf<[boolean]>();
+    // The wide `on(name: string, …)` overload is dropped, so the keys are exactly the literal event names.
+    expectTypeOf<keyof ExtractEventMap<TestEvents>>().toEqualTypeOf<'bar' | 'foo'>();
+  });
+});
 
 describe('StringKeys', () => {
   it('should extract string keys from an object type', () => {

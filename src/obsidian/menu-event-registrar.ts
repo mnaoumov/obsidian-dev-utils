@@ -12,6 +12,8 @@ import type {
   WorkspaceLeaf
 } from 'obsidian';
 
+import type { DisposableEx } from '../disposable.ts';
+
 /**
  * Handler for the editor context menu event.
  *
@@ -49,20 +51,23 @@ export interface MenuEventRegistrar {
    * Registers a handler for the editor context menu event.
    *
    * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerEditorMenuEventHandler(handler: EditorMenuEventHandler): void;
+  registerEditorMenuEventHandler(handler: EditorMenuEventHandler): DisposableEx;
 
   /**
    * Registers a handler for the single-file context menu event.
    *
    * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerFileMenuEventHandler(handler: FileMenuEventHandler): void;
+  registerFileMenuEventHandler(handler: FileMenuEventHandler): DisposableEx;
 
   /**
    * Registers a handler for the multi-file context menu event.
    *
    * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerFilesMenuEventHandler(handler: FilesMenuEventHandler): void;
+  registerFilesMenuEventHandler(handler: FilesMenuEventHandler): DisposableEx;
 }

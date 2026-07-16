@@ -17,6 +17,7 @@ import {
   vi
 } from 'vitest';
 
+import type { DisposableEx } from '../../disposable.ts';
 import type { EditorMenuEventHandler } from '../menu-event-registrar.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 import type { EditorCommandHandlerConstructorParams } from './editor-command-handler.ts';
@@ -62,8 +63,9 @@ function createMockContext(): MockContext {
     context: {
       activeFileProvider: { getActiveFile: () => null },
       menuEventRegistrar: {
-        registerEditorMenuEventHandler: (handler: EditorMenuEventHandler): void => {
+        registerEditorMenuEventHandler: (handler: EditorMenuEventHandler): DisposableEx => {
           editorMenuHandlers.push(handler);
+          return strictProxy<DisposableEx>({});
         },
         registerFileMenuEventHandler: vi.fn(),
         registerFilesMenuEventHandler: vi.fn()
