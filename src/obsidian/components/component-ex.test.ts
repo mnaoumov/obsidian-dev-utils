@@ -367,4 +367,21 @@ describe('ComponentEx', () => {
       expect(order).toEqual([1, 2]);
     });
   });
+
+  describe('registerDisposable', () => {
+    it('should return the same disposable and dispose it on unload', () => {
+      const component = new SyncComponentEx();
+      component.load();
+      const dispose = vi.fn();
+      const disposable: Disposable = { [Symbol.dispose]: dispose };
+
+      const returned = component.registerDisposable(disposable);
+
+      expect(returned).toBe(disposable);
+      expect(dispose).not.toHaveBeenCalled();
+
+      component.unload();
+      expect(dispose).toHaveBeenCalledTimes(1);
+    });
+  });
 });

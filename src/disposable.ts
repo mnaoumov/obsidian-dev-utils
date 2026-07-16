@@ -75,7 +75,7 @@ export interface AsyncCallbackDisposableConstructorParams {
   /**
    * How the disposable behaves when disposed more than once.
    *
-   * @default {@link MultipleDisposeBehavior.Invoke}
+   * @default {@link MultipleDisposeBehavior.Ignore}
    */
   readonly multipleDisposeBehavior?: MultipleDisposeBehavior;
 }
@@ -111,7 +111,7 @@ export interface CallbackDisposableConstructorParams {
   /**
    * How the disposable behaves when disposed more than once.
    *
-   * @default {@link MultipleDisposeBehavior.Invoke}
+   * @default {@link MultipleDisposeBehavior.Ignore}
    */
   readonly multipleDisposeBehavior?: MultipleDisposeBehavior;
 }
@@ -142,7 +142,7 @@ export interface CombineAsyncDisposableConstructorParams {
   /**
    * How the combiner behaves when it is disposed more than once.
    *
-   * @default {@link MultipleDisposeBehavior.Invoke}
+   * @default {@link MultipleDisposeBehavior.Ignore}
    */
   readonly multipleDisposeBehavior?: MultipleDisposeBehavior;
 }
@@ -173,7 +173,7 @@ export interface CombineDisposableConstructorParams {
   /**
    * How the combiner behaves when it is disposed more than once.
    *
-   * @default {@link MultipleDisposeBehavior.Invoke}
+   * @default {@link MultipleDisposeBehavior.Ignore}
    */
   readonly multipleDisposeBehavior?: MultipleDisposeBehavior;
 }
@@ -195,13 +195,67 @@ export interface DisposableEx extends Disposable {
 export type DisposeCallback = (this: void) => void;
 
 /**
+ * Abstract base for an {@link AsyncDisposableEx}: it carries the re-dispose guard (via
+ * {@link MultipleDisposeBehavior}) and the {@link AsyncDisposableEx.asyncDispose} alias; a subclass only
+ * implements {@link AsyncDisposableBase.performDisposeAsync}.
+ */
+export abstract class AsyncDisposableBase implements AsyncDisposableEx {
+  /**
+   * How the disposable behaves when disposed more than once.
+   *
+   * @default {@link MultipleDisposeBehavior.Ignore}
+   */
+  protected multipleDisposeBehavior: MultipleDisposeBehavior = MultipleDisposeBehavior.Ignore;
+
+  /**
+   * Whether this disposable has been disposed (its teardown has run at least once).
+   *
+   * @returns `true` once disposal has started.
+   */
+  protected get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  private _isDisposed = false;
+
+  /**
+   * Disposes the object. Convenience alias that delegates to `this[Symbol.asyncDispose]()`.
+   *
+   * @returns A {@link Promise} that resolves once teardown completes.
+   */
+  public asyncDispose(): Promise<void> {
+    return this[Symbol.asyncDispose]();
+  }
+
+  /**
+   * Disposes the object by running {@link AsyncDisposableBase.performDisposeAsync}, honoring the configured
+   * {@link MultipleDisposeBehavior} on a repeat dispose.
+   *
+   * @returns A {@link Promise} that resolves once teardown completes.
+   */
+  public async [Symbol.asyncDispose](): Promise<void> {
+    if (!shouldPerformDispose(this._isDisposed, this.multipleDisposeBehavior)) {
+      return;
+    }
+
+    this._isDisposed = true;
+    await this.performDisposeAsync();
+  }
+
+  /**
+   * Performs the actual teardown. Called at most once unless {@link MultipleDisposeBehavior.Invoke} is set.
+   *
+   * @returns A {@link Promisable} that resolves once teardown completes.
+   */
+  protected abstract performDisposeAsync(): Promisable<void>;
+}
+
+/**
  * An async disposable that executes a callback when disposed via `await using` (or a manual
  * `await disposable[Symbol.asyncDispose]()`).
  */
-export class AsyncCallbackDisposable implements AsyncDisposableEx {
+export class AsyncCallbackDisposable extends AsyncDisposableBase {
   private readonly callback: AsyncDisposeCallback;
-  private isDisposed = false;
-  private readonly multipleDisposeBehavior: MultipleDisposeBehavior;
 
   /**
    * Creates a new instance of {@link AsyncCallbackDisposable}.
@@ -209,55 +263,75 @@ export class AsyncCallbackDisposable implements AsyncDisposableEx {
    * @param params - The parameters.
    */
   public constructor(params: AsyncCallbackDisposableConstructorParams) {
+    super();
     this.callback = params.callback;
-    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Invoke;
+    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Ignore;
   }
 
   /**
-   * Disposes the object by executing the callback. Convenience alias that delegates to
-   * `this[Symbol.asyncDispose]()`.
+   * Runs the dispose callback.
    *
    * @returns A {@link Promise} that resolves once the callback completes.
    */
-  public asyncDispose(): Promise<void> {
-    return this[Symbol.asyncDispose]();
-  }
-
-  /**
-   * Disposes the object by executing the callback.
-   *
-   * This method is called automatically when the object is used in an `await using` declaration. It
-   * can also be called manually. The behavior on a second and later dispose is controlled by
-   * {@link AsyncCallbackDisposableConstructorParams.multipleDisposeBehavior}.
-   *
-   * @returns A {@link Promise} that resolves once the callback completes.
-   */
-  public async [Symbol.asyncDispose](): Promise<void> {
-    if (this.isDisposed) {
-      switch (this.multipleDisposeBehavior) {
-        case MultipleDisposeBehavior.Ignore:
-          return;
-        case MultipleDisposeBehavior.Invoke:
-          break;
-        case MultipleDisposeBehavior.Throw:
-          throw new Error('This AsyncCallbackDisposable has already been disposed.');
-        default:
-          assertNever(this.multipleDisposeBehavior);
-      }
-    }
-
-    this.isDisposed = true;
+  protected override async performDisposeAsync(): Promise<void> {
     await this.callback();
   }
 }
 
 /**
+ * Abstract base for a {@link DisposableEx}: it carries the re-dispose guard (via {@link MultipleDisposeBehavior})
+ * and the {@link DisposableEx.dispose} alias; a subclass only implements {@link DisposableBase.performDispose}.
+ */
+export abstract class DisposableBase implements DisposableEx {
+  /**
+   * How the disposable behaves when disposed more than once.
+   *
+   * @default {@link MultipleDisposeBehavior.Ignore}
+   */
+  protected multipleDisposeBehavior: MultipleDisposeBehavior = MultipleDisposeBehavior.Ignore;
+
+  /**
+   * Whether this disposable has been disposed (its teardown has run at least once).
+   *
+   * @returns `true` once disposal has started.
+   */
+  protected get isDisposed(): boolean {
+    return this._isDisposed;
+  }
+
+  private _isDisposed = false;
+
+  /**
+   * Disposes the object. Convenience alias that delegates to `this[Symbol.dispose]()`.
+   */
+  public dispose(): void {
+    this[Symbol.dispose]();
+  }
+
+  /**
+   * Disposes the object by running {@link DisposableBase.performDispose}, honoring the configured
+   * {@link MultipleDisposeBehavior} on a repeat dispose.
+   */
+  public [Symbol.dispose](): void {
+    if (!shouldPerformDispose(this._isDisposed, this.multipleDisposeBehavior)) {
+      return;
+    }
+
+    this._isDisposed = true;
+    this.performDispose();
+  }
+
+  /**
+   * Performs the actual teardown. Called at most once unless {@link MultipleDisposeBehavior.Invoke} is set.
+   */
+  protected abstract performDispose(): void;
+}
+
+/**
  * A disposable that executes a callback when disposed.
  */
-export class CallbackDisposable implements DisposableEx {
+export class CallbackDisposable extends DisposableBase {
   private readonly callback: DisposeCallback;
-  private isDisposed = false;
-  private readonly multipleDisposeBehavior: MultipleDisposeBehavior;
 
   /**
    * Creates a new instance of {@link CallbackDisposable}.
@@ -265,40 +339,15 @@ export class CallbackDisposable implements DisposableEx {
    * @param params - The parameters.
    */
   public constructor(params: CallbackDisposableConstructorParams) {
+    super();
     this.callback = params.callback;
-    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Invoke;
+    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Ignore;
   }
 
   /**
-   * Disposes the object by executing the callback. Convenience alias that delegates to
-   * `this[Symbol.dispose]()`.
+   * Runs the dispose callback.
    */
-  public dispose(): void {
-    this[Symbol.dispose]();
-  }
-
-  /**
-   * Disposes the object by executing the callback.
-   *
-   * This method is called automatically when the object is used in a `using` declaration. It can also
-   * be called manually. The behavior on a second and later dispose is controlled by
-   * {@link CallbackDisposableConstructorParams.multipleDisposeBehavior}.
-   */
-  public [Symbol.dispose](): void {
-    if (this.isDisposed) {
-      switch (this.multipleDisposeBehavior) {
-        case MultipleDisposeBehavior.Ignore:
-          return;
-        case MultipleDisposeBehavior.Invoke:
-          break;
-        case MultipleDisposeBehavior.Throw:
-          throw new Error('This CallbackDisposable has already been disposed.');
-        default:
-          assertNever(this.multipleDisposeBehavior);
-      }
-    }
-
-    this.isDisposed = true;
+  protected override performDispose(): void {
     this.callback();
   }
 }
@@ -307,12 +356,10 @@ export class CallbackDisposable implements DisposableEx {
  * An {@link AsyncDisposableEx} that combines multiple async disposables and disposes all of them when it
  * is disposed.
  */
-export class CombineAsyncDisposable implements AsyncDisposableEx {
+export class CombineAsyncDisposable extends AsyncDisposableBase {
   private readonly children: readonly AsyncDisposable[];
   private readonly disposeOrder: DisposeOrder;
   private readonly errorBehavior: DisposeErrorBehavior;
-  private isDisposed = false;
-  private readonly multipleDisposeBehavior: MultipleDisposeBehavior;
 
   /**
    * Creates a new instance of {@link CombineAsyncDisposable}.
@@ -320,48 +367,20 @@ export class CombineAsyncDisposable implements AsyncDisposableEx {
    * @param params - The parameters.
    */
   public constructor(params: CombineAsyncDisposableConstructorParams) {
+    super();
     this.children = [...params.asyncDisposables];
     this.disposeOrder = params.disposeOrder ?? DisposeOrder.Lifo;
     this.errorBehavior = params.errorBehavior ?? DisposeErrorBehavior.Aggregate;
-    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Invoke;
-  }
-
-  /**
-   * Disposes all combined children. Convenience alias that delegates to
-   * `this[Symbol.asyncDispose]()`.
-   *
-   * @returns A {@link Promise} that resolves once all children have been disposed.
-   */
-  public asyncDispose(): Promise<void> {
-    return this[Symbol.asyncDispose]();
+    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Ignore;
   }
 
   /**
    * Disposes all combined children in the configured {@link DisposeOrder}, applying the configured
    * {@link DisposeErrorBehavior} when a child throws.
    *
-   * This method is called automatically when the object is used in an `await using` declaration. It can
-   * also be called manually. The behavior on a second and later dispose is controlled by
-   * {@link CombineAsyncDisposableConstructorParams.multipleDisposeBehavior}.
-   *
    * @returns A {@link Promise} that resolves once all children have been disposed.
    */
-  public async [Symbol.asyncDispose](): Promise<void> {
-    if (this.isDisposed) {
-      switch (this.multipleDisposeBehavior) {
-        case MultipleDisposeBehavior.Ignore:
-          return;
-        case MultipleDisposeBehavior.Invoke:
-          break;
-        case MultipleDisposeBehavior.Throw:
-          throw new Error('This CombineAsyncDisposable has already been disposed.');
-        default:
-          assertNever(this.multipleDisposeBehavior);
-      }
-    }
-
-    this.isDisposed = true;
-
+  protected override async performDisposeAsync(): Promise<void> {
     const errors: unknown[] = [];
     for (const child of this.getOrderedChildren()) {
       try {
@@ -396,12 +415,10 @@ export class CombineAsyncDisposable implements AsyncDisposableEx {
  * A {@link DisposableEx} that combines multiple disposables and disposes all of them when it is
  * disposed.
  */
-export class CombineDisposable implements DisposableEx {
+export class CombineDisposable extends DisposableBase {
   private readonly children: readonly Disposable[];
   private readonly disposeOrder: DisposeOrder;
   private readonly errorBehavior: DisposeErrorBehavior;
-  private isDisposed = false;
-  private readonly multipleDisposeBehavior: MultipleDisposeBehavior;
 
   /**
    * Creates a new instance of {@link CombineDisposable}.
@@ -409,43 +426,18 @@ export class CombineDisposable implements DisposableEx {
    * @param params - The parameters.
    */
   public constructor(params: CombineDisposableConstructorParams) {
+    super();
     this.children = [...params.disposables];
     this.disposeOrder = params.disposeOrder ?? DisposeOrder.Lifo;
     this.errorBehavior = params.errorBehavior ?? DisposeErrorBehavior.Aggregate;
-    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Invoke;
-  }
-
-  /**
-   * Disposes all combined children. Convenience alias that delegates to `this[Symbol.dispose]()`.
-   */
-  public dispose(): void {
-    this[Symbol.dispose]();
+    this.multipleDisposeBehavior = params.multipleDisposeBehavior ?? MultipleDisposeBehavior.Ignore;
   }
 
   /**
    * Disposes all combined children in the configured {@link DisposeOrder}, applying the configured
    * {@link DisposeErrorBehavior} when a child throws.
-   *
-   * This method is called automatically when the object is used in a `using` declaration. It can also
-   * be called manually. The behavior on a second and later dispose is controlled by
-   * {@link CombineDisposableConstructorParams.multipleDisposeBehavior}.
    */
-  public [Symbol.dispose](): void {
-    if (this.isDisposed) {
-      switch (this.multipleDisposeBehavior) {
-        case MultipleDisposeBehavior.Ignore:
-          return;
-        case MultipleDisposeBehavior.Invoke:
-          break;
-        case MultipleDisposeBehavior.Throw:
-          throw new Error('This CombineDisposable has already been disposed.');
-        default:
-          assertNever(this.multipleDisposeBehavior);
-      }
-    }
-
-    this.isDisposed = true;
-
+  protected override performDispose(): void {
     const errors: unknown[] = [];
     for (const child of this.getOrderedChildren()) {
       try {
@@ -565,5 +557,31 @@ export function toDisposableEx(disposable: Disposable): DisposableEx {
 
   function dispose(): void {
     disposable[Symbol.dispose]();
+  }
+}
+
+/**
+ * Decides whether a disposable's teardown should run on the current dispose call, applying the
+ * {@link MultipleDisposeBehavior} re-dispose policy. Single source of the guard shared by
+ * {@link DisposableBase} and {@link AsyncDisposableBase}.
+ *
+ * @param isDisposed - Whether the disposable has already been disposed once.
+ * @param multipleDisposeBehavior - The re-dispose behavior.
+ * @returns `true` when the teardown should run, `false` when it should be skipped.
+ */
+function shouldPerformDispose(isDisposed: boolean, multipleDisposeBehavior: MultipleDisposeBehavior): boolean {
+  if (!isDisposed) {
+    return true;
+  }
+
+  switch (multipleDisposeBehavior) {
+    case MultipleDisposeBehavior.Ignore:
+      return false;
+    case MultipleDisposeBehavior.Invoke:
+      return true;
+    case MultipleDisposeBehavior.Throw:
+      throw new Error('This disposable has already been disposed.');
+    default:
+      assertNever(multipleDisposeBehavior);
   }
 }

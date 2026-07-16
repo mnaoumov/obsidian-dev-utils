@@ -4,6 +4,8 @@
  * Type utilities.
  */
 
+import type { GenericFunction } from './function.ts';
+
 import { castTo } from './object-utils.ts';
 
 /**
@@ -27,6 +29,23 @@ export type ExactMembers<
     : `ERROR: Duplicate members: ${TupleToCSV<Duplicates<Keys>>}`
   : `ERROR: Missing members: ${TupleToCSV<UnionToTuple<Exclude<Type, Keys[number]>>>}`
   : `ERROR: Invalid members: ${TupleToCSV<UnionToTuple<Exclude<Keys[number], Type>>>}`;
+
+/**
+ * Derives an event map (`{ eventName: [callbackArgs] }`) from a type exposing an overloaded `on(name, callback)`
+ * method — e.g. Obsidian's `Workspace` / `Vault` / `MetadataCache`. Each `on` overload becomes one entry keyed by
+ * the event name, with the callback's parameters as a labeled tuple; the wide `on(name: string, …)` catch-all
+ * overload is dropped. The map auto-tracks upstream overloads (no hand-authoring). It cannot reconstruct
+ * genuinely generic overloads, but Obsidian's event overloads are all concrete string-literal ones.
+ *
+ * @typeParam T - A type exposing an `on(name, callback, …)` method (e.g. an Obsidian `Events` subclass).
+ *
+ * @example
+ * ```ts
+ * type WorkspaceEventMap = ExtractEventMap<Workspace>;
+ * // { 'file-menu': [menu: Menu, file: TAbstractFile, source: string, leaf?: WorkspaceLeaf]; … }
+ * ```
+ */
+export type ExtractEventMap<T extends EventsWithOn> = UnionToIntersection<EntryOfOverload<OverloadUnion<T['on']>>>;
 
 /**
  * A type that represents a return value that may be `void`.
@@ -60,8 +79,18 @@ type Duplicates<
   : Duplicates<Rest, [...Seen, First], Added, Out>
   : Out;
 
+// Maps one `on(name, callback, …)` overload to a `{ [name]: [callbackArgs] }` entry; drops the wide `name: string` catch-all.
+type EntryOfOverload<TOverload> = TOverload extends (name: infer Name, callback: (...args: infer Args) => unknown, ...rest: never[]) => unknown ? Name extends string ? string extends Name ? never : Record<Name, Args>
+  : never
+  : never;
+
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters,no-magic-numbers -- We need to use the dummy parameter to get type inference.
 type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;
+
+// The minimal shape {@link ExtractEventMap} operates on: a type exposing an overloaded `on` method.
+interface EventsWithOn {
+  on: GenericFunction;
+}
 
 type Includes<Type extends readonly unknown[], Member> = Type extends readonly [infer First, ...infer Rest] ? Equal<First, Member> extends true ? true : Includes<Rest, Member>
   : false;
@@ -69,6 +98,20 @@ type Includes<Type extends readonly unknown[], Member> = Type extends readonly [
 type LastInUnion<Union> = UnionToIntersection<Union extends unknown ? () => Union : never> extends () => infer Last ? Last : never;
 
 type LiteralKey = number | string;
+
+// Splits an overloaded call signature into a union of its individual call signatures (a well-known overload-to-union trick).
+/* eslint-disable perfectionist/sort-intersection-types, perfectionist/sort-union-types, @stylistic/operator-linebreak -- The OverloadUnion recursion relies on this exact operand order; reordering breaks termination (TS2589), and the line-break shape is left to dprint. */
+type OverloadUnion<TOverload extends GenericFunction> = Exclude<
+  OverloadUnionRecursive<(() => never) & TOverload>,
+  TOverload extends () => never ? never : () => never
+>;
+
+type OverloadUnionRecursive<TOverload, TPartialOverload = unknown> = TOverload extends (...args: infer Args) => infer Return ? TPartialOverload extends TOverload ? never
+  :
+    | OverloadUnionRecursive<TPartialOverload & TOverload, TPartialOverload & ((...args: Args) => Return) & Pick<TOverload, keyof TOverload>>
+    | ((...args: Args) => Return)
+  : never;
+/* eslint-enable perfectionist/sort-intersection-types, perfectionist/sort-union-types, @stylistic/operator-linebreak -- The OverloadUnion recursion relies on this exact operand order; reordering breaks termination (TS2589), and the line-break shape is left to dprint. */
 
 type ToString<T> = T extends number | string ? `${T}` : never;
 

@@ -11,7 +11,8 @@ import type { AsyncEventRef } from './async-events.ts';
 
 import {
   AsyncEvents,
-  mixinAsyncEvents
+  mixinAsyncEvents,
+  subscribeAsyncDisposableEvent
 } from './async-events.ts';
 import { noopAsync } from './function.ts';
 import { castTo } from './object-utils.ts';
@@ -545,5 +546,30 @@ describe('mixinAsyncEvents', () => {
     const ref = instance.on('save', callback);
     await instance.doTryTriggerAsync(ref, []);
     expect(callback).toHaveBeenCalledOnce();
+  });
+});
+
+interface PingEventMap {
+  ping: [value: number];
+}
+
+describe('subscribeAsyncDisposableEvent', () => {
+  it('should return an AsyncDisposableEx that offrefs the AsyncEventRef on dispose', async () => {
+    const events = new AsyncEvents<PingEventMap>();
+    const callback = vi.fn<(value: number) => void>();
+
+    const disposable = subscribeAsyncDisposableEvent({
+      asyncEventSource: events,
+      callback,
+      name: 'ping'
+    });
+
+    events.trigger('ping', 1);
+    expect(callback).toHaveBeenCalledWith(1);
+
+    await disposable.asyncDispose();
+    callback.mockClear();
+    events.trigger('ping', 2);
+    expect(callback).not.toHaveBeenCalled();
   });
 });

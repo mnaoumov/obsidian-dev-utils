@@ -6,6 +6,7 @@
 
 import type { App } from 'obsidian';
 
+import type { DisposableEx } from '../../disposable.ts';
 import type {
   EditorMenuEventHandler,
   FileMenuEventHandler,
@@ -13,6 +14,7 @@ import type {
   MenuEventRegistrar
 } from '../menu-event-registrar.ts';
 
+import { EventRefDisposable } from '../events.ts';
 import { ComponentEx } from './component-ex.ts';
 
 /**
@@ -34,29 +36,32 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    * Registers a handler for the editor context menu event.
    *
    * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed (or on component unload).
    */
-  public registerEditorMenuEventHandler(handler: EditorMenuEventHandler): void {
+  public registerEditorMenuEventHandler(handler: EditorMenuEventHandler): DisposableEx {
     this.ensureLoaded();
-    this.registerEvent(this.app.workspace.on('editor-menu', handler));
+    return this.registerDisposable(new EventRefDisposable(this.app.workspace.on('editor-menu', handler)));
   }
 
   /**
    * Registers a handler for the single-file context menu event.
    *
    * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed (or on component unload).
    */
-  public registerFileMenuEventHandler(handler: FileMenuEventHandler): void {
+  public registerFileMenuEventHandler(handler: FileMenuEventHandler): DisposableEx {
     this.ensureLoaded();
-    this.registerEvent(this.app.workspace.on('file-menu', handler));
+    return this.registerDisposable(new EventRefDisposable(this.app.workspace.on('file-menu', handler)));
   }
 
   /**
    * Registers a handler for the multi-file context menu event.
    *
    * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed (or on component unload).
    */
-  public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): void {
+  public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): DisposableEx {
     this.ensureLoaded();
-    this.registerEvent(this.app.workspace.on('files-menu', handler));
+    return this.registerDisposable(new EventRefDisposable(this.app.workspace.on('files-menu', handler)));
   }
 }

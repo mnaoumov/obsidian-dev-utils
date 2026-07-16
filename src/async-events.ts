@@ -9,10 +9,14 @@ import type {
   Promisable
 } from 'type-fest';
 
+import type { AsyncDisposableEx } from './disposable.ts';
 import type { GenericPromisableVoidFunction } from './function.ts';
 import type { StringKeys } from './type.ts';
 
 import { filterInPlace } from './array.ts';
+import { AsyncDisposableBase } from './disposable.ts';
+
+declare const ASYNC_EVENT_MAP: unique symbol;
 
 /**
  * Async event reference.
@@ -64,6 +68,12 @@ export interface AsyncEventRef {
  * ```
  */
 export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> = EventMapBase> extends GenericAsyncEventSource {
+  /**
+   * Phantom marker that makes {@link EventMap} inferable from an {@link AsyncEventSource} (e.g. via
+   * `Source extends AsyncEventSource<infer EventMap>`). Never present at runtime.
+   */
+  readonly [ASYNC_EVENT_MAP]?: EventMap;
+
   /**
    * Remove an event listener.
    *
@@ -219,9 +229,69 @@ export interface GenericAsyncEventSource {
   offref(eventRef: AsyncEventRef): void;
 }
 
+/**
+ * Parameters for {@link subscribeAsyncDisposableEvent}.
+ *
+ * @typeParam Source - The {@link AsyncEventSource} type.
+ * @typeParam EventName - The event name, constrained to the source's known events.
+ */
+export interface SubscribeAsyncDisposableEventParams<Source extends GenericAsyncEventSource, EventName extends AsyncEventNameOf<Source>> {
+  /**
+   * The async event source to subscribe on.
+   */
+  readonly asyncEventSource: Source;
+
+  /**
+   * The event callback. Its argument types are inferred from {@link SubscribeAsyncDisposableEventParams.name}.
+   */
+  readonly callback: AsyncEventCallbackOf<Source, EventName>;
+
+  /**
+   * The event name to subscribe to.
+   */
+  readonly name: EventName;
+
+  /**
+   * The context passed as `this` to the callback.
+   */
+  readonly thisArg?: unknown;
+}
+
+// The callback type for a given event on an async event source, with its argument tuple inferred from the source's event map.
+type AsyncEventCallbackOf<Source extends GenericAsyncEventSource, EventName extends AsyncEventNameOf<Source>> = EventMapOf<Source>[EventName] extends infer Args extends unknown[] ? (...args: Args) => Promisable<void>
+  : never;
+
+// The union of known event names for an async event source, derived from its event map.
+type AsyncEventNameOf<Source extends GenericAsyncEventSource> = keyof EventMapOf<Source> & string;
+
 type EventMapConstraint<T> = Record<keyof T, unknown[]>;
 
+// Recovers the event map of an async event source via the phantom marker on `AsyncEventSource`.
+type EventMapOf<Source> = Source extends AsyncEventSource<infer EventMap> ? EventMap : never;
+
 type GenericCallback = GenericPromisableVoidFunction<unknown[]>;
+
+/**
+ * An {@link AsyncDisposableEx} that unregisters an {@link AsyncEventRef} on dispose, via the event source stored
+ * on the ref itself. Async counterpart of the native `EventRefDisposable`.
+ */
+export class AsyncEventRefDisposable extends AsyncDisposableBase {
+  /**
+   * Creates a disposable wrapping an existing {@link AsyncEventRef}.
+   *
+   * @param asyncEventRef - The async event reference to unregister on dispose.
+   */
+  public constructor(private readonly asyncEventRef: AsyncEventRef) {
+    super();
+  }
+
+  /**
+   * Unregisters the event via the source stored on the ref (`asyncEventSource.offref`).
+   */
+  protected override performDisposeAsync(): void {
+    this.asyncEventRef.asyncEventSource.offref(this.asyncEventRef);
+  }
+}
 
 /**
  * Async event source implementation.
@@ -660,6 +730,31 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
 
     return AsyncEventsMixin as AbstractConstructor<AsyncEventSource<EventMap> & AsyncEventTrigger<EventMap>> & TBase;
   };
+}
+
+/**
+ * Subscribes to an event on an {@link AsyncEventSource} and returns an {@link AsyncDisposableEx} that unregisters
+ * it on dispose. Async counterpart of the native `subscribeDisposableEvent`; the event name and callback argument
+ * types are inferred from the source's event map.
+ *
+ * @typeParam Source - The {@link AsyncEventSource} type.
+ * @typeParam EventName - The event name.
+ * @param params - The subscription parameters.
+ * @returns An {@link AsyncDisposableEx} that unregisters the handler when disposed.
+ */
+export function subscribeAsyncDisposableEvent<Source extends GenericAsyncEventSource, EventName extends AsyncEventNameOf<Source>>(
+  params: SubscribeAsyncDisposableEventParams<Source, EventName>
+): AsyncDisposableEx {
+  // `Source` is constrained only to the on-less `GenericAsyncEventSource` (so a typed source is accepted whatever
+  // Its event map's variance); every source is an `AsyncEventSource`, so it is narrowed to reach `on`, whose type
+  // Parameters then infer from the (already-typed) name and callback.
+  return new AsyncEventRefDisposable(asAsyncEventSource(params.asyncEventSource).on(params.name, params.callback, params.thisArg));
+}
+
+// Narrows a source to {@link AsyncEventSource} to reach `on`. A local equivalent of `castTo`: importing `castTo`
+// From `object-utils` here would create a module cycle (object-utils → error → async-events).
+function asAsyncEventSource(value: unknown): AsyncEventSource {
+  return value as AsyncEventSource;
 }
 
 function throwDelayed(error: unknown): void {

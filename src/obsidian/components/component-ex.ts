@@ -114,6 +114,24 @@ export class ComponentEx extends Component implements Disposable {
   }
 
   /**
+   * Registers a {@link Disposable} so it is disposed when this component unloads, and returns it unchanged.
+   *
+   * The recurring "tie a disposable to the component's lifecycle, then keep using it" idiom: the disposable is
+   * disposed on {@link Component.unload} (or earlier, if the caller disposes it directly — dispose is expected to
+   * be idempotent). Guard with {@link ensureLoaded} at the call site when registering before load would be unsafe.
+   *
+   * @typeParam TDisposable - The type of the disposable.
+   * @param disposable - The disposable to register.
+   * @returns The same disposable, for chaining.
+   */
+  public registerDisposable<TDisposable extends Disposable>(disposable: TDisposable): TDisposable {
+    this.register(() => {
+      disposable[Symbol.dispose]();
+    });
+    return disposable;
+  }
+
+  /**
    * Removes a child component.
    *
    * @typeParam TComponent - The type of component to remove.
