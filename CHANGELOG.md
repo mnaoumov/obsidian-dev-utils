@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 87.0.1
+
+- chore: lint
+- chore: spellcheck
+- fix: shell-quote exec args per platform so paths with metacharacters survive
+- fix: quote batched exec args so paths with spaces stay a single argument
+
 ## 87.0.0
 
 - feat!: rework hard-to-close notice close API
