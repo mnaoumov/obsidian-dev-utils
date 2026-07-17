@@ -175,6 +175,45 @@ export function toCommandLine(args: string[]): string {
 }
 
 /**
+ * Converts an array of command-line arguments into a single command-line string
+ * quoted for a POSIX shell (`sh`, `bash`, `zsh`, ...).
+ *
+ * Each argument is wrapped in single quotes unless it consists solely of
+ * characters that are safe unquoted, mirroring Python's `shlex.quote`. A literal
+ * single quote inside an argument is emitted as the `'\''` idiom (close the
+ * quoted span, add an escaped literal quote, reopen), so the shell reproduces the
+ * argument verbatim — no variable expansion (`$`), command substitution
+ * (`` ` ``), globbing (`*`, `?`, `[`), or word splitting.
+ *
+ * Use this on platforms where the command is executed through `sh -c`. On
+ * Windows, use {@link toCommandLine} plus {@link cmdEscapeCommandLine} instead —
+ * the two conventions are not interchangeable.
+ *
+ * @param args - The array of command-line arguments to convert.
+ * @returns A string representing the command-line invocation for a POSIX shell.
+ */
+export function toPosixCommandLine(args: string[]): string {
+  return args.map((arg) => posixQuote(arg)).join(' ');
+}
+
+/**
+ * Matches an argument that is entirely composed of characters safe to pass to a
+ * POSIX shell unquoted. Mirrors the safe set used by Python's `shlex.quote`.
+ */
+const POSIX_SAFE_ARG_RE = /^[\w@%+=:,./-]+$/;
+
+/**
+ * Matches a literal single quote, for replacing it with the `'\''` idiom.
+ */
+const SINGLE_QUOTE_RE = /'/g;
+
+/**
+ * The replacement for a literal single quote inside a single-quoted POSIX span:
+ * close the span, add an escaped literal quote, reopen the span.
+ */
+const POSIX_ESCAPED_SINGLE_QUOTE = '\'\\\'\'';
+
+/**
  * Quotes a single argument so that `CommandLineToArgvW` will decode it
  * unchanged. Implements the ArgvQuote algorithm from
  * {@link https://learn.microsoft.com/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way | Everyone quotes command line arguments the wrong way}.
@@ -211,6 +250,21 @@ function argvQuote(arg: string): string {
 
   result += '"';
   return result;
+}
+
+/**
+ * Quotes a single argument for a POSIX shell so it is passed through verbatim.
+ * An empty argument becomes `''`; an argument of only safe characters is
+ * returned unchanged; anything else is single-quoted.
+ *
+ * @param arg - The raw argument string.
+ * @returns The quoted argument string.
+ */
+function posixQuote(arg: string): string {
+  if (POSIX_SAFE_ARG_RE.test(arg)) {
+    return arg;
+  }
+  return `'${replaceAll({ replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE, str: arg })}'`;
 }
 
 /**

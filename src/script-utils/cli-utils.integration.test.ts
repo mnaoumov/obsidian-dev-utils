@@ -91,6 +91,36 @@ describe('toCommandLine integration', () => {
     expect(received).toEqual(['she said, "you had me at \\"hello\\""']);
   });
 
+  it('should pass an argument with a dollar sign', async () => {
+    const received = await echoArgs('price is $5 for $ITEM');
+    expect(received).toEqual(['price is $5 for $ITEM']);
+  });
+
+  it('should pass an argument with backticks', async () => {
+    const received = await echoArgs('run `whoami` now');
+    expect(received).toEqual(['run `whoami` now']);
+  });
+
+  it('should pass an argument with a glob star', async () => {
+    const received = await echoArgs('file*.md');
+    expect(received).toEqual(['file*.md']);
+  });
+
+  it('should pass an argument with a semicolon', async () => {
+    const received = await echoArgs('a;b;c');
+    expect(received).toEqual(['a;b;c']);
+  });
+
+  it('should pass an argument with a single quote', async () => {
+    const received = await echoArgs('it\'s a trap');
+    expect(received).toEqual(['it\'s a trap']);
+  });
+
+  it('should pass an argument with a leading tilde', async () => {
+    const received = await echoArgs('~nothome');
+    expect(received).toEqual(['~nothome']);
+  });
+
   it('should pass an argument with newlines', async () => {
     const received = await echoArgs('line1\nline2\nline3');
     expect(received).toEqual(['line1\nline2\nline3']);

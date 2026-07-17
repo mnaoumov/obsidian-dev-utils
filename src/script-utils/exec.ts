@@ -15,7 +15,8 @@ import { trimEnd } from '../string.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
   cmdEscapeCommandLine,
-  toCommandLine
+  toCommandLine,
+  toPosixCommandLine
 } from './cli-utils.ts';
 
 /**
@@ -247,7 +248,7 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
       return batchResult;
     }
     const args = command.filter((part): part is string => typeof part === 'string');
-    const commandLine = toCommandLine(args);
+    const commandLine = buildCommandLine(args);
 
     const maxCommandLength = getMaxCommandLength();
     if (commandLine.length > maxCommandLength) {
@@ -468,6 +469,25 @@ interface SpawnViaShellParams {
 }
 
 /**
+ * Builds a command-line string from an argument array, quoted for the shell that
+ * {@link spawnViaShell} will route through on the current platform.
+ *
+ * On Windows the command is executed via `cmd.exe`, so it uses the
+ * `CommandLineToArgvW` convention ({@link toCommandLine}); {@link spawnViaShell}
+ * then applies {@link cmdEscapeCommandLine} on top for `cmd.exe` metacharacters.
+ * Elsewhere the command is executed via `sh -c`, so it uses POSIX single-quote
+ * quoting ({@link toPosixCommandLine}) and needs no further escaping.
+ *
+ * The platform branch here MUST stay in sync with the one in {@link spawnViaShell}.
+ *
+ * @param args - The argument array to quote and join.
+ * @returns The quoted command-line string for the current platform's shell.
+ */
+function buildCommandLine(args: string[]): string {
+  return process.platform === 'win32' ? toCommandLine(args) : toPosixCommandLine(args);
+}
+
+/**
  * Executes batched commands sequentially and concatenates stdout.
  *
  * @param params - The parameters for the batched execution.
@@ -478,7 +498,7 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
   const results: string[] = [];
 
   for (const batch of batches) {
-    const batchCommand = `${baseCommand} ${toCommandLine(batch)}`;
+    const batchCommand = `${baseCommand} ${buildCommandLine(batch)}`;
     const result = await execString({
       command: batchCommand,
       options
@@ -527,11 +547,11 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   const execArg = execArgs[0];
   assertNonNullable(execArg);
   const staticParts = parts.filter((part): part is string => typeof part === 'string');
-  const baseCommand = toCommandLine(staticParts);
+  const baseCommand = buildCommandLine(staticParts);
   const maxCommandLength = getMaxCommandLength();
 
   // Try expanding all args inline
-  const fullCommand = `${baseCommand} ${toCommandLine([...execArg.batchedArgs])}`;
+  const fullCommand = `${baseCommand} ${buildCommandLine([...execArg.batchedArgs])}`;
   if (fullCommand.length <= maxCommandLength) {
     return execString({
       command: fullCommand,
@@ -544,7 +564,7 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   let currentBatch: string[] = [];
 
   for (const arg of execArg.batchedArgs) {
-    const tentative = `${baseCommand} ${toCommandLine([...currentBatch, arg])}`;
+    const tentative = `${baseCommand} ${buildCommandLine([...currentBatch, arg])}`;
     if (tentative.length > maxCommandLength) {
       if (currentBatch.length === 0) {
         return Promise.reject(

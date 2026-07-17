@@ -186,7 +186,7 @@ describe('exec', () => {
     expect(calledCommand).toContain('c');
   });
 
-  it('should quote batched args that contain spaces so they stay a single argument', async () => {
+  it('should quote batched args that contain spaces so they stay a single argument on POSIX', async () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'linux' });
     try {
@@ -203,7 +203,73 @@ describe('exec', () => {
       const firstCall = mockSpawn.mock.calls[0];
       assertNonNullable(firstCall);
       const calledCommand = firstCall[0] as string;
-      expect(calledCommand).toBe('echo "foo bar/baz.md" plain.md');
+      expect(calledCommand).toBe('echo \'foo bar/baz.md\' plain.md');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should single-quote batched args containing shell metacharacters on POSIX', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    try {
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+
+      const promise = exec(['echo', { batchedArgs: ['foo$x.md', 'a;b.md', 'c*.md', 'd\'e.md'] }], { isQuiet: true });
+
+      child.stdout.end('ok');
+      child.stderr.end('');
+      child.emit('close', 0, null);
+
+      await expect(promise).resolves.toBe('ok');
+      const firstCall = mockSpawn.mock.calls[0];
+      assertNonNullable(firstCall);
+      expect(firstCall[0]).toBe('echo \'foo$x.md\' \'a;b.md\' \'c*.md\' \'d\'\\\'\'e.md\'');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should single-quote static args containing shell metacharacters on POSIX', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    try {
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+
+      const promise = exec(['echo', 'a b$c'], { isQuiet: true });
+
+      child.stdout.end('ok');
+      child.stderr.end('');
+      child.emit('close', 0, null);
+
+      await expect(promise).resolves.toBe('ok');
+      const firstCall = mockSpawn.mock.calls[0];
+      assertNonNullable(firstCall);
+      expect(firstCall[0]).toBe('echo \'a b$c\'');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should caret-escape batched args containing cmd metacharacters on Windows', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+
+      const promise = exec(['echo', { batchedArgs: ['a&b.md', '(c).md'] }], { isQuiet: true });
+
+      child.stdout.end('ok');
+      child.stderr.end('');
+      child.emit('close', 0, null);
+
+      await expect(promise).resolves.toBe('ok');
+      const firstCall = mockSpawn.mock.calls[0];
+      assertNonNullable(firstCall);
+      expect(firstCall[0]).toBe('echo a^&b.md ^(c^).md');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
