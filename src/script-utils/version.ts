@@ -672,7 +672,7 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   await gitPush();
   await prepareGitHubRelease?.(newVersion);
   if (isObsidianPlugin && shouldArchiveDemoVault) {
-    await archivePluginDemoVault(newVersion);
+    await archivePluginDemoVault();
   }
   await publishGitHubRelease(newVersion, isObsidianPlugin);
 }

@@ -55,6 +55,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Distribution folder. */
   Dist = 'dist',
 
+  /** A path to the built `demo-vault-helper` plugin within the {@link Dist} folder, injected into demo vaults at release time. */
+  DistDemoVaultHelper = 'dist/demo-vault-helper',
+
   /** A path to the `lib` folder within the {@link Dist} folder. */
   DistLib = 'dist/lib',
 

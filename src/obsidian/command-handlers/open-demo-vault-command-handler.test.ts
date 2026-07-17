@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 
-import type {
-  App as AppOriginal,
-  PluginManifest
-} from 'obsidian';
+import type { App as AppOriginal } from 'obsidian';
 
 import {
   beforeEach,
@@ -41,15 +38,18 @@ vi.mock('../desktop-demo-vault-opener.ts', () => ({
   openDemoVault: mockOpenDemoVault
 }));
 
+const PLUGIN_ID = 'my-plugin';
+const PLUGIN_NAME = 'My Plugin';
+const PLUGIN_VERSION = '1.0.0';
 const app = strictProxy<AppOriginal>({});
-const manifest = strictProxy<PluginManifest>({ id: 'my-plugin', name: 'My Plugin', version: '1.0.0' });
 const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
 
 function createHandler(): OpenDemoVaultCommandHandler {
   return new OpenDemoVaultCommandHandler({
     app,
-    manifest,
-    pluginNoticeComponent
+    pluginId: PLUGIN_ID,
+    pluginNoticeComponent,
+    pluginVersion: PLUGIN_VERSION
   });
 }
 
@@ -80,13 +80,26 @@ describe('OpenDemoVaultCommandHandler', () => {
   });
 
   it('should open the demo vault when invoked on desktop', async () => {
-    const command = createHandler().buildCommand();
+    const handler = createHandler();
+    // The plugin name flows from registration (the base handler), not the constructor.
+    await handler.onRegistered({
+      activeFileProvider: { getActiveFile: () => null },
+      menuEventRegistrar: {
+        registerEditorMenuEventHandler: vi.fn(),
+        registerFileMenuEventHandler: vi.fn(),
+        registerFilesMenuEventHandler: vi.fn()
+      },
+      pluginName: PLUGIN_NAME
+    });
+    const command = handler.buildCommand();
     command.checkCallback?.(false);
     await waitForAllAsyncOperations();
     expect(mockOpenDemoVault).toHaveBeenCalledWith({
       app,
-      manifest,
-      pluginNoticeComponent
+      pluginId: PLUGIN_ID,
+      pluginName: PLUGIN_NAME,
+      pluginNoticeComponent,
+      pluginVersion: PLUGIN_VERSION
     });
   });
 

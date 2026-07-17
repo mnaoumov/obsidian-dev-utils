@@ -1,7 +1,9 @@
 import type {
   App,
+  DataAdapter,
   PluginManifest,
-  RequestUrlParam
+  RequestUrlParam,
+  Vault
 } from 'obsidian';
 
 import {
@@ -13,7 +15,9 @@ import {
 } from 'vitest';
 
 import { strictProxy } from '../strict-proxy.ts';
+import { EMPTY } from '../string.ts';
 import {
+  configureCommunityPlugin,
   disableCommunityPlugin,
   enableCommunityPlugin,
   getCommunityPluginRepo,
@@ -26,6 +30,7 @@ import {
 } from './community-plugins.ts';
 
 interface AppMock {
+  readonly adapterWrite: DataAdapter['write'];
   readonly app: App;
   readonly disablePluginAndSave: App['plugins']['disablePluginAndSave'];
   readonly enablePluginAndSave: App['plugins']['enablePluginAndSave'];
@@ -35,6 +40,7 @@ interface AppMock {
 
 interface CreateAppOptions {
   readonly enabledIds?: string[];
+  readonly existingPluginData?: string;
   readonly installedIds?: string[];
 }
 
@@ -92,6 +98,10 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     manifests[id] = strictProxy<PluginManifest>({ id });
   }
 
+  const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(options.existingPluginData !== undefined);
+  const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue(options.existingPluginData ?? '{}');
+  const adapterWrite = vi.fn<DataAdapter['write']>().mockResolvedValue();
+
   const app = strictProxy<App>({
     plugins: strictProxy<App['plugins']>({
       disablePluginAndSave,
@@ -100,10 +110,19 @@ function createApp(options: CreateAppOptions = {}): AppMock {
       installPlugin,
       manifests,
       uninstallPlugin
+    }),
+    vault: strictProxy<Vault>({
+      adapter: strictProxy<DataAdapter>({
+        exists: adapterExists,
+        read: adapterRead,
+        write: adapterWrite
+      }),
+      configDir: `${EMPTY}.obsidian`
     })
   });
 
   return {
+    adapterWrite,
     app,
     disablePluginAndSave,
     enablePluginAndSave,
@@ -184,6 +203,40 @@ describe('installCommunityPlugin', () => {
     const { app } = createApp();
     await expect(installCommunityPlugin({ app, pluginId: 'missing-plugin' }))
       .rejects.toThrow('Plugin \'missing-plugin\' was not found in the Obsidian community plugins registry.');
+  });
+});
+
+describe('configureCommunityPlugin', () => {
+  const DATA_PATH = `${EMPTY}.obsidian/plugins/plugin-a/data.json`;
+
+  it('should create data.json with the settings when none exists', async () => {
+    const { adapterWrite, app } = createApp();
+    await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ modulesRoot: 'root-x' }, null, 2)}\n`);
+  });
+
+  it('should shallow-merge the settings over an existing data.json', async () => {
+    const { adapterWrite, app } = createApp({ existingPluginData: JSON.stringify({ existing: 1, modulesRoot: 'old' }) });
+    await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'new' } });
+    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ existing: 1, modulesRoot: 'new' }, null, 2)}\n`);
+  });
+
+  it('should ignore a non-object existing data.json', async () => {
+    const { adapterWrite, app } = createApp({ existingPluginData: 'null' });
+    await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'x' } });
+    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ modulesRoot: 'x' }, null, 2)}\n`);
+  });
+
+  it('should return true when it changes data.json', async () => {
+    const { app } = createApp();
+    expect(await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } })).toBe(true);
+  });
+
+  it('should return false and not write when the settings are already present', async () => {
+    const { adapterWrite, app } = createApp({ existingPluginData: JSON.stringify({ modulesRoot: 'root-x' }) });
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(result).toBe(false);
+    expect(adapterWrite).not.toHaveBeenCalled();
   });
 });
 
@@ -270,6 +323,12 @@ describe('selecting a plugin by name', () => {
     const { app, enablePluginAndSave } = createApp();
     await enableCommunityPlugin({ app, pluginName: 'Plugin A' });
     expect(enablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+  });
+
+  it('should configure by pluginName', async () => {
+    const { adapterWrite, app } = createApp();
+    await configureCommunityPlugin({ app, pluginName: 'Plugin A', settings: { modulesRoot: 'root-x' } });
+    expect(adapterWrite).toHaveBeenCalledWith(`${EMPTY}.obsidian/plugins/plugin-a/data.json`, `${JSON.stringify({ modulesRoot: 'root-x' }, null, 2)}\n`);
   });
 
   it('should uninstall by pluginName', async () => {

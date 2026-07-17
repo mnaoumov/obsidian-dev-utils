@@ -3,7 +3,7 @@
  *
  * Downloads and opens a plugin's shipped demo vault in a new Obsidian window (desktop only).
  *
- * A plugin can attach a `demo-vault-<version>.zip` archive to each GitHub release (see
+ * A plugin can attach a `<plugin-id>.demo-vault.zip` archive to each GitHub release (see
  * `archivePluginDemoVault` in `script-utils/demo-vault.ts`). This resolves the plugin's repository
  * from Obsidian's community registry, downloads the archive for the chosen version, extracts it to a
  * per-version cache folder under the OS temp directory, and opens that folder as a vault in a new
@@ -11,10 +11,7 @@
  * between the two versions.
  */
 
-import type {
-  App,
-  PluginManifest
-} from 'obsidian';
+import type { App } from 'obsidian';
 
 import AdmZip from 'adm-zip';
 import { compareVersions } from 'compare-versions';
@@ -45,20 +42,31 @@ export interface OpenDemoVaultParams {
   readonly app: App;
 
   /**
-   * The manifest of the plugin whose demo vault is opened. Its `id` locates the GitHub repository, its
-   * `version` selects the archive, and its `name` labels the notices and the version-choice dialog.
+   * The plugin id, used to locate the GitHub repository and the per-version cache folder, and to name
+   * the archive asset.
    */
-  readonly manifest: PluginManifest;
+  readonly pluginId: string;
+
+  /**
+   * The plugin display name, used to label the notices and the version-choice dialog.
+   */
+  readonly pluginName: string;
 
   /**
    * The notice component used to report problems (plugin not in the registry, missing archive).
    */
   readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
+   * The currently installed plugin version, offered as one of the version choices.
+   */
+  readonly pluginVersion: string;
 }
 
 interface DownloadAndExtractDemoVaultParams {
   readonly cacheDir: string;
-  readonly manifest: PluginManifest;
+  readonly pluginId: string;
+  readonly pluginName: string;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly repo: string;
   readonly version: string;
@@ -81,17 +89,19 @@ const HTTP_STATUS_OK = 200;
 export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> {
   const {
     app,
-    manifest,
-    pluginNoticeComponent
+    pluginId,
+    pluginName,
+    pluginNoticeComponent,
+    pluginVersion
   } = params;
 
-  const repo = await getCommunityPluginRepo(manifest.id);
+  const repo = await getCommunityPluginRepo(pluginId);
   if (!repo) {
-    pluginNoticeComponent.showNotice(`Could not find plugin ${manifest.name} in the community plugins registry.`);
+    pluginNoticeComponent.showNotice(`Could not find plugin ${pluginName} in the community plugins registry.`);
     return;
   }
 
-  const currentVersion = manifest.version;
+  const currentVersion = pluginVersion;
   const latestVersion = await getLatestReleaseVersion(repo);
 
   let versionToOpen: string;
@@ -100,7 +110,7 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
   } else {
     const chosenVersion = await selectOption<null | string>({
       app,
-      message: `Current version of plugin ${manifest.name} v${currentVersion} is not the latest (v${latestVersion})`,
+      message: `Current version of plugin ${pluginName} v${currentVersion} is not the latest (v${latestVersion})`,
       options: [
         {
           isCta: true,
@@ -116,7 +126,7 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
           value: null
         }
       ],
-      title: manifest.name
+      title: pluginName
     });
     if (chosenVersion === null) {
       return;
@@ -124,11 +134,12 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
     versionToOpen = chosenVersion;
   }
 
-  const cacheDir = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, manifest.id, versionToOpen);
+  const cacheDir = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, pluginId, versionToOpen);
   if (!existsSync(cacheDir)) {
     const isExtracted = await downloadAndExtractDemoVault({
       cacheDir,
-      manifest,
+      pluginId,
+      pluginName,
       pluginNoticeComponent,
       repo,
       version: versionToOpen
@@ -144,19 +155,20 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
 async function downloadAndExtractDemoVault(params: DownloadAndExtractDemoVaultParams): Promise<boolean> {
   const {
     cacheDir,
-    manifest,
+    pluginId,
+    pluginName,
     pluginNoticeComponent,
     repo,
     version
   } = params;
 
-  const assetUrl = `https://github.com/${repo}/releases/download/${version}/demo-vault-${version}.zip`;
+  const assetUrl = `https://github.com/${repo}/releases/download/${version}/${pluginId}.demo-vault.zip`;
   const response = await requestUrl({
     throw: false,
     url: assetUrl
   });
   if (response.status !== HTTP_STATUS_OK) {
-    pluginNoticeComponent.showNotice(`No demo vault is available for plugin ${manifest.name} v${version}.`);
+    pluginNoticeComponent.showNotice(`No demo vault is available for plugin ${pluginName} v${version}.`);
     return false;
   }
 

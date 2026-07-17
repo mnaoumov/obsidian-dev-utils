@@ -1,0 +1,9 @@
+{
+  "author": "mnaoumov",
+  "description": "Bootstraps a demo vault: installs, configures, and enables CodeScript Toolkit so the demo notes' code-buttons work with no manual setup.",
+  "id": "demo-vault-helper",
+  "isDesktopOnly": true,
+  "minAppVersion": "1.11.0",
+  "name": "Demo Vault Helper",
+  "version": "0.0.0"
+}
