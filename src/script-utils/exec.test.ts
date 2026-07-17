@@ -186,6 +186,29 @@ describe('exec', () => {
     expect(calledCommand).toContain('c');
   });
 
+  it('should quote batched args that contain spaces so they stay a single argument', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    try {
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+
+      const promise = exec(['echo', { batchedArgs: ['foo bar/baz.md', 'plain.md'] }], { isQuiet: true });
+
+      child.stdout.end('ok');
+      child.stderr.end('');
+      child.emit('close', 0, null);
+
+      await expect(promise).resolves.toBe('ok');
+      const firstCall = mockSpawn.mock.calls[0];
+      assertNonNullable(firstCall);
+      const calledCommand = firstCall[0] as string;
+      expect(calledCommand).toBe('echo "foo bar/baz.md" plain.md');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
   it('should split ExecArg into batches when total exceeds limit', async () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });

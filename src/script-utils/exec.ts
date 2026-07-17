@@ -478,7 +478,7 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
   const results: string[] = [];
 
   for (const batch of batches) {
-    const batchCommand = `${baseCommand} ${batch.join(' ')}`;
+    const batchCommand = `${baseCommand} ${toCommandLine(batch)}`;
     const result = await execString({
       command: batchCommand,
       options
@@ -531,7 +531,7 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   const maxCommandLength = getMaxCommandLength();
 
   // Try expanding all args inline
-  const fullCommand = `${baseCommand} ${execArg.batchedArgs.join(' ')}`;
+  const fullCommand = `${baseCommand} ${toCommandLine([...execArg.batchedArgs])}`;
   if (fullCommand.length <= maxCommandLength) {
     return execString({
       command: fullCommand,
@@ -544,7 +544,7 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   let currentBatch: string[] = [];
 
   for (const arg of execArg.batchedArgs) {
-    const tentative = `${baseCommand} ${[...currentBatch, arg].join(' ')}`;
+    const tentative = `${baseCommand} ${toCommandLine([...currentBatch, arg])}`;
     if (tentative.length > maxCommandLength) {
       if (currentBatch.length === 0) {
         return Promise.reject(
