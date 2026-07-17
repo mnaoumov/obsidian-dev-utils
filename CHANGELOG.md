@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 87.0.2
+
+- fix: exclude nested node_modules from markdown lint/link-check globs
+
 ## 87.0.1
 
 - chore: lint
