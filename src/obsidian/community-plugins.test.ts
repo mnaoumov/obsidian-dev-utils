@@ -226,6 +226,18 @@ describe('configureCommunityPlugin', () => {
     await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'x' } });
     expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ modulesRoot: 'x' }, null, 2)}\n`);
   });
+
+  it('should return true when it changes data.json', async () => {
+    const { app } = createApp();
+    expect(await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } })).toBe(true);
+  });
+
+  it('should return false and not write when the settings are already present', async () => {
+    const { adapterWrite, app } = createApp({ existingPluginData: JSON.stringify({ modulesRoot: 'root-x' }) });
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(result).toBe(false);
+    expect(adapterWrite).not.toHaveBeenCalled();
+  });
 });
 
 describe('uninstallCommunityPlugin', () => {

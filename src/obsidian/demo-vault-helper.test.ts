@@ -14,6 +14,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { EMPTY } from '../string.ts';
 import { bootstrapDemoVault } from './demo-vault-helper.ts';
@@ -21,6 +22,13 @@ import { bootstrapDemoVault } from './demo-vault-helper.ts';
 const CST_PLUGIN_ID = 'fix-require-modules';
 const CST_REPO = 'mnaoumov/obsidian-codescript-toolkit';
 const CST_VERSION = '1.0.0';
+
+const CST_SETTINGS = {
+  invocableScriptsFolder: 'Invocables',
+  modulesRoot: '_assets/CodeScriptToolkit',
+  shouldHandleProtocolUrls: true,
+  startupScriptPath: 'startup.ts'
+};
 
 const CST_MANIFEST: PluginManifest = {
   author: 'mnaoumov',
@@ -42,21 +50,17 @@ const REGISTRY = [
 ];
 
 const DATA_PATH = `${EMPTY}.obsidian/plugins/${CST_PLUGIN_ID}/data.json`;
-const EXPECTED_SETTINGS_JSON = `${JSON.stringify({
-  invocableScriptsFolder: 'Invocables',
-  modulesRoot: '_assets/CodeScriptToolkit',
-  shouldHandleProtocolUrls: true,
-  startupScriptPath: 'startup.ts'
-}, null, 2)}\n`;
 
 interface AppMock {
   readonly adapterWrite: DataAdapter['write'];
   readonly app: App;
+  readonly disablePluginAndSave: App['plugins']['disablePluginAndSave'];
   readonly enablePluginAndSave: App['plugins']['enablePluginAndSave'];
   readonly installPlugin: App['plugins']['installPlugin'];
 }
 
 interface CreateAppOptions {
+  readonly existingData?: string;
   readonly isCstEnabled?: boolean;
   readonly isCstInstalled?: boolean;
 }
@@ -74,10 +78,21 @@ vi.mock('obsidian', async (importOriginal) => {
 });
 
 function createApp(options: CreateAppOptions = {}): AppMock {
+  // A live set the enable/disable mocks mutate, so the real community-plugin helpers observe the change
+  // (an already-enabled plugin is seen as enabled until disabled, and vice versa).
+  const enabledPlugins = new Set<string>(options.isCstEnabled ? [CST_PLUGIN_ID] : []);
   const installPlugin = vi.fn<App['plugins']['installPlugin']>().mockResolvedValue();
-  const enablePluginAndSave = vi.fn<App['plugins']['enablePluginAndSave']>().mockResolvedValue();
-  const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(false);
-  const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue('{}');
+  const enablePluginAndSave = vi.fn<App['plugins']['enablePluginAndSave']>().mockImplementation((id: string) => {
+    enabledPlugins.add(id);
+    return noopAsync();
+  });
+  const disablePluginAndSave = vi.fn<App['plugins']['disablePluginAndSave']>().mockImplementation((id: string) => {
+    enabledPlugins.delete(id);
+    return noopAsync();
+  });
+
+  const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(options.existingData !== undefined);
+  const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue(options.existingData ?? '{}');
   const adapterWrite = vi.fn<DataAdapter['write']>().mockResolvedValue();
 
   // A null-prototype record so the strict proxy does not re-wrap it: a missing key reads as `undefined`
@@ -90,7 +105,8 @@ function createApp(options: CreateAppOptions = {}): AppMock {
 
   const app = strictProxy<App>({
     plugins: strictProxy<App['plugins']>({
-      enabledPlugins: new Set(options.isCstEnabled ? [CST_PLUGIN_ID] : []),
+      disablePluginAndSave,
+      enabledPlugins,
       enablePluginAndSave,
       installPlugin,
       manifests
@@ -108,6 +124,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   return {
     adapterWrite,
     app,
+    disablePluginAndSave,
     enablePluginAndSave,
     installPlugin
   };
@@ -132,10 +149,11 @@ beforeEach(() => {
 });
 
 describe('bootstrapDemoVault', () => {
-  it('should install CodeScript Toolkit from the store when it is not installed', async () => {
-    const { app, installPlugin } = createApp();
+  it('should install CodeScript Toolkit from the store when it is not installed, then enable it', async () => {
+    const { app, enablePluginAndSave, installPlugin } = createApp();
     await bootstrapDemoVault({ app });
     expect(installPlugin).toHaveBeenCalledWith(CST_REPO, CST_VERSION, CST_MANIFEST);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
   });
 
   it('should not reinstall CodeScript Toolkit when it is already installed', async () => {
@@ -145,25 +163,38 @@ describe('bootstrapDemoVault', () => {
     expect(mockRequestUrl).not.toHaveBeenCalled();
   });
 
-  it('should still configure CodeScript Toolkit when it is already installed', async () => {
-    const { adapterWrite, app } = createApp({ isCstInstalled: true });
+  it('should write CodeScript Toolkit settings before enabling it (fresh load, no reload)', async () => {
+    const { adapterWrite, app, disablePluginAndSave, enablePluginAndSave } = createApp();
     await bootstrapDemoVault({ app });
-    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, EXPECTED_SETTINGS_JSON);
-  });
-
-  it('should write CodeScript Toolkit settings before enabling it (loads configured, no reload)', async () => {
-    const { adapterWrite, app, enablePluginAndSave } = createApp();
-    await bootstrapDemoVault({ app });
-    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, EXPECTED_SETTINGS_JSON);
+    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify(CST_SETTINGS, null, 2)}\n`);
     expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+    expect(disablePluginAndSave).not.toHaveBeenCalled();
     const writeOrder = vi.mocked(adapterWrite).mock.invocationCallOrder[0] ?? 0;
     const enableOrder = vi.mocked(enablePluginAndSave).mock.invocationCallOrder[0] ?? 0;
     expect(writeOrder).toBeLessThan(enableOrder);
   });
 
-  it('should not re-enable CodeScript Toolkit when it is already enabled', async () => {
-    const { app, enablePluginAndSave } = createApp({ isCstEnabled: true, isCstInstalled: true });
+  it('should reload CodeScript Toolkit when it is already enabled but the settings changed', async () => {
+    const { app, disablePluginAndSave, enablePluginAndSave, installPlugin } = createApp({
+      existingData: JSON.stringify({ modulesRoot: 'stale' }),
+      isCstEnabled: true,
+      isCstInstalled: true
+    });
     await bootstrapDemoVault({ app });
+    expect(installPlugin).not.toHaveBeenCalled();
+    expect(disablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+  });
+
+  it('should not reload CodeScript Toolkit when it is already enabled and the settings are unchanged', async () => {
+    const { adapterWrite, app, disablePluginAndSave, enablePluginAndSave } = createApp({
+      existingData: JSON.stringify(CST_SETTINGS),
+      isCstEnabled: true,
+      isCstInstalled: true
+    });
+    await bootstrapDemoVault({ app });
+    expect(adapterWrite).not.toHaveBeenCalled();
+    expect(disablePluginAndSave).not.toHaveBeenCalled();
     expect(enablePluginAndSave).not.toHaveBeenCalled();
   });
 });

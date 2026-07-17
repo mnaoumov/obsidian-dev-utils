@@ -192,13 +192,16 @@ const DATA_JSON_INDENT = 2;
 /**
  * Writes settings into a community plugin's `data.json`, shallow-merging them over any existing settings
  * (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load already
- * configured, with no reload.
+ * configured, with no reload. A no-op write is skipped: when the merge changes nothing, the file is left
+ * untouched and `false` is returned, so a caller can avoid reloading an already-correctly-configured
+ * plugin.
  *
  * @param params - The {@link ConfigureCommunityPluginParams}.
- * @returns A {@link Promise} that resolves once the settings are written.
+ * @returns A {@link Promise} that resolves to `true` if the `data.json` content changed (and was
+ * written), or `false` if the settings were already present (nothing written).
  * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
  */
-export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<void> {
+export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<boolean> {
   const { app, settings } = params;
   const pluginId = await resolveCommunityPluginId(params);
   const dataPath = `${app.vault.configDir}/plugins/${pluginId}/data.json`;
@@ -211,9 +214,15 @@ export async function configureCommunityPlugin(params: ConfigureCommunityPluginP
     }
   }
 
+  const serializedBefore = JSON.stringify(data);
   Object.assign(data, settings);
-  const serialized = JSON.stringify(data, null, DATA_JSON_INDENT) ?? '';
+  if (JSON.stringify(data) === serializedBefore) {
+    return false;
+  }
+
+  const serialized = String(JSON.stringify(data, null, DATA_JSON_INDENT));
   await app.vault.adapter.write(dataPath, `${serialized}\n`);
+  return true;
 }
 
 /**
