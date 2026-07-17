@@ -91,7 +91,7 @@ export async function lint(options?: LintOptions): Promise<void> {
       exclude: [
         '.git/**',
         'dist/**',
-        'node_modules/**'
+        '**/node_modules/**'
       ]
     }));
   /* v8 ignore stop */

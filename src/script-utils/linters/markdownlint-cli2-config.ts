@@ -40,7 +40,7 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
     '**/*.md'
   ],
   ignores: [
-    'node_modules/**',
+    '**/node_modules/**',
     '.git/**',
     'dist/**'
   ]
