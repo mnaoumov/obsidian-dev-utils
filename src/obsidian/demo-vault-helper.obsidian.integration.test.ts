@@ -1,8 +1,6 @@
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
-// eslint-disable-next-line import-x/no-nodejs-modules -- The node-env integration setup reads the built helper bundle from `dist`.
 import { readFileSync } from 'node:fs';
-// eslint-disable-next-line import-x/no-nodejs-modules -- The node-env integration setup resolves the built helper path.
 import { join } from 'node:path';
 import { evalInObsidian } from 'obsidian-integration-testing';
 import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup';
