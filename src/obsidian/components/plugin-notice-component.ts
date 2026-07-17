@@ -446,6 +446,7 @@ export class PluginNoticeComponent extends ComponentEx {
             isCancelled = true;
           }
         });
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Can be cancelled by the user.
         if (isCancelled) {
           return;
         }
