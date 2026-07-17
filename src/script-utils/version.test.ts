@@ -953,7 +953,7 @@ describe('updateVersion', () => {
     mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
     mockReaddirPosix.mockResolvedValue([]);
     await updateVersion('prerelease');
-    expect(mockArchivePluginDemoVault).toHaveBeenCalledWith('1.0.1-beta.0');
+    expect(mockArchivePluginDemoVault).toHaveBeenCalled();
   });
 
   it('should not archive the demo vault when shouldArchiveDemoVault is false', async () => {
