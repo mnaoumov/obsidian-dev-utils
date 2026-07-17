@@ -5,8 +5,9 @@
  *
  * A plugin can ship a curated demo vault at `demo-vault/` in its repo root. At release time this
  * module installs the freshly built plugin into that vault's `.obsidian/plugins/<id>/` folder and
- * zips the whole vault into `dist/build/demo-vault-<version>.zip`, so the existing GitHub-release
- * step (which uploads every file in `dist/build/`) attaches it automatically.
+ * zips the whole vault into `dist/build/<plugin-id>.demo-vault.zip`, so the existing GitHub-release
+ * step (which uploads every file in `dist/build/`) attaches it automatically. The archive is named by
+ * plugin id (not just `demo-vault`) so several plugins' demo vaults never collide.
  */
 
 import AdmZip from 'adm-zip';
@@ -45,13 +46,12 @@ interface PluginManifest {
  *
  * Installs the freshly built plugin from `dist/build/` into the vault's
  * `.obsidian/plugins/<id>/` folder, then zips the whole vault to
- * `dist/build/demo-vault-<version>.zip`.
+ * `dist/build/<plugin-id>.demo-vault.zip`.
  *
- * @param newVersion - The version being released, used in the archive file name.
  * @returns A {@link Promise} that resolves to the absolute path of the created zip archive, or
  * `null` if the repo has no `demo-vault/` folder.
  */
-export async function archivePluginDemoVault(newVersion: string): Promise<null | string> {
+export async function archivePluginDemoVault(): Promise<null | string> {
   const demoVaultPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.DemoVault });
   if (!existsSync(demoVaultPath)) {
     return null;
@@ -77,7 +77,7 @@ export async function archivePluginDemoVault(newVersion: string): Promise<null |
 
   // Archive name is hand-synced with the runtime `openDemoVault` opener, which downloads this exact asset name.
   const zipPath = resolvePathFromRootSafe({
-    path: join(ObsidianPluginRepoPaths.DistBuild, `demo-vault-${newVersion}.zip`)
+    path: join(ObsidianPluginRepoPaths.DistBuild, `${manifest.id}.demo-vault.zip`)
   });
   const zip = new AdmZip();
   zip.addLocalFolder(demoVaultPath);

@@ -2,7 +2,6 @@
 
 import type {
   App as AppOriginal,
-  PluginManifest,
   RequestUrlParam
 } from 'obsidian';
 
@@ -90,12 +89,10 @@ const CURRENT_VERSION = '1.0.0';
 function buildParams(version = CURRENT_VERSION): OpenDemoVaultParams {
   return {
     app: strictProxy<AppOriginal>({}),
-    manifest: strictProxy<PluginManifest>({
-      id: PLUGIN_ID,
-      name: 'My Plugin',
-      version
-    }),
-    pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNotice: mockShowNotice })
+    pluginId: PLUGIN_ID,
+    pluginName: 'My Plugin',
+    pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNotice: mockShowNotice }),
+    pluginVersion: version
   };
 }
 
@@ -192,6 +189,10 @@ describe('openDemoVault', () => {
 
   it('should download and extract the archive when the version is not cached', async () => {
     await openDemoVault(buildParams());
+    expect(mockRequestUrl).toHaveBeenCalledWith({
+      throw: false,
+      url: `https://github.com/${REPO}/releases/download/${CURRENT_VERSION}/${PLUGIN_ID}.demo-vault.zip`
+    });
     expect(mockExtractAllTo).toHaveBeenCalledWith(expect.stringContaining(cacheDirSuffix(CURRENT_VERSION)), true);
     expect(mockSendSync).toHaveBeenCalledWith('vault-open', expect.stringContaining(cacheDirSuffix(CURRENT_VERSION)), false);
   });

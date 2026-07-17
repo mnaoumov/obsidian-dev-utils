@@ -4,10 +4,7 @@
  * Handles the "Open demo vault" command.
  */
 
-import type {
-  App,
-  PluginManifest
-} from 'obsidian';
+import type { App } from 'obsidian';
 
 import { Platform } from 'obsidian';
 
@@ -25,14 +22,19 @@ export interface OpenDemoVaultCommandHandlerConstructorParams {
   readonly app: App;
 
   /**
-   * The manifest of the plugin whose demo vault the command opens.
+   * The id of the plugin whose demo vault the command opens.
    */
-  readonly manifest: PluginManifest;
+  readonly pluginId: string;
 
   /**
    * The notice component used to report problems while opening the demo vault.
    */
   readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
+   * The currently installed version of the plugin whose demo vault the command opens.
+   */
+  readonly pluginVersion: string;
 }
 
 /**
@@ -51,14 +53,19 @@ export class OpenDemoVaultCommandHandler extends GlobalCommandHandler {
   protected readonly app: App;
 
   /**
-   * The manifest of the plugin whose demo vault the command opens.
+   * The id of the plugin whose demo vault the command opens.
    */
-  protected readonly manifest: PluginManifest;
+  protected readonly pluginId: string;
 
   /**
    * The notice component used to report problems while opening the demo vault.
    */
   protected readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
+   * The currently installed version of the plugin whose demo vault the command opens.
+   */
+  protected readonly pluginVersion: string;
 
   /**
    * Constructs a new instance.
@@ -73,8 +80,9 @@ export class OpenDemoVaultCommandHandler extends GlobalCommandHandler {
     });
 
     this.app = params.app;
-    this.manifest = params.manifest;
+    this.pluginId = params.pluginId;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
+    this.pluginVersion = params.pluginVersion;
   }
 
   /**
@@ -85,8 +93,10 @@ export class OpenDemoVaultCommandHandler extends GlobalCommandHandler {
     const { openDemoVault } = await import('../desktop-demo-vault-opener.ts');
     await openDemoVault({
       app: this.app,
-      manifest: this.manifest,
-      pluginNoticeComponent: this.pluginNoticeComponent
+      pluginId: this.pluginId,
+      pluginName: this.pluginName,
+      pluginNoticeComponent: this.pluginNoticeComponent,
+      pluginVersion: this.pluginVersion
     });
   }
 

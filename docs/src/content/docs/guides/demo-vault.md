@@ -13,7 +13,7 @@ Put a curated vault at `demo-vault/` in your plugin repo root (a normal vault, i
 
 1. The freshly built plugin (from `dist/build/`) is installed into `demo-vault/.obsidian/plugins/<plugin-id>/`.
 2. The bundled `demo-vault-helper` bootstrap plugin (shipped inside `obsidian-dev-utils`) is injected into `demo-vault/.obsidian/plugins/demo-vault-helper/` — see [The `demo-vault-helper` bootstrap plugin](#the-demo-vault-helper-bootstrap-plugin).
-3. The whole `demo-vault/` folder is zipped to `dist/build/demo-vault-<version>.zip`.
+3. The whole `demo-vault/` folder is zipped to `dist/build/<plugin-id>.demo-vault.zip` (named by plugin id so several plugins' demo vaults never collide).
 4. Because the GitHub-release step uploads every file in `dist/build/`, the archive is attached to the release automatically.
 
 If the repo has no `demo-vault/` folder, the step is silently skipped.
@@ -64,8 +64,9 @@ import { OpenDemoVaultCommandHandler } from 'obsidian-dev-utils/obsidian/command
 
 new OpenDemoVaultCommandHandler({
   app: this.app,
-  manifest: this.manifest,
-  pluginNoticeComponent: this.pluginNoticeComponent
+  pluginId: this.manifest.id,
+  pluginNoticeComponent: this.pluginNoticeComponent,
+  pluginVersion: this.manifest.version
 });
 ```
 
@@ -73,7 +74,7 @@ The command is **desktop only** — it hides itself on mobile (its `canExecute` 
 
 1. Resolves the plugin's GitHub repository from Obsidian's community registry (see [`getCommunityPluginRepo`](#getcommunitypluginrepo)).
 2. Reads the latest release version. If the installed version is the latest (or newer), its demo vault opens directly; otherwise the user is offered a choice between the latest and the currently-installed version via a [Select Option](/obsidian-dev-utils/guides/modals/#select-option) dialog.
-3. Downloads and extracts the chosen version's `demo-vault-<version>.zip` to a per-version cache folder (under the OS temp directory, reused if already extracted).
+3. Downloads and extracts the chosen version's `<plugin-id>.demo-vault.zip` to a per-version cache folder (under the OS temp directory, reused if already extracted).
 4. Opens that folder as a vault in a new window.
 
 If the plugin is not in the community registry, or no archive exists for the chosen version, a notice is shown and nothing is opened.
