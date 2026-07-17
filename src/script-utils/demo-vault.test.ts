@@ -8,12 +8,14 @@ import {
 
 import type { ResolvePathFromRootSafeParams } from './root.ts';
 
+import { EMPTY } from '../string.ts';
 import { archivePluginDemoVault } from './demo-vault.ts';
 
 const {
   mockAddLocalFolder,
   mockCp,
   mockExistsSync,
+  mockGetRootFolder,
   mockMkdir,
   mockReadFile,
   mockResolvePathFromRootSafe,
@@ -22,6 +24,7 @@ const {
   mockAddLocalFolder: vi.fn(),
   mockCp: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
   mockMkdir: vi.fn(),
   mockReadFile: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
@@ -54,12 +57,14 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 });
 
 vi.mock('./root.ts', () => ({
+  getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
 }));
 
 beforeEach(() => {
   vi.resetAllMocks();
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
+  mockGetRootFolder.mockReturnValue('/package');
   mockCp.mockResolvedValue(undefined);
   mockMkdir.mockResolvedValue(undefined);
   mockReadFile.mockResolvedValue(JSON.stringify({ id: 'my-plugin' }));
@@ -82,12 +87,25 @@ describe('archivePluginDemoVault', () => {
     const result = await archivePluginDemoVault('1.2.3');
 
     expect(mockReadFile).toHaveBeenCalledWith('/root/manifest.json', 'utf-8');
-    // eslint-disable-next-line obsidianmd/hardcoded-config-path -- Asserting the fixed skeleton layout of a shipped demo-vault archive, not a live-vault lookup.
-    expect(mockMkdir).toHaveBeenCalledWith('/root/demo-vault/.obsidian/plugins/my-plugin', { recursive: true });
-    // eslint-disable-next-line obsidianmd/hardcoded-config-path -- Asserting the fixed skeleton layout of a shipped demo-vault archive, not a live-vault lookup.
-    expect(mockCp).toHaveBeenCalledWith('/root/dist/build', '/root/demo-vault/.obsidian/plugins/my-plugin', { recursive: true });
+    expect(mockMkdir).toHaveBeenCalledWith(`/root/demo-vault/${EMPTY}.obsidian/plugins/my-plugin`, { recursive: true });
+    expect(mockCp).toHaveBeenCalledWith('/root/dist/build', `/root/demo-vault/${EMPTY}.obsidian/plugins/my-plugin`, { recursive: true });
     expect(mockAddLocalFolder).toHaveBeenCalledWith('/root/demo-vault');
     expect(mockWriteZipPromise).toHaveBeenCalledWith('/root/dist/build/demo-vault-1.2.3.zip');
     expect(result).toBe('/root/dist/build/demo-vault-1.2.3.zip');
+  });
+
+  it('should inject the shipped demo-vault-helper plugin into the vault', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await archivePluginDemoVault('1.2.3');
+
+    expect(mockMkdir).toHaveBeenCalledWith(`/root/demo-vault/${EMPTY}.obsidian/plugins/demo-vault-helper`, { recursive: true });
+    expect(mockCp).toHaveBeenCalledWith('/package/dist/demo-vault-helper', `/root/demo-vault/${EMPTY}.obsidian/plugins/demo-vault-helper`, { recursive: true });
+  });
+
+  it('should throw when the obsidian-dev-utils package folder cannot be resolved', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetRootFolder.mockReturnValue(null);
+    await expect(archivePluginDemoVault('1.2.3'))
+      .rejects.toThrow('Could not resolve the obsidian-dev-utils package folder to inject the demo-vault-helper plugin.');
   });
 });

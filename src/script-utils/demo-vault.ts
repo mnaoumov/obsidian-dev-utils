@@ -18,8 +18,17 @@ import {
 } from 'node:fs/promises';
 
 import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
-import { join } from '../path.ts';
-import { resolvePathFromRootSafe } from './root.ts';
+import {
+  getFolderName,
+  join
+} from '../path.ts';
+import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
+import {
+  getRootFolder,
+  resolvePathFromRootSafe
+} from './root.ts';
+
+const DEMO_VAULT_HELPER_PLUGIN_ID = 'demo-vault-helper';
 
 /**
  * The minimal shape of a plugin `manifest.json` read by {@link archivePluginDemoVault}.
@@ -64,6 +73,8 @@ export async function archivePluginDemoVault(newVersion: string): Promise<null |
   const distBuildPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.DistBuild });
   await cp(distBuildPath, pluginFolder, { recursive: true });
 
+  await injectDemoVaultHelper();
+
   // Archive name is hand-synced with the runtime `openDemoVault` opener, which downloads this exact asset name.
   const zipPath = resolvePathFromRootSafe({
     path: join(ObsidianPluginRepoPaths.DistBuild, `demo-vault-${newVersion}.zip`)
@@ -72,4 +83,24 @@ export async function archivePluginDemoVault(newVersion: string): Promise<null |
   zip.addLocalFolder(demoVaultPath);
   await zip.writeZipPromise(zipPath);
   return zipPath;
+}
+
+// Injects the built, `obsidian-dev-utils`-owned `demo-vault-helper` bootstrap plugin (shipped in this package) into the demo vault, so no per-vault copy is committed and an `obsidian-dev-utils` bump propagates fixes.
+async function injectDemoVaultHelper(): Promise<void> {
+  const packageFolder = getRootFolder(getFolderName(import.meta.url));
+  if (!packageFolder) {
+    throw new Error('Could not resolve the obsidian-dev-utils package folder to inject the demo-vault-helper plugin.');
+  }
+
+  const helperSourcePath = join(packageFolder, ObsidianDevUtilsRepoPaths.DistDemoVaultHelper);
+  const helperFolder = resolvePathFromRootSafe({
+    path: join(
+      ObsidianPluginRepoPaths.DemoVault,
+      ObsidianPluginRepoPaths.DotObsidian,
+      ObsidianPluginRepoPaths.Plugins,
+      DEMO_VAULT_HELPER_PLUGIN_ID
+    )
+  });
+  await mkdir(helperFolder, { recursive: true });
+  await cp(helperSourcePath, helperFolder, { recursive: true });
 }

@@ -29,6 +29,7 @@
   },
   "include": [
     "./commitlint.config.ts",
+    "./demo-vault-helper/**/*.ts",
     "./eslint.config.mts",
     "./integration-test-plugin/**/*.ts",
     "./scripts/**/*.ts",

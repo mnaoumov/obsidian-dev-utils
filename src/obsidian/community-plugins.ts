@@ -43,6 +43,12 @@ export interface CommunityPluginSearchResult {
 }
 
 /**
+ * Parameters for {@link configureCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type ConfigureCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef & CommunityPluginSettings;
+
+/**
  * Parameters for {@link disableCommunityPlugin}. Selects the plugin by either `pluginId` or
  * `pluginName`.
  */
@@ -139,6 +145,17 @@ interface CommunityPluginOperationContext {
 }
 
 /**
+ * The settings to merge into a community plugin's `data.json`.
+ */
+interface CommunityPluginSettings {
+  /**
+   * The settings object shallow-merged over the plugin's existing `data.json` (the file is created if
+   * absent).
+   */
+  readonly settings: object;
+}
+
+/**
  * The desired enabled state for {@link toggleEnableCommunityPlugin}.
  */
 interface CommunityPluginToggleEnableState {
@@ -170,6 +187,34 @@ interface GitHubRelease {
 
 const COMMUNITY_PLUGINS_STATE_KEY = 'communityPluginEntriesPromise';
 const COMMUNITY_PLUGINS_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json';
+const DATA_JSON_INDENT = 2;
+
+/**
+ * Writes settings into a community plugin's `data.json`, shallow-merging them over any existing settings
+ * (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load already
+ * configured, with no reload.
+ *
+ * @param params - The {@link ConfigureCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the settings are written.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<void> {
+  const { app, settings } = params;
+  const pluginId = await resolveCommunityPluginId(params);
+  const dataPath = `${app.vault.configDir}/plugins/${pluginId}/data.json`;
+
+  let data: object = {};
+  if (await app.vault.adapter.exists(dataPath)) {
+    const parsed: unknown = JSON.parse(await app.vault.adapter.read(dataPath));
+    if (parsed !== null && typeof parsed === 'object') {
+      data = parsed;
+    }
+  }
+
+  Object.assign(data, settings);
+  const serialized = JSON.stringify(data, null, DATA_JSON_INDENT) ?? '';
+  await app.vault.adapter.write(dataPath, `${serialized}\n`);
+}
 
 /**
  * Disables a community plugin (persisting the change) if it is currently enabled. Idempotent — a no-op
