@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 87.0.3
+
+- fix(reg-exp): prevent code-block scan from freezing on unterminated fences
+- chore: update libs
+- test: demo vault
+- feat: universal demo-vault-helper bootstrap plugin
+
 ## 87.0.2
 
 - fix: exclude nested node_modules from markdown lint/link-check globs
