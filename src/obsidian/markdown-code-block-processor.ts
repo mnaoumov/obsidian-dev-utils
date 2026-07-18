@@ -33,6 +33,7 @@ import {
 } from '../string.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
+import { createCodeBlockRegExp } from './code-block-reg-exp.ts';
 import { getFileOrNull } from './file-system.ts';
 import {
   invokeWithFileSystemLock,
@@ -264,7 +265,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       const potentialCodeBlockTextLines = textLines.map((line, index) => approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : '');
       const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
 
-      const REG_EXP = /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>(?:\n?\k<LinePrefix>.*)+?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
+      const REG_EXP = createCodeBlockRegExp();
 
       for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
         if (!isSuitableCodeBlock({ isInCallout, language, match, sourceLf })) {
