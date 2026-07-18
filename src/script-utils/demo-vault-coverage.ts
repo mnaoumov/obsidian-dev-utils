@@ -10,8 +10,9 @@
  * vault is a learning resource, and these checks only guard that it stays truthful.
  *
  * Two layers are exposed:
- * - {@link DemoVaultCoverageChecker} — a framework-agnostic core that reads the corpus, parses interface
- *   members, and returns diagnostic arrays (what is undemonstrated / stale / unlinked).
+ * - {@link DemoVaultCoverageChecker} — a framework-agnostic core that reads the corpus, parses interface /
+ *   class / enum members and exported functions, and returns diagnostic arrays (what is undemonstrated / stale
+ *   / unlinked).
  * - {@link registerDemoVaultCoverageSuite} — a thin wrapper that registers a `vitest` suite over the core, so
  *   a plugin's `demo-vault.no-app.integration.test.ts` is a single declarative call.
  */
@@ -38,12 +39,13 @@ import { getMandatoryNamedGroup } from '../reg-exp.ts';
  */
 export interface DemoVaultConfigInterfaceCoverageSpec {
   /**
-   * The name of the `export interface` whose properties are the config options.
+   * The name of the `export interface`, `export class`, or `export enum` whose properties are the config
+   * options.
    */
   readonly interfaceName: string;
 
   /**
-   * The source file path (relative to the repo root) that declares the interface.
+   * The source file path (relative to the repo root) that declares the interface, class, or enum.
    */
   readonly sourcePath: string;
 }
@@ -106,16 +108,26 @@ export interface DemoVaultCoverageCheckerFindUnlinkedFeatureDocsParams {
 }
 
 /**
+ * The parameters for {@link DemoVaultCoverageChecker.getExportedFunctionNames}.
+ */
+export interface DemoVaultCoverageCheckerGetExportedFunctionNamesParams {
+  /**
+   * The source file path (relative to the repo root) whose `export function`s are parsed.
+   */
+  readonly sourcePath: string;
+}
+
+/**
  * The parameters for {@link DemoVaultCoverageChecker.getInterfaceMembers}.
  */
 export interface DemoVaultCoverageCheckerGetInterfaceMembersParams {
   /**
-   * The name of the `export interface` to parse.
+   * The name of the `export interface`, `export class`, or `export enum` to parse.
    */
   readonly interfaceName: string;
 
   /**
-   * The source file path (relative to the repo root) that declares the interface.
+   * The source file path (relative to the repo root) that declares the interface, class, or enum.
    */
   readonly sourcePath: string;
 }
@@ -136,16 +148,27 @@ export interface DemoVaultDocsCoverageSpec {
 }
 
 /**
+ * Reflects a module's exported functions, each demonstrated by its bare name in the demo corpus.
+ */
+export interface DemoVaultFunctionsCoverageSpec {
+  /**
+   * The source file path (relative to the repo root) whose `export function`s must each be demonstrated.
+   */
+  readonly sourcePath: string;
+}
+
+/**
  * Reflects a single interface's members and demonstrates them via `` `${receiver}.<member>` `` references.
  */
 export interface DemoVaultInterfaceCoverageSpec {
   /**
-   * The name of the `export interface` to reflect.
+   * The name of the `export interface`, `export class`, or `export enum` to reflect.
    */
   readonly interfaceName: string;
 
   /**
-   * Whether the demonstrated members are the interface's methods or its properties.
+   * Whether the demonstrated members are the reflected type's methods or its properties (enum members count as
+   * properties).
    */
   readonly kind: DemoVaultInterfaceMemberKind;
 
@@ -155,7 +178,7 @@ export interface DemoVaultInterfaceCoverageSpec {
   readonly receiver: string;
 
   /**
-   * The source file path (relative to the repo root) that declares the interface.
+   * The source file path (relative to the repo root) that declares the interface, class, or enum.
    */
   readonly sourcePath: string;
 }
@@ -181,18 +204,19 @@ export interface DemoVaultNonTrivialGuardSpec {
   readonly expectMember: string;
 
   /**
-   * The name of the `export interface` whose members are re-parsed for the guard.
+   * The name of the `export interface`, `export class`, or `export enum` whose members are re-parsed for the
+   * guard.
    */
   readonly interfaceName: string;
 
   /**
-   * The source file path (relative to the repo root) that declares the interface.
+   * The source file path (relative to the repo root) that declares the interface, class, or enum.
    */
   readonly sourcePath: string;
 }
 
 /**
- * The parsed members of a source interface.
+ * The parsed members of a source interface, class, or enum.
  */
 export interface InterfaceMembers {
   /**
@@ -224,6 +248,12 @@ export interface RegisterDemoVaultCoverageSuiteParams {
    * The feature-doc linking check, or `undefined` when the plugin ships no `docs/` folder.
    */
   readonly docs?: DemoVaultDocsCoverageSpec;
+
+  /**
+   * The modules whose `export function`s must each be demonstrated by their bare name, or `undefined` when the
+   * plugin exposes no such module to check.
+   */
+  readonly functionModules?: DemoVaultFunctionsCoverageSpec[];
 
   /**
    * The interfaces whose members must each be demonstrated (and referenced without drift).
@@ -317,26 +347,31 @@ export class DemoVaultCoverageChecker {
   }
 
   /**
-   * Parses the members of an `export interface` declared in a source file.
+   * Parses the names of the `export function`s (including `async` and generator declarations) in a source file.
+   *
+   * @param params - The parameters for the lookup.
+   * @returns The exported function names in source order.
+   */
+  public getExportedFunctionNames(params: DemoVaultCoverageCheckerGetExportedFunctionNamesParams): string[] {
+    const source = readFileSync(join(this.rootFolder, params.sourcePath), 'utf-8');
+    return [...source.matchAll(/^export (?:async )?function\*? (?<name>\w+)/gm)]
+      .map((match) => getMandatoryNamedGroup(match, 'name'));
+  }
+
+  /**
+   * Parses the members of an `export interface`, `export class`, or `export enum` declared in a source file.
    *
    * @param params - The parameters for the lookup.
    * @returns The parsed {@link InterfaceMembers}.
-   * @throws When the interface cannot be found in the source file.
+   * @throws When the interface, class, or enum cannot be found in the source file.
    */
   public getInterfaceMembers(params: DemoVaultCoverageCheckerGetInterfaceMembersParams): InterfaceMembers {
     const source = readFileSync(join(this.rootFolder, params.sourcePath), 'utf-8');
-    const match = new RegExp(`export interface ${params.interfaceName} \\{(?<body>[\\s\\S]*?)\\n\\}`).exec(source);
+    const match = new RegExp(`export (?<keyword>interface|class|enum) ${params.interfaceName}\\b[^{]*\\{(?<body>[\\s\\S]*?)\\n\\}`).exec(source);
     if (!match) {
       throw new Error(`Could not find interface ${params.interfaceName}`);
     }
-    const body = getMandatoryNamedGroup(match, 'body');
-    const methods = extractMethodNames(body);
-    const properties = extractPropertyNames(body);
-    return {
-      all: [...methods, ...properties],
-      methods,
-      properties
-    };
+    return parseMembers(getMandatoryNamedGroup(match, 'keyword'), getMandatoryNamedGroup(match, 'body'));
   }
 
   /**
@@ -401,6 +436,14 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
       });
     }
 
+    for (const spec of params.functionModules ?? []) {
+      it(`demonstrates every exported function in ${spec.sourcePath}`, () => {
+        const functionNames = checker.getExportedFunctionNames(spec);
+        expect(functionNames.length).toBeGreaterThan(0);
+        expect(checker.findUndemonstratedMembers({ members: functionNames })).toEqual([]);
+      });
+    }
+
     const docs = params.docs;
     if (docs) {
       it('links a demo note for every feature doc', () => {
@@ -418,10 +461,51 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
   });
 }
 
+const CLASS_MEMBER_MODIFIERS = '(?:(?:public|private|protected|readonly|static|abstract|override)\\s+)*';
+
+function buildMembers(methods: string[], properties: string[]): InterfaceMembers {
+  return {
+    all: [...methods, ...properties],
+    methods,
+    properties
+  };
+}
+
+function extractClassMethodNames(classBody: string): string[] {
+  return [...classBody.matchAll(new RegExp(`^ {2}(?<modifiers>${CLASS_MEMBER_MODIFIERS})(?<name>\\w+)(?:<[^>]*>)?\\(`, 'gm'))]
+    .filter((match) => !isNonPublicMember(getMandatoryNamedGroup(match, 'modifiers')))
+    .map((match) => getMandatoryNamedGroup(match, 'name'));
+}
+
+function extractClassPropertyNames(classBody: string): string[] {
+  return [...classBody.matchAll(new RegExp(`^ {2}(?<modifiers>${CLASS_MEMBER_MODIFIERS})(?<name>\\w+)\\s*\\??\\s*[:=]`, 'gm'))]
+    .filter((match) => !isNonPublicMember(getMandatoryNamedGroup(match, 'modifiers')))
+    .map((match) => getMandatoryNamedGroup(match, 'name'));
+}
+
+function extractEnumMemberNames(enumBody: string): string[] {
+  return [...enumBody.matchAll(/^ {2}(?<name>\w+)/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
+}
+
 function extractMethodNames(interfaceBody: string): string[] {
   return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)(?:<[^>]*>)?\(/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
 }
 
 function extractPropertyNames(interfaceBody: string): string[] {
   return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
+}
+
+function isNonPublicMember(modifiers: string): boolean {
+  return /\b(?:private|protected)\b/.test(modifiers);
+}
+
+function parseMembers(keyword: string, body: string): InterfaceMembers {
+  switch (keyword) {
+    case 'class':
+      return buildMembers(extractClassMethodNames(body), extractClassPropertyNames(body));
+    case 'enum':
+      return buildMembers([], extractEnumMemberNames(body));
+    default:
+      return buildMembers(extractMethodNames(body), extractPropertyNames(body));
+  }
 }
