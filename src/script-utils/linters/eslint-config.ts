@@ -138,6 +138,7 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
     ...getEslintCommentsConfigs(context),
     ...getObsidianDevUtilsPluginConfigs(context),
     ...getNodeCompatConfigs(context),
+    ...getIntegrationTestConfigs(),
     ...customConfigs
   );
 }
@@ -390,6 +391,19 @@ function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
       ],
       rules: {
         'import-x/no-default-export': 'off'
+      }
+    }
+  ]);
+}
+
+function getIntegrationTestConfigs(): Linter.Config[] {
+  return defineConfig([
+    {
+      // Integration tests run in a Node environment and legitimately read files / paths, so the Node-builtins bans do not apply to them.
+      files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyIntegrationTestTs)],
+      rules: {
+        'import-x/no-nodejs-modules': 'off',
+        'obsidianmd/no-nodejs-modules': 'off'
       }
     }
   ]);

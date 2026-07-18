@@ -21,6 +21,10 @@ import { abortSignalAny } from '../abort-controller.ts';
 import { requestAnimationFrameAsync } from '../async.ts';
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
+  getMandatoryNamedGroup,
+  getOptionalNamedGroup
+} from '../reg-exp.ts';
+import {
   ensureLfEndings,
   getLfNormalizedOffsetToOriginalOffsetMapper,
   hasSingleOccurrence,
@@ -452,11 +456,11 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
     textLineOffsets
   } = params;
 
-  const linePrefix = match.groups?.['LinePrefix'] ?? '';
-  const codeBlockStartDelimiter = match.groups?.['CodeBlockStartDelimiter'] ?? '';
-  const codeBlockEndDelimiter = match.groups?.['CodeBlockEndDelimiter'] ?? '';
-  const codeBlockArgsStr = match.groups?.['CodeBlockArgs'] ?? '';
-  const language = match.groups?.['CodeBlockLanguage'] ?? '';
+  const linePrefix = getMandatoryNamedGroup(match, 'LinePrefix');
+  const codeBlockStartDelimiter = getMandatoryNamedGroup(match, 'CodeBlockStartDelimiter');
+  const codeBlockEndDelimiter = getMandatoryNamedGroup(match, 'CodeBlockEndDelimiter');
+  const codeBlockArgsStr = getOptionalNamedGroup(match, 'CodeBlockArgs') ?? '';
+  const language = getMandatoryNamedGroup(match, 'CodeBlockLanguage');
 
   const previousText = potentialCodeBlockText.slice(0, match.index);
   const previousTextLinesCount = previousText.split('\n').length - 1;
@@ -533,18 +537,18 @@ function insertText(params: InsertTextParams): string {
 function isSuitableCodeBlock(params: IsSuitableCodeBlockParams): boolean {
   const { isInCallout, language, match, sourceLf } = params;
 
-  const codeBlockLanguage = match.groups?.['CodeBlockLanguage'] ?? '';
+  const codeBlockLanguage = getMandatoryNamedGroup(match, 'CodeBlockLanguage');
   if (codeBlockLanguage !== language) {
     return false;
   }
 
-  const linePrefix = match.groups?.['LinePrefix'] ?? '';
+  const linePrefix = getMandatoryNamedGroup(match, 'LinePrefix');
 
   if (isInCallout && !linePrefix.includes('> ')) {
     return false;
   }
 
-  const codeBlockContent = match.groups?.['CodeBlockContent'] ?? '';
+  const codeBlockContent = getOptionalNamedGroup(match, 'CodeBlockContent') ?? '';
   const cleanCodeBlockContent = codeBlockContent.split('\n').map((line) => line.slice(linePrefix.length)).join('\n');
 
   return cleanCodeBlockContent === sourceLf;

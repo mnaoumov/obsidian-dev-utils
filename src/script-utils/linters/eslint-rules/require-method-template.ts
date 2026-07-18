@@ -16,7 +16,7 @@ import type { TSESTree } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
 import type { Comment } from 'estree';
 
-import { ensureNonNullable } from '../../../type-guards.ts';
+import { getMandatoryNamedGroup } from '../../../reg-exp.ts';
 
 interface JsdocSettings {
   tagNamePreference?: Record<string, string>;
@@ -148,9 +148,8 @@ function parseTypeParamTags(params: ParseTypeParamTagsParams): ParsedTag[] {
 
   let match;
   while ((match = tagPattern.exec(commentBody)) !== null) {
-    const groups = ensureNonNullable(match.groups);
-    const name = ensureNonNullable(groups['typeName']);
-    const rest = ensureNonNullable(groups['rest']).trim();
+    const name = getMandatoryNamedGroup(match, 'typeName');
+    const rest = getMandatoryNamedGroup(match, 'rest').trim();
     const hasDescription = rest.length > 0 && rest !== '-';
     tags.push({ hasDescription, name });
   }

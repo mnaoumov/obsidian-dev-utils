@@ -11,6 +11,9 @@ export enum ObsidianPluginRepoPaths {
   /** CommonJS file. */
   AnyCjs = '*.cjs',
 
+  /** Any integration-test TypeScript file. */
+  AnyIntegrationTestTs = '*.integration.test.ts',
+
   /** JavaScript file. */
   AnyJs = '*.js',
 
