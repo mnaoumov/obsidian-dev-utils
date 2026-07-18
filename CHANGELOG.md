@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 87.0.4
+
+- feat(demo-vault-coverage): reflect class & enum and add exported-function coverage
+
 ## 87.0.3
 
 - fix(reg-exp): prevent code-block scan from freezing on unterminated fences
