@@ -31,7 +31,7 @@ import {
   join,
   relative
 } from '../path.ts';
-import { ensureNonNullable } from '../type-guards.ts';
+import { getMandatoryNamedGroup } from '../reg-exp.ts';
 
 /**
  * Reflects a config interface whose options are demonstrated by their bare name.
@@ -280,7 +280,7 @@ export class DemoVaultCoverageChecker {
   public findStaleReferences(params: DemoVaultCoverageCheckerFindStaleReferencesParams): string[] {
     const validMembers = new Set(params.validMembers);
     const referenced = [...this.readCorpus().matchAll(new RegExp(`${params.receiver}\\.(?<member>\\w+)`, 'g'))]
-      .map((match) => getNamedGroup(match, 'member'));
+      .map((match) => getMandatoryNamedGroup(match, 'member'));
     return [...new Set(referenced)].filter((member) => !validMembers.has(member));
   }
 
@@ -311,7 +311,7 @@ export class DemoVaultCoverageChecker {
       .map((file) => file.replace(/\.md$/, ''))
       .filter((name) => !nonFeatureDocs.has(name));
     const linkedDocs = new Set(
-      [...this.readCorpus().matchAll(/docs\/(?<doc>[\w-]+)\.md/g)].map((match) => getNamedGroup(match, 'doc'))
+      [...this.readCorpus().matchAll(/docs\/(?<doc>[\w-]+)\.md/g)].map((match) => getMandatoryNamedGroup(match, 'doc'))
     );
     return featureDocs.filter((doc) => !linkedDocs.has(doc));
   }
@@ -329,7 +329,7 @@ export class DemoVaultCoverageChecker {
     if (!match) {
       throw new Error(`Could not find interface ${params.interfaceName}`);
     }
-    const body = getNamedGroup(match, 'body');
+    const body = getMandatoryNamedGroup(match, 'body');
     const methods = extractMethodNames(body);
     const properties = extractPropertyNames(body);
     return {
@@ -419,13 +419,9 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
 }
 
 function extractMethodNames(interfaceBody: string): string[] {
-  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)(?:<[^>]*>)?\(/gm)].map((match) => getNamedGroup(match, 'name'));
+  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)(?:<[^>]*>)?\(/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
 }
 
 function extractPropertyNames(interfaceBody: string): string[] {
-  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:/gm)].map((match) => getNamedGroup(match, 'name'));
-}
-
-function getNamedGroup(match: RegExpMatchArray, groupName: string): string {
-  return ensureNonNullable(ensureNonNullable(match.groups)[groupName]);
+  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
 }

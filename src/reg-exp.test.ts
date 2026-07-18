@@ -7,11 +7,14 @@ import {
 import {
   ALWAYS_MATCH_REG_EXP,
   escapeRegExp,
+  getMandatoryNamedGroup,
+  getOptionalNamedGroup,
   isValidRegExp,
   NEVER_MATCH_REG_EXP,
   oneOf,
   RegExpMergeFlagsConflictStrategy
 } from './reg-exp.ts';
+import { ensureNonNullable } from './type-guards.ts';
 
 // The `v` flag is es2024, so a `/.../v` literal triggers TS1501 under this project's es2022 target.
 // Building it via the `RegExp` constructor with a non-literal source sidesteps both TS1501 and the
@@ -63,6 +66,50 @@ describe('ALWAYS_MATCH_REG_EXP', () => {
 describe('NEVER_MATCH_REG_EXP', () => {
   it.each(['', 'hello', 'anything at all', '\n'])('should not match any string: %j', (input) => {
     expect(NEVER_MATCH_REG_EXP.test(input)).toBe(false);
+  });
+});
+
+describe('getMandatoryNamedGroup', () => {
+  it('should return the value of a present named group', () => {
+    const match = ensureNonNullable(/x(?<value>\d+)/.exec('x42'));
+    expect(getMandatoryNamedGroup(match, 'value')).toBe('42');
+  });
+
+  it('should return an empty string for a present but zero-width group', () => {
+    const match = ensureNonNullable(/x(?<value>\d*)/.exec('x'));
+    expect(getMandatoryNamedGroup(match, 'value')).toBe('');
+  });
+
+  it('should throw when an optional group is absent', () => {
+    const match = ensureNonNullable(/(?<a>x)(?<b>y)?/.exec('x'));
+    expect(() => getMandatoryNamedGroup(match, 'b')).toThrow();
+  });
+
+  it('should throw when the match has no named groups at all', () => {
+    const match = ensureNonNullable(/\d+/.exec('x42'));
+    expect(() => getMandatoryNamedGroup(match, 'value')).toThrow();
+  });
+});
+
+describe('getOptionalNamedGroup', () => {
+  it('should return the value of a present named group', () => {
+    const match = ensureNonNullable(/x(?<value>\d+)/.exec('x42'));
+    expect(getOptionalNamedGroup(match, 'value')).toBe('42');
+  });
+
+  it('should return an empty string for a present but zero-width group', () => {
+    const match = ensureNonNullable(/x(?<value>\d*)/.exec('x'));
+    expect(getOptionalNamedGroup(match, 'value')).toBe('');
+  });
+
+  it('should return null when an optional group is absent', () => {
+    const match = ensureNonNullable(/(?<a>x)(?<b>y)?/.exec('x'));
+    expect(getOptionalNamedGroup(match, 'b')).toBeNull();
+  });
+
+  it('should return null when the match has no named groups at all', () => {
+    const match = ensureNonNullable(/\d+/.exec('x42'));
+    expect(getOptionalNamedGroup(match, 'value')).toBeNull();
   });
 });
 
