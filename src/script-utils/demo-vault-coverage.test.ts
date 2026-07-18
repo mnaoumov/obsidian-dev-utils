@@ -43,6 +43,30 @@ const PROPS_SOURCE = `export interface DemoProps {
 }
 `;
 
+const CLASS_SOURCE = `export class DemoSettings extends BaseSettings implements ISettings {
+  public isFullKeyDisplayEnabled = false;
+  public label: string;
+  public static readonly VERSION = 1;
+  private secret = 0;
+  public doAction(): void {}
+  protected helper(): void {}
+}
+`;
+
+const ENUM_SOURCE = `export enum DemoMode {
+  Fast,
+  Slow = 'slow',
+  Careful
+}
+`;
+
+const FUNCTIONS_SOURCE = `export function doFoo(): void {}
+export async function doBar(): Promise<void> {}
+export function* gen(): Generator<number> {
+  yield 1;
+}
+`;
+
 const START_NOTE = `# Start
 
 Call demoContext.doThing() and demoContext.doOther() here.
@@ -50,6 +74,14 @@ Use demoProps.alpha and demoProps.beta.
 Enable optionA and set optionB.
 
 See [feature one](docs/feature-one.md) and [feature two](docs/feature-two.md).
+`;
+
+const SURFACE_NOTE = `# Surface
+
+The DemoSettings class exposes isFullKeyDisplayEnabled, label, and VERSION.
+Call demoSettings.doAction() to run it.
+Modes: DemoMode.Fast, DemoMode.Slow, DemoMode.Careful.
+Helpers: doFoo(), doBar(), and gen().
 `;
 
 function createFixtureRoot(prefix: string): string {
@@ -62,10 +94,14 @@ function populateFixture(root: string): void {
   writeFixtureFile(root, 'src/context.ts', CONTEXT_SOURCE);
   writeFixtureFile(root, 'src/config.ts', CONFIG_SOURCE);
   writeFixtureFile(root, 'src/props.ts', PROPS_SOURCE);
+  writeFixtureFile(root, 'src/settings.ts', CLASS_SOURCE);
+  writeFixtureFile(root, 'src/mode.ts', ENUM_SOURCE);
+  writeFixtureFile(root, 'src/functions.ts', FUNCTIONS_SOURCE);
   writeFixtureFile(root, 'docs/feature-one.md', '# Feature one\n');
   writeFixtureFile(root, 'docs/feature-two.md', '# Feature two\n');
   writeFixtureFile(root, 'docs/usage.md', '# Usage\n');
   writeFixtureFile(root, 'demo-vault/Start.md', START_NOTE);
+  writeFixtureFile(root, 'demo-vault/Surface.md', SURFACE_NOTE);
   writeFixtureFile(root, 'demo-vault/nested/More.md', 'More demo content.\n');
   writeFixtureFile(root, 'demo-vault/notes.txt', 'Not a markdown file.\n');
   // A stale reference buried in node_modules must be skipped by the corpus scan.
@@ -107,6 +143,23 @@ registerDemoVaultCoverageSuite({
   rootFolder: suiteRoot
 });
 
+// A third registration reflects a class (config + methods), an enum, and an exported-function module end-to-end.
+registerDemoVaultCoverageSuite({
+  configInterfaces: [{ interfaceName: 'DemoSettings', sourcePath: 'src/settings.ts' }],
+  functionModules: [{ sourcePath: 'src/functions.ts' }],
+  interfaces: [
+    { interfaceName: 'DemoSettings', kind: 'methods', receiver: 'demoSettings', sourcePath: 'src/settings.ts' },
+    { interfaceName: 'DemoMode', kind: 'properties', receiver: 'DemoMode', sourcePath: 'src/mode.ts' }
+  ],
+  nonTrivialGuard: {
+    expectDemoNote: 'Surface.md',
+    expectMember: 'isFullKeyDisplayEnabled',
+    interfaceName: 'DemoSettings',
+    sourcePath: 'src/settings.ts'
+  },
+  rootFolder: suiteRoot
+});
+
 afterAll(() => {
   rmSync(suiteRoot, { force: true, recursive: true });
 });
@@ -128,6 +181,44 @@ describe('DemoVaultCoverageChecker', () => {
     expect(members.methods).toEqual(['doThing', 'doOther']);
     expect(members.properties).toEqual(['readonlyProp']);
     expect(members.all).toEqual(['doThing', 'doOther', 'readonlyProp']);
+  });
+
+  it('parses class members, tolerating modifiers and excluding non-public ones', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const members = checker.getInterfaceMembers({ interfaceName: 'DemoSettings', sourcePath: 'src/settings.ts' });
+    expect(members.methods).toEqual(['doAction']);
+    expect(members.properties).toEqual(['isFullKeyDisplayEnabled', 'label', 'VERSION']);
+    expect(members.all).toEqual(['doAction', 'isFullKeyDisplayEnabled', 'label', 'VERSION']);
+    expect(members.all).not.toContain('secret');
+    expect(members.all).not.toContain('helper');
+  });
+
+  it('parses enum members as properties', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const members = checker.getInterfaceMembers({ interfaceName: 'DemoMode', sourcePath: 'src/mode.ts' });
+    expect(members.methods).toEqual([]);
+    expect(members.properties).toEqual(['Fast', 'Slow', 'Careful']);
+    expect(members.all).toEqual(['Fast', 'Slow', 'Careful']);
+  });
+
+  it('parses exported function names, including async and generator declarations', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.getExportedFunctionNames({ sourcePath: 'src/functions.ts' })).toEqual(['doFoo', 'doBar', 'gen']);
+  });
+
+  it('finds undemonstrated exported functions', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const functionNames = checker.getExportedFunctionNames({ sourcePath: 'src/functions.ts' });
+    expect(checker.findUndemonstratedMembers({ members: functionNames })).toEqual([]);
+    expect(checker.findUndemonstratedMembers({ members: [...functionNames, 'missingFn'] })).toEqual(['missingFn']);
+  });
+
+  it('catches a stale reference on a class receiver', () => {
+    writeFixtureFile(root, 'demo-vault/Surface.md', 'Call demoSettings.doAction() then demoSettings.removedAction().');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const members = checker.getInterfaceMembers({ interfaceName: 'DemoSettings', sourcePath: 'src/settings.ts' });
+    expect(checker.findStaleReferences({ receiver: 'demoSettings', validMembers: members.all }))
+      .toEqual(['removedAction']);
   });
 
   it('throws when the interface cannot be found', () => {
