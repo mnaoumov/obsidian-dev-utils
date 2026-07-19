@@ -20,8 +20,8 @@ import type { SelectOptionParams } from './modals/select-option.ts';
 
 import { join } from '../path.ts';
 import { strictProxy } from '../strict-proxy.ts';
-// This stub is what the `unit-tests:obsidian` Vitest project aliases `node:original-fs` to.
-// The opener resolves the same alias, so it is the exact `chmodSync` reference it hands to adm-zip.
+// The opener loads Electron's `node:original-fs` via `window.require`.
+// `beforeEach` stubs that global to return this `chmodSync` — the exact reference handed to adm-zip.
 import { chmodSync as originalFsStubChmodSync } from '../test-helpers/original-fs-stub.ts';
 import { openDemoVault } from './desktop-demo-vault-opener.ts';
 
@@ -146,10 +146,20 @@ beforeEach(() => {
     configurable: true,
     value: { ipcRenderer: { sendSync: mockSendSync } }
   });
+  Object.defineProperty(window, 'require', {
+    configurable: true,
+    value: (id: string): unknown => {
+      if (id === 'node:original-fs') {
+        return { chmodSync: originalFsStubChmodSync };
+      }
+      throw new Error(`Unexpected require of '${id}'`);
+    }
+  });
 });
 
 afterEach(() => {
   Reflect.deleteProperty(window, 'electron');
+  Reflect.deleteProperty(window, 'require');
 });
 
 describe('openDemoVault', () => {
