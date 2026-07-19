@@ -20,9 +20,21 @@ import type { SelectOptionParams } from './modals/select-option.ts';
 
 import { join } from '../path.ts';
 import { strictProxy } from '../strict-proxy.ts';
+// This stub is what the `unit-tests:obsidian` Vitest project aliases `node:original-fs` to.
+// The opener resolves the same alias, so it is the exact `chmodSync` reference it hands to adm-zip.
+import { chmodSync as originalFsStubChmodSync } from '../test-helpers/original-fs-stub.ts';
 import { openDemoVault } from './desktop-demo-vault-opener.ts';
 
+interface AdmZipInitOptionsLike {
+  readonly fs?: ExtractionFs;
+}
+
+interface ExtractionFs {
+  chmodSync(path: string, mode: number): void;
+}
+
 const {
+  mockAdmZipInit,
   mockExistsSync,
   mockExtractAllTo,
   mockGetCommunityPluginRepo,
@@ -31,6 +43,7 @@ const {
   mockSendSync,
   mockShowNotice
 } = vi.hoisted(() => ({
+  mockAdmZipInit: vi.fn<(options?: AdmZipInitOptionsLike) => void>(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockExtractAllTo: vi.fn(),
   mockGetCommunityPluginRepo: vi.fn<(pluginId: string) => Promise<null | string>>(),
@@ -63,6 +76,9 @@ vi.mock('node:fs', async (importOriginal) => {
 vi.mock('adm-zip', () => ({
   default: class {
     public extractAllTo = mockExtractAllTo;
+    public constructor(_input: unknown, options?: AdmZipInitOptionsLike) {
+      mockAdmZipInit(options);
+    }
   }
 }));
 
@@ -195,6 +211,16 @@ describe('openDemoVault', () => {
     });
     expect(mockExtractAllTo).toHaveBeenCalledWith(expect.stringContaining(cacheDirSuffix(CURRENT_VERSION)), true);
     expect(mockSendSync).toHaveBeenCalledWith('vault-open', expect.stringContaining(cacheDirSuffix(CURRENT_VERSION)), false);
+  });
+
+  it('should hand adm-zip Electron original-fs so chmod-ing an extracted .asar file cannot crash', async () => {
+    // Electron's asar layer intercepts fs operations on any path containing `.asar` and throws
+    // ENOENT when chmod-ing an `.asar` file (it treats it as an archive root, not a plain file).
+    // The demo vault ships `_assets/CodeScriptToolkit/module.asar`, so the opener must extract with
+    // `original-fs` (asar interception disabled) rather than the intercepted `node:fs`.
+    await openDemoVault(buildParams());
+    const options = mockAdmZipInit.mock.calls.at(-1)?.[0];
+    expect(options?.fs?.chmodSync).toBe(originalFsStubChmodSync);
   });
 
   it('should show a notice and not open when the archive is missing', async () => {

@@ -172,7 +172,28 @@ async function downloadAndExtractDemoVault(params: DownloadAndExtractDemoVaultPa
     return false;
   }
 
-  const zip = new AdmZip(Buffer.from(response.arrayBuffer));
-  zip.extractAllTo(cacheDir, true);
+  await extractDemoVaultArchive(Buffer.from(response.arrayBuffer), cacheDir);
   return true;
+}
+
+/**
+ * Extracts a downloaded demo-vault archive to disk.
+ *
+ * Electron's asar layer intercepts `fs` operations on any path containing `.asar` and throws `ENOENT`
+ * when `chmod`-ing an `.asar` file (it treats it as an archive root rather than a plain file). A demo
+ * vault may ship such a file (e.g. `_assets/CodeScriptToolkit/module.asar` demonstrating the ASAR
+ * require feature), and adm-zip `chmod`s every extracted file, so extraction would otherwise crash.
+ * Hand adm-zip Electron's `original-fs` — the real `fs` with asar interception disabled — so the
+ * `.asar` file is treated as a plain file and `chmod` succeeds. It is a desktop-only Electron module
+ * with no bundled types, so it is loaded via a dynamic import and typed as `node:fs`'s shape.
+ *
+ * @param archive - The raw zip archive bytes.
+ * @param targetDir - The directory to extract into.
+ * @returns A {@link Promise} that resolves once the archive has been extracted.
+ */
+async function extractDemoVaultArchive(archive: Buffer, targetDir: string): Promise<void> {
+  // eslint-disable-next-line import-x/no-unresolved -- `node:original-fs` is an Electron runtime module typed via an ambient `declare module`; the import resolver cannot follow ambient module declarations, but TypeScript and Electron resolve it at desktop runtime.
+  const originalFs = await import('node:original-fs') as typeof import('node:fs');
+  const zip = new AdmZip(archive, { fs: originalFs });
+  zip.extractAllTo(targetDir, true);
 }

@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 const SHARED_RESOLVE = {
@@ -24,6 +25,13 @@ const SHARED_SERVER = {
   deps: {
     inline: ['@obsidian-typings']
   }
+};
+
+// Electron-only `node:original-fs` is used by the demo-vault opener to extract `.asar`-containing archives.
+// Vite's web/jsdom resolver cannot bundle the `node:`-prefixed specifier as a real Node built-in.
+// So this aliases it to a stub that the opener tests assert against.
+const ORIGINAL_FS_ALIAS = {
+  'node:original-fs': join(import.meta.dirname, '../src/test-helpers/original-fs-stub.ts')
 };
 
 const SHARED_EXCLUDE = ['node_modules', 'dist'];
@@ -91,7 +99,12 @@ export const config = defineConfig({
         }
       },
       {
-        resolve: SHARED_RESOLVE,
+        resolve: {
+          alias: {
+            ...SHARED_RESOLVE.alias,
+            ...ORIGINAL_FS_ALIAS
+          }
+        },
         test: {
           environment: 'jsdom',
           exclude: [...SHARED_EXCLUDE, SCRIPT_UTILS_TEST_FILES, INTEGRATION_TEST_FILES],
