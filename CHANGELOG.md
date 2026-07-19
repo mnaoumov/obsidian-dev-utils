@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 87.1.1
+
+- fix: load original-fs via window.require so demo-vault asar extraction works
+- chore: update libs
+
 ## 87.1.0
 
 - fix: demo-vault with asar
