@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 87.1.0
+
+- fix: demo-vault with asar
+
 ## 87.0.4
 
 - feat(demo-vault-coverage): reflect class & enum and add exported-function coverage
