@@ -50,8 +50,10 @@ const REGISTRY = [
 ];
 
 const DATA_PATH = `${EMPTY}.obsidian/plugins/${CST_PLUGIN_ID}/data.json`;
+const INVOCABLE_SCRIPTS_FOLDER_PATH = `${CST_SETTINGS.modulesRoot}/${CST_SETTINGS.invocableScriptsFolder}`;
 
 interface AppMock {
+  readonly adapterMkdir: DataAdapter['mkdir'];
   readonly adapterWrite: DataAdapter['write'];
   readonly app: App;
   readonly disablePluginAndSave: App['plugins']['disablePluginAndSave'];
@@ -63,6 +65,7 @@ interface CreateAppOptions {
   readonly existingData?: string;
   readonly isCstEnabled?: boolean;
   readonly isCstInstalled?: boolean;
+  readonly isInvocableScriptsFolderPresent?: boolean;
 }
 
 const { mockRequestUrl } = vi.hoisted(() => ({
@@ -91,9 +94,10 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     return noopAsync();
   });
 
-  const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(options.existingData !== undefined);
+  const adapterExists = vi.fn<DataAdapter['exists']>().mockImplementation((path: string) => Promise.resolve(path === INVOCABLE_SCRIPTS_FOLDER_PATH ? (options.isInvocableScriptsFolderPresent ?? false) : options.existingData !== undefined));
   const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue(options.existingData ?? '{}');
   const adapterWrite = vi.fn<DataAdapter['write']>().mockResolvedValue();
+  const adapterMkdir = vi.fn<DataAdapter['mkdir']>().mockResolvedValue();
 
   // A null-prototype record so the strict proxy does not re-wrap it: a missing key reads as `undefined`
   // (plugin not installed) instead of throwing.
@@ -114,6 +118,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     vault: strictProxy<Vault>({
       adapter: strictProxy<DataAdapter>({
         exists: adapterExists,
+        mkdir: adapterMkdir,
         read: adapterRead,
         write: adapterWrite
       }),
@@ -122,6 +127,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   });
 
   return {
+    adapterMkdir,
     adapterWrite,
     app,
     disablePluginAndSave,
@@ -184,6 +190,18 @@ describe('bootstrapDemoVault', () => {
     expect(installPlugin).not.toHaveBeenCalled();
     expect(disablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
     expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+  });
+
+  it('should create the invocable scripts folder when it does not exist', async () => {
+    const { adapterMkdir, app } = createApp();
+    await bootstrapDemoVault({ app });
+    expect(adapterMkdir).toHaveBeenCalledWith(INVOCABLE_SCRIPTS_FOLDER_PATH);
+  });
+
+  it('should not create the invocable scripts folder when it already exists', async () => {
+    const { adapterMkdir, app } = createApp({ isInvocableScriptsFolderPresent: true });
+    await bootstrapDemoVault({ app });
+    expect(adapterMkdir).not.toHaveBeenCalled();
   });
 
   it('should not reload CodeScript Toolkit when it is already enabled and the settings are unchanged', async () => {

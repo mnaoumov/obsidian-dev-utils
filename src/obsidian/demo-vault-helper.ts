@@ -13,10 +13,15 @@
  * It writes CodeScript Toolkit's settings BEFORE enabling it, so the plugin loads already configured —
  * no reload. CodeScript Toolkit then runs the vault's `startup.ts` (via its `startupScriptPath`
  * setting), which is where each vault opens its start note and does any plugin-specific setup.
+ *
+ * It also creates CodeScript Toolkit's invocable-scripts folder if it is missing, so every demo vault
+ * has the same layout even when the vault ships no invocable scripts — the vaults themselves commit no
+ * empty folder for it.
  */
 
 import type { App } from 'obsidian';
 
+import { join } from '../path.ts';
 import {
   configureCommunityPlugin,
   disableCommunityPlugin,
@@ -88,6 +93,7 @@ export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Prom
     pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID,
     settings: CODE_SCRIPT_TOOLKIT_SETTINGS
   });
+  await ensureInvocableScriptsFolder(app);
 
   if (!app.plugins.enabledPlugins.has(CODE_SCRIPT_TOOLKIT_PLUGIN_ID)) {
     await enableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
@@ -95,5 +101,15 @@ export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Prom
     // Already enabled with stale settings — reload so CodeScript Toolkit re-reads the freshly written data.json.
     await disableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
     await enableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
+  }
+}
+
+// Creates CodeScript Toolkit's invocable-scripts folder (under `modulesRoot`) if it is missing.
+// Every demo vault then has the same CodeScript Toolkit layout even when it ships no invocable scripts.
+// The committed vault therefore carries no otherwise-empty placeholder folder.
+async function ensureInvocableScriptsFolder(app: App): Promise<void> {
+  const invocableScriptsFolderPath = join(CODE_SCRIPT_TOOLKIT_MODULES_ROOT, CODE_SCRIPT_TOOLKIT_SETTINGS.invocableScriptsFolder);
+  if (!await app.vault.adapter.exists(invocableScriptsFolderPath)) {
+    await app.vault.adapter.mkdir(invocableScriptsFolderPath);
   }
 }
