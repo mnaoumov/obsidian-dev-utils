@@ -67,6 +67,12 @@ export type EnableCommunityPluginParams = CommunityPluginOperationContext & Comm
 export type InstallCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef;
 
 /**
+ * Parameters for {@link installConfigureEnableCommunityPlugin}. Selects the plugin by either `pluginId`
+ * or `pluginName`; `settings` is optional (omit for a plugin that needs no configuration).
+ */
+export type InstallConfigureEnableCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef & Partial<CommunityPluginSettings>;
+
+/**
  * Parameters for {@link toggleEnableCommunityPlugin}. Selects the plugin by either `pluginId` or
  * `pluginName`.
  */
@@ -314,6 +320,31 @@ export async function installCommunityPlugin(params: InstallCommunityPluginParam
   const version = await getLatestReleaseVersion(repo);
   const manifest = await getPluginManifest(repo, version);
   await app.plugins.installPlugin(repo, version, manifest);
+}
+
+/**
+ * Installs a community plugin, writes its settings, THEN enables it — in that order — so the plugin
+ * loads already configured (a plugin enabled before it is configured runs its `onload` with default
+ * settings and does nothing useful). If the plugin is already enabled and the settings changed, it is
+ * disabled and re-enabled so the new settings take effect. `settings` is optional: omit it for a plugin
+ * that needs no configuration. Composes {@link installCommunityPlugin}, {@link configureCommunityPlugin},
+ * {@link enableCommunityPlugin} and {@link disableCommunityPlugin}.
+ *
+ * @param params - The {@link InstallConfigureEnableCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin is installed, configured and enabled.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function installConfigureEnableCommunityPlugin(params: InstallConfigureEnableCommunityPluginParams): Promise<void> {
+  const { app, settings } = params;
+  await installCommunityPlugin(params);
+  const didSettingsChange = settings ? await configureCommunityPlugin({ ...params, settings }) : false;
+  const pluginId = await resolveCommunityPluginId(params);
+  if (!app.plugins.enabledPlugins.has(pluginId)) {
+    await enableCommunityPlugin(params);
+  } else if (didSettingsChange) {
+    await disableCommunityPlugin(params);
+    await enableCommunityPlugin(params);
+  }
 }
 
 /**

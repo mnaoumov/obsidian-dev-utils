@@ -14,6 +14,7 @@ import {
   vi
 } from 'vitest';
 
+import { noopAsync } from '../function.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { EMPTY } from '../string.ts';
 import {
@@ -23,6 +24,7 @@ import {
   getCommunityPluginRepo,
   getLatestReleaseVersion,
   installCommunityPlugin,
+  installConfigureEnableCommunityPlugin,
   searchCommunityPlugins,
   toggleEnableCommunityPlugin,
   toggleInstallCommunityPlugin,
@@ -40,7 +42,8 @@ interface AppMock {
 
 interface CreateAppOptions {
   readonly enabledIds?: string[];
-  readonly existingPluginData?: string;
+  readonly existingPluginData?: object;
+  readonly existingRawPluginData?: string;
   readonly installedIds?: string[];
 }
 
@@ -85,8 +88,15 @@ const MANIFEST: PluginManifest = {
 };
 
 function createApp(options: CreateAppOptions = {}): AppMock {
-  const disablePluginAndSave = vi.fn<App['plugins']['disablePluginAndSave']>().mockResolvedValue();
-  const enablePluginAndSave = vi.fn<App['plugins']['enablePluginAndSave']>().mockResolvedValue();
+  const enabledPlugins = new Set(options.enabledIds ?? []);
+  const disablePluginAndSave = vi.fn<App['plugins']['disablePluginAndSave']>().mockImplementation((id) => {
+    enabledPlugins.delete(id);
+    return noopAsync();
+  });
+  const enablePluginAndSave = vi.fn<App['plugins']['enablePluginAndSave']>().mockImplementation((id) => {
+    enabledPlugins.add(id);
+    return noopAsync();
+  });
   const installPlugin = vi.fn<App['plugins']['installPlugin']>().mockResolvedValue();
   const uninstallPlugin = vi.fn<App['plugins']['uninstallPlugin']>().mockResolvedValue();
 
@@ -98,14 +108,16 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     manifests[id] = strictProxy<PluginManifest>({ id });
   }
 
-  const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(options.existingPluginData !== undefined);
-  const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue(options.existingPluginData ?? '{}');
+  const existingData = options.existingRawPluginData
+    ?? (options.existingPluginData === undefined ? undefined : JSON.stringify(options.existingPluginData));
+  const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(existingData !== undefined);
+  const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue(existingData ?? '{}');
   const adapterWrite = vi.fn<DataAdapter['write']>().mockResolvedValue();
 
   const app = strictProxy<App>({
     plugins: strictProxy<App['plugins']>({
       disablePluginAndSave,
-      enabledPlugins: new Set(options.enabledIds ?? []),
+      enabledPlugins,
       enablePluginAndSave,
       installPlugin,
       manifests,
@@ -206,6 +218,45 @@ describe('installCommunityPlugin', () => {
   });
 });
 
+describe('installConfigureEnableCommunityPlugin', () => {
+  it('should configure then enable a not-yet-enabled plugin', async () => {
+    const { adapterWrite, app, disablePluginAndSave, enablePluginAndSave } = createApp({ installedIds: ['plugin-a'] });
+    await installConfigureEnableCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(adapterWrite).toHaveBeenCalled();
+    expect(enablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+    expect(disablePluginAndSave).not.toHaveBeenCalled();
+  });
+
+  it('should skip configuration when no settings are given', async () => {
+    const { adapterWrite, app, enablePluginAndSave } = createApp({ installedIds: ['plugin-a'] });
+    await installConfigureEnableCommunityPlugin({ app, pluginId: 'plugin-a' });
+    expect(adapterWrite).not.toHaveBeenCalled();
+    expect(enablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+  });
+
+  it('should disable and re-enable an already-enabled plugin when settings change', async () => {
+    const { app, disablePluginAndSave, enablePluginAndSave } = createApp({
+      enabledIds: ['plugin-a'],
+      existingPluginData: { modulesRoot: 'old' },
+      installedIds: ['plugin-a']
+    });
+    await installConfigureEnableCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'new' } });
+    expect(disablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+    expect(enablePluginAndSave).toHaveBeenCalledWith('plugin-a');
+  });
+
+  it('should not toggle an already-enabled plugin when settings are unchanged', async () => {
+    const { app, disablePluginAndSave, enablePluginAndSave } = createApp({
+      enabledIds: ['plugin-a'],
+      existingPluginData: { modulesRoot: 'same' },
+      installedIds: ['plugin-a']
+    });
+    await installConfigureEnableCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'same' } });
+    expect(disablePluginAndSave).not.toHaveBeenCalled();
+    expect(enablePluginAndSave).not.toHaveBeenCalled();
+  });
+});
+
 describe('configureCommunityPlugin', () => {
   const DATA_PATH = `${EMPTY}.obsidian/plugins/plugin-a/data.json`;
 
@@ -216,13 +267,13 @@ describe('configureCommunityPlugin', () => {
   });
 
   it('should shallow-merge the settings over an existing data.json', async () => {
-    const { adapterWrite, app } = createApp({ existingPluginData: JSON.stringify({ existing: 1, modulesRoot: 'old' }) });
+    const { adapterWrite, app } = createApp({ existingPluginData: { existing: 1, modulesRoot: 'old' } });
     await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'new' } });
     expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ existing: 1, modulesRoot: 'new' }, null, 2)}\n`);
   });
 
   it('should ignore a non-object existing data.json', async () => {
-    const { adapterWrite, app } = createApp({ existingPluginData: 'null' });
+    const { adapterWrite, app } = createApp({ existingRawPluginData: 'null' });
     await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'x' } });
     expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ modulesRoot: 'x' }, null, 2)}\n`);
   });
@@ -233,7 +284,7 @@ describe('configureCommunityPlugin', () => {
   });
 
   it('should return false and not write when the settings are already present', async () => {
-    const { adapterWrite, app } = createApp({ existingPluginData: JSON.stringify({ modulesRoot: 'root-x' }) });
+    const { adapterWrite, app } = createApp({ existingPluginData: { modulesRoot: 'root-x' } });
     const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
     expect(result).toBe(false);
     expect(adapterWrite).not.toHaveBeenCalled();
