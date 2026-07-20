@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 87.2.0
+
+- feat(demo-vault): show progress immediately, cache archives only, extract fresh per open
+- chore: update libs
+
 ## 87.1.2
 
 - feat(demo-vault-helper): create the invocable scripts folder on bootstrap
