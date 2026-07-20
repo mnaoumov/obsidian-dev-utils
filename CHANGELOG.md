@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 87.1.2
+
+- feat(demo-vault-helper): create the invocable scripts folder on bootstrap
+- chore: update libs
+- feat(community-plugins): add installConfigureEnableCommunityPlugin
+
 ## 87.1.1
 
 - fix: load original-fs via window.require so demo-vault asar extraction works
