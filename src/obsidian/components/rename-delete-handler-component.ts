@@ -617,25 +617,32 @@ class RenameHandler {
       await renameMap.fill();
       this.abortSignal.throwIfAborted();
 
-      const combinedBacklinksMap = new Map<string, Map<string, string>>();
-      renameMap.initOriginalLinksMap(combinedBacklinksMap);
-      renameMap.initBacklinksMap({
-        combinedBacklinksMap,
-        path: this.oldPath,
-        singleBacklinksMap: this.oldPathBacklinksMap
-      });
+      const settings = this.settingsManager.getSettings();
 
-      for (const attachmentOldPath of renameMap.keys()) {
-        if (attachmentOldPath === this.oldPath) {
-          continue;
-        }
-        const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath })).data;
-        this.abortSignal.throwIfAborted();
+      const combinedBacklinksMap = new Map<string, Map<string, string>>();
+
+      // Backlinks are only consumed by the link-rewrite steps below, which are gated on
+      // `shouldHandleRenames`. Skip gathering them (a backlink fetch per attachment) on a move-only rename.
+      if (settings.shouldHandleRenames) {
+        renameMap.initOriginalLinksMap(combinedBacklinksMap);
         renameMap.initBacklinksMap({
           combinedBacklinksMap,
-          path: attachmentOldPath,
-          singleBacklinksMap: attachmentOldPathBacklinksMap
+          path: this.oldPath,
+          singleBacklinksMap: this.oldPathBacklinksMap
         });
+
+        for (const attachmentOldPath of renameMap.keys()) {
+          if (attachmentOldPath === this.oldPath) {
+            continue;
+          }
+          const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath })).data;
+          this.abortSignal.throwIfAborted();
+          renameMap.initBacklinksMap({
+            combinedBacklinksMap,
+            path: attachmentOldPath,
+            singleBacklinksMap: attachmentOldPathBacklinksMap
+          });
+        }
       }
 
       const parentFolderPaths = new Set<string>();
@@ -654,10 +661,18 @@ class RenameHandler {
       await cleanupParentFolders({
         app: this.app,
         parentFolderPaths: Array.from(parentFolderPaths),
-        settings: this.settingsManager.getSettings()
+        settings
       });
       this.abortSignal.throwIfAborted();
-      const settings = this.settingsManager.getSettings();
+
+      /*
+       * The attachment move above runs regardless of `shouldHandleRenames` (that is the point of decoupling
+       * "Move attachments with note" from "Update links"). The remaining steps only rewrite links, so skip
+       * them when link updates are disabled; the `finally` block below still runs.
+       */
+      if (!settings.shouldHandleRenames) {
+        return;
+      }
 
       for (
         const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
@@ -1159,7 +1174,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     }
 
     const settings = this.settingsManager.getSettings();
-    if (!settings.shouldHandleRenames) {
+    if (!settings.shouldHandleRenames && !settings.shouldRenameAttachmentFolder && !settings.shouldRenameAttachmentFiles) {
       return;
     }
 
