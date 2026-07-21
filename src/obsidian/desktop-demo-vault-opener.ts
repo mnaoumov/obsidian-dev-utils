@@ -3,7 +3,7 @@
  *
  * Downloads and opens a plugin's shipped demo vault in a new Obsidian window (desktop only).
  *
- * A plugin can attach a `<plugin-id>.demo-vault.zip` archive to each GitHub release (see
+ * A plugin can attach a `<plugin-id>-demo-vault-<version>.zip` archive to each GitHub release (see
  * `archivePluginDemoVault` in `script-utils/demo-vault.ts`). This resolves the plugin's repository
  * from Obsidian's community registry, downloads the archive for the chosen version, and opens it as a
  * vault in a new window. When the installed plugin version is behind the latest release, the user is
@@ -293,7 +293,7 @@ async function resolveDemoVaultArchive(params: ResolveDemoVaultArchiveParams): P
   }
 
   progressNotice.setContent(`Downloading demo vault for ${pluginName} v${version}…`);
-  const assetUrl = `https://github.com/${repo}/releases/download/${version}/${pluginId}.demo-vault.zip`;
+  const assetUrl = `https://github.com/${repo}/releases/download/${version}/${pluginId}-demo-vault-${version}.zip`;
   const response = await requestUrl({
     throw: false,
     url: assetUrl

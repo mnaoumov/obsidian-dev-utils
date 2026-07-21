@@ -5,9 +5,10 @@
  *
  * A plugin can ship a curated demo vault at `demo-vault/` in its repo root. At release time this
  * module installs the freshly built plugin into that vault's `.obsidian/plugins/<id>/` folder and
- * zips the whole vault into `dist/build/<plugin-id>.demo-vault.zip`, so the existing GitHub-release
- * step (which uploads every file in `dist/build/`) attaches it automatically. The archive is named by
- * plugin id (not just `demo-vault`) so several plugins' demo vaults never collide.
+ * zips the whole vault into `dist/build/<plugin-id>-demo-vault-<version>.zip`, so the existing
+ * GitHub-release step (which uploads every file in `dist/build/`) attaches it automatically. The
+ * archive name carries the plugin id (so several plugins' demo vaults never collide) and the version
+ * (so each release ships its own distinctly named artifact).
  */
 
 import AdmZip from 'adm-zip';
@@ -39,6 +40,11 @@ interface PluginManifest {
    * The plugin id, used as the folder name under `demo-vault/.obsidian/plugins/`.
    */
   readonly id: string;
+
+  /**
+   * The plugin version, embedded in the archive file name.
+   */
+  readonly version: string;
 }
 
 /**
@@ -46,7 +52,7 @@ interface PluginManifest {
  *
  * Installs the freshly built plugin from `dist/build/` into the vault's
  * `.obsidian/plugins/<id>/` folder, then zips the whole vault to
- * `dist/build/<plugin-id>.demo-vault.zip`.
+ * `dist/build/<plugin-id>-demo-vault-<version>.zip`.
  *
  * @returns A {@link Promise} that resolves to the absolute path of the created zip archive, or
  * `null` if the repo has no `demo-vault/` folder.
@@ -77,7 +83,7 @@ export async function archivePluginDemoVault(): Promise<null | string> {
 
   // Archive name is hand-synced with the runtime `openDemoVault` opener, which downloads this exact asset name.
   const zipPath = resolvePathFromRootSafe({
-    path: join(ObsidianPluginRepoPaths.DistBuild, `${manifest.id}.demo-vault.zip`)
+    path: join(ObsidianPluginRepoPaths.DistBuild, `${manifest.id}-demo-vault-${manifest.version}.zip`)
   });
   const zip = new AdmZip();
   zip.addLocalFolder(demoVaultPath);

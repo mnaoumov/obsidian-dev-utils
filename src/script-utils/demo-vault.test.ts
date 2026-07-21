@@ -67,7 +67,7 @@ beforeEach(() => {
   mockGetRootFolder.mockReturnValue('/package');
   mockCp.mockResolvedValue(undefined);
   mockMkdir.mockResolvedValue(undefined);
-  mockReadFile.mockResolvedValue(JSON.stringify({ id: 'my-plugin' }));
+  mockReadFile.mockResolvedValue(JSON.stringify({ id: 'my-plugin', version: '1.2.3' }));
   mockWriteZipPromise.mockResolvedValue(true);
 });
 
@@ -90,8 +90,8 @@ describe('archivePluginDemoVault', () => {
     expect(mockMkdir).toHaveBeenCalledWith(`/root/demo-vault/${EMPTY}.obsidian/plugins/my-plugin`, { recursive: true });
     expect(mockCp).toHaveBeenCalledWith('/root/dist/build', `/root/demo-vault/${EMPTY}.obsidian/plugins/my-plugin`, { recursive: true });
     expect(mockAddLocalFolder).toHaveBeenCalledWith('/root/demo-vault');
-    expect(mockWriteZipPromise).toHaveBeenCalledWith('/root/dist/build/my-plugin.demo-vault.zip');
-    expect(result).toBe('/root/dist/build/my-plugin.demo-vault.zip');
+    expect(mockWriteZipPromise).toHaveBeenCalledWith('/root/dist/build/my-plugin-demo-vault-1.2.3.zip');
+    expect(result).toBe('/root/dist/build/my-plugin-demo-vault-1.2.3.zip');
   });
 
   it('should inject the shipped demo-vault-helper plugin into the vault', async () => {

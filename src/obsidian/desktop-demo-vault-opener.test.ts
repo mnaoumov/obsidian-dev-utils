@@ -286,7 +286,7 @@ describe('openDemoVault', () => {
     await openDemoVault(buildParams());
     expect(mockRequestUrl).toHaveBeenCalledWith({
       throw: false,
-      url: `https://github.com/${REPO}/releases/download/${CURRENT_VERSION}/${PLUGIN_ID}.demo-vault.zip`
+      url: `https://github.com/${REPO}/releases/download/${CURRENT_VERSION}/${PLUGIN_ID}-demo-vault-${CURRENT_VERSION}.zip`
     });
     expect(mockWriteFileSync).toHaveBeenCalledWith(expect.stringContaining(archiveFileName(CURRENT_VERSION)), expect.any(Buffer));
     expect(mockExtractAllTo).toHaveBeenCalledTimes(1);
