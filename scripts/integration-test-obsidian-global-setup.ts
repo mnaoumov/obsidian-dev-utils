@@ -15,7 +15,7 @@ import type { TestProject } from 'vitest/node';
 import {
   setup as integrationSetup,
   teardown as integrationTeardown
-} from 'obsidian-integration-testing/vitest-global-setup';
+} from 'obsidian-integration-testing/vitest-global-setup-plugin';
 
 import { buildDemoVaultHelper } from './helpers/build-demo-vault-helper.ts';
 import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plugin.ts';
