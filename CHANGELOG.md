@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 87.3.0
+
+- feat: change demo vault artifact name
+
 ## 87.2.0
 
 - feat(demo-vault): show progress immediately, cache archives only, extract fresh per open
