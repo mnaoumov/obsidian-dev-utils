@@ -133,6 +133,44 @@ describe('LayoutReadyComponent', () => {
     vi.useRealTimers();
   });
 
+  it('should not invoke onLayoutReady when unloaded while the async load is still in flight', async () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    const order: string[] = [];
+    let openLoadGate!: () => void;
+    const loadGate = new Promise<void>((resolve) => {
+      openLoadGate = resolve;
+    });
+
+    class AsyncLoadLayoutReadyComponent extends LayoutReadyComponent {
+      public override async onloadAsync(): Promise<void> {
+        await loadGate;
+        order.push('onloadAsync');
+      }
+
+      protected override onLayoutReady(): void {
+        order.push('onLayoutReady');
+      }
+    }
+
+    const component = new AsyncLoadLayoutReadyComponent(app);
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    // The async load is still gated, so the layout-ready handler is parked awaiting it.
+    expect(order).toEqual([]);
+
+    // Unload before the load settles, so `_loaded` is false once the in-flight promise resolves.
+    component.unload();
+    openLoadGate();
+    await vi.runAllTimersAsync();
+
+    // OnLayoutReady is skipped because the component was unloaded during the in-flight load.
+    expect(order).toEqual(['onloadAsync']);
+    vi.useRealTimers();
+  });
+
   it('should work with abstract subclass pattern', () => {
     vi.useFakeTimers();
     const { app, triggerLayoutReady } = createMockApp();

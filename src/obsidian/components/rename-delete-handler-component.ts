@@ -78,8 +78,8 @@ import {
 import { addToQueue } from '../queue.ts';
 import { deleteIfNotUsed } from '../vault-delete.ts';
 import {
-  deleteEmptyFolder,
-  deleteEmptyFolderHierarchy,
+  cleanupEmptyFolders,
+  EmptyFolderBehavior,
   getSafeRenamePath,
   renameSafe,
   trashSafe
@@ -90,25 +90,7 @@ import {
   MonkeyAroundComponent
 } from './monkey-around-component.ts';
 
-/**
- * A behavior of the rename/delete handler when deleting empty folders.
- */
-export enum EmptyFolderBehavior {
-  /**
-   * Delete the empty folder.
-   */
-  Delete = 'Delete',
-
-  /**
-   * Delete the empty folder and all its empty parents.
-   */
-  DeleteWithEmptyParents = 'DeleteWithEmptyParents',
-
-  /**
-   * Keep the empty folder.
-   */
-  Keep = 'Keep'
-}
+export { EmptyFolderBehavior };
 
 /**
  * Settings for the rename/delete handler.
@@ -212,23 +194,6 @@ interface RenameMapInitBacklinksMapParams {
 }
 
 const PATCH_TOKEN = Symbol.for('renameDeleteHandler');
-
-interface CleanupParentFoldersParams {
-  /**
-   * The Obsidian app instance.
-   */
-  readonly app: App;
-
-  /**
-   * The paths of the parent folders to clean up.
-   */
-  readonly parentFolderPaths: string[];
-
-  /**
-   * The rename/delete handler settings that determine the empty-folder behavior.
-   */
-  readonly settings: Partial<RenameDeleteHandlerSettings>;
-}
 
 interface DeleteHandlerConstructorParams {
   readonly abortSignal: AbortSignal;
@@ -368,10 +333,10 @@ class DeleteHandler {
     }
 
     parentFolderPaths.delete('');
-    await cleanupParentFolders({
+    await cleanupEmptyFolders({
       app: this.app,
-      parentFolderPaths: Array.from(parentFolderPaths),
-      settings: this.settingsManager.getSettings()
+      emptyFolderBehavior: settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
+      folderPaths: Array.from(parentFolderPaths)
     });
     this.abortSignal.throwIfAborted();
 
@@ -658,10 +623,10 @@ class RenameHandler {
         }
       }
 
-      await cleanupParentFolders({
+      await cleanupEmptyFolders({
         app: this.app,
-        parentFolderPaths: Array.from(parentFolderPaths),
-        settings
+        emptyFolderBehavior: settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
+        folderPaths: Array.from(parentFolderPaths)
       });
       this.abortSignal.throwIfAborted();
 
@@ -1223,29 +1188,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
     const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
     return mainPluginId === this.pluginId;
-  }
-}
-
-async function cleanupParentFolders(params: CleanupParentFoldersParams): Promise<void> {
-  const {
-    app,
-    parentFolderPaths,
-    settings
-  } = params;
-  if (settings.emptyFolderBehavior === EmptyFolderBehavior.Keep) {
-    return;
-  }
-  for (const parentFolderPath of parentFolderPaths) {
-    switch (settings.emptyFolderBehavior) {
-      case EmptyFolderBehavior.Delete:
-        await deleteEmptyFolder(app, parentFolderPath);
-        break;
-      case EmptyFolderBehavior.DeleteWithEmptyParents:
-        await deleteEmptyFolderHierarchy(app, parentFolderPath);
-        break;
-      default:
-        break;
-    }
   }
 }
 

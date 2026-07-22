@@ -349,7 +349,7 @@ describe('AsyncWithNotice', () => {
       });
 
       // No component means the silent handler is used, identical to the explicit no-notice path, so the
-      // timeout is only logged and showNotice is never accessed.
+      // Timeout is only logged and showNotice is never accessed.
       expect(capturedWithoutComponent).toBe(capturedSilent);
     });
   });
@@ -621,7 +621,7 @@ describe('AsyncWithNotice', () => {
       });
 
       // No component means the silent handler is used, identical to the explicit no-notice path, so the
-      // timeout is only logged and showNotice is never accessed.
+      // Timeout is only logged and showNotice is never accessed.
       expect(capturedWithoutComponent).toBe(capturedSilent);
     });
   });
