@@ -171,6 +171,72 @@ describe('LayoutReadyComponent', () => {
     vi.useRealTimers();
   });
 
+  it('should not invoke onLayoutReady when the in-flight async load fails', async () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    const order: string[] = [];
+    let openLoadGate!: () => void;
+    const loadGate = new Promise<void>((resolve) => {
+      openLoadGate = resolve;
+    });
+
+    class FailingAsyncLoadLayoutReadyComponent extends LayoutReadyComponent {
+      public override async onloadAsync(): Promise<void> {
+        await loadGate;
+        order.push('onloadAsync');
+        throw new Error('load failed');
+      }
+
+      protected override onLayoutReady(): void {
+        order.push('onLayoutReady');
+      }
+    }
+
+    const component = new FailingAsyncLoadLayoutReadyComponent(app);
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    // The async load is still gated, so the layout-ready handler is parked awaiting it.
+    expect(order).toEqual([]);
+
+    // Let the load settle with a failure.
+    openLoadGate();
+    await vi.runAllTimersAsync();
+
+    // OnLayoutReady is skipped because the async load failed, not just because it is unfinished.
+    expect(order).toEqual(['onloadAsync']);
+    vi.useRealTimers();
+  });
+
+  it('should not invoke onLayoutReady when the load already failed before the handler runs', async () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    const order: string[] = [];
+
+    class AlreadyFailedLoadLayoutReadyComponent extends LayoutReadyComponent {
+      public override onloadAsync(): Promise<void> {
+        order.push('onloadAsync');
+        return Promise.reject(new Error('load failed'));
+      }
+
+      protected override onLayoutReady(): void {
+        order.push('onLayoutReady');
+      }
+    }
+
+    const component = new AlreadyFailedLoadLayoutReadyComponent(app);
+    // The rejection settles (recording the error and clearing the in-flight promise) before the setTimeout(0)
+    // Handler runs, so it takes the no-in-flight-promise branch with a recorded failure.
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    // OnLayoutReady is skipped: no in-flight load remains, but the load failed.
+    expect(order).toEqual(['onloadAsync']);
+    vi.useRealTimers();
+  });
+
   it('should work with abstract subclass pattern', () => {
     vi.useFakeTimers();
     const { app, triggerLayoutReady } = createMockApp();
