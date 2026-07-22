@@ -153,30 +153,6 @@ export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeP
   });
 }
 
-/**
- * Selects the timeout handler for {@link retryWithTimeoutNotice} / {@link runWithTimeoutNotice}. A notice
- * is shown only when notices are enabled AND a real {@link PluginNoticeComponent} is supplied; otherwise
- * the timeout is silently logged.
- *
- * @param shouldShowTimeoutNotice - Whether a timeout notice is requested (defaults to `true`).
- * @param pluginNoticeComponent - The component used to show the notice, if any.
- * @param content - Optional custom content for the notice.
- * @returns The timeout handler to pass to the underlying retry/run helper.
- */
-function resolveOnTimeout(
-  shouldShowTimeoutNotice: boolean | undefined,
-  pluginNoticeComponent: null | PluginNoticeComponent,
-  content?: ValueProvider<DocumentFragment | string>
-): (ctx: TimeoutContext) => void {
-  if (!(shouldShowTimeoutNotice ?? true) || pluginNoticeComponent === null) {
-    return onTimeoutWithoutNotice;
-  }
-
-  return (ctx): void => {
-    onTimeoutNotice(ctx, pluginNoticeComponent, content);
-  };
-}
-
 function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content?: ValueProvider<DocumentFragment | string>): void {
   if (content !== undefined) {
     showCustomContentNotice(ctx, pluginNoticeComponent, content);
@@ -238,6 +214,30 @@ function onTimeoutWithoutNotice(ctx: TimeoutContext): void {
       totalDuration: Math.trunc(performance.now() - startTime)
     });
   });
+}
+
+/**
+ * Selects the timeout handler for {@link retryWithTimeoutNotice} / {@link runWithTimeoutNotice}. A notice
+ * is shown only when notices are enabled AND a real {@link PluginNoticeComponent} is supplied; otherwise
+ * the timeout is silently logged.
+ *
+ * @param shouldShowTimeoutNotice - Whether a timeout notice is requested (defaults to `true`).
+ * @param pluginNoticeComponent - The component used to show the notice, if any.
+ * @param content - Optional custom content for the notice.
+ * @returns The timeout handler to pass to the underlying retry/run helper.
+ */
+function resolveOnTimeout(
+  shouldShowTimeoutNotice: boolean | undefined,
+  pluginNoticeComponent: null | PluginNoticeComponent,
+  content?: ValueProvider<DocumentFragment | string>
+): (ctx: TimeoutContext) => void {
+  if (!(shouldShowTimeoutNotice ?? true) || pluginNoticeComponent === null) {
+    return onTimeoutWithoutNotice;
+  }
+
+  return (ctx): void => {
+    onTimeoutNotice(ctx, pluginNoticeComponent, content);
+  };
 }
 
 function showCustomContentNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content: ValueProvider<DocumentFragment | string>): void {
