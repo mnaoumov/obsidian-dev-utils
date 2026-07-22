@@ -95,6 +95,44 @@ describe('LayoutReadyComponent', () => {
     vi.useRealTimers();
   });
 
+  it('should wait for an in-flight async load before invoking onLayoutReady (loaded after layout is ready)', async () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    const order: string[] = [];
+    let openLoadGate!: () => void;
+    const loadGate = new Promise<void>((resolve) => {
+      openLoadGate = resolve;
+    });
+
+    class AsyncLoadLayoutReadyComponent extends LayoutReadyComponent {
+      public override async onloadAsync(): Promise<void> {
+        await loadGate;
+        order.push('onloadAsync');
+      }
+
+      protected override onLayoutReady(): void {
+        order.push('onLayoutReady');
+      }
+    }
+
+    const component = new AsyncLoadLayoutReadyComponent(app);
+    // Load first, then signal layout-ready: models a component loaded after the layout was already ready, so
+    // Its async load (onloadAsync) is still in flight when the layout-ready handler fires.
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    // The async load is still gated, so onLayoutReady must not have run yet.
+    expect(order).toEqual([]);
+
+    openLoadGate();
+    await vi.runAllTimersAsync();
+
+    // OnLayoutReady runs only after onloadAsync settles — never racing ahead of it.
+    expect(order).toEqual(['onloadAsync', 'onLayoutReady']);
+    vi.useRealTimers();
+  });
+
   it('should work with abstract subclass pattern', () => {
     vi.useFakeTimers();
     const { app, triggerLayoutReady } = createMockApp();

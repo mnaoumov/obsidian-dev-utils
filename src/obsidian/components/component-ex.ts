@@ -168,6 +168,21 @@ export class ComponentEx extends Component implements Disposable {
   }
 
   /**
+   * Returns the component's in-flight load {@link Promise} (its {@link onloadAsync} plus children), or `null` when
+   * nothing is loading — either the component loaded fully synchronously or its async load has already settled.
+   *
+   * Lets a caller scheduled while the component is still loading await the async load tail before acting, instead of
+   * racing it. The motivating case is a layout-ready handler (see `LayoutReadyComponent`) that fires because the
+   * component was loaded after the workspace layout was already ready: {@link Component.onload} has run (so `_loaded`
+   * is set) but {@link onloadAsync} may not have finished.
+   *
+   * @returns The in-flight load promise, or `null` if no load is in flight.
+   */
+  protected getInFlightLoadPromise(): null | Promise<void> {
+    return this.loadPromise;
+  }
+
+  /**
    * Sequences an already-started load step into the load promise.
    *
    * The step is presumed to have started synchronously (so any `_loaded` flag it sets is already visible); only the

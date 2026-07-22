@@ -30,9 +30,26 @@ export class LayoutReadyComponent extends ComponentEx {
   public override onload(): void {
     this.app.workspace.onLayoutReady(() => {
       window.setTimeout(() => {
-        if (this._loaded) {
-          invokeAsyncSafely(this.onLayoutReady.bind(this));
+        if (!this._loaded) {
+          return;
         }
+
+        const inFlightLoadPromise = this.getInFlightLoadPromise();
+        if (!inFlightLoadPromise) {
+          invokeAsyncSafely(this.onLayoutReady.bind(this));
+          return;
+        }
+
+        // Loaded after the layout was already ready: `onload` has run but the async load (`onloadAsync` and
+        // Children) may still be in flight. Wait for it before running `onLayoutReady`, otherwise the handler
+        // Races the load and can observe half-initialized state (e.g. a startup script that has not finished
+        // Loading yet).
+        invokeAsyncSafely(async () => {
+          await inFlightLoadPromise;
+          if (this._loaded) {
+            await this.onLayoutReady();
+          }
+        });
       }, 0);
     });
   }
