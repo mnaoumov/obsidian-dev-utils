@@ -62,6 +62,46 @@ import {
 import { t } from './i18n/i18n.ts';
 
 /**
+ * A behavior for handling empty folders during cleanup.
+ */
+export enum EmptyFolderBehavior {
+  /**
+   * Delete the empty folder.
+   */
+  Delete = 'Delete',
+
+  /**
+   * Delete the empty folder and all its empty parents.
+   */
+  DeleteWithEmptyParents = 'DeleteWithEmptyParents',
+
+  /**
+   * Keep the empty folder.
+   */
+  Keep = 'Keep'
+}
+
+/**
+ * Parameters for {@link cleanupEmptyFolders}.
+ */
+export interface CleanupEmptyFoldersParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The behavior determining how empty folders are cleaned up.
+   */
+  readonly emptyFolderBehavior: EmptyFolderBehavior;
+
+  /**
+   * The paths of the folders to clean up when empty.
+   */
+  readonly folderPaths: string[];
+}
+
+/**
  * Arguments for {@link process}.
  */
 export interface ContentArgs {
@@ -302,6 +342,34 @@ interface InvokeFileActionSafeParams {
    * The path or file to perform the action on.
    */
   readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Cleans up empty folders according to the given {@link EmptyFolderBehavior}.
+ *
+ * @param params - The parameters for cleaning up empty folders.
+ * @returns A {@link Promise} that resolves when the cleanup is complete.
+ */
+export async function cleanupEmptyFolders(params: CleanupEmptyFoldersParams): Promise<void> {
+  const {
+    app,
+    emptyFolderBehavior,
+    folderPaths
+  } = params;
+  for (const folderPath of folderPaths) {
+    switch (emptyFolderBehavior) {
+      case EmptyFolderBehavior.Delete:
+        await deleteEmptyFolder(app, folderPath);
+        break;
+      case EmptyFolderBehavior.DeleteWithEmptyParents:
+        await deleteEmptyFolderHierarchy(app, folderPath);
+        break;
+      case EmptyFolderBehavior.Keep:
+        break;
+      default:
+        assertNever(emptyFolderBehavior);
+    }
+  }
 }
 
 /**

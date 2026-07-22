@@ -36,12 +36,14 @@ import { assertNonNullable } from '../type-guards.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import { FileSystemType } from './file-system.ts';
 import {
+  cleanupEmptyFolders,
   copySafe,
   createFolderSafe,
   createTempFile,
   createTempFolder,
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
+  EmptyFolderBehavior,
   getAbstractFilePathSafe,
   getAvailablePath,
   getFilePathSafe,
@@ -1227,5 +1229,50 @@ describe('deleteEmptyFolderHierarchy', () => {
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
     await deleteEmptyFolderHierarchy(app, 'parent/child');
     expect(app.fileManager.trashFile).toHaveBeenCalled();
+  });
+});
+
+describe('cleanupEmptyFolders', () => {
+  beforeEach(() => {
+    mockApp = App.createConfigured__({
+      files: {
+        'my-folder/': '',
+        'parent/child/': ''
+      }
+    });
+    app = mockApp.asOriginalType__();
+    // Make every listed folder appear empty so the delete paths reach trashFile.
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
+    vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
+  });
+
+  it('should do nothing when behavior is Keep', async () => {
+    vi.spyOn(app.fileManager, 'trashFile');
+    await cleanupEmptyFolders({ app, emptyFolderBehavior: EmptyFolderBehavior.Keep, folderPaths: ['my-folder'] });
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should delete each empty folder when behavior is Delete', async () => {
+    vi.spyOn(app.fileManager, 'trashFile');
+    await cleanupEmptyFolders({ app, emptyFolderBehavior: EmptyFolderBehavior.Delete, folderPaths: ['my-folder'] });
+    expect(app.fileManager.trashFile).toHaveBeenCalled();
+  });
+
+  it('should delete the empty folder hierarchy when behavior is DeleteWithEmptyParents', async () => {
+    vi.spyOn(app.fileManager, 'trashFile');
+    await cleanupEmptyFolders({ app, emptyFolderBehavior: EmptyFolderBehavior.DeleteWithEmptyParents, folderPaths: ['parent/child'] });
+    expect(app.fileManager.trashFile).toHaveBeenCalled();
+  });
+
+  it('should do nothing when there are no folder paths', async () => {
+    vi.spyOn(app.fileManager, 'trashFile');
+    await cleanupEmptyFolders({ app, emptyFolderBehavior: EmptyFolderBehavior.Delete, folderPaths: [] });
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
+
+  it('should throw for an invalid behavior', async () => {
+    await expect(
+      cleanupEmptyFolders({ app, emptyFolderBehavior: castTo<EmptyFolderBehavior>('invalid'), folderPaths: ['my-folder'] })
+    ).rejects.toThrow('Unhandled value: invalid');
   });
 });
