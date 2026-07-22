@@ -222,7 +222,7 @@ describe('processFrontmatter', () => {
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'image.png', resourceLockComponent })).rejects.toThrow('not a markdown file');
+    await expect(processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'image.png', pluginNoticeComponent: null, resourceLockComponent })).rejects.toThrow('not a markdown file');
   });
 
   it('should call process with the file', async () => {
@@ -233,7 +233,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const frontmatterFn = vi.fn();
-    await processFrontmatter({ app, frontmatterFn, pathOrFile: 'note.md', resourceLockComponent });
+    await processFrontmatter({ app, frontmatterFn, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(process).toHaveBeenCalled();
     expect(frontmatterFn).toHaveBeenCalled();
   });
@@ -247,7 +247,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
-    await processFrontmatter({ app, frontmatterFn: () => null, pathOrFile: 'note.md', resourceLockComponent });
+    await processFrontmatter({ app, frontmatterFn: () => null, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(resultContent).toBeNull();
   });
 
@@ -262,7 +262,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'test' });
 
-    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', resourceLockComponent });
+    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(resultContent).toBe(content);
     expect(setFrontmatter).not.toHaveBeenCalled();
   });
@@ -283,6 +283,7 @@ describe('processFrontmatter', () => {
         fm['title'] = 'new';
       },
       pathOrFile: 'note.md',
+      pluginNoticeComponent: null,
       resourceLockComponent
     });
     expect(setFrontmatter).toHaveBeenCalled();
@@ -296,7 +297,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const processOptions = { timeoutInMilliseconds: 5000 };
-    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', resourceLockComponent, ...processOptions });
+    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent, ...processOptions });
     const params = vi.mocked(process).mock.calls[0]?.[0];
     expect(params?.app).toBe(app);
     expect(params?.pathOrFile).toBe('note.md');

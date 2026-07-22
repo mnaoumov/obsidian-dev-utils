@@ -1672,7 +1672,7 @@ describe('app-dependent functions', () => {
         multiValueFrontmatterExternalLinks: []
       }));
 
-      await updateFileUrlLinksInFile({ app, pathOrFile: 'note.md', resourceLockComponent });
+      await updateFileUrlLinksInFile({ app, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
       expect(applyFileChanges).toHaveBeenCalled();
     });
   });
@@ -1766,6 +1766,7 @@ describe('app-dependent functions', () => {
         app,
         linkConverter: () => '[[updated]]',
         pathOrFile: 'note.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -1798,6 +1799,7 @@ describe('app-dependent functions', () => {
         app,
         linkConverter: () => '[[updated]]',
         pathOrFile: 'note.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -1820,6 +1822,7 @@ describe('app-dependent functions', () => {
         app,
         linkConverter: () => '[[updated]]',
         pathOrFile: 'note.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -1868,6 +1871,7 @@ describe('app-dependent functions', () => {
         app,
         linkConverter,
         pathOrFile: 'target.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -1909,6 +1913,7 @@ describe('app-dependent functions', () => {
         app,
         linkConverter,
         pathOrFile: 'target.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -1982,6 +1987,7 @@ describe('app-dependent functions', () => {
       await updateLinksInFile({
         app,
         newSourcePathOrFile: 'note.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -2007,6 +2013,7 @@ describe('app-dependent functions', () => {
       await updateLinksInFile({
         app: canvasApp,
         newSourcePathOrFile: canvasFile,
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -2037,6 +2044,7 @@ describe('app-dependent functions', () => {
       await updateLinksInFile({
         app,
         newSourcePathOrFile: 'note.md',
+        pluginNoticeComponent: null,
         resourceLockComponent,
         shouldUpdateEmbedOnlyLinks: true
       });
@@ -2068,6 +2076,7 @@ describe('app-dependent functions', () => {
       await updateLinksInFile({
         app,
         newSourcePathOrFile: 'note.md',
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -2148,6 +2157,7 @@ describe('app-dependent functions', () => {
         app: canvasApp,
         linkConverter: () => 'new-target.md',
         pathOrFile: canvasFile,
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 
@@ -2193,6 +2203,7 @@ describe('app-dependent functions', () => {
         app: canvasApp,
         linkConverter: () => '[[new-target]]',
         pathOrFile: canvasFile,
+        pluginNoticeComponent: null,
         resourceLockComponent
       });
 

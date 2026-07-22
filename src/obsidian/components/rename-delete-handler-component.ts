@@ -704,6 +704,7 @@ class RenameHandler {
             }));
           },
           pathOrFile: newBacklinkPath,
+          pluginNoticeComponent,
           resourceLockComponent: this.resourceLockComponent,
           shouldFailOnMissingFile: false
         });
@@ -715,6 +716,7 @@ class RenameHandler {
           app: this.app,
           newSourcePathOrFile: this.newPath,
           oldSourcePathOrFile: this.oldPath,
+          pluginNoticeComponent,
           resourceLockComponent: this.resourceLockComponent,
           shouldFailOnMissingFile: false,
           shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases

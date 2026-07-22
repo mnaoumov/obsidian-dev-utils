@@ -186,6 +186,7 @@ export class VaultTransaction {
       app: this.app,
       newContentProvider: ({ content }) => newContentProvider(content),
       pathOrFile: path,
+      pluginNoticeComponent: null,
       resourceLockComponent: null
     });
     // Reaching this line means `process` succeeded. A missing file would have thrown above (its
@@ -196,6 +197,7 @@ export class VaultTransaction {
         app: this.app,
         newContentProvider: oldContent,
         pathOrFile: path,
+        pluginNoticeComponent: null,
         resourceLockComponent: null
       });
       // A consumer may have edited this note through the editor, leaving a dirty buffer.

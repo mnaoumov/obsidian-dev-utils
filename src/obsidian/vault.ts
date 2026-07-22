@@ -40,7 +40,6 @@ import {
   extname,
   join
 } from '../path.ts';
-import { strictProxy } from '../strict-proxy.ts';
 import { assertNever } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
@@ -215,6 +214,12 @@ export interface IsChildParams {
  * Options for {@link process}.
  */
 export interface ProcessOptions extends RetryOptions {
+  /**
+   * Plugin notice component used to show the timeout notice. When `null`, no timeout notice is shown
+   * regardless of {@link ProcessOptions.shouldShowTimeoutNotice}; the timeout is only logged.
+   */
+  readonly pluginNoticeComponent: null | PluginNoticeComponent;
+
   /**
    * An resource-lock component used to lock the file's editor read-only for the duration of
    * processing. The lock is reference-counted, so it composes with any outer operation-level lock
@@ -737,6 +742,7 @@ export async function process(params: ProcessParams): Promise<void> {
     app,
     newContentProvider,
     pathOrFile,
+    pluginNoticeComponent,
     resourceLockComponent
   } = params;
   const DEFAULT_RETRY_OPTIONS = {
@@ -810,7 +816,7 @@ export async function process(params: ProcessParams): Promise<void> {
       }
     },
     operationName: t(($) => $.obsidianDevUtils.vault.processFile, { filePath: path }),
-    pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+    pluginNoticeComponent,
     retryOptions: fullOptions,
     shouldShowTimeoutNotice: fullOptions.shouldShowTimeoutNotice
   });

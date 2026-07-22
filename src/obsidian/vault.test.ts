@@ -23,6 +23,7 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 import type { RetryWithTimeoutNoticeParams } from './async-with-notice.ts';
+import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 
 import {
@@ -990,7 +991,7 @@ describe('processFile', () => {
 
   it('should call retryWithTimeoutNotice with correct params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent: defaultResourceLockComponent });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
 
     expect(mockedRetryWithTimeoutNotice).toHaveBeenCalledOnce();
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
@@ -999,10 +1000,28 @@ describe('processFile', () => {
 
   it('should pass shouldShowTimeoutNotice from params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent: defaultResourceLockComponent, shouldShowTimeoutNotice: false });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent, shouldShowTimeoutNotice: false });
 
     const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
     expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
+  });
+
+  it('should forward a supplied pluginNoticeComponent to retryWithTimeoutNotice', async () => {
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+    const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent, resourceLockComponent: defaultResourceLockComponent });
+
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArg?.['pluginNoticeComponent']).toBe(pluginNoticeComponent);
+    expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
+  });
+
+  it('should forward a null pluginNoticeComponent when none is supplied', async () => {
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
+
+    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArg?.['pluginNoticeComponent']).toBeNull();
   });
 
   it('should write new content when content matches', async () => {
@@ -1014,7 +1033,7 @@ describe('processFile', () => {
       return fn('old content');
     });
 
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent: defaultResourceLockComponent });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
@@ -1031,14 +1050,14 @@ describe('processFile', () => {
       return fn('changed content');
     });
 
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent: defaultResourceLockComponent });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
     expect(operationResult).toBe(false);
   });
 
   it('should throw when file is missing and shouldFailOnMissingFile is true', async () => {
     setupRetryToInvokeOperationFn();
 
-    await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', resourceLockComponent: defaultResourceLockComponent, shouldFailOnMissingFile: true }))
+    await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent, shouldFailOnMissingFile: true }))
       .rejects.toThrow('File \'missing.md\' not found');
   });
 
@@ -1047,7 +1066,7 @@ describe('processFile', () => {
     mockApp = App.createConfigured__(); // No files
     app = mockApp.asOriginalType__();
 
-    await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', resourceLockComponent: defaultResourceLockComponent, shouldFailOnMissingFile: false }))
+    await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent, shouldFailOnMissingFile: false }))
       .resolves.toBeUndefined();
   });
 
@@ -1059,7 +1078,7 @@ describe('processFile', () => {
       operationResult = await operationFn(abortSignal);
     });
 
-    await processFile({ app, newContentProvider: () => null, pathOrFile: 'note.md', resourceLockComponent: defaultResourceLockComponent });
+    await processFile({ app, newContentProvider: () => null, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
     expect(operationResult).toBe(false);
   });
 
@@ -1074,7 +1093,7 @@ describe('processFile', () => {
       return 'old content';
     });
 
-    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent: defaultResourceLockComponent }))
+    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent }))
       .rejects.toThrow('File \'note.md\' not found');
   });
 
@@ -1086,7 +1105,7 @@ describe('processFile', () => {
     const lockForPath = vi.fn(() => lockDisposable);
     const resourceLockComponent = strictProxy<ResourceLockComponent>({ lockForPath });
 
-    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent });
+    await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
 
     expect(lockForPath).toHaveBeenCalledWith({ operationName: 'Process note', pathOrFile: 'note.md' });
     expect(dispose).toHaveBeenCalledTimes(1);
@@ -1099,7 +1118,7 @@ describe('processFile', () => {
     const lockDisposable: Disposable = { [Symbol.dispose]: dispose };
     const resourceLockComponent = strictProxy<ResourceLockComponent>({ lockForPath: vi.fn(() => lockDisposable) });
 
-    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent }))
+    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent }))
       .rejects.toThrow('Timeout');
     expect(dispose).toHaveBeenCalledTimes(1);
   });
@@ -1108,7 +1127,7 @@ describe('processFile', () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     vi.spyOn(app.workspace, 'on');
 
-    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', resourceLockComponent: null }))
+    await expect(processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: null }))
       .resolves.toBeUndefined();
 
     expect(vi.mocked(app.workspace.on)).not.toHaveBeenCalled();
