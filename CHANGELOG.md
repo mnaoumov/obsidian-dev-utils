@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 87.3.1
+
+- chore: bump OIT to 9.1.0 and skip flaky demo-vault-helper test
+- fix(rename-delete-handler): move attachments regardless of update-links setting
+- chore: update libs
+- refactor: update endpoint
+
 ## 87.3.0
 
 - feat: change demo vault artifact name
