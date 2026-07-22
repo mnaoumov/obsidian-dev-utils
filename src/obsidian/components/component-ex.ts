@@ -183,6 +183,20 @@ export class ComponentEx extends Component implements Disposable {
   }
 
   /**
+   * Returns whether the most recent load recorded any failure.
+   *
+   * Reflects the outcome of the last {@link load} / {@link loadWithPromises}: `true` when {@link onloadAsync} or any
+   * child's load threw (synchronously or asynchronously). Unlike {@link loadWithPromises}, reading this does NOT
+   * re-raise the collected errors — it lets a bystander (e.g. a layout-ready handler awaiting the in-flight load) tell
+   * whether the load succeeded without adopting a failure that the load's owner is already responsible for.
+   *
+   * @returns `true` if the last load recorded at least one error, otherwise `false`.
+   */
+  protected hasLoadErrors(): boolean {
+    return this.loadErrors.length > 0;
+  }
+
+  /**
    * Sequences an already-started load step into the load promise.
    *
    * The step is presumed to have started synchronously (so any `_loaded` flag it sets is already visible); only the
