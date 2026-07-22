@@ -751,7 +751,7 @@
     "jsdom": "^29.1.1",
     "moment": "^2.30.1",
     "nano-staged": "^1.0.2",
-    "obsidian-integration-testing": "^9.0.0",
+    "obsidian-integration-testing": "^9.1.0",
     "obsidian-test-mocks": "^3.6.0",
     "satori": "^0.28.2",
     "starlight-github-alerts": "^0.4.0",
