@@ -333,6 +333,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
       }));
     },
     pathOrFile: ctx.sourcePath,
+    pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
 }
@@ -367,6 +368,7 @@ export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Prom
       }));
     },
     pathOrFile: ctx.sourcePath,
+    pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
 }
@@ -442,6 +444,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
       return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
     },
     pathOrFile: ctx.sourcePath,
+    pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
 }

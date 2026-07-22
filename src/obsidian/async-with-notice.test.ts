@@ -317,6 +317,41 @@ describe('AsyncWithNotice', () => {
 
       expect(capturedOnTimeoutTrue).not.toBe(capturedOnTimeoutFalse);
     });
+
+    it('should use onTimeoutWithoutNotice when no pluginNoticeComponent is supplied, even when notices are enabled', async () => {
+      let capturedWithoutComponent: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedSilent: ((ctx: TimeoutContext) => void) | null = null;
+
+      vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
+        await noopAsync();
+        capturedWithoutComponent = options.onTimeout as (ctx: TimeoutContext) => void;
+      });
+      await retryWithTimeoutNotice({
+        operationFn: async () => {
+          await noopAsync();
+          return true;
+        },
+        pluginNoticeComponent: null,
+        shouldShowTimeoutNotice: true
+      });
+
+      vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
+        await noopAsync();
+        capturedSilent = options.onTimeout as (ctx: TimeoutContext) => void;
+      });
+      await retryWithTimeoutNotice({
+        operationFn: async () => {
+          await noopAsync();
+          return true;
+        },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+        shouldShowTimeoutNotice: false
+      });
+
+      // No component means the silent handler is used, identical to the explicit no-notice path, so the
+      // timeout is only logged and showNotice is never accessed.
+      expect(capturedWithoutComponent).toBe(capturedSilent);
+    });
   });
 
   describe('runWithTimeoutNotice', () => {
@@ -549,6 +584,45 @@ describe('AsyncWithNotice', () => {
 
       // Undefined defaults to true, so it must use the notice-showing handler, not the no-notice one used for false.
       expect(capturedOnTimeoutWithUndefined).not.toBe(capturedOnTimeoutWithFalse);
+    });
+
+    it('should use onTimeoutWithoutNotice when no pluginNoticeComponent is supplied, even when notices are enabled', async () => {
+      let capturedWithoutComponent: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedSilent: ((ctx: TimeoutContext) => void) | null = null;
+
+      vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
+        await noopAsync();
+        capturedWithoutComponent = options.onTimeout as (ctx: TimeoutContext) => void;
+        return undefined;
+      });
+      await runWithTimeoutNotice({
+        operationFn: async () => {
+          await noopAsync();
+          return 'value';
+        },
+        pluginNoticeComponent: null,
+        shouldShowTimeoutNotice: true,
+        timeoutInMilliseconds: 5000
+      });
+
+      vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
+        await noopAsync();
+        capturedSilent = options.onTimeout as (ctx: TimeoutContext) => void;
+        return undefined;
+      });
+      await runWithTimeoutNotice({
+        operationFn: async () => {
+          await noopAsync();
+          return 'value';
+        },
+        pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+        shouldShowTimeoutNotice: false,
+        timeoutInMilliseconds: 5000
+      });
+
+      // No component means the silent handler is used, identical to the explicit no-notice path, so the
+      // timeout is only logged and showNotice is never accessed.
+      expect(capturedWithoutComponent).toBe(capturedSilent);
     });
   });
 

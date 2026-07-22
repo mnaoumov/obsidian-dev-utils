@@ -149,6 +149,7 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
       }
     },
     pathOrFile,
+    pluginNoticeComponent: null,
     resourceLockComponent
   });
 }
@@ -188,6 +189,7 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
       }
     },
     pathOrFile,
+    pluginNoticeComponent: null,
     resourceLockComponent
   });
 }

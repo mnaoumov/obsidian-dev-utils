@@ -48,9 +48,10 @@ export interface RetryWithTimeoutNoticeParams {
   readonly operationName?: string;
 
   /**
-   * Plugin notice component to show notices.
+   * Plugin notice component used to show the timeout notice. When `null` (or `shouldShowTimeoutNotice`
+   * is `false`), no notice is shown and the timeout is only logged.
    */
-  readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly pluginNoticeComponent: null | PluginNoticeComponent;
 
   /**
    * The retry options.
@@ -102,9 +103,10 @@ export interface RunWithTimeoutNoticeParams<Result> {
   readonly operationName?: string;
 
   /**
-   * Plugin notice component to show notices.
+   * Plugin notice component used to show the timeout notice. When `null` (or `shouldShowTimeoutNotice`
+   * is `false`), no notice is shown and the timeout is only logged.
    */
-  readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly pluginNoticeComponent: null | PluginNoticeComponent;
 
   /**
    * Whether to show a timeout notice.
@@ -133,11 +135,7 @@ export interface RunWithTimeoutNoticeParams<Result> {
 export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParams): Promise<void> {
   return retryWithTimeout({
     ...params,
-    onTimeout: params.shouldShowTimeoutNotice ?? true
-      ? (ctx): void => {
-        onTimeoutNotice(ctx, params.pluginNoticeComponent, params.content);
-      }
-      : onTimeoutWithoutNotice
+    onTimeout: resolveOnTimeout(params.shouldShowTimeoutNotice, params.pluginNoticeComponent, params.content)
   });
 }
 
@@ -151,12 +149,32 @@ export async function retryWithTimeoutNotice(params: RetryWithTimeoutNoticeParam
 export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeParams<Result>): Promise<Result> {
   return runWithTimeout({
     ...params,
-    onTimeout: params.shouldShowTimeoutNotice ?? true
-      ? (ctx): void => {
-        onTimeoutNotice(ctx, params.pluginNoticeComponent, params.content);
-      }
-      : onTimeoutWithoutNotice
+    onTimeout: resolveOnTimeout(params.shouldShowTimeoutNotice, params.pluginNoticeComponent, params.content)
   });
+}
+
+/**
+ * Selects the timeout handler for {@link retryWithTimeoutNotice} / {@link runWithTimeoutNotice}. A notice
+ * is shown only when notices are enabled AND a real {@link PluginNoticeComponent} is supplied; otherwise
+ * the timeout is silently logged.
+ *
+ * @param shouldShowTimeoutNotice - Whether a timeout notice is requested (defaults to `true`).
+ * @param pluginNoticeComponent - The component used to show the notice, if any.
+ * @param content - Optional custom content for the notice.
+ * @returns The timeout handler to pass to the underlying retry/run helper.
+ */
+function resolveOnTimeout(
+  shouldShowTimeoutNotice: boolean | undefined,
+  pluginNoticeComponent: null | PluginNoticeComponent,
+  content?: ValueProvider<DocumentFragment | string>
+): (ctx: TimeoutContext) => void {
+  if (!(shouldShowTimeoutNotice ?? true) || pluginNoticeComponent === null) {
+    return onTimeoutWithoutNotice;
+  }
+
+  return (ctx): void => {
+    onTimeoutNotice(ctx, pluginNoticeComponent, content);
+  };
 }
 
 function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content?: ValueProvider<DocumentFragment | string>): void {
