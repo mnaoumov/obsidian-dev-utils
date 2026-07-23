@@ -42,7 +42,7 @@ describe('demo-vault-helper bootstrap', () => {
   //
   // NOTE: CST is installed FROM THE STORE and bundles its own copy of obsidian-dev-utils, so the
   // `startupRan`/`probeValue`/`activeFilePath` assertions (CST running its startup script when enabled AFTER
-  // layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
+  // Layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
   // Store serves a CST release built against the fixed dev-utils (CST 13.4.1+; see T126 / T130).
   it('should install, configure, enable CodeScript Toolkit and run startup with no reload', async () => {
     const vaultPath = getTempVault().path;
