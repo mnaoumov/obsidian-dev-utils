@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 88.1.2
+
+- fix(canvas): apply fixFrontmatterMarkdownLinks in getCanvasReferences text-node parse
+- chore: update libs
+
 ## 88.1.1
 
 - test(demo-vault-helper): re-enable the bootstrap integration test
