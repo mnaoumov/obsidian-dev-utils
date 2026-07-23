@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 88.1.0
+
+- refactor: canvas links
+
 ## 88.0.0
 
 - fix(docs): skip base-absolute internal links on the 127.0.0.1 linkinator host
