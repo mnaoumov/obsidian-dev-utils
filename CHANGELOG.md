@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 88.0.0
+
+- fix(docs): skip base-absolute internal links on the 127.0.0.1 linkinator host
+- fix: don't run onLayoutReady on failures
+- feat(vault): export cleanupEmptyFolders helper
+- fix(vault)!: thread pluginNoticeComponent to fix process() timeout-notice crash
+- fix(layout-ready-component): run onLayoutReady only after the in-flight load settles
+
 ## 87.3.1
 
 - chore: bump OIT to 9.1.0 and skip flaky demo-vault-helper test
