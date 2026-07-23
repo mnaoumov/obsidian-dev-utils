@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 88.1.1
+
+- test(demo-vault-helper): re-enable the bootstrap integration test
+- chore: update libs
+
 ## 88.1.0
 
 - refactor: canvas links
