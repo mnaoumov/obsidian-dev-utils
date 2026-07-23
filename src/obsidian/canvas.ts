@@ -14,6 +14,7 @@ import type {
   CanvasTextNodeReference
 } from './reference.ts';
 
+import { fixFrontmatterMarkdownLinks } from './link.ts';
 import {
   getLinks,
   parseMetadata
@@ -76,6 +77,9 @@ export async function getCanvasReferences(app: App, pathOrFile: PathOrFile): Pro
       }
       case 'text': {
         const metadata = await parseMetadata(app, node.text);
+        if (app.plugins.getPlugin('frontmatter-markdown-links')) {
+          fixFrontmatterMarkdownLinks(metadata);
+        }
         const links = getLinks({ cache: metadata });
         for (const [linkIndex, link] of links.entries()) {
           const canvasTextNodeReference: CanvasTextNodeReference = {
