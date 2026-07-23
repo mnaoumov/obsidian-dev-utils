@@ -632,4 +632,28 @@ describe('loop', () => {
     expect(fragmentCalls.length).toBeGreaterThanOrEqual(1);
     vi.mocked(Notice.prototype.setMessage).mockRestore();
   });
+
+  it('should not create a notice when pluginNoticeComponent is null', async () => {
+    // Make invokeAsyncSafely actually await the function so showNotice runs to completion
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure showNotice runs before loop iterates.
+    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
+      await fn();
+    });
+
+    vi.spyOn(Notice.prototype, 'setMessage');
+
+    await loop({
+      buildNoticeMessage: vi.fn(() => 'msg'),
+      items: ['a', 'b'],
+      pluginNoticeComponent: null,
+      processItem: vi.fn(),
+      progressBarTitle: 'My Progress',
+      shouldShowNotice: true,
+      shouldShowProgressBar: true
+    });
+
+    // With no component, no Notice is ever constructed, so setMessage is never called.
+    expect(vi.mocked(Notice.prototype.setMessage)).not.toHaveBeenCalled();
+    vi.mocked(Notice.prototype.setMessage).mockRestore();
+  });
 });
