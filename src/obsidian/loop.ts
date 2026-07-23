@@ -165,7 +165,7 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
 
   const items = fullOptions.items;
   let iterationCount = 0;
-  let notice: Notice | null = null;
+  let notice = null as Notice | null;
   let isDone = false;
   invokeAsyncSafely(() => showNotice());
 
