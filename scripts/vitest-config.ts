@@ -32,6 +32,7 @@ const SCRIPT_UTILS_TEST_FILES = 'src/script-utils/**/*.test.ts';
 const ESLINT_TYPECHECK_TEST_FILES = 'src/script-utils/linters/eslint-rules/*.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
+const DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE = 'src/obsidian/demo-vault-helper.obsidian.integration.test.ts';
 const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
 const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
@@ -123,6 +124,7 @@ export const config = defineConfig({
           // These integration tests share ONE Obsidian instance and mutate its global state.
           // Parallel files would stomp each other: focus and the active workspace are global.
           // So this project runs serially in a single worker.
+          exclude: [...SHARED_EXCLUDE, DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE],
           fileParallelism: false,
           globalSetup: ['./scripts/integration-test-obsidian-global-setup.ts'],
           include: [OBSIDIAN_INTEGRATION_TEST_FILES],
@@ -132,6 +134,21 @@ export const config = defineConfig({
             'obsidian-integration-testing/vitest-setup',
             './scripts/integration-test-obsidian-setup.ts'
           ],
+          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+        }
+      },
+      {
+        test: {
+          environment: 'node',
+          // The demo-vault-helper bootstrap test runs in its OWN dedicated Obsidian instance/vault (isolated
+          // From the shared instance above) via its own global setup, so it does not pollute the shared vault
+          // The other `*.obsidian.integration.test.ts` files use. Serial single worker, same as above.
+          fileParallelism: false,
+          globalSetup: ['./scripts/demo-vault-helper-global-setup.ts'],
+          include: [DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE],
+          maxWorkers: 1,
+          name: 'obsidian-integration-tests:demo-vault-helper',
+          setupFiles: ['obsidian-integration-testing/vitest-setup'],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
       }

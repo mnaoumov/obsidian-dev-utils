@@ -83,7 +83,7 @@ export interface LoopParams<T> {
   /**
    * A component to show notices.
    */
-  readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly pluginNoticeComponent: null | PluginNoticeComponent;
 
   /**
    * Process each item.
@@ -230,13 +230,13 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
     if (isDone) {
       return;
     }
-    notice = params.pluginNoticeComponent.showNotice('', {});
+    notice = params.pluginNoticeComponent?.showNotice('', {}) ?? null;
     if (!fullOptions.shouldShowProgressBar) {
       return;
     }
     const fragment = createFragment();
     fragment.createDiv({ text: fullOptions.progressBarTitle });
     fragment.appendChild(progressBarEl);
-    notice.setMessage(fragment);
+    notice?.setMessage(fragment);
   }
 }

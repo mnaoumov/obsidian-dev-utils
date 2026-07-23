@@ -33,21 +33,18 @@ interface BootstrapStatus {
 }
 
 describe('demo-vault-helper bootstrap', () => {
-  // This test is meant to run in a DEDICATED integration project with its own isolated vault: a `createSetup`
-  // Global setup is staged at `scripts/demo-vault-helper-global-setup.ts` (seeds the vault with the committed
-  // Helper + the probe/startup scripts + start note, and enables the helper via the harness's
+  // This test runs in the DEDICATED `obsidian-integration-tests:demo-vault-helper` project (see
+  // `scripts/vitest-config.ts`), which boots its own isolated Obsidian instance/vault via
+  // `scripts/demo-vault-helper-global-setup.ts`. That global setup seeds the vault with the committed helper
+  // Plus the probe/startup scripts + start note, and enables the helper via the harness's
   // `enableCommunityPlugins` path, which kicks off the helper's on-layout-ready bootstrap that installs
-  // CodeScript Toolkit from the store). That project is NOT wired into `scripts/vitest-config.ts` yet — see
-  // Below — so this file currently only compiles (it is `it.skip`-ped and its home project boots nothing).
+  // CodeScript Toolkit from the store.
   //
-  // SKIPPED pending a CodeScript Toolkit release. Setup + install + configure + enable all pass, but the
-  // `startupRan`/`probeValue`/`activeFilePath` assertions require CST to run its startup script when enabled
-  // AFTER layout-ready. That was a load-vs-execute race in `LayoutReadyComponent` (fixed in this repo), but CST
-  // Bundles its OWN copy of obsidian-dev-utils, so the fix only reaches CST once it re-releases with a bumped
-  // Dev-utils. To re-enable (see T126 / T130): after CST releases, wire the dedicated
-  // `obsidian-integration-tests:demo-vault-helper` project (its global setup is staged) into
-  // `scripts/vitest-config.ts`, add it to `scripts/test-integration.ts`, and drop this `.skip`.
-  it.skip('should install, configure, enable CodeScript Toolkit and run startup with no reload', async () => {
+  // NOTE: CST is installed FROM THE STORE and bundles its own copy of obsidian-dev-utils, so the
+  // `startupRan`/`probeValue`/`activeFilePath` assertions (CST running its startup script when enabled AFTER
+  // Layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
+  // Store serves a CST release built against the fixed dev-utils (CST 13.4.1+; see T126 / T130).
+  it('should install, configure, enable CodeScript Toolkit and run startup with no reload', async () => {
     const vaultPath = getTempVault().path;
 
     let lastStatus: BootstrapStatus | undefined;
