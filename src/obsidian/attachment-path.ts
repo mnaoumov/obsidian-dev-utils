@@ -12,7 +12,10 @@ import type {
   Vault
 } from 'obsidian';
 
-import { parentFolderPath } from '@obsidian-typings/obsidian-public-latest/implementations';
+import {
+  getDataAdapterEx,
+  parentFolderPath
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { PathOrFile } from './file-system.ts';
 
@@ -257,6 +260,33 @@ export interface HasOwnAttachmentFolderParams {
 }
 
 /**
+ * Parameters for {@link isAtProperAttachmentPath}.
+ */
+export interface IsAtProperAttachmentPathParams {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file of the attachment to check.
+   */
+  readonly attachmentPathOrFile: PathOrFile;
+
+  /**
+   * The context.
+   *
+   * @default {@link AttachmentPathContext.Unknown}
+   */
+  readonly context?: AttachmentPathContext;
+
+  /**
+   * The path or file of the note that references the attachment.
+   */
+  readonly notePathOrFile: PathOrFile;
+}
+
+/**
  * Retrieves the file path for an attachment within a note.
  *
  * @param params - Parameters for the get attachment file path function.
@@ -398,6 +428,75 @@ export async function hasOwnAttachmentFolder(params: HasOwnAttachmentFolderParam
   });
   return attachmentFolderPath !== dummyAttachmentFolderPath;
 }
+
+/* v8 ignore stop */
+
+/**
+ * Checks whether an attachment already sits at its proper attachment path.
+ *
+ * Returns `true` when the attachment's current path is, within its proper attachment folder, either the proper
+ * base name or the proper base name plus an Obsidian deduplication suffix (a space followed by digits, e.g.
+ * `img 1`) with the same extension. The proper path is computed via {@link getAttachmentFilePath} with
+ * {@link GetAttachmentFilePathParams.shouldSkipDuplicateCheck} set to `true` (the target before any
+ * deduplication suffix), and the comparison respects the file system case-sensitivity flag
+ * (`getDataAdapterEx(app).insensitive`) that `getSafeRenamePath` uses.
+ *
+ * This lets a caller recognize a deduplication-parked attachment as already-collected, so a "needs move?"
+ * decision made against the deduplication-free proper path converges instead of re-scheduling the file forever.
+ *
+ * @param params - Parameters for the is at proper attachment path function.
+ * @returns A {@link Promise} that resolves to `true` when the attachment is already at its proper path.
+ */
+export async function isAtProperAttachmentPath(params: IsAtProperAttachmentPathParams): Promise<boolean> {
+  const {
+    app,
+    attachmentPathOrFile,
+    context = AttachmentPathContext.Unknown,
+    notePathOrFile
+  } = params;
+
+  const currentPath = getPath(app, attachmentPathOrFile);
+  const properPath = await getAttachmentFilePath({
+    app,
+    context,
+    notePathOrFile,
+    oldAttachmentPathOrFile: attachmentPathOrFile,
+    shouldSkipDuplicateCheck: true
+  });
+
+  const isInsensitive = getDataAdapterEx(app).insensitive;
+
+  function fold(value: string): string {
+    return isInsensitive ? value.toLowerCase() : value;
+  }
+
+  if (fold(dirname(currentPath)) !== fold(dirname(properPath))) {
+    return false;
+  }
+
+  const currentExtension = extname(currentPath);
+  const properExtension = extname(properPath);
+  if (fold(currentExtension) !== fold(properExtension)) {
+    return false;
+  }
+
+  const currentBaseName = basename(currentPath, currentExtension);
+  const properBaseName = basename(properPath, properExtension);
+
+  if (fold(currentBaseName) === fold(properBaseName)) {
+    return true;
+  }
+
+  const deduplicationPrefix = `${properBaseName} `;
+  if (!fold(currentBaseName).startsWith(fold(deduplicationPrefix))) {
+    return false;
+  }
+
+  const deduplicationSuffix = currentBaseName.slice(deduplicationPrefix.length);
+  return /^\d+$/.test(deduplicationSuffix);
+}
+
+/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
 
 /**
  * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
