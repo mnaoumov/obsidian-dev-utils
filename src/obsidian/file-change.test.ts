@@ -695,6 +695,32 @@ describe('canvas changes via applyFileChanges', () => {
     expect(firstNode['text']).toContain('[[replaced]]');
   });
 
+  it('should preserve the escaped wikilink divider when a canvas text node embed is inside a table', async () => {
+    const nodeText = '| ![[old.png\\|500]] |';
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: nodeText, type: 'text' }]
+    };
+    // The regenerated link uses an unescaped divider; the escaping must be restored so the table
+    // And the embed size survive.
+    const changes = [makeCanvasTextNodeChange('![[old.png\\|500]]', '![[new.png|500]]', 0, 2)];
+    let resultContent: null | string = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    const nodes = parsed['nodes'];
+    assertNonNullable(nodes);
+    const firstNode = nodes[0];
+    assertNonNullable(firstNode);
+    expect(firstNode['text']).toBe('| ![[new.png\\|500]] |');
+  });
+
   it('should skip the rewrite (return null) for invalid JSON canvas content instead of throwing', async () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = 'sentinel';
