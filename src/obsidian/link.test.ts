@@ -1396,6 +1396,25 @@ describe('app-dependent functions', () => {
       expect(result).toBe('[[target|my alias]]');
     });
 
+    it('should refresh a wikilink alias equal to the old base name when shouldUpdateFileNameAlias is true', () => {
+      const link = {
+        displayText: '2',
+        link: 'folder/2',
+        original: '[[folder/2|2]]'
+      } as Reference;
+      const result = updateLink({
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/222.md',
+        oldTargetPathOrFile: 'folder/2.md',
+        shouldUpdateFileNameAlias: true
+      });
+      // Previously the explicit wikilink alias short-circuited the refresh, leaving the stale
+      // `[[folder/222|2]]`; the alias must follow the rename to the new base name.
+      expect(result).toBe('[[folder/222|222]]');
+    });
+
     it('should update alias matching old basename when shouldUpdateFileNameAlias is not set', () => {
       const link = {
         displayText: 'target',

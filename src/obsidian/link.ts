@@ -1451,7 +1451,6 @@ export function updateLink(params: UpdateLinkParams): string {
   }));
 
   const { subpath } = splitSubpath(link.link);
-  let shouldKeepAlias = !shouldUpdateFileNameAlias;
 
   if (isCanvasFile(newSourcePathOrFile)) {
     /* v8 ignore start -- Canvas file node reference branch is hard to reproduce in unit tests. */
@@ -1466,7 +1465,6 @@ export function updateLink(params: UpdateLinkParams): string {
 
   if (isWikilink && parseLinkResult?.alias) {
     alias = parseLinkResult.alias;
-    shouldKeepAlias = true;
   }
 
   alias ??= shouldResetAlias(normalizeOptionalProperties<ShouldResetAliasParams>({
@@ -1481,14 +1479,16 @@ export function updateLink(params: UpdateLinkParams): string {
     ? undefined
     : parseLinkResult?.alias;
 
-  if (!shouldKeepAlias) {
-    /* v8 ignore start -- Alias matching branches are hard to reproduce in unit tests. */
+  // Refresh a file-name alias to the new base name when the flag is set.
+  // A file-name alias equals the OLD base name (with or without extension); a custom alias is kept.
+  // Gating on the flag also refreshes wikilinks that carry an explicit alias.
+  // Those previously short-circuited the refresh and kept the stale old base name.
+  if (shouldUpdateFileNameAlias) {
     if (alias === basename(oldTargetPath, extname(oldTargetPath))) {
       alias = newTargetFile.basename;
     } else if (alias === basename(oldTargetPath)) {
       alias = newTargetFile.name;
     }
-    /* v8 ignore stop */
   }
 
   const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkParams>({
