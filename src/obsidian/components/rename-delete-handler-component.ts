@@ -53,11 +53,13 @@ import {
   getAttachmentFolderPath,
   hasOwnAttachmentFolder
 } from '../attachment-path.ts';
+import { getCanvasReferences } from '../canvas.ts';
 import {
   CANVAS_FILE_EXTENSION,
   getFile,
   getFileOrNull,
   getFolderOrNull,
+  isCanvasFile,
   isFile,
   isMarkdownFile,
   isNote
@@ -844,6 +846,15 @@ class RenameMap {
 
     if (!isNote(this.oldPath)) {
       return;
+    }
+
+    // Obsidian does not index a canvas file into the metadata cache.
+    // The cache-derived `oldPathLinks` is empty for a canvas, hiding its embedded attachments.
+    // Reading the canvas references directly moves them with the canvas (mirroring note behavior).
+    // The file already lives at the new path after the rename, so read the references from there.
+    if (isCanvasFile(this.oldPath)) {
+      const canvasReferences = await getCanvasReferences(this.app, this.newPath);
+      this.oldPathLinks.push(...canvasReferences);
     }
 
     const settings = this.settingsManager.getSettings();
