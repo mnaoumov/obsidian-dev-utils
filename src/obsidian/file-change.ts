@@ -60,6 +60,9 @@ import {
 } from './reference.ts';
 import { process } from './vault.ts';
 
+const ESCAPED_WIKILINK_DIVIDER = '\\|';
+const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
+
 /**
  * Parameters for {@link applyContentChanges}.
  */
@@ -540,7 +543,16 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
       return null;
     }
 
-    const contentChanges = canvasTextChangesForNode.map((change) => referenceToFileChange(change.reference.originalReference, change.newContent));
+    const contentChanges = canvasTextChangesForNode.map((change) => {
+      // A canvas text node can hold a markdown table, where a sized embed escapes the wikilink
+      // Divider so the pipe does not terminate the table cell (`![[img.png\|500]]`). The regenerated
+      // Link uses an unescaped divider, so restore the escaping when the original reference had it,
+      // Keeping both the table and the embed size intact across the rewrite.
+      const newContent = change.reference.originalReference.original.includes(ESCAPED_WIKILINK_DIVIDER)
+        ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER)
+        : change.newContent;
+      return referenceToFileChange(change.reference.originalReference, newContent);
+    });
     node.text = await applyContentChanges({
       abortSignal,
       changesProvider: contentChanges,
