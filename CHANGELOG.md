@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 88.2.0
+
+- chore: update libs
+- fix: re https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/20
+- fix: re https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/27
+- fix: re https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/45
+- fix: re https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/22
+- feat(attachment-path): add isAtProperAttachmentPath helper
+
 ## 88.1.2
 
 - fix(canvas): apply fixFrontmatterMarkdownLinks in getCanvasReferences text-node parse
