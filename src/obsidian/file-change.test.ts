@@ -695,17 +695,33 @@ describe('canvas changes via applyFileChanges', () => {
     expect(firstNode['text']).toContain('[[replaced]]');
   });
 
-  it('should handle invalid JSON canvas content by throwing', async () => {
+  it('should skip the rewrite (return null) for invalid JSON canvas content instead of throwing', async () => {
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = 'sentinel';
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
-      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'not valid json' });
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'not valid json' });
     });
 
-    // When JSON is invalid, it is parsed as {} without a nodes property,
-    // Causing a TypeError when accessing canvasData.nodes[nodeIndex]
-    await expect(applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent })).rejects.toThrow(TypeError);
+    // Invalid JSON parses to `{}` (no `nodes`/`edges` arrays); the guard skips the rewrite so the
+    // Malformed object is never written back to disk (previously this threw a TypeError).
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBeNull();
+  });
+
+  it('should skip the rewrite (return null) when the canvas has no edges array', async () => {
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      // `nodes` is an array but `edges` is missing (a partial canvas still being initialized).
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify({ nodes: [{ file: 'old.md', id: '1', type: 'file' }] }) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBeNull();
   });
 
   it('should return null when canvas text node text is not a string', async () => {
