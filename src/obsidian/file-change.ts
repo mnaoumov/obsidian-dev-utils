@@ -459,6 +459,15 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
 
   const canvasData = parseJsonSafe(content) as GenericObject<CanvasData>;
 
+  // The content is not a valid canvas (a transient `{}` or partial object).
+  // This happens when another plugin is still initializing the file.
+  // Skip the rewrite so no malformed object is written back and the renderer never crashes.
+  // Mirrors the `{ edges: [], nodes: [] }` fallback in `getCanvasReferences`.
+  if (!Array.isArray(canvasData.nodes) || !Array.isArray(canvasData.edges)) {
+    getLibDebugger('FileChange:applyCanvasChanges')('Not a valid canvas; skipping rewrite', { path });
+    return null;
+  }
+
   const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
 
   for (const change of changes) {
