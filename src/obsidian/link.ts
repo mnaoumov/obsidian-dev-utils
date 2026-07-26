@@ -26,6 +26,7 @@ import type {
   GetFileParams,
   PathOrFile
 } from './file-system.ts';
+import type { LinkUpdateProgressReporter } from './link-update-progress.ts';
 import type { ProcessOptions } from './vault.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
@@ -214,6 +215,12 @@ export interface EditBacklinksParams extends EditBacklinksOptions {
    * The function that converts each link.
    */
   linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+
+  /**
+   * An optional reporter invoked once per backlink file after its links are updated, with the running
+   * count of processed files and the total. When omitted, no progress is reported.
+   */
+  readonly linkUpdateProgressReporter?: LinkUpdateProgressReporter;
 
   /**
    * The path or file to edit the backlinks for.
@@ -1011,11 +1018,14 @@ export async function editBacklinks(params: EditBacklinksParams): Promise<void> 
   const {
     app,
     linkConverter,
+    linkUpdateProgressReporter,
     pathOrFile,
     ...options
   } = params;
   const backlinks = await getBacklinksForFileSafe({ app, pathOrFile, ...options });
-  for (const backlinkNotePath of backlinks.keys()) {
+  const backlinkNotePaths = Array.from(backlinks.keys());
+  let processed = 0;
+  for (const backlinkNotePath of backlinkNotePaths) {
     const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
     const linkJsons = new Set<string>(currentLinks.map((link) => JSON.stringify(link)));
     await editLinks({
@@ -1030,6 +1040,12 @@ export async function editBacklinks(params: EditBacklinksParams): Promise<void> 
       },
       pathOrFile: backlinkNotePath,
       ...options
+    });
+    processed++;
+    linkUpdateProgressReporter?.({
+      currentPath: backlinkNotePath,
+      processed,
+      total: backlinkNotePaths.length
     });
   }
 }

@@ -25,6 +25,7 @@ import {
 import { t } from 'i18next';
 import { Vault } from 'obsidian';
 
+import type { LinkUpdateProgressReporter } from '../link-update-progress.ts';
 import type {
   UpdateLinkParams,
   UpdateLinksInFileParams
@@ -160,6 +161,7 @@ interface RenameHandlerConstructorParams {
   readonly handledRenames: HandledRenames;
   readonly interruptedCombinedBacklinksMap?: Map<string, Map<string, string>>;
   readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
+  readonly linkUpdateProgressReporter: LinkUpdateProgressReporter | null;
   readonly newPath: string;
   readonly oldCache: CachedMetadata | null;
   readonly oldPath: string;
@@ -221,6 +223,7 @@ interface MetadataDeletedHandlerConstructorParams {
 interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
+  readonly linkUpdateProgressReporter?: LinkUpdateProgressReporter;
   readonly pluginId: string;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly resourceLockComponent: null | ResourceLockComponent;
@@ -527,6 +530,7 @@ class RenameHandler {
   private readonly handledRenames: HandledRenames;
   private readonly interruptedCombinedBacklinksMap: Map<string, Map<string, string>>;
   private readonly interruptedRenamesMap: Map<string, InterruptedRename[]>;
+  private readonly linkUpdateProgressReporter: LinkUpdateProgressReporter | null;
   private readonly newPath: string;
   private readonly oldCache: CachedMetadata | null;
   private readonly oldPath: string;
@@ -543,6 +547,7 @@ class RenameHandler {
     this.handledRenames = params.handledRenames;
     this.interruptedCombinedBacklinksMap = params.interruptedCombinedBacklinksMap ?? new Map<string, Map<string, string>>();
     this.interruptedRenamesMap = params.interruptedRenamesMap;
+    this.linkUpdateProgressReporter = params.linkUpdateProgressReporter;
     this.newPath = params.newPath;
     this.oldCache = params.oldCache;
     this.oldPath = params.oldPath;
@@ -641,11 +646,11 @@ class RenameHandler {
         return;
       }
 
-      for (
-        const [newBacklinkPath, linkJsonToPathMap] of Array.from(combinedBacklinksMap.entries()).concat(
-          Array.from(this.interruptedCombinedBacklinksMap.entries())
-        )
-      ) {
+      const backlinkEntries = Array.from(combinedBacklinksMap.entries()).concat(
+        Array.from(this.interruptedCombinedBacklinksMap.entries())
+      );
+      let processedBacklinkFiles = 0;
+      for (const [newBacklinkPath, linkJsonToPathMap] of backlinkEntries) {
         let linkIndex = 0;
         await editLinks({
           app: this.app,
@@ -676,6 +681,12 @@ class RenameHandler {
           shouldFailOnMissingFile: false
         });
         this.abortSignal.throwIfAborted();
+        processedBacklinkFiles++;
+        this.linkUpdateProgressReporter?.({
+          currentPath: newBacklinkPath,
+          processed: processedBacklinkFiles,
+          total: backlinkEntries.length
+        });
       }
 
       if (isNote(this.newPath)) {
@@ -734,6 +745,7 @@ class RenameHandler {
           handledRenames: this.handledRenames,
           interruptedCombinedBacklinksMap: interruptedRename.combinedBacklinksMap,
           interruptedRenamesMap: this.interruptedRenamesMap,
+          linkUpdateProgressReporter: this.linkUpdateProgressReporter,
           newPath: this.newPath,
           oldCache: this.oldCache,
           oldPath: interruptedRename.oldPath,
@@ -759,6 +771,7 @@ class RenameHandler {
       app: this.app,
       handledRenames: this.handledRenames,
       interruptedRenamesMap: this.interruptedRenamesMap,
+      linkUpdateProgressReporter: this.linkUpdateProgressReporter,
       newPath: tempPath,
       oldCache: this.oldCache,
       oldPath: this.oldPath,
@@ -1034,6 +1047,11 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
    */
   protected readonly app: App;
   /**
+   * An optional reporter invoked once per backlink file whose links are updated during a rename/move,
+   * with the running count of processed files and the total. When `null`, no progress is reported.
+   */
+  protected readonly linkUpdateProgressReporter: LinkUpdateProgressReporter | null;
+  /**
    * The plugin ID used to identify this handler among the registered rename/delete handlers.
    */
   protected readonly pluginId: string;
@@ -1071,6 +1089,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     super();
     this.abortSignalComponent = params.abortSignalComponent;
     this.app = params.app;
+    this.linkUpdateProgressReporter = params.linkUpdateProgressReporter ?? null;
     this.resourceLockComponent = params.resourceLockComponent;
     this.pluginId = params.pluginId;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
@@ -1176,6 +1195,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
           app: this.app,
           handledRenames: this.handledRenames,
           interruptedRenamesMap: this.interruptedRenamesMap,
+          linkUpdateProgressReporter: this.linkUpdateProgressReporter,
           newPath,
           oldCache,
           oldPath,

@@ -1940,6 +1940,53 @@ describe('app-dependent functions', () => {
       // LinkConverter should NOT be called because the link is not in the backlinks set
       expect(linkConverter).not.toHaveBeenCalled();
     });
+
+    it('should report progress once per backlink file with a running count and total', async () => {
+      const backlinkRef = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]',
+        position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
+      };
+      vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
+        get: () => [backlinkRef],
+        keys: () => ['note-a.md', 'note-b.md', 'note-c.md']
+      }));
+
+      const linkUpdateProgressReporter = vi.fn();
+      await editBacklinks({
+        app,
+        linkConverter: () => '[[new-target]]',
+        linkUpdateProgressReporter,
+        pathOrFile: 'target.md',
+        pluginNoticeComponent: null,
+        resourceLockComponent
+      });
+
+      expect(linkUpdateProgressReporter.mock.calls).toEqual([
+        [{ currentPath: 'note-a.md', processed: 1, total: 3 }],
+        [{ currentPath: 'note-b.md', processed: 2, total: 3 }],
+        [{ currentPath: 'note-c.md', processed: 3, total: 3 }]
+      ]);
+    });
+
+    it('should not report progress when there are no backlink files', async () => {
+      vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
+        keys: () => []
+      }));
+
+      const linkUpdateProgressReporter = vi.fn();
+      await editBacklinks({
+        app,
+        linkConverter: () => '[[new-target]]',
+        linkUpdateProgressReporter,
+        pathOrFile: 'target.md',
+        pluginNoticeComponent: null,
+        resourceLockComponent
+      });
+
+      expect(linkUpdateProgressReporter).not.toHaveBeenCalled();
+    });
   });
 
   describe('updateLinksInContent', () => {
