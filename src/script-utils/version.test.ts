@@ -13,6 +13,7 @@ import type { ResolvePathFromRootSafeParams } from './root.ts';
 import {
   addGitTag,
   addUpdatedFilesToGit,
+  autolinkBareUrls,
   checkGitHubCliInstalled,
   checkGitInstalled,
   checkGitRepoClean,
@@ -605,7 +606,53 @@ describe('publishGitHubRelease', () => {
   });
 });
 
+describe('autolinkBareUrls', () => {
+  it('should wrap a bare URL in angle brackets', () => {
+    expect(autolinkBareUrls('fix: re https://github.com/user/repo/issues/146')).toBe(
+      'fix: re <https://github.com/user/repo/issues/146>'
+    );
+  });
+
+  it('should wrap a bare URL that appears mid-text and keep trailing punctuation outside the brackets', () => {
+    expect(autolinkBareUrls('see https://example.com/foo. for details')).toBe(
+      'see <https://example.com/foo>. for details'
+    );
+  });
+
+  it('should leave an already angle-bracket-wrapped URL untouched', () => {
+    expect(autolinkBareUrls('fix: re <https://github.com/user/repo/issues/25>')).toBe(
+      'fix: re <https://github.com/user/repo/issues/25>'
+    );
+  });
+
+  it('should leave a URL inside a Markdown link untouched', () => {
+    expect(autolinkBareUrls('fix: see [issue 25](https://github.com/user/repo/issues/25)')).toBe(
+      'fix: see [issue 25](https://github.com/user/repo/issues/25)'
+    );
+  });
+
+  it('should return a subject with no URL unchanged', () => {
+    expect(autolinkBareUrls('feat: add a shiny new feature')).toBe('feat: add a shiny new feature');
+  });
+});
+
 describe('updateChangelog', () => {
+  it('should autolink bare URLs in the generated bullets', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockExecFromRoot
+      .mockResolvedValueOnce('fix: re https://github.com/user/repo/issues/146\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('- fix: re <https://github.com/user/repo/issues/146>\n'),
+      'utf-8'
+    );
+  });
+
   it('should create changelog from scratch when file does not exist', async () => {
     mockExistsSync.mockReturnValue(false);
     mockExecFromRoot

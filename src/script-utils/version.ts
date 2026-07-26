@@ -263,6 +263,27 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
 }
 
 /**
+ * Wraps any bare `http(s)://` URL in the given text in angle brackets (`<url>`) so that text emitted
+ * into a Markdown document (such as a generated changelog bullet) passes markdownlint's
+ * `MD034/no-bare-urls` rule while still rendering as a clickable autolink on GitHub.
+ *
+ * URLs that are already wrapped in angle brackets (`<url>`) or that form the target of a Markdown
+ * link (`[text](url)`) are left untouched, so the function is safe to run repeatedly. Trailing
+ * sentence punctuation (`.`, `,`, `;`, `:`, `!`, `?`) is kept outside the angle brackets so it does
+ * not become part of the link.
+ *
+ * @param text - The text possibly containing bare URLs.
+ * @returns The text with every bare URL wrapped in angle brackets.
+ */
+export function autolinkBareUrls(text: string): string {
+  return text.replace(/(?<![<[(])https?:\/\/[^\s<>)\]]+/g, (url) => {
+    const trailingPunctuation = /[.,;:!?]+$/.exec(url)?.[0] ?? '';
+    const bareUrl = url.slice(0, url.length - trailingPunctuation.length);
+    return `<${bareUrl}>${trailingPunctuation}`;
+  });
+}
+
+/**
  * Checks if the GitHub CLI is installed on the system.
  *
  * Throws an error if the GitHub CLI is not installed.
@@ -552,7 +573,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
   for (const message of commitMessages) {
-    newChangeLog += `- ${message}\n`;
+    newChangeLog += `- ${autolinkBareUrls(message)}\n`;
   }
 
   if (previousChangelogLines.length > 0) {
