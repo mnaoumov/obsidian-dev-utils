@@ -79,6 +79,7 @@ import {
   registerFiles
 } from '../metadata-cache.ts';
 import { addToQueue } from '../queue.ts';
+import { isResourceLockedForPathByAncestor } from '../resource-lock.ts';
 import { deleteIfNotUsed } from '../vault-delete.ts';
 import {
   cleanupEmptyFolders,
@@ -416,8 +417,20 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
 
   private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
     let isRenameCalled = false;
-    const eventRef = this.app.vault.on('rename', () => {
+    let isForeignLockedRenameCalled = false;
+    const eventRef = this.app.vault.on('rename', (file, oldPath) => {
       isRenameCalled = true;
+      /*
+       * A rename performed inside a foreign plugin's in-flight locked transaction (which locks the
+       * affected folder subtree, e.g. Advanced Note Composer's folder merge) is owned by that
+       * transaction, which is responsible for its own link consistency. This handler deliberately does
+       * NOT rewrite links for it, so suppressing Obsidian's native link update below would leave the
+       * links dangling. Let the native update proceed untouched. See
+       * https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/146.
+       */
+      if (isResourceLockedForPathByAncestor(this.app, file.path) || isResourceLockedForPathByAncestor(this.app, oldPath)) {
+        isForeignLockedRenameCalled = true;
+      }
     });
     try {
       await linkUpdatesHandler(linkUpdates);
@@ -426,7 +439,7 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
     }
     const settings = this.settingsManager.getSettings();
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.
-    if (!isRenameCalled || !settings.shouldHandleRenames) {
+    if (!isRenameCalled || !settings.shouldHandleRenames || isForeignLockedRenameCalled) {
       return;
     }
 
@@ -1167,6 +1180,24 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     getLibDebugger('RenameDeleteHandler:handleRename')(`Handle Rename ${oldPath} -> ${newPath}`);
     if (this.handledRenames.has(oldPath, newPath)) {
       this.handledRenames.delete(oldPath, newPath);
+      return;
+    }
+
+    /*
+     * A rename occurring inside a foreign plugin's in-flight locked transaction (which locks the
+     * affected folder subtree, e.g. Advanced Note Composer's folder merge) is orchestrated by that
+     * transaction's owner, which takes responsibility for its own link consistency. Reacting to it
+     * here would (a) perturb Obsidian's native post-rename link update and leave links dangling, and
+     * (b) collide with the foreign transaction — an async abort from this handler aborts an
+     * already-committed transaction, throwing "Cannot roll back a committed transaction". This
+     * handler's own attachment moves are already excluded above via `handledRenames`, so a lock still
+     * held here always belongs to a foreign operation; stay out of its way. See
+     * https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/146.
+     */
+    if (isResourceLockedForPathByAncestor(this.app, oldPath) || isResourceLockedForPathByAncestor(this.app, newPath)) {
+      getLibDebugger('RenameDeleteHandler:handleRename')(
+        `Skipping rename handler of ${oldPath} -> ${newPath} as it occurs inside a foreign locked transaction.`
+      );
       return;
     }
 

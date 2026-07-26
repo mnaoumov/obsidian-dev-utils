@@ -1189,6 +1189,24 @@ export function isResourceLockedForPath(app: App, pathOrFile: PathOrFile): boole
 }
 
 /**
+ * Checks whether the note at the given path is currently locked directly OR is covered by a
+ * `subtree`-locked ancestor folder.
+ *
+ * Unlike {@link isResourceLockedForPath}, which only reports an exact-path lock, this also reports a
+ * path that lies under a folder locked in `subtree` mode. Use it to detect that a rename/move is
+ * happening inside a foreign plugin's in-flight locked transaction (which locks the affected folder
+ * subtree), so that a bystander (e.g. the rename/delete handler) can stay out of the way and let the
+ * transaction's owner keep its own links consistent.
+ *
+ * @param app - The Obsidian app instance.
+ * @param pathOrFile - The path or file of the note to check.
+ * @returns `true` if the path is itself locked or lies under a `subtree`-locked ancestor folder.
+ */
+export function isResourceLockedForPathByAncestor(app: App, pathOrFile: PathOrFile): boolean {
+  return getManager().isLockedByAncestor(app, pathOrFile);
+}
+
+/**
  * Locks the note at the given path, making it read-only in every current and future
  * {@link MarkdownView} until the lock is released, and showing a lock indicator in the tab header,
  * view action bar, and (while active) the status bar. The indicators' tooltip lists the plugins
