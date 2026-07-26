@@ -167,4 +167,86 @@ describe('rename-delete-handler', () => {
       expect(result.hasSrcAttachment).toBe(false);
     });
   });
+
+  describe('does not interfere with a foreign locked transaction (issue #146)', () => {
+    it('should not process a rename that occurs inside a foreign subtree-locked transaction', async () => {
+      const result = await evalInObsidian<Record<string, never>, AttachmentMoveResult>({
+        async fn({ app, lib: { AbortSignalComponent, PluginNoticeComponent, RenameDeleteHandlerComponent, ResourceLockComponent, waitForAllAsyncOperations, waitUntil } }) {
+          const PLUGIN_ID = 'rdh-foreign-lock-test';
+          const FOREIGN_PLUGIN_ID = 'rdh-foreign-plugin';
+          const SRC_FOLDER = 'rdh-foreign-src';
+          const DST_FOLDER = 'rdh-foreign-dst';
+          const SRC_NOTE = `${SRC_FOLDER}/note.md`;
+          const DST_NOTE = `${DST_FOLDER}/note.md`;
+          const SRC_ATTACHMENT = `${SRC_FOLDER}/attachments/img.png`;
+          const DST_ATTACHMENT = `${DST_FOLDER}/attachments/img.png`;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30000;
+
+          const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
+          app.vault.setConfig('attachmentFolderPath', './attachments');
+
+          const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+          const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Foreign Lock Test' });
+          const handlerComponent = new RenameDeleteHandlerComponent({
+            abortSignalComponent,
+            app,
+            pluginId: PLUGIN_ID,
+            pluginNoticeComponent,
+            resourceLockComponent: null,
+            // The Custom Attachment Location configuration from issue #146: move attachments with the note, do not update links.
+            settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+              isNote: (path: string): boolean => path.endsWith('.md'),
+              shouldHandleRenames: false,
+              shouldRenameAttachmentFolder: true
+            })
+          });
+          handlerComponent.load();
+
+          // A foreign plugin (mirroring Advanced Note Composer's folder merge) that holds a subtree lock over the source folder for the duration of its own rename. A plain subtree lock is enough: the fix keys off the subtree lock's presence, independent of whether it also blocks mutations. The component's unload releases every lock it holds.
+          const foreignResourceLockComponent = new ResourceLockComponent(app, FOREIGN_PLUGIN_ID);
+          foreignResourceLockComponent.load();
+
+          try {
+            await app.vault.createFolder(`${SRC_FOLDER}/attachments`);
+            await app.vault.createFolder(DST_FOLDER);
+            await app.vault.createBinary(SRC_ATTACHMENT, new ArrayBuffer(8));
+            const note = await app.vault.create(SRC_NOTE, `![[${SRC_ATTACHMENT}]]\n`);
+
+            await waitUntil({
+              message: 'note embed indexed by the metadata cache',
+              predicate: () => (app.metadataCache.getFileCache(note)?.embeds?.length ?? 0) > 0,
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            foreignResourceLockComponent.lockForPath({ mode: 'subtree', operationName: 'Foreign merge', pathOrFile: SRC_FOLDER });
+            foreignResourceLockComponent.lockForPath({ mode: 'subtree', operationName: 'Foreign merge', pathOrFile: DST_FOLDER });
+
+            await app.fileManager.renameFile(note, DST_NOTE);
+            // Drain any work the rename/delete handler might have scheduled. With the fix it schedules none, because the rename happens under the foreign subtree lock; without the fix, the async handler would move the attachment.
+            await waitForAllAsyncOperations();
+
+            return {
+              hasDstAttachment: app.vault.getAbstractFileByPath(DST_ATTACHMENT) !== null,
+              hasSrcAttachment: app.vault.getAbstractFileByPath(SRC_ATTACHMENT) !== null
+            };
+          } finally {
+            foreignResourceLockComponent.unload();
+            handlerComponent.unload();
+            app.vault.setConfig('attachmentFolderPath', originalAttachmentFolderPath);
+            for (const folderPath of [SRC_FOLDER, DST_FOLDER]) {
+              const folder = app.vault.getAbstractFileByPath(folderPath);
+              if (folder) {
+                // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+                await app.vault.delete(folder, true);
+              }
+            }
+          }
+        }
+      });
+
+      // The foreign transaction owns its own link/attachment consistency, so the handler must stay out of the way: it does NOT move the attachment.
+      expect(result.hasDstAttachment).toBe(false);
+      expect(result.hasSrcAttachment).toBe(true);
+    });
+  });
 });

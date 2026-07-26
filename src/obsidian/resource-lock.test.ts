@@ -32,6 +32,7 @@ import { toggleEditorReadOnly } from './editor.ts';
 import { confirm } from './modals/confirm.ts';
 import {
   isResourceLockedForPath,
+  isResourceLockedForPathByAncestor,
   lockResourceForPath,
   requestResourceUnlockForPath,
   ResourceLockComponent,
@@ -264,6 +265,31 @@ describe('lockResourceForPath', () => {
     disposable[Symbol.dispose]();
 
     expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
+  });
+});
+
+describe('isResourceLockedForPathByAncestor', () => {
+  it('should report a directly-locked path as locked', () => {
+    stubLeaves();
+    lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
+
+    expect(isResourceLockedForPathByAncestor(app, 'note.md')).toBe(true);
+  });
+
+  it('should report a path under a subtree-locked ancestor folder as locked', () => {
+    stubLeaves();
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+
+    expect(isResourceLockedForPathByAncestor(app, 'folder/child.md')).toBe(true);
+    // A directly-locked-only query does not see the subtree ancestor coverage.
+    expect(isResourceLockedForPath(app, 'folder/child.md')).toBe(false);
+  });
+
+  it('should not report a path outside every lock as locked', () => {
+    stubLeaves();
+    new ResourceLockComponent(app, 'test-plugin').lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+
+    expect(isResourceLockedForPathByAncestor(app, 'other/child.md')).toBe(false);
   });
 });
 
