@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 88.3.0
+
+- chore: update libs
+- test(rename-delete-handler): drain the queue with flushQueue in the #146 test
+- docs: autolink bare URLs in the 88.2.0 changelog section
+- feat: autolink bare URLs in generated changelog
+- fix: re <https://github.com/mnaoumov/obsidian-advanced-note-composer/issues/146>
+- feat: re <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/25>
+
 ## 88.2.0
 
 - chore: update libs
