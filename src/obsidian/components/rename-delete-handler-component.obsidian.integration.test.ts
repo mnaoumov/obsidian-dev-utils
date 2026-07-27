@@ -171,7 +171,7 @@ describe('rename-delete-handler', () => {
   describe('does not interfere with a foreign locked transaction (issue #146)', () => {
     it('should not process a rename that occurs inside a foreign subtree-locked transaction', async () => {
       const result = await evalInObsidian<Record<string, never>, AttachmentMoveResult>({
-        async fn({ app, lib: { AbortSignalComponent, PluginNoticeComponent, RenameDeleteHandlerComponent, ResourceLockComponent, waitForAllAsyncOperations, waitUntil } }) {
+        async fn({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, ResourceLockComponent, waitUntil } }) {
           const PLUGIN_ID = 'rdh-foreign-lock-test';
           const FOREIGN_PLUGIN_ID = 'rdh-foreign-plugin';
           const SRC_FOLDER = 'rdh-foreign-src';
@@ -222,8 +222,16 @@ describe('rename-delete-handler', () => {
             foreignResourceLockComponent.lockForPath({ mode: 'subtree', operationName: 'Foreign merge', pathOrFile: DST_FOLDER });
 
             await app.fileManager.renameFile(note, DST_NOTE);
-            // Drain any work the rename/delete handler might have scheduled. With the fix it schedules none, because the rename happens under the foreign subtree lock; without the fix, the async handler would move the attachment.
-            await waitForAllAsyncOperations();
+            /*
+             * The handler schedules its attachment move onto the shared sequential queue synchronously
+             * from the `rename` event (which has already fired by the time `renameFile` resolves), so
+             * draining that queue deterministically drains any work the handler might have scheduled.
+             * With the fix it schedules none, because the rename happens under the foreign subtree lock;
+             * without the fix, the queued handler would move the attachment before this resolves.
+             * `flushQueue` is used instead of `waitForAllAsyncOperations` because async-operation
+             * tracking is a unit-test setup and is not enabled in the live Obsidian runtime.
+             */
+            await flushQueue();
 
             return {
               hasDstAttachment: app.vault.getAbstractFileByPath(DST_ATTACHMENT) !== null,
