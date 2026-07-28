@@ -4,7 +4,15 @@ import {
   it
 } from 'vitest';
 
-import { PathSettings } from './path-settings.ts';
+import {
+  PathSettings,
+  pathsValidator
+} from './path-settings.ts';
+
+const REPORTED_REG_EXP = '/^Inbox\\/[^\\/]*$/';
+const DANGLING_ESCAPE = '/^Inbox\\/';
+const UNBALANCED_CHARACTER_CLASS = '/^Inbox\\/[^\\/';
+const UNBALANCED_GROUP = '/(Inbox/';
 
 describe('PathSettings', () => {
   describe('excludePaths', () => {
@@ -134,5 +142,90 @@ describe('PathSettings', () => {
       expect(ps.isPathIgnored('dir.name')).toBe(true);
       expect(ps.isPathIgnored('dirxname')).toBe(false);
     });
+  });
+
+  describe('un-parseable regex patterns', () => {
+    it('should not throw for any prefix typed on the way to a valid regex', () => {
+      const ps = new PathSettings();
+      for (let length = 1; length <= REPORTED_REG_EXP.length; length++) {
+        const prefix = REPORTED_REG_EXP.slice(0, length);
+        expect(() => {
+          ps.excludePaths = [prefix];
+        }, prefix).not.toThrow();
+      }
+    });
+
+    it('should match as usual once the typed regex is completed', () => {
+      const ps = new PathSettings();
+      ps.excludePaths = [REPORTED_REG_EXP];
+      expect(ps.isPathIgnored('Inbox/note.md')).toBe(true);
+      expect(ps.isPathIgnored('Inbox/sub/note.md')).toBe(false);
+      expect(ps.isPathIgnored('Other/note.md')).toBe(false);
+    });
+
+    it.each([DANGLING_ESCAPE, UNBALANCED_CHARACTER_CLASS, UNBALANCED_GROUP])('should exclude nothing for un-parseable exclude pattern %s', (path) => {
+      const ps = new PathSettings();
+      ps.excludePaths = [path];
+      expect(ps.isPathIgnored('Inbox/note.md')).toBe(false);
+      expect(ps.isPathIgnored('anything')).toBe(false);
+    });
+
+    it.each([DANGLING_ESCAPE, UNBALANCED_CHARACTER_CLASS, UNBALANCED_GROUP])('should include everything for un-parseable include pattern %s', (path) => {
+      const ps = new PathSettings();
+      ps.includePaths = [path];
+      expect(ps.isPathIgnored('Inbox/note.md')).toBe(false);
+      expect(ps.isPathIgnored('anything')).toBe(false);
+    });
+
+    it('should fall back to the default pattern when only some entries are un-parseable', () => {
+      const ps = new PathSettings();
+      ps.excludePaths = ['secret', DANGLING_ESCAPE];
+      expect(ps.isPathIgnored('secret')).toBe(false);
+    });
+
+    it('should keep the entries as set', () => {
+      const ps = new PathSettings();
+      ps.excludePaths = ['secret', DANGLING_ESCAPE];
+      expect(ps.excludePaths).toEqual(['secret', DANGLING_ESCAPE]);
+    });
+
+    it('should not throw when the same un-parseable value is assigned again', () => {
+      const ps = new PathSettings();
+      ps.excludePaths = [DANGLING_ESCAPE];
+      const savedPaths = ps.excludePaths;
+      expect(() => {
+        ps.excludePaths = savedPaths;
+      }).not.toThrow();
+    });
+
+    it('should recover once an un-parseable value is replaced with a valid one', () => {
+      const ps = new PathSettings();
+      ps.excludePaths = [DANGLING_ESCAPE];
+      expect(ps.isPathIgnored('secret')).toBe(false);
+      ps.excludePaths = ['secret'];
+      expect(ps.isPathIgnored('secret')).toBe(true);
+    });
+  });
+});
+
+describe('pathsValidator', () => {
+  it('should accept an empty array', () => {
+    expect(pathsValidator([])).toBeUndefined();
+  });
+
+  it('should accept plain paths', () => {
+    expect(pathsValidator(['dir', 'dir/sub', 'dir.name'])).toBeUndefined();
+  });
+
+  it('should accept valid regex patterns', () => {
+    expect(pathsValidator([REPORTED_REG_EXP, '/\\.git/', '/'])).toBeUndefined();
+  });
+
+  it.each([DANGLING_ESCAPE, UNBALANCED_CHARACTER_CLASS, UNBALANCED_GROUP])('should reject un-parseable regex pattern %s', (path) => {
+    expect(pathsValidator([path])).toContain(path);
+  });
+
+  it('should report the first un-parseable entry', () => {
+    expect(pathsValidator(['dir', UNBALANCED_GROUP, DANGLING_ESCAPE])).toContain(UNBALANCED_GROUP);
   });
 });

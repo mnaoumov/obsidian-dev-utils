@@ -1,16 +1,20 @@
 /**
  * @file
  *
- * This module provides classes for managing include/exclude path settings.
+ * This module provides classes and validators for managing include/exclude path settings.
  */
+
+import type { MaybeReturn } from '../type.ts';
 
 import {
   ALWAYS_MATCH_REG_EXP,
   escapeRegExp,
+  isValidRegExp,
   NEVER_MATCH_REG_EXP
 } from '../reg-exp.ts';
 import { trimEnd } from '../string.ts';
 import { assertNever } from '../type-guards.ts';
+import { t } from './i18n/i18n.ts';
 
 enum PathSettingType {
   Exclude = 'Exclude',
@@ -24,7 +28,7 @@ class PathSetting {
 
   public set array(value: string[]) {
     this._array = value.filter(Boolean);
-    this.regExp = makeRegExp(this._array, this.defaultRegExp);
+    this.regExp = makeRegExp(this._array, this.defaultRegExp) ?? this.defaultRegExp;
   }
 
   private _array: string[] = [];
@@ -106,6 +110,24 @@ export class PathSettings {
   }
 }
 
+/**
+ * Validates include/exclude path entries, reporting the first entry that is not a parseable regular expression.
+ *
+ * An entry that starts and ends with `/` is a regular expression literal; every other entry is a plain path and is
+ * always valid. An invalid entry does not throw when assigned to {@link PathSettings} — the whole list falls back to
+ * its default pattern instead — so this validator is what surfaces the problem to the user.
+ *
+ * @param paths - The path entries to validate.
+ * @returns A message naming the first invalid entry, or nothing when every entry is valid.
+ */
+export function pathsValidator(paths: string[]): MaybeReturn<string> {
+  for (const path of paths) {
+    if (path.startsWith('/') && path.endsWith('/') && !isValidRegExp(path.slice(1, -1))) {
+      return t(($) => $.obsidianDevUtils.pathSettings.invalidRegularExpression, { regExp: path });
+    }
+  }
+}
+
 function getDefaultRegExp(type: PathSettingType): RegExp {
   /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
   switch (type) {
@@ -121,7 +143,7 @@ function getDefaultRegExp(type: PathSettingType): RegExp {
   }
 }
 
-function makeRegExp(paths: string[], defaultRegExp: RegExp): RegExp {
+function makeRegExp(paths: string[], defaultRegExp: RegExp): null | RegExp {
   if (paths.length === 0) {
     return defaultRegExp;
   }
@@ -143,5 +165,12 @@ function makeRegExp(paths: string[], defaultRegExp: RegExp): RegExp {
   })
     .map((regExpStr) => `(${regExpStr})`)
     .join('|');
-  return new RegExp(regExpStrCombined);
+
+  try {
+    return new RegExp(regExpStrCombined);
+  } catch {
+    // A partially typed regex literal (`/^Inbox\/`) is not parseable.
+    // Report it instead of throwing from a settings setter, which would break both the settings UI and the save path.
+    return null;
+  }
 }
