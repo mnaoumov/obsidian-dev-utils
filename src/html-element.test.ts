@@ -19,6 +19,7 @@ import {
   createSpanAsync,
   createSvgAsync,
   ensureLoaded,
+  getDocumentWindow,
   getZIndex,
   isElementVisibleInOffsetParent,
   isLoaded,
@@ -301,6 +302,19 @@ describe('createSvgAsync', () => {
     }
     await createSvgAsync('svg', undefined, callback);
     expect(callbackCompleted).toBe(true);
+  });
+});
+
+describe('getDocumentWindow', () => {
+  it('should return the window the document belongs to', () => {
+    expect(getDocumentWindow(document)).toBe(window);
+  });
+
+  it('should throw for a detached document', () => {
+    // A document built this way has no window of its own.
+    const detachedDoc = document.implementation.createHTMLDocument();
+
+    expect(() => getDocumentWindow(detachedDoc)).toThrow('The document has no window');
   });
 });
 

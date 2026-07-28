@@ -1,0 +1,36 @@
+// A popover is anchored at a point and appended to the document body, outside any plugin-scoped
+// container, so it is positioned absolutely at the top level. It borrows Obsidian's `.menu` look,
+// which already carries the popup background, border and shadow — only layout is set here.
+.obsidian-dev-utils {
+  &.popover {
+    // Deliberately not `calc(100vw - 16px)`: the SCSS compiler strips the `calc(` wrapper inside
+    // `min()`, which yields invalid CSS. A viewport percentage keeps a narrow window's popover on
+    // screen.
+    max-width: min(420px, 90vw);
+    min-width: 320px;
+    padding: var(--size-4-2) var(--size-4-3);
+    position: absolute;
+    z-index: var(--layer-menu);
+
+    // Setting rows are built for a full-width settings tab; compact them for a popover.
+    .setting-item {
+      align-items: center;
+      border-top: none;
+      gap: var(--size-4-2);
+      padding: var(--size-2-1) 0;
+    }
+
+    .setting-item-info {
+      margin-right: 0;
+    }
+
+    .setting-item-control {
+      flex-grow: 1;
+      justify-content: flex-end;
+    }
+
+    input[type='text'] {
+      width: 100%;
+    }
+  }
+}

@@ -361,6 +361,26 @@
         "default": "./dist/lib/cjs/obsidian/plugin/*.cjs"
       }
     },
+    "./obsidian/popovers": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/popovers/index.d.mts",
+        "default": "./dist/lib/esm/obsidian/popovers/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/popovers/index.d.cts",
+        "default": "./dist/lib/cjs/obsidian/popovers/index.cjs"
+      }
+    },
+    "./obsidian/popovers/*": {
+      "import": {
+        "types": "./dist/lib/esm/obsidian/popovers/*.d.mts",
+        "default": "./dist/lib/esm/obsidian/popovers/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/obsidian/popovers/*.d.cts",
+        "default": "./dist/lib/cjs/obsidian/popovers/*.cjs"
+      }
+    },
     "./obsidian/react": {
       "import": {
         "types": "./dist/lib/esm/obsidian/react/index.d.mts",
