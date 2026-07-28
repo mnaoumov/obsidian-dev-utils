@@ -34,6 +34,14 @@ await wrapCliTask(async () => {
       continue;
     }
 
+    /*
+     * A patched copy of a third-party package needs its own hand-written manifest — without one, Node
+     * resolves the wrapper against this repo's `"type": "module"` and refuses to run its `require()`.
+     */
+    if (file.startsWith(ObsidianDevUtilsRepoPaths.Patches)) {
+      continue;
+    }
+
     await rm(file);
   }
 });

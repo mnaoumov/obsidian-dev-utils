@@ -1,7 +1,5 @@
 import type { Font } from 'satori';
 
-import matter from 'gray-matter';
-import { load as loadYaml } from 'js-yaml';
 import { existsSync } from 'node:fs';
 import {
   mkdir,
@@ -11,6 +9,7 @@ import {
 } from 'node:fs/promises';
 import { dirname } from 'node:path/posix';
 import { fileURLToPath } from 'node:url';
+import { parse as parseYaml } from 'yaml';
 
 import type { OgImageParams } from './helpers/og-image.ts';
 
@@ -33,13 +32,12 @@ interface PageEntry {
 const CONCURRENCY = 10;
 const PROGRESS_LOG_INTERVAL = 100;
 
-// Gray-matter's default YAML engine calls js-yaml's `safeLoad`, which was removed in js-yaml v4
-// (the version installed here), so the default `matter(content)` throws. Supply v4's `load` explicitly.
-const GRAY_MATTER_OPTIONS = {
-  engines: {
-    yaml: (input: string): object => (loadYaml(input) as null | object) ?? {}
-  }
-};
+// Frontmatter is parsed here rather than with `gray-matter`. Its `lib/engines.js` binds js-yaml's
+// `safeLoad`/`safeDump` at MODULE-LOAD time, and both were removed in js-yaml v4 — so merely
+// IMPORTING `gray-matter` throws `Cannot read properties of undefined (reading 'bind')`, before an
+// `engines` option could override the default. Only the frontmatter object is needed here.
+// `yaml` is used rather than `js-yaml` because `depend/ban-dependencies` bans the latter directly.
+const FRONT_MATTER_REG_EXP = /^---\r?\n(?<frontMatter>[\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
 interface GenerateOptions {
   readonly changedPages: PageEntry[];
@@ -158,9 +156,18 @@ async function main(): Promise<void> {
   console.warn(`OG images: done. Generated ${String(changedPages.length)} images.`);
 }
 
+function parseFrontMatter(content: string): Record<string, unknown> {
+  const frontMatter = FRONT_MATTER_REG_EXP.exec(content)?.groups?.['frontMatter'];
+  if (!frontMatter) {
+    return {};
+  }
+
+  return (parseYaml(frontMatter) as null | Record<string, unknown>) ?? {};
+}
+
 async function parsePage(filePath: string, contentDocsDir: string): Promise<null | PageEntry> {
   const content = await readFile(filePath, 'utf-8');
-  const { data } = matter(content, GRAY_MATTER_OPTIONS);
+  const data = parseFrontMatter(content);
 
   const title = (data['title'] as string | undefined) ?? '';
   if (!title) {

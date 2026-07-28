@@ -130,6 +130,9 @@ export enum ObsidianDevUtilsRepoPaths {
   /** Package JSON file. */
   PackageJson = 'package.json',
 
+  /** Folder holding hand-written patched copies of third-party packages. */
+  Patches = 'patches',
+
   /** Root folder. */
   RootFolder = '/',
 

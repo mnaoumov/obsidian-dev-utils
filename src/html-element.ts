@@ -14,6 +14,7 @@
 import type { Promisable } from 'type-fest';
 
 import { CallbackDisposable } from './disposable.ts';
+import { ensureNonNullable } from './type-guards.ts';
 
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
@@ -160,6 +161,21 @@ export async function ensureLoaded(el: Element): Promise<void> {
   }
 
   await Promise.all(getLoadableElements(el).map(ensureLoaded));
+}
+
+/**
+ * Gets the window a document belongs to.
+ *
+ * A document is the one node whose `ownerDocument` is `null`, so the `ownerDocument`-chasing lookup
+ * used for ordinary nodes resolves a document to the wrong window. Reading `defaultView` off the
+ * document itself is what keeps a pop-out window's coordinates measured against that window.
+ *
+ * @param doc - The document to get the window of.
+ * @returns The window the document belongs to.
+ * @throws An {@link Error} if the document is detached and therefore has no window.
+ */
+export function getDocumentWindow(doc: Document): Window {
+  return ensureNonNullable(doc.defaultView, 'The document has no window');
 }
 
 /**

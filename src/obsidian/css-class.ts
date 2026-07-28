@@ -183,6 +183,11 @@ export enum CssClass {
   PluginSettingsTab = 'plugin-settings-tab',
 
   /**
+   * A CSS class for the popover.
+   */
+  Popover = 'popover',
+
+  /**
    * A CSS class for the prompt modal.
    */
   PromptModal = 'prompt-modal',
