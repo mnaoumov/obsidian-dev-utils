@@ -431,6 +431,42 @@ describe('MyModule', () => {
 | `@lezer/common` | `1.2.3` | `obsidian` uses this version at runtime |
 | `@types/node` | `25.0.3` | Matches the Node.js version used in the project |
 
+### The `js-yaml` override is capped at `^4` — do NOT let `update-npm-deps` take it to `^5`
+
+`overrides.js-yaml` must stay on the `^4` line. Every consumer in the tree asks for `^4.1.1`
+(`astro`, `@astrojs/starlight`, `@astrojs/internal-helpers`, `cosmiconfig`) or `^3` (
+`@istanbuljs/load-nyc-config`); **nothing** wants `5.x`. `js-yaml@5` drops the default export, so
+forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'` with
+`The requested module 'js-yaml' does not provide an export named 'default'`. Unit tests and lint stay
+green, so this only shows up in the docs build — re-run `docs:build` after any `js-yaml` bump.
+
+Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yaml's `safeLoad` /
+`safeDump` at **module-load** time, and both were removed in js-yaml v4 — so merely *importing*
+`gray-matter` throws `Cannot read properties of undefined (reading 'bind')`, before any `engines`
+option can override the default. `scripts/docs-gen/generate-og-images.ts` therefore parses frontmatter
+itself with `yaml`. (`yaml`, not `js-yaml`: `depend/ban-dependencies` bans `js-yaml` as a *direct*
+dependency, which is why it only ever appears under `overrides`.)
+
+### Security overrides (`brace-expansion` GHSA-mh99-v99m-4gvg)
+
+`brace-expansion` <= `5.0.7` is vulnerable; the fix ships **only** on the `5.x` line, while `minimatch@3`
+and `minimatch@9` pin the unpatched `1.x` / `2.x` lines. `npm audit fix` cannot resolve this — its only
+offer downgrades unrelated packages — so the `overrides` block carries the fix:
+
+| Override | Why |
+| --- | --- |
+| `glob` → `^13`, `test-exclude` → `^8`, `readdir-glob` → `^3` | Newest majors, all on `minimatch@^10` (which uses the patched `brace-expansion@5`). Verified against their call sites: `glob.sync` / `globSync` and `readdir-glob`'s `match` / `end` events are unchanged. |
+| `eslint-plugin-n` → `$eslint-plugin-n`, `eslint-plugin-json-schema-validator` → `^6` | Replaces the versions `@microsoft/eslint-plugin-sdl` / `eslint-plugin-obsidianmd` pin exactly; `n@18` drops `minimatch` entirely and `json-schema-validator@6` moved to `minimatch@^10`. |
+| `eslint-plugin-import` → `npm:eslint-plugin-import-x` | `eslint-plugin-import` still needs `minimatch@^3` at its latest version, and `import-x` is its maintained fork (on `minimatch@^9 \|\| ^10`). |
+| `brace-expansion` → `file:patches/brace-expansion-callable` | Last resort for `eslint-plugin-react`, which `@microsoft/eslint-plugin-sdl` pins and which still needs `minimatch@3`. The two lines differ **only** in module shape (`module.exports = expand` vs `exports.expand`), so the patch re-exports the patched `5.x` implementation — installed under the `brace-expansion-upstream` alias — in the legacy callable shape. |
+
+Do not point the `brace-expansion` override at a nested (scoped) key: npm resolves a `file:` spec there
+relative to the *dependent*, producing a junction to a path that does not exist. It must stay top-level.
+
+**Remove all of this** once upstream lands the backports — the ranges (`^1.1.7` / `^2.0.2` / `^3.1.2`) mean a
+published `brace-expansion@1.1.17` flows in through a plain `npm update`, at which point the patch and the
+`brace-expansion-upstream` alias are dead weight.
+
 ## Consumer Script Pattern
 
 Consumer projects import functions from `obsidian-dev-utils` and wrap them with `wrapCliTask()`:
