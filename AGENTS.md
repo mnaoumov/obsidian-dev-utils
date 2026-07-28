@@ -58,26 +58,31 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
 `mnaoumov.github.io`). It is NOT a separate npm package — its dependencies live in the root
 `package.json` and it is driven by the root `docs:dev`/`docs:build`/`docs:preview` scripts.
 
-- `astro.config.ts` (repo root) — the Astro config. `srcDir` is set to `./docs` so the site's content
-  tree never collides with the library's own `src/`; output goes to `docs/dist`. The Starlight
-  integration uses `starlight-github-alerts` to render GitHub-style Markdown alerts as native
-  Starlight asides.
-- `docs/content.config.ts` — Starlight content-collection config.
-- `docs/content/docs/` — site content: `index.mdx` (landing), `guides/` (the hand-written topic guides,
-  each with Starlight frontmatter; co-located screenshots under `guides/images/`), and the generated
-  `api/` (gitignored — regenerated on every build).
-- `docs/api-readme.md` — the API section landing content. Passed to TypeDoc as `readme`; a real readme
-  (not `'none'`) is REQUIRED, otherwise `starlight-typedoc` deletes every generated module overview page.
-- `docs/typedoc-file-overview.ts` — a small TypeDoc plugin that re-attaches each module's `@file`
-  overview as the module comment. TypeDoc only treats a top-of-file comment as the module comment when it
-  carries `@packageDocumentation`/`@module`, so without this the repo's `@file` overviews would be
-  dropped. TypeDoc entry points use `entryPointStrategy: 'expand'` over `./src` (one module per source
-  file, matching the `./*` subpath exports), excluding tests/barrels/`__merged`/`@types`/`.d.ts`.
+- `astro.config.ts` (repo root) — the Astro config. `srcDir` is set to `./docs/src` so the site's
+  source tree never collides with the library's own `src/`; `outDir` is `./docs/dist`, `site` is
+  `https://mnaoumov.dev` and `base` is `/obsidian-dev-utils`. The Starlight integration uses
+  `starlight-github-alerts` to render GitHub-style Markdown alerts as native Starlight asides.
+- `docs/src/content.config.ts` — Starlight content-collection config.
+- `docs/src/content/docs/` — site content: `index.mdx` (landing), `guides/` (the hand-written topic
+  guides, each with Starlight frontmatter; co-located screenshots under `guides/images/` — the guides
+  sidebar autogenerates from the directory), and the generated `api/` (gitignored — regenerated on
+  every build).
+- `scripts/docs-gen/` — the **custom** API-reference generator (there is no TypeDoc / `starlight-typedoc`
+  in the pipeline). `generate-api-docs.ts` walks `src` with **ts-morph**, extracts every documentable
+  exported declaration, and emits Starlight-compatible MDX plus a sidebar JSON; the output tree mirrors
+  the library's module/subpath structure (a type's namespace is its source path relative to `src`). It
+  reads each module's `@file` overview directly (`helpers/api-doc-jsdoc.ts`), so no
+  `@packageDocumentation`/`@module` tag is needed. `generate-og-images.ts` renders the per-page OG
+  images (satori). Paths are centralized in `helpers/api-doc-constants.ts`: output
+  `docs/src/content/docs/api`, cache `…/api/.cache-hash`, sidebar `docs/src/generated-sidebar.json`,
+  base path `/obsidian-dev-utils`. `DOCS_ROOT` overrides the repo root for out-of-tree runs. All three
+  outputs are gitignored (`.gitignore:30-32`, the third being `docs/public/og`).
 - **Tooling scope:** ESLint validates `astro.config.ts`, `docs/src/**/*.ts`, `docs/**/*.astro`, and the
   documentation generator under `scripts/docs-gen/`; `npm run lint` explicitly supplies the `.astro` glob
   because ESLint does not discover that extension by default. Markdownlint excludes the whole docs sub-project
   because Starlight's MDX follows its own conventions, while `astro build` validates the site. cspell excludes
-  the generated `docs/content/docs/api` and `docs/dist`/`.astro`. `linkinator.config.json` skips the
+  the generated `docs/src/content/docs/api`, `docs/dist`/`.astro`, `docs/src/components`, `docs/src/styles`,
+  and `scripts/docs-gen`. `linkinator.config.json` skips the
   `mnaoumov.dev/obsidian-dev-utils` links (the site is not reachable until the first Pages deploy).
 - `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`,
   which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages,
