@@ -1,0 +1,45 @@
+{
+  "comment": [
+    "Release conditions for every exact-pinned version in package.json (dependencies, devDependencies and overrides).",
+    "An exact pin is invisible to update-npm-deps.ps1 — that script upgrades caret ranges and skips exact versions — so",
+    "nothing would ever remind you a pin is stale. This file is what makes that check happen: on every run the script",
+    "executes each `check` and compares its trimmed stdout to `expect`. Equal means the pin is still required; different",
+    "means the condition that justified the pin has changed and the pin should be re-examined. `check: null` means no",
+    "mechanical test exists — it is reported for manual review on every run instead of going quiet. Every exact pin must",
+    "have an entry here, and every entry must correspond to a real pin; the script errors on either mismatch.",
+    "Prose rationale and the wider context live in AGENTS.md under 'Pinned versions'."
+  ],
+  "pins": {
+    "@codemirror/state": {
+      "section": "dependencies",
+      "why": "obsidian's peerDependencies names this exact version. A second copy in the tree means two CodeMirror state instances at runtime.",
+      "check": "node -e \"process.stdout.write(require('obsidian/package.json').peerDependencies['@codemirror/state'])\"",
+      "expect": "6.5.0"
+    },
+    "@codemirror/view": {
+      "section": "dependencies",
+      "why": "Same as @codemirror/state — obsidian peer-pins it exactly.",
+      "check": "node -e \"process.stdout.write(require('obsidian/package.json').peerDependencies['@codemirror/view'])\"",
+      "expect": "6.38.6"
+    },
+    "@lezer/common": {
+      "section": "dependencies",
+      "why": "Must match the copy Obsidian bundles at runtime: app.js registers '@lezer/common' in the module map it hands to plugins, so our copy is types-only. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. The specific version 1.2.3 is UNCONFIRMED — 1fdd8d24 downgraded it from ^1.4.0 without recording a reason.",
+      "check": null,
+      "expect": null,
+      "manualCheck": "The bundle embeds no version string (the only '1.2.3' in app.js is SVG path data in the donut icon). Settle it by bumping to ^1.5 and running build:compile:typescript plus src/obsidian/editor.obsidian.integration.test.ts."
+    },
+    "typescript": {
+      "section": "dependencies",
+      "why": "@typescript-eslint peer-requires >=4.8.4 <6.1.0, and its parser crashes on the TypeScript 7 (tsgo) native API, so type-aware ESLint cannot run on 7. TypeScript 7 was adopted in db7c417c and rolled back in 846d6c6a; 3234c7d0 made the pin exact so a dependency sweep could not drift it back. Propagates to the whole tree via overrides.typescript = $typescript.",
+      "check": "node -e \"process.stdout.write(require('typescript-eslint/package.json').peerDependencies.typescript)\"",
+      "expect": ">=4.8.4 <6.1.0"
+    },
+    "js-yaml": {
+      "section": "overrides",
+      "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x.",
+      "check": "node -e \"process.stdout.write(require('astro/package.json').dependencies['js-yaml'])\"",
+      "expect": "^4.1.1"
+    }
+  }
+}
