@@ -36,6 +36,9 @@ export const en = {
       closeAriaLabel: 'Close',
       unhandledError: 'An unhandled error occurred. Please check the console for more information.'
     },
+    pathSettings: {
+      invalidRegularExpression: 'Invalid regular expression: {{regExp}}'
+    },
     queue: {
       flushQueue: 'Flush queue'
     },
