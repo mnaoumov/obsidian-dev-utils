@@ -22,6 +22,7 @@ import {
 
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
+  basename,
   extname,
   resolve
 } from '../path.ts';
@@ -255,6 +256,22 @@ export interface GetMarkdownFilesParams {
    * The path or folder to retrieve the markdown files from.
    */
   readonly pathOrFolder: PathOrFolder;
+}
+
+/**
+ * Parameters for {@link isMarkdownAttachment}.
+ */
+export interface IsMarkdownAttachmentParams {
+  /**
+   * The sub-extensions that mark a markdown file as an attachment, e.g. `['excalidraw']`. Each entry is normalized before matching: surrounding whitespace is
+   * trimmed, leading dots are stripped, and the comparison is case-insensitive. Empty entries are ignored.
+   */
+  readonly markdownAttachmentSubExtensions: readonly string[];
+
+  /**
+   * The path or file to classify.
+   */
+  readonly pathOrFile: null | PathOrAbstractFile;
 }
 
 /**
@@ -773,6 +790,34 @@ export function isFolder(file: unknown): file is TFolder {
 }
 
 /**
+ * Checks if the given file is a markdown file that is really an attachment rather than a note.
+ *
+ * Some plugins store their data in files that are markdown on disk but are not prose — Excalidraw, for example, saves each drawing as `sketch.excalidraw.md`.
+ * Obsidian reports such a file's extension as `md` and its base name as `sketch.excalidraw`, so the sub-extension is matched against the base name, never
+ * against the extension.
+ *
+ * @param params - The path or file to classify and the configured sub-extensions.
+ * @returns A boolean indicating whether the file is a markdown-shaped attachment.
+ */
+export function isMarkdownAttachment(params: IsMarkdownAttachmentParams): boolean {
+  const {
+    markdownAttachmentSubExtensions,
+    pathOrFile
+  } = params;
+  if (pathOrFile === null || !isMarkdownFile(pathOrFile)) {
+    return false;
+  }
+
+  // The markdown check above guarantees a `.md` tail, so matching the full name against `.<subExtension>.md` is equivalent to matching the base name.
+  // Nothing has to strip the extension, which is what lets a path string and an abstract file be handled identically.
+  const lowerCaseName = getName(pathOrFile).toLowerCase();
+  return markdownAttachmentSubExtensions.some((subExtension) => {
+    const normalizedSubExtension = subExtension.trim().replace(/^\.+/, '').toLowerCase();
+    return normalizedSubExtension !== '' && lowerCaseName.endsWith(`.${normalizedSubExtension}.${MARKDOWN_FILE_EXTENSION}`);
+  });
+}
+
+/**
  * Checks if the given file is a Markdown file.
  *
  * @param pathOrFile - The path or file to check.
@@ -826,6 +871,10 @@ function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {
   }
 
   return app.vault.getAbstractFileByPath(path);
+}
+
+function getName(pathOrFile: PathOrAbstractFile): string {
+  return isAbstractFile(pathOrFile) ? pathOrFile.name : basename(pathOrFile);
 }
 
 function getResolvedPath(path: string): string {
