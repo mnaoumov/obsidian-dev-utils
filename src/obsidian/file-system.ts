@@ -259,14 +259,14 @@ export interface GetMarkdownFilesParams {
 }
 
 /**
- * Parameters for {@link isMarkdownAttachment}.
+ * Parameters for {@link isTreatedAsAttachment}.
  */
-export interface IsMarkdownAttachmentParams {
+export interface IsTreatedAsAttachmentParams {
   /**
-   * The sub-extensions that mark a markdown file as an attachment, e.g. `['excalidraw']`. Each entry is normalized before matching: surrounding whitespace is
-   * trimmed, leading dots are stripped, and the comparison is case-insensitive. Empty entries are ignored.
+   * The extensions that mark a file as an attachment, e.g. `['.excalidraw.md']`. Each entry is normalized before matching: surrounding whitespace is trimmed,
+   * a single leading dot is enforced, and the comparison is case-insensitive. Empty entries are ignored.
    */
-  readonly markdownAttachmentSubExtensions: readonly string[];
+  readonly attachmentExtensions: readonly string[];
 
   /**
    * The path or file to classify.
@@ -790,34 +790,6 @@ export function isFolder(file: unknown): file is TFolder {
 }
 
 /**
- * Checks if the given file is a markdown file that is really an attachment rather than a note.
- *
- * Some plugins store their data in files that are markdown on disk but are not prose — Excalidraw, for example, saves each drawing as `sketch.excalidraw.md`.
- * Obsidian reports such a file's extension as `md` and its base name as `sketch.excalidraw`, so the sub-extension is matched against the base name, never
- * against the extension.
- *
- * @param params - The path or file to classify and the configured sub-extensions.
- * @returns A boolean indicating whether the file is a markdown-shaped attachment.
- */
-export function isMarkdownAttachment(params: IsMarkdownAttachmentParams): boolean {
-  const {
-    markdownAttachmentSubExtensions,
-    pathOrFile
-  } = params;
-  if (pathOrFile === null || !isMarkdownFile(pathOrFile)) {
-    return false;
-  }
-
-  // The markdown check above guarantees a `.md` tail, so matching the full name against `.<subExtension>.md` is equivalent to matching the base name.
-  // Nothing has to strip the extension, which is what lets a path string and an abstract file be handled identically.
-  const lowerCaseName = getName(pathOrFile).toLowerCase();
-  return markdownAttachmentSubExtensions.some((subExtension) => {
-    const normalizedSubExtension = subExtension.trim().replace(/^\.+/, '').toLowerCase();
-    return normalizedSubExtension !== '' && lowerCaseName.endsWith(`.${normalizedSubExtension}.${MARKDOWN_FILE_EXTENSION}`);
-  });
-}
-
-/**
  * Checks if the given file is a Markdown file.
  *
  * @param pathOrFile - The path or file to check.
@@ -835,6 +807,34 @@ export function isMarkdownFile(pathOrFile: null | PathOrAbstractFile): boolean {
  */
 export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
   return isMarkdownFile(pathOrFile) || isCanvasFile(pathOrFile) || isBaseFile(pathOrFile);
+}
+
+/**
+ * Checks if the given file should be treated as an attachment because of its extension.
+ *
+ * Some plugins store their data in files that are markdown on disk but are not prose — Excalidraw, for example, saves each drawing as `sketch.excalidraw.md`.
+ * Obsidian reports such a file's extension as `md`, so a caller that wants to tell a drawing apart from a note has to match the full multi-part extension
+ * (`.excalidraw.md`) against the file name. Which extensions count is the caller's configuration, not this library's — only the matching rule is shared.
+ *
+ * @param params - The path or file to classify and the configured attachment extensions.
+ * @returns A boolean indicating whether the file should be treated as an attachment.
+ */
+export function isTreatedAsAttachment(params: IsTreatedAsAttachmentParams): boolean {
+  const {
+    attachmentExtensions,
+    pathOrFile
+  } = params;
+  if (pathOrFile === null || isFolder(pathOrFile)) {
+    return false;
+  }
+
+  const lowerCaseName = getName(pathOrFile).toLowerCase();
+  return attachmentExtensions.some((extension) => {
+    // Enforcing a single leading dot is what keeps the match on an extension boundary.
+    // A bare `raw.md` would otherwise match `sketch.excalidraw.md`, which is never what a caller means.
+    const normalizedExtension = extension.trim().replace(/^\.+/, '').toLowerCase();
+    return normalizedExtension !== '' && lowerCaseName.endsWith(`.${normalizedExtension}`);
+  });
 }
 
 /**
