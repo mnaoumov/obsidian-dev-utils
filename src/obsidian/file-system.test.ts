@@ -51,6 +51,7 @@ import {
   isFolder,
   isMarkdownFile,
   isNote,
+  isTreatedAsAttachment,
   MARKDOWN_FILE_EXTENSION,
   trimMarkdownExtension
 } from './file-system.ts';
@@ -330,6 +331,81 @@ describe('isMarkdownFile', () => {
 
   it('should return false for null', () => {
     expect(isMarkdownFile(null)).toBe(false);
+  });
+});
+
+describe('isTreatedAsAttachment', () => {
+  it('should return true for a file whose name ends with a configured extension', () => {
+    app = App.createConfigured__({ files: { 'Docs/sketch.excalidraw.md': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/sketch.excalidraw.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: file })).toBe(true);
+  });
+
+  it('should return false for a plain markdown file', () => {
+    app = App.createConfigured__({ files: { 'Docs/note.md': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/note.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: file })).toBe(false);
+  });
+
+  it('should return true for a non-markdown file whose extension is configured', () => {
+    app = App.createConfigured__({ files: { 'Docs/data.foo.txt': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/data.foo.txt');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.foo.txt'], pathOrFile: file })).toBe(true);
+  });
+
+  it('should match a single-part extension', () => {
+    app = App.createConfigured__({ files: { 'Docs/img.png': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/img.png');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.png'], pathOrFile: file })).toBe(true);
+  });
+
+  it('should match the configured extension case-insensitively', () => {
+    app = App.createConfigured__({ files: { 'Docs/sketch.excalidraw.md': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/sketch.excalidraw.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.EXCALIDRAW.MD'], pathOrFile: file })).toBe(true);
+  });
+
+  it('should match a file name case-insensitively', () => {
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: 'Docs/Sketch.EXCALIDRAW.MD' })).toBe(true);
+  });
+
+  it('should normalize surrounding whitespace and a missing or repeated leading dot', () => {
+    app = App.createConfigured__({ files: { 'Docs/sketch.excalidraw.md': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/sketch.excalidraw.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['  .excalidraw.md '], pathOrFile: file })).toBe(true);
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['excalidraw.md'], pathOrFile: file })).toBe(true);
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['...excalidraw.md'], pathOrFile: file })).toBe(true);
+  });
+
+  it('should only match on an extension boundary', () => {
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['raw.md'], pathOrFile: 'Docs/sketch.excalidraw.md' })).toBe(false);
+  });
+
+  it('should ignore empty configured extensions', () => {
+    app = App.createConfigured__({ files: { 'Docs/note.md': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/note.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['', '   ', '...'], pathOrFile: file })).toBe(false);
+  });
+
+  it('should return false when no extensions are configured', () => {
+    app = App.createConfigured__({ files: { 'Docs/sketch.excalidraw.md': '' } }).asOriginalType__();
+    const file = app.vault.getFileByPath('Docs/sketch.excalidraw.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: [], pathOrFile: file })).toBe(false);
+  });
+
+  it('should accept a path string', () => {
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: 'Docs/sketch.excalidraw.md' })).toBe(true);
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: 'Docs/note.md' })).toBe(false);
+  });
+
+  it('should return false for a folder', () => {
+    app = App.createConfigured__({ files: { 'sketch.excalidraw.md/': '' } }).asOriginalType__();
+    const folder = app.vault.getFolderByPath('sketch.excalidraw.md');
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: folder })).toBe(false);
+  });
+
+  it('should return false for null', () => {
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: null })).toBe(false);
   });
 });
 

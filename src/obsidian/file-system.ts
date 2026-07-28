@@ -22,6 +22,7 @@ import {
 
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import {
+  basename,
   extname,
   resolve
 } from '../path.ts';
@@ -255,6 +256,22 @@ export interface GetMarkdownFilesParams {
    * The path or folder to retrieve the markdown files from.
    */
   readonly pathOrFolder: PathOrFolder;
+}
+
+/**
+ * Parameters for {@link isTreatedAsAttachment}.
+ */
+export interface IsTreatedAsAttachmentParams {
+  /**
+   * The extensions that mark a file as an attachment, e.g. `['.excalidraw.md']`. Each entry is normalized before matching: surrounding whitespace is trimmed,
+   * a single leading dot is enforced, and the comparison is case-insensitive. Empty entries are ignored.
+   */
+  readonly attachmentExtensions: readonly string[];
+
+  /**
+   * The path or file to classify.
+   */
+  readonly pathOrFile: null | PathOrAbstractFile;
 }
 
 /**
@@ -793,6 +810,34 @@ export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
 }
 
 /**
+ * Checks if the given file should be treated as an attachment because of its extension.
+ *
+ * Some plugins store their data in files that are markdown on disk but are not prose — Excalidraw, for example, saves each drawing as `sketch.excalidraw.md`.
+ * Obsidian reports such a file's extension as `md`, so a caller that wants to tell a drawing apart from a note has to match the full multi-part extension
+ * (`.excalidraw.md`) against the file name. Which extensions count is the caller's configuration, not this library's — only the matching rule is shared.
+ *
+ * @param params - The path or file to classify and the configured attachment extensions.
+ * @returns A boolean indicating whether the file should be treated as an attachment.
+ */
+export function isTreatedAsAttachment(params: IsTreatedAsAttachmentParams): boolean {
+  const {
+    attachmentExtensions,
+    pathOrFile
+  } = params;
+  if (pathOrFile === null || isFolder(pathOrFile)) {
+    return false;
+  }
+
+  const lowerCaseName = getName(pathOrFile).toLowerCase();
+  return attachmentExtensions.some((extension) => {
+    // Enforcing a single leading dot is what keeps the match on an extension boundary.
+    // A bare `raw.md` would otherwise match `sketch.excalidraw.md`, which is never what a caller means.
+    const normalizedExtension = extension.trim().replace(/^\.+/, '').toLowerCase();
+    return normalizedExtension !== '' && lowerCaseName.endsWith(`.${normalizedExtension}`);
+  });
+}
+
+/**
  * Trims the markdown extension from the file path if the file is a markdown file.
  * If the file is not a markdown file, the original file path is returned.
  *
@@ -826,6 +871,10 @@ function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {
   }
 
   return app.vault.getAbstractFileByPath(path);
+}
+
+function getName(pathOrFile: PathOrAbstractFile): string {
+  return isAbstractFile(pathOrFile) ? pathOrFile.name : basename(pathOrFile);
 }
 
 function getResolvedPath(path: string): string {
