@@ -44,6 +44,7 @@ _dependencies.ts
 
 package.json
 !/package.json
+!/patches/**/package.json
 
 .claude/settings.local.json
 
