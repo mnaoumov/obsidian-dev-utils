@@ -13,11 +13,315 @@ import {
   vi
 } from 'vitest';
 
+import type { GetAvailablePathForAttachmentsExtendedFnParams } from './attachment-path.ts';
+
 import { castTo } from '../object-utils.ts';
 import {
+  basename,
+  dirname,
+  extname
+} from '../path.ts';
+import {
   AttachmentPathContext,
+  getAttachmentFilePath,
+  getAttachmentFolderPath,
+  getAvailablePathForAttachments,
+  hasOwnAttachmentFolder,
   isAtProperAttachmentPath
 } from './attachment-path.ts';
+import { getFile } from './file-system.ts';
+
+const NOTE_PATH = 'Docs/note.md';
+
+function createApp(attachmentFolderPath: string, extraFiles?: Record<string, string>): AppOriginal {
+  const app = App.createConfigured__({
+    files: {
+      'Docs/note.md': '',
+      'Docs/other.md': '',
+      'Files/': '',
+      'Files/Sub/': '',
+      'root-note.md': '',
+      ...extraFiles
+    }
+  }).asOriginalType__();
+  app.vault.setConfig('attachmentFolderPath', attachmentFolderPath);
+  return app;
+}
+
+/**
+ * Models what an attachment-location plugin does: derive the attachment folder from the note's NAME.
+ */
+function stubNoteNameFolder(app: AppOriginal): void {
+  const extended = vi.fn((params: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string> => {
+    const notePath = params.notePathOrFile as string;
+    const noteFolderPath = dirname(notePath);
+    const noteBaseName = basename(notePath, extname(notePath));
+    const attachmentFileExtension = params.attachmentFileExtension ? `.${params.attachmentFileExtension}` : '';
+    return Promise.resolve(`${noteFolderPath}/${noteBaseName}/${params.attachmentFileBaseName}${attachmentFileExtension}`);
+  });
+  app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
+    Object.assign(vi.fn(), { extended })
+  );
+}
+
+describe('getAttachmentFolderPath', () => {
+  it('should resolve the vault root', async () => {
+    const app = createApp('/');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('/');
+  });
+
+  it('should resolve a fixed folder', async () => {
+    const app = createApp('Files');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('Files');
+  });
+
+  it('should resolve a fixed folder that does not exist yet', async () => {
+    const app = createApp('Missing');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('Missing');
+  });
+
+  it('should resolve the note folder', async () => {
+    const app = createApp('./');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('Docs');
+  });
+
+  it('should resolve the note folder for the dot setting variant', async () => {
+    const app = createApp('.');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('Docs');
+  });
+
+  it('should resolve a subfolder of the note folder', async () => {
+    const app = createApp('./assets');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('Docs/assets');
+  });
+
+  it('should resolve the note folder for a note that does not exist yet', async () => {
+    const app = createApp('./');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: 'Docs/missing.md' })).toBe('Docs');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: 'Missing/missing.md' })).toBe('Missing');
+  });
+
+  it('should resolve a subfolder of the folder of a note that does not exist yet', async () => {
+    const app = createApp('./assets');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: 'Docs/missing.md' })).toBe('Docs/assets');
+  });
+
+  it('should normalize a setting with redundant and backslash separators', async () => {
+    const app = createApp('\\Files\\\\Sub\\');
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH })).toBe('Files/Sub');
+  });
+
+  it('should fall back to the vault root for a note detached from the folder tree', async () => {
+    const app = createApp('./');
+    const note = getFile({ app, pathOrFile: NOTE_PATH });
+    note.parent = null;
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: note })).toBe('/');
+  });
+
+  it('should fall back to a root subfolder for a note detached from the folder tree', async () => {
+    const app = createApp('./assets');
+    const note = getFile({ app, pathOrFile: NOTE_PATH });
+    note.parent = null;
+    expect(await getAttachmentFolderPath({ app, notePathOrFile: note })).toBe('assets');
+  });
+
+  it('should honor an explicit context', async () => {
+    const app = createApp('./');
+    expect(
+      await getAttachmentFolderPath({
+        app,
+        context: AttachmentPathContext.RenameNote,
+        notePathOrFile: NOTE_PATH
+      })
+    ).toBe('Docs');
+  });
+});
+
+describe('getAvailablePathForAttachments', () => {
+  it('should resolve the vault root for a note-less attachment', async () => {
+    const app = createApp('./');
+    expect(
+      await getAvailablePathForAttachments({
+        app,
+        attachmentFileBaseName: 'img',
+        attachmentFileExtension: 'png',
+        notePathOrFile: null,
+        shouldSkipDuplicateCheck: true,
+        shouldSkipMissingAttachmentFolderCreation: true
+      })
+    ).toBe('img.png');
+  });
+
+  it('should resolve a root subfolder for a note-less attachment', async () => {
+    const app = createApp('./assets');
+    expect(
+      await getAvailablePathForAttachments({
+        app,
+        attachmentFileBaseName: 'img',
+        attachmentFileExtension: 'png',
+        notePathOrFile: null,
+        shouldSkipDuplicateCheck: true,
+        shouldSkipMissingAttachmentFolderCreation: true
+      })
+    ).toBe('assets/img.png');
+  });
+
+  it('should create a missing attachment folder', async () => {
+    const app = createApp('./assets');
+    expect(app.vault.getFolderByPath('Docs/assets')).toBeNull();
+    expect(
+      await getAvailablePathForAttachments({
+        app,
+        attachmentFileBaseName: 'img',
+        attachmentFileExtension: 'png',
+        notePathOrFile: NOTE_PATH,
+        shouldSkipDuplicateCheck: true,
+        shouldSkipMissingAttachmentFolderCreation: false
+      })
+    ).toBe('Docs/assets/img.png');
+    expect(app.vault.getFolderByPath('Docs/assets')).not.toBeNull();
+  });
+
+  it('should not create a missing attachment folder when skipped', async () => {
+    const app = createApp('./assets');
+    expect(
+      await getAvailablePathForAttachments({
+        app,
+        attachmentFileBaseName: 'img',
+        attachmentFileExtension: 'png',
+        notePathOrFile: NOTE_PATH,
+        shouldSkipDuplicateCheck: true,
+        shouldSkipMissingAttachmentFolderCreation: true
+      })
+    ).toBe('Docs/assets/img.png');
+    expect(app.vault.getFolderByPath('Docs/assets')).toBeNull();
+  });
+
+  it('should deduplicate against an existing attachment', async () => {
+    const app = createApp('./', { 'Docs/img.png': '' });
+    expect(
+      await getAvailablePathForAttachments({
+        app,
+        attachmentFileBaseName: 'img',
+        attachmentFileExtension: 'png',
+        notePathOrFile: NOTE_PATH
+      })
+    ).toBe('Docs/img 1.png');
+  });
+
+  it('should keep the requested name when the duplicate check is skipped', async () => {
+    const app = createApp('./', { 'Docs/img.png': '' });
+    expect(
+      await getAvailablePathForAttachments({
+        app,
+        attachmentFileBaseName: 'img',
+        attachmentFileExtension: 'png',
+        notePathOrFile: NOTE_PATH,
+        shouldSkipDuplicateCheck: true
+      })
+    ).toBe('Docs/img.png');
+  });
+});
+
+describe('getAttachmentFilePath', () => {
+  it('should resolve the attachment path without an extended override', async () => {
+    const app = createApp('./assets');
+    expect(
+      await getAttachmentFilePath({
+        app,
+        context: AttachmentPathContext.Unknown,
+        notePathOrFile: NOTE_PATH,
+        oldAttachmentPathOrFile: 'Inbox/img.png',
+        shouldSkipDuplicateCheck: true
+      })
+    ).toBe('Docs/assets/img.png');
+  });
+
+  it('should pass the stats and a content reader of an existing attachment to the extended override', async () => {
+    const app = createApp('./', { 'Inbox/img.png': 'CONTENT' });
+    const extended = vi.fn().mockResolvedValue('Docs/img.png');
+    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
+      Object.assign(vi.fn(), { extended })
+    );
+    const content = new ArrayBuffer(8);
+    const readBinary = vi.fn().mockResolvedValue(content);
+    app.vault.readBinary = readBinary;
+
+    expect(
+      await getAttachmentFilePath({
+        app,
+        context: AttachmentPathContext.RenameNote,
+        notePathOrFile: NOTE_PATH,
+        oldAttachmentPathOrFile: 'Inbox/img.png',
+        oldNotePathOrFile: 'Docs/old-note.md',
+        shouldSkipDuplicateCheck: true
+      })
+    ).toBe('Docs/img.png');
+
+    const params = castTo<GetAvailablePathForAttachmentsExtendedFnParams>(extended.mock.calls[0]?.[0]);
+    expect(params.attachmentFileBaseName).toBe('img');
+    expect(params.attachmentFileExtension).toBe('png');
+    expect(params.attachmentFileStats).toBeDefined();
+    expect(params.oldNotePathOrFile).toBe('Docs/old-note.md');
+    expect(params.readAttachmentFileContent).not.toBeNull();
+    expect(await params.readAttachmentFileContent?.()).toBe(content);
+    expect(readBinary).toHaveBeenCalledWith(expect.objectContaining({ path: 'Inbox/img.png' }));
+  });
+
+  it('should pass no content reader for a missing attachment', async () => {
+    const app = createApp('./');
+    const extended = vi.fn().mockResolvedValue('Docs/img.png');
+    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
+      Object.assign(vi.fn(), { extended })
+    );
+
+    await getAttachmentFilePath({
+      app,
+      context: AttachmentPathContext.Unknown,
+      notePathOrFile: NOTE_PATH,
+      oldAttachmentPathOrFile: 'Inbox/missing.png',
+      shouldSkipDuplicateCheck: true
+    });
+
+    const params = castTo<GetAvailablePathForAttachmentsExtendedFnParams>(extended.mock.calls[0]?.[0]);
+    expect(params.attachmentFileStats).toBeUndefined();
+    expect(params.readAttachmentFileContent).toBeNull();
+  });
+});
+
+describe('hasOwnAttachmentFolder', () => {
+  it('should return false for the vault root', async () => {
+    const app = createApp('/');
+    expect(await hasOwnAttachmentFolder({ app, path: NOTE_PATH })).toBe(false);
+  });
+
+  it('should return false for a fixed folder', async () => {
+    const app = createApp('Files');
+    expect(await hasOwnAttachmentFolder({ app, path: NOTE_PATH })).toBe(false);
+  });
+
+  it('should return false for the note folder', async () => {
+    const app = createApp('./');
+    expect(await hasOwnAttachmentFolder({ app, path: NOTE_PATH })).toBe(false);
+  });
+
+  it('should return false for a subfolder of the note folder', async () => {
+    const app = createApp('./assets');
+    expect(await hasOwnAttachmentFolder({ app, path: NOTE_PATH })).toBe(false);
+  });
+
+  it('should return true when the folder is derived from the note name', async () => {
+    const app = createApp('./');
+    stubNoteNameFolder(app);
+    expect(
+      await hasOwnAttachmentFolder({
+        app,
+        context: AttachmentPathContext.DeleteNote,
+        path: NOTE_PATH
+      })
+    ).toBe(true);
+  });
+});
 
 describe('isAtProperAttachmentPath', () => {
   let app: AppOriginal;
