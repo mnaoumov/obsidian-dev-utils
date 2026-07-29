@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 88.4.0
+
+- test(vitest-config): give docs-generator a timeout that survives full-suite load
+- fix(attachment-path): resolve the note folder from the path
+- feat(file-system): add isTreatedAsAttachment predicate
+- chore(deps): pin js-yaml exactly and document every pin's release condition
+- fix(path-settings): stop throwing on un-parseable path entries
+- feat(popovers): add an anchored field-editor popover
+
 ## 88.3.0
 
 - chore: update libs
