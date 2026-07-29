@@ -52,7 +52,10 @@ export const config = defineConfig({
           exclude: [...SHARED_EXCLUDE],
           include: [DOCS_GENERATOR_TEST_FILES, DOCS_SITE_TEST_FILES],
           name: 'unit-tests:docs-generator',
-          setupFiles: []
+          setupFiles: [],
+          // Rasterizing an OG image (satori + resvg) and building a ts-morph Project are genuinely slow.
+          // Under the full aggregate they lose the CPU race and the default 5000 ms times them out.
+          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
       },
       {
