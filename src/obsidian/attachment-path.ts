@@ -4,8 +4,6 @@
  * Provides utility functions for working with attachment paths.
  */
 
-/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-
 import type {
   App,
   FileStats,
@@ -32,6 +30,7 @@ import {
   trimStart
 } from '../string.ts';
 import {
+  getFile,
   getFileOrNull,
   getFolder,
   getFolderOrNull,
@@ -376,7 +375,16 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
     })
     : null;
 
-  const noteFileOrNull = getFileOrNull({ app, pathOrFile: notePathOrFile });
+  // A note that does not exist yet (a rename target, a dummy sibling) still belongs to its own folder.
+  // Materializing it from its path keeps that folder, where a vault lookup would fall back to the root.
+  // Only an explicitly note-less attachment resolves to the vault root.
+  const noteFileOrNull = notePathOrFile === null
+    ? null
+    : getFile({
+      app,
+      pathOrFile: notePathOrFile,
+      shouldIncludeNonExisting: true
+    });
 
   if (isCurrentFolder) {
     attachmentFolderPath = noteFileOrNull ? noteFileOrNull.parent?.path ?? '' : '';
@@ -389,13 +397,15 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
 
   let folder = getFolderOrNull({ app, isCaseInsensitive: true, pathOrFolder: attachmentFolderPath });
 
-  if (!folder && relativePath) {
-    folder = shouldSkipMissingAttachmentFolderCreation
-      ? getFolder({ app, pathOrFolder: attachmentFolderPath, shouldIncludeNonExisting: true })
-      : await app.vault.createFolder(attachmentFolderPath);
+  if (!folder && relativePath && !shouldSkipMissingAttachmentFolderCreation) {
+    folder = await app.vault.createFolder(attachmentFolderPath);
   }
 
-  const prefix = folder?.getParentPrefix() ?? '';
+  // A folder that does not exist yet still owns the attachment path.
+  // Resolving it as a non-existing folder stops the answer from collapsing to the vault root.
+  folder ??= getFolder({ app, pathOrFolder: attachmentFolderPath, shouldIncludeNonExisting: true });
+
+  const prefix = folder.getParentPrefix();
   return shouldSkipDuplicateCheck
     ? makeFileName({
       fileBaseName: prefix + attachmentFileBaseName,
@@ -405,7 +415,17 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
 }
 
 /**
- * Checks if a note has its own attachment folder.
+ * Checks whether a note's attachment folder is specific to that note rather than shared with its siblings.
+ *
+ * The answer is derived by comparing the note's attachment folder with the one a same-folder sibling note
+ * would get: they differ only when the folder depends on the note's NAME. Every built-in
+ * `attachmentFolderPath` mode — the vault root, a fixed folder, the note's own folder (`./`), a subfolder of
+ * the note's folder (`./sub`) — is shared by every note in that folder, so it answers `false`; `true` arises
+ * from a {@link GetAvailablePathForAttachmentsFnExtended.extended} override that derives the folder from the
+ * note's name (what an attachment-location plugin produces).
+ *
+ * This is the distinction a caller needs before sweeping an attachment folder wholesale: only a
+ * note-specific folder can be treated as belonging to the note.
  *
  * @param params - Parameters for the has own attachment folder function.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the note has its own attachment folder.
@@ -428,8 +448,6 @@ export async function hasOwnAttachmentFolder(params: HasOwnAttachmentFolderParam
   });
   return attachmentFolderPath !== dummyAttachmentFolderPath;
 }
-
-/* v8 ignore stop */
 
 /**
  * Checks whether an attachment already sits at its proper attachment path.
@@ -496,8 +514,6 @@ export async function isAtProperAttachmentPath(params: IsAtProperAttachmentPathP
   return /^\d+$/.test(deduplicationSuffix);
 }
 
-/* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
-
 /**
  * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
  *
@@ -517,5 +533,3 @@ function normalizeSlashes(path: string): string {
   });
   return path || '/';
 }
-
-/* v8 ignore stop */
