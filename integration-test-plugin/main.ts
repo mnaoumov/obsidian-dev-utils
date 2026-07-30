@@ -4,7 +4,7 @@
  * Integration test harness plugin.
  *
  * Imports the entire `obsidian-dev-utils` library and exposes it as a strongly
- * typed namespace on `window.__obsidianDevUtilsModule__`. This allows
+ * typed namespace on `window.__obsidianDevUtilsModule`. This allows
  * `evalInObsidian` callbacks to access any part of the library.
  */
 

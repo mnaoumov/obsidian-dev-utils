@@ -15,7 +15,8 @@ const BUILD_STEPS = [
   'build:generate-exports',
   'build:templates',
   'build:styles',
-  'build:demo-vault-helper'
+  'build:demo-vault-helper',
+  'build:integration-test-plugin'
 ];
 
 await wrapCliTask(async () => {
