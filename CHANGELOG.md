@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 88.5.0
+
+- feat(integration-test): publish the consumer integration-test setup
+- chore: update libs
+
 ## 88.4.0
 
 - test(vitest-config): give docs-generator a timeout that survives full-suite load
