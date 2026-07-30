@@ -8,26 +8,19 @@
  * on `window`, so the styles must be injected here for tests that rely on the library's CSS. The
  * injection is idempotent (keyed by a style element id), so running it once per test file is safe.
  *
- * Also registers the `lib` resolver: the harness merges the object it returns into the `lib` argument
- * of every `evalInObsidian` callback, so a serialized closure reaches any library helper as `lib.fn`
- * (the flat `__merged` barrel the integration harness plugin exposes on `window`).
+ * The `lib` resolver comes from the PUBLISHED registration the `obsidian-dev-utils/integration-test-setup`
+ * endpoint calls — the very code consumer plugins get — so this repo's own suites exercise the consumer path
+ * rather than a private copy of it.
  */
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import {
-  evalInObsidian,
-  registerLibResolver
-} from 'obsidian-integration-testing';
+import { evalInObsidian } from 'obsidian-integration-testing';
 import { beforeAll } from 'vitest';
 
-registerLibResolver(() => {
-  const obsidianDevUtilsModule = window.__obsidianDevUtilsModule;
-  if (!obsidianDevUtilsModule) {
-    throw new Error('The obsidian-dev-utils module is not exposed on `window`. Is the integration harness plugin loaded?');
-  }
-  return obsidianDevUtilsModule.__merged;
-});
+import { registerIntegrationTestLibResolver } from '../src/script-utils/test-runners/integration-test-plugin.ts';
+
+registerIntegrationTestLibResolver();
 
 const STYLES_CSS_PATH = join(import.meta.dirname, '../dist/styles.css');
 

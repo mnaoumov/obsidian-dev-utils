@@ -123,6 +123,72 @@ Node 22+ exposes an experimental Web Storage `localStorage`, but it is unavailab
 NODE_OPTIONS=--localstorage-file=:memory: vitest
 ```
 
+## Integration tests: reaching library helpers inside `evalInObsidian`
+
+[`obsidian-integration-testing`](https://github.com/mnaoumov/obsidian-integration-testing) runs a closure inside a real Obsidian, and injects a `lib` bag into it. `Obsidian Dev Utils` can merge its **entire** helper surface into that bag, so a serialized closure — which cannot use imports — reaches any helper as `lib.<helper>`:
+
+```typescript
+await evalInObsidian({
+  async fn({ app, lib: { ensureMetadataCacheReady } }) {
+    await ensureMetadataCacheReady(app);
+  }
+});
+```
+
+Three pieces make that work, and **all three are required** — the runtime without the types leaves `lib.<helper>` unable to compile, and the types without the runtime leaves it `undefined` at run time.
+
+### 1. Global setup — put the library in the test vault
+
+The helpers are published by a tiny harness plugin that this package ships. It has to be installed in the test vault **alongside** your own plugin, so replace `obsidian-integration-testing/vitest-global-setup-plugin` with the drop-in below (do not list both):
+
+```typescript
+// vitest.config.ts (each integration-test project)
+globalSetup: ['obsidian-dev-utils/integration-test-vitest-global-setup'],
+```
+
+It does everything the harness's own global setup does — temp vault, install and enable your plugin — and additionally seeds and enables the harness plugin.
+
+If a project already needs its own `populate` (demo-vault fixtures, a large performance vault), compose instead of replacing:
+
+```typescript
+import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import {
+  getIntegrationTestPluginPopulate,
+  OBSIDIAN_DEV_UTILS_INTEGRATION_TEST_PLUGIN_ID
+} from 'obsidian-dev-utils/script-utils/test-runners/integration-test-plugin';
+
+export const { setup, teardown } = createSetup({
+  enableCommunityPlugins: [OBSIDIAN_DEV_UTILS_INTEGRATION_TEST_PLUGIN_ID],
+  populate: () => ({ ...myFixtures(), ...getIntegrationTestPluginPopulate() })
+});
+```
+
+### 2. Setup file — register the resolver
+
+```typescript
+// vitest.config.ts (each integration-test project)
+setupFiles: [
+  'obsidian-integration-testing/vitest-setup',
+  'obsidian-dev-utils/integration-test-setup'
+],
+```
+
+Importing `obsidian-dev-utils/integration-test-setup` registers a renderer-side resolver whose result the harness merges into `lib`. Registration is idempotent, so naming it from more than one setup file is safe.
+
+### 3. A triple-slash reference — activate the types
+
+Add one line to a `.d.ts` your `tsconfig.json` already includes (e.g. `src/obsidian-dev-utils-lib.d.ts`):
+
+```typescript
+/// <reference types="obsidian-dev-utils/@types/obsidian-integration-testing" />
+```
+
+This is what augments the harness's `Lib` interface with the library's flat surface. Without it, `lib.<helper>` fails to compile with `TS2339: Property '<helper>' does not exist on type 'Lib'`.
+
+Use the reference, **not** a `compilerOptions.types` entry: a `types` entry naming the same path resolves without complaint but does not bring the module augmentation into the program, so `lib.<helper>` still fails to compile. (Verified against `moduleResolution: node16`.)
+
+The `lib` bag is **flat** — every helper sits at the top level (`lib.ensureMetadataCacheReady`, not `lib.obsidian['metadata-cache'].ensureMetadataCacheReady`). Note that the harness plugin carries its own copy of the library, loaded only in the throwaway test vault; your plugin's own bundle is untouched.
+
 ## Warnings as errors
 
 The standard per-test setup also turns any Node process warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`, …) into a test failure, so warnings get fixed at the source instead of scrolling past unread. This is **not** opt-in — wiring in any of the setup endpoints above (`vitest-setup`, `jest-setup`, or the agnostic `setup`) enables it automatically.

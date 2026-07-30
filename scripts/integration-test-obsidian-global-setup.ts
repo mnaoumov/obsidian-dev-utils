@@ -18,6 +18,7 @@ import {
   teardown as integrationTeardown
 } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 
+import { ObsidianPluginRepoPaths } from '../src/obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plugin.ts';
 
 /**
@@ -26,7 +27,7 @@ import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plu
  * @param project - The Vitest test project.
  */
 export async function setup(project: TestProject): Promise<void> {
-  await buildIntegrationTestPlugin();
+  await buildIntegrationTestPlugin({ outDir: ObsidianPluginRepoPaths.DistDev });
   await integrationSetup(project);
 }
 

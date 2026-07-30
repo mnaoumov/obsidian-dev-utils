@@ -413,12 +413,21 @@ describe('MyModule', () => {
   vault — it awaits `onCleanCache` and is unbounded, so it waits exactly as long as needed.
   `getBacklinksForFileSafe` already calls it internally, but inside a *bounded* retry that can time
   out under load, so call it explicitly first.
+- **`ensureMetadataCacheReady` is NOT sufficient for a file you just created.** It awaits
+  `onCleanCache`, which resolves as soon as the cache is clean *at that instant* — and right after
+  `vault.create` the indexing work is not queued yet, so it returns before there is anything to wait
+  for. Measured under T236: it left 2 of 3 flakes in place. For a fresh file, wait on the concrete
+  condition instead (e.g. the file's `resolvedLinks` entry appearing), not on cache cleanliness.
 - When there is no readiness event to await, poll with `retryWithTimeout` (bounded) rather than a
   single frame or fixed delay — e.g. `getDomEventsHandlersConstructor` retries until the constructor
   is intercepted instead of asserting after one `requestAnimationFrame`.
-- Inside `evalInObsidian` callbacks, library helpers are reachable via
-  `window.__obsidianDevUtilsModule__` (e.g. `lib.obsidian['metadata-cache'].ensureMetadataCacheReady`),
-  **not** via the test file's imports — the callback is serialized and runs in the Obsidian process.
+- Inside `evalInObsidian` callbacks, library helpers arrive via the injected `lib` bag — **not** via the
+  test file's imports, since the callback is serialized and runs in the Obsidian process. `lib` is
+  **flat**, so it is `lib.ensureMetadataCacheReady`, not `lib.obsidian['metadata-cache'].…`. Destructure
+  by name (`fn({ app, lib: { ensureMetadataCacheReady } })`). A new export only appears there after
+  `npm run build:generate-merged` regenerates the gitignored `src/__merged.ts`; otherwise `tsc` fails with
+  `Property '<name>' does not exist on type 'Lib'`. The runtime source is
+  `window.__obsidianDevUtilsModule`, published by the harness plugin.
 
 ## Dependencies
 
