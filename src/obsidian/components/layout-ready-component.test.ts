@@ -13,7 +13,9 @@ import {
   vi
 } from 'vitest';
 
+import { noop } from '../../function.ts';
 import { strictProxy } from '../../strict-proxy.ts';
+import { AllWindowsEventComponent } from './all-windows-event-component.ts';
 import {
   CallbackLayoutReadyComponent,
   LayoutReadyComponent
@@ -234,6 +236,48 @@ describe('LayoutReadyComponent', () => {
 
     // OnLayoutReady is skipped: no in-flight load remains, but the load failed.
     expect(order).toEqual(['onloadAsync']);
+    vi.useRealTimers();
+  });
+
+  it('should quietly abandon an onLayoutReady that resumes after the component was unloaded', async () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    const order: string[] = [];
+    let openWorkGate!: () => void;
+    const workGate = new Promise<void>((resolve) => {
+      openWorkGate = resolve;
+    });
+
+    class SlowLayoutReadyComponent extends LayoutReadyComponent {
+      protected override async onLayoutReady(): Promise<void> {
+        order.push('started');
+        await workGate;
+        order.push('resumed');
+        this.addChild(new AllWindowsEventComponent(this.app)).registerAllDocumentsDomEvent({
+          callback: noop,
+          options: { capture: true },
+          type: 'change'
+        });
+        order.push('registered');
+      }
+    }
+
+    const component = new SlowLayoutReadyComponent(app);
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    // The handler started and is suspended on the gate, exactly as a long-running plugin onLayoutReady is.
+    expect(order).toEqual(['started']);
+
+    // Models a plugin update/reload: the component is unloaded while the handler is still suspended.
+    component.unload();
+    openWorkGate();
+    await vi.runAllTimersAsync();
+
+    // The resumed body unwinds at addChild with a SilentError, so the registration never happens and no
+    // Unhandled async error is emitted — the shared setup fails the test if one were.
+    expect(order).toEqual(['started', 'resumed']);
     vi.useRealTimers();
   });
 

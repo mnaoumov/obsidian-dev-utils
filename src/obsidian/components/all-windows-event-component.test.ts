@@ -16,6 +16,7 @@ import {
   vi
 } from 'vitest';
 
+import { SilentError } from '../../error.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { AllWindowsEventComponent } from './all-windows-event-component.ts';
 
@@ -88,6 +89,18 @@ describe('AllWindowsEventComponent', () => {
       expect(() => {
         new AllWindowsEventComponent(app).registerAllWindowsHandler(handler);
       }).toThrow('Component is not loaded');
+    });
+
+    it('should throw a SilentError when registering a handler after the component is unloaded', () => {
+      const app = createMockApp({});
+      const handler = vi.fn();
+      const component = createLoadedComponent(app);
+      component.unload();
+
+      expect(() => {
+        component.registerAllWindowsHandler(handler);
+      }).toThrow(SilentError);
+      expect(handler).not.toHaveBeenCalled();
     });
 
     it('should call handler for existing popup windows after layout ready', () => {
