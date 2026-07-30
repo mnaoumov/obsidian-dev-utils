@@ -39,7 +39,7 @@
       "section": "overrides",
       "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x.",
       "check": "node -e \"process.stdout.write(require('astro/package.json').dependencies['js-yaml'])\"",
-      "expect": "^4.1.1"
+      "expect": "^4.3.0"
     }
   }
 }

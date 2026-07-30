@@ -487,11 +487,13 @@ exact pin is the only self-enforcing form — the script skips exact versions by
 'default'`. Unit tests and lint stay green, so this only shows up in the docs build — re-run
 `docs:build` after any `js-yaml` change.
 
-The pin is a compromise, not a consensus: `astro`, `@astrojs/starlight`,
-`@astrojs/internal-helpers` and `cosmiconfig` ask for `^4.1.1` and `@istanbuljs/load-nyc-config` for
-`^3`, but `markdownlint-cli2` pins `5.2.2` **exactly** and is force-downgraded to `4.3.0` by this
-override. That downgrade is verified green through `lint:md`. When Astro moves to `js-yaml@5`, the pin
-can be retired — until then, check `lint:md` as well as `docs:build` on any bump.
+The pin is a compromise, not a consensus: `astro` asks for `^4.3.0` (raised from `^4.1.1` in
+`astro@7.1.6`), `@astrojs/starlight` and `@astrojs/internal-helpers` for `^4.1.1`, `cosmiconfig` for
+`^4.1.0` and `@istanbuljs/load-nyc-config` for `^3`, but `markdownlint-cli2` pins `5.2.2` **exactly**
+and is force-downgraded to `4.3.0` by this override. That downgrade is verified green through
+`lint:md`. `4.3.0` is the newest `4.x`, so Astro's bump changed nothing but the recorded `expect` in
+[`pinned-versions.json`](pinned-versions.json). When Astro moves to `js-yaml@5`, the pin can be
+retired — until then, check `lint:md` as well as `docs:build` on any bump.
 
 Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yaml's `safeLoad` /
 `safeDump` at **module-load** time, and both were removed in js-yaml v4 — so merely *importing*
@@ -499,6 +501,22 @@ Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yam
 option can override the default. `scripts/docs-gen/generate-og-images.ts` therefore parses frontmatter
 itself with `yaml`. (`yaml`, not `js-yaml`: `depend/ban-dependencies` bans `js-yaml` as a *direct*
 dependency, which is why it only ever appears under `overrides`.)
+
+### `@astrojs/markdown-remark` is a direct devDependency on purpose
+
+Astro 7 made Sätteri its default Markdown processor and **stopped installing `@astrojs/markdown-remark`**,
+but `markdown.remarkPlugins` (used by [`astro.config.ts`](astro.config.ts) for `remarkRelativeLinks`) still
+runs on the `unified` processor from that package. Without it as a direct dependency, `npm run docs:build`
+dies during config validation with
+
+```text
+`markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` run on the `unified`
+processor from `@astrojs/markdown-remark`, which is no longer installed by default …
+```
+
+`@astrojs/mdx` pulls its own **nested** copy, which does not satisfy this — the resolution has to succeed
+from the project root. So the package is listed in `devDependencies`; do not drop it as "already
+transitively available". It retires only if `astro.config.ts` stops using remark/rehype plugins.
 
 ### Security overrides (`brace-expansion` GHSA-mh99-v99m-4gvg)
 
