@@ -8,6 +8,7 @@ import type { BaseComponent } from 'obsidian';
 
 import { Setting } from 'obsidian';
 
+import { castTo } from '../object-utils.ts';
 import { CheckboxComponent } from './setting-components/checkbox-component.ts';
 import { CodeHighlighterComponent } from './setting-components/code-highlighter-component.ts';
 import { DateComponent } from './setting-components/date-component.ts';
@@ -250,4 +251,26 @@ export class SettingEx extends Setting {
   public addWeek(cb: (week: WeekComponent) => void): this {
     return this.addComponentClass(WeekComponent, cb);
   }
+}
+
+/**
+ * Adopts a plain {@link Setting} into a {@link SettingEx}, returning the very same instance.
+ *
+ * Obsidian's declarative settings API creates the row itself and hands a plain {@link Setting} to a
+ * `SettingDefinitionRender.render` callback, so the extended adders are out of reach there. Re-pointing the
+ * instance's prototype at {@link SettingEx.prototype} makes them available on the object Obsidian already
+ * owns and keeps rendering: {@link SettingEx} declares no instance state and its constructor only delegates
+ * to `super`, and `SettingEx.prototype` inherits from the very `Setting.prototype` the instance came from,
+ * so every method Obsidian relies on — including the ones absent from the public typings — stays reachable.
+ *
+ * @param setting - The setting to adopt.
+ * @returns The same instance, typed as a {@link SettingEx}.
+ */
+export function adoptSettingEx(setting: Setting): SettingEx {
+  if (setting instanceof SettingEx) {
+    return setting;
+  }
+
+  Object.setPrototypeOf(setting, SettingEx.prototype);
+  return castTo<SettingEx>(setting);
 }

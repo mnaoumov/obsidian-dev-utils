@@ -1,9 +1,18 @@
 import type {
   App as AppOriginal,
-  Plugin
+  Plugin,
+  Setting as SettingApi,
+  SettingDefinitionGroup,
+  SettingDefinitionItem,
+  SettingDefinitionRender,
+  SettingGroup as SettingGroupApi
 } from 'obsidian';
 
-import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  App,
+  Setting,
+  SettingGroup
+} from 'obsidian-test-mocks/obsidian';
 import {
   beforeEach,
   describe,
@@ -18,10 +27,18 @@ import type {
 } from '../../function.ts';
 import type { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
+import type {
+  PluginSettingsTabBaseSettingExParams,
+  PluginSettingsTabBaseSettingGroupExParams
+} from './plugin-settings-tab.ts';
 
-import { noopAsync } from '../../function.ts';
+import {
+  noop,
+  noopAsync
+} from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
+import { SettingEx } from '../setting-ex.ts';
 import {
   PluginSettingsTabBase,
   SAVE_TO_FILE_CONTEXT
@@ -64,6 +81,22 @@ interface TextBasedMockComponentShape extends MockValueComponentBase {
   empty: ReturnType<typeof vi.fn>;
   isEmpty: ReturnType<typeof vi.fn>;
   setPlaceholderValue: ReturnType<typeof vi.fn>;
+}
+
+class DeclarativeSettingsTab extends PluginSettingsTabBase<TestSettings> {
+  public definitionItems: SettingDefinitionItem[] = [];
+
+  public override getSettingDefinitionItems(): SettingDefinitionItem[] {
+    return this.definitionItems;
+  }
+
+  public override settingEx(params: PluginSettingsTabBaseSettingExParams): SettingDefinitionRender {
+    return super.settingEx(params);
+  }
+
+  public override settingGroupEx(params: PluginSettingsTabBaseSettingGroupExParams): SettingDefinitionGroup {
+    return super.settingGroupEx(params);
+  }
 }
 
 class TestSettingsTab extends PluginSettingsTabBase<TestSettings> {
@@ -420,12 +453,15 @@ describe('PluginSettingsTabBase', () => {
     await saveSettingsCallback(state, state, SAVE_TO_FILE_CONTEXT);
   });
 
-  it('should call display when onSaveSettings is called with non-tab context', async () => {
+  it('should refresh when onSaveSettings is called with non-tab context', async () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.displayLegacy();
-    tab.displayCalled = false;
+
+    // Obsidian re-renders from `update()`: it refreshes the definitions and, for a tab that provides none,
+    // Falls back to `display()` -> `displayLegacy()`.
+    const updateSpy = vi.spyOn(tab, 'update');
 
     const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
     const onCall = onCalls.find((call) => call[0] === 'saveSettings');
@@ -439,15 +475,16 @@ describe('PluginSettingsTabBase', () => {
       validationMessages: { enabled: '', name: '' }
     };
     await saveSettingsCallback(state, state, 'someOtherContext');
-    expect(tab.displayCalled).toBe(true);
+    expect(updateSpy).toHaveBeenCalled();
   });
 
-  it('should call display when onLoadSettings is triggered', async () => {
+  it('should refresh when onLoadSettings is triggered', async () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.displayLegacy();
-    tab.displayCalled = false;
+
+    const updateSpy = vi.spyOn(tab, 'update');
 
     const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
     const onCall = onCalls.find((call) => call[0] === 'loadSettings');
@@ -457,7 +494,7 @@ describe('PluginSettingsTabBase', () => {
     ) => Promise<void>;
 
     await loadSettingsCallback({}, false);
-    expect(tab.displayCalled).toBe(true);
+    expect(updateSpy).toHaveBeenCalled();
   });
 
   it('should handle bind with text component and shouldEmptyOnBlur', async () => {
@@ -964,6 +1001,231 @@ describe('PluginSettingsTabBase', () => {
   });
 });
 
+describe('PluginSettingsTabBase declarative settings', () => {
+  it('should expose the consumer definitions to Obsidian', () => {
+    const tab = createDeclarativeTab();
+    const definition = tab.settingEx({ name: 'Name', render: noop });
+    tab.definitionItems = [definition];
+
+    expect(tab.getSettingDefinitions()).toEqual([definition]);
+  });
+
+  it('should build a heading group around the rows', () => {
+    const tab = createDeclarativeTab();
+    const row = tab.settingEx({ name: 'Name', render: noop });
+
+    const group = tab.settingGroupEx({ heading: 'Heading', items: [row] });
+
+    expect(group).toEqual({
+      heading: 'Heading',
+      items: [row],
+      type: 'group'
+    });
+  });
+
+  it('should fall back to the legacy path when the consumer provides no definitions', () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+
+    expect(tab.getSettingDefinitions()).toEqual([]);
+  });
+
+  it('should adopt the setting into a SettingEx before rendering the row', () => {
+    const tab = createDeclarativeTab();
+    let renderedSetting: SettingEx | undefined;
+    const definition = tab.settingEx({
+      name: 'Name',
+      render: (setting) => {
+        renderedSetting = setting;
+      }
+    });
+
+    const setting = createMockSetting();
+    definition.render(setting, createMockSettingGroup());
+
+    expect(renderedSetting).toBe(setting);
+    expect(renderedSetting).toBeInstanceOf(SettingEx);
+  });
+
+  it('should pass the predicates through to the definition', () => {
+    const tab = createDeclarativeTab();
+    const definition = tab.settingEx({
+      aliases: ['alias'],
+      desc: 'Desc',
+      disabled: isDisabled,
+      name: 'Name',
+      render: noop,
+      visible: false
+    });
+
+    // Obsidian re-evaluates them on every render and on every `refreshDomState()`.
+    expect(definition.disabled).toBe(isDisabled);
+    expect(definition.visible).toBe(false);
+    expect(definition.aliases).toEqual(['alias']);
+    expect(definition.desc).toBe('Desc');
+    expect(definition.name).toBe('Name');
+  });
+
+  it('should release the row subscriptions when Obsidian tears the row down', () => {
+    const tab = createDeclarativeTab();
+    const countLiveListeners = trackValidationListeners(tab);
+    const consumerCleanup = vi.fn();
+
+    const definition = tab.settingEx({
+      name: 'Name',
+      render: () => {
+        tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
+        return consumerCleanup;
+      }
+    });
+
+    const cleanup = definition.render(createMockSetting(), createMockSettingGroup());
+    expect(countLiveListeners()).toBe(1);
+
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    expect(consumerCleanup).toHaveBeenCalledOnce();
+    expect(countLiveListeners()).toBe(0);
+  });
+
+  it('should release the row subscriptions even when the row returns no cleanup', () => {
+    const tab = createDeclarativeTab();
+    const countLiveListeners = trackValidationListeners(tab);
+
+    const definition = tab.settingEx({
+      name: 'Name',
+      render: () => {
+        tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
+      }
+    });
+
+    const cleanup = definition.render(createMockSetting(), createMockSettingGroup());
+    expect(countLiveListeners()).toBe(1);
+
+    if (typeof cleanup === 'function') {
+      cleanup();
+    }
+
+    expect(countLiveListeners()).toBe(0);
+  });
+
+  it('should keep every rendered row subscribed while it is on screen', () => {
+    const tab = createDeclarativeTab();
+    const countLiveListeners = trackValidationListeners(tab);
+
+    const ROW_COUNT = 3;
+    for (let i = 0; i < ROW_COUNT; i++) {
+      const definition = tab.settingEx({
+        name: `Name ${String(i)}`,
+        render: () => {
+          tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
+        }
+      });
+      definition.render(createMockSetting(), createMockSettingGroup());
+    }
+
+    expect(countLiveListeners()).toBe(ROW_COUNT);
+  });
+
+  it('should read and write control values through the settings component', async () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+
+    expect(tab.getControlValue('name')).toBe('test');
+
+    await tab.setControlValue('name', 'newValue');
+
+    expect(pluginSettingsComponent.setProperty).toHaveBeenCalledWith('name', 'newValue');
+  });
+});
+
+describe('PluginSettingsTabBase render lifecycle', () => {
+  it('should subscribe to the settings component only once across render cycles', () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+
+    const RENDER_CYCLE_COUNT = 3;
+    for (let i = 0; i < RENDER_CYCLE_COUNT; i++) {
+      tab.displayLegacy();
+    }
+
+    // `loadSettings` and `saveSettings`, registered when the component loads — NOT once per render.
+    const EXPECTED_SUBSCRIPTION_COUNT = 2;
+    expect(pluginSettingsComponent.on).toHaveBeenCalledTimes(EXPECTED_SUBSCRIPTION_COUNT);
+  });
+
+  it('should not accumulate row subscriptions across render cycles', () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+    const countLiveListeners = trackValidationListeners(tab);
+
+    const RENDER_CYCLE_COUNT = 3;
+    for (let i = 0; i < RENDER_CYCLE_COUNT; i++) {
+      tab.displayLegacy();
+      tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
+    }
+
+    expect(countLiveListeners()).toBe(1);
+  });
+
+  it('should release the row subscriptions when the tab is hidden', () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+    const countLiveListeners = trackValidationListeners(tab);
+
+    tab.displayLegacy();
+    tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
+    expect(countLiveListeners()).toBe(1);
+
+    tab.hide();
+
+    expect(countLiveListeners()).toBe(0);
+  });
+
+  it('should resubscribe to the settings component when the tab is shown again', () => {
+    const plugin = createMockPlugin(app);
+    const pluginSettingsComponent = createMockSettingsComponent();
+    const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
+
+    tab.displayLegacy();
+    tab.hide();
+    tab.displayLegacy();
+
+    const EXPECTED_SUBSCRIPTION_COUNT = 4;
+    expect(pluginSettingsComponent.on).toHaveBeenCalledTimes(EXPECTED_SUBSCRIPTION_COUNT);
+  });
+});
+
+function createDeclarativeTab(): DeclarativeSettingsTab {
+  return new DeclarativeSettingsTab({
+    plugin: createMockPlugin(app),
+    pluginSettingsComponent: createMockSettingsComponent()
+  });
+}
+
+function createMockSetting(): SettingApi {
+  return Setting.create__(createDiv()).asOriginalType__();
+}
+
+function createMockSettingGroup(): SettingGroupApi {
+  return SettingGroup.create__(createDiv()).asOriginalType__();
+}
+
+function createMockValueComponent(): ValueComponentWithChangeTracking<string> {
+  const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
+    onChange: vi.fn(() => mockComponent),
+    setValue: vi.fn()
+  });
+  return mockComponent;
+}
+
 function createTextBasedMockComponent(): TextBasedMockComponentShape & ValueComponentWithChangeTracking<string> {
   const mockComponent = {
     empty: vi.fn(),
@@ -973,4 +1235,32 @@ function createTextBasedMockComponent(): TextBasedMockComponentShape & ValueComp
     setValue: vi.fn()
   };
   return castTo<TextBasedMockComponentShape & ValueComponentWithChangeTracking<string>>(mockComponent);
+}
+
+function isDisabled(): boolean {
+  return true;
+}
+
+/**
+ * Counts the `validationMessageChanged` listeners the tab currently holds.
+ *
+ * `bind` registers exactly one per row and ties it to the render lifecycle, so the count is the number of
+ * rows still subscribed — which is what the leak regression is about. There is no public listener-count API,
+ * so registrations are counted through the tab's own `on` and cancellations through `offref` on the event
+ * source those registrations are released on.
+ *
+ * @param tab - The tab to track.
+ * @returns A function returning the number of live listeners.
+ */
+function trackValidationListeners(tab: PluginSettingsTabBase<TestSettings>): () => number {
+  // `validationMessageChanged` is the tab's only event, so every registration on the tab and every
+  // Cancellation on the source those registrations are released through belongs to it.
+  const probeRef = tab.on('validationMessageChanged', noop);
+  const { asyncEventSource } = probeRef;
+  tab.offref(probeRef);
+
+  const onSpy = vi.spyOn(tab, 'on');
+  const offrefSpy = vi.spyOn(asyncEventSource, 'offref');
+
+  return (): number => onSpy.mock.calls.length - offrefSpy.mock.calls.length;
 }

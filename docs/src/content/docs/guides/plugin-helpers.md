@@ -89,9 +89,70 @@ export class FooPluginSettingsTab extends PluginSettingsTabBase<FooPluginSetting
 }
 ```
 
+Obsidian 1.13 renders a settings tab from the definitions it returns, so a tab describes its rows instead of
+building them into a container. Override `getSettingDefinitionItems()` and build each row with `settingEx()`,
+grouping them with `settingGroupEx()`:
+
+```ts
+export class FooPluginSettingsTab extends PluginSettingsTabBase<FooPluginSettings> {
+  protected override getSettingDefinitionItems(): SettingDefinitionItem[] {
+    return [
+      this.settingGroupEx({
+        heading: 'Invalid characters',
+        items: [
+          this.settingEx({
+            desc: 'How to process invalid characters in the new title.',
+            name: 'Invalid characters action',
+            render: (setting) => {
+              setting.addDropdown((dropdown) => {
+                dropdown.addOptions({ Remove: 'Remove', Replace: 'Replace' });
+                this.bind({
+                  onChanged: () => {
+                    this.refreshDomState();
+                  },
+                  propertyName: 'invalidCharacterAction',
+                  valueComponent: dropdown
+                });
+              });
+            }
+          }),
+          this.settingEx({
+            disabled: () => this.pluginSettingsComponent.settings.invalidCharacterAction !== 'Replace',
+            name: 'Replacement character',
+            render: (setting) => {
+              setting.addText((text) => {
+                this.bind({ propertyName: 'replacementCharacter', valueComponent: text });
+              });
+            }
+          })
+        ]
+      })
+    ];
+  }
+}
+```
+
+Notes:
+
+- The `setting` a `render` callback receives is a full `SettingEx`, so every custom component
+  adder (`addNumber()`, `addMultipleText()`, `addCodeHighlighter()`, …) and `bind()` work exactly as they do
+  in an imperative tab.
+- `getSettingDefinitionItems()` **must be a pure builder**. Obsidian calls it when the tab is registered — at
+  plugin load, long before the tab is opened — to index the settings for search. Put anything with a side
+  effect inside a `render` callback, which runs only when the row is actually rendered.
+- `disabled` and `visible` accept a function, re-evaluated on every render and on every `refreshDomState()`.
+  Prefer `refreshDomState()` when only those predicates change: it toggles the rendered DOM in place. Use
+  `refresh()` only when the structure changes, i.e. rows are added or removed.
+- Native `control` definitions are supported too — `getControlValue()` / `setControlValue()` are wired to the
+  settings component — but `render` + `bind()` is the richer path: it carries validation messages, the
+  reset-when-empty behavior, placeholders for default values, and the value converters.
+- A tab that has not migrated keeps working: leave `getSettingDefinitionItems()` alone and override
+  `displayLegacy()`, which Obsidian falls back to when the definitions are empty.
+
 The most important methods in the execution order:
 
-- `display()`
+- `getSettingDefinitionItems()` (or `displayLegacy()` for the imperative fallback)
+- `settingGroupEx()` / `settingEx()`
 - `bind()`
 
 ## Working with plugin settings
