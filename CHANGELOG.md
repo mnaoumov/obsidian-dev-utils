@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 88.6.0
+
+- feat(plugin-settings-tab): render declaratively via the Obsidian 1.13 settings API
+- fix(component-ex): abandon lifecycle-guarded work quietly after unload
+- fix(deps): correct @lezer/common to 1.5.2, the version Obsidian bundles
+- chore: update libs
+
 ## 88.5.0
 
 - feat(integration-test): publish the consumer integration-test setup
