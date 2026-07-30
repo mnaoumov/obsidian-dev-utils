@@ -1,11 +1,11 @@
 import type {
   App as AppOriginal,
   Plugin,
-  Setting as SettingOriginal,
+  Setting as SettingApi,
   SettingDefinitionGroup,
   SettingDefinitionItem,
   SettingDefinitionRender,
-  SettingGroup as SettingGroupOriginal
+  SettingGroup as SettingGroupApi
 } from 'obsidian';
 
 import {
@@ -1210,11 +1210,11 @@ function createDeclarativeTab(): DeclarativeSettingsTab {
   });
 }
 
-function createMockSetting(): SettingOriginal {
+function createMockSetting(): SettingApi {
   return Setting.create__(createDiv()).asOriginalType__();
 }
 
-function createMockSettingGroup(): SettingGroupOriginal {
+function createMockSettingGroup(): SettingGroupApi {
   return SettingGroup.create__(createDiv()).asOriginalType__();
 }
 
