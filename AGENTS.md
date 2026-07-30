@@ -443,7 +443,7 @@ retired by anyone but its author — do not add one.**
 | --- | --- | --- | --- |
 | `@codemirror/state` | `6.5.0` | `obsidian`'s `peerDependencies` names this exact version. A second copy in the tree means two CodeMirror state instances at runtime. | `obsidian` names a different version — see "the CodeMirror pins are already due" below. |
 | `@codemirror/view` | `6.38.6` | Same — `obsidian` peer-pins it exactly. | Same as above. |
-| `@lezer/common` | `1.2.3` | Must match the copy Obsidian bundles at runtime. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. Rationale **unconfirmed** — see below. | Obsidian's bundled Lezer version changes. No mechanical check exists — `obsidian-api` declares no `@lezer/*` at all. |
+| `@lezer/common` | `1.5.2` | Must match the copy Obsidian bundles at runtime — our copy is types-only, so a newer pin declares API the runtime lacks. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. Verified against Obsidian `1.13.4` — see below. | A newer `@lezer/common` publishes — `npm view @lezer/common version` — which is the cue to re-derive what Obsidian bundles, not proof the pin is stale. `obsidian-api` still declares no `@lezer/*`, so there is no upstream manifest to ask. |
 | `typescript` | `6.0.3` | `@typescript-eslint` peer-requires `>=4.8.4 <6.1.0`, and its parser crashes on the TypeScript 7 (tsgo) native API, so type-aware ESLint cannot run on 7. TypeScript 7 was adopted in `db7c417c` (compile on 7, tooling on 6) and rolled back in `846d6c6a`; `3234c7d0` then made the pin exact so a dependency sweep could not drift it back. `6.0.3` is also the newest stable `6.x`. | `@typescript-eslint`'s peer range admits `7.x` — `node -e "console.log(require('typescript-eslint/package.json').peerDependencies.typescript)"` |
 | `js-yaml` (override) | `4.3.0` | `js-yaml@5` breaks `npm run docs:build` — see the next section. | `astro` accepts `js-yaml@5` — `node -e "console.log(require('astro/package.json').dependencies['js-yaml'])"` |
 
@@ -463,14 +463,33 @@ npm view obsidian version                                                 # what
 # and https://github.com/obsidianmd/obsidian-api/blob/master/package.json  # what is coming
 ```
 
-`@lezer/common` is the one pin whose rationale is not established. `1fdd8d24` ("chore: update libs")
-**downgraded** it from `^1.4.0` to `1.2.3` — a deliberate downgrade inside an upgrade sweep, so it is
-almost certainly load-bearing — but recorded no reason, and the previous wording here ("`obsidian` uses
-this version at runtime") was inherited rather than verified. `obsidian-api`'s manifest lists **no**
-`@lezer/*` entry in any section, so unlike the CodeMirror pins there is no declared upstream version to
-compare against; Obsidian bundles Lezer inside `app.js`. Settle it by bumping to `^1.5` and running
-`build:compile:typescript` plus the editor integration tests
-(`src/obsidian/editor.obsidian.integration.test.ts`), then record what actually breaks.
+**`@lezer/common` was settled by reading the bundle — and `1.2.3` was simply wrong.** `1fdd8d24`
+("chore: update libs") had **downgraded** it from `^1.4.0` to `1.2.3` inside an upgrade sweep without
+recording a reason, and the old wording here ("`obsidian` uses this version at runtime") was inherited
+rather than verified. `obsidian-api`'s manifest lists **no** `@lezer/*` entry in any section, so unlike
+the CodeMirror pins there is no declared upstream version to compare against — Obsidian bundles Lezer
+inside `app.js`, which is also where the pin's *reason* is visible: `app.js` registers `'@lezer/common'`
+in the module map it hands to plugins (Obsidian `1.13.4`, `app.js:167784`), so our copy is types-only.
+
+The bundle carries no version string, but the implementation is identifiable. Diff the `dist` of
+candidate versions (`npm pack @lezer/common@<v>`) and grep `app.js` for what distinguishes them; against
+Obsidian `1.13.4` (exactly one Lezer copy in the bundle) the markers land on **`1.5.2`**:
+
+| Marker present in `app.js` | Introduced in |
+| --- | --- |
+| `combine` field on the `NodeProp` constructor; `depth++` on the active overlay after `materialize` | `1.3.0` |
+| `-4 == size` (`SpecialRecord.LookAhead`) accepted in the skipped-node scan | `1.4.0` |
+| `IterMode.EnterBracketed = 16`; `MountedTree.bracketed` | `1.5.0` |
+| `nextChild`'s bracketed test in the `!mounted.overlay && mounted.bracketed && pos >= start` form (`1.5.0` used an `?.overlay === null` form) | `1.5.1` |
+| `FragmentCursor.moveTo` guarding the advance with `cursor.to <= pos` | `1.5.2` |
+
+`npm view @lezer/common version` is therefore a *trigger*, not a verdict: when it moves past `1.5.2`,
+re-run the marker comparison against the current `app.js` before touching the pin. A single value can
+serve as the pin because this project targets the **latest** Obsidian only — "what Obsidian bundles"
+always means the current release, and no older bundle has to stay satisfied. Stronger enforcement
+would be an integration test — the harness runs inside Obsidian, where `require('@lezer/common')`
+returns the real bundled module, so its export keys and `IterMode` members can be compared against the
+installed copy — which is the mismatch that actually bites. Not written yet.
 
 Not pinned, despite what this table used to claim: `@types/node` is `^26.1.2`. The old row said
 `25.0.3` "matches the Node.js version used in the project"; it has since moved to a caret range and

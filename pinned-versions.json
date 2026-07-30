@@ -24,10 +24,10 @@
     },
     "@lezer/common": {
       "section": "dependencies",
-      "why": "Must match the copy Obsidian bundles at runtime: app.js registers '@lezer/common' in the module map it hands to plugins, so our copy is types-only. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. The specific version 1.2.3 is UNCONFIRMED — 1fdd8d24 downgraded it from ^1.4.0 without recording a reason.",
-      "check": null,
-      "expect": null,
-      "manualCheck": "The bundle embeds no version string (the only '1.2.3' in app.js is SVG path data in the donut icon). Settle it by bumping to ^1.5 and running build:compile:typescript plus src/obsidian/editor.obsidian.integration.test.ts."
+      "why": "Must match the copy Obsidian bundles at runtime: app.js registers '@lezer/common' in the module map it hands to plugins, so our copy is types-only and a newer pin would declare API the runtime lacks. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. 1.5.2 was established by feature-marker comparison against Obsidian 1.13.4's app.js — see manualCheck. It replaced 1.2.3, which 1fdd8d24 had downgraded to from ^1.4.0 without a reason and which never matched the runtime.",
+      "check": "npm view @lezer/common version",
+      "expect": "1.5.2",
+      "manualCheck": "The check is a re-examination trigger, not proof: a newer publish means re-derive what Obsidian bundles, it does not by itself make the pin stale. The bundle embeds no version string, so derive it from feature markers — diff the dist of candidate versions (npm pack) and grep app.js for what distinguishes them. For 1.13.4: NodeProp 'combine' field and overlay 'depth++' after materialize => >=1.3.0; '-4 == size' (SpecialRecord.LookAhead) in the skipped-node scan => >=1.4.0; IterMode.EnterBracketed = 16 and MountedTree.bracketed => >=1.5.0; nextChild's bracketed test in the '!mounted.overlay && mounted.bracketed && pos >= start' form => >=1.5.1; FragmentCursor.moveTo guarding with 'cursor.to <= pos' => 1.5.2. Then run build:compile:typescript plus src/obsidian/editor.obsidian.integration.test.ts."
     },
     "typescript": {
       "section": "dependencies",
