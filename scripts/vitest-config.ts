@@ -33,6 +33,7 @@ const ESLINT_TYPECHECK_TEST_FILES = 'src/script-utils/linters/eslint-rules/*.tes
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
 const DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE = 'src/obsidian/demo-vault-helper.obsidian.integration.test.ts';
+const CONSUMER_LIB_INTEGRATION_TEST_FILE = 'src/integration-test-lib.obsidian.integration.test.ts';
 const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
 const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
@@ -53,7 +54,7 @@ export const config = defineConfig({
           include: [DOCS_GENERATOR_TEST_FILES, DOCS_SITE_TEST_FILES],
           name: 'unit-tests:docs-generator',
           setupFiles: [],
-          // Rasterizing an OG image (satori + resvg) and building a ts-morph Project are genuinely slow.
+          // Rendering an OG image to a bitmap (satori + resvg) and building a ts-morph Project are genuinely slow.
           // Under the full aggregate they lose the CPU race and the default 5000 ms times them out.
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
@@ -127,7 +128,7 @@ export const config = defineConfig({
           // These integration tests share ONE Obsidian instance and mutate its global state.
           // Parallel files would stomp each other: focus and the active workspace are global.
           // So this project runs serially in a single worker.
-          exclude: [...SHARED_EXCLUDE, DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE],
+          exclude: [...SHARED_EXCLUDE, DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE, CONSUMER_LIB_INTEGRATION_TEST_FILE],
           fileParallelism: false,
           globalSetup: ['./scripts/integration-test-obsidian-global-setup.ts'],
           include: [OBSIDIAN_INTEGRATION_TEST_FILES],
@@ -152,6 +153,24 @@ export const config = defineConfig({
           maxWorkers: 1,
           name: 'obsidian-integration-tests:demo-vault-helper',
           setupFiles: ['obsidian-integration-testing/vitest-setup'],
+          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+        }
+      },
+      {
+        test: {
+          environment: 'node',
+          // Proves the CONSUMER wiring, which no other project can: its own Obsidian instance/vault has NO
+          // Plugin-under-test, and the harness plugin is seeded + enabled as a plain community plugin exactly
+          // As a consumer's would be. `setupFiles` names the PUBLISHED setup endpoint on purpose.
+          fileParallelism: false,
+          globalSetup: ['./scripts/integration-test-consumer-lib-global-setup.ts'],
+          include: [CONSUMER_LIB_INTEGRATION_TEST_FILE],
+          maxWorkers: 1,
+          name: 'obsidian-integration-tests:consumer-lib',
+          setupFiles: [
+            'obsidian-integration-testing/vitest-setup',
+            './src/integration-test-setup.ts'
+          ],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
       }
