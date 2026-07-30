@@ -12,10 +12,24 @@ import {
   vi
 } from 'vitest';
 
-import { ErrorWrapper } from '../../error.ts';
+import {
+  ErrorWrapper,
+  SilentError
+} from '../../error.ts';
 import { noopAsync } from '../../function.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { ComponentEx } from './component-ex.ts';
+
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
+class LifecycleGuardsComponentEx extends ComponentEx {
+  public invokeEnsureLoaded(): void {
+    this.ensureLoaded();
+  }
+
+  public invokeIsUnloaded(): boolean {
+    return this.isUnloaded();
+  }
+}
 
 // eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
 class SyncComponentEx extends ComponentEx {
@@ -263,6 +277,94 @@ describe('ComponentEx', () => {
 
       await parent.loadWithPromises();
       expect(child.asyncLoadFn).toHaveBeenCalledOnce();
+    });
+
+    it('should throw a SilentError and add nothing when the parent is already unloaded', () => {
+      const parent = new SyncComponentEx();
+      parent.load();
+      parent.unload();
+
+      const child = new SyncComponentEx();
+
+      expect(() => {
+        parent.addChild(child);
+      }).toThrow(SilentError);
+      expect(parent._children).not.toContain(child);
+      expect(child._loaded).toBe(false);
+    });
+
+    it('should accept a child again after the parent is reloaded', () => {
+      const parent = new SyncComponentEx();
+      parent.load();
+      parent.unload();
+      parent.load();
+
+      const child = new SyncComponentEx();
+
+      expect(parent.addChild(child)).toBe(child);
+      expect(child._loaded).toBe(true);
+    });
+  });
+
+  describe('ensureLoaded', () => {
+    it('should throw a loud Error when the component was never loaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).toThrow('Component is not loaded');
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).not.toThrow(SilentError);
+    });
+
+    it('should not throw when the component is loaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).not.toThrow();
+    });
+
+    it('should throw a SilentError when the component is already unloaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      component.unload();
+
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).toThrow(SilentError);
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).toThrow('Component is already unloaded');
+    });
+  });
+
+  describe('isUnloaded', () => {
+    it('should be false before the first load', () => {
+      expect(new LifecycleGuardsComponentEx().invokeIsUnloaded()).toBe(false);
+    });
+
+    it('should be false while loaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      expect(component.invokeIsUnloaded()).toBe(false);
+    });
+
+    it('should be true after unload', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      component.unload();
+      expect(component.invokeIsUnloaded()).toBe(true);
+    });
+
+    it('should be false again after a reload', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      component.unload();
+      component.load();
+      expect(component.invokeIsUnloaded()).toBe(false);
     });
   });
 

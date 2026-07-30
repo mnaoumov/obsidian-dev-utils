@@ -8,7 +8,10 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
-import { ErrorWrapper } from '../../error.ts';
+import {
+  ErrorWrapper,
+  SilentError
+} from '../../error.ts';
 import {
   noop,
   noopAsyncSingletonPromise
@@ -20,6 +23,7 @@ import {
 // eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Extended base class.
 export class ComponentEx extends Component implements Disposable {
   private readonly childrenSet = new Set<Component>();
+  private hasBeenLoaded = false;
   private loadErrors: Error[] = [];
   private loadPromise: null | Promise<void> = null;
 
@@ -30,11 +34,22 @@ export class ComponentEx extends Component implements Disposable {
    * immediately, so `child._loaded` is set before this method returns even when this component has async load logic.
    * The child's async tail (if any) is sequenced into the load promise so a later {@link loadWithPromises} call awaits it.
    *
+   * Adding a child BEFORE the first load is legitimate: the child is queued and loaded when this component loads.
+   * Adding one AFTER this component has been unloaded is not — the child would never be loaded and never unloaded
+   * (a leak), so it is refused with a {@link SilentError}. The typical source of such a call is an `async` method
+   * that was suspended on an `await` when the component got unloaded and then resumed on the dead component; the
+   * {@link SilentError} unwinds it quietly (see {@link isUnloaded}).
+   *
    * @typeParam TComponent - The type of component to add.
    * @param component - The component instance to add.
    * @returns The added component.
+   * @throws A {@link SilentError} if the component has already been unloaded.
    */
   public override addChild<TComponent extends Component>(component: TComponent): TComponent {
+    if (this.isUnloaded()) {
+      throw new SilentError('Component is already unloaded');
+    }
+
     this._children.push(component);
     this.childrenSet.add(component);
 
@@ -56,6 +71,7 @@ export class ComponentEx extends Component implements Disposable {
     }
 
     this._loaded = true;
+    this.hasBeenLoaded = true;
     this.resetLoadState();
 
     this.onload();
@@ -159,12 +175,24 @@ export class ComponentEx extends Component implements Disposable {
    * {@link Component.unload} is a no-op while the component is not loaded, so any teardown registered beforehand would
    * never run if the component is unloaded without first being loaded.
    *
-   * @throws An {@link Error} if the component is not loaded.
+   * The two not-loaded cases are deliberately distinguished. A component that was NEVER loaded is a genuine
+   * programming error, so it throws a loud {@link Error}. A component that has ALREADY been unloaded is not —
+   * it is the expected outcome of work that outlived its component (e.g. an `async` method suspended on an
+   * `await` while the component was unloaded, then resumed) — so it throws a {@link SilentError}, which
+   * `handleSilentError` suppresses, letting such work unwind quietly instead of reporting an async error.
+   *
+   * @throws An {@link Error} if the component was never loaded, or a {@link SilentError} if it has already been unloaded.
    */
   protected ensureLoaded(): void {
-    if (!this._loaded) {
-      throw new Error('Component is not loaded');
+    if (this._loaded) {
+      return;
     }
+
+    if (this.isUnloaded()) {
+      throw new SilentError('Component is already unloaded');
+    }
+
+    throw new Error('Component is not loaded');
   }
 
   /**
@@ -194,6 +222,23 @@ export class ComponentEx extends Component implements Disposable {
    */
   protected hasLoadErrors(): boolean {
     return this.loadErrors.length > 0;
+  }
+
+  /**
+   * Returns whether the component has already been unloaded, as opposed to simply not having been loaded yet.
+   *
+   * Both states leave `_loaded` false, but they mean opposite things: a component that was never loaded is still
+   * ahead of its lifecycle (queueing children before load is legitimate), while an unloaded one is behind it and
+   * must not be used any further. The distinction is tracked by a flag set in {@link load}, NOT by an
+   * {@link Component.onunload} override, because subclasses override `onunload` and may not call `super`.
+   *
+   * Use it in a long-running `async` method to abandon work whose component was unloaded mid-flight, when
+   * unwinding via the {@link SilentError} thrown by {@link ensureLoaded} / {@link addChild} is not desired.
+   *
+   * @returns `true` if the component was loaded at some point and is currently unloaded, otherwise `false`.
+   */
+  protected isUnloaded(): boolean {
+    return this.hasBeenLoaded && !this._loaded;
   }
 
   /**
