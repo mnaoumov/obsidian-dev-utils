@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { Setting } from 'obsidian';
 import {
   beforeEach,
   describe,
@@ -9,7 +10,10 @@ import {
 } from 'vitest';
 
 import { noop } from '../function.ts';
-import { SettingEx } from './setting-ex.ts';
+import {
+  adoptSettingEx,
+  SettingEx
+} from './setting-ex.ts';
 
 const mocks = vi.hoisted(() => {
   class MockComponentClass {
@@ -252,5 +256,26 @@ describe('SettingEx', () => {
       expect(result).toBe(settingEx);
       expect(cb).toHaveBeenCalled();
     });
+  });
+});
+
+describe('adoptSettingEx', () => {
+  it('should adopt a plain setting in place', () => {
+    const setting = new Setting(createDiv());
+
+    const adopted = adoptSettingEx(setting);
+
+    // Obsidian keeps rendering the very object it created, so adoption must not replace it.
+    expect(adopted).toBe(setting);
+    expect(adopted).toBeInstanceOf(SettingEx);
+    const cb = vi.fn();
+    adopted.addNumber(cb);
+    expect(cb).toHaveBeenCalled();
+  });
+
+  it('should leave an already adopted setting untouched', () => {
+    const settingEx = new SettingEx(createDiv());
+
+    expect(adoptSettingEx(settingEx)).toBe(settingEx);
   });
 });

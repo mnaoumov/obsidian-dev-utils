@@ -7,10 +7,16 @@
 
 import type {
   Debouncer,
-  Plugin
+  Plugin,
+  Setting,
+  SettingDefinitionGroup,
+  SettingDefinitionItem,
+  SettingDefinitionRender,
+  SettingGroup
 } from 'obsidian';
 import type {
   ConditionalKeys,
+  Except,
   Promisable,
   ReadonlyDeep
 } from 'type-fest';
@@ -28,6 +34,7 @@ import type {
   ReadonlyPluginSettingsState
 } from '../components/plugin-settings-component.ts';
 import type { ValueComponentWithChangeTracking } from '../setting-components/value-component-with-change-tracking.ts';
+import type { SettingEx } from '../setting-ex.ts';
 import type { ValidationMessageHolder } from '../validation.ts';
 
 import { mixinAsyncEvents } from '../../async-events.ts';
@@ -39,7 +46,11 @@ import {
   noop,
   noopAsync
 } from '../../function.ts';
-import { deepEqual } from '../../object-utils.ts';
+import {
+  castTo,
+  deepEqual,
+  normalizeOptionalProperties
+} from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { registerAsyncEvent } from '../components/async-events-component.ts';
 import { ComponentEx } from '../components/component-ex.ts';
@@ -47,6 +58,7 @@ import { CssClass } from '../css-class.ts';
 import { ensureWrapped } from '../setting-components/setting-component-wrapper.ts';
 import { getTextBasedComponentValue } from '../setting-components/text-based-component.ts';
 import { getValidatorComponent } from '../setting-components/validator-component.ts';
+import { adoptSettingEx } from '../setting-ex.ts';
 import { isValidationMessageHolder } from '../validation.ts';
 import { addPluginCssClasses } from './plugin-context.ts';
 
@@ -185,6 +197,69 @@ export interface PluginSettingsTabBaseConstructorParams<PluginSettings extends o
 }
 
 /**
+ * Params for {@link PluginSettingsTabBase.settingEx}.
+ */
+export interface PluginSettingsTabBaseSettingExParams {
+  /**
+   * Additional search terms for the setting.
+   */
+  readonly aliases?: string[];
+
+  /**
+   * The description of the setting. Used for rendering; the text content of a fragment is used for search.
+   */
+  readonly desc?: DocumentFragment | string;
+
+  /**
+   * Whether the setting row is disabled.
+   *
+   * A function form is re-evaluated on every render AND on every {@link PluginSettingsTabBase.refreshDomState}
+   * call, so it can reflect runtime state. Obsidian applies it with `Setting.setDisabled`, which disables the
+   * row and every component registered on it.
+   */
+  readonly disabled?: (() => boolean) | boolean;
+
+  /**
+   * The display name of the setting. Used for rendering and search.
+   */
+  readonly name: string;
+
+  /**
+   * Renders the setting row imperatively, typically via the {@link SettingEx} adders and
+   * {@link PluginSettingsTabBase.bind}.
+   *
+   * The setting Obsidian creates for the row is adopted into a {@link SettingEx} before it is handed over, so
+   * an imperative row body carries over unchanged. May return a cleanup function, invoked before the row is
+   * torn down or re-rendered.
+   *
+   * @param setting - The setting to render into.
+   * @param group - The group the setting belongs to.
+   * @returns An optional cleanup function.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- Mirrors Obsidian's `SettingDefinitionRender.render`, whose cleanup function is optional.
+  render(setting: SettingEx, group: SettingGroup): (() => void) | void;
+
+  /**
+   * Controls whether the setting is included in the settings search. Defaults to `true`.
+   */
+  readonly searchable?: (() => boolean) | boolean;
+
+  /**
+   * Controls whether the setting row is rendered. A function form is re-evaluated on every render and on
+   * every {@link PluginSettingsTabBase.refreshDomState} call. Defaults to `true`.
+   */
+  readonly visible?: (() => boolean) | boolean;
+}
+
+/**
+ * Params for {@link PluginSettingsTabBase.settingGroupEx}.
+ *
+ * Every member of {@link SettingDefinitionGroup} except its discriminator, which
+ * {@link PluginSettingsTabBase.settingGroupEx} sets.
+ */
+export type PluginSettingsTabBaseSettingGroupExParams = Except<SettingDefinitionGroup, 'type'>;
+
+/**
  * Implementation params for {@link PluginSettingsTabBase.bind}.
  *
  * @typeParam PluginSettings - The plugin settings type.
@@ -236,6 +311,85 @@ interface PluginSettingsTabBaseOnSaveSettingsParams<PluginSettings extends objec
 }
 
 /**
+ * Params for {@link PluginSettingsTabBase.renderSettingEx}.
+ */
+interface PluginSettingsTabBaseRenderSettingExParams {
+  /**
+   * The group the row belongs to.
+   */
+  readonly group: SettingGroup;
+
+  /**
+   * The setting Obsidian created for the row.
+   */
+  readonly setting: Setting;
+
+  /**
+   * The params the row was declared with.
+   */
+  readonly settingExParams: PluginSettingsTabBaseSettingExParams;
+}
+
+/**
+ * Constructor params for {@link PluginSettingsTabEventsComponent}.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
+ */
+interface PluginSettingsTabEventsComponentConstructorParams<PluginSettings extends object> {
+  /**
+   * Called when the plugin settings are loaded.
+   */
+  onLoadSettings(loadedState: ReadonlyPluginSettingsState<PluginSettings>, isInitialLoad: boolean): Promisable<void>;
+
+  /**
+   * Called when the plugin settings are saved.
+   */
+  onSaveSettings(
+    newState: ReadonlyPluginSettingsState<PluginSettings>,
+    oldState: ReadonlyPluginSettingsState<PluginSettings>,
+    context: unknown
+  ): Promisable<void>;
+
+  /**
+   * The settings component to subscribe to.
+   */
+  readonly pluginSettingsComponent: PluginSettingsComponentBase<PluginSettings>;
+}
+
+/**
+ * Owns the tab's subscriptions to the settings component.
+ *
+ * The subscriptions live in {@link onload} rather than at each render, so that a load/unload pair registers
+ * them exactly once. Registering them per render instead would accumulate a fresh pair on every render cycle,
+ * because {@link ComponentEx.load} early-returns once the component is loaded and nothing resets in between.
+ *
+ * @typeParam PluginSettings - The plugin settings type.
+ */
+class PluginSettingsTabEventsComponent<PluginSettings extends object> extends ComponentEx {
+  private readonly params: PluginSettingsTabEventsComponentConstructorParams<PluginSettings>;
+
+  /**
+   * Creates a new component.
+   *
+   * @param params - The params.
+   */
+  public constructor(params: PluginSettingsTabEventsComponentConstructorParams<PluginSettings>) {
+    super();
+    this.params = params;
+  }
+
+  /**
+   * Subscribes to the settings component's events.
+   */
+  public override onload(): void {
+    super.onload();
+    const { pluginSettingsComponent } = this.params;
+    registerAsyncEvent(this, pluginSettingsComponent.on('loadSettings', (loadedState, isInitialLoad) => this.params.onLoadSettings(loadedState, isInitialLoad)));
+    registerAsyncEvent(this, pluginSettingsComponent.on('saveSettings', (newState, oldState, context) => this.params.onSaveSettings(newState, oldState, context)));
+  }
+}
+
+/**
  * Base class for creating plugin settings tabs in Obsidian.
  * Provides a method for binding value components to plugin settings and handling changes.
  *
@@ -267,7 +421,8 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   }
 
   private _isOpen = false;
-  private readonly component: ComponentEx;
+  private readonly component: PluginSettingsTabEventsComponent<PluginSettings>;
+  private currentRenderComponent: ComponentEx | null = null;
   private readonly saveSettingsDebounced: Debouncer<[], void>;
 
   private get pluginSettings(): ReadonlyPluginSettings<PluginSettings> {
@@ -287,7 +442,11 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       convertAsyncToSync(() => this.pluginSettingsComponent.saveToFile(SAVE_TO_FILE_CONTEXT)),
       this.saveSettingsDebounceTimeoutInMilliseconds
     );
-    this.component = new ComponentEx();
+    this.component = new PluginSettingsTabEventsComponent<PluginSettings>({
+      onLoadSettings: (loadedState, isInitialLoad): Promisable<void> => this.onLoadSettings(loadedState, isInitialLoad),
+      onSaveSettings: (newState, oldState, context): Promisable<void> => this.onSaveSettings({ context, newState, oldState }),
+      pluginSettingsComponent: this.pluginSettingsComponent
+    });
   }
 
   /**
@@ -378,7 +537,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     }
 
     registerAsyncEvent(
-      this.component,
+      this.getRenderComponent(),
       this.on('validationMessageChanged', (anotherPropertyName, anotherValidationMessage) => {
         if (propertyName !== anotherPropertyName) {
           return;
@@ -511,16 +670,41 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   }
 
   /**
-   * Legacy way to render the plugin settings tab.
+   * Legacy way to render the plugin settings tab imperatively.
    *
-   * Temporary workaround to avoid dealing with `@deprecated`.
+   * The pre-declarative fallback: Obsidian only calls it when {@link getSettingDefinitions} returns an empty
+   * array, i.e. when the consumer has not overridden {@link getSettingDefinitionItems}. Such a consumer
+   * overrides this method and builds the UI with {@link SettingEx} and {@link bind}.
    */
   public displayLegacy(): void {
+    this.beginRenderCycle();
     this.containerEl.empty();
-    this._isOpen = true;
-    this.component.load();
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('loadSettings', this.onLoadSettings.bind(this)));
-    registerAsyncEvent(this.component, this.pluginSettingsComponent.on('saveSettings', (newState, oldState, context) => this.onSaveSettings({ context, newState, oldState })));
+  }
+
+  /**
+   * Reads the value backing a native `control` setting definition.
+   *
+   * Obsidian calls it on every render of a `control`-type definition. The inherited implementation reads
+   * `plugin.settings`, which a plugin built on {@link PluginSettingsComponentBase} never populates, so it is
+   * routed to the settings component instead.
+   *
+   * @param key - The settings property name.
+   * @returns The current value.
+   */
+  public override getControlValue(key: string): unknown {
+    return this.getPluginSettingsProperty(castTo<StringKeys<PluginSettings>>(key));
+  }
+
+  /**
+   * Returns the declarative setting definitions rendered by Obsidian 1.13+.
+   *
+   * Delegates to {@link getSettingDefinitionItems}. When a consumer has not overridden that hook it returns
+   * an empty array, and Obsidian falls back to the imperative {@link displayLegacy} path.
+   *
+   * @returns The setting definitions.
+   */
+  public override getSettingDefinitions(): SettingDefinitionItem[] {
+    return this.getSettingDefinitionItems();
   }
 
   /**
@@ -530,6 +714,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     super.hide();
     this.saveSettingsDebounced.cancel();
     this._isOpen = false;
+    this.endRenderCycle();
     this.component.unload();
     invokeAsyncSafely(() => this.hideAsync());
   }
@@ -544,10 +729,61 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   }
 
   /**
+   * Re-renders the settings tab after the underlying state changed.
+   *
+   * Rebuilds the definitions and re-renders, which covers both paths: Obsidian renders the declarative
+   * definitions when {@link getSettingDefinitionItems} provides them, and falls back to
+   * {@link displayLegacy} when it does not. Nothing is rendered while the tab is not the one on screen.
+   *
+   * Use it only for changes that alter the STRUCTURE of the tab — rows added or removed. When only a
+   * {@link PluginSettingsTabBaseSettingExParams.disabled} / {@link PluginSettingsTabBaseSettingExParams.visible}
+   * predicate has to be re-evaluated, call the much cheaper {@link refreshDomState} instead, which toggles the
+   * rendered DOM in place.
+   */
+  public refresh(): void {
+    this.update();
+  }
+
+  /**
+   * Persists the value of a native `control` setting definition.
+   *
+   * The counterpart of {@link getControlValue}: it routes the write to the settings component instead of the
+   * inherited `plugin.saveData` path, so validation, transformers and the debounced save all apply as they do
+   * for a {@link bind}-ed component.
+   *
+   * @param key - The settings property name.
+   * @param value - The value to persist.
+   * @returns A {@link Promise} that resolves when the value is set.
+   */
+  public override async setControlValue(key: string, value: unknown): Promise<void> {
+    type PropertyName = StringKeys<PluginSettings>;
+    await this.pluginSettingsComponent.setProperty(castTo<PropertyName>(key), castTo<PluginSettings[PropertyName]>(value));
+    this.saveSettingsDebounced();
+  }
+
+  /**
    * Shows the plugin settings tab.
    */
   public show(): void {
     this.app.setting.openTab(this);
+  }
+
+  /**
+   * The declarative setting definitions for the tab (Obsidian 1.13+).
+   *
+   * Consumers override this, typically building each row with {@link settingEx} and {@link bind} and grouping
+   * them with `settingGroupEx`. Returning an empty array — the default — makes Obsidian fall back to the
+   * imperative {@link displayLegacy} path.
+   *
+   * MUST be a pure builder. Obsidian calls it when the tab is registered (`addSettingTab`), long before the
+   * tab is ever opened, in order to index the settings for search. Anything with a side effect belongs inside
+   * a row's {@link PluginSettingsTabBaseSettingExParams.render} callback, which runs only when the row is
+   * actually rendered.
+   *
+   * @returns The setting definitions.
+   */
+  protected getSettingDefinitionItems(): SettingDefinitionItem[] {
+    return [];
   }
 
   /**
@@ -558,7 +794,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns A {@link Promise} that resolves when the settings are loaded.
    */
   protected async onLoadSettings(_loadedState: ReadonlyPluginSettingsState<PluginSettings>, _isInitialLoad: boolean): Promise<void> {
-    this.displayLegacy();
+    this.refresh();
     await noopAsync();
   }
 
@@ -572,11 +808,81 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     await this.updateValidations(validationMessages);
   }
 
+  /**
+   * Builds a search-indexable declarative row that is rendered imperatively.
+   *
+   * The bridge between the declarative API and ODU's imperative building blocks: Obsidian owns the row (so it
+   * indexes it for search and evaluates its {@link PluginSettingsTabBaseSettingExParams.visible} /
+   * {@link PluginSettingsTabBaseSettingExParams.disabled} predicates on every
+   * {@link refreshDomState}), while {@link PluginSettingsTabBaseSettingExParams.render} fills it in with
+   * {@link SettingEx} adders and {@link bind} exactly as an imperative tab would.
+   *
+   * @param params - The row params.
+   * @returns The setting definition.
+   */
+  protected settingEx(params: PluginSettingsTabBaseSettingExParams): SettingDefinitionRender {
+    // TODO(T270): the `disabled` member below comes from the local augmentation in `src/@types/obsidian.d.ts`.
+    // Drop that file once T269 adds the member to @obsidian-typings: Obsidian 1.13 honours the predicate on a
+    // Render row at runtime, but its own typings declare it only on control and action definitions.
+    return normalizeOptionalProperties<SettingDefinitionRender>({
+      aliases: params.aliases,
+      desc: params.desc,
+      disabled: params.disabled,
+      name: params.name,
+      render: (setting: Setting, group: SettingGroup) => this.renderSettingEx({ group, setting, settingExParams: params }),
+      searchable: params.searchable,
+      visible: params.visible
+    });
+  }
+
+  /**
+   * Builds a declarative heading group.
+   *
+   * The declarative counterpart of `SettingGroupEx`: where that class appends a group to a container
+   * imperatively, this returns the definition Obsidian renders, so a group-structured tab keeps its shape
+   * after the migration.
+   *
+   * @param params - The group params.
+   * @returns The group definition.
+   */
+  protected settingGroupEx(params: PluginSettingsTabBaseSettingGroupExParams): SettingDefinitionGroup {
+    return normalizeOptionalProperties<SettingDefinitionGroup>({
+      ...params,
+      type: 'group'
+    });
+  }
+
+  private beginRenderCycle(): void {
+    this.endRenderCycle();
+    this.currentRenderComponent = this.createRenderComponent();
+  }
+
+  private createRenderComponent(): ComponentEx {
+    this._isOpen = true;
+    this.component.load();
+    return this.component.addChild(new ComponentEx());
+  }
+
+  private endRenderCycle(): void {
+    const renderComponent = this.currentRenderComponent;
+    if (!renderComponent) {
+      return;
+    }
+
+    this.currentRenderComponent = null;
+    this.component.removeChild(renderComponent);
+  }
+
   private getPluginSettingsProperty<PropertyName extends StringKeys<PluginSettings>>(
     propertyName: PropertyName
   ): ReadonlyDeep<PluginSettings[PropertyName]> {
     const settings = this.pluginSettings as PluginSettings;
     return settings[propertyName] as ReadonlyDeep<PluginSettings[PropertyName]>;
+  }
+
+  private getRenderComponent(): ComponentEx {
+    this.currentRenderComponent ??= this.createRenderComponent();
+    return this.currentRenderComponent;
   }
 
   private async onSaveSettings(params: PluginSettingsTabBaseOnSaveSettingsParams<PluginSettings>): Promise<void> {
@@ -590,7 +896,27 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       return;
     }
 
-    this.displayLegacy();
+    this.refresh();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- Mirrors Obsidian's `SettingDefinitionRender.render`, whose cleanup function is optional.
+  private renderSettingEx(params: PluginSettingsTabBaseRenderSettingExParams): (() => void) | void {
+    const rowComponent = this.createRenderComponent();
+    const previousRenderComponent = this.currentRenderComponent;
+    this.currentRenderComponent = rowComponent;
+
+    try {
+      const cleanup = params.settingExParams.render(adoptSettingEx(params.setting), params.group);
+      return () => {
+        if (typeof cleanup === 'function') {
+          cleanup();
+        }
+
+        this.component.removeChild(rowComponent);
+      };
+    } finally {
+      this.currentRenderComponent = previousRenderComponent;
+    }
   }
 
   private async updateValidations(validationMessages: Record<StringKeys<PluginSettings>, string>): Promise<void> {
