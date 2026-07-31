@@ -36,13 +36,16 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
   customRules: [
     relativeLinksRule
   ],
+  // Every `.gitignore` in the tree, and up to the repository root — git's own default behavior. A path git
+  // Ignores is a path we do not lint, so `node_modules` (including the nested ones under test fixtures),
+  // `dist`, and every generated folder are skipped without anyone maintaining a list that can drift.
+  gitignore: true,
   globs: [
     '**/*.md'
   ],
+  // Git never "ignores" `.git` itself — it is simply outside the working tree — so this one stays explicit.
   ignores: [
-    '**/node_modules/**',
-    '.git/**',
-    'dist/**'
+    '.git/**'
   ]
 };
 

@@ -15,6 +15,7 @@ import { enableLibraryDebuggers } from '../debug.ts';
 import { printError } from '../error.ts';
 import { noop } from '../function.ts';
 import { replaceAll } from '../string.ts';
+import { getDisabledScriptEnvVariableName } from './env-toggle.ts';
 
 /**
  * Abstract class representing the result of a task. Includes methods for handling success,
@@ -294,10 +295,23 @@ export function cmdEscapeCommandLine(commandLine: string): string {
 /**
  * Wraps a CLI task function to ensure it runs safely and handles its {@link CliTaskResult}.
  *
+ * Honors the per-script off switch first: when the npm script currently running has been switched off —
+ * `LINT_MD=0 npm run lint:md`, see {@link getDisabledScriptEnvVariableName} — the task is not executed and
+ * the process exits successfully. Because every `scripts/*.ts` entry point already funnels through here, no
+ * script has to opt in, and each `npm run` sub-step of a composite script (e.g. `build`) carries its own
+ * switch.
+ *
  * @param taskFn - The task function to execute, which may return a {@link CliTaskResult} or `void`.
  * @returns A {@link Promise} that resolves when the task is completed and exits with the appropriate status.
  */
 export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<void> {
+  const disabledScriptEnvVariableName = getDisabledScriptEnvVariableName();
+  if (disabledScriptEnvVariableName !== null) {
+    process.stdout.write(`Skipped (${disabledScriptEnvVariableName} is off).\n`);
+    CliTaskResult.Success().exit();
+    return;
+  }
+
   enableLibraryDebuggers();
   const result = await wrapResult(taskFn);
   result.exit();

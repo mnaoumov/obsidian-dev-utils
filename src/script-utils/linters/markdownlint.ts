@@ -19,6 +19,7 @@ import {
   join
 } from '../../path.ts';
 import { assertNonNullable } from '../../type-guards.ts';
+import { getNonIgnoredFiles } from '../git.ts';
 import { ObsidianDevUtilsRepoPaths } from '../obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
@@ -87,13 +88,7 @@ export async function lint(options?: LintOptions): Promise<void> {
   const rootFolder = getRootFolder() ?? process.cwd();
   const mdFiles = paths?.length
     ? paths.map((p) => relative(rootFolder, p).replace(/\\/g, '/') || p)
-    : await toArray(glob(['**/*.md'], {
-      exclude: [
-        '.git/**',
-        'dist/**',
-        '**/node_modules/**'
-      ]
-    }));
+    : await getMarkdownFiles();
   /* v8 ignore stop */
   await execFromRoot([
     'npx',
@@ -110,4 +105,34 @@ export async function lint(options?: LintOptions): Promise<void> {
     'https://registry.npmjs.org/',
     { batchedArgs: mdFiles }
   ]);
+}
+
+/**
+ * The git pathspec matching every markdown file in the repository, at any depth.
+ */
+const MARKDOWN_PATHSPEC = '*.md';
+
+/**
+ * Lists the markdown files to hand to `linkinator`.
+ *
+ * `linkinator` takes a file list rather than an ignore configuration, so the gitignored files have to be
+ * dropped before it is invoked. Git itself answers that (nested ignore files, `!` negations and all); the
+ * hand-maintained glob exclusions below are only the fallback for a checkout without git, and they are the
+ * very lists this indirection exists to stop from drifting.
+ *
+ * @returns A {@link Promise} that resolves with the markdown file paths, relative to the root folder.
+ */
+async function getMarkdownFiles(): Promise<string[]> {
+  const nonIgnoredFiles = await getNonIgnoredFiles({ patterns: [MARKDOWN_PATHSPEC] });
+  if (nonIgnoredFiles) {
+    return nonIgnoredFiles;
+  }
+
+  return await toArray(glob(['**/*.md'], {
+    exclude: [
+      '.git/**',
+      'dist/**',
+      '**/node_modules/**'
+    ]
+  }));
 }
