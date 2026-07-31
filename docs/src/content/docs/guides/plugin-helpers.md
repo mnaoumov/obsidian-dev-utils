@@ -155,6 +155,31 @@ The most important methods in the execution order:
 - `settingGroupEx()` / `settingEx()`
 - `bind()`
 
+## [SyntaxHighlightingComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/syntax-highlighting-component.ts)
+
+`SyntaxHighlightingComponent` registers your own syntax highlighting languages and unregisters them when it is unloaded. Add it as a child of your plugin: `const syntaxHighlightingComponent = this.addChild(new SyntaxHighlightingComponent());`.
+
+Obsidian highlights code through two independent registries, so there are two methods:
+
+- `registerPrismLanguageAsync({ grammar, language })` - registers a Prism language, which highlights code in reading view and in every `<pre><code>` the library renders, including the `SettingEx.addCodeHighlighter()` field.
+- `registerCodeBlockLanguageAsync({ editorMode, language, prismGrammar })` - additionally registers a CodeMirror 5 mode, which is what highlights a fenced code block inside the editor. `editorMode` is the mode name or MIME type the fence is highlighted as, e.g. `text/typescript`. Omit `prismGrammar` when the fence is replaced in reading view, e.g. rendered as a button.
+
+`grammar` / `prismGrammar` accepts three forms:
+
+- a `Grammar` object - the grammar itself.
+- a `string` - the name of an already registered language to alias, e.g. `'typescript'`.
+- a factory `({ prism, requirePrismLanguage }) => Grammar` - builds the grammar from the loaded Prism module, so you never need to call `loadPrism()` yourself. Use `requirePrismLanguage('javascript')` to nest an existing language's grammar into your own.
+
+A missing language always throws - both when aliasing a language that is not registered and from `requirePrismLanguage()` - so a typo fails loudly instead of silently leaving your code without highlighting.
+
+```ts
+await syntaxHighlightingComponent.registerCodeBlockLanguageAsync({
+  editorMode: 'text/typescript',
+  language: 'my-language',
+  prismGrammar: 'typescript'
+});
+```
+
 ## Working with plugin settings
 
 Most of the times, it's enough to use `plugin.settings` which is just an alias to `plugin.settingsComponent.settingsState.effectiveValues`.
