@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 88.8.0
+
+- feat(script-utils): unify the per-plugin vitest configuration
+
 ## 88.7.0
 
 - feat: add SyntaxHighlightingComponent
