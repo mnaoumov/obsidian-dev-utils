@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 88.7.0
+
+- feat: add SyntaxHighlightingComponent
+- chore: consume the upstream SettingDefinitionBase.disabled
+- feat(script-utils): derive tooling ignores from .gitignore and add per-script off switches
+
 ## 88.6.0
 
 - feat(plugin-settings-tab): render declaratively via the Obsidian 1.13 settings API
