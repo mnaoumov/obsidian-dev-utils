@@ -1,17 +1,9 @@
 {
   "version": "0.2",
   "ignorePaths": [
-    ".astro",
-    ".env",
-    "coverage",
-    "dist",
-    "docs/dist",
     "docs/src/components",
-    "docs/src/content/docs/api",
     "docs/src/styles",
-    "node_modules",
-    "scripts/docs-gen",
-    "tsconfig.tsbuildinfo"
+    "scripts/docs-gen"
   ],
   "dictionaryDefinitions": [],
   "dictionaries": [],
@@ -133,6 +125,8 @@
     "Pagerow",
     "parsimmon",
     "pathlike",
+    "pathspec",
+    "pathspecs",
     "pointerdown",
     "Popout",
     "popouts",
@@ -195,6 +189,7 @@
     "unpushed",
     "unregisters",
     "unstub",
+    "uppercased",
     "urlpattern",
     "vararg",
     "varargs",

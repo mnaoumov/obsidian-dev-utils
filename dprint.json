@@ -12,12 +12,10 @@
   },
   "json": {},
   "markdown": {},
+  // dprint respects .gitignore by default (--no-gitignore opts out), so dist, docs/dist, .astro and
+  // Node_modules need no entry here. Only paths git does NOT ignore belong below.
   "excludes": [
-    "dist",
-    "docs/dist",
-    ".astro",
     "scripts/docs-gen",
-    "**/node_modules",
     "**/*-lock.json",
     "**/*.md"
   ],

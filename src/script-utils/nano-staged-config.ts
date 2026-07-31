@@ -4,8 +4,12 @@
  * Shared nano-staged configuration for pre-commit hooks.
  */
 
-import { existsSync } from 'node:fs';
 import process from 'node:process';
+
+import {
+  isEnvVariableOff,
+  loadEnvFileIfExists
+} from './env-toggle.ts';
 
 /**
  * Nano-staged configuration that runs file-based lint, format, and spellcheck on staged files.
@@ -36,16 +40,18 @@ export const obsidianDevUtilsConfig: Record<string, string[]> = {
   ]
 };
 
-const NANO_STAGED_OFF_VALUES: ReadonlySet<string> = new Set(['0', 'false', 'no', 'off']);
+const NANO_STAGED_ENV_VARIABLE = 'NANO_STAGED';
 
 /**
  * Resolves the nano-staged configuration to use, honoring a per-developer opt-out.
  *
- * Loads a gitignored `.env` if present (via Node's own `process.loadEnvFile`, so it behaves the same
- * on every platform and shell), then — when `NANO_STAGED` is set to an off value (`0`, `false`, `off`,
- * or `no`) — prints a notice and exits the process successfully so the pre-commit checks are skipped.
- * This mirrors husky's own `HUSKY=0` switch, but scoped to the nano-staged step (so the commit-msg
- * hook still runs). Otherwise it returns {@link obsidianDevUtilsConfig}.
+ * Loads a gitignored `.env` if present, then — when `NANO_STAGED` is set to an off value (`0`, `false`,
+ * `off`, or `no`) — prints a notice and exits the process successfully so the pre-commit checks are
+ * skipped. This mirrors husky's own `HUSKY=0` switch, but scoped to the nano-staged step (so the
+ * commit-msg hook still runs). Otherwise it returns {@link obsidianDevUtilsConfig}.
+ *
+ * `NANO_STAGED` is not an npm script, so it carries its own switch rather than the script-name-derived one
+ * every npm script gets — but both share the same notion of an off value, via {@link isEnvVariableOff}.
  *
  * This is a function rather than module-level code so importing the package barrel never triggers the
  * `.env` read or the process exit; call it from the thin `scripts/nano-staged-config.ts` entry.
@@ -53,18 +59,12 @@ const NANO_STAGED_OFF_VALUES: ReadonlySet<string> = new Set(['0', 'false', 'no',
  * @returns The nano-staged task configuration. Does not return when the opt-out is active.
  */
 export function getNanoStagedConfig(): Record<string, string[]> {
-  if (existsSync('.env')) {
-    process.loadEnvFile('.env');
-  }
+  loadEnvFileIfExists();
 
-  if (isNanoStagedDisabled(process.env['NANO_STAGED'])) {
-    process.stdout.write('nano-staged: skipped (NANO_STAGED is off).\n');
+  if (isEnvVariableOff(NANO_STAGED_ENV_VARIABLE)) {
+    process.stdout.write(`nano-staged: skipped (${NANO_STAGED_ENV_VARIABLE} is off).\n`);
     process.exit(0);
   }
 
   return obsidianDevUtilsConfig;
-}
-
-function isNanoStagedDisabled(value: string | undefined): boolean {
-  return NANO_STAGED_OFF_VALUES.has((value ?? '').trim().toLowerCase());
 }

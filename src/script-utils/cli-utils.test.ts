@@ -1,4 +1,5 @@
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -12,15 +13,31 @@ import {
   wrapCliTask
 } from './cli-utils.ts';
 
-const { mockExit } = vi.hoisted(() => ({
-  mockExit: vi.fn()
+const { mockExistsSync, mockExit, mockStdoutWrite } = vi.hoisted(() => ({
+  mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockExit: vi.fn(),
+  mockStdoutWrite: vi.fn()
+}));
+
+// `wrapCliTask()` consults the per-script off switch, which reads `.env` through `node:fs`. Pin it to
+// Absent so the suite never picks up a developer's real `.env`.
+vi.mock('node:fs', async (importOriginal) => ({
+  ...await importOriginal<typeof import('node:fs')>(),
+  existsSync: mockExistsSync
 }));
 
 vi.mock('node:process', async (importOriginal) => {
   const mod = await importOriginal<typeof import('node:process')>();
   return {
     ...mod,
-    default: { ...mod, exit: mockExit }
+    default: {
+      ...mod,
+      exit: mockExit,
+      stdout: {
+        ...mod.stdout,
+        write: mockStdoutWrite
+      }
+    }
   };
 });
 
@@ -278,7 +295,14 @@ describe('CliTaskResult', () => {
 
 describe('wrapCliTask', () => {
   beforeEach(() => {
-    mockExit.mockClear();
+    vi.clearAllMocks();
+    mockExistsSync.mockReturnValue(false);
+    // Pin the npm script name so the off-switch lookup cannot be influenced by the runner's own environment.
+    vi.stubEnv('npm_lifecycle_event', undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('should exit with code 0 for a successful task', async () => {
@@ -318,5 +342,39 @@ describe('wrapCliTask', () => {
       // No return
     });
     expect(mockExit).toHaveBeenCalledWith(0);
+  });
+
+  describe('per-script off switch', () => {
+    it('should skip the task and exit 0 when the script switch is off', async () => {
+      vi.stubEnv('npm_lifecycle_event', 'lint:md');
+      vi.stubEnv('LINT_MD', '0');
+      const taskFn = vi.fn(() => CliTaskResult.Failure());
+
+      await wrapCliTask(taskFn);
+
+      expect(taskFn).not.toHaveBeenCalled();
+      expect(mockStdoutWrite).toHaveBeenCalledWith('Skipped (LINT_MD is off).\n');
+      expect(mockExit).toHaveBeenCalledWith(0);
+    });
+
+    it('should run the task when the script switch is on', async () => {
+      vi.stubEnv('npm_lifecycle_event', 'lint:md');
+      vi.stubEnv('LINT_MD', '1');
+      const taskFn = vi.fn(() => CliTaskResult.Success());
+
+      await wrapCliTask(taskFn);
+
+      expect(taskFn).toHaveBeenCalledOnce();
+      expect(mockStdoutWrite).not.toHaveBeenCalled();
+    });
+
+    it('should run the task when the script was not started through npm', async () => {
+      vi.stubEnv('npm_lifecycle_event', undefined);
+      const taskFn = vi.fn(() => CliTaskResult.Success());
+
+      await wrapCliTask(taskFn);
+
+      expect(taskFn).toHaveBeenCalledOnce();
+    });
   });
 });

@@ -15,6 +15,7 @@ const {
   mockCp,
   mockExecFromRoot,
   mockExistsSync,
+  mockGetNonIgnoredFiles,
   mockGetRootFolder,
   mockGlob,
   mockResolvePathFromRootSafe
@@ -22,6 +23,7 @@ const {
   mockCp: vi.fn(),
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockGetNonIgnoredFiles: vi.fn<() => Promise<null | string[]>>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
   mockGlob: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>()
@@ -31,6 +33,10 @@ vi.mock('../script-utils/root.ts', () => ({
   execFromRoot: mockExecFromRoot,
   getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('../script-utils/git.ts', () => ({
+  getNonIgnoredFiles: mockGetNonIgnoredFiles
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -58,6 +64,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
   mockCp.mockResolvedValue(undefined);
+  // Default to "git cannot answer" so the existing cases keep exercising the glob fallback they assert on.
+  mockGetNonIgnoredFiles.mockResolvedValue(null);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockGlob.mockReturnValue((async function* generateMdFiles(): AsyncGenerator<string, void> {
     await noopAsync();
@@ -109,6 +117,33 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(false);
     mockGetRootFolder.mockReturnValue(null);
     await expect(lint()).rejects.toThrow('Package folder not found');
+  });
+
+  it('should link-check the non-ignored markdown files git reports', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetNonIgnoredFiles.mockResolvedValue(['README.md', 'docs/guide.md']);
+    await lint();
+    expect(mockGetNonIgnoredFiles).toHaveBeenCalledWith({ patterns: ['*.md'] });
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md', 'docs/guide.md'] }])
+    );
+  });
+
+  it('should prefer git over the glob fallback', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetNonIgnoredFiles.mockResolvedValue(['README.md']);
+    await lint();
+    expect(mockGlob).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to the glob when git cannot answer', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetNonIgnoredFiles.mockResolvedValue(null);
+    await lint();
+    expect(mockGlob).toHaveBeenCalledOnce();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md'] }])
+    );
   });
 
   it('should handle multiple markdown files from glob', async () => {

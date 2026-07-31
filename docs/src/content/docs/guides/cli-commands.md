@@ -280,4 +280,50 @@ NANO_STAGED=0
 
 The `.env` file is read by Node itself, so this works the same on every platform and shell. It mirrors husky's own `HUSKY=0`, but scoped to the nano-staged step — the commit-message (commitlint) hook still runs. Remove the line (or set any other value) to re-enable the checks.
 
+## Skipping an individual command
+
+Every command above can be switched off the same way. The rule is mechanical, so it covers **every** npm script — the ones below, and any project-specific script you add: take the script's own name, uppercase it, and replace every non-alphanumeric character with `_`.
+
+| Script                     | Switch                       |
+|----------------------------|------------------------------|
+| `build`                    | `BUILD=0`                    |
+| `build:clean`              | `BUILD_CLEAN=0`              |
+| `build:compile`            | `BUILD_COMPILE=0`            |
+| `build:compile:svelte`     | `BUILD_COMPILE_SVELTE=0`     |
+| `build:compile:typescript` | `BUILD_COMPILE_TYPESCRIPT=0` |
+| `build:templates`          | `BUILD_TEMPLATES=0`          |
+| `commit`                   | `COMMIT=0`                   |
+| `dev`                      | `DEV=0`                      |
+| `find-overexposed`         | `FIND_OVEREXPOSED=0`         |
+| `find-overexposed:fix`     | `FIND_OVEREXPOSED_FIX=0`     |
+| `format`                   | `FORMAT=0`                   |
+| `format:check`             | `FORMAT_CHECK=0`             |
+| `lint`                     | `LINT=0`                     |
+| `lint:fix`                 | `LINT_FIX=0`                 |
+| `lint:md`                  | `LINT_MD=0`                  |
+| `lint:md:fix`              | `LINT_MD_FIX=0`              |
+| `prepare`                  | `PREPARE=0`                  |
+| `publish`                  | `PUBLISH=0`                  |
+| `spellcheck`               | `SPELLCHECK=0`               |
+| `test`                     | `TEST=0`                     |
+| `test:coverage`            | `TEST_COVERAGE=0`            |
+| `test:watch`               | `TEST_WATCH=0`               |
+| `version`                  | `VERSION=0`                  |
+
+Set it for one invocation, or park it in the gitignored `.env` file to keep it off:
+
+```shell
+LINT_MD=0 npm run lint:md
+```
+
+The command prints `Skipped (LINT_MD is off).` and exits successfully, so a composite script or a CI step that runs it does not fail. The same off values apply (`0`, `false`, `off`, `no`); anything else — including leaving the variable unset — runs the command normally.
+
+Because each step of a composite script is itself an `npm run`, the switches nest: `BUILD=0` skips the whole build, while `BUILD_CLEAN=0` skips only that one step of it. Running a script directly (`jiti scripts/lint.ts`) bypasses npm, so nothing is skipped.
+
+## Ignored paths follow `.gitignore`
+
+The commands that walk the whole project — `lint`, `lint:md`, `format`, `spellcheck` — skip whatever `.gitignore` skips, rather than each keeping its own list of folders to avoid. A generated or build folder is therefore excluded from every check the moment it is gitignored, and nested `node_modules` under test fixtures are never walked.
+
+This is wired per tool: ESLint reads `.gitignore` through its ignore-file config, dprint respects it natively, `markdownlint-cli2` uses `gitignore: true`, and cspell is invoked with `--gitignore`. Only paths git does **not** ignore — a checked-in folder you nonetheless want a given tool to skip — still need an explicit entry in that tool's own config.
+
 [Hot Reload]: https://github.com/pjeby/hot-reload
