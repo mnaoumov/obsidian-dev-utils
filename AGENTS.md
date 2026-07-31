@@ -563,6 +563,22 @@ published `brace-expansion@1.1.17` flows in through a plain `npm update`, at whi
 `import-x` alias is separate and does **not** retire with it — that one lasts as long as
 `eslint-plugin-import` needs `minimatch@^3`.
 
+### Unused dependencies (`.depcheckrc.json`)
+
+A dependency nothing references is as invisible to a sweep as a stale pin: npm never mentions it, `npm
+audit` never mentions it, and it keeps dragging a whole subtree — and that subtree's advisories — into
+every install. `update-npm-deps.ps1` therefore ends by running `depcheck`. depcheck is heuristic and
+cannot see a package that is only invoked as a CLI from a script, named as a string in a config, or
+pulled in by a compiler option, so it **never** removes anything: it reports, and
+[`.depcheckrc.json`](.depcheckrc.json) records each verified false positive **together with the
+reference that proves it**. Because that file exists, anything depcheck still reports **fails** the
+sweep — so silencing a name without its reason defeats the entire mechanism.
+
+Three entries are subtler than "run as a CLI": `@types/babel__core`, `@types/pug` and `postcss-modules`
+are imported by no file here, only by `svelte-preprocess`' and `esbuild-sass-plugin`'s own `.d.ts`. The
+compile does not care (`skipLibCheck: true`), but the `skipLibCheck: false` re-check above does — drop
+them and its `Ignored N diagnostic(s)` count, which is meant to reach `0`, goes **up** by three.
+
 ## Consumer Script Pattern
 
 Consumer projects import functions from `obsidian-dev-utils` and wrap them with `wrapCliTask()`:

@@ -49,6 +49,8 @@
     "dcts",
     "Debouncer",
     "debouncers",
+    "depcheck",
+    "depcheckrc",
     "dirents",
     "dirxname",
     "dmts",
