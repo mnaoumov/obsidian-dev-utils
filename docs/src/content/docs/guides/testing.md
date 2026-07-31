@@ -123,6 +123,58 @@ Node 22+ exposes an experimental Web Storage `localStorage`, but it is unavailab
 NODE_OPTIONS=--localstorage-file=:memory: vitest
 ```
 
+## Plugin vitest configuration
+
+An Obsidian plugin's vitest setup is the same in every repo — a `unit-tests` project against mocked Obsidian plus an `integration-tests:*` family against a real one. `defineObsidianPluginVitestConfig` owns that whole shape, so a plugin's config is one call:
+
+```typescript
+// scripts/vitest-config.ts
+import { defineObsidianPluginVitestConfig } from 'obsidian-dev-utils/script-utils/test-runners/vitest-config';
+
+export const config = defineObsidianPluginVitestConfig();
+```
+
+It declares five projects, each collecting its own suffix:
+
+| Project                                 | Collects                                                            |
+|-----------------------------------------|---------------------------------------------------------------------|
+| `unit-tests`                            | `*.test.ts` (minus every `*.integration.test.ts`), in `jsdom`        |
+| `integration-tests:no-app`              | `*.no-app.integration.test.ts` — no Obsidian instance at all         |
+| `integration-tests:desktop`             | `*.desktop.integration.test.ts` + `*.cross-platform.integration.test.ts` |
+| `integration-tests:desktop-performance` | `*.desktop-performance.integration.test.ts`                          |
+| `integration-tests:android`             | `*.android.integration.test.ts` + `*.cross-platform.integration.test.ts` |
+
+A behavior that must hold on **both** platforms therefore lives in exactly one `*.cross-platform.integration.test.ts` file with plain top-level `describe` / `it` — both platform projects collect it and run it under their own transport. A behavior specific to one platform stays in a single `*.desktop.` or `*.android.` file. Neither needs a wrapper function or a per-platform entry point.
+
+Set `OBSIDIAN_VERSION` to pin the desktop project to a specific Obsidian (for example `OBSIDIAN_VERSION=catalyst-latest`); when it is unset, no version is pinned and the installed Obsidian runs as-is.
+
+Customize through the two hooks — `editContext` edits the standard projects in place, `customProjects` appends projects the base does not know about:
+
+```typescript
+export const config = defineObsidianPluginVitestConfig({
+  customProjects(context) {
+    return [{
+      test: {
+        environment: 'node',
+        fileParallelism: false,
+        globalSetup: ['./scripts/demo-vault-global-setup.ts'],
+        hookTimeout: context.bigTimeoutInMilliseconds * context.hookTimeoutMultiplier,
+        include: ['src/**/*.demo-vault.integration.test.ts'],
+        name: 'integration-tests:demo-vault',
+        setupFiles: ['obsidian-integration-testing/vitest-setup'],
+        testTimeout: context.bigTimeoutInMilliseconds
+      }
+    }];
+  },
+  editContext(context) {
+    context.desktopPerformance.globalSetup = ['./scripts/vitest-global-setup-performance.ts'];
+    context.coverageExclude.push('src/**/*.d.ts');
+  }
+});
+```
+
+Everything the context exposes is live — the arrays and objects it hands you are the ones the final configuration is built from.
+
 ## Integration tests: reaching library helpers inside `evalInObsidian`
 
 [`obsidian-integration-testing`](https://github.com/mnaoumov/obsidian-integration-testing) runs a closure inside a real Obsidian, and injects a `lib` bag into it. `Obsidian Dev Utils` can merge its **entire** helper surface into that bag, so a serialized closure — which cannot use imports — reaches any helper as `lib.<helper>`:

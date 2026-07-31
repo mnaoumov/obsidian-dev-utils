@@ -268,7 +268,7 @@ You do not have to write these script and config files by hand. Ready-made templ
 - `dist/templates/scripts/` — the script entry points. The per-tool scripts are grouped by the module they use (`build/`, `bundlers/`, `formatters/`, `linters/`, `test-runners/`, `version/`), and the shared config logic files sit at the top level (`commitlint-config.ts`, `eslint-config.ts`, `vitest-config.ts`, `markdownlint-cli2-config.ts`, `nano-staged-config.ts`). Copy the files you need into your project's `scripts/` folder, naming each one to match the `package.json` script that runs it.
 - `dist/templates/` (top level) — the thin root config files a project keeps at its root: `commitlint.config.ts`, `eslint.config.mts`, `vitest.config.ts`, `dprint.json`, `.markdownlint-cli2.mjs`, and `.nano-staged.mjs`. Each one re-exports its matching `scripts/*-config.ts`, so copy both halves together.
 
-The `commitlint-config`, `markdownlint-cli2-config`, and `nano-staged-config` templates work as-is; `eslint-config` and `vitest-config` are baselines you adapt to your plugin.
+The `commitlint-config`, `markdownlint-cli2-config`, `nano-staged-config`, and `vitest-config` templates work as-is; `eslint-config` is a baseline you adapt to your plugin.
 
 ## Skipping pre-commit checks
 
