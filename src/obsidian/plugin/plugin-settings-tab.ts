@@ -821,9 +821,6 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns The setting definition.
    */
   protected settingEx(params: PluginSettingsTabBaseSettingExParams): SettingDefinitionRender {
-    // TODO(T270): the `disabled` member below comes from the local augmentation in `src/@types/obsidian.d.ts`.
-    // Drop that file once T269 adds the member to @obsidian-typings: Obsidian 1.13 honours the predicate on a
-    // Render row at runtime, but its own typings declare it only on control and action definitions.
     return normalizeOptionalProperties<SettingDefinitionRender>({
       aliases: params.aliases,
       desc: params.desc,
