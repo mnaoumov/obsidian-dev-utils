@@ -10,6 +10,8 @@ import relativeLinksRule from 'markdownlint-rule-relative-links';
 
 import type { MarkdownlintCli2ConfigurationSchema } from './markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
 
+import { NODE_MODULES_IGNORE_GLOB } from './markdownlint-ignores.ts';
+
 /**
  * Default markdownlint-cli2 configuration for the Obsidian Dev Utils.
  */
@@ -43,9 +45,13 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
   globs: [
     '**/*.md'
   ],
-  // Git never "ignores" `.git` itself — it is simply outside the working tree — so this one stays explicit.
+  // The residual, explicit list — everything `.gitignore` cannot express for us. Git never "ignores"
+  // `.git` itself (it is simply outside the working tree), and a repository can deliberately TRACK a
+  // Vendored `node_modules` tree, whose third-party markdown is not ours to lint. See
+  // `markdownlint-ignores.ts`.
   ignores: [
-    '.git/**'
+    '.git/**',
+    NODE_MODULES_IGNORE_GLOB
   ]
 };
 

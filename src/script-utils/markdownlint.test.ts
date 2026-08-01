@@ -129,6 +129,32 @@ describe('lint', () => {
     );
   });
 
+  // Git only skips what the repository asked it to skip, and `obsidian-codescript-toolkit` deliberately
+  // TRACKS a vendored `node_modules` tree so its demo vault can `require('uuid')` offline. Third-party
+  // Markdown is not ours to link-check — the vendored README's relative link to an upstream-only file
+  // Failed the whole gate.
+  it('should drop vendored node_modules markdown from the list git reports', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetNonIgnoredFiles.mockResolvedValue([
+      'README.md',
+      'demo-vault/_assets/CodeScriptToolkit/node_modules/uuid/README.md',
+      'docs/guide.md'
+    ]);
+    await lint();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md', 'docs/guide.md'] }])
+    );
+  });
+
+  it('should keep a file whose own name merely contains the words', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetNonIgnoredFiles.mockResolvedValue(['docs/node_modules-migration.md']);
+    await lint();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['docs/node_modules-migration.md'] }])
+    );
+  });
+
   it('should prefer git over the glob fallback', async () => {
     mockExistsSync.mockReturnValue(true);
     mockGetNonIgnoredFiles.mockResolvedValue(['README.md']);

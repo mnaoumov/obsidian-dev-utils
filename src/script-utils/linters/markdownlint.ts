@@ -26,6 +26,10 @@ import {
   getRootFolder,
   resolvePathFromRootSafe
 } from '../root.ts';
+import {
+  checkIsInNodeModules,
+  NODE_MODULES_IGNORE_GLOB
+} from './markdownlint-ignores.ts';
 
 /**
  * Parameters for the {@link lint} function.
@@ -120,19 +124,24 @@ const MARKDOWN_PATHSPEC = '*.md';
  * hand-maintained glob exclusions below are only the fallback for a checkout without git, and they are the
  * very lists this indirection exists to stop from drifting.
  *
+ * The `node_modules` filter is applied to the git-derived list too, and deliberately so: git only skips
+ * what the repository asked it to skip, and a repository can deliberately TRACK a vendored `node_modules`
+ * tree. That is the one exclusion `.gitignore` cannot answer — see `markdownlint-ignores.ts`. Applying it
+ * here keeps `linkinator` in step with the markdownlint half, which ignores the same paths by glob.
+ *
  * @returns A {@link Promise} that resolves with the markdown file paths, relative to the root folder.
  */
 async function getMarkdownFiles(): Promise<string[]> {
   const nonIgnoredFiles = await getNonIgnoredFiles({ patterns: [MARKDOWN_PATHSPEC] });
   if (nonIgnoredFiles) {
-    return nonIgnoredFiles;
+    return nonIgnoredFiles.filter((path) => !checkIsInNodeModules(path));
   }
 
   return await toArray(glob(['**/*.md'], {
     exclude: [
       '.git/**',
       'dist/**',
-      '**/node_modules/**'
+      NODE_MODULES_IGNORE_GLOB
     ]
   }));
 }
