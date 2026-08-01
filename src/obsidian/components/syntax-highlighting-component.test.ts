@@ -51,11 +51,11 @@ describe('SyntaxHighlightingComponent', () => {
     mocks = createMocks();
   });
 
-  describe('registerPrismLanguageAsync', () => {
+  describe('registerPrismLanguage', () => {
     it('should register the passed grammar', async () => {
       const component = createLoadedComponent();
 
-      await component.registerPrismLanguageAsync({
+      await component.registerPrismLanguage({
         grammar: TEST_GRAMMAR,
         language: TEST_LANGUAGE
       });
@@ -67,7 +67,7 @@ describe('SyntaxHighlightingComponent', () => {
       const component = createLoadedComponent();
       mocks.prism.languages['typescript'] = TYPESCRIPT_GRAMMAR;
 
-      await component.registerPrismLanguageAsync({
+      await component.registerPrismLanguage({
         grammar: 'typescript',
         language: TEST_LANGUAGE
       });
@@ -78,7 +78,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should throw when the aliased language is not registered', async () => {
       const component = createLoadedComponent();
 
-      await expect(component.registerPrismLanguageAsync({
+      await expect(component.registerPrismLanguage({
         grammar: 'typescript',
         language: TEST_LANGUAGE
       })).rejects.toThrow('Prism language "typescript" is not registered.');
@@ -89,7 +89,7 @@ describe('SyntaxHighlightingComponent', () => {
       const component = createLoadedComponent();
       let factoryPrism: null | PrismModule = null;
 
-      await component.registerPrismLanguageAsync({
+      await component.registerPrismLanguage({
         grammar: ({ prism }): Grammar => {
           factoryPrism = prism;
           return TEST_GRAMMAR;
@@ -105,7 +105,7 @@ describe('SyntaxHighlightingComponent', () => {
       const component = createLoadedComponent();
       mocks.prism.languages['javascript'] = TYPESCRIPT_GRAMMAR;
 
-      await component.registerPrismLanguageAsync({
+      await component.registerPrismLanguage({
         grammar: ({ requirePrismLanguage }): Grammar => ({
           expression: {
             inside: requirePrismLanguage('javascript'),
@@ -121,7 +121,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should throw when a factory requires a language that is not registered', async () => {
       const component = createLoadedComponent();
 
-      await expect(component.registerPrismLanguageAsync({
+      await expect(component.registerPrismLanguage({
         grammar: ({ requirePrismLanguage }): Grammar => ({
           expression: {
             inside: requirePrismLanguage('javascript'),
@@ -135,7 +135,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should delete the registered language when unloaded', async () => {
       const component = createLoadedComponent();
 
-      await component.registerPrismLanguageAsync({
+      await component.registerPrismLanguage({
         grammar: TEST_GRAMMAR,
         language: TEST_LANGUAGE
       });
@@ -148,7 +148,7 @@ describe('SyntaxHighlightingComponent', () => {
       const component = createLoadedComponent();
       mocks.prism.languages[TEST_LANGUAGE] = TYPESCRIPT_GRAMMAR;
 
-      await component.registerPrismLanguageAsync({
+      await component.registerPrismLanguage({
         grammar: TEST_GRAMMAR,
         language: TEST_LANGUAGE
       });
@@ -162,7 +162,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should throw when the component is not loaded', async () => {
       const component = new SyntaxHighlightingComponent();
 
-      await expect(component.registerPrismLanguageAsync({
+      await expect(component.registerPrismLanguage({
         grammar: TEST_GRAMMAR,
         language: TEST_LANGUAGE
       })).rejects.toThrow('Component is not loaded');
@@ -178,7 +178,7 @@ describe('SyntaxHighlightingComponent', () => {
         })
       );
 
-      const registerPromise = component.registerPrismLanguageAsync({
+      const registerPromise = component.registerPrismLanguage({
         grammar: TEST_GRAMMAR,
         language: TEST_LANGUAGE
       });
@@ -190,11 +190,11 @@ describe('SyntaxHighlightingComponent', () => {
     });
   });
 
-  describe('registerCodeBlockLanguageAsync', () => {
+  describe('registerCodeBlockLanguage', () => {
     it('should define an editor mode delegating to the passed editor mode', async () => {
       const component = createLoadedComponent();
 
-      await component.registerCodeBlockLanguageAsync({
+      await component.registerCodeBlockLanguage({
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE
       });
@@ -207,7 +207,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should register the Prism grammar as well when it is passed', async () => {
       const component = createLoadedComponent();
 
-      await component.registerCodeBlockLanguageAsync({
+      await component.registerCodeBlockLanguage({
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE,
         prismGrammar: TEST_GRAMMAR
@@ -219,7 +219,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should not touch Prism when no grammar is passed', async () => {
       const component = createLoadedComponent();
 
-      await component.registerCodeBlockLanguageAsync({
+      await component.registerCodeBlockLanguage({
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE
       });
@@ -231,7 +231,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should delete the editor mode and the Prism grammar when unloaded', async () => {
       const component = createLoadedComponent();
 
-      await component.registerCodeBlockLanguageAsync({
+      await component.registerCodeBlockLanguage({
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE,
         prismGrammar: TEST_GRAMMAR
@@ -247,7 +247,7 @@ describe('SyntaxHighlightingComponent', () => {
       const previousModeFactory = createModeFactoryMock();
       mocks.modes[TEST_LANGUAGE] = previousModeFactory;
 
-      await component.registerCodeBlockLanguageAsync({
+      await component.registerCodeBlockLanguage({
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE
       });
@@ -261,7 +261,7 @@ describe('SyntaxHighlightingComponent', () => {
     it('should throw when the component is not loaded', async () => {
       const component = new SyntaxHighlightingComponent();
 
-      await expect(component.registerCodeBlockLanguageAsync({
+      await expect(component.registerCodeBlockLanguage({
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE
       })).rejects.toThrow('Component is not loaded');

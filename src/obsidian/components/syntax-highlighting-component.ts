@@ -71,9 +71,9 @@ export interface SyntaxHighlightingComponentGrammarFactoryParams {
 export type SyntaxHighlightingComponentGrammarSource = ((params: SyntaxHighlightingComponentGrammarFactoryParams) => Grammar) | Grammar | string;
 
 /**
- * Parameters for {@link SyntaxHighlightingComponent.registerCodeBlockLanguageAsync}.
+ * Parameters for {@link SyntaxHighlightingComponent.registerCodeBlockLanguage}.
  */
-export interface SyntaxHighlightingComponentRegisterCodeBlockLanguageAsyncParams {
+export interface SyntaxHighlightingComponentRegisterCodeBlockLanguageParams {
   /**
    * The CodeMirror 5 mode name or MIME type the editor highlights the fence as, e.g. `text/typescript`.
    */
@@ -92,9 +92,9 @@ export interface SyntaxHighlightingComponentRegisterCodeBlockLanguageAsyncParams
 }
 
 /**
- * Parameters for {@link SyntaxHighlightingComponent.registerPrismLanguageAsync}.
+ * Parameters for {@link SyntaxHighlightingComponent.registerPrismLanguage}.
  */
-export interface SyntaxHighlightingComponentRegisterPrismLanguageAsyncParams {
+export interface SyntaxHighlightingComponentRegisterPrismLanguageParams {
   /**
    * The grammar to register.
    */
@@ -122,14 +122,14 @@ export class SyntaxHighlightingComponent extends ComponentEx {
    *
    * @example
    * ```ts
-   * await component.registerCodeBlockLanguageAsync({
+   * await component.registerCodeBlockLanguage({
    *   editorMode: 'text/typescript',
    *   language: 'my-language',
    *   prismGrammar: 'typescript'
    * });
    * ```
    */
-  public async registerCodeBlockLanguageAsync(params: SyntaxHighlightingComponentRegisterCodeBlockLanguageAsyncParams): Promise<void> {
+  public async registerCodeBlockLanguage(params: SyntaxHighlightingComponentRegisterCodeBlockLanguageParams): Promise<void> {
     const {
       editorMode,
       language,
@@ -139,7 +139,7 @@ export class SyntaxHighlightingComponent extends ComponentEx {
     this.ensureLoaded();
 
     if (prismGrammar !== undefined) {
-      await this.registerPrismLanguageAsync({
+      await this.registerPrismLanguage({
         grammar: prismGrammar,
         language
       });
@@ -170,7 +170,7 @@ export class SyntaxHighlightingComponent extends ComponentEx {
    *
    * @example
    * ```ts
-   * await component.registerPrismLanguageAsync({
+   * await component.registerPrismLanguage({
    *   grammar: {
    *     keyword: /\bfoo\b/
    *   },
@@ -178,7 +178,7 @@ export class SyntaxHighlightingComponent extends ComponentEx {
    * });
    * ```
    */
-  public async registerPrismLanguageAsync(params: SyntaxHighlightingComponentRegisterPrismLanguageAsyncParams): Promise<void> {
+  public async registerPrismLanguage(params: SyntaxHighlightingComponentRegisterPrismLanguageParams): Promise<void> {
     const {
       grammar,
       language
