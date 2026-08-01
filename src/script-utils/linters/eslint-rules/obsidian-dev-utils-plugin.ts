@@ -5,6 +5,7 @@
  */
 import type { ESLint } from 'eslint';
 
+import { kebabCaseFileName } from './kebab-case-file-name.ts';
 import { noAsyncCallbackToUnsafeReturn } from './no-async-callback-to-unsafe-return.ts';
 import { noUnusedParamsMembers } from './no-unused-params-members.ts';
 import { noUsedUnderscoreVariables } from './no-used-underscore-variables.ts';
@@ -17,6 +18,7 @@ import { requireSuperCall } from './require-super-call.ts';
 
 export const obsidianDevUtilsPlugin: ESLint.Plugin = {
   rules: {
+    'kebab-case-file-name': kebabCaseFileName,
     'no-async-callback-to-unsafe-return': noAsyncCallbackToUnsafeReturn,
     'no-unused-params-members': noUnusedParamsMembers,
     'no-used-underscore-variables': noUsedUnderscoreVariables,
