@@ -57,7 +57,7 @@ describe('SyntaxHighlightingComponent', () => {
           const isHighlightedBeforeRegistration = await checkIsHighlightedAsync(false);
 
           component.load();
-          await component.registerCodeBlockLanguageAsync({
+          await component.registerCodeBlockLanguage({
             editorMode: 'text/typescript',
             language: LANGUAGE
           });
@@ -156,7 +156,7 @@ describe('SyntaxHighlightingComponent', () => {
 
         try {
           component.load();
-          await component.registerCodeBlockLanguageAsync({
+          await component.registerCodeBlockLanguage({
             editorMode: 'text/typescript',
             language: LANGUAGE,
             prismGrammar: 'typescript'

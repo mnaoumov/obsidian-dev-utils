@@ -157,6 +157,16 @@ export function myFunction(param: Type): ReturnType {
 - Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
 - **Exception:** `src/test-helpers/mocks/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
 - **Exception:** `constructors/` files use camelCase matching the exported function name (e.g., `getDomEventsHandlersConstructor.ts`), mirroring the `obsidian-typings` Constructors convention
+- **An `Async` suffix disambiguates, it does NOT mean "this returns a promise".** Add it only when a
+  synchronous counterpart of the same name already exists and would otherwise collide. Being `async` is
+  never on its own a reason for the suffix — measured 2026-07-31, ~18 suffixed members against ~179 async
+  members without one, and **every** established use resolves a name collision: `onloadAsync` (Obsidian's
+  `onload`), `hideAsync`, `triggerAsync`/`tryTriggerAsync`, `createDivAsync`/`createElAsync`/… (Obsidian's
+  sync `createDiv`/`createEl`), `setTimeoutAsync`/`requestAnimationFrameAsync`/`setImmediateAsync`/
+  `nextTickAsync` (the callback-based globals), `replaceAllAsync`
+  (`String.replaceAll`), `noopAsync` (`noop`). (`invokeAsyncSafely` is not a counter-example — its `Async`
+  is mid-name, describing what it invokes.) A `*Params` interface is named after its method, so it follows
+  the method either way.
 
 ### Documentation
 
