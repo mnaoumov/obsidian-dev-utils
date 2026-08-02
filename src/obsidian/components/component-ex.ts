@@ -8,6 +8,7 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
+import { dispose } from '../../disposable.ts';
 import {
   ErrorWrapper,
   SilentError
@@ -142,7 +143,7 @@ export class ComponentEx extends Component implements Disposable {
    */
   public registerDisposable<TDisposable extends Disposable>(disposable: TDisposable): TDisposable {
     this.register(() => {
-      disposable[Symbol.dispose]();
+      dispose(disposable);
     });
     return disposable;
   }
@@ -163,6 +164,7 @@ export class ComponentEx extends Component implements Disposable {
   /**
    * Disposes of the component.
    */
+  // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.dispose` is standard as of Explicit Resource Management; the rule has not caught up. This class implements the protocol, so it must name the symbol.
   public [Symbol.dispose](): void {
     this.unload();
   }

@@ -30,6 +30,8 @@ import {
   it
 } from 'vitest';
 
+import { dispose } from '../disposable.ts';
+
 interface BypassScopeResult {
   readonly wasBypassedModifyAllowed: boolean;
   readonly wasModifyBlockedAfterScope: boolean;
@@ -158,7 +160,7 @@ describe('resource-lock', () => {
           const isOtherNoteLocked = readLeafReadOnly(otherNoteLeaf);
 
           // Releasing the lock makes the note editable again.
-          disposable[Symbol.dispose]();
+          dispose(disposable);
           await settle();
           const isCurrentTabLockedAfterUnlock = readLeafReadOnly(currentTabLeaf);
 
@@ -237,7 +239,7 @@ describe('resource-lock', () => {
           const didOtherNoteAcceptTyping = readValue(otherLeaf) !== otherBefore;
 
           // Releasing the lock makes the previously-locked note typable again.
-          disposable[Symbol.dispose]();
+          dispose(disposable);
           await settle();
           const unlockedBefore = readValue(lockedLeaf);
           await typeIntoEditor({ editor: getEditor(lockedLeaf), text: 'Z' });
@@ -307,7 +309,7 @@ describe('resource-lock', () => {
           const didLockedNoteRejectShiftEnter = readValue(lockedLeaf) === lockedBefore;
 
           // Releasing the lock restores the normal Shift+Enter behavior (a newline is inserted).
-          disposable[Symbol.dispose]();
+          dispose(disposable);
           await settle();
           await reconcile();
           const unlockedBefore = readValue(lockedLeaf);
@@ -386,7 +388,7 @@ describe('resource-lock', () => {
           await reconcile();
           const isChildLockedUnderSubtree = readLeafReadOnly(leaf);
 
-          disposable[Symbol.dispose]();
+          dispose(disposable);
           await settle();
           const isChildLockedAfterUnlock = readLeafReadOnly(leaf);
 
@@ -505,7 +507,7 @@ describe('resource-lock', () => {
               wasTrashBlocked = error instanceof ResourceLockedError;
             }
           } finally {
-            disposable[Symbol.dispose]();
+            dispose(disposable);
           }
 
           // With the blocker uninstalled, the same rename now runs.
@@ -562,7 +564,7 @@ describe('resource-lock', () => {
             } catch {
               // The bypassed modify should be allowed; leave the flag false if it unexpectedly throws.
             } finally {
-              bypass[Symbol.dispose]();
+              dispose(bypass);
             }
             // Outside the scope the path is enforced again.
             try {
@@ -571,7 +573,7 @@ describe('resource-lock', () => {
               wasModifyBlockedAfterScope = error instanceof ResourceLockedError;
             }
           } finally {
-            lock[Symbol.dispose]();
+            dispose(lock);
           }
 
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
@@ -614,7 +616,7 @@ describe('resource-lock', () => {
             }
             return { wasAbortedOnExternalDelete: abortController.signal.aborted };
           } finally {
-            lock[Symbol.dispose]();
+            dispose(lock);
           }
         }
       });
@@ -660,7 +662,7 @@ describe('resource-lock', () => {
             const canExecuteWhileNotLocked = command?.checkCallback?.(true) ?? false;
 
             // Disposing removes the command — this is the real-Obsidian removeCommand path that a mock cannot cover.
-            disposable[Symbol.dispose]();
+            dispose(disposable);
             const isRegisteredAfterDispose = Boolean(app.commands.commands[commandId]);
 
             return { canExecuteWhileNotLocked, hasCheckCallback, isRegisteredAfterDispose, isRegisteredBefore, isRegisteredWhileActive };

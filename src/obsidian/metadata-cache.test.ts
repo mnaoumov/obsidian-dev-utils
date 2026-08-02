@@ -34,6 +34,7 @@ import type {
   ParseLinkReference
 } from './parse-link.ts';
 
+import { dispose } from '../disposable.ts';
 import { castTo } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { strictProxy } from '../strict-proxy.ts';
@@ -630,7 +631,7 @@ describe('registerFileCacheForNonExistingFile', () => {
     const disposable = registerFileCacheForNonExistingFile({ app, cache, pathOrFile: castTo<PathOrFile>(file) });
     expect(app.metadataCache.metadataCache['folder/note.md']).toBe(cache);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(app.metadataCache.fileCache['folder/note.md']).toBeUndefined();
     expect(app.metadataCache.metadataCache['folder/note.md']).toBeUndefined();
@@ -706,7 +707,7 @@ describe('registerFiles', () => {
     const disposable = registerFiles(app, [file]);
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBeNull();
   });

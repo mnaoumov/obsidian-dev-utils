@@ -25,6 +25,7 @@ import {
 
 import type { GenericObject } from '../type-guards.ts';
 
+import { dispose } from '../disposable.ts';
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { assertNonNullable } from '../type-guards.ts';
@@ -249,7 +250,7 @@ describe('lockResourceForPath', () => {
     stubLeaves(leafOf(view));
 
     const disposable = lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(isResourceLockedForPath(app, 'note.md')).toBe(false);
     expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, false);
@@ -261,8 +262,8 @@ describe('lockResourceForPath', () => {
     const disposable = lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
     lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
 
-    disposable[Symbol.dispose]();
-    disposable[Symbol.dispose]();
+    dispose(disposable);
+    dispose(disposable);
 
     expect(isResourceLockedForPath(app, 'note.md')).toBe(true);
   });
@@ -498,7 +499,7 @@ describe('requestResourceUnlockForPath', () => {
 
     const disposable = component.lockForPath({ abortController: disposedController, operationName: 'Test operation', pathOrFile: 'note.md' });
     component.lockForPath({ abortController: heldController, operationName: 'Test operation', pathOrFile: 'note.md' });
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     requestResourceUnlockForPath(app, 'note.md');
 
@@ -512,7 +513,7 @@ describe('requestResourceUnlockForPath', () => {
     const abortController = new AbortController();
 
     const disposable = component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     requestResourceUnlockForPath(app, 'note.md');
 
@@ -1106,10 +1107,10 @@ describe('subtree locking', () => {
     const first = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
     const second = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
 
-    first[Symbol.dispose]();
+    dispose(first);
     expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(true);
 
-    second[Symbol.dispose]();
+    dispose(second);
     expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
 
@@ -1152,7 +1153,7 @@ describe('subtree locking', () => {
     expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
 
     // A's outstanding handle disposes after A was already cleared — a safe no-op that leaves B intact.
-    disposableA[Symbol.dispose]();
+    dispose(disposableA);
     expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(true);
 
     componentB.unload();
@@ -1202,7 +1203,7 @@ describe('subtree locking', () => {
     component.unload();
 
     expect(() => {
-      disposable[Symbol.dispose]();
+      dispose(disposable);
     }).not.toThrow();
     expect(new ResourceLockComponent(app, 'other').isLockedByAncestorForPath('folder/a.md')).toBe(false);
   });
@@ -1300,7 +1301,7 @@ describe('mutation blocker', () => {
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
     expect(component.isMutationBlockedByAncestorForPath('other.md')).toBe(false);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(false);
   });
 
@@ -1316,7 +1317,7 @@ describe('mutation blocker', () => {
     const file = targetFile();
     expect(() => app.vault.rename(file, 'renamed.md')).toThrow(ResourceLockedError);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     // The patch is uninstalled, so the same rename now runs.
     await expect(app.vault.rename(file, 'renamed.md')).resolves.toBeUndefined();
   });
@@ -1420,12 +1421,12 @@ describe('mutation blocker', () => {
     expect(() => app.vault.delete(file)).toThrow(ResourceLockedError);
 
     // Releasing one of the two blocking locks keeps the path blocked (the other still holds it).
-    first[Symbol.dispose]();
+    dispose(first);
     // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Exercising the mutation blocker on this method.
     expect(() => app.vault.delete(file)).toThrow(ResourceLockedError);
 
     // Releasing the last blocking lock uninstalls the patch, so the mutation runs.
-    second[Symbol.dispose]();
+    dispose(second);
     // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Confirming the mutation runs once the blocker is uninstalled.
     await expect(app.vault.delete(file)).resolves.toBeUndefined();
   });
@@ -1479,7 +1480,7 @@ describe('mutation bypass scope', () => {
 
     const bypass = component.bypassBlockedMutations(['target.md']);
     expect(component.isMutationBlockedByAncestorForPath('target.md')).toBe(true);
-    bypass[Symbol.dispose]();
+    dispose(bypass);
 
     const file = fileAt('target.md');
     expect(() => app.vault.modify(file, 'x')).toThrow(ResourceLockedError);
@@ -1504,9 +1505,9 @@ describe('mutation bypass scope', () => {
 
   it('should be safe to dispose a bypass scope twice', () => {
     const bypass = new ResourceLockComponent(app, 'test-plugin').bypassBlockedMutations(['target.md']);
-    bypass[Symbol.dispose]();
+    dispose(bypass);
     expect(() => {
-      bypass[Symbol.dispose]();
+      dispose(bypass);
     }).not.toThrow();
   });
 });

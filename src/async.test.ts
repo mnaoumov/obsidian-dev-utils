@@ -42,6 +42,7 @@ import {
   toArray,
   waitForAllAsyncOperations
 } from './async.ts';
+import { dispose } from './disposable.ts';
 import {
   registerAsyncErrorEventHandler,
   SilentError,
@@ -1279,7 +1280,7 @@ describe('Async', () => {
 
     it('should disable tracking when the returned disposable is disposed', async () => {
       const disposable = enableAsyncOperationTracking();
-      disposable[Symbol.dispose]();
+      dispose(disposable);
       await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
     });
 

@@ -25,6 +25,8 @@ import {
 
 import type { PluginEventMap } from './plugin/plugin-event-source.ts';
 
+import { dispose } from '../disposable.ts';
+
 interface TypingResult {
   readonly asyncErrors: string[];
   readonly initialNoticeCount: number;
@@ -143,7 +145,7 @@ describe('PathSettings', () => {
             validationMessageForInvalidRegExp: textAreaElement.validationMessage
           };
         } finally {
-          registration[Symbol.dispose]();
+          dispose(registration);
           tab.containerEl.remove();
           settingsComponent.unload();
         }

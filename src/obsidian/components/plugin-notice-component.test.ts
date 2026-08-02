@@ -13,6 +13,7 @@ import {
 } from 'vitest';
 
 import { waitForAllAsyncOperations } from '../../async.ts';
+import { dispose } from '../../disposable.ts';
 import { noop } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
@@ -667,7 +668,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     component.load();
 
     const handle = component.showNoticeAfterDelay({ content: 'Working', delayInMilliseconds: DELAY_IN_MILLISECONDS });
-    handle[Symbol.dispose]();
+    dispose(handle);
     await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
 
     expect(mocks.NoticeMock).not.toHaveBeenCalled();
@@ -685,7 +686,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     expect(castTo<DocumentFragment>(content).textContent).toBe('My Plugin\nWorking');
     expect(duration).toBe(0);
 
-    handle[Symbol.dispose]();
+    dispose(handle);
     expect(mocks.instances[0]?.hide).toHaveBeenCalledTimes(1);
   });
 
@@ -768,7 +769,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     });
 
     await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
-    handle[Symbol.dispose]();
+    dispose(handle);
     resolveContent('late');
     await vi.advanceTimersByTimeAsync(0);
 
@@ -825,7 +826,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     component.showNotice('Newer');
     const newerNotice = mocks.instances[1];
 
-    handle[Symbol.dispose]();
+    dispose(handle);
 
     // Disposing the delayed handle hides its own (already-replaced) notice but must not touch the newer one.
     expect(newerNotice?.hide).not.toHaveBeenCalled();

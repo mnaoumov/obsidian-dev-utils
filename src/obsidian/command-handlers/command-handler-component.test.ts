@@ -26,7 +26,10 @@ import type {
 } from './command-handler.ts';
 
 import { waitForAllAsyncOperations } from '../../async.ts';
-import { CallbackDisposable } from '../../disposable.ts';
+import {
+  CallbackDisposable,
+  dispose
+} from '../../disposable.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { CommandHandlerComponent } from './command-handler-component.ts';
@@ -207,7 +210,7 @@ describe('CommandHandlerComponent', () => {
     const disposable = component.registerCommandHandlers([new TestHandler(createParams({ id: 'my-cmd' }))]);
     expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     // Plugin.removeCommand re-prefixes, so it must receive the original unprefixed id, not the mutated one.
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
@@ -236,7 +239,7 @@ describe('CommandHandlerComponent', () => {
     assertNonNullable(menuDisposeSpy);
     expect(menuDisposeSpy).not.toHaveBeenCalled();
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
   });
 
@@ -254,7 +257,7 @@ describe('CommandHandlerComponent', () => {
     assertNonNullable(menuDisposeSpyA);
     assertNonNullable(menuDisposeSpyB);
 
-    disposableA[Symbol.dispose]();
+    dispose(disposableA);
     expect(menuDisposeSpyA).toHaveBeenCalledTimes(1);
     expect(menuDisposeSpyB).not.toHaveBeenCalled();
   });
@@ -265,7 +268,7 @@ describe('CommandHandlerComponent', () => {
 
     // Dispose the batch before the fire-and-forget onRegistered has run.
     const disposable = component.registerCommandHandlers([new MenuRegisteringHandler(createParams())]);
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     await waitForAllAsyncOperations();
 
@@ -283,7 +286,7 @@ describe('CommandHandlerComponent', () => {
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(3);
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     for (const menuDisposeSpy of menuDisposeSpies) {
       expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
     }

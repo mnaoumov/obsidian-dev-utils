@@ -11,6 +11,7 @@ import {
 
 import type { GenericObject } from './type-guards.ts';
 
+import { dispose } from './disposable.ts';
 import { noopAsync } from './function.ts';
 import {
   createDivAsync,
@@ -710,7 +711,7 @@ describe('onAncestorScrollOrResize', () => {
     const nodeRemoveEventListeners = vi.fn();
     node.removeEventListener = nodeRemoveEventListeners;
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(documentRemoveEventListeners).toHaveBeenCalledWith(
       'scroll',
@@ -800,7 +801,7 @@ describe('onAncestorScrollOrResize', () => {
     // A Document node has a `null` ownerDocument, exercising the window-document fallback.
     const disposable = onAncestorScrollOrResize(activeDocument, vi.fn());
     expect(typeof disposable[Symbol.dispose]).toBe('function');
-    disposable[Symbol.dispose]();
+    dispose(disposable);
   });
 
   it('should reset isEventTriggered even if callback throws', () => {

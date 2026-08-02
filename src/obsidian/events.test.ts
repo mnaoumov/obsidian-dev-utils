@@ -16,6 +16,7 @@ import {
   vi
 } from 'vitest';
 
+import { dispose } from '../disposable.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
   EventRefDisposable as EventReferenceDisposable,
@@ -113,7 +114,7 @@ describe('EventRefDisposable', () => {
     } = createMocks();
     const disposable = new EventReferenceDisposable(eventRef);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(offref).toHaveBeenCalledWith(eventRef);
   });

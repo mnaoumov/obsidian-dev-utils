@@ -12,6 +12,7 @@ import {
   vi
 } from 'vitest';
 
+import { dispose } from '../../disposable.ts';
 import {
   ErrorWrapper,
   SilentError
@@ -423,7 +424,7 @@ describe('ComponentEx', () => {
       component.load();
       expect(component._loaded).toBe(true);
 
-      component[Symbol.dispose]();
+      dispose(component);
       expect(component._loaded).toBe(false);
     });
   });
@@ -474,16 +475,16 @@ describe('ComponentEx', () => {
     it('should return the same disposable and dispose it on unload', () => {
       const component = new SyncComponentEx();
       component.load();
-      const dispose = vi.fn();
-      const disposable: Disposable = { [Symbol.dispose]: dispose };
+      const disposeMock = vi.fn();
+      const disposable: Disposable = { [Symbol.dispose]: disposeMock };
 
       const returned = component.registerDisposable(disposable);
 
       expect(returned).toBe(disposable);
-      expect(dispose).not.toHaveBeenCalled();
+      expect(disposeMock).not.toHaveBeenCalled();
 
       component.unload();
-      expect(dispose).toHaveBeenCalledTimes(1);
+      expect(disposeMock).toHaveBeenCalledTimes(1);
     });
   });
 });

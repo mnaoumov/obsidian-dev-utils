@@ -12,6 +12,8 @@ import {
   CombineAsyncDisposable,
   CombineDisposable,
   DisposableBase,
+  dispose,
+  disposeAsync,
   DisposeErrorBehavior,
   DisposeOrder,
   isAsyncDisposable,
@@ -32,7 +34,7 @@ describe('CallbackDisposable', () => {
   it('should execute the callback when disposed', () => {
     const callback = vi.fn();
     const disposable = new CallbackDisposable({ callback });
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -46,8 +48,8 @@ describe('CallbackDisposable', () => {
   it('should invoke the callback only once on repeated dispose by default', () => {
     const callback = vi.fn();
     const disposable = new CallbackDisposable({ callback });
-    disposable[Symbol.dispose]();
-    disposable[Symbol.dispose]();
+    dispose(disposable);
+    dispose(disposable);
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -57,8 +59,8 @@ describe('CallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: MultipleDisposeBehavior.Invoke
     });
-    disposable[Symbol.dispose]();
-    disposable[Symbol.dispose]();
+    dispose(disposable);
+    dispose(disposable);
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
@@ -68,8 +70,8 @@ describe('CallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
-    disposable[Symbol.dispose]();
-    disposable[Symbol.dispose]();
+    dispose(disposable);
+    dispose(disposable);
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -79,9 +81,9 @@ describe('CallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: MultipleDisposeBehavior.Throw
     });
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     expect(() => {
-      disposable[Symbol.dispose]();
+      dispose(disposable);
     }).toThrow('already been disposed');
     expect(callback).toHaveBeenCalledTimes(1);
   });
@@ -92,9 +94,9 @@ describe('CallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: castTo<MultipleDisposeBehavior>(-1)
     });
-    disposable[Symbol.dispose]();
+    dispose(disposable);
     expect(() => {
-      disposable[Symbol.dispose]();
+      dispose(disposable);
     }).toThrow();
   });
 });
@@ -103,7 +105,7 @@ describe('AsyncCallbackDisposable', () => {
   it('should execute the callback when disposed', async () => {
     const callback = vi.fn();
     const disposable = new AsyncCallbackDisposable({ callback });
-    await disposable[Symbol.asyncDispose]();
+    await disposeAsync(disposable);
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -117,8 +119,8 @@ describe('AsyncCallbackDisposable', () => {
   it('should invoke the callback only once on repeated dispose by default', async () => {
     const callback = vi.fn();
     const disposable = new AsyncCallbackDisposable({ callback });
-    await disposable[Symbol.asyncDispose]();
-    await disposable[Symbol.asyncDispose]();
+    await disposeAsync(disposable);
+    await disposeAsync(disposable);
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -128,8 +130,8 @@ describe('AsyncCallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: MultipleDisposeBehavior.Invoke
     });
-    await disposable[Symbol.asyncDispose]();
-    await disposable[Symbol.asyncDispose]();
+    await disposeAsync(disposable);
+    await disposeAsync(disposable);
     expect(callback).toHaveBeenCalledTimes(2);
   });
 
@@ -139,8 +141,8 @@ describe('AsyncCallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
-    await disposable[Symbol.asyncDispose]();
-    await disposable[Symbol.asyncDispose]();
+    await disposeAsync(disposable);
+    await disposeAsync(disposable);
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -150,8 +152,8 @@ describe('AsyncCallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: MultipleDisposeBehavior.Throw
     });
-    await disposable[Symbol.asyncDispose]();
-    await expect(disposable[Symbol.asyncDispose]()).rejects.toThrow('already been disposed');
+    await disposeAsync(disposable);
+    await expect(disposeAsync(disposable)).rejects.toThrow('already been disposed');
     expect(callback).toHaveBeenCalledTimes(1);
   });
 
@@ -161,8 +163,8 @@ describe('AsyncCallbackDisposable', () => {
       callback,
       multipleDisposeBehavior: castTo<MultipleDisposeBehavior>(-1)
     });
-    await disposable[Symbol.asyncDispose]();
-    await expect(disposable[Symbol.asyncDispose]()).rejects.toThrow();
+    await disposeAsync(disposable);
+    await expect(disposeAsync(disposable)).rejects.toThrow();
   });
 });
 
@@ -190,22 +192,22 @@ describe('isAsyncDisposable', () => {
 
 describe('toDisposableEx / isDisposableEx', () => {
   it('should wrap a plain Disposable and delegate the dispose() convenience method', () => {
-    const dispose = vi.fn();
-    const plain: Disposable = { [Symbol.dispose]: dispose };
+    const disposeMock = vi.fn();
+    const plain: Disposable = { [Symbol.dispose]: disposeMock };
     expect(isDisposableEx(plain)).toBe(false);
 
     const disposableEx = toDisposableEx(plain);
     expect(isDisposableEx(disposableEx)).toBe(true);
 
     disposableEx.dispose();
-    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(disposeMock).toHaveBeenCalledTimes(1);
   });
 
   it('should delegate the wrapped Symbol.dispose()', () => {
-    const dispose = vi.fn();
-    const disposableEx = toDisposableEx({ [Symbol.dispose]: dispose });
-    disposableEx[Symbol.dispose]();
-    expect(dispose).toHaveBeenCalledTimes(1);
+    const disposeMock = vi.fn();
+    const disposableEx = toDisposableEx({ [Symbol.dispose]: disposeMock });
+    dispose(disposableEx);
+    expect(disposeMock).toHaveBeenCalledTimes(1);
   });
 
   it('should return an already-DisposableEx input unchanged', () => {
@@ -234,7 +236,7 @@ describe('toAsyncDisposableEx / isAsyncDisposableEx', () => {
   it('should delegate the wrapped Symbol.asyncDispose()', async () => {
     const asyncDispose = vi.fn(() => noopAsync());
     const asyncDisposableEx = toAsyncDisposableEx({ [Symbol.asyncDispose]: asyncDispose });
-    await asyncDisposableEx[Symbol.asyncDispose]();
+    await disposeAsync(asyncDisposableEx);
     expect(asyncDispose).toHaveBeenCalledTimes(1);
   });
 
@@ -266,7 +268,7 @@ describe('CombineDisposable', () => {
         { [Symbol.dispose]: (): number => order.push('b') }
       ]
     });
-    combined[Symbol.dispose]();
+    dispose(combined);
     expect(order).toEqual(['b', 'a']);
   });
 
@@ -279,15 +281,15 @@ describe('CombineDisposable', () => {
       ],
       disposeOrder: DisposeOrder.Fifo
     });
-    combined[Symbol.dispose]();
+    dispose(combined);
     expect(order).toEqual(['a', 'b']);
   });
 
   it('should dispose children only once on repeated dispose by default', () => {
     const a = vi.fn();
     const combined = new CombineDisposable({ disposables: [{ [Symbol.dispose]: a }] });
-    combined[Symbol.dispose]();
-    combined[Symbol.dispose]();
+    dispose(combined);
+    dispose(combined);
     expect(a).toHaveBeenCalledTimes(1);
   });
 
@@ -297,8 +299,8 @@ describe('CombineDisposable', () => {
       disposables: [{ [Symbol.dispose]: a }],
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
-    combined[Symbol.dispose]();
-    combined[Symbol.dispose]();
+    dispose(combined);
+    dispose(combined);
     expect(a).toHaveBeenCalledTimes(1);
   });
 
@@ -307,9 +309,9 @@ describe('CombineDisposable', () => {
       disposables: [],
       multipleDisposeBehavior: MultipleDisposeBehavior.Throw
     });
-    combined[Symbol.dispose]();
+    dispose(combined);
     expect(() => {
-      combined[Symbol.dispose]();
+      dispose(combined);
     }).toThrow('already been disposed');
   });
 
@@ -318,9 +320,9 @@ describe('CombineDisposable', () => {
       disposables: [],
       multipleDisposeBehavior: castTo<MultipleDisposeBehavior>(-1)
     });
-    combined[Symbol.dispose]();
+    dispose(combined);
     expect(() => {
-      combined[Symbol.dispose]();
+      dispose(combined);
     }).toThrow();
   });
 
@@ -330,7 +332,7 @@ describe('CombineDisposable', () => {
       disposeOrder: castTo<DisposeOrder>(-1)
     });
     expect(() => {
-      combined[Symbol.dispose]();
+      dispose(combined);
     }).toThrow();
   });
 
@@ -349,7 +351,7 @@ describe('CombineDisposable', () => {
 
     let caught: unknown;
     try {
-      combined[Symbol.dispose]();
+      dispose(combined);
     } catch (error) {
       caught = error;
     }
@@ -373,7 +375,7 @@ describe('CombineDisposable', () => {
     });
 
     expect(() => {
-      combined[Symbol.dispose]();
+      dispose(combined);
     }).toThrow('a failed');
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).not.toHaveBeenCalled();
@@ -408,7 +410,7 @@ describe('CombineAsyncDisposable', () => {
         }
       ]
     });
-    await combined[Symbol.asyncDispose]();
+    await disposeAsync(combined);
     expect(order).toEqual(['b', 'a']);
   });
 
@@ -431,15 +433,15 @@ describe('CombineAsyncDisposable', () => {
       ],
       disposeOrder: DisposeOrder.Fifo
     });
-    await combined[Symbol.asyncDispose]();
+    await disposeAsync(combined);
     expect(order).toEqual(['a', 'b']);
   });
 
   it('should dispose children only once on repeated dispose by default', async () => {
     const a = vi.fn(() => noopAsync());
     const combined = new CombineAsyncDisposable({ asyncDisposables: [{ [Symbol.asyncDispose]: a }] });
-    await combined[Symbol.asyncDispose]();
-    await combined[Symbol.asyncDispose]();
+    await disposeAsync(combined);
+    await disposeAsync(combined);
     expect(a).toHaveBeenCalledTimes(1);
   });
 
@@ -449,8 +451,8 @@ describe('CombineAsyncDisposable', () => {
       asyncDisposables: [{ [Symbol.asyncDispose]: a }],
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
-    await combined[Symbol.asyncDispose]();
-    await combined[Symbol.asyncDispose]();
+    await disposeAsync(combined);
+    await disposeAsync(combined);
     expect(a).toHaveBeenCalledTimes(1);
   });
 
@@ -459,8 +461,8 @@ describe('CombineAsyncDisposable', () => {
       asyncDisposables: [],
       multipleDisposeBehavior: MultipleDisposeBehavior.Throw
     });
-    await combined[Symbol.asyncDispose]();
-    await expect(combined[Symbol.asyncDispose]()).rejects.toThrow('already been disposed');
+    await disposeAsync(combined);
+    await expect(disposeAsync(combined)).rejects.toThrow('already been disposed');
   });
 
   it('should reject on a second dispose with an unknown behavior', async () => {
@@ -468,8 +470,8 @@ describe('CombineAsyncDisposable', () => {
       asyncDisposables: [],
       multipleDisposeBehavior: castTo<MultipleDisposeBehavior>(-1)
     });
-    await combined[Symbol.asyncDispose]();
-    await expect(combined[Symbol.asyncDispose]()).rejects.toThrow();
+    await disposeAsync(combined);
+    await expect(disposeAsync(combined)).rejects.toThrow();
   });
 
   it('should reject with an unknown dispose order', async () => {
@@ -477,7 +479,7 @@ describe('CombineAsyncDisposable', () => {
       asyncDisposables: [{ [Symbol.asyncDispose]: (): Promise<void> => noopAsync() }],
       disposeOrder: castTo<DisposeOrder>(-1)
     });
-    await expect(combined[Symbol.asyncDispose]()).rejects.toThrow();
+    await expect(disposeAsync(combined)).rejects.toThrow();
   });
 
   it('should dispose every child and aggregate the errors by default', async () => {
@@ -491,7 +493,7 @@ describe('CombineAsyncDisposable', () => {
 
     let caught: unknown;
     try {
-      await combined[Symbol.asyncDispose]();
+      await disposeAsync(combined);
     } catch (error) {
       caught = error;
     }
@@ -512,7 +514,7 @@ describe('CombineAsyncDisposable', () => {
       errorBehavior: DisposeErrorBehavior.FailFast
     });
 
-    await expect(combined[Symbol.asyncDispose]()).rejects.toThrow('a failed');
+    await expect(disposeAsync(combined)).rejects.toThrow('a failed');
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).not.toHaveBeenCalled();
   });

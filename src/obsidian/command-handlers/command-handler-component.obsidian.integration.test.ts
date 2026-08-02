@@ -20,6 +20,8 @@ import {
 
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 
+import { dispose } from '../../disposable.ts';
+
 interface MenuTeardownResult {
   readonly countAfterDispose: number;
   readonly countAfterFirstTrigger: number;
@@ -90,7 +92,7 @@ describe('CommandHandlerComponent menu-event teardown', () => {
           });
           const countAfterFirstTrigger = fileMenuCallCount;
 
-          disposable[Symbol.dispose]();
+          dispose(disposable);
 
           // After dispose the file-menu registration is gone, so a further trigger must not run the handler.
           app.workspace.trigger('file-menu', new obsidianModule.Menu(), file, 'integration-test');
