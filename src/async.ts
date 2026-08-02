@@ -224,6 +224,7 @@ export function convertSyncToAsync<Arguments extends unknown[], Result>(syncFn: 
  * @param error - The error to handle.
  * @returns Whether the error is a silent error.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether the error was handled.
 export function handleSilentError(error: unknown): boolean {
   let cause = error;
   while (!(cause instanceof SilentError)) {

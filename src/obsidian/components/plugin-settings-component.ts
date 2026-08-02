@@ -35,8 +35,8 @@ import {
 } from '../../function.ts';
 import {
   castTo,
-  deepEqual,
-  getAllKeys
+  getAllKeys,
+  isDeepEqual
 } from '../../object-utils.ts';
 import { DateTransformer } from '../../transformers/date-transformer.ts';
 import { DurationTransformer } from '../../transformers/duration-transformer.ts';
@@ -348,7 +348,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
 
       const newRecord = await this.settingsToRawRecord(this.currentState.inputValues);
 
-      if (!deepEqual(newRecord, data)) {
+      if (!isDeepEqual(newRecord, data)) {
         await this.saveToFileImpl();
       }
     } finally {
@@ -513,7 +513,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    */
   public async saveToFile(context?: unknown): Promise<void> {
     this.ensureLoaded();
-    if (deepEqual(this.lastSavedState.inputValues, this.currentState.inputValues)) {
+    if (isDeepEqual(this.lastSavedState.inputValues, this.currentState.inputValues)) {
       return;
     }
 

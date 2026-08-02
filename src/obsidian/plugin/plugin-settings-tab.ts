@@ -48,7 +48,7 @@ import {
 } from '../../function.ts';
 import {
   castTo,
-  deepEqual,
+  isDeepEqual,
   normalizeOptionalProperties
 } from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
@@ -551,7 +551,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     let shouldEmptyOnBlur = false;
     let shouldRevertToDefaultValueOnBlur = false;
 
-    if (textBasedComponent && optionsExtension.shouldShowPlaceholderForDefaultValues && deepEqual(readonlyValue, defaultValue)) {
+    if (textBasedComponent && optionsExtension.shouldShowPlaceholderForDefaultValues && isDeepEqual(readonlyValue, defaultValue)) {
       textBasedComponent.empty();
     } else {
       valueComponent.setValue(optionsExtension.pluginSettingsToComponentValueConverter(readonlyValue));
@@ -591,7 +591,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
       if (shouldSetProperty) {
         validationMessage = await this.pluginSettingsComponent.setProperty(propertyName, newValue as PluginSettings[PropertyName]);
-        if (textBasedComponent && optionsExtension.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
+        if (textBasedComponent && optionsExtension.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && isDeepEqual(newValue, defaultValue)) {
           shouldEmptyOnBlur = true;
         }
       }

@@ -155,11 +155,11 @@ const KEY_SEPARATOR = '.';
 const PLACEHOLDER_KEY_PREFIX = 'toJson:';
 const equalityComparerEntries = createEqualityComparerEntries(
   [
-    { constructor: ArrayBuffer, equalityComparer: deepEqualArrayBuffer },
-    { constructor: Date, equalityComparer: deepEqualDate },
-    { constructor: RegExp, equalityComparer: deepEqualRegExp },
-    { constructor: Map, equalityComparer: deepEqualMap },
-    { constructor: Set, equalityComparer: deepEqualSet }
+    { constructor: ArrayBuffer, equalityComparer: isDeepEqualArrayBuffer },
+    { constructor: Date, equalityComparer: isDeepEqualDate },
+    { constructor: RegExp, equalityComparer: isDeepEqualRegExp },
+    { constructor: Map, equalityComparer: isDeepEqualMap },
+    { constructor: Set, equalityComparer: isDeepEqualSet }
   ] as const
 );
 
@@ -628,55 +628,6 @@ export function cloneWithNonEnumerableProperties<T extends object>(obj: T): T {
 }
 
 /**
- * Compares two values to determine if they are deeply equal.
- *
- * @param a - The first value to compare.
- * @param b - The second value to compare.
- * @returns `true` if the values are deeply equal, otherwise `false`.
- */
-export function deepEqual(a: unknown, b: unknown): boolean {
-  if (a === b) {
-    return true;
-  }
-
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
-    return false;
-  }
-
-  const aConstructor = a.constructor;
-  const bConstructor = b.constructor;
-
-  if (aConstructor !== bConstructor) {
-    return false;
-  }
-
-  if (aConstructor !== Object) {
-    const result = deepEqualTyped(a, b);
-    if (result !== undefined) {
-      return result;
-    }
-  }
-
-  const keysA = getAllKeys(a);
-  const keysB = getAllKeys(b);
-
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-
-  const aRecord = ensureGenericObject(a);
-  const bRecord = ensureGenericObject(b);
-
-  for (const key of keysA) {
-    if (!keysB.includes(key) || !deepEqual(aRecord[key], bRecord[key])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
  * Deletes multiple properties from an object.
  *
  * @typeParam T - The type of the object.
@@ -684,6 +635,7 @@ export function deepEqual(a: unknown, b: unknown): boolean {
  * @param propertyNames - The names of the properties to delete.
  * @returns `true` if any of the properties were present, otherwise `false`.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was deleted.
 export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof T)[]): boolean {
   let hasDeletedAny = false;
 
@@ -702,6 +654,7 @@ export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof
  * @param propertyName - The name of the property to delete.
  * @returns `true` if the property was present, otherwise `false`.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether the property was deleted.
 export function deleteProperty<T extends object>(obj: T, propertyName: keyof T): boolean {
   if (!Object.hasOwn(obj, propertyName)) {
     return false;
@@ -816,6 +769,55 @@ export function getPrototypeOf<T>(instance: T): T {
     return instance;
   }
   return Object.getPrototypeOf(instance) as T;
+}
+
+/**
+ * Compares two values to determine if they are deeply equal.
+ *
+ * @param a - The first value to compare.
+ * @param b - The second value to compare.
+ * @returns `true` if the values are deeply equal, otherwise `false`.
+ */
+export function isDeepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) {
+    return true;
+  }
+
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+    return false;
+  }
+
+  const aConstructor = a.constructor;
+  const bConstructor = b.constructor;
+
+  if (aConstructor !== bConstructor) {
+    return false;
+  }
+
+  if (aConstructor !== Object) {
+    const result = deepEqualTyped(a, b);
+    if (result !== undefined) {
+      return result;
+    }
+  }
+
+  const keysA = getAllKeys(a);
+  const keysB = getAllKeys(b);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  const aRecord = ensureGenericObject(a);
+  const bRecord = ensureGenericObject(b);
+
+  for (const key of keysA) {
+    if (!keysB.includes(key) || !isDeepEqual(aRecord[key], bRecord[key])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 /**
  * Retrieves the name of a property of a given type `T`.
@@ -1001,62 +1003,6 @@ function createEqualityComparerEntries<const T extends readonly EqualityComparer
   return entries;
 }
 
-function deepEqualArrayBuffer(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-
-  const viewA = new Uint8Array(a);
-  const viewB = new Uint8Array(b);
-  return deepEqual(viewA, viewB);
-}
-
-function deepEqualDate(a: Date, b: Date): boolean {
-  return a.getTime() === b.getTime();
-}
-
-function deepEqualMap(a: Map<unknown, unknown>, b: Map<unknown, unknown>): boolean {
-  if (a.size !== b.size) {
-    return false;
-  }
-
-  for (const [key, value] of a) {
-    if (!b.has(key) || !deepEqual(value, b.get(key))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function deepEqualRegExp(a: RegExp, b: RegExp): boolean {
-  return a.source === b.source && a.flags === b.flags;
-}
-
-function deepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
-  if (a.size !== b.size) {
-    return false;
-  }
-
-  for (const valueA of a) {
-    if (b.has(valueA)) {
-      continue;
-    }
-    let hasMatch = false;
-    for (const valueB of b) {
-      if (deepEqual(valueA, valueB)) {
-        hasMatch = true;
-        break;
-      }
-    }
-    if (!hasMatch) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
   for (const entry of equalityComparerEntries) {
     const result = tryEntryEquality({
@@ -1069,6 +1015,62 @@ function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
     }
   }
   return undefined;
+}
+
+function isDeepEqualArrayBuffer(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) {
+    return false;
+  }
+
+  const viewA = new Uint8Array(a);
+  const viewB = new Uint8Array(b);
+  return isDeepEqual(viewA, viewB);
+}
+
+function isDeepEqualDate(a: Date, b: Date): boolean {
+  return a.getTime() === b.getTime();
+}
+
+function isDeepEqualMap(a: Map<unknown, unknown>, b: Map<unknown, unknown>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const [key, value] of a) {
+    if (!b.has(key) || !isDeepEqual(value, b.get(key))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isDeepEqualRegExp(a: RegExp, b: RegExp): boolean {
+  return a.source === b.source && a.flags === b.flags;
+}
+
+function isDeepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const valueA of a) {
+    if (b.has(valueA)) {
+      continue;
+    }
+    let hasMatch = false;
+    for (const valueB of b) {
+      if (isDeepEqual(valueA, valueB)) {
+        hasMatch = true;
+        break;
+      }
+    }
+    if (!hasMatch) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {

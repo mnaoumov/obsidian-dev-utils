@@ -17,7 +17,7 @@ import type {
 } from './vault.ts';
 
 import {
-  deepEqual,
+  isDeepEqual,
   normalizeOptionalProperties
 } from '../object-utils.ts';
 import {
@@ -226,7 +226,7 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(params: Pr
         return null;
       }
 
-      if (deepEqual(oldFrontmatter, newFrontmatter)) {
+      if (isDeepEqual(oldFrontmatter, newFrontmatter)) {
         return content;
       }
 

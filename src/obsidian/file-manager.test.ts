@@ -17,7 +17,7 @@ import type { GetFileParams } from './file-system.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 
 import { noop } from '../function.ts';
-import { deepEqual } from '../object-utils.ts';
+import { isDeepEqual } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
@@ -44,7 +44,7 @@ vi.mock('../object-utils.ts', async (importOriginal) => {
   const original = await importOriginal<typeof import('../object-utils.ts')>();
   return {
     ...original,
-    deepEqual: vi.fn(() => false)
+    isDeepEqual: vi.fn(() => false)
   };
 });
 
@@ -88,7 +88,7 @@ describe('addAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
   });
 
   it('should do nothing when alias is empty', async () => {
@@ -156,7 +156,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases: some-alias\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ aliases: ['some-alias'] });
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
   });
 
   it('should do nothing when alias is empty', async () => {
@@ -217,7 +217,7 @@ describe('processFrontmatter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(isMarkdownFile).mockReturnValue(true);
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
   });
 
   it('should throw when file is not a markdown file', async () => {
@@ -255,7 +255,7 @@ describe('processFrontmatter', () => {
     const content = '---\ntitle: test\n---\ncontent';
     let resultContent: null | string = null;
 
-    vi.mocked(deepEqual).mockReturnValue(true);
+    vi.mocked(isDeepEqual).mockReturnValue(true);
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content });
@@ -269,7 +269,7 @@ describe('processFrontmatter', () => {
 
   it('should call setFrontmatter when frontmatter changed', async () => {
     const content = '---\ntitle: old\n---\ncontent';
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content });

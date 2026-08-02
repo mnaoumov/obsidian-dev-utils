@@ -66,6 +66,7 @@ interface ShouldKeepProjectFileParams {
  * @returns `true` when the library's own declarations have no type errors, `false` otherwise.
  * @throws If the root folder cannot be found.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether validation passed.
 export function validateDeclarations(options: ValidateDeclarationsOptions = {}): boolean {
   const root = getRootFolder();
 

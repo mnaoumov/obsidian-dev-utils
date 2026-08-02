@@ -36,8 +36,8 @@ import type {
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
 import {
-  deepEqual,
   getNestedPropertyValue,
+  isDeepEqual,
   normalizeOptionalProperties,
   setNestedPropertyValue
 } from '../object-utils.ts';
@@ -829,6 +829,6 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
     if (index === 0) {
       return true;
     }
-    return !deepEqual(change, changes[index - 1]);
+    return !isDeepEqual(change, changes[index - 1]);
   });
 }

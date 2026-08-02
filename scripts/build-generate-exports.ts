@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 
 import type { PackageJson } from '../src/script-utils/npm.ts';
 
-import { deepEqual } from '../src/object-utils.ts';
+import { isDeepEqual } from '../src/object-utils.ts';
 import {
   basename,
   dirname,
@@ -54,7 +54,7 @@ await wrapCliTask(async () => {
       await setExport(packageJson.exports, srcFolder, true);
     }
 
-    isChanged = !deepEqual(oldExports, packageJson.exports);
+    isChanged = !isDeepEqual(oldExports, packageJson.exports);
   });
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It changed in the `editPackageJson`, ESLint mistakenly does not recognize it.

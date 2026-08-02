@@ -49,15 +49,15 @@ import {
   fixFrontmatterMarkdownLinks,
   generateMarkdownLink,
   generateRawMarkdownLink,
+  hasAngleBrackets,
+  hasEmbedSyntax,
+  hasLeadingDot,
+  hasLeadingSlash,
+  hasWikilinkSyntax,
   LinkPathStyle,
   LinkStyle,
   shouldResetAlias,
   splitSubpath,
-  testAngleBrackets,
-  testEmbed,
-  testLeadingDot,
-  testLeadingSlash,
-  testWikilink,
   updateFileUrlLinksInContent,
   updateFileUrlLinksInFile,
   updateLink,
@@ -328,7 +328,7 @@ describe('generateRawMarkdownLink', () => {
   });
 });
 
-describe('testWikilink', () => {
+describe('hasWikilinkSyntax', () => {
   it.each([
     { description: 'a wikilink', expected: true, input: '[[note]]' },
     { description: 'an embed wikilink', expected: true, input: '![[note]]' },
@@ -337,11 +337,11 @@ describe('testWikilink', () => {
     { description: 'an embed markdown link', expected: false, input: '![alt](image.png)' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testWikilink(input)).toBe(expected);
+    expect(hasWikilinkSyntax(input)).toBe(expected);
   });
 });
 
-describe('testEmbed', () => {
+describe('hasEmbedSyntax', () => {
   it.each([
     { description: 'an embed wikilink', expected: true, input: '![[image.png]]' },
     { description: 'an embed markdown link', expected: true, input: '![alt](image.png)' },
@@ -349,11 +349,11 @@ describe('testEmbed', () => {
     { description: 'a non-embed markdown link', expected: false, input: '[alias](note.md)' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testEmbed(input)).toBe(expected);
+    expect(hasEmbedSyntax(input)).toBe(expected);
   });
 });
 
-describe('testAngleBrackets', () => {
+describe('hasAngleBrackets', () => {
   it.each([
     { description: 'a markdown link with angle brackets', expected: true, input: '[link](<path with spaces.md>)' },
     { description: 'an embed with angle brackets', expected: true, input: '![alt](<image file.png>)' },
@@ -361,11 +361,11 @@ describe('testAngleBrackets', () => {
     { description: 'a wikilink', expected: false, input: '[[note]]' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testAngleBrackets(input)).toBe(expected);
+    expect(hasAngleBrackets(input)).toBe(expected);
   });
 });
 
-describe('testLeadingDot', () => {
+describe('hasLeadingDot', () => {
   it.each([
     { description: 'a wikilink with a leading dot', expected: true, input: '[[./note]]' },
     { description: 'a markdown link with a leading dot', expected: true, input: '[link](./note.md)' },
@@ -374,11 +374,11 @@ describe('testLeadingDot', () => {
     { description: 'an absolute path', expected: false, input: '[[note]]' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testLeadingDot(input)).toBe(expected);
+    expect(hasLeadingDot(input)).toBe(expected);
   });
 });
 
-describe('testLeadingSlash', () => {
+describe('hasLeadingSlash', () => {
   it.each([
     { description: 'a wikilink with a leading slash', expected: true, input: '[[/note]]' },
     { description: 'a markdown link with a leading slash', expected: true, input: '[link](/note.md)' },
@@ -387,7 +387,7 @@ describe('testLeadingSlash', () => {
     { description: 'a relative path', expected: false, input: '[[note]]' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testLeadingSlash(input)).toBe(expected);
+    expect(hasLeadingSlash(input)).toBe(expected);
   });
 });
 

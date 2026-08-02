@@ -263,6 +263,54 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
 }
 
 /**
+ * Checks if the GitHub CLI is installed on the system.
+ *
+ * Throws an error if the GitHub CLI is not installed.
+ *
+ * @throws Error if the GitHub CLI is not installed.
+ */
+export async function assertGitHubCliInstalled(): Promise<void> {
+  try {
+    await execFromRoot('gh --version', { isQuiet: true });
+  } catch {
+    throw new Error('GitHub CLI is not installed. Please install it from https://cli.github.com/');
+  }
+}
+
+/**
+ * Checks if Git is installed on the system.
+ *
+ * Throws an error if Git is not installed.
+ *
+ * @throws Error if Git is not installed.
+ */
+export async function assertGitInstalled(): Promise<void> {
+  try {
+    await execFromRoot('git --version', { isQuiet: true });
+  } catch {
+    throw new Error('Git is not installed. Please install it from https://git-scm.com/');
+  }
+}
+
+/**
+ * Checks if the Git repository is clean, meaning there are no uncommitted changes.
+ *
+ * Throws an error if the Git repository is not clean.
+ *
+ * @throws Error if the Git repository is not clean.
+ */
+export async function assertGitRepoClean(): Promise<void> {
+  try {
+    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { isQuiet: true });
+    if (stdout) {
+      throw new Error();
+    }
+  } catch {
+    throw new Error('Git repository is not clean. Please commit or stash your changes before releasing a new version.');
+  }
+}
+
+/**
  * Wraps any bare `http(s)://` URL in the given text in angle brackets (`<url>`) so that text emitted
  * into a Markdown document (such as a generated changelog bullet) passes markdownlint's
  * `MD034/no-bare-urls` rule while still rendering as a clickable autolink on GitHub.
@@ -281,54 +329,6 @@ export function autolinkBareUrls(text: string): string {
     const bareUrl = url.slice(0, url.length - trailingPunctuation.length);
     return `<${bareUrl}>${trailingPunctuation}`;
   });
-}
-
-/**
- * Checks if the GitHub CLI is installed on the system.
- *
- * Throws an error if the GitHub CLI is not installed.
- *
- * @throws Error if the GitHub CLI is not installed.
- */
-export async function checkGitHubCliInstalled(): Promise<void> {
-  try {
-    await execFromRoot('gh --version', { isQuiet: true });
-  } catch {
-    throw new Error('GitHub CLI is not installed. Please install it from https://cli.github.com/');
-  }
-}
-
-/**
- * Checks if Git is installed on the system.
- *
- * Throws an error if Git is not installed.
- *
- * @throws Error if Git is not installed.
- */
-export async function checkGitInstalled(): Promise<void> {
-  try {
-    await execFromRoot('git --version', { isQuiet: true });
-  } catch {
-    throw new Error('Git is not installed. Please install it from https://git-scm.com/');
-  }
-}
-
-/**
- * Checks if the Git repository is clean, meaning there are no uncommitted changes.
- *
- * Throws an error if the Git repository is not clean.
- *
- * @throws Error if the Git repository is not clean.
- */
-export async function checkGitRepoClean(): Promise<void> {
-  try {
-    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { isQuiet: true });
-    if (stdout) {
-      throw new Error();
-    }
-  } catch {
-    throw new Error('Git repository is not clean. Please commit or stash your changes before releasing a new version.');
-  }
 }
 
 /**
@@ -649,11 +649,11 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   const isObsidianPlugin = existsSync(resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ManifestJson })) && (await readPackageJson()).name !== 'obsidian-dev-utils';
 
   validate(versionUpdateType);
-  await checkGitInstalled();
-  await checkGitHubCliInstalled();
+  await assertGitInstalled();
+  await assertGitHubCliInstalled();
 
   if (shouldRunChecks) {
-    await checkGitRepoClean();
+    await assertGitRepoClean();
     await npmRun('format:check');
     await npmRun('spellcheck');
     await npmRun('lint:md');

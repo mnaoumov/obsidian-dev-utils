@@ -49,7 +49,7 @@ export const requireComponentSuffix: Rule.RuleModule = {
 
     return {
       'ClassDeclaration[id]'(node: Rule.Node): void {
-        checkClass({
+        reportClass({
           checker,
           context,
           node,
@@ -57,7 +57,7 @@ export const requireComponentSuffix: Rule.RuleModule = {
         });
       },
       'ClassExpression[id]'(node: Rule.Node): void {
-        checkClass({
+        reportClass({
           checker,
           context,
           node,
@@ -81,9 +81,9 @@ export const requireComponentSuffix: Rule.RuleModule = {
 };
 
 /**
- * Parameters for {@link checkClass}.
+ * Parameters for {@link reportClass}.
  */
-interface CheckClassParams {
+interface ReportClassParams {
   /**
    * The TypeScript type checker.
    */
@@ -126,11 +126,64 @@ interface WalkAncestorsParams {
 }
 
 /**
+ * Collects the names of all ancestor types in the inheritance chain.
+ *
+ * @param type - The TypeScript type to start from.
+ * @returns A set of ancestor class names.
+ */
+function collectAncestorNames(type: Type): Set<string> {
+  const names = new Set<string>();
+  const visited = new Set<Type>();
+
+  walkAncestors({
+    collectedNames: names,
+    currentType: type,
+    visitedTypes: visited
+  });
+
+  return names;
+
+  /**
+   * Recursively walks the base types of a type, collecting their names.
+   *
+   * @param params - The parameters for the walk.
+   */
+  function walkAncestors(params: WalkAncestorsParams): void {
+    const { collectedNames, currentType, visitedTypes } = params;
+    if (visitedTypes.has(currentType)) {
+      return;
+    }
+
+    visitedTypes.add(currentType);
+
+    const baseTypes = (currentType as TypeWithBaseTypes).getBaseTypes?.();
+
+    if (!baseTypes) {
+      return;
+    }
+
+    for (const baseType of baseTypes) {
+      const $symbol = baseType.getSymbol();
+
+      if ($symbol) {
+        collectedNames.add($symbol.getName());
+      }
+
+      walkAncestors({
+        collectedNames,
+        currentType: baseType,
+        visitedTypes
+      });
+    }
+  }
+}
+
+/**
  * Checks a single class declaration or expression.
  *
  * @param params - The parameters for the check.
  */
-function checkClass(params: CheckClassParams): void {
+function reportClass(params: ReportClassParams): void {
   const { checker, context, node, services } = params;
   const classNode = node as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
   const classId = classNode.id;
@@ -188,58 +241,5 @@ function checkClass(params: CheckClassParams): void {
       messageId: MESSAGE_ID_MISSING_SUFFIX,
       node
     });
-  }
-}
-
-/**
- * Collects the names of all ancestor types in the inheritance chain.
- *
- * @param type - The TypeScript type to start from.
- * @returns A set of ancestor class names.
- */
-function collectAncestorNames(type: Type): Set<string> {
-  const names = new Set<string>();
-  const visited = new Set<Type>();
-
-  walkAncestors({
-    collectedNames: names,
-    currentType: type,
-    visitedTypes: visited
-  });
-
-  return names;
-
-  /**
-   * Recursively walks the base types of a type, collecting their names.
-   *
-   * @param params - The parameters for the walk.
-   */
-  function walkAncestors(params: WalkAncestorsParams): void {
-    const { collectedNames, currentType, visitedTypes } = params;
-    if (visitedTypes.has(currentType)) {
-      return;
-    }
-
-    visitedTypes.add(currentType);
-
-    const baseTypes = (currentType as TypeWithBaseTypes).getBaseTypes?.();
-
-    if (!baseTypes) {
-      return;
-    }
-
-    for (const baseType of baseTypes) {
-      const $symbol = baseType.getSymbol();
-
-      if ($symbol) {
-        collectedNames.add($symbol.getName());
-      }
-
-      walkAncestors({
-        collectedNames,
-        currentType: baseType,
-        visitedTypes
-      });
-    }
   }
 }

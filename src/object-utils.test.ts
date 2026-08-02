@@ -13,7 +13,6 @@ import {
   assignWithNonEnumerableProperties,
   castTo,
   cloneWithNonEnumerableProperties,
-  deepEqual,
   deleteProperties,
   deleteProperty,
   extractDefaultExportInterop,
@@ -22,6 +21,7 @@ import {
   getAllKeys,
   getNestedPropertyValue,
   getPrototypeOf,
+  isDeepEqual,
   nameof,
   normalizeOptionalProperties,
   removeUndefinedProperties,
@@ -45,10 +45,10 @@ interface RemoveUndefinedTestObject {
 }
 
 describe('ObjectUtils', () => {
-  describe('deepEqual', () => {
+  describe('isDeepEqual', () => {
     it('should return true for identical references', () => {
       const $object = { a: 1 };
-      expect(deepEqual($object, $object)).toBe(true);
+      expect(isDeepEqual($object, $object)).toBe(true);
     });
 
     it.each([
@@ -58,7 +58,7 @@ describe('ObjectUtils', () => {
       [null, null],
       [undefined, undefined]
     ])('should return true for equal primitives %j and %j', (a, b) => {
-      expect(deepEqual(a, b)).toBe(true);
+      expect(isDeepEqual(a, b)).toBe(true);
     });
 
     it.each([
@@ -67,7 +67,7 @@ describe('ObjectUtils', () => {
       [true, false],
       [null, undefined]
     ])('should return false for different primitives %j and %j', (a, b) => {
-      expect(deepEqual(a, b)).toBe(false);
+      expect(isDeepEqual(a, b)).toBe(false);
     });
 
     it.each([
@@ -75,7 +75,7 @@ describe('ObjectUtils', () => {
       [{ a: 1 }, { a: 2 }, false],
       [{ a: 1 }, { a: 1, b: 2 }, false]
     ])('should compare plain objects deeply %j and %j → %j', (a, b, expected) => {
-      expect(deepEqual(a, b)).toBe(expected);
+      expect(isDeepEqual(a, b)).toBe(expected);
     });
 
     it.each([
@@ -83,14 +83,14 @@ describe('ObjectUtils', () => {
       [[1, 2], [1, 2, 3], false],
       [[1, [2, 3]], [1, [2, 3]], true]
     ])('should compare arrays deeply %j and %j → %j', (a, b, expected) => {
-      expect(deepEqual(a, b)).toBe(expected);
+      expect(isDeepEqual(a, b)).toBe(expected);
     });
 
     it.each([
       ['2024-01-01', '2024-01-01', true],
       ['2024-01-01', '2024-01-02', false]
     ])('should compare Dates %s and %s → %j', (a, b, expected) => {
-      expect(deepEqual(new Date(a), new Date(b))).toBe(expected);
+      expect(isDeepEqual(new Date(a), new Date(b))).toBe(expected);
     });
 
     it.each([
@@ -98,67 +98,67 @@ describe('ObjectUtils', () => {
       [/abc/g, /abc/i, false],
       [/abc/, /def/, false]
     ])('should compare RegExps %j and %j → %j', (a, b, expected) => {
-      expect(deepEqual(a, b)).toBe(expected);
+      expect(isDeepEqual(a, b)).toBe(expected);
     });
 
     it('should return true for equal Maps', () => {
       const m1 = new Map([['a', 1], ['b', 2]]);
       const m2 = new Map([['a', 1], ['b', 2]]);
-      expect(deepEqual(m1, m2)).toBe(true);
+      expect(isDeepEqual(m1, m2)).toBe(true);
     });
 
     it('should return false for Maps with different sizes', () => {
       const m1 = new Map([['a', 1], ['b', 2]]);
       const m3 = new Map([['a', 1]]);
-      expect(deepEqual(m1, m3)).toBe(false);
+      expect(isDeepEqual(m1, m3)).toBe(false);
     });
 
     it('should return true for equal Sets', () => {
       const s1 = new Set([1, 2, 3]);
       const s2 = new Set([1, 2, 3]);
-      expect(deepEqual(s1, s2)).toBe(true);
+      expect(isDeepEqual(s1, s2)).toBe(true);
     });
 
     it('should return false for Sets with different sizes', () => {
       const s1 = new Set([1, 2, 3]);
       const s3 = new Set([1, 2]);
-      expect(deepEqual(s1, s3)).toBe(false);
+      expect(isDeepEqual(s1, s3)).toBe(false);
     });
 
     it('should compare Sets with deep objects', () => {
       const s1 = new Set([{ a: 1 }]);
       const s2 = new Set([{ a: 1 }]);
-      expect(deepEqual(s1, s2)).toBe(true);
+      expect(isDeepEqual(s1, s2)).toBe(true);
     });
 
     it('should return false for Sets with different deep objects', () => {
       const s1 = new Set([{ a: 1 }, { b: 2 }]);
       const s2 = new Set([{ a: 1 }, { b: 99 }]);
-      expect(deepEqual(s1, s2)).toBe(false);
+      expect(isDeepEqual(s1, s2)).toBe(false);
     });
 
     it('should compare Maps with different values for same key', () => {
       const m1 = new Map([['a', 1]]);
       const m2 = new Map([['a', 2]]);
-      expect(deepEqual(m1, m2)).toBe(false);
+      expect(isDeepEqual(m1, m2)).toBe(false);
     });
 
     it('should compare ArrayBuffers of different lengths', () => {
       const a1 = new Uint8Array([1, 2]).buffer;
       const a2 = new Uint8Array([1, 2, 3]).buffer;
-      expect(deepEqual(a1, a2)).toBe(false);
+      expect(isDeepEqual(a1, a2)).toBe(false);
     });
 
     it('should return true for equal ArrayBuffers', () => {
       const a1 = new Uint8Array([1, 2, 3]).buffer;
       const a2 = new Uint8Array([1, 2, 3]).buffer;
-      expect(deepEqual(a1, a2)).toBe(true);
+      expect(isDeepEqual(a1, a2)).toBe(true);
     });
 
     it('should return false for ArrayBuffers with different contents', () => {
       const a1 = new Uint8Array([1, 2, 3]).buffer;
       const a3 = new Uint8Array([1, 2, 4]).buffer;
-      expect(deepEqual(a1, a3)).toBe(false);
+      expect(isDeepEqual(a1, a3)).toBe(false);
     });
 
     it('should return false for different constructors', () => {
@@ -168,14 +168,14 @@ describe('ObjectUtils', () => {
       class B {
         public x = 1;
       }
-      expect(deepEqual(new A(), new B())).toBe(false);
+      expect(isDeepEqual(new A(), new B())).toBe(false);
     });
 
     it.each([
       [{}, null],
       [null, {}]
     ])('should return false for object vs null %j and %j', (a, b) => {
-      expect(deepEqual(a, b)).toBe(false);
+      expect(isDeepEqual(a, b)).toBe(false);
     });
   });
 

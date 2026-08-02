@@ -431,7 +431,7 @@ export interface GenerateMarkdownLinkParams {
    *
    * If provided, it will be used to infer the values of
    *
-   * - {@link isEmbed}
+   * - {@link hasEmbedSyntax}
    * - {@link linkStyle}
    * - {@link shouldUseAngleBrackets}
    * - {@link shouldUseLeadingDotForRelativePaths}
@@ -551,14 +551,14 @@ export interface GenerateRawMarkdownLinkParams {
   readonly isWikilink: boolean;
 
   /**
-   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`.
+   * Whether to escape the alias. Applicable only if {@link hasWikilinkSyntax} is `false`.
    *
    * @default `false`
    */
   readonly shouldEscapeAlias?: boolean;
 
   /**
-   * Whether to use angle brackets. Applicable only if {@link isWikilink} is `false`.
+   * Whether to use angle brackets. Applicable only if {@link hasWikilinkSyntax} is `false`.
    *
    * @default `false`
    */
@@ -1183,6 +1183,7 @@ export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
  * @param cache - The metadata cache to fix the frontmatter markdown links in.
  * @returns Whether the frontmatter markdown links were fixed.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was fixed.
 export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
   return fixFrontmatterMarkdownLinksImpl({ cache, key: '', value: cache.frontmatter });
 }
@@ -1246,6 +1247,68 @@ export function generateRawMarkdownLink(params: GenerateRawMarkdownLinkParams): 
  */
 export function getGenerateMarkdownLinkDefaultParamsFns(): (() => Partial<GenerateMarkdownLinkParams>)[] {
   return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>('generateMarkdownLinkDefaultParamsFns', []).value;
+}
+
+/**
+ * Tests whether a link uses angle brackets, possibly embed:
+ * `[title](<link>)`, `![title](<link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link uses angle brackets
+ */
+export function hasAngleBrackets(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.hasAngleBrackets ?? false;
+}
+
+/**
+ * Tests whether a link is an embed link:
+ * `![[link]]`, `![title](link)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link is an embed link
+ */
+export function hasEmbedSyntax(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.isEmbed ?? false;
+}
+
+/**
+ * Tests whether a link has a leading dot, possibly embed:
+ * `[[./link]]`, `[title](./link)`, `[title](<./link>)`,
+ * `![[./link]]`, `![title](./link)`, `![title](<./link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link has a leading dot
+ */
+export function hasLeadingDot(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.url.startsWith('./') ?? false;
+}
+
+/**
+ * Tests whether a link has a leading slash, possibly embed:
+ * `[[/link]]`, `[title](/link)`, `[title](</link>)`,
+ * `![[/link]]`, `![title](/link)`, `![title](</link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link has a leading slash
+ */
+export function hasLeadingSlash(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.url.startsWith('/') ?? false;
+}
+
+/**
+ * Tests whether a link is a wikilink, possibly embed:
+ * `[[link]]`, `![[link]]`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link is a wikilink
+ */
+export function hasWikilinkSyntax(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.isWikilink ?? false;
 }
 
 /**
@@ -1328,68 +1391,6 @@ export function splitSubpath(link: string): SplitSubpathResult {
     linkPath: parsed.path,
     subpath: parsed.subpath
   };
-}
-
-/**
- * Tests whether a link uses angle brackets, possibly embed:
- * `[title](<link>)`, `![title](<link>)`.
- *
- * @param link - Link to test
- * @returns Whether the link uses angle brackets
- */
-export function testAngleBrackets(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.hasAngleBrackets ?? false;
-}
-
-/**
- * Tests whether a link is an embed link:
- * `![[link]]`, `![title](link)`.
- *
- * @param link - Link to test
- * @returns Whether the link is an embed link
- */
-export function testEmbed(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.isEmbed ?? false;
-}
-
-/**
- * Tests whether a link has a leading dot, possibly embed:
- * `[[./link]]`, `[title](./link)`, `[title](<./link>)`,
- * `![[./link]]`, `![title](./link)`, `![title](<./link>)`.
- *
- * @param link - Link to test
- * @returns Whether the link has a leading dot
- */
-export function testLeadingDot(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.url.startsWith('./') ?? false;
-}
-
-/**
- * Tests whether a link has a leading slash, possibly embed:
- * `[[/link]]`, `[title](/link)`, `[title](</link>)`,
- * `![[/link]]`, `![title](/link)`, `![title](</link>)`.
- *
- * @param link - Link to test
- * @returns Whether the link has a leading slash
- */
-export function testLeadingSlash(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.url.startsWith('/') ?? false;
-}
-
-/**
- * Tests whether a link is a wikilink, possibly embed:
- * `[[link]]`, `![[link]]`.
- *
- * @param link - Link to test
- * @returns Whether the link is a wikilink
- */
-export function testWikilink(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.isWikilink ?? false;
 }
 
 /**
@@ -1540,7 +1541,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
     app,
     content,
     linkConverter: (link) => {
-      const isEmbedLink = testEmbed(link.original);
+      const isEmbedLink = hasEmbedSyntax(link.original);
       if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
         return;
       }
@@ -1579,7 +1580,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   await editLinks({
     ...params,
     linkConverter: (link) => {
-      const isEmbedLink = testEmbed(link.original);
+      const isEmbedLink = hasEmbedSyntax(link.original);
       if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
         return;
       }
@@ -1596,6 +1597,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   });
 }
 
+// eslint-disable-next-line unicorn/consistent-boolean-name -- Mirrors the exported function it implements.
 function fixFrontmatterMarkdownLinksImpl(params: FixFrontmatterMarkdownLinksImplParams): boolean {
   const {
     cache,
@@ -1840,7 +1842,7 @@ function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLi
 function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
   const { app } = params;
   return {
-    isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : false),
+    isEmbed: params.isEmbed ?? (params.originalLink ? hasEmbedSyntax(params.originalLink) : false),
     isSingleSubpathAllowed: params.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(normalizeOptionalProperties<ShouldUseWikilinkStyleParams>({
       app,
@@ -1848,11 +1850,11 @@ function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
       originalLink: params.originalLink
     })),
     linkPathStyle: getFinalLinkPathStyle(app, params.linkPathStyle),
-    shouldUseAngleBrackets: params.shouldUseAngleBrackets ?? (params.originalLink ? testAngleBrackets(params.originalLink) : undefined) ?? false,
+    shouldUseAngleBrackets: params.shouldUseAngleBrackets ?? (params.originalLink ? hasAngleBrackets(params.originalLink) : undefined) ?? false,
     shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths
-      ?? (params.originalLink ? testLeadingDot(params.originalLink) : undefined) ?? false,
+      ?? (params.originalLink ? hasLeadingDot(params.originalLink) : undefined) ?? false,
     shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
-      ?? (params.originalLink ? testLeadingSlash(params.originalLink) : undefined) ?? false
+      ?? (params.originalLink ? hasLeadingSlash(params.originalLink) : undefined) ?? false
   };
 }
 
@@ -1927,7 +1929,7 @@ function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {
       return shouldUseWikilinks(app);
     }
     case LinkStyle.PreserveExisting: {
-      return originalLink === undefined ? shouldUseWikilinks(app) : testWikilink(originalLink);
+      return originalLink === undefined ? shouldUseWikilinks(app) : hasWikilinkSyntax(originalLink);
     }
     case LinkStyle.Wikilink: {
       return true;

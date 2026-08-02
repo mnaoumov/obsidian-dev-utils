@@ -13,10 +13,10 @@ import type { ResolvePathFromRootSafeParams } from './root.ts';
 import {
   addGitTag,
   addUpdatedFilesToGit,
+  assertGitHubCliInstalled,
+  assertGitInstalled,
+  assertGitRepoClean,
   autolinkBareUrls,
-  checkGitHubCliInstalled,
-  checkGitInstalled,
-  checkGitRepoClean,
   copyUpdatedManifest,
   getNewVersion,
   getReleaseNotes,
@@ -324,44 +324,44 @@ describe('getNewVersion', () => {
   });
 });
 
-describe('checkGitInstalled', () => {
+describe('assertGitInstalled', () => {
   it('should not throw when git is installed', async () => {
     mockExecFromRoot.mockResolvedValue('git version 2.40.0');
-    await expect(checkGitInstalled()).resolves.toBeUndefined();
+    await expect(assertGitInstalled()).resolves.toBeUndefined();
   });
 
   it('should throw when git is not installed', async () => {
     mockExecFromRoot.mockRejectedValue(new Error('command not found'));
-    await expect(checkGitInstalled()).rejects.toThrow('Git is not installed');
+    await expect(assertGitInstalled()).rejects.toThrow('Git is not installed');
   });
 });
 
-describe('checkGitHubCliInstalled', () => {
+describe('assertGitHubCliInstalled', () => {
   it('should not throw when gh is installed', async () => {
     mockExecFromRoot.mockResolvedValue('gh version 2.30.0');
-    await expect(checkGitHubCliInstalled()).resolves.toBeUndefined();
+    await expect(assertGitHubCliInstalled()).resolves.toBeUndefined();
   });
 
   it('should throw when gh is not installed', async () => {
     mockExecFromRoot.mockRejectedValue(new Error('command not found'));
-    await expect(checkGitHubCliInstalled()).rejects.toThrow('GitHub CLI is not installed');
+    await expect(assertGitHubCliInstalled()).rejects.toThrow('GitHub CLI is not installed');
   });
 });
 
-describe('checkGitRepoClean', () => {
+describe('assertGitRepoClean', () => {
   it('should not throw when repo is clean', async () => {
     mockExecFromRoot.mockResolvedValue('');
-    await expect(checkGitRepoClean()).resolves.toBeUndefined();
+    await expect(assertGitRepoClean()).resolves.toBeUndefined();
   });
 
   it('should throw when repo has uncommitted changes', async () => {
     mockExecFromRoot.mockResolvedValue('M src/file.ts');
-    await expect(checkGitRepoClean()).rejects.toThrow('Git repository is not clean');
+    await expect(assertGitRepoClean()).rejects.toThrow('Git repository is not clean');
   });
 
   it('should throw when git status command fails', async () => {
     mockExecFromRoot.mockRejectedValue(new Error('not a git repo'));
-    await expect(checkGitRepoClean()).rejects.toThrow('Git repository is not clean');
+    await expect(assertGitRepoClean()).rejects.toThrow('Git repository is not clean');
   });
 });
 

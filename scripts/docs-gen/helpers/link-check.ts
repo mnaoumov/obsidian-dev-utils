@@ -94,13 +94,13 @@ export interface LinkCheckFileSystem {
  * Validates the deduplicated external URLs over the network through a bounded concurrency pool.
  *
  * @param targets - The unique external URL → referencing page map from {@link collectExternalTargets}.
- * @param checkUrl - Injected probe returning the HTTP status for a URL (`0` for a network failure).
+ * @param fetchUrlStatus - Injected probe returning the HTTP status for a URL (`0` for a network failure).
  * @param concurrency - The maximum number of in-flight probes.
  * @returns Every external URL that did not return HTTP `200`, in the map's iteration order.
  */
-export async function checkExternalTargets(
+export async function collectBrokenExternalLinks(
   targets: Map<string, string>,
-  checkUrl: (url: string) => Promise<number>,
+  fetchUrlStatus: (url: string) => Promise<number>,
   concurrency: number
 ): Promise<BrokenLink[]> {
   const entries = [...targets];
@@ -117,7 +117,7 @@ export async function checkExternalTargets(
       }
 
       const [externalUrl, pageUrl] = entry;
-      const httpStatus = await checkUrl(externalUrl);
+      const httpStatus = await fetchUrlStatus(externalUrl);
       if (httpStatus !== HTTP_OK_STATUS) {
         results[index] = { httpStatus, pageUrl, reason: 'external-error', targetUrl: externalUrl };
       }
@@ -142,7 +142,7 @@ export async function checkExternalTargets(
  * @param siteBaseUrl - The absolute base URL the site is served from (with a trailing slash).
  * @returns Every broken internal link, in page-then-document order.
  */
-export function checkLinks(pages: DocumentationPage[], fileSystem: LinkCheckFileSystem, siteBaseUrl: string): BrokenLink[] {
+export function collectBrokenLinks(pages: DocumentationPage[], fileSystem: LinkCheckFileSystem, siteBaseUrl: string): BrokenLink[] {
   const brokenLinks: BrokenLink[] = [];
 
   for (const page of pages) {

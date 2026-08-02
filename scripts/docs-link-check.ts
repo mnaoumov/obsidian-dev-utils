@@ -21,8 +21,8 @@ import type {
 
 import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import {
-  checkExternalTargets,
-  checkLinks,
+  collectBrokenExternalLinks,
+  collectBrokenLinks,
   collectExternalTargets,
   extractIds,
   formatBrokenLinks,
@@ -45,36 +45,16 @@ await wrapCliTask(async () => {
   const allFiles = await getAllFiles(DOCS_OUTPUT_PATH);
   const pages = await readPages(DOCS_OUTPUT_PATH, allFiles);
 
-  const internalBrokenLinks = checkLinks(pages, createFileSystem(allFiles, pages), SITE_BASE_URL);
+  const internalBrokenLinks = collectBrokenLinks(pages, createFileSystem(allFiles, pages), SITE_BASE_URL);
 
   const externalTargets = collectExternalTargets(pages, SITE_BASE_URL);
-  const externalBrokenLinks = await checkExternalTargets(externalTargets, checkExternalUrl, EXTERNAL_LINK_CONCURRENCY);
+  const externalBrokenLinks = await collectBrokenExternalLinks(externalTargets, fetchUrlStatus, EXTERNAL_LINK_CONCURRENCY);
 
   const brokenLinks = [...internalBrokenLinks, ...externalBrokenLinks];
   if (brokenLinks.length > 0) {
     throw new Error(`Detected ${String(brokenLinks.length)} broken documentation link(s):\n${formatBrokenLinks(brokenLinks)}`);
   }
 });
-
-async function checkExternalUrl(url: string): Promise<number> {
-  const controller = new AbortController();
-  const timeoutId = globalThis.setTimeout(() => {
-    controller.abort();
-  }, EXTERNAL_LINK_TIMEOUT_IN_MILLISECONDS);
-
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    // Cancel the unread body so undici releases the connection immediately.
-    // Without this the per-host connection pool stalls and same-host requests
-    // Serialize, turning a ~3s run into minutes.
-    await response.body?.cancel();
-    return response.status;
-  } catch {
-    return NETWORK_FAILURE_STATUS;
-  } finally {
-    globalThis.clearTimeout(timeoutId);
-  }
-}
 
 function createFileSystem(allFiles: Set<string>, pages: DocumentationPage[]): LinkCheckFileSystem {
   const htmlByRelativePath = new Map(pages.map((page) => [page.relativePath, page.html]));
@@ -101,6 +81,26 @@ function createFileSystem(allFiles: Set<string>, pages: DocumentationPage[]): Li
       return candidates.find((candidate) => allFiles.has(candidate)) ?? null;
     }
   };
+}
+
+async function fetchUrlStatus(url: string): Promise<number> {
+  const controller = new AbortController();
+  const timeoutId = globalThis.setTimeout(() => {
+    controller.abort();
+  }, EXTERNAL_LINK_TIMEOUT_IN_MILLISECONDS);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    // Cancel the unread body so undici releases the connection immediately.
+    // Without this the per-host connection pool stalls and same-host requests
+    // Serialize, turning a ~3s run into minutes.
+    await response.body?.cancel();
+    return response.status;
+  } catch {
+    return NETWORK_FAILURE_STATUS;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
+  }
 }
 
 async function getAllFiles(outputRootPath: string): Promise<Set<string>> {

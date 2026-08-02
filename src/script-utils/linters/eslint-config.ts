@@ -678,12 +678,20 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * `isMemberPageExists` rather than `doesMemberPageExist`. These entries EXTEND the defaults (`is`,
          * `has`, `can`, `should`, ...) rather than replacing them, so a boolean with no boolean-reading prefix
          * at all is still rejected -- the rule just stops insisting the prefix come from a shorter list.
+         *
+         * The list is bidirectional: adding a prefix also asserts that everything named with it IS a boolean.
+         * `check` earns its place on both counts, since the handful of non-boolean `check*` names it surfaced
+         * were genuinely mis-named (void functions that throw, a probe returning an HTTP status). `test` was
+         * measured and rejected: it would validate five `test*` link predicates that read better as `is*`
+         * anyway, at the cost of renaming SCREAMING_CASE test fixtures and the `testCoverage`/`testWatch`
+         * runners that deliberately mirror the `test:coverage`/`test:watch` npm scripts.
          */
         'unicorn/consistent-boolean-name': [
           'error',
           {
             prefixes: {
               allows: true,
+              check: true,
               contains: true,
               does: true,
               includes: true,
