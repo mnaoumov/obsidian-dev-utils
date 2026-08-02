@@ -706,6 +706,17 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
             }
           }
         ],
+        /*
+         * The next six rules all suggest an API newer than this project's `lib` (`ES2022`), so following any of
+         * them fails to compile. The target is not arbitrary: `obsidian-integration-testing/metadata.json`
+         * records `ecmaScriptVersion: "ES2022"` for installer 1.1.9, the oldest one still able to run current
+         * Obsidian. Each is off at the config level rather than annotated per site, because none can ever be
+         * satisfied while that floor holds. Revisit them together if the floor moves.
+         *
+         * `Array#toReversed` and `Array#toSorted` are ES2023.
+         */
+        'unicorn/no-array-reverse': 'off',
+        'unicorn/no-array-sort': 'off',
         // `null` is load-bearing here: an optional collaborator is modelled as a required `null | X` field rather than an optional `X`, so `null` and `undefined` are not interchangeable.
         'unicorn/no-null': 'off',
         /*
@@ -722,6 +733,8 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
             checkArrowFunctionBody: false
           }
         ],
+        // `Array.fromAsync` is ES2024. See the ES2022 floor note above.
+        'unicorn/prefer-array-from-async': 'off',
         /*
          * Directly contradicts `obsidianmd/no-global-this`: this rule rewrites `window.x` to `globalThis.x`, and
          * that one forbids `globalThis` outright. With both enabled, `--fix` applies one and then the other
@@ -729,6 +742,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * guidance wins in an Obsidian library, so this is the rule that gives way.
          */
         'unicorn/prefer-global-this': 'off',
+        // `Iterator#toArray` is ES2025. See the ES2022 floor note above.
+        'unicorn/prefer-iterator-to-array': 'off',
+        // `Promise.withResolvers` is ES2024. See the ES2022 floor note above.
+        'unicorn/prefer-promise-with-resolvers': 'off',
+        // `Set#union` and friends are ES2025. See the ES2022 floor note above.
+        'unicorn/prefer-set-methods': 'off',
         /*
          * `URL.canParse` requires Node 18.17, well above the Node 16.16.0 floor that shipped source targets
          * (see `minimumNodeVersion` below). The rule can therefore never be satisfied here, so it is off at the
