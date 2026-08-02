@@ -26,6 +26,8 @@ import nodePlugin from 'eslint-plugin-n';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `index` is too confusing.
+import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig } from 'eslint/config';
 import { existsSync } from 'node:fs';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
@@ -134,6 +136,7 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
     ...getStylisticConfigs(context),
     ...getImportXConfigs(context),
     ...getPerfectionistConfigs(context),
+    ...getUnicornConfigs(context),
     ...getEslintImportResolverTypescriptConfigs(),
     ...getEslintCommentsConfigs(context),
     ...getObsidianDevUtilsPluginConfigs(context),
@@ -410,9 +413,16 @@ function getIntegrationTestConfigs(): Linter.Config[] {
 }
 
 function getNodeCompatConfigs(context: EslintConfigContext): Linter.Config[] {
-  // The minimum Obsidian installer that still receives app updates (0.14.5) ships Electron 18.0.3, which runs Node 16.13.2.
-  // Shipped source must therefore avoid Node/ES runtime builtins unavailable in that version. Tests and scripts are dev-only and exempt.
-  const minimumNodeVersion = '>=16.13.2';
+  /*
+   * The minimum Obsidian installer that still receives app updates and works is 1.1.9, which ships Electron
+   * 21.3.3 and runs Node 16.16.0. Shipped source must therefore avoid Node/ES runtime builtins unavailable in
+   * that version. Tests and scripts are dev-only and exempt.
+   *
+   * Source of truth: `obsidian-integration-testing/metadata.json` — the newest release carrying the field
+   * (1.13.1) declares `minRunnableInstallerVersion: "1.1.9"`, and that installer's `runtimeVersions` gives the
+   * Electron and Node versions above. Re-derive from there rather than editing this number by hand.
+   */
+  const minimumNodeVersion = '>=16.16.0';
 
   return defineConfig([
     {
@@ -619,6 +629,110 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
         react: {
           version: 'detect'
         }
+      }
+    }
+  ]);
+}
+
+function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
+  return defineConfig([
+    {
+      extends: [unicorn.configs.recommended],
+      files: context.allFiles(),
+      rules: {
+        /*
+         * These entries are not abbreviations to be expanded — they are established vocabulary here.
+         *
+         * Brand: `dev`, `lib`, `util`/`utils` spell the product's own name. Left on, the rule rewrites
+         * `ObsidianDevUtilsRepoPaths` to `ObsidianDevelopmentUtilitiesRepoPaths` and `getLibDebugger` to
+         * `getLibraryDebugger`, renaming exported API after the package it belongs to.
+         *
+         * Convention: `params` is the parameter-bag convention, enforced by
+         * `obsidian-dev-utils/params-options-name-match`, which requires bag types to be named
+         * `<Owner>Params` / `<Owner>Options`. Expanding it to `Parameters` would put the two rules in direct
+         * contradiction and break 300+ exported type names.
+         *
+         * Reserved words: a bare `args`, `fn`, `str`, `mod` or `evt` expands to an identifier that is already
+         * taken, so the rule suggests `$arguments`, `$function`, and so on. Spell those `$arguments` /
+         * `$function` instead — a `$` prefix reads better than a trailing underscore. This is deliberately NOT
+         * configured as a custom replacement: unicorn substitutes at the word level inside compound names, so
+         * redirecting the whole entry turns `asyncFn` into `async$function`. Compounds want the plain expansion
+         * (`asyncFunction`); only the bare, genuinely-colliding identifiers take the `$` form.
+         *
+         * Domain words: `doc`/`docs`, `env`, `dist` and `src` are the clearer spelling in this codebase.
+         * Expanding `doc` also picks the wrong word — the `api-doc-*` modules generate API *documentation*, not
+         * documents. `src` additionally corrupts code: the fixer renames the `Src` member of the exported
+         * `ObsidianPluginRepoPaths` / `ObsidianDevUtilsRepoPaths` enums while leaving every `.Src` reference
+         * dangling, because `checkProperties` exempts property accesses but not the declarations they point at.
+         *
+         * Disabling the replacement entries protects these permanently; an `allowList` would instead need every
+         * affected identifier enumerated by hand and re-enumerated for every new one.
+         *
+         * NOTE: this rule's autofix is NOT reference-aware for declarations that participate in a contract —
+         * enum members, interface members, and TypeScript parameter properties (`constructor(private readonly
+         * el: HTMLElement)`) are renamed while `this.el` and `Enum.Member` references are left dangling. Apply
+         * its reports by hand; never run `--fix` over it.
+         */
+        'unicorn/name-replacements': [
+          'error',
+          {
+            replacements: {
+              dev: false,
+              dist: false,
+              doc: false,
+              docs: false,
+              env: false,
+              lib: false,
+              params: false,
+              src: false,
+              util: false,
+              utils: false
+            }
+          }
+        ],
+        // `null` is load-bearing here: an optional collaborator is modelled as a required `null | X` field rather than an optional `X`, so `null` and `undefined` are not interchangeable.
+        'unicorn/no-null': 'off',
+        /*
+         * `checkArguments` strips `undefined` arguments, which shifts the remaining positional arguments into
+         * the wrong slots; `checkArrowFunctionBody` removes `return undefined;` from arrow bodies whose other
+         * branches do return a value, which violates the `noImplicitReturns` setting this project compiles with.
+         * The rule's remaining cases (a bare `undefined` initializer, `return undefined;` in a void function)
+         * are still worth having.
+         */
+        'unicorn/no-useless-undefined': [
+          'error',
+          {
+            checkArguments: false,
+            checkArrowFunctionBody: false
+          }
+        ],
+        /*
+         * Directly contradicts `obsidianmd/no-global-this`: this rule rewrites `window.x` to `globalThis.x`, and
+         * that one forbids `globalThis` outright. With both enabled, `--fix` applies one and then the other
+         * reverts it, which ESLint reports as `ESLintCircularFixesWarning` across 29 files. Obsidian's own
+         * guidance wins in an Obsidian library, so this is the rule that gives way.
+         */
+        'unicorn/prefer-global-this': 'off',
+        /*
+         * `URL.canParse` requires Node 18.17, well above the Node 16.16.0 floor that shipped source targets
+         * (see `minimumNodeVersion` below). The rule can therefore never be satisfied here, so it is off at the
+         * config level rather than annotated at each call site.
+         */
+        'unicorn/prefer-url-can-parse': 'off',
+        // The codebase already spells encodings the WHATWG way (`utf-8`), which is also what `TextDecoder` reports. Keep the rule enforcing consistency, just in the direction already in use.
+        'unicorn/text-encoding-identifier-case': [
+          'error',
+          {
+            withDash: true
+          }
+        ]
+      }
+    },
+    {
+      // Build/lint/version scripts are CLI entry points, where exiting with a status code is the interface.
+      files: context.scriptFiles,
+      rules: {
+        'unicorn/no-process-exit': 'off'
       }
     }
   ]);
