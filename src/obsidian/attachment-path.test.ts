@@ -383,13 +383,13 @@ describe('isAtProperAttachmentPath', () => {
 
   it('should forward the note, attachment, and explicit context to the proper-path lookup', async () => {
     const extended = stubProperPath('attachments/img.png');
-    const result = await isAtProperAttachmentPath({
+    const isAtProperPath = await isAtProperAttachmentPath({
       app,
       attachmentPathOrFile: 'attachments/img 1.png',
       context: AttachmentPathContext.RenameNote,
       notePathOrFile: 'note.md'
     });
-    expect(result).toBe(true);
+    expect(isAtProperPath).toBe(true);
     expect(extended).toHaveBeenCalledTimes(1);
     expect(extended).toHaveBeenCalledWith(expect.objectContaining({
       context: AttachmentPathContext.RenameNote,

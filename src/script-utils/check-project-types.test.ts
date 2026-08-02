@@ -102,13 +102,13 @@ describe('toCanonical', () => {
 
 describe('checkProjectTypes', () => {
   it('should force skipLibCheck to false and return true when there are no diagnostics', () => {
-    const result = checkProjectTypes({
+    const areProjectTypesValid = checkProjectTypes({
       options: { skipLibCheck: true, strict: true },
       rootNames: ['/root/a.ts'],
       shouldKeepFile: () => true
     });
 
-    expect(result).toBe(true);
+    expect(areProjectTypesValid).toBe(true);
     const createProgramOptions = mockCreateProgram.mock.calls[0]?.[0];
     expect(createProgramOptions?.options.skipLibCheck).toBe(false);
     expect(createProgramOptions?.options.strict).toBe(true);
@@ -129,13 +129,13 @@ describe('checkProjectTypes', () => {
       return 'formatted';
     });
 
-    const result = checkProjectTypes({
+    const areProjectTypesValid = checkProjectTypes({
       options: {},
       rootNames: ['/root/keep.ts'],
       shouldKeepFile: (fileName) => fileName.includes('keep')
     });
 
-    expect(result).toBe(false);
+    expect(areProjectTypesValid).toBe(false);
     expect(mockFormatWithColor).toHaveBeenCalledWith([keptError, noFileWarning], expect.anything());
     expect(process.stdout.write).toHaveBeenCalledWith('formatted');
     expect(mockSys.getCurrentDirectory).toHaveBeenCalled();
@@ -145,13 +145,13 @@ describe('checkProjectTypes', () => {
     const keptWarning = createDiagnostic({ category: DiagnosticCategory.Warning, fileName: '/root/keep.ts' });
     mockGetPreEmitDiagnostics.mockReturnValue([keptWarning]);
 
-    const result = checkProjectTypes({
+    const areProjectTypesValid = checkProjectTypes({
       options: {},
       rootNames: ['/root/keep.ts'],
       shouldKeepFile: () => true
     });
 
-    expect(result).toBe(true);
+    expect(areProjectTypesValid).toBe(true);
     expect(process.stdout.write).toHaveBeenCalledWith('formatted');
   });
 
@@ -160,14 +160,14 @@ describe('checkProjectTypes', () => {
     const interopError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/keep.ts' });
     mockGetPreEmitDiagnostics.mockReturnValue([keptError, interopError]);
 
-    const result = checkProjectTypes({
+    const areProjectTypesValid = checkProjectTypes({
       options: {},
       rootNames: ['/root/keep.ts'],
       shouldKeepDiagnostic: (diagnostic) => diagnostic !== interopError,
       shouldKeepFile: () => true
     });
 
-    expect(result).toBe(false);
+    expect(areProjectTypesValid).toBe(false);
     expect(mockFormatWithColor).toHaveBeenCalledWith([keptError], expect.anything());
     expect(process.stdout.write).toHaveBeenCalledWith('Ignored 1 diagnostic(s) outside the validated set.\n');
   });
@@ -178,14 +178,14 @@ describe('checkProjectTypes', () => {
     mockGetPreEmitDiagnostics.mockReturnValue([keptError, droppedError]);
     mockFormatWithColor.mockReturnValueOnce('formatted-kept').mockReturnValueOnce('formatted-ignored');
 
-    const result = checkProjectTypes({
+    const areProjectTypesValid = checkProjectTypes({
       isVerbose: true,
       options: {},
       rootNames: ['/root/keep.ts'],
       shouldKeepFile: (fileName) => fileName.includes('keep')
     });
 
-    expect(result).toBe(false);
+    expect(areProjectTypesValid).toBe(false);
     expect(mockFormatWithColor).toHaveBeenNthCalledWith(1, [keptError], expect.anything());
     expect(mockFormatWithColor).toHaveBeenNthCalledWith(2, [droppedError], expect.anything());
     expect(process.stdout.write).toHaveBeenCalledWith('Ignored 1 diagnostic(s) outside the validated set.\n');
@@ -211,13 +211,13 @@ describe('checkProjectTypes', () => {
     const droppedError = createDiagnostic({ category: DiagnosticCategory.Error, fileName: '/root/drop.ts' });
     mockGetPreEmitDiagnostics.mockReturnValue([droppedError]);
 
-    const result = checkProjectTypes({
+    const areProjectTypesValid = checkProjectTypes({
       options: {},
       rootNames: ['/root/keep.ts'],
       shouldKeepFile: () => false
     });
 
-    expect(result).toBe(true);
+    expect(areProjectTypesValid).toBe(true);
     expect(mockFormatWithColor).not.toHaveBeenCalled();
     expect(process.stdout.write).toHaveBeenCalledTimes(1);
     expect(process.stdout.write).toHaveBeenCalledWith('Ignored 1 diagnostic(s) outside the validated set.\n');

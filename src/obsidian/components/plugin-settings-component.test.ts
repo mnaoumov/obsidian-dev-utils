@@ -421,8 +421,8 @@ describe('PluginSettingsComponentBase', () => {
   it('should return false for non-string property names in isValidPropertyName', () => {
     const component = createComponent(new MockDataHandler({}));
     // Access the private method to test the non-string guard
-    const result = component['isValidPropertyName'](123);
-    expect(result).toBe(false);
+    const isValidPropertyName = component['isValidPropertyName'](123);
+    expect(isValidPropertyName).toBe(false);
   });
 
   it('should handle validator returning empty string (no error)', async () => {

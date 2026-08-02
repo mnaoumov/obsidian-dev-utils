@@ -244,15 +244,15 @@ describe('getNoteFilesSorted', () => {
 describe('createFolderSafe', () => {
   it('should return false if folder already exists', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
-    const result = await createFolderSafe(app, 'existing-folder');
-    expect(result).toBe(false);
+    const wasFolderCreated = await createFolderSafe(app, 'existing-folder');
+    expect(wasFolderCreated).toBe(false);
   });
 
   it('should create folder and return true when it does not exist', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
-    const result = await createFolderSafe(app, 'new-folder');
-    expect(result).toBe(true);
+    const wasFolderCreated = await createFolderSafe(app, 'new-folder');
+    expect(wasFolderCreated).toBe(true);
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
   });
 
@@ -260,8 +260,8 @@ describe('createFolderSafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder').mockRejectedValue(new Error('Folder already exists'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(true);
-    const result = await createFolderSafe(app, 'race-condition-folder');
-    expect(result).toBe(true);
+    const wasFolderCreated = await createFolderSafe(app, 'race-condition-folder');
+    expect(wasFolderCreated).toBe(true);
   });
 
   it('should throw if createFolder fails and folder does not exist', async () => {
@@ -512,28 +512,28 @@ describe('isEmptyFolder', () => {
   it('should return true for an empty folder', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
-    const result = await isEmptyFolder(app, 'empty-folder');
-    expect(result).toBe(true);
+    const isEmpty = await isEmptyFolder(app, 'empty-folder');
+    expect(isEmpty).toBe(true);
   });
 
   it('should return false for a folder with files', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['full-folder/note.md'], folders: [] });
-    const result = await isEmptyFolder(app, 'full-folder');
-    expect(result).toBe(false);
+    const isEmpty = await isEmptyFolder(app, 'full-folder');
+    expect(isEmpty).toBe(false);
   });
 
   it('should return false for a folder with subfolders', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: ['full-folder/sub'] });
-    const result = await isEmptyFolder(app, 'full-folder');
-    expect(result).toBe(false);
+    const isEmpty = await isEmptyFolder(app, 'full-folder');
+    expect(isEmpty).toBe(false);
   });
 
   it('should return true for a path that is not a folder', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue(null);
-    const result = await isEmptyFolder(app, 'nonexistent');
-    expect(result).toBe(true);
+    const isEmpty = await isEmptyFolder(app, 'nonexistent');
+    expect(isEmpty).toBe(true);
   });
 
   it('should work with TFolder instances', async () => {
@@ -541,8 +541,8 @@ describe('isEmptyFolder', () => {
     assertNonNullable(folder);
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
-    const result = await isEmptyFolder(app, folder);
-    expect(result).toBe(true);
+    const isEmpty = await isEmptyFolder(app, folder);
+    expect(isEmpty).toBe(true);
   });
 });
 

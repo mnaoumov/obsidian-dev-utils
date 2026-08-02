@@ -147,13 +147,13 @@ describe('attachment-path', () => {
 
   describe('hasOwnAttachmentFolder', () => {
     it('should return a boolean indicating own attachment folder', async () => {
-      const result = await evalInObsidian<Record<string, never>, boolean>({
+      const hasOwnFolder = await evalInObsidian<Record<string, never>, boolean>({
         fn({ app, lib: { hasOwnAttachmentFolder } }) {
           return hasOwnAttachmentFolder({ app, path: 'test-note.md' });
         }
       });
 
-      expect(typeof result).toBe('boolean');
+      expect(typeof hasOwnFolder).toBe('boolean');
     });
   });
 });

@@ -399,10 +399,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -450,10 +450,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return false', () => {
-      expect(result).toBe(false);
+      expect(wereLinksFixed).toBe(false);
     });
 
     it('should not define frontmatterLinks', () => {
@@ -469,8 +469,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   it('should ignore external URLs in frontmatter', () => {
@@ -481,8 +481,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   describe('should handle nested objects in frontmatter', () => {
@@ -494,10 +494,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -525,10 +525,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -549,8 +549,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   it('should handle numeric and boolean frontmatter values', () => {
@@ -562,8 +562,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   describe('should handle a markdown link without alias (empty alias)', () => {
@@ -573,10 +573,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -609,10 +609,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
         original: '[old](old-note.md)'
       }]
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should have 1 frontmatter link', () => {
@@ -645,8 +645,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
   it('should handle undefined frontmatter gracefully', () => {
     const cache: CachedMetadata = castTo<CachedMetadata>({ frontmatter: undefined, frontmatterLinks: undefined });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 });
 
@@ -1223,7 +1223,7 @@ describe('app-dependent functions', () => {
 
   describe('shouldResetAlias', () => {
     it('should return false when isWikilink is false', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'any',
         isWikilink: false,
@@ -1231,77 +1231,77 @@ describe('app-dependent functions', () => {
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(false);
+      expect(shouldReset).toBe(false);
     });
 
     it('should return true when displayText is undefined', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: undefined,
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should return true when displayText matches target path', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target.md',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should return true when displayText matches basename without extension', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should return false when displayText does not match any alias', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'completely-different-text',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(false);
+      expect(shouldReset).toBe(false);
     });
 
     it('should handle displayText with separator >', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target > extra',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should skip falsy pathOrFile in loop', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'completely-different-text',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: '',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(false);
+      expect(shouldReset).toBe(false);
     });
 
     it('should use oldSourcePathOrFile when provided', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target',
         newSourcePathOrFile: 'folder/other.md',
@@ -1309,7 +1309,7 @@ describe('app-dependent functions', () => {
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
   });
 

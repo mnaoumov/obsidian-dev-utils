@@ -63,7 +63,7 @@ describe('rename-delete-handler', () => {
     });
 
     it('should delete a file from the vault', async () => {
-      const result = await evalInObsidian<Record<string, never>, boolean>({
+      const isFileGone = await evalInObsidian<Record<string, never>, boolean>({
         async fn({ app }) {
           const file = await app.vault.create('rdh-delete-test.md', '# Delete test\n');
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
@@ -72,11 +72,11 @@ describe('rename-delete-handler', () => {
         }
       });
 
-      expect(result).toBe(true);
+      expect(isFileGone).toBe(true);
     });
 
     it('should create and delete a folder', async () => {
-      const result = await evalInObsidian<Record<string, never>, boolean>({
+      const isFolderGone = await evalInObsidian<Record<string, never>, boolean>({
         async fn({ app }) {
           const folder = await app.vault.createFolder('rdh-test-folder');
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
@@ -85,7 +85,7 @@ describe('rename-delete-handler', () => {
         }
       });
 
-      expect(result).toBe(true);
+      expect(isFolderGone).toBe(true);
     });
   });
 

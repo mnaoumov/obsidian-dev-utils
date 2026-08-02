@@ -285,8 +285,8 @@ describe('configureCommunityPlugin', () => {
 
   it('should return false and not write when the settings are already present', async () => {
     const { adapterWrite, app } = createApp({ existingPluginData: { modulesRoot: 'root-x' } });
-    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
-    expect(result).toBe(false);
+    const hasDataJsonChanged = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(hasDataJsonChanged).toBe(false);
     expect(adapterWrite).not.toHaveBeenCalled();
   });
 });

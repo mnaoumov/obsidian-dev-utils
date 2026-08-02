@@ -55,9 +55,9 @@ describe('validateDeclarations', () => {
   });
 
   it('should validate both declaration configs and return true when both pass', () => {
-    const result = validateDeclarations();
+    const areDeclarationsValid = validateDeclarations();
 
-    expect(result).toBe(true);
+    expect(areDeclarationsValid).toBe(true);
     expect(mockCheckProjectTypes).toHaveBeenCalledTimes(2);
     expect(mockParseTsConfig).toHaveBeenNthCalledWith(1, '/root/tsconfig.validate-declarations.json');
     expect(mockParseTsConfig).toHaveBeenNthCalledWith(2, '/root/tsconfig.validate-declarations-cjs.json');
@@ -66,9 +66,9 @@ describe('validateDeclarations', () => {
   it('should still check both configs and return false when the first config fails', () => {
     mockCheckProjectTypes.mockReturnValueOnce(false).mockReturnValueOnce(true);
 
-    const result = validateDeclarations();
+    const areDeclarationsValid = validateDeclarations();
 
-    expect(result).toBe(false);
+    expect(areDeclarationsValid).toBe(false);
     expect(mockCheckProjectTypes).toHaveBeenCalledTimes(2);
   });
 
