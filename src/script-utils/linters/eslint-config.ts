@@ -676,6 +676,22 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         'unicorn/name-replacements': [
           'error',
           {
+            /*
+             * `checkProperties` stays at its default of `false`, deliberately. The rule is purely syntactic: it
+             * sees a property name matching an abbreviation and cannot tell one we declare from one belonging to
+             * a dependency, so it demands renames that are impossible to make.
+             *
+             * Measured: enabling it reported 681 property hits, NONE auto-fixable. Applying them one name at a
+             * time, gated on `tsc`, 214 of those hits (31%) broke the build -- including every `str` and `fn`,
+             * because those names also live on `DomElementInfo` and `EvalInObsidianParams`. The rule reports all
+             * 681 identically, so its output cannot be acted on without redoing the type analysis it lacks.
+             *
+             * Renaming only the members we declare does not rescue it either: object-literal keys in loosely
+             * typed positions (`expect.arrayContaining([{ batchedArgs: ... }])`) are not contextually typed, so
+             * they are left behind and the suite breaks in ways `tsc` cannot see. Including those keys instead
+             * renames the foreign symbol -- which, via the language service, rewrites the declaration inside
+             * `node_modules`.
+             */
             replacements: {
               dev: false,
               dist: false,
