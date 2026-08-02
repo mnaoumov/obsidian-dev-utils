@@ -720,6 +720,14 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         // `null` is load-bearing here: an optional collaborator is modelled as a required `null | X` field rather than an optional `X`, so `null` and `undefined` are not interchangeable.
         'unicorn/no-null': 'off',
         /*
+         * TypeScript's explicit `this` parameter (`function get(this: Holder) { return this.value; }`) makes
+         * `this` outside a class both legal and type-checked, but the rule is syntactic and flags it identically
+         * to a genuinely unbound `this`. It has no options (`schema: []`) and no fixer, so there is no way to
+         * separate the idiom from the bug it targets. Most hits here were typed `this` parameters and tests that
+         * deliberately assert `this` binding.
+         */
+        'unicorn/no-this-outside-of-class': 'off',
+        /*
          * `checkArguments` strips `undefined` arguments, which shifts the remaining positional arguments into
          * the wrong slots; `checkArrowFunctionBody` removes `return undefined;` from arrow bodies whose other
          * branches do return a value, which violates the `noImplicitReturns` setting this project compiles with.
