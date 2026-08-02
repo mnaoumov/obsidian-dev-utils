@@ -813,6 +813,23 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
       rules: {
         'unicorn/no-process-exit': 'off'
       }
+    },
+    {
+      /*
+       * A module-level fixture assigned from `beforeEach` is the standard test shape:
+       *
+       *   let app: App;
+       *   beforeEach(() => { app = App.createConfigured__(); });
+       *
+       * The rule is right about production code -- module state reassigned from inside a function is worth
+       * flagging, and the fix is to hold it in a `const` object instead. In tests that would replace every
+       * `app` with `STATE.app` and make each file read worse for no gain, since the fixture is reset per test
+       * by design. Scoped off here rather than disabled outright, so production code keeps the check.
+       */
+      files: context.testFiles,
+      rules: {
+        'unicorn/no-top-level-assignment-in-function': 'off'
+      }
     }
   ]);
 }
