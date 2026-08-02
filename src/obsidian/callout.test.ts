@@ -133,10 +133,10 @@ function createMockDv(): MockDv {
         // eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- test setup
         p.innerHTML = text;
       } else if (text instanceof Node) {
-        p.appendChild(text);
+        p.append(text);
       }
       const target = options?.container ?? container;
-      target.appendChild(p);
+      target.append(p);
       return p;
     })
   };

@@ -112,7 +112,7 @@ describe('createElAsync', () => {
 
   it('should apply a DocumentFragment as text content', async () => {
     const fragment = createFragment();
-    fragment.appendChild(createSpan());
+    fragment.append(createSpan());
     const element = await createElementAsync('p', { text: fragment });
     expect(element.querySelector('span')).not.toBeNull();
   });
@@ -136,7 +136,7 @@ describe('createElAsync', () => {
 
   it('should prepend to the parent', async () => {
     const parent = createDiv();
-    parent.appendChild(createSpan());
+    parent.append(createSpan());
     const element = await createElementAsync('p', { parent, prepend: true });
     expect(parent.firstElementChild).toBe(element);
   });
@@ -590,7 +590,7 @@ describe('isLoaded', () => {
     it('should return false when a loadable child is not loaded', () => {
       const img = buildElement({ attrs: { complete: false, naturalWidth: 0 }, tag: 'img' });
       const element = buildElement();
-      element.appendChild(img);
+      element.append(img);
       expect(isLoaded(element)).toBe(false);
     });
   });
@@ -879,7 +879,7 @@ describe('ensureLoaded', () => {
   it('should recursively ensure all loadable children are loaded for generic elements', async () => {
     const script = buildElement({ tag: 'script' });
     const element = buildElement();
-    element.appendChild(script);
+    element.append(script);
     await expect(ensureLoaded(element)).resolves.toBeUndefined();
   });
 
@@ -892,7 +892,7 @@ describe('ensureLoaded', () => {
       tag: 'img'
     });
     const element = buildElement();
-    element.appendChild(img);
+    element.append(img);
 
     const promise = ensureLoaded(element);
     img.dispatchEvent(new Event('load'));
@@ -952,11 +952,11 @@ describe('waitUntilConnected', () => {
     });
 
     // An unrelated mutation fires the observer while the element is still disconnected (it must not resolve yet).
-    activeDocument.body.appendChild(buildElement());
+    activeDocument.body.append(buildElement());
     await flushMutations();
     expect(isResolved).toBe(false);
 
-    activeDocument.body.appendChild(element);
+    activeDocument.body.append(element);
     await promise;
     expect(isResolved).toBe(true);
   });
@@ -976,7 +976,7 @@ function buildElement(params: BuildElementParams = {}): HTMLElement {
     Object.defineProperty(record, key, { configurable: true, value, writable: true });
   }
   if (parent) {
-    parent.appendChild(element);
+    parent.append(element);
   }
   return element;
 }

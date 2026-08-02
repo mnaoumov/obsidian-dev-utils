@@ -236,7 +236,7 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
     }
     const fragment = createFragment();
     fragment.createDiv({ text: fullOptions.progressBarTitle });
-    fragment.appendChild(progressBarElement);
+    fragment.append(progressBarElement);
     notice?.setMessage(fragment);
   }
 }

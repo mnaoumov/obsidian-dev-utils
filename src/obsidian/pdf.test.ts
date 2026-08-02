@@ -34,7 +34,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     printDiv = createDiv();
     printDiv.remove = vi.fn() as () => void;
     activeDocument.body.createDiv = vi.fn((): HTMLDivElement => {
-      activeDocument.body.appendChild(printDiv);
+      activeDocument.body.append(printDiv);
       return printDiv;
     });
 

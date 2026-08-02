@@ -388,7 +388,7 @@ describe('PluginSettingsTabBase', () => {
 
     const parentElement = createDiv();
     const validatorElement = createEl('input');
-    parentElement.appendChild(validatorElement);
+    parentElement.append(validatorElement);
     validatorElement.isActiveElement = vi.fn(() => false);
 
     const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
@@ -409,7 +409,7 @@ describe('PluginSettingsTabBase', () => {
 
     const parentElement = createDiv();
     const validatorElement = createEl('input');
-    parentElement.appendChild(validatorElement);
+    parentElement.append(validatorElement);
     validatorElement.isActiveElement = vi.fn(() => false);
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -539,7 +539,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       validatorElement.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -581,7 +581,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       validatorElement.isActiveElement = vi.fn(() => false);
 
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
@@ -616,7 +616,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       validatorElement.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -775,7 +775,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       validatorElement.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -814,7 +814,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       // IsActiveElement returns true - should NOT trigger empty/revert logic
       validatorElement.isActiveElement = vi.fn(() => true);
 
@@ -892,7 +892,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       validatorElement.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
@@ -965,7 +965,7 @@ describe('PluginSettingsTabBase', () => {
 
       const parentElement = createDiv();
       const validatorElement = createEl('input');
-      parentElement.appendChild(validatorElement);
+      parentElement.append(validatorElement);
       validatorElement.isActiveElement = vi.fn(() => false);
 
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({

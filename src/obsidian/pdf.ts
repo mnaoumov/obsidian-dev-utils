@@ -35,7 +35,7 @@ export async function printToPdf(el: HTMLElement, options: Partial<PrintToPdfOpt
   }
 
   const printDiv = activeDocument.body.createDiv('print');
-  printDiv.appendChild(el);
+  printDiv.append(el);
   await ensureLoaded(printDiv);
 
   const DEFAULT_SCALE_FACTOR = 100;

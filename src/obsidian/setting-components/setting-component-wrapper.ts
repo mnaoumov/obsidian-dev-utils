@@ -26,8 +26,8 @@ export function ensureWrapped(el: HTMLElement): HTMLDivElement {
   const wrapper = createDiv();
   addPluginCssClasses(wrapper, CssClass.SettingComponentWrapper);
   for (const child of children) {
-    wrapper.appendChild(child);
+    wrapper.append(child);
   }
-  parent.appendChild(wrapper);
+  parent.append(wrapper);
   return wrapper;
 }

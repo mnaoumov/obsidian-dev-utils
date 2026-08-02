@@ -110,7 +110,7 @@ describe('PathSettings', () => {
           plugin: ensureNonNullable(app.plugins.getPlugin(harnessPluginId), 'The integration test harness plugin is not loaded'),
           pluginSettingsComponent: settingsComponent
         });
-        activeDocument.body.appendChild(tab.containerEl);
+        activeDocument.body.append(tab.containerEl);
         // eslint-disable-next-line @typescript-eslint/no-deprecated -- The override clears the upstream deprecation, but the rule walks the inheritance chain (AGENTS.md L1).
         tab.display();
 

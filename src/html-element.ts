@@ -430,6 +430,7 @@ function insertIntoParent(element: Element, info: DomElementInfo | SvgElementInf
   if (info.prepend) {
     info.parent.insertBefore(element, info.parent.firstChild);
   } else {
+    // eslint-disable-next-line unicorn/prefer-dom-node-append -- `parent` is a `Node`, and `append` is declared on `ParentNode`, not on `Node`.
     info.parent.appendChild(element);
   }
 }

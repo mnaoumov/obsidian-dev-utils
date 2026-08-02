@@ -83,7 +83,7 @@ interface ParagraphOptions {
 
 function createMockDv(): DataviewInlineApi {
   const container = createDiv();
-  activeDocument.body.appendChild(container);
+  activeDocument.body.append(container);
 
   return strictProxy<DataviewInlineApi>({
     app: { metadataCache: {}, vault: { adapter: {} } },
@@ -101,7 +101,7 @@ function createMockDv(): DataviewInlineApi {
             element.setAttribute(k, v);
           }
         }
-        container.appendChild(element);
+        container.append(element);
         return element;
       }
     )),
@@ -115,7 +115,7 @@ function createMockDv(): DataviewInlineApi {
         if (typeof text === 'string') {
           p.textContent = text;
         }
-        (options?.container ?? container).appendChild(p);
+        (options?.container ?? container).append(p);
         return p;
       }
     ),

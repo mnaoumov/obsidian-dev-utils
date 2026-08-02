@@ -472,7 +472,7 @@ export class PluginNoticeComponent extends ComponentEx {
     if (typeof content === 'string') {
       fragment.appendText(content);
     } else {
-      fragment.appendChild(content);
+      fragment.append(content);
     }
 
     if (abortController) {
@@ -487,7 +487,7 @@ export class PluginNoticeComponent extends ComponentEx {
       cancelButton.buttonEl.addEventListener('click', () => {
         abortController.abort();
       });
-      fragment.appendChild(cancelButton.buttonEl);
+      fragment.append(cancelButton.buttonEl);
     }
     return fragment;
   }
@@ -506,7 +506,7 @@ export class PluginNoticeComponent extends ComponentEx {
     const fragment = createFragment();
     const contentElement = fragment.createDiv();
     addPluginCssClasses(contentElement, CssClass.PluginNoticeContent);
-    contentElement.appendChild(this.buildPrefixedMessage(message));
+    contentElement.append(this.buildPrefixedMessage(message));
     contentElement.addEventListener('click', ($event) => {
       // A hard-to-close notice must not dismiss on any stray click; only its close button may hide it.
       if (requiresExplicitClose) {
@@ -539,7 +539,7 @@ export class PluginNoticeComponent extends ComponentEx {
     const fragment = createFragment();
     const nameElement = createSpan({ text: this.pluginName });
     addPluginCssClasses(nameElement, CssClass.PluginNoticeName);
-    fragment.appendChild(nameElement);
+    fragment.append(nameElement);
     if (!this._loaded) {
       fragment.appendText(' (unloaded)');
     }
@@ -547,7 +547,7 @@ export class PluginNoticeComponent extends ComponentEx {
     if (typeof message === 'string') {
       fragment.appendText(message);
     } else {
-      fragment.appendChild(message);
+      fragment.append(message);
     }
     return fragment;
   }

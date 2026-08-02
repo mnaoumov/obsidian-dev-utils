@@ -533,7 +533,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       const tooltipArrowElement = tooltipElement.createDiv();
       addPluginCssClasses(tooltipArrowElement, CssClass.TooltipArrow);
       tooltipElement.hide();
-      wrapper.appendChild(tooltipElement);
+      wrapper.append(tooltipElement);
     }
 
     registerAsyncEvent(

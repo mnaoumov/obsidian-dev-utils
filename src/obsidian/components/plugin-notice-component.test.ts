@@ -45,7 +45,7 @@ const mocks = vi.hoisted(() => {
     this.setMessage = vi.fn();
     this.messageEl = createDiv();
     this.containerEl = createDiv();
-    this.containerEl.appendChild(this.messageEl);
+    this.containerEl.append(this.messageEl);
     instances.push(this);
   });
   return { instances, NoticeMock };
@@ -133,7 +133,7 @@ describe('PluginNoticeComponent', () => {
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     // Stand in for Obsidian's noticeEl, whose own bubble-phase click handler dismisses the notice.
     const noticeElementStub = createDiv();
-    noticeElementStub.appendChild(fragment);
+    noticeElementStub.append(fragment);
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
@@ -150,7 +150,7 @@ describe('PluginNoticeComponent', () => {
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     const noticeElementStub = createDiv();
-    noticeElementStub.appendChild(fragment);
+    noticeElementStub.append(fragment);
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
@@ -168,7 +168,7 @@ describe('PluginNoticeComponent', () => {
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     const noticeElementStub = createDiv();
-    noticeElementStub.appendChild(fragment);
+    noticeElementStub.append(fragment);
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
@@ -371,7 +371,7 @@ describe('PluginNoticeComponent', () => {
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     const noticeElementStub = createDiv();
-    noticeElementStub.appendChild(fragment);
+    noticeElementStub.append(fragment);
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
@@ -408,7 +408,7 @@ describe('PluginNoticeComponent', () => {
 
     const notice = ensureNonNullable(mocks.instances[0]);
     const outerStub = createDiv();
-    outerStub.appendChild(notice.containerEl);
+    outerStub.append(notice.containerEl);
     const dismissListener = vi.fn();
     outerStub.addEventListener('click', dismissListener);
 
@@ -426,7 +426,7 @@ describe('PluginNoticeComponent', () => {
     // Simulate Obsidian inserting the notice content into the container, so the close button becomes a
     // Descendant of the container's capture-phase guard.
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    notice.messageEl.appendChild(fragment);
+    notice.messageEl.append(fragment);
 
     const closeButton = ensureNonNullable(notice.containerEl.querySelector(`.${CssClass.PluginNoticeCloseButton}`));
     closeButton.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
@@ -472,10 +472,10 @@ describe('PluginNoticeComponent', () => {
     // Simulate Obsidian inserting the notice content into the container, so the button becomes a
     // Descendant of the container's capture-phase guard.
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    notice.messageEl.appendChild(fragment);
+    notice.messageEl.append(fragment);
 
     const outerStub = createDiv();
-    outerStub.appendChild(notice.containerEl);
+    outerStub.append(notice.containerEl);
     const dismissListener = vi.fn();
     outerStub.addEventListener('click', dismissListener);
 
@@ -492,11 +492,12 @@ describe('PluginNoticeComponent', () => {
     const notice = ensureNonNullable(mocks.instances[0]);
 
     const outerStub = createDiv();
-    outerStub.appendChild(notice.containerEl);
+    outerStub.append(notice.containerEl);
     const dismissListener = vi.fn();
     outerStub.addEventListener('click', dismissListener);
 
     // A text node is not an `Element`, exercising the guard's non-element branch.
+    // eslint-disable-next-line unicorn/prefer-dom-node-append -- The appended node is needed back, and `append` returns `undefined`.
     const textNode = notice.messageEl.appendChild(document.createTextNode('text'));
     textNode.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
@@ -712,7 +713,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
 
     const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     const noticeElementStub = createDiv();
-    noticeElementStub.appendChild(content);
+    noticeElementStub.append(content);
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
