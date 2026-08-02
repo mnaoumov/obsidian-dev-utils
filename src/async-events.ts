@@ -282,9 +282,9 @@ export class AsyncEventRefDisposable extends AsyncDisposableBase {
   /**
    * Creates a disposable wrapping an existing {@link AsyncEventRef}.
    *
-   * @param asyncEventRef - The async event reference to unregister on dispose.
+   * @param asyncEventReference - The async event reference to unregister on dispose.
    */
-  public constructor(private readonly asyncEventRef: AsyncEventRef) {
+  public constructor(private readonly asyncEventReference: AsyncEventRef) {
     super();
   }
 
@@ -292,7 +292,7 @@ export class AsyncEventRefDisposable extends AsyncDisposableBase {
    * Unregisters the event via the source stored on the ref (`asyncEventSource.offref`).
    */
   protected override performDisposeAsync(): void {
-    this.asyncEventRef.asyncEventSource.offref(this.asyncEventRef);
+    this.asyncEventReference.asyncEventSource.offref(this.asyncEventReference);
   }
 }
 

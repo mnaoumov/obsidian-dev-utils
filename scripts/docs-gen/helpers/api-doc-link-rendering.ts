@@ -24,7 +24,7 @@ import {
 import {
   escapeMdxAngleBrackets,
   escapeMdxProse,
-  getNamespaceDir,
+  getNamespaceDirectory,
   memberRouteSegment,
   memberSlug,
   overloadRouteSegment,
@@ -148,8 +148,8 @@ export function memberHref(memberSlugString: string, inheritedFrom: string, allT
     // Undocumented). Return no href so the caller renders plain text instead of a broken link.
     return '';
   }
-  const parentNsDir = getNamespaceDir(parentInfo.namespace);
-  return `${BASE_PATH}/api/${parentNsDir}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugString}/`;
+  const parentNsDirectory = getNamespaceDirectory(parentInfo.namespace);
+  return `${BASE_PATH}/api/${parentNsDirectory}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugString}/`;
 }
 
 /**
@@ -345,8 +345,8 @@ export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, self
       const memberName = dotMatch.groups['memberName'] ?? '';
       const typeInfo = findType(allTypes, typeName, selfNamespace);
       if (typeInfo && doesMemberPageExist(typeInfo.namespace, typeInfo.name, memberRouteSegment(memberName))) {
-        const targetNsDir = getNamespaceDir(typeInfo.namespace);
-        return `[${display}](${BASE_PATH}/api/${targetNsDir}/${toTypeRouteSegment(typeInfo.namespace, typeInfo.name)}/${memberRouteSegment(memberName)}/)`;
+        const targetNsDirectory = getNamespaceDirectory(typeInfo.namespace);
+        return `[${display}](${BASE_PATH}/api/${targetNsDirectory}/${toTypeRouteSegment(typeInfo.namespace, typeInfo.name)}/${memberRouteSegment(memberName)}/)`;
       }
     }
 
@@ -403,7 +403,7 @@ export function toTypeRouteSegment(namespace: string, name: string): string {
 
 /** Absolute link to a type's overview page. */
 export function typeHref(info: TypeInfo): string {
-  return `${BASE_PATH}/api/${getNamespaceDir(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
+  return `${BASE_PATH}/api/${getNamespaceDirectory(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
 }
 
 /** Create an absolute link to a type page */

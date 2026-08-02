@@ -170,13 +170,13 @@ interface CheckIsParentMethodAbstractParams {
 /**
  * Checks whether a declaration has the `abstract` modifier.
  *
- * @param decl - The TypeScript declaration to inspect.
+ * @param declaration - The TypeScript declaration to inspect.
  * @returns `true` if the declaration is abstract.
  */
-function isAbstract(decl: Declaration): boolean {
-  assert(canHaveModifiers(decl), 'Expected method declaration to support modifiers');
+function isAbstract(declaration: Declaration): boolean {
+  assert(canHaveModifiers(declaration), 'Expected method declaration to support modifiers');
 
-  const modifiers = getModifiers(decl);
+  const modifiers = getModifiers(declaration);
   return modifiers?.some(($module) => $module.kind === SyntaxKind.AbstractKeyword) ?? false;
 }
 

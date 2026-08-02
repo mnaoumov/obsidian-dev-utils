@@ -389,7 +389,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -399,8 +399,8 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
     Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArg?: unknown): AsyncEventReference {
-    return this.asyncEvents.on(name, callback, thisArg);
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArgument?: unknown): AsyncEventReference {
+    return this.asyncEvents.on(name, callback, thisArgument);
   }
 
   /**
@@ -412,7 +412,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -422,8 +422,8 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
     Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArg?: unknown): AsyncEventReference {
-    return this.asyncEvents.once(name, callback, thisArg);
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArgument?: unknown): AsyncEventReference {
+    return this.asyncEvents.once(name, callback, thisArgument);
   }
 
   /**

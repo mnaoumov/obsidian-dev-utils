@@ -54,7 +54,7 @@ export function extractClassInfo(cls: ClassDeclaration, namespace: string): Type
 }
 
 export function extractConstructorInfo(ctor: ConstructorDeclaration): MemberInfo {
-  const parameterDescriptions = getParamDescriptions(ctor);
+  const parameterDescriptions = getParameterDescriptions(ctor);
   const params = ctor.getParameters().map((p) => {
     const isOptional = p.isOptional();
     const optionalSuffix = isOptional ? '?' : '';
@@ -145,7 +145,7 @@ export function extractInterfaceInfo(iface: InterfaceDeclaration, namespace: str
 
 export function extractMethodInfo(method: MethodDeclaration): MemberInfo {
   const name = method.getName();
-  const parameterDescriptions = getParamDescriptions(method);
+  const parameterDescriptions = getParameterDescriptions(method);
   const params = method.getParameters().map((p) => {
     const isOptional = p.isOptional();
     const optionalSuffix = isOptional ? '?' : '';
@@ -177,7 +177,7 @@ export function extractMethodInfo(method: MethodDeclaration): MemberInfo {
 
 export function extractMethodSignatureInfo(method: MethodSignature): MemberInfo {
   const name = method.getName();
-  const parameterDescriptions = getParamDescriptions(method);
+  const parameterDescriptions = getParameterDescriptions(method);
   const params = method.getParameters().map((p) => {
     const isOptional = p.isOptional();
     const optionalSuffix = isOptional ? '?' : '';
@@ -304,7 +304,7 @@ export function getExamples(node: JSDocableNode): string[] {
 }
 
 /** Extract @param descriptions from JSDoc tags */
-export function getParamDescriptions(node: JSDocableNode): Map<string, string> {
+export function getParameterDescriptions(node: JSDocableNode): Map<string, string> {
   const result = new Map<string, string>();
   const docs = node.getJsDocs();
   for (const doc of docs) {

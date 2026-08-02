@@ -183,10 +183,10 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * Checks whether the command can execute for the given editor and context.
    *
    * @param _editor - The editor instance.
-   * @param _ctx - The markdown file context.
+   * @param _context - The markdown file context.
    * @returns Whether the command can execute.
    */
-  protected canExecuteEditor(_editor: Editor, _ctx: MarkdownFileInfo): boolean {
+  protected canExecuteEditor(_editor: Editor, _context: MarkdownFileInfo): boolean {
     return true;
   }
 
@@ -194,9 +194,9 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * Executes the command for the given editor and context.
    *
    * @param editor - The editor instance.
-   * @param ctx - The markdown file context.
+   * @param context - The markdown file context.
    */
-  protected abstract executeEditor(editor: Editor, ctx: MarkdownFileInfo): Promisable<void>;
+  protected abstract executeEditor(editor: Editor, context: MarkdownFileInfo): Promisable<void>;
 
   /**
    * Gets whether to add the command to a submenu.
@@ -220,10 +220,10 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * Checks whether the command should appear in the editor context menu.
    *
    * @param _editor - The editor instance.
-   * @param _ctx - The markdown file context.
+   * @param _context - The markdown file context.
    * @returns Whether to add to the editor menu.
    */
-  protected shouldAddToEditorMenu(_editor: Editor, _ctx: MarkdownFileInfo): boolean {
+  protected shouldAddToEditorMenu(_editor: Editor, _context: MarkdownFileInfo): boolean {
     return false;
   }
 

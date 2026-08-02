@@ -441,13 +441,13 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
  * @param path - The path of the file to create.
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary file and all its created parents.
  */
-export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
+export async function createTemporaryFile(app: App, path: string): Promise<() => Promise<void>> {
   let file = getFileOrNull({ app, pathOrFile: path });
   if (file) {
     return noopAsync;
   }
 
-  const folderCleanup = await createTempFolder(app, parentFolderPath(path));
+  const folderCleanup = await createTemporaryFolder(app, parentFolderPath(path));
 
   try {
     await app.vault.create(path, '');
@@ -473,16 +473,16 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
  * @param path - The path of the folder to create.
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary folder and all its created parents.
  */
-export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
+export async function createTemporaryFolder(app: App, path: string): Promise<() => Promise<void>> {
   let folder = getFolderOrNull({ app, pathOrFolder: path });
   if (folder) {
     return noopAsync;
   }
 
   const folderPath = parentFolderPath(path);
-  await createTempFolder(app, folderPath);
+  await createTemporaryFolder(app, folderPath);
 
-  const folderCleanup = await createTempFolder(app, parentFolderPath(path));
+  const folderCleanup = await createTemporaryFolder(app, parentFolderPath(path));
 
   await createFolderSafe(app, path);
 

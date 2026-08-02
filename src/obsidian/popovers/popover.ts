@@ -143,10 +143,10 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
      * rather than `click` matters: a popover is typically opened from a `click` handler, and the very
      * same click would otherwise reach this listener and close the popover the instant it appears.
      *
-     * @param evt - The pointer event.
+     * @param $event - The pointer event.
      */
-    function handlePointerDown(evt: PointerEvent): void {
-      if (evt.composedPath().includes(popoverElement)) {
+    function handlePointerDown($event: PointerEvent): void {
+      if ($event.composedPath().includes(popoverElement)) {
         return;
       }
       close(null);
@@ -195,10 +195,10 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
 /**
  * Focuses and selects the popover's first text input, so the user can type straight away.
  *
- * @param popoverEl - The popover to focus within.
+ * @param popoverElement - The popover to focus within.
  */
-function focusFirstInput(popoverEl: HTMLElement): void {
-  const inputElement = popoverEl.querySelector('input');
+function focusFirstInput(popoverElement: HTMLElement): void {
+  const inputElement = popoverElement.querySelector('input');
   if (!inputElement) {
     return;
   }
@@ -212,17 +212,17 @@ function focusFirstInput(popoverEl: HTMLElement): void {
  * overflow — an anchor near the right or bottom edge is exactly where an unclamped popover would
  * render off-screen.
  *
- * @param popoverEl - The popover to position.
+ * @param popoverElement - The popover to position.
  * @param anchor - Where the popover belongs.
  * @param win - The window the anchor lives in (a pop-out window has its own).
  */
-function positionAtAnchor(popoverEl: HTMLElement, anchor: PopoverAnchor, win: Window): void {
-  const maxLeft = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerWidth - popoverEl.offsetWidth - VIEWPORT_MARGIN_IN_PIXELS);
-  const maxTop = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerHeight - popoverEl.offsetHeight - VIEWPORT_MARGIN_IN_PIXELS);
+function positionAtAnchor(popoverElement: HTMLElement, anchor: PopoverAnchor, win: Window): void {
+  const maxLeft = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerWidth - popoverElement.offsetWidth - VIEWPORT_MARGIN_IN_PIXELS);
+  const maxTop = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerHeight - popoverElement.offsetHeight - VIEWPORT_MARGIN_IN_PIXELS);
 
   const left = Math.min(Math.max(anchor.left, VIEWPORT_MARGIN_IN_PIXELS), maxLeft);
   const top = Math.min(Math.max(anchor.bottom + ANCHOR_GAP_IN_PIXELS, VIEWPORT_MARGIN_IN_PIXELS), maxTop);
 
-  popoverEl.style.left = `${String(Math.round(left + win.scrollX))}px`;
-  popoverEl.style.top = `${String(Math.round(top + win.scrollY))}px`;
+  popoverElement.style.left = `${String(Math.round(left + win.scrollX))}px`;
+  popoverElement.style.top = `${String(Math.round(top + win.scrollY))}px`;
 }

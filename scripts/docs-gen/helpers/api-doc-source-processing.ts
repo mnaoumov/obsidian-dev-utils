@@ -32,7 +32,7 @@ import {
   extractTypeAliasInfo,
   getDescription,
   getExamples,
-  getParamDescriptions as getParameterDescriptions,
+  getParameterDescriptions,
   getRemarks,
   getReturnDescription,
   getSince
@@ -155,8 +155,8 @@ export function computeCacheHash(entryFiles: string[]): string {
 }
 
 /** Compute the namespace (POSIX path relative to `src`, no extension) for a source file. */
-export function computeNamespace(srcDir: string, filePath: string): string {
-  return relative(srcDir, filePath).replaceAll('\\', '/').replace(/\.ts$/, '');
+export function computeNamespace(srcDirectory: string, filePath: string): string {
+  return relative(srcDirectory, filePath).replaceAll('\\', '/').replace(/\.ts$/, '');
 }
 
 /**

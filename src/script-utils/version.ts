@@ -457,7 +457,7 @@ export async function gitPush(): Promise<void> {
  * @param args - The command-line arguments to parse (typically `process.argv.slice(2)`).
  * @returns The {@link ParsedVersionArgs} containing the version update type and the options.
  */
-export function parseVersionArgs(args: string[]): ParsedVersionArgs {
+export function parseVersionArguments(args: string[]): ParsedVersionArgs {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
     args,

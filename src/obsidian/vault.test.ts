@@ -39,8 +39,8 @@ import {
   cleanupEmptyFolders,
   copySafe,
   createFolderSafe,
-  createTempFile as createTemporaryFile,
-  createTempFolder as createTemporaryFolder,
+  createTemporaryFile,
+  createTemporaryFolder,
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
   EmptyFolderBehavior,
@@ -627,8 +627,8 @@ describe('getSafeRenamePath', () => {
     parentFolder.getParentPrefix = (): string => 'dir/';
     mockApp.vault.setVaultAbstractFile__('dir', mockParentFolder);
 
-    const mockDirFile = TFile.create__(mockApp.vault, 'dir/old.md');
-    mockApp.vault.setVaultAbstractFile__('dir/old.md', mockDirFile);
+    const mockDirectoryFile = TFile.create__(mockApp.vault, 'dir/old.md');
+    mockApp.vault.setVaultAbstractFile__('dir/old.md', mockDirectoryFile);
 
     const result = getSafeRenamePath({ app, newPath: 'dir/OLD.md', oldPathOrAbstractFile: 'dir/old.md' });
     expect(result).toBe('dir/OLD.md');

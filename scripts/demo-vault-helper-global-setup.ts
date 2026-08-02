@@ -108,10 +108,10 @@ function buildDemoVaultPopulateForHelperTest(): PopulateFilesParams {
   moduleState.demoVaultPath = mkdtempSync(join(tmpdir(), 'demo-vault-helper-'));
   writeFileSync(join(moduleState.demoVaultPath, START_NOTE_PATH), '# Start\n');
 
-  const modulesDir = join(moduleState.demoVaultPath, MODULES_ROOT);
-  mkdirSync(modulesDir, { recursive: true });
-  writeFileSync(join(modulesDir, 'probe.ts'), PROBE_MODULE);
-  writeFileSync(join(modulesDir, 'startup.ts'), STARTUP_SCRIPT);
+  const modulesDirectory = join(moduleState.demoVaultPath, MODULES_ROOT);
+  mkdirSync(modulesDirectory, { recursive: true });
+  writeFileSync(join(modulesDirectory, 'probe.ts'), PROBE_MODULE);
+  writeFileSync(join(modulesDirectory, 'startup.ts'), STARTUP_SCRIPT);
 
   return buildDemoVaultPopulate({
     demoVaultPath: moduleState.demoVaultPath,

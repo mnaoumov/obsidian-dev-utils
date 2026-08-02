@@ -19,10 +19,10 @@ export interface AllWindowsEventComponentRegisterAllDocumentsDomEventParams<Docu
   /**
    * The callback to execute.
    *
-   * @param evt - The event.
+   * @param $event - The event.
    * @returns The result of the callback.
    */
-  callback(this: HTMLElement, evt: DocumentEventMap[DocumentEventType]): unknown;
+  callback(this: HTMLElement, $event: DocumentEventMap[DocumentEventType]): unknown;
 
   /**
    * The options for the event.
@@ -44,10 +44,10 @@ export interface AllWindowsEventComponentRegisterAllWindowsDomEventParams<Window
   /**
    * The callback to execute.
    *
-   * @param evt - The event.
+   * @param $event - The event.
    * @returns The result of the callback.
    */
-  callback(this: HTMLElement, evt: WindowEventMap[WindowEventType]): unknown;
+  callback(this: HTMLElement, $event: WindowEventMap[WindowEventType]): unknown;
 
   /**
    * The options for the event.

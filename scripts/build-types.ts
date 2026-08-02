@@ -170,8 +170,8 @@ await wrapCliTask(async () => {
     }\n`;
   }
 
-  function buildReferencePathDirective(declarationFilePath: string, moduleDir: string, extension: string): string {
-    const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDir, LIBRARY_FILE_NAME + extension);
+  function buildReferencePathDirective(declarationFilePath: string, moduleDirectory: string, extension: string): string {
+    const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDirectory, LIBRARY_FILE_NAME + extension);
     let relativePath = relative(dirname(declarationFilePath), libraryFilePath).replaceAll('\\', '/');
     if (!relativePath.startsWith('.')) {
       relativePath = `./${relativePath}`;

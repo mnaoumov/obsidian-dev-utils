@@ -28,9 +28,9 @@ export interface RibbonIconRegistrarAddRibbonIconParams {
   /**
    * Callback function for the ribbon icon to register.
    *
-   * @param evt - The mouse event that triggered the callback.
+   * @param $event - The mouse event that triggered the callback.
    */
-  callback(this: void, evt: MouseEvent): void;
+  callback(this: void, $event: MouseEvent): void;
 
   /**
    * The icon name for the ribbon icon to register.

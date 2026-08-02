@@ -82,89 +82,89 @@ export interface PackageLockJson extends Partial<PackageJson> {
 /**
  * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `PackageJson` object.
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
  * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export async function editNpmShrinkWrapJson(
-  editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
+  editFunction: (packageLockJson: PackageLockJson) => Promisable<void>,
   options: EditNpmShrinkWrapJsonOptions = {}
 ): Promise<void> {
   const {
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn, path: getNpmShrinkWrapJsonPath(cwd), shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn: editFunction, path: getNpmShrinkWrapJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `PackageJson` object.
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
  * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export async function editPackageJson(
-  editFn: (packageJson: PackageJson) => Promisable<void>,
+  editFunction: (packageJson: PackageJson) => Promisable<void>,
   options: EditPackageJsonOptions = {}
 ): Promise<void> {
   const {
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn: editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
  * Reads, edits, and writes back the `package.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `PackageJson` object.
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
  */
 export function editPackageJsonSync(
-  editFn: (packageJson: PackageJson) => void,
+  editFunction: (packageJson: PackageJson) => void,
   options: EditPackageJsonSyncOptions = {}
 ): void {
   const {
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageJson>>({ editFn, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
+  editJsonSync<PackageJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageJson>>({ editFn: editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
  * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `PackageJson` object.
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
  * @param options - Additional options for editing.
  * @returns A {@link Promise} that resolves when the file has been edited and written.
  */
 export async function editPackageLockJson(
-  editFn: (packageLockJson: PackageLockJson) => Promisable<void>,
+  editFunction: (packageLockJson: PackageLockJson) => Promisable<void>,
   options: EditPackageLockJsonOptions = {}
 ): Promise<void> {
   const {
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn: editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
  * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
  *
- * @param editFn - The function to edit the parsed `PackageLockJson` object.
+ * @param editFunction - The function to edit the parsed `PackageLockJson` object.
  * @param options - Additional options for editing.
  */
 export function editPackageLockJsonSync(
-  editFn: (packageLockJson: PackageLockJson) => void,
+  editFunction: (packageLockJson: PackageLockJson) => void,
   options: EditPackageLockJsonSyncOptions = {}
 ): void {
   const {
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageLockJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageLockJson>>({ editFn, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
+  editJsonSync<PackageLockJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageLockJson>>({ editFn: editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**

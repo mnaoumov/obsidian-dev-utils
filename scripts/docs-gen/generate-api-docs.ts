@@ -61,10 +61,10 @@ import { resolveInheritedMembers } from './helpers/api-doc-type-merging.ts';
 async function main(): Promise<void> {
   loadExternalTypeMaps();
 
-  const rootDir = ROOT_DIR;
-  const srcDir = join(rootDir, 'src');
+  const rootDirectory = ROOT_DIR;
+  const srcDirectory = join(rootDirectory, 'src');
 
-  const entryFiles = findEntryFiles(srcDir);
+  const entryFiles = findEntryFiles(srcDirectory);
   console.warn(`Found ${String(entryFiles.length)} entry source files`);
 
   // Check cache — skip generation if nothing changed
@@ -77,7 +77,7 @@ async function main(): Promise<void> {
   // Load via the ODU tsconfig so inferred types resolve.
   const project = new Project({
     skipAddingFilesFromTsConfig: true,
-    tsConfigFilePath: join(rootDir, 'tsconfig.json')
+    tsConfigFilePath: join(rootDirectory, 'tsconfig.json')
   });
   const sourceFiles = project.addSourceFilesAtPaths(entryFiles);
 
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
   const moduleOverviews = new Map<string, string>();
 
   for (const src of sourceFiles) {
-    const namespace = computeNamespace(srcDir, src.getFilePath());
+    const namespace = computeNamespace(srcDirectory, src.getFilePath());
     const overview = extractFileOverview(src);
     if (overview) {
       moduleOverviews.set(namespace, overview);

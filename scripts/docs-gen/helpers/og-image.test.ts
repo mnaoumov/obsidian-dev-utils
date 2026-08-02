@@ -34,7 +34,7 @@ afterAll(() => {
   }
 });
 
-function makeTempDir(): string {
+function makeTemporaryDirectory(): string {
   const directory = mkdtempSync(join(tmpdir(), 'og-fonts-'));
   temporaryDirectories.push(directory);
   return directory;
@@ -71,12 +71,12 @@ describe('loadFonts', () => {
   });
 
   it('returns null when the directory has no font files', async () => {
-    expect(await loadFonts(join(makeTempDir(), 'does-not-exist'))).toBeNull();
-    expect(await loadFonts(makeTempDir())).toBeNull();
+    expect(await loadFonts(join(makeTemporaryDirectory(), 'does-not-exist'))).toBeNull();
+    expect(await loadFonts(makeTemporaryDirectory())).toBeNull();
   });
 
   it('falls back to any single font file for both weights', async () => {
-    const directory = makeTempDir();
+    const directory = makeTemporaryDirectory();
     writeFileSync(join(directory, 'stray.otf'), Buffer.from('not-a-real-font'));
 
     const fonts = await loadFonts(directory);
@@ -89,7 +89,7 @@ describe('loadFonts', () => {
 
 describe('loadLogoDataUri', () => {
   it('returns null when the favicon is missing', async () => {
-    expect(await loadLogoDataUri(join(makeTempDir(), 'missing-favicon.svg'))).toBeNull();
+    expect(await loadLogoDataUri(join(makeTemporaryDirectory(), 'missing-favicon.svg'))).toBeNull();
   });
 });
 

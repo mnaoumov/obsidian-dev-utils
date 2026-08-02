@@ -30,15 +30,15 @@ export const noUsedUnderscoreVariables: Rule.RuleModule = {
             continue;
           }
 
-          const defNode = variable.defs[0];
-          assertNonNullable(defNode, 'User-declared _-prefixed variables always have at least one definition');
+          const definitionNode = variable.defs[0];
+          assertNonNullable(definitionNode, 'User-declared _-prefixed variables always have at least one definition');
 
           // For parameters, only count references inside the function body
           // (not in type annotations like `asserts _obj is T`).
           // For local variables, any read reference counts.
           const functionBody = (node as NodeWithBody).body;
           const bodyRange = functionBody?.range;
-          const isParameter = defNode.type === 'Parameter';
+          const isParameter = definitionNode.type === 'Parameter';
           const hasBodyReferences = variable.references.some((reference) => {
             if (!reference.isRead()) {
               return false;
@@ -54,7 +54,7 @@ export const noUsedUnderscoreVariables: Rule.RuleModule = {
             context.report({
               data: { name: variable.name },
               messageId: MESSAGE_ID,
-              node: defNode.name
+              node: definitionNode.name
             });
           }
         }

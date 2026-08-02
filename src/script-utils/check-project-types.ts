@@ -139,7 +139,7 @@ export function parseTsConfig(tsConfigPath: string): ParsedTsConfig {
     onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
       throw new Error(formatDiagnostic(diagnostic, FORMAT_HOST));
     },
-    readDirectory: (rootDir, extensions, excludes, includes, depth) => sys.readDirectory(rootDir, extensions, excludes, includes, depth),
+    readDirectory: (rootDirectory, extensions, excludes, includes, depth) => sys.readDirectory(rootDirectory, extensions, excludes, includes, depth),
     readFile: (path) => sys.readFile(path),
     useCaseSensitiveFileNames: sys.useCaseSensitiveFileNames
   };

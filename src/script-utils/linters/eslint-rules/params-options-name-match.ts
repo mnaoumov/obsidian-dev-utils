@@ -97,10 +97,10 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
     function isInExportedScope(node: Rule.Node): boolean {
       // Class method or constructor: check that the class is exported, regardless of accessibility
       // (public/protected/private members are all checked).
-      const methodDef = node.parent;
-      if (methodDef?.type === 'MethodDefinition') {
+      const methodDefinition = node.parent;
+      if (methodDefinition?.type === 'MethodDefinition') {
         // Check if the class itself is exported
-        const classBody = methodDef.parent;
+        const classBody = methodDefinition.parent;
         const classNode = classBody?.parent;
         /* v8 ignore start -- Defensive guard: ESLint AST always has parent chain for class methods. */
         if (!classNode) {
@@ -138,21 +138,21 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
     }
 
     function getMethodExpectedPrefix(node: Rule.Node): string | undefined {
-      const methodDef = node.parent;
-      if (methodDef?.type !== 'MethodDefinition') {
+      const methodDefinition = node.parent;
+      if (methodDefinition?.type !== 'MethodDefinition') {
         return undefined;
       }
 
       /* v8 ignore start -- Defensive guard: ESLint AST MethodDefinition always has a named key. */
       if (
-        !('key' in methodDef) || !methodDef.key || typeof methodDef.key !== 'object' || !('name' in methodDef.key) || typeof methodDef.key.name !== 'string'
+        !('key' in methodDefinition) || !methodDefinition.key || typeof methodDefinition.key !== 'object' || !('name' in methodDefinition.key) || typeof methodDefinition.key.name !== 'string'
       ) {
         return undefined;
       }
       /* v8 ignore stop */
 
-      const methodName = methodDef.key.name;
-      const className = getClassName(methodDef);
+      const methodName = methodDefinition.key.name;
+      const className = getClassName(methodDefinition);
       if (!className) {
         return undefined;
       }
@@ -164,8 +164,8 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
       return className + toPascalCase(methodName);
     }
 
-    function getClassName(methodDef: Rule.Node): string | undefined {
-      const classBody = methodDef.parent;
+    function getClassName(methodDefinition: Rule.Node): string | undefined {
+      const classBody = methodDefinition.parent;
       const classNode = classBody?.parent;
       if (
         !classNode || !('id' in classNode) || !classNode.id || typeof classNode.id !== 'object' || !('name' in classNode.id)

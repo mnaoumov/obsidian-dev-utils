@@ -36,9 +36,9 @@ import {
   typeLink
 } from './api-doc-link-rendering.ts';
 import {
-  ensureDir,
+  ensureDirectory,
   escapeJsString,
-  escapeJsxAttr as escapeJsxAttribute,
+  escapeJsxAttribute,
   escapeMarkdown,
   escapeMdxAngleBrackets,
   escapeMdxBraces,
@@ -46,7 +46,7 @@ import {
   getComponentImportPath,
   getDisplayName,
   getImportStatement,
-  getNamespaceDir,
+  getNamespaceDirectory,
   memberRouteSegment,
   memberSlug,
   overloadRouteSegment,
@@ -77,8 +77,8 @@ export async function appendBacklinksAndWrite(
       for (const blKey of sortedBacklinks) {
         const blInfo = allTypes.get(blKey);
         if (blInfo) {
-          const blNsDir = getNamespaceDir(blInfo.namespace);
-          lines.push(`- [${blInfo.name}](${BASE_PATH}/api/${blNsDir}/${toTypeRouteSegment(blInfo.namespace, blInfo.name)}/)`);
+          const blNsDirectory = getNamespaceDirectory(blInfo.namespace);
+          lines.push(`- [${blInfo.name}](${BASE_PATH}/api/${blNsDirectory}/${toTypeRouteSegment(blInfo.namespace, blInfo.name)}/)`);
         }
       }
     }
@@ -96,7 +96,7 @@ export function buildBacklinksFromContent(
   // Identity back to its original qualified type key.
   const routeKeyToTypeKey = new Map<string, string>();
   for (const [typeKey, info] of allTypes) {
-    routeKeyToTypeKey.set(`${getNamespaceDir(info.namespace)}#${toTypeRouteSegment(info.namespace, info.name)}`, typeKey);
+    routeKeyToTypeKey.set(`${getNamespaceDirectory(info.namespace)}#${toTypeRouteSegment(info.namespace, info.name)}`, typeKey);
   }
   const escapedBase = BASE_PATH.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
   const linkPattern = new RegExp(`${escapedBase}/api/(?<path>(?:[a-zA-Z0-9_@-]+/)+)`, 'g');
@@ -165,22 +165,22 @@ export function computeOverviewSignature(name: string, info: TypeInfo): string |
 }
 
 export async function generateMemberPages(name: string, info: TypeInfo, allTypes: Map<string, TypeInfo>): Promise<void> {
-  const nsDir = getNamespaceDir(info.namespace);
-  const typeFileDir = toTypeFileSegment(info.namespace, name);
-  const typeRouteDir = toTypeRouteSegment(info.namespace, name);
-  const componentImport = `import { MemberDetail } from "${getComponentImportPath(nsDir, typeFileDir)}";`;
+  const nsDirectory = getNamespaceDirectory(info.namespace);
+  const typeFileDirectory = toTypeFileSegment(info.namespace, name);
+  const typeRouteDirectory = toTypeRouteSegment(info.namespace, name);
+  const componentImport = `import { MemberDetail } from "${getComponentImportPath(nsDirectory, typeFileDirectory)}";`;
 
   // Property pages (skip inherited — they live on the parent type)
   const properties = info.properties.filter((p) => !p.inheritedFrom);
   for (const property of properties) {
-    const filePath = join(OUTPUT_DIR, nsDir, typeFileDir, `${memberSlug(property.name)}.mdx`);
-    await ensureDir(filePath);
+    const filePath = join(OUTPUT_DIR, nsDirectory, typeFileDirectory, `${memberSlug(property.name)}.mdx`);
+    await ensureDirectory(filePath);
 
     const lines: string[] = [];
     const propertyTitle = `${name}.${property.name}`;
     lines.push('---');
     lines.push(`title: "${escapeYaml(propertyTitle)}"`);
-    lines.push(`slug: "api/${nsDir}/${typeRouteDir}/${memberRouteSegment(property.name)}"`);
+    lines.push(`slug: "api/${nsDirectory}/${typeRouteDirectory}/${memberRouteSegment(property.name)}"`);
     lines.push(`signature: "${escapeYaml(truncateSignature(`${property.signature}: ${property.type}`))}"`);
     lines.push('editUrl: false');
     lines.push('sidebar:');
@@ -191,7 +191,7 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
     lines.push('');
 
     // Breadcrumb
-    lines.push(`[${name}](${BASE_PATH}/api/${nsDir}/${typeRouteDir}/) › ${property.name}`);
+    lines.push(`[${name}](${BASE_PATH}/api/${nsDirectory}/${typeRouteDirectory}/) › ${property.name}`);
     lines.push('');
 
     const staticAttribute = property.isStatic ? ' isStatic={true}' : '';
@@ -220,15 +220,15 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
 
   for (const [overloadKey, overloads] of overloadGroups) {
     const fileSlug = overloadSlug(overloadKey);
-    const filePath = join(OUTPUT_DIR, nsDir, typeFileDir, `${fileSlug}.mdx`);
-    await ensureDir(filePath);
+    const filePath = join(OUTPUT_DIR, nsDirectory, typeFileDirectory, `${fileSlug}.mdx`);
+    await ensureDirectory(filePath);
 
     const displayName = `${name}.${overloadKey} method`;
     const firstOverload = overloads[0];
 
     const lines: string[] = ['---'];
     lines.push(`title: "${escapeYaml(displayName)}"`);
-    lines.push(`slug: "api/${nsDir}/${typeRouteDir}/${overloadRouteSegment(overloadKey)}"`);
+    lines.push(`slug: "api/${nsDirectory}/${typeRouteDirectory}/${overloadRouteSegment(overloadKey)}"`);
     if (firstOverload) {
       lines.push(`signature: "${escapeYaml(truncateSignature(`${firstOverload.signature}: ${firstOverload.returnType}`))}"`);
     }
@@ -241,7 +241,7 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
     lines.push('');
 
     // Breadcrumb
-    lines.push(`[${name}](${BASE_PATH}/api/${nsDir}/${typeRouteDir}/) › ${overloadKey}`);
+    lines.push(`[${name}](${BASE_PATH}/api/${nsDirectory}/${typeRouteDirectory}/) › ${overloadKey}`);
     lines.push('');
 
     for (const overload of overloads) {
@@ -270,11 +270,11 @@ export async function generateNamespaceIndexPages(
   }
 
   for (const [namespace, nsTypes] of namespaces) {
-    const nsDir = getNamespaceDir(namespace);
-    const filePath = join(OUTPUT_DIR, nsDir, 'index.mdx');
-    await ensureDir(filePath);
+    const nsDirectory = getNamespaceDirectory(namespace);
+    const filePath = join(OUTPUT_DIR, nsDirectory, 'index.mdx');
+    await ensureDirectory(filePath);
 
-    const lines: string[] = ['---', `title: "${namespace}"`, `slug: "api/${nsDir}"`, 'editUrl: false', 'sidebar:', `  label: "${namespace}"`, '---', ''];
+    const lines: string[] = ['---', `title: "${namespace}"`, `slug: "api/${nsDirectory}"`, 'editUrl: false', 'sidebar:', `  label: "${namespace}"`, '---', ''];
 
     // Module @file overview text
     const overview = moduleOverviews.get(namespace);
@@ -299,20 +299,20 @@ export async function generateNamespaceIndexPages(
   rootLines.push('');
   const sortedNamespaces = [...namespaces.keys()].sort((a, b) => a.localeCompare(b));
   for (const namespace of sortedNamespaces) {
-    rootLines.push(`- [${namespace}](${BASE_PATH}/api/${getNamespaceDir(namespace)}/)`);
+    rootLines.push(`- [${namespace}](${BASE_PATH}/api/${getNamespaceDirectory(namespace)}/)`);
   }
   rootLines.push('');
   const rootFilePath = join(OUTPUT_DIR, 'index.mdx');
-  await ensureDir(rootFilePath);
+  await ensureDirectory(rootFilePath);
   await writeFile(rootFilePath, rootLines.join('\n'), 'utf-8');
 }
 
 export async function generateOverviewPage(name: string, info: TypeInfo, allTypes: Map<string, TypeInfo>): Promise<PageContent> {
-  const nsDir = getNamespaceDir(info.namespace);
+  const nsDirectory = getNamespaceDirectory(info.namespace);
   const typeFileSlug = toTypeFileSegment(info.namespace, name);
   const typeRouteSlug = toTypeRouteSegment(info.namespace, name);
-  const filePath = join(OUTPUT_DIR, nsDir, typeFileSlug, 'index.mdx');
-  await ensureDir(filePath);
+  const filePath = join(OUTPUT_DIR, nsDirectory, typeFileSlug, 'index.mdx');
+  await ensureDirectory(filePath);
 
   const lines: string[] = [];
 
@@ -320,7 +320,7 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
   const displayName = getDisplayName(name, info);
   lines.push('---');
   lines.push(`title: "${displayName}"`);
-  lines.push(`slug: "api/${nsDir}/${typeRouteSlug}"`);
+  lines.push(`slug: "api/${nsDirectory}/${typeRouteSlug}"`);
   if (info.description) {
     lines.push(`description: "${escapeYaml(stripMarkdown(info.description))}"`);
   }
@@ -335,7 +335,7 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
   lines.push('');
 
   // Component imports — compute relative path from generated page to components
-  const componentPath = getComponentImportPath(nsDir, typeFileSlug);
+  const componentPath = getComponentImportPath(nsDirectory, typeFileSlug);
   lines.push(
     `import { TypeSignature, ImportStatement, ConstructorBlock, PropertyTable, MethodTable } from "${componentPath}";`
   );

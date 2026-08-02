@@ -13,7 +13,7 @@ import {
   resolvePathFromRootSafe
 } from '../src/script-utils/root.ts';
 import {
-  parseVersionArgs as parseVersionArguments,
+  parseVersionArguments,
   updateVersion
 } from '../src/script-utils/version.ts';
 

@@ -22,7 +22,7 @@ import {
   getReleaseNotes,
   getVersionUpdateType,
   gitPush,
-  parseVersionArgs as parseVersionArguments,
+  parseVersionArguments,
   publishGitHubRelease,
   updateChangelog,
   updateVersion,

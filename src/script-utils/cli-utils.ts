@@ -280,6 +280,7 @@ const CMD_META_RE = /[()%!^"<>&|]/g;
  * @param commandLine - The already-quoted command line string.
  * @returns The string with all cmd metacharacters `^`-escaped.
  */
+// eslint-disable-next-line unicorn/name-replacements -- `cmd` names Windows `cmd.exe`, not an abbreviation of `command`.
 export function cmdEscapeCommandLine(commandLine: string): string {
   return replaceAll({
     replacer: '^$&',
@@ -297,10 +298,10 @@ export function cmdEscapeCommandLine(commandLine: string): string {
  * script has to opt in, and each `npm run` sub-step of a composite script (e.g. `build`) carries its own
  * switch.
  *
- * @param taskFn - The task function to execute, which may return a {@link CliTaskResult} or `void`.
+ * @param taskFunction - The task function to execute, which may return a {@link CliTaskResult} or `void`.
  * @returns A {@link Promise} that resolves when the task is completed and exits with the appropriate status.
  */
-export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<void> {
+export async function wrapCliTask(taskFunction: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<void> {
   const disabledScriptEnvVariableName = getDisabledScriptEnvVariableName();
   if (disabledScriptEnvVariableName !== null) {
     process.stdout.write(`Skipped (${disabledScriptEnvVariableName} is off).\n`);
@@ -309,7 +310,7 @@ export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskRe
   }
 
   enableLibraryDebuggers();
-  const result = await wrapResult(taskFn);
+  const result = await wrapResult(taskFunction);
   result.exit();
 }
 
@@ -317,12 +318,12 @@ export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskRe
  * Safely executes a task function and returns a {@link CliTaskResult}. If the task function throws an error,
  * An error is caught, and a failure {@link CliTaskResult} is returned.
  *
- * @param taskFn - The task function to execute.
+ * @param taskFunction - The task function to execute.
  * @returns A {@link Promise} that resolves with a {@link CliTaskResult} representing the outcome of the task.
  */
-async function wrapResult(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<CliTaskResult> {
+async function wrapResult(taskFunction: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<CliTaskResult> {
   try {
-    return (await taskFn()) as CliTaskResult | undefined ?? CliTaskResult.Success();
+    return (await taskFunction()) as CliTaskResult | undefined ?? CliTaskResult.Success();
   } catch (error) {
     printError(new Error('An error occurred during task execution', { cause: error }));
     return CliTaskResult.Failure();

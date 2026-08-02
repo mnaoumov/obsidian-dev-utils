@@ -52,12 +52,12 @@ export interface BuildIntegrationTestPluginParams {
  * @param params - The parameters for building the plugin.
  */
 export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPluginParams): Promise<void> {
-  const outDirPath = join(PROJECT_ROOT, params.outDir);
+  const outDirectoryPath = join(PROJECT_ROOT, params.outDir);
 
-  if (existsSync(outDirPath)) {
-    await rm(outDirPath, { recursive: true });
+  if (existsSync(outDirectoryPath)) {
+    await rm(outDirectoryPath, { recursive: true });
   }
-  await mkdir(outDirPath, { recursive: true });
+  await mkdir(outDirectoryPath, { recursive: true });
 
   await build({
     bundle: true,
@@ -72,11 +72,11 @@ export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPlu
     ],
     format: 'cjs',
     logLevel: 'info',
-    outfile: join(outDirPath, 'main.js'),
+    outfile: join(outDirectoryPath, 'main.js'),
     platform: 'node',
     sourcemap: (params.shouldGenerateSourceMap ?? true) ? 'inline' : false,
     target: 'ES2022'
   });
 
-  await cp(join(PLUGIN_DIR, 'manifest.json'), join(outDirPath, 'manifest.json'));
+  await cp(join(PLUGIN_DIR, 'manifest.json'), join(outDirectoryPath, 'manifest.json'));
 }

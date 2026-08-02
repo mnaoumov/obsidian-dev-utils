@@ -11,7 +11,7 @@ import {
   extractInterfaceInfo,
   getDescription,
   getExamples,
-  getParamDescriptions as getParameterDescriptions,
+  getParameterDescriptions,
   getRemarks,
   getReturnDescription,
   getSince

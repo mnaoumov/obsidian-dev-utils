@@ -69,9 +69,9 @@ export function computeOgHash(params: ComputeOgHashParams): string {
  * `.ttf`/`.otf`) in `fontsDir` and returns `null` when none are available, so
  * the caller can skip OG generation instead of crashing the build.
  */
-export async function loadFonts(fontsDir: string): Promise<Font[] | null> {
-  const regularPath = `${fontsDir}/inter-latin-400-normal.ttf`;
-  const boldPath = `${fontsDir}/inter-latin-700-normal.ttf`;
+export async function loadFonts(fontsDirectory: string): Promise<Font[] | null> {
+  const regularPath = `${fontsDirectory}/inter-latin-400-normal.ttf`;
+  const boldPath = `${fontsDirectory}/inter-latin-700-normal.ttf`;
 
   if (existsSync(regularPath) && existsSync(boldPath)) {
     const [regularData, boldData] = await Promise.all([
@@ -85,11 +85,11 @@ export async function loadFonts(fontsDir: string): Promise<Font[] | null> {
   }
 
   // Fallback: reuse any single font file in the directory for both weights.
-  if (existsSync(fontsDir)) {
-    const entries = await readdir(fontsDir);
+  if (existsSync(fontsDirectory)) {
+    const entries = await readdir(fontsDirectory);
     const fontFile = entries.find((name) => name.endsWith('.ttf') || name.endsWith('.otf'));
     if (fontFile) {
-      const data = await readFile(`${fontsDir}/${fontFile}`);
+      const data = await readFile(`${fontsDirectory}/${fontFile}`);
       return [
         { data, name: 'Inter', style: 'normal' as const, weight: FONT_WEIGHT_REGULAR },
         { data, name: 'Inter', style: 'normal' as const, weight: FONT_WEIGHT_BOLD }

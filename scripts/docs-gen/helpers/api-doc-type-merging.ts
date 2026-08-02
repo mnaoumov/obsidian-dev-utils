@@ -19,7 +19,7 @@ import { findType } from './api-doc-link-rendering.ts';
  * E.g., parent has `typeParameters: ['Instance extends BaseInstance']` and
  * child extends `Parent<CanvasPluginInstance>` → `{Instance: 'CanvasPluginInstance'}`
  */
-export function buildTypeParamMap(baseInfo: TypeInfo, typeArguments: string[]): Map<string, string> {
+export function buildTypeParameterMap(baseInfo: TypeInfo, typeArguments: string[]): Map<string, string> {
   const mapping = new Map<string, string>();
   const count = Math.min(baseInfo.typeParameters.length, typeArguments.length);
   for (let index = 0; index < count; index++) {
@@ -77,7 +77,7 @@ export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
       }
 
       const typeArguments = parseTypeArguments(baseTypeName);
-      const typeParameterMap = buildTypeParamMap(baseInfo, typeArguments);
+      const typeParameterMap = buildTypeParameterMap(baseInfo, typeArguments);
 
       for (const property of baseInfo.properties) {
         if (info.properties.every((p) => !(p.name === property.name))) {

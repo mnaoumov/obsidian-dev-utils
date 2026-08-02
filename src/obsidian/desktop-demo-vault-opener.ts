@@ -185,13 +185,13 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
 
   progressNotice.setContent(`Extracting demo vault for ${pluginName} v${versionToOpen}…`);
   cleanupOrphanedExtractedVaults();
-  const vaultDir = extractDemoVaultToFreshFolder({
+  const vaultDirectory = extractDemoVaultToFreshFolder({
     archive,
     pluginId,
     version: versionToOpen
   });
 
-  window.electron.ipcRenderer.sendSync('vault-open', vaultDir, false);
+  window.electron.ipcRenderer.sendSync('vault-open', vaultDirectory, false);
 }
 
 /**
@@ -236,12 +236,12 @@ function cleanupOrphanedExtractedVaults(): void {
  * with no bundled types, so it is loaded via `window.require` and typed as `node:fs`'s shape.
  *
  * @param archive - The raw zip archive bytes.
- * @param targetDir - The directory to extract into.
+ * @param targetDirectory - The directory to extract into.
  */
-function extractDemoVaultArchive(archive: Buffer, targetDir: string): void {
+function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): void {
   const originalFs = window.require('node:original-fs') as typeof import('node:fs');
   const zip = new AdmZip(archive, { fs: originalFs });
-  zip.extractAllTo(targetDir, true);
+  zip.extractAllTo(targetDirectory, true);
 }
 
 /**
@@ -259,10 +259,10 @@ function extractDemoVaultToFreshFolder(params: ExtractDemoVaultToFreshFolderPara
   const { archive, pluginId, version } = params;
   const extractedVaultsRoot = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, EXTRACTED_VAULTS_SUBFOLDER);
   mkdirSync(extractedVaultsRoot, { recursive: true });
-  const uniqueParentDir = mkdtempSync(join(extractedVaultsRoot, `${pluginId}-${version}-`));
-  const vaultDir = join(uniqueParentDir, `${pluginId}-${version}.demo-vault`);
-  extractDemoVaultArchive(archive, vaultDir);
-  return vaultDir;
+  const uniqueParentDirectory = mkdtempSync(join(extractedVaultsRoot, `${pluginId}-${version}-`));
+  const vaultDirectory = join(uniqueParentDirectory, `${pluginId}-${version}.demo-vault`);
+  extractDemoVaultArchive(archive, vaultDirectory);
+  return vaultDirectory;
 }
 
 /**
@@ -286,8 +286,8 @@ async function resolveDemoVaultArchive(params: ResolveDemoVaultArchiveParams): P
     version
   } = params;
 
-  const archivesDir = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, ARCHIVES_SUBFOLDER);
-  const archivePath = join(archivesDir, `${pluginId}-${version}.zip`);
+  const archivesDirectory = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, ARCHIVES_SUBFOLDER);
+  const archivePath = join(archivesDirectory, `${pluginId}-${version}.zip`);
   if (existsSync(archivePath)) {
     return readFileSync(archivePath);
   }
@@ -304,7 +304,7 @@ async function resolveDemoVaultArchive(params: ResolveDemoVaultArchiveParams): P
   }
 
   const archive = Buffer.from(response.arrayBuffer);
-  mkdirSync(archivesDir, { recursive: true });
+  mkdirSync(archivesDirectory, { recursive: true });
   writeFileSync(archivePath, archive);
   return archive;
 }

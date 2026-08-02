@@ -10,7 +10,7 @@ import type {
 } from './api-doc-types.ts';
 
 import {
-  buildTypeParamMap as buildTypeParameterMap,
+  buildTypeParameterMap,
   parseTypeArguments,
   resolveInheritedMembers,
   substituteMemberTypes,

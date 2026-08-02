@@ -66,9 +66,9 @@ export interface CheckboxCommand {
   /**
    * Called once with the created checkbox element, to initialize its state.
    *
-   * @param checkboxEl - The created checkbox element.
+   * @param checkboxElement - The created checkbox element.
    */
-  onInit(checkboxEl: HTMLInputElement): void;
+  onInit(checkboxElement: HTMLInputElement): void;
 
   /**
    * The human-readable description shown next to the checkbox in the instruction bar.
@@ -132,11 +132,11 @@ export interface KeyboardCommand {
    * The handler invoked when the shortcut is pressed. When omitted, the command is a hint only and no
    * scope handler is registered.
    *
-   * @param evt - The keyboard event.
-   * @param ctx - The keymap context.
+   * @param $event - The keyboard event.
+   * @param context - The keymap context.
    * @returns `false` to prevent Obsidian's default handling, or `void`/`true` otherwise.
    */
-  onKey?(evt: KeyboardEvent, ctx: KeymapContext): boolean;
+  onKey?($event: KeyboardEvent, context: KeymapContext): boolean;
 
   /**
    * The human-readable description shown next to the key in the instruction bar.

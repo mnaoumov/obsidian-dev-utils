@@ -11,16 +11,16 @@ import { relative } from 'node:path/posix';
  *
  * @param frontmatter - The page's parsed frontmatter.
  * @param filePath - The page's source-file path.
- * @param contentDocsDir - The documentation content root.
+ * @param contentDocsDirectory - The documentation content root.
  * @returns The case-preserved explicit slug, or a slug derived from the file path.
  */
-export function getOgImagePageSlug(frontmatter: Record<string, unknown>, filePath: string, contentDocsDir: string): string {
+export function getOgImagePageSlug(frontmatter: Record<string, unknown>, filePath: string, contentDocsDirectory: string): string {
   const slug = frontmatter['slug'];
   if (typeof slug === 'string') {
     return slug;
   }
 
-  let filePathSlug = relative(contentDocsDir, filePath);
+  let filePathSlug = relative(contentDocsDirectory, filePath);
   filePathSlug = filePathSlug.replaceAll('\\', '/');
   filePathSlug = filePathSlug.replace(/\.\w+$/, '');
   filePathSlug = filePathSlug.replace(/(?:^|\/)index$/, '');

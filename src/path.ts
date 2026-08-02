@@ -26,7 +26,7 @@ export const delimiter = posix.delimiter;
 /**
  * A POSIX segment separator.
  */
-export const sep = pathBrowserify.posix.sep;
+export const separator = pathBrowserify.posix.sep;
 
 /**
  * Returns the base name of a file, optionally removing the file extension.

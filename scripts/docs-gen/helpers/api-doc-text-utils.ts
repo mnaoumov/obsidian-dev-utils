@@ -27,7 +27,7 @@ export function computeOverloadKey(method: MemberInfo): string {
   return method.name;
 }
 
-export async function ensureDir(filePath: string): Promise<void> {
+export async function ensureDirectory(filePath: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
 }
 
@@ -37,7 +37,7 @@ export function escapeJsString(text: string): string {
 }
 
 /** Escape text for use inside a JSX attribute: attr="..." (MDX uses HTML-style parsing) */
-export function escapeJsxAttr(text: string): string {
+export function escapeJsxAttribute(text: string): string {
   return text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('\n', ' ');
 }
 
@@ -113,8 +113,8 @@ export function foldTsDocParagraphs(text: string): string {
  *
  * So we walk up from content/docs/api/{nsDir}/{typeDir}/ to docs/src/, then into components/api.
  */
-export function getComponentImportPath(nsDir: string, typeDir: string): string {
-  const segments = ['content', 'docs', 'api', ...nsDir.split('/'), ...typeDir.split('/')].filter(Boolean);
+export function getComponentImportPath(nsDirectory: string, typeDirectory: string): string {
+  const segments = ['content', 'docs', 'api', ...nsDirectory.split('/'), ...typeDirectory.split('/')].filter(Boolean);
   const ups = '../'.repeat(segments.length);
   return `${ups}components/api`;
 }
@@ -143,7 +143,7 @@ export function getImportStatement(info: TypeInfo): string | undefined {
   return `${importKeyword} { ${info.name} } from 'obsidian-dev-utils/${info.namespace}';`;
 }
 
-export function getNamespaceDir(namespace: string): string {
+export function getNamespaceDirectory(namespace: string): string {
   return namespace;
 }
 

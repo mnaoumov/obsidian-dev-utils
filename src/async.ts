@@ -85,16 +85,16 @@ export interface RetryOptions {
 /**
  * Adds an error handler to a {@link Promise} that catches any errors and emits an async error event.
  *
- * @param asyncFn - The asynchronous function to add an error handler to.
+ * @param asyncFunction - The asynchronous function to add an error handler to.
  * @param stackTrace - The stack trace of the source function.
  * @returns A {@link Promise} that resolves when the asynchronous function completes or emits async error event.
  */
-export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrace?: string): Promise<void> {
+export async function addErrorHandler(asyncFunction: () => Promise<unknown>, stackTrace?: string): Promise<void> {
   stackTrace ??= getStackTrace(1);
   // Capture the ignore context synchronously at schedule time, so a deferred rejection settling after the scope exits is still ignored.
   const wasScheduledWithinIgnoreContext = isAsyncErrorIgnoreContextActive();
   try {
-    await asyncFn();
+    await asyncFunction();
   } catch (asyncError) {
     const wrappedError = new CustomStackTraceError({
       cause: asyncError,
@@ -189,17 +189,17 @@ export async function asyncMap<T, U>(array: T[], callback: (value: T, index: num
  * Converts an asynchronous function to a synchronous one by automatically handling the Promise rejection.
  *
  * @typeParam Arguments - The types of the arguments the function accepts.
- * @param asyncFunc - The asynchronous function to convert.
+ * @param asyncFunction - The asynchronous function to convert.
  * @param stackTrace - The stack trace of the source function.
  * @returns A function that wraps the asynchronous function in a synchronous interface.
  */
-export function convertAsyncToSync<Arguments extends unknown[]>(asyncFunc: GenericAsyncFunction<Arguments>, stackTrace?: string): GenericVoidFunction<Arguments> {
+export function convertAsyncToSync<Arguments extends unknown[]>(asyncFunction: GenericAsyncFunction<Arguments>, stackTrace?: string): GenericVoidFunction<Arguments> {
   stackTrace ??= getStackTrace(1);
   return (...$arguments: Arguments): void => {
     assertNonNullable(stackTrace);
     const innerStackTrace = getStackTrace(1);
     stackTrace = `${stackTrace}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
-    invokeAsyncSafely(() => asyncFunc(...$arguments), stackTrace);
+    invokeAsyncSafely(() => asyncFunction(...$arguments), stackTrace);
   };
 }
 
@@ -208,13 +208,13 @@ export function convertAsyncToSync<Arguments extends unknown[]>(asyncFunc: Gener
  *
  * @typeParam Arguments - The types of the arguments the function accepts.
  * @typeParam Result - The type of the function's return value.
- * @param syncFn - The synchronous function to convert.
+ * @param syncFunction - The synchronous function to convert.
  * @returns A function that wraps the synchronous function in an asynchronous interface.
  */
-export function convertSyncToAsync<Arguments extends unknown[], Result>(syncFn: GenericFunction<Arguments, Result>): GenericAsyncFunction<Arguments, Result> {
+export function convertSyncToAsync<Arguments extends unknown[], Result>(syncFunction: GenericFunction<Arguments, Result>): GenericAsyncFunction<Arguments, Result> {
   return async (...$arguments: Arguments): Promise<Result> => {
     await noopAsync();
-    return syncFn(...$arguments);
+    return syncFunction(...$arguments);
   };
 }
 
@@ -343,15 +343,15 @@ export function enableAsyncOperationTracking(): Disposable {
 /**
  * Invokes a {@link Promise} and safely handles any errors by catching them and emitting an async error event.
  *
- * @param asyncFn - The asynchronous function to invoke safely.
+ * @param asyncFunction - The asynchronous function to invoke safely.
  * @param stackTrace - The stack trace of the source function.
  */
-export function invokeAsyncSafely(asyncFn: () => Promisable<unknown>, stackTrace?: string): void {
+export function invokeAsyncSafely(asyncFunction: () => Promisable<unknown>, stackTrace?: string): void {
   stackTrace ??= getStackTrace(1);
 
   let result: unknown;
   try {
-    result = asyncFn();
+    result = asyncFunction();
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Re-rejecting the original caught error as-is.
     trackAsyncOperation(addErrorHandler(() => Promise.reject(error), stackTrace));
@@ -600,15 +600,15 @@ export interface TimeoutParams {
  * Chains a promise with another promise.
  *
  * @param chainPromise - Represents the chained promise.
- * @param promisableFn - The function to chain.
+ * @param promisableFunction - The function to chain.
  * @returns Chained promise or `null` if no async logic is chained.
  */
-export function chain(chainPromise: null | Promise<void>, promisableFn: () => null | Promisable<void>): null | Promise<void> {
+export function chain(chainPromise: null | Promise<void>, promisableFunction: () => null | Promisable<void>): null | Promise<void> {
   let nextChainPromise = chainPromise;
   if (chainPromise) {
-    nextChainPromise = chainPromise.then(() => promisableFn() ?? undefined);
+    nextChainPromise = chainPromise.then(() => promisableFunction() ?? undefined);
   } else {
-    const promisable = promisableFn();
+    const promisable = promisableFunction();
     if (promisable) {
       nextChainPromise = promisable instanceof Promise ? promisable as Promise<void> : Promise.resolve(promisable);
     }

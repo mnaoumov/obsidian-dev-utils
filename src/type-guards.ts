@@ -34,9 +34,9 @@ export function assert(isTrue: boolean, errorOrMessage: Error | string): asserts
  * Asserts that a value is a generic object, narrowing its type in place.
  *
  * @typeParam T - The type of the value.
- * @param _obj - The value to assert.
+ * @param _object - The value to assert.
  */
-export function assertGenericObject<T>(_obj: T): asserts _obj is GenericObject<T> {
+export function assertGenericObject<T>(_object: T): asserts _object is GenericObject<T> {
   noop();
 }
 
