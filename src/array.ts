@@ -28,6 +28,27 @@ export function filterInPlace<T>(arr: T[], predicate: (value: T, index: number, 
 }
 
 /**
+ * Copies an iterable into a new array, so it can be safely iterated while the original is modified.
+ *
+ * Use this whenever the loop body (or an awaited call inside it) adds to or removes from the collection
+ * being iterated — releasing locks, cancelling timers, settling pending operations. Iterating the live
+ * collection in those cases silently skips entries.
+ *
+ * Prefer this over an inline `[...collection]`: it says why the copy exists, and it keeps the call site
+ * clear of `unicorn/no-useless-spread`, which cannot tell a defensive copy from a redundant one.
+ *
+ * The result is `readonly`: it exists to be iterated, not worked on. Mutating it would change a throwaway
+ * copy and leave the original untouched, which is never what the caller wants.
+ *
+ * @typeParam T - The type of the elements.
+ * @param collection - The collection to copy.
+ * @returns A new array holding the collection's elements at the time of the call.
+ */
+export function snapshot<T>(collection: Iterable<T>): readonly T[] {
+  return [...collection];
+}
+
+/**
  * Remove duplicates from an array.
  *
  * @typeParam T - The type of the array elements.

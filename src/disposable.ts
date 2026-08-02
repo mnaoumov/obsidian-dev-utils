@@ -279,6 +279,19 @@ export class AsyncCallbackDisposable extends AsyncDisposableBase {
 }
 
 /**
+ * Disposes a {@link Disposable}.
+ *
+ * Prefer this over calling `disposable[Symbol.dispose]()` at the call site: it reads better and keeps the
+ * well-known symbol referenced in a single place.
+ *
+ * @param disposable - the disposable to dispose
+ */
+export function dispose(disposable: Disposable): void {
+  // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.dispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. Routing every disposal through this function keeps the exception to one site.
+  disposable[Symbol.dispose]();
+}
+
+/**
  * Abstract base for a {@link DisposableEx}: it carries the re-dispose guard (via {@link MultipleDisposeBehavior})
  * and the {@link DisposableEx.dispose} alias; a subclass only implements {@link DisposableBase.performDispose}.
  */
@@ -401,12 +414,15 @@ export class CombineAsyncDisposable extends AsyncDisposableBase {
 
   private getOrderedChildren(): readonly AsyncDisposable[] {
     switch (this.disposeOrder) {
-      case DisposeOrder.Fifo:
+      case DisposeOrder.Fifo: {
         return this.children;
-      case DisposeOrder.Lifo:
+      }
+      case DisposeOrder.Lifo: {
         return [...this.children].reverse();
-      default:
+      }
+      default: {
         assertNever(this.disposeOrder);
+      }
     }
   }
 }
@@ -458,14 +474,31 @@ export class CombineDisposable extends DisposableBase {
 
   private getOrderedChildren(): readonly Disposable[] {
     switch (this.disposeOrder) {
-      case DisposeOrder.Fifo:
+      case DisposeOrder.Fifo: {
         return this.children;
-      case DisposeOrder.Lifo:
+      }
+      case DisposeOrder.Lifo: {
         return [...this.children].reverse();
-      default:
+      }
+      default: {
         assertNever(this.disposeOrder);
+      }
     }
   }
+}
+
+/**
+ * Disposes an {@link AsyncDisposable}.
+ *
+ * Prefer this over calling `asyncDisposable[Symbol.asyncDispose]()` at the call site: it reads better and
+ * keeps the well-known symbol referenced in a single place.
+ *
+ * @param asyncDisposable - the async disposable to dispose
+ * @returns A {@link Promise} that resolves once the disposal completes.
+ */
+export async function disposeAsync(asyncDisposable: AsyncDisposable): Promise<void> {
+  // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.asyncDispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. Routing every disposal through this function keeps the exception to one site.
+  await asyncDisposable[Symbol.asyncDispose]();
 }
 
 /**
@@ -527,12 +560,13 @@ export function toAsyncDisposableEx(asyncDisposable: AsyncDisposable): AsyncDisp
   }
 
   return {
-    asyncDispose,
-    [Symbol.asyncDispose]: asyncDispose
+    asyncDispose: asyncDisposeAdapted,
+    // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.asyncDispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. This module implements the protocol, so it necessarily names the symbol.
+    [Symbol.asyncDispose]: asyncDisposeAdapted
   };
 
-  function asyncDispose(): Promise<void> {
-    return Promise.resolve(asyncDisposable[Symbol.asyncDispose]());
+  function asyncDisposeAdapted(): Promise<void> {
+    return disposeAsync(asyncDisposable);
   }
 }
 
@@ -551,12 +585,13 @@ export function toDisposableEx(disposable: Disposable): DisposableEx {
   }
 
   return {
-    dispose,
-    [Symbol.dispose]: dispose
+    dispose: disposeAdapted,
+    // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.dispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. This module implements the protocol, so it necessarily names the symbol.
+    [Symbol.dispose]: disposeAdapted
   };
 
-  function dispose(): void {
-    disposable[Symbol.dispose]();
+  function disposeAdapted(): void {
+    dispose(disposable);
   }
 }
 
@@ -575,13 +610,17 @@ function shouldPerformDispose(isDisposed: boolean, multipleDisposeBehavior: Mult
   }
 
   switch (multipleDisposeBehavior) {
-    case MultipleDisposeBehavior.Ignore:
+    case MultipleDisposeBehavior.Ignore: {
       return false;
-    case MultipleDisposeBehavior.Invoke:
+    }
+    case MultipleDisposeBehavior.Invoke: {
       return true;
-    case MultipleDisposeBehavior.Throw:
+    }
+    case MultipleDisposeBehavior.Throw: {
       throw new Error('This disposable has already been disposed.');
-    default:
+    }
+    default: {
       assertNever(multipleDisposeBehavior);
+    }
   }
 }
