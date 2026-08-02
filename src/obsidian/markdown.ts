@@ -224,8 +224,8 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
     });
   }
 
-  private updateZIndex(el: HTMLElement): void {
-    this.zIndex = getZIndex(el) + 1;
+  private updateZIndex(element: HTMLElement): void {
+    this.zIndex = getZIndex(element) + 1;
   }
 }
 
@@ -322,18 +322,18 @@ export async function renderExternalLink(params: RenderExternalLinkParams): Prom
     url
   } = params;
   const displayText = params.displayText ?? url;
-  const wrapperEl = createSpan();
+  const wrapperElement = createSpan();
   await fullRender({
     app,
-    el: wrapperEl,
+    el: wrapperElement,
     markdown: `[${displayText}](${url})`
   });
-  const aEl = wrapperEl.find('a') as HTMLAnchorElement;
+  const aElement = wrapperElement.find('a') as HTMLAnchorElement;
   await registerLinkHandlers({
     app,
-    el: aEl
+    el: aElement
   });
-  return aEl;
+  return aElement;
 }
 
 /**
@@ -351,26 +351,26 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
   const path = getPath(app, pathOrAbstractFile);
   const displayText = params.displayText ?? path;
   if (isFolder(abstractFile)) {
-    return createEl('a', { text: displayText }, (aEl) => {
-      aEl.addEventListener('click', (evt) => {
-        evt.preventDefault();
+    return createEl('a', { text: displayText }, (aElement) => {
+      aElement.addEventListener('click', ($event) => {
+        $event.preventDefault();
         app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
       });
     });
   }
 
-  const wrapperEl = createSpan();
+  const wrapperElement = createSpan();
   await fullRender({
     app,
-    el: wrapperEl,
+    el: wrapperElement,
     markdown: `[[${path}|${displayText}]]`
   });
-  const aEl = wrapperEl.find('a') as HTMLAnchorElement;
+  const aElement = wrapperElement.find('a') as HTMLAnchorElement;
   await registerLinkHandlers({
     app,
-    el: aEl
+    el: aElement
   });
-  return aEl;
+  return aElement;
 }
 
 /* v8 ignore stop */

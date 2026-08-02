@@ -322,21 +322,21 @@ interface CreatePageLinkParams {
  */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => Promisable<void>): Promise<HTMLParagraphElement> {
   const oldContainer = dv.container;
-  const tempContainer = dv.paragraph('');
-  dv.container = tempContainer;
+  const temporaryContainer = dv.paragraph('');
+  dv.container = temporaryContainer;
   dv.container.empty();
 
   try {
     await renderer();
-  } catch (e) {
-    dv.paragraph(`❌${errorToString(e)}`);
+  } catch (error) {
+    dv.paragraph(`❌${errorToString(error)}`);
   } finally {
     // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
     dv.container = oldContainer;
-    tempContainer.remove();
+    temporaryContainer.remove();
   }
 
-  return tempContainer;
+  return temporaryContainer;
 }
 
 /**
@@ -479,9 +479,9 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
       paginationRow1Div.createSpan({ text: '...' });
     }
 
-    for (let i = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); i <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); i++) {
-      const pageLink = createPageLink({ currentPageNumber: i, disabled: i === pageNumber, text: String(i) });
-      if (i === pageNumber) {
+    for (let index = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); index <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); index++) {
+      const pageLink = createPageLink({ currentPageNumber: index, disabled: index === pageNumber, text: String(index) });
+      if (index === pageNumber) {
         pageLink.addClass('current');
       }
     }
@@ -517,11 +517,13 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     jumpToPageInput.addEventListener(
       'keydown',
       convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
-        if (event.key === 'Enter') {
-          const page = parseInt(jumpToPageInput.value, 10);
-          if (page >= 1 && page <= totalPages) {
-            await renderPage(page);
-          }
+        if (!(event.key === 'Enter')) {
+          return;
+        }
+
+        const page = parseInt(jumpToPageInput.value, 10);
+        if (page >= 1 && page <= totalPages) {
+          await renderPage(page);
         }
       })
     );
@@ -537,17 +539,16 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
       const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${String(currentPageNumber)}`, text });
       if (disabled) {
         link.addClass('disabled');
+        // eslint-disable-next-line unicorn/prefer-add-event-listener -- The handler is assigned to `onclick` so it stays readable back off the element, which is how it is invoked in tests and how a later assignment can replace it.
         link.onclick = (event: MouseEvent): void => {
           event.preventDefault();
         };
       } else {
-        link.addEventListener(
-          'click',
-          convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
-            event.preventDefault();
-            await renderPage(currentPageNumber);
-          })
-        );
+        // eslint-disable-next-line unicorn/prefer-add-event-listener -- The handler is assigned to `onclick` so it stays readable back off the element, which is how it is invoked in tests and how a later assignment can replace it.
+        link.onclick = convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
+          event.preventDefault();
+          await renderPage(currentPageNumber);
+        });
       }
       return link;
     }
@@ -567,8 +568,8 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     dv.container = container;
     try {
       await params.renderer(rowsForCurrentPage);
-    } catch (e) {
-      dv.paragraph(`❌${errorToString(e)}`);
+    } catch (error) {
+      dv.paragraph(`❌${errorToString(error)}`);
     } finally {
       // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
       dv.container = oldContainer;

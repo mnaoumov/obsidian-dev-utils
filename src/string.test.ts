@@ -432,31 +432,31 @@ describe('normalizeString', () => {
 
 describe('escape', () => {
   it('should escape newline', () => {
-    expect(escape('\n')).toBe('\\n');
+    expect(escape('\n')).toBe(String.raw`\n`);
   });
 
   it('should escape carriage return', () => {
-    expect(escape('\r')).toBe('\\r');
+    expect(escape('\r')).toBe(String.raw`\r`);
   });
 
   it('should escape tab', () => {
-    expect(escape('\t')).toBe('\\t');
+    expect(escape('\t')).toBe(String.raw`\t`);
   });
 
   it('should escape backspace', () => {
-    expect(escape('\b')).toBe('\\b');
+    expect(escape('\b')).toBe(String.raw`\b`);
   });
 
   it('should escape form feed', () => {
-    expect(escape('\f')).toBe('\\f');
+    expect(escape('\f')).toBe(String.raw`\f`);
   });
 
   it('should escape single quote', () => {
-    expect(escape('\'')).toBe('\\\'');
+    expect(escape('\'')).toBe(String.raw`\'`);
   });
 
   it('should escape double quote', () => {
-    expect(escape('"')).toBe('\\"');
+    expect(escape('"')).toBe(String.raw`\"`);
   });
 
   it('should escape backslash', () => {
@@ -464,7 +464,7 @@ describe('escape', () => {
   });
 
   it('should escape multiple special characters', () => {
-    expect(escape('line1\nline2\ttab')).toBe('line1\\nline2\\ttab');
+    expect(escape('line1\nline2\ttab')).toBe(String.raw`line1\nline2\ttab`);
   });
 
   it('should leave regular strings unchanged', () => {
@@ -477,32 +477,32 @@ describe('escape', () => {
 });
 
 describe('unescape', () => {
-  it('should unescape \\n to newline', () => {
-    expect(unescape('\\n')).toBe('\n');
+  it(String.raw`should unescape \n to newline`, () => {
+    expect(unescape(String.raw`\n`)).toBe('\n');
   });
 
-  it('should unescape \\r to carriage return', () => {
-    expect(unescape('\\r')).toBe('\r');
+  it(String.raw`should unescape \r to carriage return`, () => {
+    expect(unescape(String.raw`\r`)).toBe('\r');
   });
 
-  it('should unescape \\t to tab', () => {
-    expect(unescape('\\t')).toBe('\t');
+  it(String.raw`should unescape \t to tab`, () => {
+    expect(unescape(String.raw`\t`)).toBe('\t');
   });
 
-  it('should unescape \\b to backspace', () => {
-    expect(unescape('\\b')).toBe('\b');
+  it(String.raw`should unescape \b to backspace`, () => {
+    expect(unescape(String.raw`\b`)).toBe('\b');
   });
 
-  it('should unescape \\f to form feed', () => {
-    expect(unescape('\\f')).toBe('\f');
+  it(String.raw`should unescape \f to form feed`, () => {
+    expect(unescape(String.raw`\f`)).toBe('\f');
   });
 
   it('should unescape escaped single quote', () => {
-    expect(unescape('\\\'')).toBe('\'');
+    expect(unescape(String.raw`\'`)).toBe('\'');
   });
 
   it('should unescape escaped double quote', () => {
-    expect(unescape('\\"')).toBe('"');
+    expect(unescape(String.raw`\"`)).toBe('"');
   });
 
   it('should unescape escaped backslash', () => {
@@ -715,7 +715,7 @@ describe('getLfNormalizedOffsetToOriginalOffsetMapper', () => {
     [4, 4],
     [5, 5],
     [6, 6]
-  ])('should return identity mapping for LF-only string "abc\\ndef": offset %j -> %j', (lfOffset, expected) => {
+  ])(String.raw`should return identity mapping for LF-only string "abc\ndef": offset %j -> %j`, (lfOffset, expected) => {
     const mapper = getLfNormalizedOffsetToOriginalOffsetMapper('abc\ndef');
     expect(mapper(lfOffset)).toBe(expected);
   });
@@ -726,7 +726,7 @@ describe('getLfNormalizedOffsetToOriginalOffsetMapper', () => {
     [2, 3],
     [3, 4],
     [4, 5]
-  ])('should map CRLF offsets correctly for "ab\\r\\ncd": offset %j -> %j', (lfOffset, expected) => {
+  ])(String.raw`should map CRLF offsets correctly for "ab\r\ncd": offset %j -> %j`, (lfOffset, expected) => {
     const mapper = getLfNormalizedOffsetToOriginalOffsetMapper('ab\r\ncd');
     expect(mapper(lfOffset)).toBe(expected);
   });
@@ -737,7 +737,7 @@ describe('getLfNormalizedOffsetToOriginalOffsetMapper', () => {
     [2, 3],
     [3, 5],
     [4, 6]
-  ])('should handle multiple CRLF sequences in "a\\r\\nb\\r\\nc": offset %j -> %j', (lfOffset, expected) => {
+  ])(String.raw`should handle multiple CRLF sequences in "a\r\nb\r\nc": offset %j -> %j`, (lfOffset, expected) => {
     const mapper = getLfNormalizedOffsetToOriginalOffsetMapper('a\r\nb\r\nc');
     expect(mapper(lfOffset)).toBe(expected);
   });
@@ -753,7 +753,7 @@ describe('getLfNormalizedOffsetToOriginalOffsetMapper', () => {
   it.each([
     [5, 6],
     [10, 11]
-  ])('should handle offset beyond string length for "ab\\r\\ncd": offset %j -> %j', (lfOffset, expected) => {
+  ])(String.raw`should handle offset beyond string length for "ab\r\ncd": offset %j -> %j`, (lfOffset, expected) => {
     const mapper = getLfNormalizedOffsetToOriginalOffsetMapper('ab\r\ncd');
     expect(mapper(lfOffset)).toBe(expected);
   });

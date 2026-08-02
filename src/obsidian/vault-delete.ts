@@ -78,8 +78,8 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<bo
   if (canDelete) {
     try {
       await trashSafe(params.app, file);
-    } catch (e) {
-      printError(new Error(`Failed to delete ${file.path}`, { cause: e }));
+    } catch (error) {
+      printError(new Error(`Failed to delete ${file.path}`, { cause: error }));
       canDelete = false;
     }
   }

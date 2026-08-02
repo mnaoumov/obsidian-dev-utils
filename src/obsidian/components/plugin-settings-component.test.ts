@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import type { AsyncEventRef } from '../../async-events.ts';
+import type { AsyncEventRef as AsyncEventReference } from '../../async-events.ts';
 import type { DataHandler } from '../data-handler.ts';
 import type { PluginEventSource } from '../plugin/plugin-event-source.ts';
 
@@ -56,8 +56,8 @@ function createComponent(dataHandler: MockDataHandler): PluginSettingsComponentB
 function createMockPluginEventSource(): PluginEventSource {
   const source: PluginEventSource = strictProxy<PluginEventSource>({
     offref: noop,
-    on(name: string, callback: () => void, thisArg?: unknown): AsyncEventRef {
-      return { asyncEventSource: source, callback, name, thisArg };
+    on(name: string, callback: () => void, thisArgument?: unknown): AsyncEventReference {
+      return { asyncEventSource: source, callback, name, thisArg: thisArgument };
     }
   });
   return source;
@@ -136,6 +136,7 @@ describe('PluginSettingsComponentBase', () => {
           if (value < 0) {
             return 'Count must be non-negative';
           }
+          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
           return undefined;
         });
       }
@@ -233,6 +234,7 @@ describe('PluginSettingsComponentBase', () => {
           if (value < 0) {
             return 'Invalid';
           }
+          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
           return undefined;
         });
       }
@@ -259,6 +261,7 @@ describe('PluginSettingsComponentBase', () => {
           if (value < 0) {
             return 'Invalid';
           }
+          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
           return undefined;
         });
       }
@@ -287,6 +290,7 @@ describe('PluginSettingsComponentBase', () => {
           if (value === '') {
             return 'Name required';
           }
+          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
           return undefined;
         });
       }
@@ -316,10 +320,12 @@ describe('PluginSettingsComponentBase', () => {
         this.registerLegacySettingsConverter(
           LegacySettings,
           (legacy) => {
-            if (legacy.oldName) {
-              legacy.name = legacy.oldName;
-              delete legacy.oldName;
+            if (!legacy.oldName) {
+              return;
             }
+
+            legacy.name = legacy.oldName;
+            delete legacy.oldName;
           }
         );
       }
@@ -462,6 +468,7 @@ describe('PluginSettingsComponentBase', () => {
           if (value < 0) {
             return 'Must be non-negative';
           }
+          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
           return undefined;
         });
       }
@@ -499,8 +506,8 @@ describe('PluginSettingsComponentBase', () => {
     await component.loadWithPromises();
 
     const callback = vi.fn();
-    const ref = component.on('loadSettings', callback);
-    component.offref(ref);
+    const reference = component.on('loadSettings', callback);
+    component.offref(reference);
 
     await component.loadFromFile(true);
 

@@ -15,7 +15,7 @@ import type {
 import type { ValueProvider } from '../value-provider.ts';
 import type { CodeBlockMarkdownInformation } from './code-block-markdown-information.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
-import type { ContentArgs } from './vault.ts';
+import type { ContentArgs as ContentArguments } from './vault.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
 import { requestAnimationFrameAsync } from '../async.ts';
@@ -124,7 +124,7 @@ export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * Provides a new code block.
    */
-  readonly codeBlockProvider: ValueProvider<string, ContentArgs>;
+  readonly codeBlockProvider: ValueProvider<string, ContentArguments>;
 
   /**
    * The resource-lock component used to lock the note while it is being modified.
@@ -251,14 +251,13 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       const sourceLines = sourceLf.split('\n');
 
       const textLines = approximateSectionInfo.text.split('\n');
-      const textLineOffsets = new Map<number, number>();
-      textLineOffsets.set(linesBeforeSectionCount, sectionOffset);
+      const textLineOffsets = new Map<number, number>([[linesBeforeSectionCount, sectionOffset]]);
 
       let lastTextLineOffset = sectionOffset;
-      for (let i = 0; i < textLines.length; i++) {
-        const textLine = textLines[i] ?? '';
+      for (const [index, textLine_] of textLines.entries()) {
+        const textLine = textLine_;
         const lineOffset = lastTextLineOffset + textLine.length + 1;
-        textLineOffsets.set(linesBeforeSectionCount + i + 1, lineOffset);
+        textLineOffsets.set(linesBeforeSectionCount + index + 1, lineOffset);
         lastTextLineOffset = lineOffset;
       }
 
@@ -463,7 +462,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   const linePrefix = getMandatoryNamedGroup(match, 'LinePrefix');
   const codeBlockStartDelimiter = getMandatoryNamedGroup(match, 'CodeBlockStartDelimiter');
   const codeBlockEndDelimiter = getMandatoryNamedGroup(match, 'CodeBlockEndDelimiter');
-  const codeBlockArgsStr = getOptionalNamedGroup(match, 'CodeBlockArgs') ?? '';
+  const codeBlockArgumentsString = getOptionalNamedGroup(match, 'CodeBlockArgs') ?? '';
   const language = getMandatoryNamedGroup(match, 'CodeBlockLanguage');
 
   const previousText = potentialCodeBlockText.slice(0, match.index);
@@ -473,7 +472,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   const endLine = startLine + sourceLinesCount + 1;
 
   return {
-    args: codeBlockArgsStr.split(/\s+/).filter(Boolean),
+    args: codeBlockArgumentsString.split(/\s+/).filter(Boolean),
     endDelimiter: codeBlockEndDelimiter,
     language,
     linePrefix,
@@ -490,7 +489,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
         offset: textLineOffsets.get(startLine) ?? 0
       }
     },
-    rawArgsStr: codeBlockArgsStr,
+    rawArgsStr: codeBlockArgumentsString,
     sectionInfo: {
       lineEnd: previousTextLinesCount + sourceLinesCount + 1,
       lineStart: previousTextLinesCount,
@@ -500,9 +499,9 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   };
 }
 
-function getLanguageFromElement(el: HTMLElement): string {
+function getLanguageFromElement(element: HTMLElement): string {
   const BLOCK_LANGUAGE_PREFIX = 'block-language-';
-  return Array.from(el.classList).find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
+  return Array.from(element.classList).find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
 }
 
 function insertText(params: InsertTextParams): string {

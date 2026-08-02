@@ -45,7 +45,7 @@ vi.mock('../obsidian/file-system.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((selector: unknown, _opts?: unknown) => {
+  t: vi.fn((selector: unknown, _options?: unknown) => {
     if (typeof selector === 'function') {
       const proxy: unknown = new Proxy({}, { get: (): unknown => proxy });
       (selector as (root: unknown) => unknown)(proxy);
@@ -112,15 +112,15 @@ describe('deleteIfNotUsed', () => {
 
   it('should clear backlinks from the deleted note path', async () => {
     const file = TFile.create__(castTo(app.vault), 'attachment.png').asOriginalType2__();
-    const clearFn = vi.fn();
+    const clearFunction = vi.fn();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
-    mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: clearFn, count: vi.fn(() => 0) });
+    mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: clearFunction, count: vi.fn(() => 0) });
     await deleteIfNotUsed({
       app,
       deletedNotePath: 'deleted-note.md',
       pathOrFile: file
     });
-    expect(clearFn).toHaveBeenCalledWith('deleted-note.md');
+    expect(clearFunction).toHaveBeenCalledWith('deleted-note.md');
   });
 
   it('should show notice for used attachments when pluginNoticeComponent is provided', async () => {

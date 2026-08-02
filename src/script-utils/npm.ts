@@ -68,7 +68,6 @@ export type EditPackageLockJsonSyncOptions = EditPackageJsonOptions;
 /**
  * A type of the `package.json` file.
  */
-export type { PackageJson };
 
 /**
  * A type of the `package-lock.json` file.
@@ -288,3 +287,5 @@ export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd
 export function writePackageLockJsonSync(packageLockJson: PackageLockJson, cwd?: string): void {
   writeJsonSync(getPackageLockJsonPath(cwd), packageLockJson);
 }
+
+export { type PackageJson } from 'type-fest';

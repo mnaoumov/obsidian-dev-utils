@@ -358,16 +358,20 @@ export async function cleanupEmptyFolders(params: CleanupEmptyFoldersParams): Pr
   } = params;
   for (const folderPath of folderPaths) {
     switch (emptyFolderBehavior) {
-      case EmptyFolderBehavior.Delete:
+      case EmptyFolderBehavior.Delete: {
         await deleteEmptyFolder(app, folderPath);
         break;
-      case EmptyFolderBehavior.DeleteWithEmptyParents:
+      }
+      case EmptyFolderBehavior.DeleteWithEmptyParents: {
         await deleteEmptyFolderHierarchy(app, folderPath);
         break;
-      case EmptyFolderBehavior.Keep:
+      }
+      case EmptyFolderBehavior.Keep: {
         break;
-      default:
+      }
+      default: {
         assertNever(emptyFolderBehavior);
+      }
     }
   }
 }
@@ -397,9 +401,9 @@ export async function copySafe(params: CopySafeParams): Promise<string> {
 
   try {
     await app.vault.copy(file, newAvailablePath);
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(newAvailablePath)) {
-      throw e;
+      throw error;
     }
   }
 
@@ -422,9 +426,9 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
   try {
     await app.vault.createFolder(path);
     return true;
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(path)) {
-      throw e;
+      throw error;
     }
     return true;
   }
@@ -447,9 +451,9 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
 
   try {
     await app.vault.create(path, '');
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(path)) {
-      throw e;
+      throw error;
     }
   }
 
@@ -558,8 +562,8 @@ export function getAbstractFilePathSafe(params: GetAbstractFilePathSafeParams): 
  * @returns The available path for the file.
  */
 export function getAvailablePath(app: App, path: string): string {
-  const ext = extname(path);
-  return app.vault.getAvailablePath(join(dirname(path), basename(path, ext)), ext.slice(1));
+  const extension = extname(path);
+  return app.vault.getAvailablePath(join(dirname(path), basename(path, extension)), extension.slice(1));
 }
 
 /**
@@ -626,12 +630,15 @@ export async function getOrCreateAbstractFileSafe(params: GetOrCreateAbstractFil
   }
 
   switch (type) {
-    case FileSystemType.File:
+    case FileSystemType.File: {
       return await app.vault.create(path, '');
-    case FileSystemType.Folder:
+    }
+    case FileSystemType.Folder: {
       return await app.vault.createFolder(path);
-    default:
+    }
+    default: {
       assertNever(type);
+    }
   }
 }
 
@@ -788,9 +795,9 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
 
   try {
     return await app.vault.adapter.list(path);
-  } catch (e) {
+  } catch (error) {
     if (await app.vault.exists(path)) {
-      throw e;
+      throw error;
     }
     return EMPTY;
   }
@@ -941,9 +948,9 @@ export async function renameSafe(params: RenameSafeParams): Promise<string> {
 
   try {
     await app.fileManager.renameFile(oldAbstractFile, newAvailablePath);
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(oldAbstractFile.path)) {
-      throw e;
+      throw error;
     }
   }
 
@@ -986,12 +993,12 @@ export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promi
 
   try {
     await app.fileManager.trashFile(file);
-  } catch (e) {
+  } catch (error) {
     if (await app.vault.exists(file.path)) {
-      throw e;
+      throw error;
     }
 
-    getLibDebugger('Vault:trashSafe')(`An error occurred while trashing ${file.path}, but the file no longer exists.`, { error: e, path: file.path });
+    getLibDebugger('Vault:trashSafe')(`An error occurred while trashing ${file.path}, but the file no longer exists.`, { error, path: file.path });
   }
 }
 
@@ -1009,11 +1016,11 @@ async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise
   try {
     await fileAction(file);
     return true;
-  } catch (e) {
+  } catch (error) {
     file = getFileOrNull({ app, pathOrFile: path });
     if (!file || file.deleted) {
       return false;
     }
-    throw e;
+    throw error;
   }
 }

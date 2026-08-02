@@ -86,9 +86,9 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     }
   }
 
-  public override selectSuggestion(value: FuzzyMatch<T>, evt: KeyboardEvent | MouseEvent): void {
+  public override selectSuggestion(value: FuzzyMatch<T>, $event: KeyboardEvent | MouseEvent): void {
     this.isSelected = true;
-    super.selectSuggestion(value, evt);
+    super.selectSuggestion(value, $event);
   }
 }
 

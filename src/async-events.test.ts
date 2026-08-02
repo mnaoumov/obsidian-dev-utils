@@ -7,7 +7,7 @@ import {
   vi
 } from 'vitest';
 
-import type { AsyncEventRef } from './async-events.ts';
+import type { AsyncEventRef as AsyncEventReference } from './async-events.ts';
 
 import {
   AsyncEvents,
@@ -117,8 +117,8 @@ describe('AsyncEvents', () => {
   describe('offref', () => {
     it('should remove a listener by event reference', () => {
       const callback = vi.fn();
-      const ref = events.on('test', callback);
-      events.offref(ref);
+      const reference = events.on('test', callback);
+      events.offref(reference);
       events.trigger('test');
       expect(callback).not.toHaveBeenCalled();
     });
@@ -126,9 +126,9 @@ describe('AsyncEvents', () => {
     it('should not remove other listeners when removing a specific ref', () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
-      const ref1 = events.on('test', callback1);
+      const reference1 = events.on('test', callback1);
       events.on('test', callback2);
-      events.offref(ref1);
+      events.offref(reference1);
       events.trigger('test');
       expect(callback1).not.toHaveBeenCalled();
     });
@@ -136,19 +136,19 @@ describe('AsyncEvents', () => {
     it('should still call remaining listeners after removing a specific ref', () => {
       const callback1 = vi.fn();
       const callback2 = vi.fn();
-      const ref1 = events.on('test', callback1);
+      const reference1 = events.on('test', callback1);
       events.on('test', callback2);
-      events.offref(ref1);
+      events.offref(reference1);
       events.trigger('test');
       expect(callback2).toHaveBeenCalledOnce();
     });
 
     it('should do nothing when removing a ref for nonexistent event', () => {
-      const ref = events.on('test', vi.fn());
-      events.offref(ref);
+      const reference = events.on('test', vi.fn());
+      events.offref(reference);
       // Removing again should not throw
       expect(() => {
-        events.offref(ref);
+        events.offref(reference);
       }).not.toThrow();
     });
   });
@@ -172,8 +172,8 @@ describe('AsyncEvents', () => {
 
     it('should return a ref that can be used to cancel before firing', () => {
       const callback = vi.fn();
-      const ref = events.once('test', callback);
-      events.offref(ref);
+      const reference = events.once('test', callback);
+      events.offref(reference);
       events.trigger('test');
       expect(callback).not.toHaveBeenCalled();
     });
@@ -183,7 +183,7 @@ describe('AsyncEvents', () => {
     it('should pass the correct this context to the callback', () => {
       const context = { value: 42 };
       let receivedThis: unknown;
-      events.on('test', function fn(this: unknown): void {
+      events.on('test', function $function(this: unknown): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
@@ -194,7 +194,7 @@ describe('AsyncEvents', () => {
     it('should pass the correct this context for once callbacks', () => {
       const context = { id: 'once-context' };
       let receivedThis: unknown;
-      events.once('test', function fn(this: unknown): void {
+      events.once('test', function $function(this: unknown): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
@@ -223,9 +223,9 @@ describe('AsyncEvents', () => {
 
       const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
-      const deferredFn = firstCall[0] as () => void;
+      const deferredFunction = firstCall[0] as () => void;
       expect(() => {
-        deferredFn();
+        deferredFunction();
       }).toThrow(error);
     });
 
@@ -297,9 +297,9 @@ describe('AsyncEvents', () => {
       await events.triggerAsync('test');
       const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
-      const deferredFn = firstCall[0] as () => void;
+      const deferredFunction = firstCall[0] as () => void;
       expect(() => {
-        deferredFn();
+        deferredFunction();
       }).toThrow(error);
     });
 
@@ -324,55 +324,55 @@ describe('AsyncEvents', () => {
   describe('tryTrigger', () => {
     it('should call the callback from the event ref with correct args', () => {
       const callback = vi.fn();
-      const ref = events.on('test', callback);
-      events.tryTrigger(ref, [10, 'hello']);
+      const reference = events.on('test', callback);
+      events.tryTrigger(reference, [10, 'hello']);
       expect(callback).toHaveBeenCalledWith(10, 'hello');
     });
 
     it('should apply thisArg from the event ref', () => {
       const context = { name: 'ctx' };
       let receivedThis: unknown;
-      const ref = events.on('test', function fn(this: unknown): void {
+      const reference = events.on('test', function $function(this: unknown): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
-      events.tryTrigger(ref, []);
+      events.tryTrigger(reference, []);
       expect(receivedThis).toBe(context);
     });
 
     it('should catch errors and defer via window.setTimeout', () => {
       const error = new Error('try error');
-      const ref = events.on('test', () => {
+      const reference = events.on('test', () => {
         throw error;
       });
-      events.tryTrigger(ref, []);
+      events.tryTrigger(reference, []);
       expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
     });
 
     it('should rethrow the error from the deferred function in tryTrigger', () => {
       const error = new Error('try error');
-      const ref = events.on('test', () => {
+      const reference = events.on('test', () => {
         throw error;
       });
-      events.tryTrigger(ref, []);
+      events.tryTrigger(reference, []);
       const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
-      const deferredFn = firstCall[0] as () => void;
+      const deferredFunction = firstCall[0] as () => void;
       expect(() => {
-        deferredFn();
+        deferredFunction();
       }).toThrow(error);
     });
 
     it('should catch async rejection and defer via window.setTimeout', async () => {
       const error = new Error('async try error');
-      const ref = events.on('test', () => Promise.reject(error));
-      events.tryTrigger(ref, []);
+      const reference = events.on('test', () => Promise.reject(error));
+      events.tryTrigger(reference, []);
       await noopAsync();
       const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
-      const deferredFn = firstCall[0] as () => void;
+      const deferredFunction = firstCall[0] as () => void;
       expect(() => {
-        deferredFn();
+        deferredFunction();
       }).toThrow(error);
     });
   });
@@ -380,45 +380,45 @@ describe('AsyncEvents', () => {
   describe('tryTriggerAsync', () => {
     it('should call the async callback from the event ref with correct args', async () => {
       const callback = vi.fn(noopAsync);
-      const ref = events.on('test', callback);
-      await events.tryTriggerAsync(ref, ['async-arg']);
+      const reference = events.on('test', callback);
+      await events.tryTriggerAsync(reference, ['async-arg']);
       expect(callback).toHaveBeenCalledWith('async-arg');
     });
 
     it('should apply thisArg from the event ref', async () => {
       const context = { name: 'async-ctx' };
       let receivedThis: unknown;
-      const ref = events.on('test', async function fn(this: unknown): Promise<void> {
+      const reference = events.on('test', async function $function(this: unknown): Promise<void> {
         await noopAsync();
         // eslint-disable-next-line @typescript-eslint/no-this-alias, consistent-this -- Need to capture `this` for testing.
         receivedThis = this;
       }, context);
-      await events.tryTriggerAsync(ref, []);
+      await events.tryTriggerAsync(reference, []);
       expect(receivedThis).toBe(context);
     });
 
     it('should catch async errors and defer via window.setTimeout', async () => {
       const error = new Error('async try error');
-      const ref = events.on('test', async () => {
+      const reference = events.on('test', async () => {
         await noopAsync();
         throw error;
       });
-      await events.tryTriggerAsync(ref, []);
+      await events.tryTriggerAsync(reference, []);
       expect(vi.mocked(window.setTimeout)).toHaveBeenCalledOnce();
     });
 
     it('should rethrow the async error from the deferred function in tryTriggerAsync', async () => {
       const error = new Error('async try error');
-      const ref = events.on('test', async () => {
+      const reference = events.on('test', async () => {
         await noopAsync();
         throw error;
       });
-      await events.tryTriggerAsync(ref, []);
+      await events.tryTriggerAsync(reference, []);
       const firstCall = vi.mocked(window.setTimeout).mock.calls[0];
       assertNonNullable(firstCall);
-      const deferredFn = firstCall[0] as () => void;
+      const deferredFunction = firstCall[0] as () => void;
       expect(() => {
-        deferredFn();
+        deferredFunction();
       }).toThrow(error);
     });
   });
@@ -426,31 +426,31 @@ describe('AsyncEvents', () => {
   describe('event ref structure', () => {
     it('should have asyncEvents pointing to the events instance', () => {
       const callback = vi.fn();
-      const ref = events.on('my-event', callback, 'myThis');
-      expect(ref.asyncEventSource).toBe(events);
+      const reference = events.on('my-event', callback, 'myThis');
+      expect(reference.asyncEventSource).toBe(events);
     });
 
     it('should have callback pointing to the registered function', () => {
       const callback = vi.fn();
-      const ref = events.on('my-event', callback, 'myThis');
-      expect(ref.callback).toBe(callback);
+      const reference = events.on('my-event', callback, 'myThis');
+      expect(reference.callback).toBe(callback);
     });
 
     it('should have name matching the event name', () => {
       const callback = vi.fn();
-      const ref = events.on('my-event', callback, 'myThis');
-      expect(ref.name).toBe('my-event');
+      const reference = events.on('my-event', callback, 'myThis');
+      expect(reference.name).toBe('my-event');
     });
 
     it('should have thisArg matching the provided context', () => {
       const callback = vi.fn();
-      const ref = events.on('my-event', callback, 'myThis');
-      expect(ref.thisArg).toBe('myThis');
+      const reference = events.on('my-event', callback, 'myThis');
+      expect(reference.thisArg).toBe('myThis');
     });
 
     it('should have undefined thisArg when not provided', () => {
-      const ref = events.on('test', vi.fn());
-      expect(ref.thisArg).toBeUndefined();
+      const reference = events.on('test', vi.fn());
+      expect(reference.thisArg).toBeUndefined();
     });
   });
 });
@@ -467,20 +467,20 @@ class Base {
 }
 
 class MixedIn extends mixinAsyncEvents<TestEventMap>()(Base) {
-  public doTrigger(name: string, ...args: unknown[]): void {
-    this.trigger(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>(args));
+  public doTrigger(name: string, ...$arguments: unknown[]): void {
+    this.trigger(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>($arguments));
   }
 
-  public async doTriggerAsync(name: string, ...args: unknown[]): Promise<void> {
-    await this.triggerAsync(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>(args));
+  public async doTriggerAsync(name: string, ...$arguments: unknown[]): Promise<void> {
+    await this.triggerAsync(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>($arguments));
   }
 
-  public doTryTrigger(eventRef: AsyncEventRef, args: unknown[]): void {
-    this.tryTrigger(eventRef, args);
+  public doTryTrigger(eventReference: AsyncEventReference, $arguments: unknown[]): void {
+    this.tryTrigger(eventReference, $arguments);
   }
 
-  public async doTryTriggerAsync(eventRef: AsyncEventRef, args: unknown[]): Promise<void> {
-    await this.tryTriggerAsync(eventRef, args);
+  public async doTryTriggerAsync(eventReference: AsyncEventReference, $arguments: unknown[]): Promise<void> {
+    await this.tryTriggerAsync(eventReference, $arguments);
   }
 }
 
@@ -502,7 +502,7 @@ describe('mixinAsyncEvents', () => {
 
   it('should delegate on/off/once to internal AsyncEvents', () => {
     const callback = vi.fn();
-    const ref = instance.on('greet', callback);
+    const reference = instance.on('greet', callback);
     instance.doTrigger('greet', 'Alice');
     expect(callback).toHaveBeenCalledWith('Alice');
 
@@ -516,13 +516,13 @@ describe('mixinAsyncEvents', () => {
     instance.doTrigger('save');
     expect(onceCallback).toHaveBeenCalledOnce();
 
-    expect(ref.asyncEventSource).toBeDefined();
+    expect(reference.asyncEventSource).toBeDefined();
   });
 
   it('should delegate offref', () => {
     const callback = vi.fn();
-    const ref = instance.on('greet', callback);
-    instance.offref(ref);
+    const reference = instance.on('greet', callback);
+    instance.offref(reference);
     instance.doTrigger('greet', 'Alice');
     expect(callback).not.toHaveBeenCalled();
   });
@@ -536,15 +536,15 @@ describe('mixinAsyncEvents', () => {
 
   it('should delegate tryTrigger', () => {
     const callback = vi.fn();
-    const ref = instance.on('greet', callback);
-    instance.doTryTrigger(ref, ['Alice']);
+    const reference = instance.on('greet', callback);
+    instance.doTryTrigger(reference, ['Alice']);
     expect(callback).toHaveBeenCalledWith('Alice');
   });
 
   it('should delegate tryTriggerAsync', async () => {
     const callback = vi.fn(() => noopAsync());
-    const ref = instance.on('save', callback);
-    await instance.doTryTriggerAsync(ref, []);
+    const reference = instance.on('save', callback);
+    await instance.doTryTriggerAsync(reference, []);
     expect(callback).toHaveBeenCalledOnce();
   });
 });

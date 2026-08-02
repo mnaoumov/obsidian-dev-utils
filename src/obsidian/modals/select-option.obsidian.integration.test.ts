@@ -27,7 +27,7 @@ describe('selectOption', () => {
   it('should render one button per option and resolve the chosen value', async () => {
     const result = await evalInObsidian({
       async fn({ app, lib: { selectOption, waitUntil } }): Promise<SelectOptionResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30000;
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const EXPECTED_OPTION_COUNT = 3;
 
         const resultPromise = selectOption<string>({

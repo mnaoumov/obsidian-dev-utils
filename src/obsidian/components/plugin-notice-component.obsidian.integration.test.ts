@@ -24,35 +24,35 @@ describe('PluginNoticeComponent styling', () => {
         const notice = component.showNotice('Body text');
 
         try {
-          const nameEl = activeDocument.querySelector('.obsidian-dev-utils.plugin-notice-name');
-          if (!nameEl) {
+          const nameElement = activeDocument.querySelector('.obsidian-dev-utils.plugin-notice-name');
+          if (!nameElement) {
             throw new Error('plugin name element not found in the rendered notice');
           }
 
-          const nameStyle = activeWindow.getComputedStyle(nameEl);
+          const nameStyle = activeWindow.getComputedStyle(nameElement);
 
           // Probe resolving the same theme variables the CSS rule uses (compare computed rgb / weight).
-          const probeEl = activeDocument.body.createSpan();
-          probeEl.setCssStyles({ color: 'var(--text-accent)', fontWeight: 'var(--font-bold)' });
-          const probeStyle = activeWindow.getComputedStyle(probeEl);
+          const probeElement = activeDocument.body.createSpan();
+          probeElement.setCssStyles({ color: 'var(--text-accent)', fontWeight: 'var(--font-bold)' });
+          const probeStyle = activeWindow.getComputedStyle(probeElement);
 
           // Plain element inheriting the default text color, to prove the name color is distinct.
-          const plainEl = activeDocument.body.createSpan();
-          const defaultColor = activeWindow.getComputedStyle(plainEl).color;
+          const plainElement = activeDocument.body.createSpan();
+          const defaultColor = activeWindow.getComputedStyle(plainElement).color;
 
           const measurement = {
             accentColor: probeStyle.color,
             boldFontWeight: probeStyle.fontWeight,
             defaultColor,
-            hasLibClass: nameEl.classList.contains('obsidian-dev-utils'),
-            hasNameClass: nameEl.classList.contains('plugin-notice-name'),
+            hasLibClass: nameElement.classList.contains('obsidian-dev-utils'),
+            hasNameClass: nameElement.classList.contains('plugin-notice-name'),
             nameColor: nameStyle.color,
             nameFontWeight: nameStyle.fontWeight,
-            text: nameEl.textContent
+            text: nameElement.textContent
           };
 
-          probeEl.remove();
-          plainEl.remove();
+          probeElement.remove();
+          plainElement.remove();
           return measurement;
         } finally {
           notice.hide();
@@ -81,9 +81,9 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
-        function findLockedContentEl(): HTMLElement | null {
+        function findLockedContentElement(): HTMLElement | null {
           const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
-          return els.find((el) => el.textContent.includes('Locked action')) ?? null;
+          return els.find((element) => element.textContent.includes('Locked action')) ?? null;
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
@@ -102,49 +102,49 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         try {
           await waitUntil({
             message: 'the hard-to-close notice should render',
-            predicate: () => findLockedContentEl() !== null,
+            predicate: () => findLockedContentElement() !== null,
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
-          const contentEl = findLockedContentEl();
+          const contentElement = findLockedContentElement();
           const { containerEl, messageEl } = notice;
-          const closeButtonEl = contentEl?.querySelector<HTMLElement>('.obsidian-dev-utils.plugin-notice-close-button') ?? null;
-          const hasCloseButton = closeButtonEl !== null;
+          const closeButtonElement = contentElement?.querySelector<HTMLElement>('.obsidian-dev-utils.plugin-notice-close-button') ?? null;
+          const hasCloseButton = closeButtonElement !== null;
           const hasRequiresExplicitCloseClass = containerEl.classList.contains('plugin-notice-requires-explicit-close');
 
           // A stray click on the notice body must NOT dismiss it.
-          contentEl?.click();
+          contentElement?.click();
           await sleep(SETTLE_IN_MILLISECONDS);
-          const isShownAfterBodyClick = findLockedContentEl() !== null;
+          const isShownAfterBodyClick = findLockedContentElement() !== null;
 
           // A click on the inner message element (a descendant) must NOT dismiss it — the capture-phase
           // Guard on the container stops it before Obsidian's dismiss handler runs.
           messageEl.click();
           await sleep(SETTLE_IN_MILLISECONDS);
-          const isShownAfterMessageClick = findLockedContentEl() !== null;
+          const isShownAfterMessageClick = findLockedContentElement() !== null;
 
           // A real click at the notice's very corner (where the padding used to be) must land on the
           // Guarded content and NOT dismiss it.
           const rect = containerEl.getBoundingClientRect();
-          const cornerEl = activeDocument.elementFromPoint(rect.left + 2, rect.top + 2);
-          cornerEl?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          const cornerElement = activeDocument.elementFromPoint(rect.left + 2, rect.top + 2);
+          cornerElement?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
           await sleep(SETTLE_IN_MILLISECONDS);
-          const isShownAfterPaddingClick = findLockedContentEl() !== null;
+          const isShownAfterPaddingClick = findLockedContentElement() !== null;
 
           // A following ordinary notice must NOT hide the standalone hard-to-close notice.
           const ordinaryNotice = component.showNotice('Ordinary notice');
           await sleep(SETTLE_IN_MILLISECONDS);
-          const isShownAfterOtherNotice = findLockedContentEl() !== null;
+          const isShownAfterOtherNotice = findLockedContentElement() !== null;
           ordinaryNotice.hide();
 
           // Clicking the close button hides the notice directly — no confirmation modal.
-          closeButtonEl?.click();
+          closeButtonElement?.click();
           await waitUntil({
             message: 'the notice should be gone after clicking the close button',
-            predicate: () => findLockedContentEl() === null,
+            predicate: () => findLockedContentElement() === null,
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
-          const isShownAfterClose = findLockedContentEl() !== null;
+          const isShownAfterClose = findLockedContentElement() !== null;
           const hasConfirmModal = activeDocument.querySelector('.obsidian-dev-utils.confirm-modal') !== null;
           // Let the fire-and-forget onHide callback settle after the notice was hidden.
           await sleep(SETTLE_IN_MILLISECONDS);
@@ -193,9 +193,9 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
-        function findActionContentEl(): HTMLElement | null {
+        function findActionContentElement(): HTMLElement | null {
           const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
-          return els.find((el) => el.textContent.includes('Action notice')) ?? null;
+          return els.find((element) => element.textContent.includes('Action notice')) ?? null;
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
@@ -203,9 +203,9 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         // A consumer embeds an action button in the message fragment.
         const message = createFragment();
         message.appendText('Action notice');
-        const actionButtonEl = message.createEl('button', { attr: { 'data-action-button': 'true' }, text: 'Do it' });
+        const actionButtonElement = message.createEl('button', { attr: { 'data-action-button': 'true' }, text: 'Do it' });
         let buttonClickCount = 0;
-        actionButtonEl.addEventListener('click', () => {
+        actionButtonElement.addEventListener('click', () => {
           buttonClickCount += 1;
         });
 
@@ -220,19 +220,19 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         try {
           await waitUntil({
             message: 'the hard-to-close notice with the action button should render',
-            predicate: () => Boolean(findActionContentEl()?.querySelector('[data-action-button]')),
+            predicate: () => Boolean(findActionContentElement()?.querySelector('[data-action-button]')),
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
-          const renderedButtonEl = findActionContentEl()?.querySelector<HTMLElement>('[data-action-button]') ?? null;
-          const hasButton = renderedButtonEl !== null;
+          const renderedButtonElement = findActionContentElement()?.querySelector<HTMLElement>('[data-action-button]') ?? null;
+          const hasButton = renderedButtonElement !== null;
 
           // Clicking the action button must run its own handler AND leave the notice shown — the
           // Capture-phase guard lets the click reach the button, and the content wrapper's bubble
           // Guard then stops it from reaching Obsidian's dismiss handler.
-          renderedButtonEl?.click();
+          renderedButtonElement?.click();
           await sleep(SETTLE_IN_MILLISECONDS);
-          const isShownAfterButtonClick = findActionContentEl() !== null;
+          const isShownAfterButtonClick = findActionContentElement() !== null;
 
           return {
             buttonClickCount,
@@ -272,9 +272,9 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
 
         // Scope the lookup to this notice by its text, so a previous test's notice still fading out
         // (same class) is never mistaken for ours.
-        function findContentEl(textIncludes: string): Element | null {
+        function findContentElement(textIncludes: string): Element | null {
           const els = Array.from(activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content'));
-          return els.find((el) => el.textContent.includes(textIncludes)) ?? null;
+          return els.find((element) => element.textContent.includes(textIncludes)) ?? null;
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
@@ -286,25 +286,25 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
         });
 
         try {
-          const isShownBeforeDelay = findContentEl('Working') !== null;
+          const isShownBeforeDelay = findContentElement('Working') !== null;
 
           await wait(DELAY_IN_MILLISECONDS + SETTLE_IN_MILLISECONDS);
-          const contentEl = findContentEl('Working');
-          const isShownAfterDelay = contentEl !== null;
-          const initialText = contentEl?.textContent ?? '';
-          const buttonEl = contentEl?.querySelector('button') ?? null;
-          const cancelButtonText = buttonEl?.textContent ?? '';
+          const contentElement = findContentElement('Working');
+          const isShownAfterDelay = contentElement !== null;
+          const initialText = contentElement?.textContent ?? '';
+          const buttonElement = contentElement?.querySelector('button') ?? null;
+          const cancelButtonText = buttonElement?.textContent ?? '';
 
           // Clicking the Cancel button must abort the controller AND not dismiss the notice (the
           // Interactive-click guard stops the click from reaching the notice's dismiss handler).
-          buttonEl?.click();
+          buttonElement?.click();
           await wait(SETTLE_IN_MILLISECONDS);
           const isAbortedAfterCancel = abortController.signal.aborted;
-          const isConnectedAfterCancel = buttonEl?.isConnected ?? false;
+          const isConnectedAfterCancel = buttonElement?.isConnected ?? false;
 
           // Updating the content of the shown notice.
           handle.setContent('Updated 5/10');
-          const updatedText = findContentEl('Updated 5/10')?.textContent ?? '';
+          const updatedText = findContentElement('Updated 5/10')?.textContent ?? '';
 
           return {
             cancelButtonText,

@@ -28,47 +28,47 @@ export interface ValidatorComponent {
   /**
    * A validator element of the component.
    */
-  readonly validatorEl: ValidatorElement;
+  readonly validatorElement: ValidatorElement;
 }
 
 class OverlayValidatorComponent implements ValidatorComponent {
-  public get validatorEl(): ValidatorElement {
-    return this._validatorEl;
+  public get validatorElement(): ValidatorElement {
+    return this._validatorElement;
   }
 
-  private readonly _validatorEl: ValidatorElement;
+  private readonly _validatorElement: ValidatorElement;
 
-  public constructor(private readonly el: HTMLElement) {
-    const wrapper = ensureWrapped(el);
+  public constructor(private readonly element: HTMLElement) {
+    const wrapper = ensureWrapped(element);
 
-    this._validatorEl = wrapper.createEl('input', {
+    this._validatorElement = wrapper.createEl('input', {
       attr: {
         tabindex: -1
       }
     });
-    addPluginCssClasses(this._validatorEl, CssClass.OverlayValidator);
+    addPluginCssClasses(this._validatorElement, CssClass.OverlayValidator);
 
-    this._validatorEl.addEventListener('focus', () => {
-      this.el.focus();
+    this._validatorElement.addEventListener('focus', () => {
+      this.element.focus();
     });
 
-    this._validatorEl.isActiveElement = this.isElementOrDescendantActive.bind(this);
+    this._validatorElement.isActiveElement = this.isElementOrDescendantActive.bind(this);
 
-    let tabIndexEl = this.el.querySelector<HTMLElement>('[tabindex]');
-    if (!tabIndexEl) {
-      if (this.el.getAttr('tabindex') === null) {
-        this.el.tabIndex = -1;
+    let tabIndexElement = this.element.querySelector<HTMLElement>('[tabindex]');
+    if (!tabIndexElement) {
+      if (this.element.getAttr('tabindex') === null) {
+        this.element.tabIndex = -1;
       }
-      tabIndexEl = this.el;
+      tabIndexElement = this.element;
     }
 
-    this.el.addEventListener('focusin', () => {
+    this.element.addEventListener('focusin', () => {
       this.forceBlurValidatorEl();
     });
-    this.el.addEventListener('click', () => {
-      tabIndexEl.focus();
+    this.element.addEventListener('click', () => {
+      tabIndexElement.focus();
     });
-    this.el.addEventListener('focusout', () => {
+    this.element.addEventListener('focusout', () => {
       window.setTimeout(() => {
         if (this.isElementOrDescendantActive()) {
           return;
@@ -80,16 +80,16 @@ class OverlayValidatorComponent implements ValidatorComponent {
   }
 
   private forceBlurValidatorEl(): void {
-    this._validatorEl.dispatchEvent(new Event('blur'));
+    this._validatorElement.dispatchEvent(new Event('blur'));
   }
 
   private isElementOrDescendantActive(): boolean {
-    return this.el.contains(activeDocument.activeElement);
+    return this.element.contains(activeDocument.activeElement);
   }
 }
 
 class ValidatorElementWrapper implements ValidatorComponent {
-  public constructor(public readonly validatorEl: ValidatorElement) {}
+  public constructor(public readonly validatorElement: ValidatorElement) {}
 }
 
 /**
@@ -138,6 +138,6 @@ export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
   return null;
 }
 
-function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
-  return typeof obj === 'object' && obj !== null && 'validatorEl' in obj && !!(obj as Partial<ValidatorComponent>).validatorEl;
+function isValidatorComponent($object: unknown): $object is ValidatorComponent {
+  return typeof $object === 'object' && $object !== null && 'validatorElement' in $object && !!($object as Partial<ValidatorComponent>).validatorElement;
 }

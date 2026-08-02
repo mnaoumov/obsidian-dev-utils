@@ -88,7 +88,7 @@ const MANIFEST: PluginManifest = {
 };
 
 function createApp(options: CreateAppOptions = {}): AppMock {
-  const enabledPlugins = new Set(options.enabledIds ?? []);
+  const enabledPlugins = new Set(options.enabledIds);
   const disablePluginAndSave = vi.fn<App['plugins']['disablePluginAndSave']>().mockImplementation((id) => {
     enabledPlugins.delete(id);
     return noopAsync();
@@ -144,8 +144,8 @@ function createApp(options: CreateAppOptions = {}): AppMock {
 }
 
 function mockRegistryAndReleases(): void {
-  mockRequestUrl.mockImplementation((arg: RequestUrlParam | string) => {
-    const url = typeof arg === 'string' ? arg : arg.url;
+  mockRequestUrl.mockImplementation((argument: RequestUrlParam | string) => {
+    const url = typeof argument === 'string' ? argument : argument.url;
     if (url.includes('community-plugins.json')) {
       return Promise.resolve({ json: REGISTRY });
     }

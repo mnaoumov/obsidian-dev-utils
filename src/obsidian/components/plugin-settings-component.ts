@@ -15,7 +15,7 @@ import type {
 } from 'type-fest';
 
 import type {
-  AsyncEventRef,
+  AsyncEventRef as AsyncEventReference,
   AsyncEventSource
 } from '../../async-events.ts';
 import type { Transformer } from '../../transformers/transformer.ts';
@@ -360,16 +360,16 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * Remove an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to remove.
    */
   public off<
     EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-    Args extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
+    Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...args: Args) => Promisable<void>): void {
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>): void {
     this.asyncEvents.off(name, callback);
   }
 
@@ -378,7 +378,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    *
    * @param eventRef - The reference to the event listener.
    */
-  public offref(eventRef: AsyncEventRef): void {
+  public offref(eventRef: AsyncEventReference): void {
     this.asyncEvents.offref(eventRef);
   }
 
@@ -386,7 +386,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * Add an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
    * @param thisArg - The context passed as `this` to the `callback`.
@@ -397,9 +397,9 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   public on<
     EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-    Args extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
+    Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArg?: unknown): AsyncEventReference {
     return this.asyncEvents.on(name, callback, thisArg);
   }
 
@@ -409,7 +409,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * Add an event listener that will be called only once.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
    * @param thisArg - The context passed as `this` to the `callback`.
@@ -420,9 +420,9 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   public once<
     EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings>,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-    Args extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
+    Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...args: Args) => Promisable<void>, thisArg?: unknown): AsyncEventRef {
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArg?: unknown): AsyncEventReference {
     return this.asyncEvents.once(name, callback, thisArg);
   }
 
@@ -554,7 +554,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    */
   public async validate(settings: PluginSettings): Promise<ValidationResult<PluginSettings>> {
     const result: ValidationResult<PluginSettings> = {};
-    for (const [propertyName, validator] of this.validators.entries()) {
+    for (const [propertyName, validator] of this.validators) {
       const validationMessage = await validator(settings[propertyName], settings);
       if (validationMessage) {
         result[propertyName] = validationMessage;
@@ -678,12 +678,12 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     }
   }
 
-  private isValidPropertyName(prop: unknown): prop is PropertyNames<PluginSettings> {
-    if (typeof prop !== 'string') {
+  private isValidPropertyName(property: unknown): property is PropertyNames<PluginSettings> {
+    if (typeof property !== 'string') {
       return false;
     }
 
-    return (this.propertyNames as string[]).includes(prop);
+    return (this.propertyNames as string[]).includes(property);
   }
 
   private async rawRecordToSettings(rawRecord: GenericObject): Promise<PluginSettings> {

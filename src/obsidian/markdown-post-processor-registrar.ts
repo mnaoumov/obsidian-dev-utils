@@ -63,6 +63,6 @@ export class PluginMarkdownPostProcessorRegistrar implements MarkdownPostProcess
    * @param params - The parameters for the markdown post processor registration.
    */
   public registerMarkdownPostProcessor(params: PluginMarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorParams): void {
-    this.plugin.registerMarkdownPostProcessor((el, ctx) => normalizePromisable(params.postProcessor(el, ctx)), params.sortOrder);
+    this.plugin.registerMarkdownPostProcessor((element, context) => normalizePromisable(params.postProcessor(element, context)), params.sortOrder);
   }
 }

@@ -56,7 +56,7 @@ export interface ValidatorElement extends HTMLElement {
  */
 export async function createDivAsync(
   o?: DomElementInfo | string,
-  callback?: (el: HTMLDivElement) => Promisable<void>
+  callback?: (element: HTMLDivElement) => Promisable<void>
 ): Promise<HTMLDivElement> {
   const div = createHtmlElement('div', o);
   await callback?.(div);
@@ -76,11 +76,11 @@ export async function createDivAsync(
 export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   o?: DomElementInfo | string,
-  callback?: (el: HTMLElementTagNameMap[K]) => Promisable<void>
+  callback?: (element: HTMLElementTagNameMap[K]) => Promisable<void>
 ): Promise<HTMLElementTagNameMap[K]> {
-  const el = createHtmlElement(tag, o);
-  await callback?.(el);
-  return el;
+  const element = createHtmlElement(tag, o);
+  await callback?.(element);
+  return element;
 }
 
 /**
@@ -89,7 +89,7 @@ export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
  * @param callback - The callback to call when the DocumentFragment is created.
  * @returns A {@link Promise} that resolves to the DocumentFragment.
  */
-export async function createFragmentAsync(callback?: (el: DocumentFragment) => Promisable<void>): Promise<DocumentFragment> {
+export async function createFragmentAsync(callback?: (element: DocumentFragment) => Promisable<void>): Promise<DocumentFragment> {
   // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
   const fragment = document.createDocumentFragment();
   await callback?.(fragment);
@@ -105,7 +105,7 @@ export async function createFragmentAsync(callback?: (el: DocumentFragment) => P
  */
 export async function createSpanAsync(
   o?: DomElementInfo | string,
-  callback?: (el: HTMLSpanElement) => Promisable<void>
+  callback?: (element: HTMLSpanElement) => Promisable<void>
 ): Promise<HTMLSpanElement> {
   const span = createHtmlElement('span', o);
   await callback?.(span);
@@ -125,7 +125,7 @@ export async function createSpanAsync(
 export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
   tag: K,
   o?: string | SvgElementInfo,
-  callback?: (el: SVGElementTagNameMap[K]) => Promisable<void>
+  callback?: (element: SVGElementTagNameMap[K]) => Promisable<void>
 ): Promise<SVGElementTagNameMap[K]> {
   const svg = createSvgElement(tag, o);
   await callback?.(svg);
@@ -185,15 +185,15 @@ export function getDocumentWindow(doc: Document): Window {
  * @returns The z-index of the element.
  */
 export function getZIndex(el: Element): number {
-  let el2: Element | null = el;
+  let element2: Element | null = el;
 
-  while (el2) {
-    const zIndexStr = getComputedStyle(el2).zIndex;
-    const zIndex = Number.parseInt(zIndexStr, 10);
+  while (element2) {
+    const zIndexString = getComputedStyle(element2).zIndex;
+    const zIndex = Number.parseInt(zIndexString, 10);
     if (!Number.isNaN(zIndex)) {
       return zIndex;
     }
-    el2 = el2.parentElement;
+    element2 = element2.parentElement;
   }
 
   return 0;
@@ -206,19 +206,19 @@ export function getZIndex(el: Element): number {
  * @returns `true` if the element is visible in the offset parent, `false` otherwise.
  */
 export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
-  const parentEl = el.offsetParent;
-  if (!parentEl) {
+  const parentElement = el.offsetParent;
+  if (!parentElement) {
     return false;
   }
 
-  const elRect = el.getBoundingClientRect();
-  const parentElRect = parentEl.getBoundingClientRect();
+  const elementRect = el.getBoundingClientRect();
+  const parentElementRect = parentElement.getBoundingClientRect();
 
   return (
-    parentElRect.top <= elRect.top
-    && elRect.bottom <= parentElRect.bottom
-    && parentElRect.left <= elRect.left
-    && elRect.right <= parentElRect.right
+    parentElementRect.top <= elementRect.top
+    && elementRect.bottom <= parentElementRect.bottom
+    && parentElementRect.left <= elementRect.left
+    && elementRect.right <= parentElementRect.right
   );
 }
 
@@ -281,9 +281,7 @@ export function isLoaded(el: Element): boolean {
  */
 export function onAncestorScrollOrResize(node: Node, callback: () => void): Disposable {
   const win = getNodeWindow(node);
-  const ancestors: EventTarget[] = [];
-  ancestors.push(node.ownerDocument ?? win.document);
-  ancestors.push(win);
+  const ancestors: EventTarget[] = [node.ownerDocument ?? win.document, win];
 
   let currentNode: Node | null = node;
 
@@ -352,10 +350,12 @@ export function waitUntilConnected(el: HTMLElement): Promise<void> {
     // The agnostic equivalent instead observes the element's document for it becoming connected.
     const ownerDocument = el.ownerDocument;
     const observer = new (getNodeWindow(el)).MutationObserver(() => {
-      if (el.isConnected) {
-        observer.disconnect();
-        resolve();
+      if (!el.isConnected) {
+        return;
       }
+
+      observer.disconnect();
+      resolve();
     });
     observer.observe(ownerDocument, { childList: true, subtree: true });
   });
@@ -381,7 +381,7 @@ function applyDomElementInfo(el: HTMLElement, o: DomElementInfo | string | undef
     setElementText(el, info.text);
   }
   if (info.attr) {
-    setElementAttrs(el, info.attr);
+    setElementAttributes(el, info.attr);
   }
   if (info.title !== undefined) {
     el.title = info.title;
@@ -391,9 +391,9 @@ function applyDomElementInfo(el: HTMLElement, o: DomElementInfo | string | undef
 
 function createHtmlElement<K extends keyof HTMLElementTagNameMap>(tag: K, o?: DomElementInfo | string): HTMLElementTagNameMap[K] {
   // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
-  const el = document.createElement(tag);
-  applyDomElementInfo(el, o);
-  return el;
+  const element = document.createElement(tag);
+  applyDomElementInfo(element, o);
+  return element;
 }
 
 function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, o?: string | SvgElementInfo): SVGElementTagNameMap[K] {
@@ -408,14 +408,14 @@ function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, o?: stri
     }
   }
   if (info.attr) {
-    setElementAttrs(svg, info.attr);
+    setElementAttributes(svg, info.attr);
   }
   insertIntoParent(svg, info);
   return svg;
 }
 
-function getLoadableElements(el: Element): Element[] {
-  return Array.from(el.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
+function getLoadableElements(element: Element): Element[] {
+  return Array.from(element.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
 }
 
 // eslint-disable-next-line obsidianmd/no-global-this -- Type-only: the resolved window needs the global DOM constructor typings.
@@ -423,38 +423,38 @@ function getNodeWindow(node: Node): typeof globalThis & Window {
   return node.ownerDocument?.defaultView ?? window;
 }
 
-function insertIntoParent(el: Element, info: DomElementInfo | SvgElementInfo): void {
+function insertIntoParent(element: Element, info: DomElementInfo | SvgElementInfo): void {
   if (!info.parent) {
     return;
   }
   if (info.prepend) {
-    info.parent.insertBefore(el, info.parent.firstChild);
+    info.parent.insertBefore(element, info.parent.firstChild);
   } else {
-    info.parent.appendChild(el);
+    info.parent.appendChild(element);
   }
 }
 
-function isInstanceOf<T extends Node>(node: Node, ctor: abstract new (...args: never[]) => T): node is T {
+function isInstanceOf<T extends Node>(node: Node, ctor: abstract new (...$arguments: never[]) => T): node is T {
   // Agnostic reimplementation of Obsidian's `Node.prototype.instanceOf` (enhance.js).
   // The caller resolves `ctor` in the node's own realm (via `getNodeWindow`), keeping it cross-window safe.
   // eslint-disable-next-line obsidianmd/prefer-instanceof -- This IS the agnostic `.instanceOf` replacement.
   return node instanceof ctor;
 }
 
-function setElementAttrs(el: Element, attr: NonNullable<DomElementInfo['attr']>): void {
-  for (const [name, value] of Object.entries(attr)) {
+function setElementAttributes(element: Element, attribute: NonNullable<DomElementInfo['attr']>): void {
+  for (const [name, value] of Object.entries(attribute)) {
     if (value === null) {
-      el.removeAttribute(name);
+      element.removeAttribute(name);
     } else {
-      el.setAttribute(name, String(value));
+      element.setAttribute(name, String(value));
     }
   }
 }
 
-function setElementText(el: HTMLElement, text: DocumentFragment | string): void {
+function setElementText(element: HTMLElement, text: DocumentFragment | string): void {
   if (text instanceof DocumentFragment) {
-    el.replaceChildren(text);
+    element.replaceChildren(text);
   } else {
-    el.textContent = text;
+    element.textContent = text;
   }
 }

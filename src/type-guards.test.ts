@@ -39,17 +39,17 @@ describe('TypeGuards', () => {
 
   describe('assertGenericObject', () => {
     it('should not throw for a plain object', () => {
-      const obj = { key: 'value' };
+      const $object = { key: 'value' };
       expect(() => {
-        assertGenericObject(obj);
+        assertGenericObject($object);
       }).not.toThrow();
     });
 
     it('should narrow the type to GenericObject', () => {
-      const obj: object = { a: 1, b: 'two' };
-      assertGenericObject(obj);
-      expect(obj['a']).toBe(1);
-      expect(obj['b']).toBe('two');
+      const $object: object = { a: 1, b: 'two' };
+      assertGenericObject($object);
+      expect($object['a']).toBe(1);
+      expect($object['b']).toBe('two');
     });
   });
 
@@ -64,12 +64,15 @@ describe('TypeGuards', () => {
       type Mode = 'a' | 'b';
       function handle(mode: Mode): string {
         switch (mode) {
-          case 'a':
+          case 'a': {
             return 'A';
-          case 'b':
+          }
+          case 'b': {
             return 'B';
-          default:
+          }
+          default: {
             assertNever(mode);
+          }
         }
       }
       expect(handle('a')).toBe('A');
@@ -114,15 +117,15 @@ describe('TypeGuards', () => {
 
   describe('ensureGenericObject', () => {
     it('should return the object as GenericObject', () => {
-      const obj: object = { x: 42 };
-      const result = ensureGenericObject(obj);
-      expect(result).toBe(obj);
+      const $object: object = { x: 42 };
+      const result = ensureGenericObject($object);
+      expect(result).toBe($object);
       expect(result['x']).toBe(42);
     });
 
     it('should preserve original type in the intersection', () => {
-      const obj = { name: 'test', value: 123 };
-      const result = ensureGenericObject(obj);
+      const $object = { name: 'test', value: 123 };
+      const result = ensureGenericObject($object);
       expect(result.name).toBe('test');
       expect(result.value).toBe(123);
       expectTypeOf(result.name).toEqualTypeOf<string>();
@@ -130,8 +133,8 @@ describe('TypeGuards', () => {
     });
 
     it('should allow accessing unknown properties via index signature', () => {
-      const obj = { name: 'test' };
-      const result = ensureGenericObject(obj);
+      const $object = { name: 'test' };
+      const result = ensureGenericObject($object);
       result['newProp'] = 'dynamic';
       expect(result['newProp']).toBe('dynamic');
     });

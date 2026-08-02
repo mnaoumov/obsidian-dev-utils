@@ -151,10 +151,10 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override buildCommand(): Command {
     return {
-      editorCheckCallback: (checking, editor, ctx) =>
+      editorCheckCallback: (checking, editor, context) =>
         this.editorCheckCallback({
           checking,
-          ctx,
+          ctx: context,
           editor
         }),
       icon: this.icon,
@@ -170,9 +170,9 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
-    context.menuEventRegistrar.registerEditorMenuEventHandler((menu, editor, ctx) => {
+    context.menuEventRegistrar.registerEditorMenuEventHandler((menu, editor, $context) => {
       this.handleEditorMenu({
-        ctx,
+        ctx: $context,
         editor,
         menu
       });

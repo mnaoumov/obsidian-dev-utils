@@ -141,7 +141,7 @@ export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promis
   const abortSignal = params.abortSignal ?? abortSignalNever();
   abortSignal.throwIfAborted();
 
-  const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60000;
+  const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60_000;
   const timeoutInMilliseconds = params.timeoutInMilliseconds ?? DEFAULT_TIMEOUT_IN_MILLISECONDS;
   const stackTrace = params.stackTrace ?? getStackTrace(1);
   const operationName = params.operationName ?? '';

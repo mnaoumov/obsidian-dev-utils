@@ -20,15 +20,15 @@ import {
 } from './queue.ts';
 
 const mocks = vi.hoisted(() => ({
-  addErrorHandler: vi.fn(async (fn: () => Promise<void>) => {
-    await fn();
+  addErrorHandler: vi.fn(async ($function: () => Promise<void>) => {
+    await $function();
   }),
   getObsidianDevUtilsState: vi.fn(),
   invokeAsyncAndLog: vi.fn(async (params: InvokeAsyncAndLogParams) => {
     await params.fn(params.abortSignal ?? new AbortController().signal);
   }),
-  invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
-    fn().catch(() => undefined);
+  invokeAsyncSafely: vi.fn(($function: () => Promise<unknown>) => {
+    $function().catch(() => undefined);
   }),
   runWithTimeoutNotice: vi.fn(async (params: RunWithTimeoutNoticeParams<unknown>) => {
     const controller = new AbortController();
@@ -102,8 +102,8 @@ describe('addToQueue', () => {
   });
 
   it('should add an item to the queue via invokeAsyncSafely', () => {
-    const operationFn = vi.fn();
-    addToQueue({ operationFn, operationName: 'test-op' });
+    const operationFunction = vi.fn();
+    addToQueue({ operationFn: operationFunction, operationName: 'test-op' });
     expect(mocks.invokeAsyncSafely).toHaveBeenCalledWith(expect.any(Function), 'mock-stack-trace');
   });
 });
@@ -118,8 +118,8 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should add an item to the queue and process it', async () => {
-    const operationFn = vi.fn();
-    await addToQueueAndWait({ operationFn, operationName: 'test-op' });
+    const operationFunction = vi.fn();
+    await addToQueueAndWait({ operationFn: operationFunction, operationName: 'test-op' });
     expect(queue.items.length).toBe(0);
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
@@ -151,7 +151,7 @@ describe('addToQueueAndWait', () => {
     await addToQueueAndWait({ operationFn: vi.fn() });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
-        timeoutInMilliseconds: 60000
+        timeoutInMilliseconds: 60_000
       })
     );
   });

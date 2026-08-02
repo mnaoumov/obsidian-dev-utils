@@ -77,13 +77,13 @@ describe('markdown', () => {
     it('should render markdown into an element', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
         async fn({ app, lib: { fullRender } }) {
-          const el = createDiv();
+          const element = createDiv();
           await fullRender({
             app,
-            el,
+            el: element,
             markdown: 'Hello **world**'
           });
-          return el.innerHTML;
+          return element.innerHTML;
         }
       });
 

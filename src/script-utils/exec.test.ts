@@ -49,19 +49,19 @@ const {
 }));
 
 vi.mock('node:child_process', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:child_process')>();
+  const $module = await importOriginal<typeof import('node:child_process')>();
   return {
-    ...mod,
+    ...$module,
     spawn: mockSpawn
   };
 });
 
 vi.mock('node:process', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:process')>();
+  const $module = await importOriginal<typeof import('node:process')>();
   const mockProcess = {
-    ...mod,
-    cwd: (): string => mod.cwd(),
-    env: mod.env,
+    ...$module,
+    cwd: (): string => $module.cwd(),
+    env: $module.env,
     stderr: { write: mockStderrWrite },
     stdout: { write: mockStdoutWrite }
   };
@@ -71,7 +71,7 @@ vi.mock('node:process', async (importOriginal) => {
     get: () => process.platform
   });
   return {
-    ...mod,
+    ...$module,
     default: mockProcess
   };
 });
@@ -113,7 +113,7 @@ describe('exec', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'linux' });
     try {
-      const longCommand = 'a'.repeat(131073);
+      const longCommand = 'a'.repeat(131_073);
       await expect(exec(longCommand)).rejects.toThrow('Command line is too long');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
@@ -124,8 +124,8 @@ describe('exec', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
     try {
-      const longArg = 'a'.repeat(8192);
-      await expect(exec(['echo', longArg])).rejects.toThrow('Command line is too long');
+      const longArgument = 'a'.repeat(8192);
+      await expect(exec(['echo', longArgument])).rejects.toThrow('Command line is too long');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
@@ -225,7 +225,7 @@ describe('exec', () => {
       await expect(promise).resolves.toBe('ok');
       const firstCall = mockSpawn.mock.calls[0];
       assertNonNullable(firstCall);
-      expect(firstCall[0]).toBe('echo \'foo$x.md\' \'a;b.md\' \'c*.md\' \'d\'\\\'\'e.md\'');
+      expect(firstCall[0]).toBe(String.raw`echo 'foo$x.md' 'a;b.md' 'c*.md' 'd'\''e.md'`);
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
@@ -279,7 +279,7 @@ describe('exec', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
     try {
-      const longArg = 'x'.repeat(4000);
+      const longArgument = 'x'.repeat(4000);
       const children = [createMockChild(), createMockChild()];
       let callIndex = 0;
       mockSpawn.mockImplementation(() => {
@@ -292,11 +292,11 @@ describe('exec', () => {
           child.stdout.end();
           child.stderr.end();
           child.emit('close', 0, null);
-        });
+        }, 0);
         return child;
       });
 
-      const result = await exec(['echo', { batchedArgs: [longArg, longArg, longArg] }], { isQuiet: true });
+      const result = await exec(['echo', { batchedArgs: [longArgument, longArgument, longArgument] }], { isQuiet: true });
 
       expect(mockSpawn).toHaveBeenCalledTimes(2);
       expect(result).toContain('out');
@@ -309,7 +309,7 @@ describe('exec', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
     try {
-      const longArg = 'x'.repeat(4000);
+      const longArgument = 'x'.repeat(4000);
       const children = [createMockChild(), createMockChild()];
       let callIndex = 0;
       mockSpawn.mockImplementation(() => {
@@ -322,11 +322,11 @@ describe('exec', () => {
           child.stdout.end();
           child.stderr.end();
           child.emit('close', 0, null);
-        });
+        }, 0);
         return child;
       });
 
-      const result = await exec(['echo', { batchedArgs: [longArg, longArg, longArg] }], { isQuiet: true, shouldIncludeDetails: true });
+      const result = await exec(['echo', { batchedArgs: [longArgument, longArgument, longArgument] }], { isQuiet: true, shouldIncludeDetails: true });
 
       expect(result).toEqual({
         exitCode: 0,
@@ -343,9 +343,9 @@ describe('exec', () => {
     const originalPlatform = process.platform;
     Object.defineProperty(process, 'platform', { value: 'win32' });
     try {
-      const hugeArg = 'x'.repeat(8192);
+      const hugeArgument = 'x'.repeat(8192);
       await expect(
-        exec(['echo', { batchedArgs: [hugeArg] }])
+        exec(['echo', { batchedArgs: [hugeArgument] }])
       ).rejects.toThrow('Cannot split');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
@@ -614,7 +614,7 @@ describe('exec', () => {
 describe('appendNodeOption', () => {
   it('should return the option alone when there are no existing options', () => {
     expect(appendNodeOption(undefined, '--localstorage-file=:memory:')).toBe('--localstorage-file=:memory:');
-    expect(appendNodeOption('   ', '--localstorage-file=:memory:')).toBe('--localstorage-file=:memory:');
+    expect(appendNodeOption(' '.repeat(3), '--localstorage-file=:memory:')).toBe('--localstorage-file=:memory:');
   });
 
   it('should append the option, preserving existing options', () => {

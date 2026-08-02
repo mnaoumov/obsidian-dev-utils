@@ -12,7 +12,7 @@ import {
   vi
 } from 'vitest';
 
-import type { AsyncEventRef } from '../../async-events.ts';
+import type { AsyncEventRef as AsyncEventReference } from '../../async-events.ts';
 
 import { registerAsyncEvent } from './async-events-component.ts';
 
@@ -22,19 +22,19 @@ describe('registerAsyncEvent', () => {
     component.load();
 
     const offref = vi.fn();
-    const eventRef: AsyncEventRef = {
+    const eventReference: AsyncEventReference = {
       asyncEventSource: { offref },
       callback: vi.fn(),
       name: 'test',
       thisArg: undefined
     };
 
-    registerAsyncEvent(component, eventRef);
+    registerAsyncEvent(component, eventReference);
 
     expect(offref).not.toHaveBeenCalled();
 
     component.unload();
 
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 });

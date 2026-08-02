@@ -165,8 +165,8 @@ describe('Async', () => {
         await noopAsync();
         return true;
       });
-      const arr = ['a', 'b', 'c'];
-      await asyncFilter(arr, predicate);
+      const array = ['a', 'b', 'c'];
+      await asyncFilter(array, predicate);
       expect(predicate).toHaveBeenCalledTimes(3);
     });
 
@@ -179,9 +179,9 @@ describe('Async', () => {
         await noopAsync();
         return true;
       });
-      const arr = ['a', 'b', 'c'];
-      await asyncFilter(arr, predicate);
-      expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, arr);
+      const array = ['a', 'b', 'c'];
+      await asyncFilter(array, predicate);
+      expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, array);
     });
 
     it('should not mutate the original array', async () => {
@@ -203,10 +203,10 @@ describe('Async', () => {
     });
 
     it('should skip sparse array holes', async () => {
-      const arr = new Array<number>(5);
-      arr[1] = 10;
-      arr[3] = 30;
-      const result = await asyncFilter(arr, async () => {
+      const array = new Array<number>(5);
+      array[1] = 10;
+      array[3] = 30;
+      const result = await asyncFilter(array, async () => {
         await noopAsync();
         return true;
       });
@@ -216,88 +216,88 @@ describe('Async', () => {
 
   describe('asyncFilterInPlace', () => {
     it('should filter elements in place based on async predicate', async () => {
-      const arr = [1, 2, 3, 4, 5];
-      await asyncFilterInPlace(arr, async (v) => {
+      const array = [1, 2, 3, 4, 5];
+      await asyncFilterInPlace(array, async (v) => {
         await noopAsync();
         return v % 2 !== 0;
       });
-      expect(arr).toEqual([1, 3, 5]);
+      expect(array).toEqual([1, 3, 5]);
     });
 
     it('should handle an empty array', async () => {
-      const arr: number[] = [];
-      await asyncFilterInPlace(arr, async () => {
+      const array: number[] = [];
+      await asyncFilterInPlace(array, async () => {
         await noopAsync();
         return true;
       });
-      expect(arr).toEqual([]);
+      expect(array).toEqual([]);
     });
 
     it('should remove all elements when predicate always returns false', async () => {
-      const arr = [1, 2, 3];
-      await asyncFilterInPlace(arr, async () => {
+      const array = [1, 2, 3];
+      await asyncFilterInPlace(array, async () => {
         await noopAsync();
         return false;
       });
-      expect(arr).toEqual([]);
+      expect(array).toEqual([]);
     });
 
     it('should set length to 0 when predicate always returns false', async () => {
-      const arr = [1, 2, 3];
-      await asyncFilterInPlace(arr, async () => {
+      const array = [1, 2, 3];
+      await asyncFilterInPlace(array, async () => {
         await noopAsync();
         return false;
       });
-      expect(arr.length).toBe(0);
+      expect(array.length).toBe(0);
     });
 
     it('should keep all elements when predicate always returns true', async () => {
-      const arr = [1, 2, 3];
-      await asyncFilterInPlace(arr, async () => {
+      const array = [1, 2, 3];
+      await asyncFilterInPlace(array, async () => {
         await noopAsync();
         return true;
       });
-      expect(arr).toEqual([1, 2, 3]);
+      expect(array).toEqual([1, 2, 3]);
     });
 
     it('should update array content correctly after filtering', async () => {
-      const arr = [10, 20, 30, 40, 50];
-      await asyncFilterInPlace(arr, async (v) => {
+      const array = [10, 20, 30, 40, 50];
+      await asyncFilterInPlace(array, async (v) => {
         await noopAsync();
         return v >= 30;
       });
-      expect(arr).toEqual([30, 40, 50]);
+      expect(array).toEqual([30, 40, 50]);
     });
 
     it('should update array length correctly after filtering', async () => {
-      const arr = [10, 20, 30, 40, 50];
-      await asyncFilterInPlace(arr, async (v) => {
+      const array = [10, 20, 30, 40, 50];
+      await asyncFilterInPlace(array, async (v) => {
         await noopAsync();
         return v >= 30;
       });
-      expect(arr.length).toBe(3);
+      expect(array.length).toBe(3);
     });
 
     it('should skip sparse array holes and keep only defined elements', async () => {
-      const arr = new Array<number>(5);
-      arr[1] = 10;
-      arr[3] = 30;
-      await asyncFilterInPlace(arr, async () => {
+      const array = new Array<number>(5);
+      array[1] = 10;
+      array[3] = 30;
+      await asyncFilterInPlace(array, async () => {
         await noopAsync();
         return true;
       });
-      expect(arr).toEqual([10, 30]);
+      expect(array).toEqual([10, 30]);
     });
 
     it('should update length correctly after filtering sparse arrays', async () => {
-      const arr = new Array<number>(5);
-      arr[1] = 10;
-      arr[3] = 30;
-      await asyncFilterInPlace(arr, async () => {
+      const array = new Array<number>(5);
+      array[1] = 10;
+      array[3] = 30;
+      await asyncFilterInPlace(array, async () => {
         await noopAsync();
         return true;
       });
-      expect(arr.length).toBe(2);
+      expect(array.length).toBe(2);
     });
   });
 
@@ -378,36 +378,36 @@ describe('Async', () => {
 
   describe('convertSyncToAsync', () => {
     it('should wrap a sync function into an async one', async () => {
-      function syncFn(a: number, b: number): number {
+      function syncFunction(a: number, b: number): number {
         return a + b;
       }
-      const asyncFn = convertSyncToAsync(syncFn);
-      const result = await asyncFn(3, 4);
+      const asyncFunction = convertSyncToAsync(syncFunction);
+      const result = await asyncFunction(3, 4);
       expect(result).toBe(7);
     });
 
     it('should return a promise', () => {
-      function syncFn(): string {
+      function syncFunction(): string {
         return 'hello';
       }
-      const asyncFn = convertSyncToAsync(syncFn);
-      const result = asyncFn();
+      const asyncFunction = convertSyncToAsync(syncFunction);
+      const result = asyncFunction();
       expect(result).toBeInstanceOf(Promise);
     });
 
     it('should propagate thrown errors as rejected promises', async () => {
-      function syncFn(): never {
+      function syncFunction(): never {
         throw new Error('sync boom');
       }
-      const asyncFn = convertSyncToAsync(syncFn);
-      await expect(asyncFn()).rejects.toThrow('sync boom');
+      const asyncFunction = convertSyncToAsync(syncFunction);
+      await expect(asyncFunction()).rejects.toThrow('sync boom');
     });
 
     it('should pass arguments correctly', async () => {
-      const syncFn = vi.fn((x: string) => x.toUpperCase());
-      const asyncFn = convertSyncToAsync(syncFn);
-      await asyncFn('test');
-      expect(syncFn).toHaveBeenCalledWith('test');
+      const syncFunction = vi.fn((x: string) => x.toUpperCase());
+      const asyncFunction = convertSyncToAsync(syncFunction);
+      await asyncFunction('test');
+      expect(syncFunction).toHaveBeenCalledWith('test');
     });
   });
 
@@ -502,7 +502,7 @@ describe('Async', () => {
     });
 
     it('should stop execution on first error', async () => {
-      const fn3 = vi.fn(async (): Promise<string> => {
+      const function3 = vi.fn(async (): Promise<string> => {
         await noopAsync();
         return 'c';
       });
@@ -516,22 +516,22 @@ describe('Async', () => {
             await noopAsync();
             throw new Error('seq fail');
           },
-          fn3
+          function3
         ])
       ).rejects.toThrow('seq fail');
-      expect(fn3).not.toHaveBeenCalled();
+      expect(function3).not.toHaveBeenCalled();
     });
 
     it('should execute functions one at a time, not in parallel', async () => {
       let concurrency = 0;
       let maxConcurrency = 0;
-      async function fn(): Promise<void> {
+      async function $function(): Promise<void> {
         concurrency++;
         maxConcurrency = Math.max(maxConcurrency, concurrency);
         await noopAsync();
         concurrency--;
       }
-      await promiseAllAsyncFnsSequentially([fn, fn, fn]);
+      await promiseAllAsyncFnsSequentially([$function, $function, $function]);
       expect(maxConcurrency).toBe(1);
     });
   });
@@ -680,7 +680,7 @@ describe('Async', () => {
       await expect(runWithTimeout({
         operationFn: async () => {
           await new Promise((resolve) => {
-            window.setTimeout(resolve, 10000);
+            window.setTimeout(resolve, 10_000);
           });
           return 'late';
         },
@@ -716,15 +716,15 @@ describe('Async', () => {
     });
 
     it('should reject when custom onTimeout handler terminates the operation', async () => {
-      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
-        ctx.terminateOperation();
+      const onTimeout = vi.fn((context: TimeoutContext): void => {
+        context.terminateOperation();
       });
 
       await expect(runWithTimeout({
         onTimeout,
         operationFn: async () => {
           await new Promise((resolve) => {
-            window.setTimeout(resolve, 10000);
+            window.setTimeout(resolve, 10_000);
           });
           return 'late';
         },
@@ -733,8 +733,8 @@ describe('Async', () => {
     });
 
     it('should call custom onTimeout handler when timeout occurs', async () => {
-      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
-        ctx.terminateOperation();
+      const onTimeout = vi.fn((context: TimeoutContext): void => {
+        context.terminateOperation();
       });
 
       try {
@@ -742,7 +742,7 @@ describe('Async', () => {
           onTimeout,
           operationFn: async () => {
             await new Promise((resolve) => {
-              window.setTimeout(resolve, 10000);
+              window.setTimeout(resolve, 10_000);
             });
             return 'late';
           },
@@ -756,8 +756,8 @@ describe('Async', () => {
     });
 
     it('should pass correct TimeoutContext to custom onTimeout handler', async () => {
-      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
-        ctx.terminateOperation();
+      const onTimeout = vi.fn((context: TimeoutContext): void => {
+        context.terminateOperation();
       });
 
       try {
@@ -765,7 +765,7 @@ describe('Async', () => {
           onTimeout,
           operationFn: async () => {
             await new Promise((resolve) => {
-              window.setTimeout(resolve, 10000);
+              window.setTimeout(resolve, 10_000);
             });
             return 'late';
           },
@@ -784,17 +784,17 @@ describe('Async', () => {
     });
 
     it('should provide TimeoutContext with correct operationName', async () => {
-      let capturedCtx: null | TimeoutContext = null;
+      let capturedContext: null | TimeoutContext = null;
 
       try {
         await runWithTimeout({
-          onTimeout(ctx) {
-            capturedCtx = ctx;
-            ctx.terminateOperation();
+          onTimeout(context) {
+            capturedContext = context;
+            context.terminateOperation();
           },
           operationFn: async () => {
             await new Promise((resolve) => {
-              window.setTimeout(resolve, 10000);
+              window.setTimeout(resolve, 10_000);
             });
           },
           operationName: 'myOperation',
@@ -804,21 +804,21 @@ describe('Async', () => {
         // Expected
       }
 
-      expect(capturedCtx).not.toBeNull();
+      expect(capturedContext).not.toBeNull();
     });
 
     it('should set operationName on the captured TimeoutContext', async () => {
-      let capturedCtx: null | TimeoutContext = null;
+      let capturedContext: null | TimeoutContext = null;
 
       try {
         await runWithTimeout({
-          onTimeout(ctx) {
-            capturedCtx = ctx;
-            ctx.terminateOperation();
+          onTimeout(context) {
+            capturedContext = context;
+            context.terminateOperation();
           },
           operationFn: async () => {
             await new Promise((resolve) => {
-              window.setTimeout(resolve, 10000);
+              window.setTimeout(resolve, 10_000);
             });
           },
           operationName: 'myOperation',
@@ -828,14 +828,14 @@ describe('Async', () => {
         // Expected
       }
 
-      capturedCtx = ensureNonNullable(capturedCtx as null | TimeoutContext);
-      expect(capturedCtx.operationName).toBe('myOperation');
+      capturedContext = ensureNonNullable(capturedContext as null | TimeoutContext);
+      expect(capturedContext.operationName).toBe('myOperation');
     });
 
     it('should return the result when onTimeout does not terminate', async () => {
       const result = await runWithTimeout({
-        onTimeout(ctx) {
-          ctx.onOperationCompleted(() => {
+        onTimeout(context) {
+          context.onOperationCompleted(() => {
             // Do not terminate - let the operation finish on its own
           });
         },
@@ -855,8 +855,8 @@ describe('Async', () => {
       let completedCallbackCalled = false;
 
       await runWithTimeout({
-        onTimeout(ctx) {
-          ctx.onOperationCompleted(() => {
+        onTimeout(context) {
+          context.onOperationCompleted(() => {
             completedCallbackCalled = true;
           });
         },
@@ -894,7 +894,7 @@ describe('Async', () => {
           operationFn: async (abortSignal) => {
             receivedSignal = abortSignal;
             await new Promise((resolve) => {
-              window.setTimeout(resolve, 10000);
+              window.setTimeout(resolve, 10_000);
             });
             return 'late';
           },
@@ -911,46 +911,46 @@ describe('Async', () => {
 
   describe('retryWithTimeout', () => {
     it('should resolve when operationFn returns true on first attempt', async () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         await noopAsync();
         return true;
       });
 
       await retryWithTimeout({
-        operationFn: fn,
+        operationFn: $function,
         retryOptions: { timeoutInMilliseconds: 5000 }
       });
 
-      expect(fn).toHaveBeenCalledTimes(1);
+      expect($function).toHaveBeenCalledTimes(1);
     });
 
     it('should retry until operationFn returns true', async () => {
       let attempt = 0;
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         await noopAsync();
         attempt++;
         return attempt >= 3;
       });
 
       await retryWithTimeout({
-        operationFn: fn,
+        operationFn: $function,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 5000
         }
       });
 
-      expect(fn).toHaveBeenCalledTimes(3);
+      expect($function).toHaveBeenCalledTimes(3);
     });
 
     it('should reject when timeout is reached and the while loop exits due to abort', async () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         await noopAsync();
         return false;
       });
 
       await expect(retryWithTimeout({
-        operationFn: fn,
+        operationFn: $function,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
@@ -959,20 +959,20 @@ describe('Async', () => {
     });
 
     it('should have called operationFn at least once before timeout', async () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         await noopAsync();
         return false;
       });
 
       await expect(retryWithTimeout({
-        operationFn: fn,
+        operationFn: $function,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
         }
       })).rejects.toThrow();
 
-      expect(fn.mock.calls.length).toBeGreaterThanOrEqual(1);
+      expect($function.mock.calls.length).toBeGreaterThanOrEqual(1);
     });
 
     it('should throw immediately if abortSignal is already aborted', async () => {
@@ -1062,21 +1062,21 @@ describe('Async', () => {
     });
 
     it('should use default retry options when none are specified', async () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         await noopAsync();
         return true;
       });
 
       await retryWithTimeout({
-        operationFn: fn
+        operationFn: $function
       });
 
-      expect(fn).toHaveBeenCalledTimes(1);
+      expect($function).toHaveBeenCalledTimes(1);
     });
 
     it('should reject when custom onTimeout terminates the operation', async () => {
-      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
-        ctx.terminateOperation();
+      const onTimeout = vi.fn((context: TimeoutContext): void => {
+        context.terminateOperation();
       });
 
       await expect(retryWithTimeout({
@@ -1093,8 +1093,8 @@ describe('Async', () => {
     });
 
     it('should call custom onTimeout when forwarded to runWithTimeout', async () => {
-      const onTimeout = vi.fn((ctx: TimeoutContext): void => {
-        ctx.terminateOperation();
+      const onTimeout = vi.fn((context: TimeoutContext): void => {
+        context.terminateOperation();
       });
 
       await expect(retryWithTimeout({
@@ -1338,27 +1338,27 @@ describe('Async', () => {
 
   describe('invokeAsyncSafelyAfterDelay', () => {
     it('should not invoke the function immediately', () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay({ asyncFn: fn, delayInMilliseconds: 50 });
+      invokeAsyncSafelyAfterDelay({ asyncFn: $function, delayInMilliseconds: 50 });
 
-      expect(fn).not.toHaveBeenCalled();
+      expect($function).not.toHaveBeenCalled();
     });
 
     it('should invoke the function after a delay', async () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay({ asyncFn: fn, delayInMilliseconds: 50 });
+      invokeAsyncSafelyAfterDelay({ asyncFn: $function, delayInMilliseconds: 50 });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 150);
       });
 
-      expect(fn).toHaveBeenCalledTimes(1);
+      expect($function).toHaveBeenCalledTimes(1);
     });
 
     it('should throw if abortSignal is already aborted', () => {
@@ -1413,67 +1413,67 @@ describe('Async', () => {
     });
 
     it('should default delay to 0', async () => {
-      const fn = vi.fn(async () => {
+      const $function = vi.fn(async () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay({ asyncFn: fn });
+      invokeAsyncSafelyAfterDelay({ asyncFn: $function });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 100);
       });
 
-      expect(fn).toHaveBeenCalledTimes(1);
+      expect($function).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('convertAsyncToSync', () => {
     it('should return a function', () => {
-      const asyncFn = vi.fn(async () => {
+      const asyncFunction = vi.fn(async () => {
         await noopAsync();
         return 42;
       });
-      const syncFn = convertAsyncToSync(asyncFn);
-      expect(typeof syncFn).toBe('function');
+      const syncFunction = convertAsyncToSync(asyncFunction);
+      expect(typeof syncFunction).toBe('function');
     });
 
     it('should call the async function when the sync wrapper is invoked', () => {
-      const asyncFn = vi.fn(async () => {
+      const asyncFunction = vi.fn(async () => {
         await noopAsync();
         return 42;
       });
-      const syncFn = convertAsyncToSync(asyncFn);
-      syncFn();
-      expect(asyncFn).toHaveBeenCalledTimes(1);
+      const syncFunction = convertAsyncToSync(asyncFunction);
+      syncFunction();
+      expect(asyncFunction).toHaveBeenCalledTimes(1);
     });
 
     it('should pass arguments to the async function', async () => {
-      const asyncFn = vi.fn(async (a: number, b: string) => {
+      const asyncFunction = vi.fn(async (a: number, b: string) => {
         await noopAsync();
         return `${String(a)}-${b}`;
       });
-      const syncFn = convertAsyncToSync(asyncFn);
+      const syncFunction = convertAsyncToSync(asyncFunction);
 
-      syncFn(5, 'hello');
+      syncFunction(5, 'hello');
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 50);
       });
 
-      expect(asyncFn).toHaveBeenCalledWith(5, 'hello');
+      expect(asyncFunction).toHaveBeenCalledWith(5, 'hello');
     });
 
     it('should not throw synchronously when the async function rejects', () => {
       using _ignore = startAsyncErrorIgnoreContext();
 
-      async function asyncFn(): Promise<never> {
+      async function asyncFunction(): Promise<never> {
         await noopAsync();
         throw new Error('async boom');
       }
-      const syncFn = convertAsyncToSync(asyncFn);
+      const syncFunction = convertAsyncToSync(asyncFunction);
 
       expect(() => {
-        syncFn();
+        syncFunction();
       }).not.toThrow();
     });
 
@@ -1481,13 +1481,13 @@ describe('Async', () => {
       const handler = vi.fn();
       using _registration = registerAsyncErrorEventHandler(handler);
 
-      async function asyncFn(): Promise<never> {
+      async function asyncFunction(): Promise<never> {
         await noopAsync();
         throw new Error('async error');
       }
-      const syncFn = convertAsyncToSync(asyncFn);
+      const syncFunction = convertAsyncToSync(asyncFunction);
 
-      syncFn();
+      syncFunction();
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 50);
@@ -1506,7 +1506,7 @@ describe('Async', () => {
       }, 50);
 
       const start = Date.now();
-      await sleep({ abortSignal: controller.signal, milliseconds: 10000 });
+      await sleep({ abortSignal: controller.signal, milliseconds: 10_000 });
       const elapsed = Date.now() - start;
 
       // Should have resolved much sooner than 10s
@@ -1520,7 +1520,7 @@ describe('Async', () => {
         controller.abort(new Error('abort reason'));
       }, 50);
 
-      await expect(sleep({ abortSignal: controller.signal, milliseconds: 10000, shouldThrowOnAbort: true })).rejects.toThrow();
+      await expect(sleep({ abortSignal: controller.signal, milliseconds: 10_000, shouldThrowOnAbort: true })).rejects.toThrow();
     });
 
     it('should not throw when shouldThrowOnAbort is false and signal is aborted', async () => {
@@ -1530,7 +1530,7 @@ describe('Async', () => {
         controller.abort(new Error('abort reason'));
       }, 50);
 
-      await expect(sleep({ abortSignal: controller.signal, milliseconds: 10000, shouldThrowOnAbort: false })).resolves.toBeUndefined();
+      await expect(sleep({ abortSignal: controller.signal, milliseconds: 10_000, shouldThrowOnAbort: false })).resolves.toBeUndefined();
     });
 
     it('should resolve normally when abortSignal is not aborted', async () => {
@@ -1622,8 +1622,8 @@ describe('Async', () => {
         await noopAsync();
         return v * 2;
       });
-      const arr = [10, 20, 30];
-      await asyncMap(arr, callback);
+      const array = [10, 20, 30];
+      await asyncMap(array, callback);
       expect(callback).toHaveBeenCalledTimes(3);
     });
 
@@ -1636,9 +1636,9 @@ describe('Async', () => {
         await noopAsync();
         return v * 2;
       });
-      const arr = [10, 20, 30];
-      await asyncMap(arr, callback);
-      expect(callback).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, arr);
+      const array = [10, 20, 30];
+      await asyncMap(array, callback);
+      expect(callback).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, array);
     });
 
     it('should propagate errors from callback', async () => {
@@ -1664,8 +1664,8 @@ describe('Async', () => {
         await noopAsync();
         return [v];
       });
-      const arr = [10, 20];
-      await asyncFlatMap(arr, callback);
+      const array = [10, 20];
+      await asyncFlatMap(array, callback);
       expect(callback).toHaveBeenCalledTimes(2);
     });
 
@@ -1677,9 +1677,9 @@ describe('Async', () => {
         await noopAsync();
         return [v];
       });
-      const arr = [10, 20];
-      await asyncFlatMap(arr, callback);
-      expect(callback).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, arr);
+      const array = [10, 20];
+      await asyncFlatMap(array, callback);
+      expect(callback).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, array);
     });
 
     it('should propagate errors from callback', async () => {
@@ -1709,8 +1709,8 @@ describe('Async', () => {
 
   describe('asyncFilterInPlace edge cases', () => {
     it('should propagate errors from predicate', async () => {
-      const arr = [1, 2, 3];
-      await expect(asyncFilterInPlace(arr, async () => {
+      const array = [1, 2, 3];
+      await expect(asyncFilterInPlace(array, async () => {
         await noopAsync();
         throw new Error('filterInPlace error');
       })).rejects.toThrow('filterInPlace error');
@@ -1721,8 +1721,8 @@ describe('Async', () => {
         await noopAsync();
         return true;
       });
-      const arr = [10, 20, 30];
-      await asyncFilterInPlace(arr, predicate);
+      const array = [10, 20, 30];
+      await asyncFilterInPlace(array, predicate);
       expect(predicate).toHaveBeenCalledTimes(3);
     });
 
@@ -1735,9 +1735,9 @@ describe('Async', () => {
         await noopAsync();
         return true;
       });
-      const arr = [10, 20, 30];
-      await asyncFilterInPlace(arr, predicate);
-      expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, arr);
+      const array = [10, 20, 30];
+      await asyncFilterInPlace(array, predicate);
+      expect(predicate).toHaveBeenNthCalledWith(callIndex, expectedValue, expectedIndex, array);
     });
   });
 

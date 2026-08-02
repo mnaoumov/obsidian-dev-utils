@@ -20,7 +20,7 @@ import { assertNonNullable } from './type-guards.ts';
 
 describe('INFINITE_TIMEOUT', () => {
   it('should equal Number.POSITIVE_INFINITY', () => {
-    expect(INFINITE_TIMEOUT).toBe(Number.POSITIVE_INFINITY);
+    expect(INFINITE_TIMEOUT).toBe(Infinity);
   });
 });
 

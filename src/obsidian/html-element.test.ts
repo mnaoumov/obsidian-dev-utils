@@ -11,9 +11,9 @@ import { appendCodeBlock } from './html-element.ts';
 
 describe('appendCodeBlock', () => {
   it('should append a strong.markdown-rendered.code wrapping a code element with the text', () => {
-    const el = createDiv();
-    appendCodeBlock(el, 'console.log("hello")');
-    const strong = el.querySelector('strong');
+    const element = createDiv();
+    appendCodeBlock(element, 'console.log("hello")');
+    const strong = element.querySelector('strong');
     assertNonNullable(strong);
     expect(strong.className).toBe('markdown-rendered code');
     const code = strong.querySelector('code');

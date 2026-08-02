@@ -168,8 +168,8 @@ describe('AsyncCallbackDisposable', () => {
 
 describe('isDisposable', () => {
   it('should return true for objects with Symbol.dispose', () => {
-    const obj = { [Symbol.dispose]: noop };
-    expect(isDisposable(obj)).toBe(true);
+    const $object = { [Symbol.dispose]: noop };
+    expect(isDisposable($object)).toBe(true);
   });
 
   it('should return false for objects without Symbol.dispose', () => {

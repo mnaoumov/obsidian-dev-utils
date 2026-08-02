@@ -13,15 +13,15 @@ import {
   resolvePathFromRootSafe
 } from '../src/script-utils/root.ts';
 import {
-  parseVersionArgs,
+  parseVersionArgs as parseVersionArguments,
   updateVersion
 } from '../src/script-utils/version.ts';
 
-const [, , ...args] = process.argv;
+const [, , ...$arguments] = process.argv;
 
 await wrapCliTask(async () => {
   await execFromRoot(['npm', 'run', 'build:templates']);
-  const { options, versionUpdateType } = parseVersionArgs(args);
+  const { options, versionUpdateType } = parseVersionArguments($arguments);
   await updateVersion(versionUpdateType, {
     ...options,
     prepareGitHubRelease

@@ -229,10 +229,10 @@ function collectAncestorNames(type: Type): Set<string> {
     }
 
     for (const baseType of baseTypes) {
-      const symbol = baseType.getSymbol();
+      const $symbol = baseType.getSymbol();
 
-      if (symbol) {
-        collectedNames.add(symbol.getName());
+      if ($symbol) {
+        collectedNames.add($symbol.getName());
       }
 
       walkAncestors({

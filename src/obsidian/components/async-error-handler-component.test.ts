@@ -14,14 +14,14 @@ import { strictProxy } from '../../strict-proxy.ts';
 import { AsyncErrorHandlerComponent } from './async-error-handler-component.ts';
 import { PluginNoticeComponent } from './plugin-notice-component.ts';
 
-type TranslationsArg = Parameters<Parameters<typeof import('../i18n/i18n.ts')['t']>[0]>[0];
+type TranslationsArgument = Parameters<Parameters<typeof import('../i18n/i18n.ts')['t']>[0]>[0];
 
 const app = strictProxy<AppOriginal>({});
 
 const mocks = vi.hoisted(() => ({
   registerAsyncErrorEventHandler: vi.fn<(handler: (error: unknown) => void) => Disposable>(),
-  t: vi.fn((fn: (translations: TranslationsArg) => string) =>
-    fn(castTo<TranslationsArg>({
+  t: vi.fn(($function: (translations: TranslationsArgument) => string) =>
+    $function(castTo<TranslationsArgument>({
       obsidianDevUtils: {
         notices: {
           unhandledError: 'An error occurred'

@@ -13,9 +13,9 @@ const CST_PLUGIN_ID = 'fix-require-modules';
 const START_NOTE_PATH = '00 Start.md';
 const MODULES_ROOT = '_assets/CodeScriptToolkit';
 
-const TEST_TIMEOUT_IN_MILLISECONDS = 150000;
+const TEST_TIMEOUT_IN_MILLISECONDS = 150_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 2000;
-const POLL_TIMEOUT_IN_MILLISECONDS = 120000;
+const POLL_TIMEOUT_IN_MILLISECONDS = 120_000;
 
 // The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `cstEnabled` are the
 // Acceptance signal; the rest are asserted on success and reported on a flake (the CST store install is
@@ -59,9 +59,9 @@ describe('demo-vault-helper bootstrap', () => {
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
           const cstInstalled = Boolean(app.plugins.manifests[cstPluginId]);
           let noticeText = '';
-          for (const noticeEl of Array.from(document.querySelectorAll('.notice'))) {
-            if (noticeEl.textContent.includes('Demo Vault Helper')) {
-              noticeText = noticeEl.textContent;
+          for (const noticeElement of Array.from(document.querySelectorAll('.notice'))) {
+            if (noticeElement.textContent.includes('Demo Vault Helper')) {
+              noticeText = noticeElement.textContent;
             }
           }
           return {

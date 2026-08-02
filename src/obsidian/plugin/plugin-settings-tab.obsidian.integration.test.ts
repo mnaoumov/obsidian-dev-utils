@@ -73,7 +73,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
           offref(): void;
         }
 
-        interface EventRefStub {
+        interface EventReferenceStub {
           asyncEventSource: AsyncEventSourceStub;
         }
 
@@ -88,7 +88,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const pluginSettingsComponent = strictProxy<PluginSettingsComponentBase<ProbeSettings>>({
           defaultSettings: { enabled: false },
-          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventRefStub => ({ asyncEventSource: { offref: () => undefined } })),
+          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventReferenceStub => ({ asyncEventSource: { offref: () => undefined } })),
           saveToFile: () => noopAsync(),
           settingsState: {
             effectiveValues: { enabled: false },
@@ -133,8 +133,8 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         app.setting.openTab(tab);
         await settle();
 
-        const rowElBefore = findRowEl();
-        const isRowDisabledBefore = rowElBefore.hasClass('is-disabled');
+        const rowElementBefore = findRowElement();
+        const isRowDisabledBefore = rowElementBefore.hasClass('is-disabled');
         const isComponentDisabledBefore = dependentComponent?.disabled ?? false;
 
         // The pattern the plugins use: flip the state a dependent row's predicate reads, then ask Obsidian to
@@ -143,13 +143,13 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         tab.refreshDomState();
         await settle();
 
-        const rowElAfter = findRowEl();
+        const rowElementAfter = findRowElement();
         const result2: DependentDisabledResult = {
           isComponentDisabledAfter: dependentComponent?.disabled ?? false,
           isComponentDisabledBefore,
-          isRowDisabledAfter: rowElAfter.hasClass('is-disabled'),
+          isRowDisabledAfter: rowElementAfter.hasClass('is-disabled'),
           isRowDisabledBefore,
-          isSameRowElement: rowElBefore === rowElAfter
+          isSameRowElement: rowElementBefore === rowElementAfter
         };
 
         app.setting.close();
@@ -157,13 +157,13 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         return result2;
 
-        function findRowEl(): HTMLElement {
-          const rowEl = Array.from(tab.containerEl.querySelectorAll<HTMLElement>('.setting-item'))
-            .find((el) => el.querySelector('.setting-item-name')?.textContent === 'Dependent');
-          if (!rowEl) {
+        function findRowElement(): HTMLElement {
+          const rowElement = Array.from(tab.containerEl.querySelectorAll<HTMLElement>('.setting-item'))
+            .find((element) => element.querySelector('.setting-item-name')?.textContent === 'Dependent');
+          if (!rowElement) {
             throw new Error('the dependent row was not rendered');
           }
-          return rowEl;
+          return rowElement;
         }
 
         async function settle(): Promise<void> {
@@ -197,7 +197,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
           offref(): void;
         }
 
-        interface EventRefStub {
+        interface EventReferenceStub {
           asyncEventSource: AsyncEventSourceStub;
         }
 
@@ -212,7 +212,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const pluginSettingsComponent = strictProxy<PluginSettingsComponentBase<ProbeSettings>>({
           defaultSettings: { enabled: false },
-          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventRefStub => ({ asyncEventSource: { offref: () => undefined } })),
+          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventReferenceStub => ({ asyncEventSource: { offref: () => undefined } })),
           saveToFile: () => noopAsync(),
           settingsState: {
             effectiveValues: { enabled: false },
@@ -279,7 +279,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         };
 
         function readRowNames(): string[] {
-          return Array.from(tab.containerEl.querySelectorAll('.setting-item-name')).map((el) => el.textContent);
+          return Array.from(tab.containerEl.querySelectorAll('.setting-item-name')).map((element) => element.textContent);
         }
 
         async function settle(): Promise<void> {
@@ -309,7 +309,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
           offref(): void;
         }
 
-        interface EventRefStub {
+        interface EventReferenceStub {
           asyncEventSource: AsyncEventSourceStub;
         }
 
@@ -326,7 +326,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const pluginSettingsComponent = strictProxy<PluginSettingsComponentBase<ProbeSettings>>({
           defaultSettings: { count: 0 },
-          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventRefStub => ({ asyncEventSource: { offref: () => undefined } })),
+          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventReferenceStub => ({ asyncEventSource: { offref: () => undefined } })),
           saveToFile: () => noopAsync(),
           setProperty: castTo<PluginSettingsComponentBase<ProbeSettings>['setProperty']>(() => Promise.resolve('')),
           settingsState: {
@@ -368,9 +368,9 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const result2: GroupResult = {
           boundInputValue: tab.containerEl.querySelector<HTMLInputElement>('input[type="number"]')?.value ?? null,
-          headings: Array.from(tab.containerEl.querySelectorAll('.setting-item-heading .setting-item-name')).map((el) => el.textContent),
+          headings: Array.from(tab.containerEl.querySelectorAll('.setting-item-heading .setting-item-name')).map((element) => element.textContent),
           isSettingEx,
-          rowNames: Array.from(tab.containerEl.querySelectorAll('.setting-item:not(.setting-item-heading) .setting-item-name')).map((el) => el.textContent)
+          rowNames: Array.from(tab.containerEl.querySelectorAll('.setting-item:not(.setting-item-heading) .setting-item-name')).map((element) => element.textContent)
         };
 
         app.setting.close();
@@ -407,7 +407,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
           offref(): void;
         }
 
-        interface EventRefStub {
+        interface EventReferenceStub {
           asyncEventSource: AsyncEventSourceStub;
         }
 
@@ -422,7 +422,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const pluginSettingsComponent = strictProxy<PluginSettingsComponentBase<ProbeSettings>>({
           defaultSettings: { enabled: false },
-          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventRefStub => ({ asyncEventSource: { offref: () => undefined } })),
+          on: castTo<PluginSettingsComponentBase<ProbeSettings>['on']>((): EventReferenceStub => ({ asyncEventSource: { offref: () => undefined } })),
           saveToFile: () => noopAsync(),
           settingsState: {
             effectiveValues: { enabled: false },

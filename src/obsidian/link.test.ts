@@ -285,7 +285,7 @@ describe('generateRawMarkdownLink', () => {
         shouldEscapeAlias: true,
         url: 'note.md'
       });
-      expect(result).toBe('[\\*\\*bold\\*\\*](note.md)');
+      expect(result).toBe(String.raw`[\*\*bold\*\*](note.md)`);
     });
 
     it('should not escape alias when shouldEscapeAlias is false', () => {
@@ -703,7 +703,7 @@ describe('generateRawMarkdownLink (additional edge cases)', () => {
       title: 'hover text',
       url: 'note.md'
     });
-    expect(result).toBe('[\\*\\*bold\\*\\*](note.md "hover text")');
+    expect(result).toBe(String.raw`[\*\*bold\*\*](note.md "hover text")`);
   });
 
   it('should generate an embed markdown link with title', () => {
@@ -802,6 +802,7 @@ describe('app-dependent functions', () => {
       if (key === 'newLinkFormat') {
         return 'shortest';
       }
+      // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
       return undefined;
     });
 
@@ -1025,6 +1026,7 @@ describe('app-dependent functions', () => {
         if (key === 'newLinkFormat') {
           return 'shortest';
         }
+        // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
         return undefined;
       });
       const result = generateMarkdownLink({
@@ -1668,10 +1670,12 @@ describe('app-dependent functions', () => {
     it('should edit external links via editLinks', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
@@ -1795,10 +1799,12 @@ describe('app-dependent functions', () => {
     it('should invoke changesProvider when applyFileChanges calls it', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
 
@@ -1828,10 +1834,12 @@ describe('app-dependent functions', () => {
     it('should return null from changesProvider when content differs from cachedRead', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: 'different content' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: 'different content' });
         }
       );
 
@@ -1851,7 +1859,7 @@ describe('app-dependent functions', () => {
 
   describe('editBacklinks', () => {
     it('should process backlinks and invoke linkConverter for matching links', async () => {
-      const backlinkRef = {
+      const backlinkReference = {
         displayText: 'target',
         link: 'target',
         original: '[[target]]',
@@ -1860,7 +1868,7 @@ describe('app-dependent functions', () => {
       vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
         get: (key: string) => {
           if (key === 'note.md') {
-            return [backlinkRef];
+            return [backlinkReference];
           }
           return null;
         },
@@ -1870,10 +1878,12 @@ describe('app-dependent functions', () => {
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
 
@@ -1881,7 +1891,7 @@ describe('app-dependent functions', () => {
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
-        links: [backlinkRef],
+        links: [backlinkReference],
         sections: undefined
       }));
 
@@ -1899,7 +1909,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should skip links not in backlinks set', async () => {
-      const backlinkRef = {
+      const backlinkReference = {
         displayText: 'target',
         link: 'target',
         original: '[[target]]',
@@ -1913,17 +1923,19 @@ describe('app-dependent functions', () => {
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
 
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
-        links: [backlinkRef],
+        links: [backlinkReference],
         sections: undefined
       }));
 
@@ -1942,14 +1954,14 @@ describe('app-dependent functions', () => {
     });
 
     it('should report progress once per backlink file with a running count and total', async () => {
-      const backlinkRef = {
+      const backlinkReference = {
         displayText: 'target',
         link: 'target',
         original: '[[target]]',
         position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
       };
       vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
-        get: () => [backlinkRef],
+        get: () => [backlinkReference],
         keys: () => ['note-a.md', 'note-b.md', 'note-c.md']
       }));
 
@@ -2089,10 +2101,12 @@ describe('app-dependent functions', () => {
     it('should skip links when shouldUpdateEmbedOnlyLinks does not match', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
@@ -2121,10 +2135,12 @@ describe('app-dependent functions', () => {
     it('should invoke convertLink for matching links', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
@@ -2198,10 +2214,12 @@ describe('app-dependent functions', () => {
 
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
         }
       );
 
@@ -2244,10 +2262,12 @@ describe('app-dependent functions', () => {
 
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
+          if (!(typeof changesProvider === 'function')) {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
         }
       );
 

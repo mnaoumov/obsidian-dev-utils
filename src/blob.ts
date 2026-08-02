@@ -101,8 +101,8 @@ export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
 
   const uInt8Array = new Uint8Array(rawLength);
 
-  for (let i = 0; i < rawLength; i++) {
-    uInt8Array[i] = raw.charCodeAt(i);
+  for (let index = 0; index < rawLength; index++) {
+    uInt8Array[index] = raw.charCodeAt(index);
   }
   return uInt8Array.buffer;
 }

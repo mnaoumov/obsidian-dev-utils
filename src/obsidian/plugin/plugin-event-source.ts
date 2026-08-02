@@ -7,7 +7,7 @@
 import type { Promisable } from 'type-fest';
 
 import type {
-  AsyncEventRef,
+  AsyncEventRef as AsyncEventReference,
   AsyncEventSource
 } from '../../async-events.ts';
 import type { StringKeys } from '../../type.ts';
@@ -41,7 +41,7 @@ export class PluginEventSourceImpl implements PluginEventSource {
    * Remove an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The arguments of the event.
+   * @typeParam Arguments - The arguments of the event.
    * @param name - The name of the event.
    * @param callback - The callback to remove.
    *
@@ -51,9 +51,9 @@ export class PluginEventSourceImpl implements PluginEventSource {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public off<EventName extends StringKeys<PluginEventMap>, Args extends EventName extends StringKeys<PluginEventMap> ? PluginEventMap[EventName] : unknown[]>(
+  public off<EventName extends StringKeys<PluginEventMap>, Arguments extends EventName extends StringKeys<PluginEventMap> ? PluginEventMap[EventName] : unknown[]>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>
+    callback: (...$arguments: Arguments) => Promisable<void>
   ): void {
     this.plugin.off(name, callback);
   }
@@ -63,7 +63,7 @@ export class PluginEventSourceImpl implements PluginEventSource {
    *
    * @param eventRef - The reference to remove.
    */
-  public offref(eventRef: AsyncEventRef): void {
+  public offref(eventRef: AsyncEventReference): void {
     this.plugin.offref(eventRef);
   }
 
@@ -71,10 +71,10 @@ export class PluginEventSourceImpl implements PluginEventSource {
    * Add an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The arguments of the event.
+   * @typeParam Arguments - The arguments of the event.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -88,22 +88,22 @@ export class PluginEventSourceImpl implements PluginEventSource {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public on<EventName extends StringKeys<PluginEventMap>, Args extends EventName extends StringKeys<PluginEventMap> ? PluginEventMap[EventName] : unknown[]>(
+  public on<EventName extends StringKeys<PluginEventMap>, Arguments extends EventName extends StringKeys<PluginEventMap> ? PluginEventMap[EventName] : unknown[]>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>,
-    thisArg?: unknown
-  ): AsyncEventRef {
-    return this.plugin.on(name, callback, thisArg);
+    callback: (...$arguments: Arguments) => Promisable<void>,
+    thisArgument?: unknown
+  ): AsyncEventReference {
+    return this.plugin.on(name, callback, thisArgument);
   }
 
   /**
    * Add an event listener that will be triggered only once.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The arguments of the event.
+   * @typeParam Arguments - The arguments of the event.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -117,11 +117,11 @@ export class PluginEventSourceImpl implements PluginEventSource {
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public once<EventName extends StringKeys<PluginEventMap>, Args extends EventName extends StringKeys<PluginEventMap> ? PluginEventMap[EventName] : unknown[]>(
+  public once<EventName extends StringKeys<PluginEventMap>, Arguments extends EventName extends StringKeys<PluginEventMap> ? PluginEventMap[EventName] : unknown[]>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>,
-    thisArg?: unknown
-  ): AsyncEventRef {
-    return this.plugin.once(name, callback, thisArg);
+    callback: (...$arguments: Arguments) => Promisable<void>,
+    thisArgument?: unknown
+  ): AsyncEventReference {
+    return this.plugin.once(name, callback, thisArgument);
   }
 }

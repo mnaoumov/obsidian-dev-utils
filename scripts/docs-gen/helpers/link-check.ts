@@ -104,7 +104,7 @@ export async function checkExternalTargets(
   concurrency: number
 ): Promise<BrokenLink[]> {
   const entries = [...targets];
-  const results = new Array<BrokenLink | null>(entries.length).fill(null);
+  const results = Array.from({ length: entries.length }).fill(null);
   let nextIndex = 0;
 
   async function runWorker(): Promise<void> {
@@ -235,14 +235,18 @@ export function formatBrokenLinks(brokenLinks: BrokenLink[]): string {
   return brokenLinks
     .map((brokenLink) => {
       switch (brokenLink.reason) {
-        case 'external-error':
+        case 'external-error': {
           return `${brokenLink.pageUrl} links to external URL ${brokenLink.targetUrl} that returned ${describeHttpStatus(brokenLink.httpStatus)}.`;
-        case 'missing-fragment':
+        }
+        case 'missing-fragment': {
           return `${brokenLink.pageUrl} links to missing fragment ${brokenLink.targetUrl}.`;
-        case 'missing-page':
+        }
+        case 'missing-page': {
           return `${brokenLink.pageUrl} links to missing page ${brokenLink.targetUrl}.`;
-        default:
+        }
+        default: {
           return assertNever(brokenLink.reason);
+        }
       }
     })
     .join('\n');

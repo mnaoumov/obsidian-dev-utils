@@ -63,7 +63,7 @@ async function checkExternalUrl(url: string): Promise<number> {
   }, EXTERNAL_LINK_TIMEOUT_IN_MILLISECONDS);
 
   try {
-    const response = await fetch(url, { redirect: 'follow', signal: controller.signal });
+    const response = await fetch(url, { signal: controller.signal });
     // Cancel the unread body so undici releases the connection immediately.
     // Without this the per-host connection pool stalls and same-host requests
     // Serialize, turning a ~3s run into minutes.

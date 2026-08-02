@@ -67,7 +67,7 @@ describe('SyntaxHighlightingComponent', () => {
           component.unload();
           const hasModeAfterUnload = LANGUAGE in window.CodeMirror.modes;
           const isHighlightedAfterUnload = await checkIsHighlightedAsync(false);
-          const textAfterUnload = readCodeLineEl()?.textContent ?? '';
+          const textAfterUnload = readCodeLineElement()?.textContent ?? '';
 
           return {
             hasModeAfterUnload,
@@ -87,7 +87,7 @@ describe('SyntaxHighlightingComponent', () => {
         // A highlighted fence splits into token spans (`cm-keyword`, `cm-def`, ...); an unhighlighted one
         // Stays a single `cm-hmd-codeblock` span.
         function checkHasKeywordToken(): boolean {
-          return (readCodeLineEl()?.querySelector('.cm-keyword') ?? null) !== null;
+          return (readCodeLineElement()?.querySelector('.cm-keyword') ?? null) !== null;
         }
 
         // `isHighlightingExpected` decides HOW to wait, because the two directions need different waits:
@@ -109,9 +109,9 @@ describe('SyntaxHighlightingComponent', () => {
           return checkHasKeywordToken();
         }
 
-        function readCodeLineEl(): Element | null {
+        function readCodeLineElement(): Element | null {
           const lineEls = Array.from(leaf.view.containerEl.querySelectorAll('.cm-content .cm-line'));
-          return lineEls.find((lineEl) => lineEl.textContent.includes(CODE)) ?? null;
+          return lineEls.find((lineElement) => lineElement.textContent.includes(CODE)) ?? null;
         }
 
         // Rebuilds the view from scratch so the fence is tokenized against the CURRENT mode registry,
@@ -122,7 +122,7 @@ describe('SyntaxHighlightingComponent', () => {
           await app.workspace.revealLeaf(leaf);
           await waitUntil({
             message: 'the fence line should render in the editor',
-            predicate: () => readCodeLineEl() !== null,
+            predicate: () => readCodeLineElement() !== null,
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
         }
@@ -165,7 +165,7 @@ describe('SyntaxHighlightingComponent', () => {
 
           component.unload();
           const isHighlightedAfterUnload = await checkIsHighlightedAsync(false);
-          const textAfterUnload = readCodeEl()?.textContent ?? '';
+          const textAfterUnload = readCodeElement()?.textContent ?? '';
 
           return {
             isHighlightedAfterUnload,
@@ -181,7 +181,7 @@ describe('SyntaxHighlightingComponent', () => {
 
         // Prism wraps every matched construct in a `.token` span.
         function checkHasPrismToken(): boolean {
-          return (readCodeEl()?.querySelector('.token') ?? null) !== null;
+          return (readCodeElement()?.querySelector('.token') ?? null) !== null;
         }
 
         // Same asymmetry as the editor test: the wait IS the assertion when tokens are expected, while
@@ -202,9 +202,9 @@ describe('SyntaxHighlightingComponent', () => {
           return checkHasPrismToken();
         }
 
-        function readCodeEl(): Element | null {
+        function readCodeElement(): Element | null {
           const codeEls = Array.from(leaf.view.containerEl.querySelectorAll('.markdown-preview-view pre > code'));
-          return codeEls.find((codeEl) => codeEl.textContent.includes(CODE)) ?? null;
+          return codeEls.find((codeElement) => codeElement.textContent.includes(CODE)) ?? null;
         }
 
         // Rebuilds the reading view from scratch so the fence is highlighted against the CURRENT Prism
@@ -215,7 +215,7 @@ describe('SyntaxHighlightingComponent', () => {
           await app.workspace.revealLeaf(leaf);
           await waitUntil({
             message: 'the fence should render in reading view',
-            predicate: () => readCodeEl() !== null,
+            predicate: () => readCodeElement() !== null,
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
         }

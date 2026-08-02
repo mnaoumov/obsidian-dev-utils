@@ -38,8 +38,7 @@ export class CaseInsensitiveFileIndex {
    *
    * @param app - The Obsidian application instance whose vault this index mirrors.
    */
-  public constructor(protected readonly app: App) {
-  }
+  public constructor(protected readonly app: App) {}
 
   /**
    * Adds an abstract file to the index.
@@ -106,11 +105,13 @@ export class CaseInsensitiveFileIndex {
 
     const oldDescendantPrefix = `${oldKey}/`;
     const newDescendantPrefix = `${newKey}/`;
-    for (const [existingKey, existingValue] of Array.from(this.map.entries())) {
-      if (existingKey.startsWith(oldDescendantPrefix)) {
-        this.map.delete(existingKey);
-        this.map.set(newDescendantPrefix + existingKey.slice(oldDescendantPrefix.length), existingValue);
+    for (const [existingKey, existingValue] of Array.from(this.map)) {
+      if (!existingKey.startsWith(oldDescendantPrefix)) {
+        continue;
       }
+
+      this.map.delete(existingKey);
+      this.map.set(newDescendantPrefix + existingKey.slice(oldDescendantPrefix.length), existingValue);
     }
   }
 }

@@ -19,9 +19,9 @@ describe('ValueWrapper', () => {
     });
 
     it('should store an object value', () => {
-      const obj = { key: 'val' };
-      const wrapper = ValueWrapper.of(obj);
-      expect(wrapper.value).toBe(obj);
+      const $object = { key: 'val' };
+      const wrapper = ValueWrapper.of($object);
+      expect(wrapper.value).toBe($object);
     });
 
     it('should store null', () => {

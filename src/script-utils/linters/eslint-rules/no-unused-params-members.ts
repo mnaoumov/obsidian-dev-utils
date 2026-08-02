@@ -56,10 +56,10 @@ interface MaybeTypedNode {
   type?: unknown;
 }
 
-type ParamBinding = IdentifierBinding | PatternBinding;
+type ParameterBinding = IdentifierBinding | PatternBinding;
 
-interface ParamInfo {
-  readonly binding: ParamBinding;
+interface ParameterInfo {
+  readonly binding: ParameterBinding;
   readonly typeName: string;
 }
 
@@ -75,8 +75,8 @@ export const noUnusedParamsMembers: Rule.RuleModule = {
 
     return {
       ':function'(node: Rule.Node): void {
-        for (const param of record(node)['params'] as Rule.Node[]) {
-          const info = getParamInfo(param);
+        for (const parameter of record(node)['params'] as Rule.Node[]) {
+          const info = getParameterInfo(parameter);
           if (!info) {
             continue;
           }
@@ -246,27 +246,27 @@ function getInterfaceName(node: Rule.Node): string {
   return record(id)['name'] as string;
 }
 
-function getParamInfo(param: Rule.Node): ParamInfo | undefined {
-  const actualParam = nodeType(param) === 'TSParameterProperty' ? record(param)['parameter'] as Rule.Node : param;
+function getParameterInfo(parameter: Rule.Node): ParameterInfo | undefined {
+  const actualParameter = nodeType(parameter) === 'TSParameterProperty' ? record(parameter)['parameter'] as Rule.Node : parameter;
 
-  const typeName = getTypeReferenceName(actualParam);
+  const typeName = getTypeReferenceName(actualParameter);
   if (!typeName || !PARAMS_OPTIONS_SUFFIX_PATTERN.test(typeName)) {
     return undefined;
   }
 
-  if (actualParam.type === 'Identifier') {
-    return { binding: { name: record(actualParam)['name'] as string, type: 'identifier' }, typeName };
+  if (actualParameter.type === 'Identifier') {
+    return { binding: { name: record(actualParameter)['name'] as string, type: 'identifier' }, typeName };
   }
 
-  if (actualParam.type === 'ObjectPattern') {
-    return { binding: { pattern: actualParam, type: 'pattern' }, typeName };
+  if (actualParameter.type === 'ObjectPattern') {
+    return { binding: { pattern: actualParameter, type: 'pattern' }, typeName };
   }
 
   return undefined;
 }
 
-function getTypeReferenceName(param: Rule.Node): string | undefined {
-  const annotation = record(param)['typeAnnotation'];
+function getTypeReferenceName(parameter: Rule.Node): string | undefined {
+  const annotation = record(parameter)['typeAnnotation'];
   if (!isNode(annotation)) {
     return undefined;
   }

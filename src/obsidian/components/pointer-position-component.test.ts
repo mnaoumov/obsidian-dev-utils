@@ -41,8 +41,8 @@ function createMockApp(domWindows: Window[]): App {
         }
       },
       on: vi.fn().mockReturnValue(strictProxy<EventRef>({})),
-      onLayoutReady: (cb: () => void): void => {
-        cb();
+      onLayoutReady: (callback: () => void): void => {
+        callback();
       }
     }
   });

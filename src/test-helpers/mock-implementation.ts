@@ -27,7 +27,7 @@ export interface MockImplementationParams<
    * Replacement function receiving the original implementation and call args.
    *
    * @param originalImplementation - The original implementation of the method.
-   * @param args - The real call arguments.
+   * @param $arguments - The real call arguments.
    * @returns The return value of the method.
    */
   impl(this: T, originalImplementation: F, ...args: Parameters<F>): ReturnType<F>;
@@ -84,8 +84,8 @@ export function mockImplementation<
   const originalImplementation = map.get(method) as F;
 
   const spy = vi.spyOn(obj, method) as MockInstance;
-  spy.mockImplementation(function mockImpl(this: T, ...args: Parameters<F>): ReturnType<F> {
-    return impl.call(this, originalImplementation, ...args);
+  spy.mockImplementation(function mockImpl(this: T, ...$arguments: Parameters<F>): ReturnType<F> {
+    return impl.call(this, originalImplementation, ...$arguments);
   });
   return spy;
 }

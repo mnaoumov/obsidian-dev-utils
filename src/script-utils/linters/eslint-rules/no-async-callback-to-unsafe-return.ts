@@ -96,16 +96,16 @@ function containsPromiseReference(checker: TypeChecker, node: TypeNode): boolean
     }
 
     // Resolve type alias (following imports) and check its definition body
-    let symbol = checker.getSymbolAtLocation(node.typeName);
+    let $symbol = checker.getSymbolAtLocation(node.typeName);
     /* v8 ignore start -- Import aliases require multi-file setup not available in RuleTester. */
     // eslint-disable-next-line no-bitwise -- Bitwise flag check is idiomatic for TypeScript compiler API.
-    if (symbol && symbol.flags & SymbolFlags.Alias) {
-      symbol = checker.getAliasedSymbol(symbol);
+    if ($symbol && $symbol.flags & SymbolFlags.Alias) {
+      $symbol = checker.getAliasedSymbol($symbol);
     }
     /* v8 ignore stop */
-    const decl = symbol?.declarations?.[0];
-    if (decl && isTypeAliasDeclaration(decl)) {
-      return containsPromiseReference(checker, decl.type);
+    const declaration = $symbol?.declarations?.[0];
+    if (declaration && isTypeAliasDeclaration(declaration)) {
+      return containsPromiseReference(checker, declaration.type);
     }
   }
 
@@ -136,8 +136,8 @@ function isUnsafeReturnSignature(checker: TypeChecker, sig: Signature): boolean 
   // Check the syntactic return type annotation. If it contains a reference to
   // Promise/PromiseLike (directly or via a type alias), the caller explicitly
   // Handles async returns and should not be flagged.
-  const decl = sig.getDeclaration();
-  const returnTypeNode = decl.type;
+  const declaration = sig.getDeclaration();
+  const returnTypeNode = declaration.type;
   assertNonNullable(returnTypeNode, 'Signature declarations with any/unknown return always have a return type annotation');
 
   return !containsPromiseReference(checker, returnTypeNode);
@@ -152,9 +152,9 @@ export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
       CallExpression(node: Rule.Node): void {
         const callNode = node as TSESTree.CallExpression;
 
-        for (let i = 0; i < callNode.arguments.length; i++) {
-          const arg = callNode.arguments[i];
-          if (!arg || !isAsyncFunctionNode(arg)) {
+        for (let index = 0; index < callNode.arguments.length; index++) {
+          const argument = callNode.arguments[index];
+          if (!argument || !isAsyncFunctionNode(argument)) {
             continue;
           }
 
@@ -162,17 +162,17 @@ export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
           const calleeType = checker.getTypeAtLocation(tsCalleeNode);
 
           for (const sig of calleeType.getCallSignatures()) {
-            const param = sig.getParameters()[i];
-            if (!param) {
+            const parameter = sig.getParameters()[index];
+            if (!parameter) {
               continue;
             }
 
-            const paramType = checker.getTypeOfSymbol(param);
+            const parameterType = checker.getTypeOfSymbol(parameter);
 
-            if (hasUnsafeReturnCallSignature(checker, paramType)) {
+            if (hasUnsafeReturnCallSignature(checker, parameterType)) {
               context.report({
                 messageId: MESSAGE_ID,
-                node: arg
+                node: argument
               });
               break;
             }

@@ -28,27 +28,27 @@ const {
   mockInitFn,
   mockTLibFn
 } = vi.hoisted(() => {
-  const mockAddResourceBundleFn2 = vi.fn();
+  const mockAddResourceBundleFunction2 = vi.fn();
   // Mirrors i18next: `init()` flips `isInitialized`, which the real code reads as the single source of truth.
   const mockI18nextInstance2 = {
-    addResourceBundle: mockAddResourceBundleFn2,
+    addResourceBundle: mockAddResourceBundleFunction2,
     isInitialized: false
   };
-  const mockInitFn2 = vi.fn(() => {
+  const mockInitFunction2 = vi.fn(() => {
     mockI18nextInstance2.isInitialized = true;
     return noopAsync();
   });
-  const mockTLibFn2 = vi.fn((selector: unknown) => {
+  const mockTLibFunction2 = vi.fn((selector: unknown) => {
     if (typeof selector === 'function') {
       return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });
     }
     return 'mock-translated';
   });
   return {
-    mockAddResourceBundleFn: mockAddResourceBundleFn2,
+    mockAddResourceBundleFn: mockAddResourceBundleFunction2,
     mockI18nextInstance: mockI18nextInstance2,
-    mockInitFn: mockInitFn2,
-    mockTLibFn: mockTLibFn2
+    mockInitFn: mockInitFunction2,
+    mockTLibFn: mockTLibFunction2
   };
 });
 
@@ -112,10 +112,10 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       freshT(castTo<Parameters<typeof freshT>[0]>((translations: GenericObject) => translations['test']));
 
       // eslint-disable-next-line no-console -- Valid usage.
-      const callArgs = vi.mocked(console.debug).mock.calls[0];
-      assertNonNullable(callArgs);
+      const callArguments = vi.mocked(console.debug).mock.calls[0];
+      assertNonNullable(callArguments);
       // The debug library prefixes the namespace onto the message, so match on the message itself.
-      expect(callArgs[0]).toContain('I18N was not initialized, initializing default obsidian-dev-utils translations');
+      expect(callArguments[0]).toContain('I18N was not initialized, initializing default obsidian-dev-utils translations');
       // The real invokeAsyncSafely runs the fire-and-forget initI18N synchronously up to its first
       // Await, so the observable effect of auto-initialization is that init() was called once.
       expect(mockInitFn).toHaveBeenCalledTimes(1);
@@ -163,8 +163,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N(translationsMap, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = (mockInitFn.mock.calls[0] as unknown[])[0] as object;
-      expect(callArgs).toMatchObject({
+      const callArguments = (mockInitFn.mock.calls[0] as unknown[])[0] as object;
+      expect(callArguments).toMatchObject({
         fallbackLng: 'en',
         initAsync: false,
         interpolation: { escapeValue: false },
@@ -181,8 +181,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N(translationsMap, false);
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
-      expect(callArgs['resources']).toEqual({
+      const callArguments = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
+      expect(callArguments['resources']).toEqual({
         en: { translation: { greeting: 'Hello' } },
         fr: { translation: { greeting: 'Bonjour' } }
       });
@@ -218,8 +218,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await initI18N({ en: { test: 'value' } });
 
       expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArgs = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
-      expect(callArgs['initAsync']).toBe(true);
+      const callArguments = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
+      expect(callArguments['initAsync']).toBe(true);
     });
   });
 

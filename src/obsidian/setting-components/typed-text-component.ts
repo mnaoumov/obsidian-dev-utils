@@ -52,7 +52,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    *
    * @returns The validator element.
    */
-  public get validatorEl(): ValidatorElement {
+  public get validatorElement(): ValidatorElement {
     return this.inputEl;
   }
 

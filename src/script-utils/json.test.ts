@@ -33,7 +33,7 @@ interface NameJson {
   name: string;
 }
 
-interface ValJson {
+interface ValueJson {
   val: number;
 }
 
@@ -52,9 +52,9 @@ const {
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs')>();
+  const $module = await importOriginal<typeof import('node:fs')>();
   return {
-    ...mod,
+    ...$module,
     existsSync: mockExistsSync,
     readFileSync: mockReadFileSync,
     writeFileSync: mockWriteFileSync
@@ -62,9 +62,9 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs/promises')>();
+  const $module = await importOriginal<typeof import('node:fs/promises')>();
   return {
-    ...mod,
+    ...$module,
     readFile: mockReadFile,
     writeFile: mockWriteFile
   };
@@ -176,7 +176,7 @@ describe('editJson', () => {
 describe('editJsonSync', () => {
   it('should read, edit, and write back JSON synchronously', () => {
     mockReadFileSync.mockReturnValue('{"val":1}');
-    editJsonSync<ValJson>({
+    editJsonSync<ValueJson>({
       editFn: (data) => {
         data.val = 99;
       },

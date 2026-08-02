@@ -38,7 +38,7 @@ import {
 import {
   ensureDir,
   escapeJsString,
-  escapeJsxAttr,
+  escapeJsxAttr as escapeJsxAttribute,
   escapeMarkdown,
   escapeMdxAngleBrackets,
   escapeMdxBraces,
@@ -98,7 +98,7 @@ export function buildBacklinksFromContent(
   for (const [typeKey, info] of allTypes) {
     routeKeyToTypeKey.set(`${getNamespaceDir(info.namespace)}#${toTypeRouteSegment(info.namespace, info.name)}`, typeKey);
   }
-  const escapedBase = BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escapedBase = BASE_PATH.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
   const linkPattern = new RegExp(`${escapedBase}/api/(?<path>(?:[a-zA-Z0-9_@-]+/)+)`, 'g');
   for (const [sourceKey, { content }] of pageContents) {
     const referenced = new Set<string>();
@@ -106,10 +106,10 @@ export function buildBacklinksFromContent(
     for (const match of content.matchAll(linkPattern)) {
       const path = match.groups?.['path'] ?? '';
       const segments = path.split('/').filter(Boolean);
-      if (segments.length < 1) {
+      if (segments.length === 0) {
         continue;
       }
-      const typeName = segments[segments.length - 1] ?? '';
+      const typeName = segments.at(-1) ?? '';
       const namespace = segments.slice(0, -1).join('/');
       const routeKey = `${namespace}#${typeName}`;
       const resolvedKey = routeKeyToTypeKey.get(routeKey);
@@ -118,11 +118,11 @@ export function buildBacklinksFromContent(
       }
     }
 
-    for (const ref of referenced) {
-      if (!backlinks.has(ref)) {
-        backlinks.set(ref, []);
+    for (const reference of referenced) {
+      if (!backlinks.has(reference)) {
+        backlinks.set(reference, []);
       }
-      backlinks.get(ref)?.push(sourceKey);
+      backlinks.get(reference)?.push(sourceKey);
     }
   }
 
@@ -152,8 +152,8 @@ export function buildSidebarTree(types: Map<string, TypeInfo>): SidebarTreeNode 
  */
 export function computeOverviewSignature(name: string, info: TypeInfo): string | undefined {
   if (info.kind === 'function') {
-    const fn = info.methods[0];
-    return fn ? `function ${fn.signature}: ${fn.returnType}` : undefined;
+    const $function = info.methods[0];
+    return $function ? `function ${$function.signature}: ${$function.returnType}` : undefined;
   }
   if (info.kind === 'type') {
     return `type ${getDisplayName(info.name, info)} = ${info.typeAliasText ?? 'unknown'}`;
@@ -171,37 +171,37 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
   const componentImport = `import { MemberDetail } from "${getComponentImportPath(nsDir, typeFileDir)}";`;
 
   // Property pages (skip inherited — they live on the parent type)
-  const props = info.properties.filter((p) => !p.inheritedFrom);
-  for (const prop of props) {
-    const filePath = join(OUTPUT_DIR, nsDir, typeFileDir, `${memberSlug(prop.name)}.mdx`);
+  const properties = info.properties.filter((p) => !p.inheritedFrom);
+  for (const property of properties) {
+    const filePath = join(OUTPUT_DIR, nsDir, typeFileDir, `${memberSlug(property.name)}.mdx`);
     await ensureDir(filePath);
 
     const lines: string[] = [];
-    const propTitle = `${name}.${prop.name}`;
+    const propertyTitle = `${name}.${property.name}`;
     lines.push('---');
-    lines.push(`title: "${escapeYaml(propTitle)}"`);
-    lines.push(`slug: "api/${nsDir}/${typeRouteDir}/${memberRouteSegment(prop.name)}"`);
-    lines.push(`signature: "${escapeYaml(truncateSignature(`${prop.signature}: ${prop.type}`))}"`);
+    lines.push(`title: "${escapeYaml(propertyTitle)}"`);
+    lines.push(`slug: "api/${nsDir}/${typeRouteDir}/${memberRouteSegment(property.name)}"`);
+    lines.push(`signature: "${escapeYaml(truncateSignature(`${property.signature}: ${property.type}`))}"`);
     lines.push('editUrl: false');
     lines.push('sidebar:');
-    lines.push(`  label: "${escapeYaml(propTitle)}"`);
+    lines.push(`  label: "${escapeYaml(propertyTitle)}"`);
     lines.push('---');
     lines.push('');
     lines.push(componentImport);
     lines.push('');
 
     // Breadcrumb
-    lines.push(`[${name}](${BASE_PATH}/api/${nsDir}/${typeRouteDir}/) › ${prop.name}`);
+    lines.push(`[${name}](${BASE_PATH}/api/${nsDir}/${typeRouteDir}/) › ${property.name}`);
     lines.push('');
 
-    const staticAttr = prop.isStatic ? ' isStatic={true}' : '';
-    const typeAttr = ` type="${escapeJsxAttr(markdownToHtml(renderTypeWithLinks(prop.type, allTypes, name, info.namespace)))}"`;
-    const descAttr = prop.description ? ` description="${escapeJsxAttr(markdownToHtml(resolveLinks(prop.description, allTypes, info.namespace)))}"` : '';
-    const remarksAttr = prop.remarks ? ` remarks="${escapeJsxAttr(markdownToHtml(resolveLinks(prop.remarks, allTypes, info.namespace)))}"` : '';
-    const sinceAttr = prop.since ? ` since="${escapeJsxAttr(prop.since)}"` : '';
-    const examplesAttr = prop.examples.length > 0 ? ` examples={${JSON.stringify(prop.examples)}}` : '';
+    const staticAttribute = property.isStatic ? ' isStatic={true}' : '';
+    const typeAttribute = ` type="${escapeJsxAttribute(markdownToHtml(renderTypeWithLinks(property.type, allTypes, name, info.namespace)))}"`;
+    const descAttribute = property.description ? ` description="${escapeJsxAttribute(markdownToHtml(resolveLinks(property.description, allTypes, info.namespace)))}"` : '';
+    const remarksAttribute = property.remarks ? ` remarks="${escapeJsxAttribute(markdownToHtml(resolveLinks(property.remarks, allTypes, info.namespace)))}"` : '';
+    const sinceAttribute = property.since ? ` since="${escapeJsxAttribute(property.since)}"` : '';
+    const examplesAttribute = property.examples.length > 0 ? ` examples={${JSON.stringify(property.examples)}}` : '';
 
-    lines.push(`<MemberDetail${staticAttr}${typeAttr}${descAttr}${remarksAttr}${sinceAttr}${examplesAttr} />`);
+    lines.push(`<MemberDetail${staticAttribute}${typeAttribute}${descAttribute}${remarksAttribute}${sinceAttribute}${examplesAttribute} />`);
     lines.push('');
 
     await writeFile(filePath, lines.join('\n'), 'utf-8');
@@ -226,8 +226,7 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
     const displayName = `${name}.${overloadKey} method`;
     const firstOverload = overloads[0];
 
-    const lines: string[] = [];
-    lines.push('---');
+    const lines: string[] = ['---'];
     lines.push(`title: "${escapeYaml(displayName)}"`);
     lines.push(`slug: "api/${nsDir}/${typeRouteDir}/${overloadRouteSegment(overloadKey)}"`);
     if (firstOverload) {
@@ -275,15 +274,7 @@ export async function generateNamespaceIndexPages(
     const filePath = join(OUTPUT_DIR, nsDir, 'index.mdx');
     await ensureDir(filePath);
 
-    const lines: string[] = [];
-    lines.push('---');
-    lines.push(`title: "${namespace}"`);
-    lines.push(`slug: "api/${nsDir}"`);
-    lines.push('editUrl: false');
-    lines.push('sidebar:');
-    lines.push(`  label: "${namespace}"`);
-    lines.push('---');
-    lines.push('');
+    const lines: string[] = ['---', `title: "${namespace}"`, `slug: "api/${nsDir}"`, 'editUrl: false', 'sidebar:', `  label: "${namespace}"`, '---', ''];
 
     // Module @file overview text
     const overview = moduleOverviews.get(namespace);
@@ -303,17 +294,7 @@ export async function generateNamespaceIndexPages(
   }
 
   // Root API index page listing every module.
-  const rootLines: string[] = [];
-  rootLines.push('---');
-  rootLines.push('title: "API reference"');
-  rootLines.push('slug: "api"');
-  rootLines.push('editUrl: false');
-  rootLines.push('sidebar:');
-  rootLines.push('  label: "Overview"');
-  rootLines.push('---');
-  rootLines.push('');
-  rootLines.push('The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).');
-  rootLines.push('');
+  const rootLines: string[] = ['---', 'title: "API reference"', 'slug: "api"', 'editUrl: false', 'sidebar:', '  label: "Overview"', '---', '', 'The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).', ''];
   rootLines.push('## Modules');
   rootLines.push('');
   const sortedNamespaces = [...namespaces.keys()].sort((a, b) => a.localeCompare(b));
@@ -376,7 +357,7 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
   // Import statement
   const importStatement = getImportStatement(info);
   if (importStatement) {
-    lines.push(`<ImportStatement text="${escapeJsxAttr(importStatement)}" />`);
+    lines.push(`<ImportStatement text="${escapeJsxAttribute(importStatement)}" />`);
     lines.push('');
   }
 
@@ -413,10 +394,10 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
   }
 
   // Classes / interfaces: signature + extends/implements + constructor + member tables
-  const typeParamsAttr = info.typeParameters.length > 0 ? ` typeParams={${JSON.stringify(info.typeParameters)}}` : '';
-  const extendsAttr = info.baseTypes.length > 0 ? ` extends={${JSON.stringify(info.baseTypes)}}` : '';
-  const implementsAttr = info.implementsTypes.length > 0 ? ` implements={${JSON.stringify(info.implementsTypes)}}` : '';
-  lines.push(`<TypeSignature kind="${info.kind}" name="${name}"${typeParamsAttr}${extendsAttr}${implementsAttr} />`);
+  const typeParamsAttribute = info.typeParameters.length > 0 ? ` typeParams={${JSON.stringify(info.typeParameters)}}` : '';
+  const extendsAttribute = info.baseTypes.length > 0 ? ` extends={${JSON.stringify(info.baseTypes)}}` : '';
+  const implementsAttribute = info.implementsTypes.length > 0 ? ` implements={${JSON.stringify(info.implementsTypes)}}` : '';
+  lines.push(`<TypeSignature kind="${info.kind}" name="${name}"${typeParamsAttribute}${extendsAttribute}${implementsAttribute} />`);
   lines.push('');
 
   if (info.baseTypes.length > 0) {
@@ -467,9 +448,9 @@ export function renderConstructorMdx(lines: string[], name: string, info: TypeIn
   }
   const ctorSig = `new ${name}${constructor.signature}`;
   const ctorDesc = constructor.description
-    ? ` description="${escapeJsxAttr(markdownToHtml(resolveLinks(constructor.description, allTypes, info.namespace)))}"`
+    ? ` description="${escapeJsxAttribute(markdownToHtml(resolveLinks(constructor.description, allTypes, info.namespace)))}"`
     : '';
-  lines.push(`<ConstructorBlock signature="${escapeJsxAttr(ctorSig)}"${ctorDesc} />`);
+  lines.push(`<ConstructorBlock signature="${escapeJsxAttribute(ctorSig)}"${ctorDesc} />`);
   lines.push('');
 }
 
@@ -493,36 +474,36 @@ export function renderEnumPage(lines: string[], info: TypeInfo, allTypes: Map<st
 }
 
 export function renderFunctionPage(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
-  const fn = info.methods[0];
-  if (!fn) {
+  const $function = info.methods[0];
+  if (!$function) {
     return;
   }
 
   lines.push('**Signature:**');
   lines.push('');
   lines.push('```ts');
-  lines.push(`function ${fn.signature}: ${fn.returnType}`);
+  lines.push(`function ${$function.signature}: ${$function.returnType}`);
   lines.push('```');
   lines.push('');
 
-  if (fn.parameters.length > 0) {
+  if ($function.parameters.length > 0) {
     lines.push('**Parameters:**');
     lines.push('');
     lines.push('| Parameter | Type | Description |');
     lines.push('| :-- | :-- | :-- |');
-    for (const param of fn.parameters) {
+    for (const parameter of $function.parameters) {
       lines.push(
-        `| \`${param.name}\` | ${escapeMarkdown(escapeMdxAngleBrackets(renderTypeWithLinks(param.type, allTypes, info.name, info.namespace)))} | ${escapeMarkdown(resolveLinks(param.description, allTypes, info.namespace))} |`
+        `| \`${parameter.name}\` | ${escapeMarkdown(escapeMdxAngleBrackets(renderTypeWithLinks(parameter.type, allTypes, info.name, info.namespace)))} | ${escapeMarkdown(resolveLinks(parameter.description, allTypes, info.namespace))} |`
       );
     }
     lines.push('');
   }
 
-  const returnDesc = fn.returnDescription ? ` — ${escapeMdxAngleBrackets(resolveLinks(fn.returnDescription, allTypes, info.namespace))}` : '';
-  lines.push(`**Returns:** ${escapeMdxAngleBrackets(renderTypeWithLinks(fn.returnType, allTypes, info.name, info.namespace))}${returnDesc}`);
+  const returnDesc = $function.returnDescription ? ` — ${escapeMdxAngleBrackets(resolveLinks($function.returnDescription, allTypes, info.namespace))}` : '';
+  lines.push(`**Returns:** ${escapeMdxAngleBrackets(renderTypeWithLinks($function.returnType, allTypes, info.name, info.namespace))}${returnDesc}`);
   lines.push('');
 
-  for (const example of fn.examples) {
+  for (const example of $function.examples) {
     lines.push('**Example:**');
     lines.push('');
     lines.push(renderExampleMdx(example, allTypes, info.namespace));
@@ -532,25 +513,25 @@ export function renderFunctionPage(lines: string[], info: TypeInfo, allTypes: Ma
 
 export function renderMethodOverloadMdx(lines: string[], overload: MemberInfo, typeName: string, namespace: string, allTypes: Map<string, TypeInfo>): void {
   const sig = `${overload.signature}: ${overload.returnType}`;
-  const staticAttr = overload.isStatic ? ' isStatic={true}' : '';
-  const descAttr = overload.description ? ` description="${escapeJsxAttr(markdownToHtml(resolveLinks(overload.description, allTypes, namespace)))}"` : '';
-  const remarksAttr = overload.remarks ? ` remarks="${escapeJsxAttr(markdownToHtml(resolveLinks(overload.remarks, allTypes, namespace)))}"` : '';
-  const sinceAttr = overload.since ? ` since="${escapeJsxAttr(overload.since)}"` : '';
-  const returnTypeAttr = ` returnType="${escapeJsxAttr(markdownToHtml(renderTypeWithLinks(overload.returnType, allTypes, typeName, namespace)))}"`;
-  const returnDescAttr = overload.returnDescription
-    ? ` returnDescription="${escapeJsxAttr(markdownToHtml(resolveLinks(overload.returnDescription, allTypes, namespace)))}"`
+  const staticAttribute = overload.isStatic ? ' isStatic={true}' : '';
+  const descAttribute = overload.description ? ` description="${escapeJsxAttribute(markdownToHtml(resolveLinks(overload.description, allTypes, namespace)))}"` : '';
+  const remarksAttribute = overload.remarks ? ` remarks="${escapeJsxAttribute(markdownToHtml(resolveLinks(overload.remarks, allTypes, namespace)))}"` : '';
+  const sinceAttribute = overload.since ? ` since="${escapeJsxAttribute(overload.since)}"` : '';
+  const returnTypeAttribute = ` returnType="${escapeJsxAttribute(markdownToHtml(renderTypeWithLinks(overload.returnType, allTypes, typeName, namespace)))}"`;
+  const returnDescAttribute = overload.returnDescription
+    ? ` returnDescription="${escapeJsxAttribute(markdownToHtml(resolveLinks(overload.returnDescription, allTypes, namespace)))}"`
     : '';
-  const examplesAttr = overload.examples.length > 0 ? ` examples={${JSON.stringify(overload.examples)}}` : '';
+  const examplesAttribute = overload.examples.length > 0 ? ` examples={${JSON.stringify(overload.examples)}}` : '';
 
   const params = overload.parameters.map((p) => ({
     description: markdownToHtml(p.description || (p.name.endsWith('?') ? '*(Optional)*' : '')),
     name: p.name,
     type: markdownToHtml(renderTypeWithLinks(p.type, allTypes, typeName, namespace))
   }));
-  const paramsAttr = params.length > 0 ? ` parameters={${JSON.stringify(params)}}` : '';
+  const paramsAttribute = params.length > 0 ? ` parameters={${JSON.stringify(params)}}` : '';
 
   lines.push(
-    `<MemberDetail${staticAttr} signature="${escapeJsxAttr(sig)}"${descAttr}${remarksAttr}${sinceAttr}${returnTypeAttr}${returnDescAttr}${paramsAttr}${examplesAttr} />`
+    `<MemberDetail${staticAttribute} signature="${escapeJsxAttribute(sig)}"${descAttribute}${remarksAttribute}${sinceAttribute}${returnTypeAttribute}${returnDescAttribute}${paramsAttribute}${examplesAttribute} />`
   );
   lines.push('');
 }
@@ -569,9 +550,9 @@ export function renderMethodTableMdx(lines: string[], info: TypeInfo, allTypes: 
   for (const method of methods) {
     const desc = escapeJsString(markdownToHtml(resolveLinks(method.description, allTypes, info.namespace)));
     const staticPrefix = method.isStatic ? 'static ' : '';
-    const shortParams = method.parameters.map((p, i) => {
-      if (i === 0 && EVENT_METHODS.has(method.name) && (p.type.startsWith('"') || p.type.startsWith('\''))) {
-        return p.type.replace(/"/g, '\'');
+    const shortParams = method.parameters.map((p, index) => {
+      if (index === 0 && EVENT_METHODS.has(method.name) && (p.type.startsWith('"') || p.type.startsWith('\''))) {
+        return p.type.replaceAll('"', '\'');
       }
       return p.name;
     }).join(', ');
@@ -579,12 +560,12 @@ export function renderMethodTableMdx(lines: string[], info: TypeInfo, allTypes: 
     const sig = escapeJsString(shortSig);
     const slug = overloadRouteSegment(method.overloadKey);
     const returnType = markdownToHtml(renderTypeWithLinks(method.returnType, allTypes, info.name, info.namespace));
-    const inheritedAttr = method.inheritedFrom
+    const inheritedAttribute = method.inheritedFrom
       ? `, inheritedFrom: "${escapeJsString(markdownToHtml(typeLink(method.inheritedFrom, allTypes, info.namespace)))}"`
       : '';
     const href = memberHref(slug, method.inheritedFrom, allTypes, info.namespace);
     lines.push(
-      `  { signature: "${sig}", href: "${escapeJsString(href)}", returns: "${escapeJsString(returnType)}", description: "${desc}"${inheritedAttr} },`
+      `  { signature: "${sig}", href: "${escapeJsString(href)}", returns: "${escapeJsString(returnType)}", description: "${desc}"${inheritedAttribute} },`
     );
   }
   lines.push(']} />');
@@ -592,20 +573,20 @@ export function renderMethodTableMdx(lines: string[], info: TypeInfo, allTypes: 
 }
 
 export function renderPropertyTableMdx(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
-  const props = info.properties;
-  if (props.length === 0) {
+  const properties = info.properties;
+  if (properties.length === 0) {
     return;
   }
   lines.push('<PropertyTable rows={[');
-  for (const prop of props) {
-    const desc = escapeJsString(markdownToHtml(resolveLinks(prop.description, allTypes, info.namespace)));
-    const type = markdownToHtml(renderTypeWithLinks(prop.type, allTypes, info.name, info.namespace));
-    const inheritedAttr = prop.inheritedFrom
-      ? `, inheritedFrom: "${escapeJsString(markdownToHtml(typeLink(prop.inheritedFrom, allTypes, info.namespace)))}"`
+  for (const property of properties) {
+    const desc = escapeJsString(markdownToHtml(resolveLinks(property.description, allTypes, info.namespace)));
+    const type = markdownToHtml(renderTypeWithLinks(property.type, allTypes, info.name, info.namespace));
+    const inheritedAttribute = property.inheritedFrom
+      ? `, inheritedFrom: "${escapeJsString(markdownToHtml(typeLink(property.inheritedFrom, allTypes, info.namespace)))}"`
       : '';
-    const href = memberHref(memberRouteSegment(prop.name), prop.inheritedFrom, allTypes, info.namespace);
+    const href = memberHref(memberRouteSegment(property.name), property.inheritedFrom, allTypes, info.namespace);
     lines.push(
-      `  { name: "${escapeJsString(prop.name)}", href: "${escapeJsString(href)}", type: "${escapeJsString(type)}", description: "${desc}"${inheritedAttr} },`
+      `  { name: "${escapeJsString(property.name)}", href: "${escapeJsString(href)}", type: "${escapeJsString(type)}", description: "${desc}"${inheritedAttribute} },`
     );
   }
   lines.push(']} />');
@@ -613,8 +594,8 @@ export function renderPropertyTableMdx(lines: string[], info: TypeInfo, allTypes
 }
 
 export function renderTypeAliasPage(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
-  const typeParamsAttr = info.typeParameters.length > 0 ? ` typeParams={${JSON.stringify(info.typeParameters)}}` : '';
-  lines.push(`<TypeSignature kind="type" name="${info.name}"${typeParamsAttr} />`);
+  const typeParamsAttribute = info.typeParameters.length > 0 ? ` typeParams={${JSON.stringify(info.typeParameters)}}` : '';
+  lines.push(`<TypeSignature kind="type" name="${info.name}"${typeParamsAttribute} />`);
   lines.push('');
 
   const rhs = info.typeAliasText ?? 'unknown';
@@ -630,14 +611,14 @@ export function renderTypeAliasPage(lines: string[], info: TypeInfo, allTypes: M
 
 export function renderVariablePage(lines: string[], name: string, info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
   const keyword = info.variableKeyword ?? 'let';
-  const varType = info.variableType ?? 'unknown';
+  const variableType = info.variableType ?? 'unknown';
   lines.push('**Signature:**');
   lines.push('');
   lines.push('```ts');
-  lines.push(`${keyword} ${name}: ${varType}`);
+  lines.push(`${keyword} ${name}: ${variableType}`);
   lines.push('```');
   lines.push('');
-  lines.push(`**Type:** ${escapeMdxBraces(escapeMdxAngleBrackets(renderTypeWithLinks(varType, allTypes, name, info.namespace)))}`);
+  lines.push(`**Type:** ${escapeMdxBraces(escapeMdxAngleBrackets(renderTypeWithLinks(variableType, allTypes, name, info.namespace)))}`);
   lines.push('');
 }
 

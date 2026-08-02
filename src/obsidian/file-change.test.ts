@@ -17,7 +17,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { FileChange } from './file-change.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 import type {
-  ContentArgs,
+  ContentArgs as ContentArguments,
   ProcessParams
 } from './vault.ts';
 
@@ -65,7 +65,7 @@ vi.mock('../obsidian/frontmatter.ts', async (importOriginal) => {
   return {
     ...original,
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Spy wrapper passes through to original implementation.
-    parseFrontmatter: vi.fn((...args: Parameters<typeof original.parseFrontmatter>) => original.parseFrontmatter(...args))
+    parseFrontmatter: vi.fn((...$arguments: Parameters<typeof original.parseFrontmatter>) => original.parseFrontmatter(...$arguments))
   };
 });
 
@@ -112,7 +112,7 @@ function makeCanvasTextNodeChange(
   oldContent: string,
   newContent: string,
   nodeIndex: number,
-  originalRefStartOffset: number
+  originalReferenceStartOffset: number
 ): FileChange {
   return {
     newContent,
@@ -128,8 +128,8 @@ function makeCanvasTextNodeChange(
         link: oldContent,
         original: oldContent,
         position: {
-          end: { col: 0, line: 0, offset: originalRefStartOffset + oldContent.length },
-          start: { col: 0, line: 0, offset: originalRefStartOffset }
+          end: { col: 0, line: 0, offset: originalReferenceStartOffset + oldContent.length },
+          start: { col: 0, line: 0, offset: originalReferenceStartOffset }
         }
       },
       type: 'text'
@@ -437,7 +437,7 @@ describe('applyContentChanges', () => {
   it('should accept a function as changesProvider', async () => {
     const content = 'Hello [[old]] world';
 
-    const provider = vi.fn(({ content: c }: ContentArgs) => {
+    const provider = vi.fn(({ content: c }: ContentArguments) => {
       expect(c).toBe(content);
       return [makeContentChange('[[old]]', '[[new]]', 6)];
     });
@@ -696,14 +696,14 @@ describe('canvas changes via applyFileChanges', () => {
   });
 
   it('should preserve the escaped wikilink divider when a canvas text node embed is inside a table', async () => {
-    const nodeText = '| ![[old.png\\|500]] |';
+    const nodeText = String.raw`| ![[old.png\|500]] |`;
     const canvasData = {
       edges: [],
       nodes: [{ id: '1', text: nodeText, type: 'text' }]
     };
     // The regenerated link uses an unescaped divider; the escaping must be restored so the table
     // And the embed size survive.
-    const changes = [makeCanvasTextNodeChange('![[old.png\\|500]]', '![[new.png|500]]', 0, 2)];
+    const changes = [makeCanvasTextNodeChange(String.raw`![[old.png\|500]]`, '![[new.png|500]]', 0, 2)];
     let resultContent: null | string = null;
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
@@ -718,7 +718,7 @@ describe('canvas changes via applyFileChanges', () => {
     assertNonNullable(nodes);
     const firstNode = nodes[0];
     assertNonNullable(firstNode);
-    expect(firstNode['text']).toBe('| ![[new.png\\|500]] |');
+    expect(firstNode['text']).toBe(String.raw`| ![[new.png\|500]] |`);
   });
 
   it('should skip the rewrite (return null) for invalid JSON canvas content instead of throwing', async () => {

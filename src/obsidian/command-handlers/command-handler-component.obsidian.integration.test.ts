@@ -32,7 +32,7 @@ describe('CommandHandlerComponent menu-event teardown', () => {
         { app, lib: { AppActiveFileProvider, CommandHandler, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, waitUntil }, obsidianModule }
       ): Promise<MenuTeardownResult> {
         const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30000;
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
         const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
         if (!harnessPlugin) {

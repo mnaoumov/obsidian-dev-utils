@@ -136,10 +136,9 @@ describe('VaultTransaction', () => {
 
         await app.vault.createFolder(folderPath);
         await app.vault.createFolder('vt-subtree/nested');
-        for (let i = 0; i < childPaths.length; i++) {
-          const path = childPaths[i];
-          const content = childContents[i];
-          if (path === undefined || content === undefined) {
+        for (const [index, path] of childPaths.entries()) {
+          const content = childContents[index];
+          if (content === undefined) {
             throw new Error('test fixture mismatch');
           }
           await app.vault.create(path, content);
@@ -235,7 +234,7 @@ describe('VaultTransaction', () => {
           await leaf.openFile(file);
           const view = leaf.view;
           if (!(view instanceof MarkdownView)) {
-            throw new Error('expected a MarkdownView');
+            throw new TypeError('expected a MarkdownView');
           }
           const editor = view.editor;
 

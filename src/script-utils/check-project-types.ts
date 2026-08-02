@@ -121,7 +121,7 @@ export function checkProjectTypes(params: CheckProjectTypesParams): boolean {
     process.stdout.write(formatDiagnosticsWithColorAndContext(ignoredDiagnostics, FORMAT_HOST));
   }
 
-  return !keptDiagnostics.some((diagnostic) => diagnostic.category === DiagnosticCategory.Error);
+  return keptDiagnostics.every((diagnostic) => !(diagnostic.category === DiagnosticCategory.Error));
 }
 
 /**

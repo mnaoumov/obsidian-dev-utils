@@ -15,6 +15,7 @@ import {
 
 import type { ValueProvider } from '../../value-provider.ts';
 
+import { snapshot } from '../../array.ts';
 import { invokeAsyncSafely } from '../../async.ts';
 import { normalizeOptionalProperties } from '../../object-utils.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
@@ -294,7 +295,7 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   public override onunload(): void {
     // Cancel any delayed notice whose timer has not fired yet, so it never appears after unload.
-    for (const cancelPendingTimer of [...this.pendingTimerCancellations]) {
+    for (const cancelPendingTimer of snapshot(this.pendingTimerCancellations)) {
       cancelPendingTimer();
     }
     if (this.getPermanentNotice() !== this.notice) {
@@ -429,16 +430,16 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   private appendCloseButton(params: PluginNoticeComponentAppendCloseButtonParams): void {
     const { contentEl, getNotice, onCloseClick } = params;
-    const closeButtonEl = contentEl.createEl('button', {
+    const closeButtonElement = contentEl.createEl('button', {
       attr: { 'aria-label': t(($) => $.obsidianDevUtils.notices.closeAriaLabel) }
     });
     // Reuse Obsidian's modal close-button classes so this button matches the native modal close button
     // (look and hover); the stylesheet only positions it in the notice corner.
-    addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
-    closeButtonEl.addClasses([CssClass.ClickableIcon, CssClass.ModalHeaderButton]);
-    setIcon(closeButtonEl, 'x');
-    closeButtonEl.addEventListener('click', (evt) => {
-      evt.stopPropagation();
+    addPluginCssClasses(closeButtonElement, CssClass.PluginNoticeCloseButton);
+    closeButtonElement.addClasses([CssClass.ClickableIcon, CssClass.ModalHeaderButton]);
+    setIcon(closeButtonElement, 'x');
+    closeButtonElement.addEventListener('click', ($event) => {
+      $event.stopPropagation();
       invokeAsyncSafely(async () => {
         let isCancelled = false;
         await onCloseClick?.({
@@ -503,23 +504,23 @@ export class PluginNoticeComponent extends ComponentEx {
   private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): DocumentFragment {
     const { getNotice, message, onCloseClick, requiresExplicitClose = false, shouldShowCloseButton = true } = params;
     const fragment = createFragment();
-    const contentEl = fragment.createDiv();
-    addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
-    contentEl.appendChild(this.buildPrefixedMessage(message));
-    contentEl.addEventListener('click', (evt) => {
+    const contentElement = fragment.createDiv();
+    addPluginCssClasses(contentElement, CssClass.PluginNoticeContent);
+    contentElement.appendChild(this.buildPrefixedMessage(message));
+    contentElement.addEventListener('click', ($event) => {
       // A hard-to-close notice must not dismiss on any stray click; only its close button may hide it.
       if (requiresExplicitClose) {
-        evt.stopPropagation();
+        $event.stopPropagation();
         return;
       }
-      if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
-        evt.stopPropagation();
+      if ($event.target instanceof Element && $event.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+        $event.stopPropagation();
       }
     });
 
     if (requiresExplicitClose && shouldShowCloseButton) {
       this.appendCloseButton(normalizeOptionalProperties<PluginNoticeComponentAppendCloseButtonParams>({
-        contentEl,
+        contentEl: contentElement,
         getNotice: ensureNonNullable(getNotice),
         onCloseClick
       }));
@@ -536,9 +537,9 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   private buildPrefixedMessage(message: DocumentFragment | string): DocumentFragment {
     const fragment = createFragment();
-    const nameEl = createSpan({ text: this.pluginName });
-    addPluginCssClasses(nameEl, CssClass.PluginNoticeName);
-    fragment.appendChild(nameEl);
+    const nameElement = createSpan({ text: this.pluginName });
+    addPluginCssClasses(nameElement, CssClass.PluginNoticeName);
+    fragment.appendChild(nameElement);
     if (!this._loaded) {
       fragment.appendText(' (unloaded)');
     }
@@ -581,11 +582,11 @@ export class PluginNoticeComponent extends ComponentEx {
     // Letting a click reach an interactive child (a button, link, the close button, etc.) is what keeps
     // Its own handler working; the bubble-phase guard on the content wrapper then stops that click from
     // Bubbling up to Obsidian's dismiss handler, so the notice still stays open.
-    notice.containerEl.addEventListener('click', (evt) => {
-      if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+    notice.containerEl.addEventListener('click', ($event) => {
+      if ($event.target instanceof Element && $event.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
         return;
       }
-      evt.stopPropagation();
+      $event.stopPropagation();
     }, { capture: true });
   }
 

@@ -6,7 +6,7 @@
 
 import type {
   App as AppOriginal,
-  EventRef as EventRefOriginal,
+  EventRef as EventReferenceOriginal,
   Events as EventsOriginal
 } from 'obsidian';
 
@@ -22,7 +22,7 @@ import { MenuEventRegistrarComponent } from './menu-event-registrar-component.ts
 
 interface Mocks {
   app: AppOriginal;
-  eventRef: EventRefOriginal;
+  eventRef: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   registeredEvents: string[];
 }
@@ -31,20 +31,20 @@ function createMocks(): Mocks {
   const registeredEvents: string[] = [];
   const offref = vi.fn();
   const events = strictProxy<EventsOriginal>({ offref });
-  const eventRef = strictProxy<EventRefOriginal>({ e: events });
+  const eventReference = strictProxy<EventReferenceOriginal>({ e: events });
 
   const app = strictProxy<AppOriginal>({
     workspace: {
       on: vi.fn((event: string) => {
         registeredEvents.push(event);
-        return eventRef;
+        return eventReference;
       })
     }
   });
 
   return {
     app,
-    eventRef,
+    eventRef: eventReference,
     offref,
     registeredEvents
   };

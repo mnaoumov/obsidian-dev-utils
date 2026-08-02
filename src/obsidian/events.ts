@@ -65,7 +65,7 @@ export interface SubscribeEventParams<Source extends Events, EventName extends E
  * @typeParam Source - The {@link Events} source type.
  * @typeParam EventName - The event name.
  */
-type EventCallbackOf<Source extends Events, EventName extends EventNameOf<Source>> = ExtractEventMap<Source>[EventName] extends infer Args extends unknown[] ? (...args: Args) => unknown
+type EventCallbackOf<Source extends Events, EventName extends EventNameOf<Source>> = ExtractEventMap<Source>[EventName] extends infer Arguments extends unknown[] ? (...$arguments: Arguments) => unknown
   : never;
 
 /**

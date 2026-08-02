@@ -17,117 +17,117 @@ const ECHO_ARGS = resolve(dirname(fileURLToPath(import.meta.url)), '../../script
  * Executes the echo-args script with the given arguments via `exec` (array form)
  * and returns the parsed argv array as received by the child process.
  *
- * @param args - The arguments to pass.
+ * @param $arguments - The arguments to pass.
  * @returns The argv array as received by the child process.
  */
-async function echoArgs(...args: string[]): Promise<string[]> {
+async function echoArguments(...args: string[]): Promise<string[]> {
   const result = await exec(['node', ECHO_ARGS, ...args], { isQuiet: true });
   return JSON.parse(result) as string[];
 }
 
 describe('toCommandLine integration', () => {
   it('should pass a simple argument', async () => {
-    const received = await echoArgs('hello');
+    const received = await echoArguments('hello');
     expect(received).toEqual(['hello']);
   });
 
   it('should pass an argument with spaces', async () => {
-    const received = await echoArgs('hello world');
+    const received = await echoArguments('hello world');
     expect(received).toEqual(['hello world']);
   });
 
   it('should pass an argument with double quotes', async () => {
-    const received = await echoArgs('say "hi"');
+    const received = await echoArguments('say "hi"');
     expect(received).toEqual(['say "hi"']);
   });
 
   it('should pass an argument with backslashes', async () => {
-    const received = await echoArgs('C:\\Users\\test');
-    expect(received).toEqual(['C:\\Users\\test']);
+    const received = await echoArguments(String.raw`C:\Users\test`);
+    expect(received).toEqual([String.raw`C:\Users\test`]);
   });
 
   it('should pass an argument with trailing backslash and spaces', async () => {
-    const received = await echoArgs('C:\\path with spaces\\');
+    const received = await echoArguments('C:\\path with spaces\\');
     expect(received).toEqual(['C:\\path with spaces\\']);
   });
 
   it('should pass an empty argument', async () => {
-    const received = await echoArgs('');
+    const received = await echoArguments('');
     expect(received).toEqual(['']);
   });
 
   it('should pass multiple mixed arguments', async () => {
-    const received = await echoArgs('simple', 'with spaces', 'with "quotes"', '');
+    const received = await echoArguments('simple', 'with spaces', 'with "quotes"', '');
     expect(received).toEqual(['simple', 'with spaces', 'with "quotes"', '']);
   });
 
   it('should pass an argument with special shell characters', async () => {
-    const received = await echoArgs('a & b | c > d < e');
+    const received = await echoArguments('a & b | c > d < e');
     expect(received).toEqual(['a & b | c > d < e']);
   });
 
   it('should pass an argument with parentheses', async () => {
-    const received = await echoArgs('(hello)');
+    const received = await echoArguments('(hello)');
     expect(received).toEqual(['(hello)']);
   });
 
   it('should pass an argument with percent signs', async () => {
-    const received = await echoArgs('100%');
+    const received = await echoArguments('100%');
     expect(received).toEqual(['100%']);
   });
 
   it('should pass an argument with caret', async () => {
-    const received = await echoArgs('a^b');
+    const received = await echoArguments('a^b');
     expect(received).toEqual(['a^b']);
   });
 
   it('should pass an argument with exclamation marks', async () => {
-    const received = await echoArgs('hello!');
+    const received = await echoArguments('hello!');
     expect(received).toEqual(['hello!']);
   });
 
   it('should pass a complex nested quote argument', async () => {
-    const received = await echoArgs('she said, "you had me at \\"hello\\""');
-    expect(received).toEqual(['she said, "you had me at \\"hello\\""']);
+    const received = await echoArguments(String.raw`she said, "you had me at \"hello\""`);
+    expect(received).toEqual([String.raw`she said, "you had me at \"hello\""`]);
   });
 
   it('should pass an argument with a dollar sign', async () => {
-    const received = await echoArgs('price is $5 for $ITEM');
+    const received = await echoArguments('price is $5 for $ITEM');
     expect(received).toEqual(['price is $5 for $ITEM']);
   });
 
   it('should pass an argument with backticks', async () => {
-    const received = await echoArgs('run `whoami` now');
+    const received = await echoArguments('run `whoami` now');
     expect(received).toEqual(['run `whoami` now']);
   });
 
   it('should pass an argument with a glob star', async () => {
-    const received = await echoArgs('file*.md');
+    const received = await echoArguments('file*.md');
     expect(received).toEqual(['file*.md']);
   });
 
   it('should pass an argument with a semicolon', async () => {
-    const received = await echoArgs('a;b;c');
+    const received = await echoArguments('a;b;c');
     expect(received).toEqual(['a;b;c']);
   });
 
   it('should pass an argument with a single quote', async () => {
-    const received = await echoArgs('it\'s a trap');
+    const received = await echoArguments('it\'s a trap');
     expect(received).toEqual(['it\'s a trap']);
   });
 
   it('should pass an argument with a leading tilde', async () => {
-    const received = await echoArgs('~nothome');
+    const received = await echoArguments('~nothome');
     expect(received).toEqual(['~nothome']);
   });
 
   it('should pass an argument with newlines', async () => {
-    const received = await echoArgs('line1\nline2\nline3');
+    const received = await echoArguments('line1\nline2\nline3');
     expect(received).toEqual(['line1\nline2\nline3']);
   });
 
   it('should pass multiple arguments including one with newlines', async () => {
-    const received = await echoArgs('normal', 'has\nnewline', 'also normal');
+    const received = await echoArguments('normal', 'has\nnewline', 'also normal');
     expect(received).toEqual(['normal', 'has\nnewline', 'also normal']);
   });
 });

@@ -18,9 +18,9 @@ import { EVENT_METHODS } from './api-doc-constants.ts';
 /** Compute an overload key for methods with distinguishing first param (e.g. on('changed',...)) */
 export function computeOverloadKey(method: MemberInfo): string {
   if (EVENT_METHODS.has(method.name) && method.parameters.length > 0) {
-    const firstParam = method.parameters[0];
-    if (firstParam?.type.startsWith('"') || firstParam?.type.startsWith('\'')) {
-      const normalizedType = firstParam.type.replace(/"/g, '\'');
+    const firstParameter = method.parameters[0];
+    if (firstParameter?.type.startsWith('"') || firstParameter?.type.startsWith('\'')) {
+      const normalizedType = firstParameter.type.replaceAll('"', '\'');
       return `${method.name}(${normalizedType})`;
     }
   }
@@ -33,29 +33,29 @@ export async function ensureDir(filePath: string): Promise<void> {
 
 /** Escape text for use inside a JS string within a JSX expression: {...{key: "..."}} */
 export function escapeJsString(text: string): string {
-  return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ');
+  return text.replaceAll('\\', '\\\\').replaceAll('"', String.raw`\"`).replaceAll('\n', ' ');
 }
 
 /** Escape text for use inside a JSX attribute: attr="..." (MDX uses HTML-style parsing) */
 export function escapeJsxAttr(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/\n/g, ' ');
+  return text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('\n', ' ');
 }
 
 export function escapeMarkdown(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ').replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+  return text.replaceAll('|', String.raw`\|`).replaceAll('\n', ' ').replaceAll('{', String.raw`\{`).replaceAll('}', String.raw`\}`);
 }
 
 export function escapeMdxAngleBrackets(text: string): string {
-  return text.replace(/</g, '\\<').replace(/>/g, '\\>');
+  return text.replaceAll('<', String.raw`\<`).replaceAll('>', String.raw`\>`);
 }
 
 /** Escape curly braces in MDX markdown content to prevent JSX expression parsing */
 export function escapeMdxBraces(text: string): string {
-  return text.replace(/\{/g, '\\{').replace(/\}/g, '\\}');
+  return text.replaceAll('{', String.raw`\{`).replaceAll('}', String.raw`\}`);
 }
 
 export function escapeYaml(text: string): string {
-  return text.replace(/"/g, '\\"');
+  return text.replaceAll('"', String.raw`\"`);
 }
 
 const SIGNATURE_MAX_LENGTH = 160;
@@ -79,7 +79,7 @@ export function escapeMdxProse(text: string): string {
   return result;
 
   function escapeMdxProseChars(chunk: string): string {
-    return chunk.replace(/[<{}]/g, (char) => `\\${char}`);
+    return chunk.replaceAll(/[<{}]/g, (char) => `\\${char}`);
   }
 }
 
@@ -97,7 +97,7 @@ export function foldTsDocParagraphs(text: string): string {
       }
       return seg.text
         .split(/\n{2,}/)
-        .map((paragraph) => paragraph.replace(/\n/g, ' '))
+        .map((paragraph) => paragraph.replaceAll('\n', ' '))
         .join('\n\n');
     })
     .map((segment) => segment.trim())
@@ -176,47 +176,49 @@ export function segmentMarkdown(text: string): MarkdownSegment[] {
   const lines = text.split('\n');
   const segments: MarkdownSegment[] = [];
   let proseBuffer: string[] = [];
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i] ?? '';
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index] ?? '';
     const openMatch = /^\s*(?<fence>`{3,}|~{3,})(?<lang>.*)$/.exec(line);
     if (openMatch?.groups) {
       const fenceChars = openMatch.groups['fence'] ?? '```';
       const fenceChar = fenceChars[0] ?? '`';
-      const fenceLen = fenceChars.length;
+      const fenceLength = fenceChars.length;
       const lang = (openMatch.groups['lang'] ?? '').trim();
-      const closeRe = new RegExp(`^\\s*\\${fenceChar}{${String(fenceLen)},}\\s*$`);
+      const closeRe = new RegExp(`^\\s*\\${fenceChar}{${String(fenceLength)},}\\s*$`);
       const codeLines: string[] = [];
-      i++;
-      while (i < lines.length && !closeRe.test(lines[i] ?? '')) {
-        codeLines.push(lines[i] ?? '');
-        i++;
+      index++;
+      while (index < lines.length && !closeRe.test(lines[index] ?? '')) {
+        codeLines.push(lines[index] ?? '');
+        index++;
       }
-      if (i < lines.length) {
-        i++;
+      if (index < lines.length) {
+        index++;
       }
       flushProse();
       segments.push({ lang, text: codeLines.join('\n'), type: 'code' });
       continue;
     }
     proseBuffer.push(line);
-    i++;
+    index++;
   }
   flushProse();
   return segments;
 
   function flushProse(): void {
-    if (proseBuffer.length > 0) {
-      segments.push({ text: proseBuffer.join('\n'), type: 'prose' });
-      proseBuffer = [];
+    if (proseBuffer.length === 0) {
+      return;
     }
+
+    segments.push({ text: proseBuffer.join('\n'), type: 'prose' });
+    proseBuffer = [];
   }
 }
 
 export function simplifyType(typeText: string): string {
   return typeText
-    .replace(/import\("[^"]+"\)\./g, '')
-    .replace(/import\('[^']+'\)\./g, '');
+    .replaceAll(/import\("[^"]+"\)\./g, '')
+    .replaceAll(/import\('[^']+'\)\./g, '');
 }
 
 /**
@@ -235,7 +237,7 @@ export function toRouteSegment(segment: string): string {
  * the internal links that point at it, so URLs read as pretty PascalCase (e.g. `/api/.../TypeName/`).
  */
 export function toRouteSegmentPreserveCase(segment: string): string {
-  const cleaned = segment.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const cleaned = segment.replaceAll(/[^a-zA-Z0-9]+/g, '-').replaceAll(/^-|-$/g, '');
   return cleaned || 'unnamed';
 }
 
@@ -244,7 +246,7 @@ export function toRouteSegmentPreserveCase(segment: string): string {
  * single spaces and truncate to a card-friendly length with an ellipsis.
  */
 export function truncateSignature(signature: string): string {
-  const collapsed = signature.replace(/\s+/g, ' ').trim();
+  const collapsed = signature.replaceAll(/\s+/g, ' ').trim();
   if (collapsed.length <= SIGNATURE_MAX_LENGTH) {
     return collapsed;
   }
@@ -253,10 +255,10 @@ export function truncateSignature(signature: string): string {
 
 function slugifyMemberName(name: string): string {
   const cleaned = name
-    .replace(/^["']|["']$/g, '')
-    .replace(/[^a-zA-Z0-9]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replaceAll(/^["']|["']$/g, '')
+    .replaceAll(/[^a-zA-Z0-9]/g, '-')
+    .replaceAll(/-+/g, '-')
+    .replaceAll(/^-|-$/g, '');
   if (cleaned === 'index') {
     // A member literally named `index` would write `index.mdx`, colliding with the type-overview
     // `index.mdx` in the same directory (one silently overwrites the other, 404-ing the loser).
@@ -267,10 +269,10 @@ function slugifyMemberName(name: string): string {
 
 function slugifyOverloadKey(overloadKey: string): string {
   return overloadKey
-    .replace(/["'()]/g, ' ')
-    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .replaceAll(/["'()]/g, ' ')
+    .replaceAll(/[^a-zA-Z0-9\s]/g, '')
     .trim()
-    .replace(/\s+/g, '-');
+    .replaceAll(/\s+/g, '-');
 }
 
 const OG_DESCRIPTION_MAX_LENGTH = 160;
@@ -278,13 +280,13 @@ const OG_DESCRIPTION_MAX_LENGTH = 160;
 /** Strip markdown formatting to plain text for use in meta descriptions */
 export function stripMarkdown(text: string): string {
   return text
-    .replace(/\{@link\s+(?:[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...args) => {
-      const groups = args[args.length - 1] as Record<string, string | undefined>;
+    .replaceAll(/\{@link\s+(?:[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...$arguments) => {
+      const groups = $arguments.at(-1) as Record<string, string | undefined>;
       return groups['display'] ?? '';
     })
-    .replace(/\[(?<text>[^\]]+)\]\([^)]+\)/g, '$<text>')
-    .replace(/[`*_~]/g, '')
-    .replace(/\s+/g, ' ')
+    .replaceAll(/\[(?<text>[^\]]+)\]\([^)]+\)/g, '$<text>')
+    .replaceAll(/[`*_~]/g, '')
+    .replaceAll(/\s+/g, ' ')
     .trim()
     .slice(0, OG_DESCRIPTION_MAX_LENGTH);
 }

@@ -989,7 +989,7 @@ describe('formatOverExposureFindings', () => {
   it('should canonicalize a backslash baseFolder (Windows process.cwd()) before matching posix finding paths', () => {
     const report = formatOverExposureFindings([
       buildFinding({ column: 8, filePath: '/proj/sub/a.ts', line: 22, name: 'helper', suggestedExposure: 'private' })
-    ], { baseFolder: '\\proj\\sub' });
+    ], { baseFolder: String.raw`\proj\sub` });
 
     expect(report).toContain('a.ts\n');
     expect(report).toContain('22:8');

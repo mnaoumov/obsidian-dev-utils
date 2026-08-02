@@ -25,7 +25,7 @@ import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
  * Selects a community plugin either by its id ({@link CommunityPluginByIdRef}) or by its display name
  * ({@link CommunityPluginByNameRef}).
  */
-export type CommunityPluginRef = CommunityPluginByIdRef | CommunityPluginByNameRef;
+export type CommunityPluginRef = CommunityPluginByIdReference | CommunityPluginByNameReference;
 
 /**
  * A single result of {@link searchCommunityPlugins}.
@@ -93,7 +93,7 @@ export type UninstallCommunityPluginParams = CommunityPluginOperationContext & C
 /**
  * Selects a community plugin by its id.
  */
-interface CommunityPluginByIdRef {
+interface CommunityPluginByIdReference {
   /**
    * The plugin id.
    */
@@ -103,7 +103,7 @@ interface CommunityPluginByIdRef {
 /**
  * Selects a community plugin by its display name (as listed in Obsidian's community registry).
  */
-interface CommunityPluginByNameRef {
+interface CommunityPluginByNameReference {
   /**
    * The plugin display name.
    */
@@ -442,15 +442,15 @@ async function getPluginManifest(repo: string, version: string): Promise<PluginM
   return response.json as PluginManifest;
 }
 
-async function resolveCommunityPluginId(ref: CommunityPluginRef): Promise<string> {
-  if ('pluginId' in ref) {
-    return ref.pluginId;
+async function resolveCommunityPluginId(reference: CommunityPluginRef): Promise<string> {
+  if ('pluginId' in reference) {
+    return reference.pluginId;
   }
 
   const entries = await getCommunityPluginEntries();
-  const entry = entries.find((candidate) => candidate.name === ref.pluginName);
+  const entry = entries.find((candidate) => candidate.name === reference.pluginName);
   if (!entry) {
-    throw new Error(`Plugin named '${ref.pluginName}' was not found in the Obsidian community plugins registry.`);
+    throw new Error(`Plugin named '${reference.pluginName}' was not found in the Obsidian community plugins registry.`);
   }
   return entry.id;
 }

@@ -45,8 +45,8 @@ vi.mock('./editor.ts', () => ({
 }));
 
 vi.mock('./i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: GenericObject) => unknown) =>
-    fn({
+  t: vi.fn(($function: (messages: GenericObject) => unknown) =>
+    $function({
       obsidianDevUtils: {
         resourceLock: {
           lockedByTooltip: 'Locked by',
@@ -101,8 +101,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  for (const el of Array.from(activeDocument.body.querySelectorAll('.status-bar'))) {
-    el.remove();
+  for (const element of Array.from(activeDocument.body.querySelectorAll('.status-bar'))) {
+    element.remove();
   }
 });
 
@@ -122,16 +122,16 @@ function createMarkdownView(path: string, hasTabStatusContainer = true): Markdow
   return view;
 }
 
-function dispatchAuxClick(el: EventTarget, button: number): void {
-  el.dispatchEvent(new MouseEvent('auxclick', { button, cancelable: true }));
+function dispatchAuxClick(element: EventTarget, button: number): void {
+  element.dispatchEvent(new MouseEvent('auxclick', { button, cancelable: true }));
 }
 
-function dispatchClick(el: EventTarget): void {
-  el.dispatchEvent(new MouseEvent('click', { cancelable: true }));
+function dispatchClick(element: EventTarget): void {
+  element.dispatchEvent(new MouseEvent('click', { cancelable: true }));
 }
 
-function dispatchContextMenu(el: EventTarget): void {
-  el.dispatchEvent(new MouseEvent('contextmenu', { cancelable: true }));
+function dispatchContextMenu(element: EventTarget): void {
+  element.dispatchEvent(new MouseEvent('contextmenu', { cancelable: true }));
 }
 
 async function flushAsync(): Promise<void> {
@@ -243,9 +243,9 @@ describe('lockResourceForPath', () => {
 
   it('should return a Disposable that releases the lock on dispose', () => {
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
-    const removeSpy = vi.spyOn(iconEl, 'remove');
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
+    const removeSpy = vi.spyOn(iconElement, 'remove');
     stubLeaves(leafOf(view));
 
     const disposable = lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
@@ -296,9 +296,9 @@ describe('isResourceLockedForPathByAncestor', () => {
 describe('unlockResourceForPath', () => {
   it('should unlock views and unregister events when the last lock is released', () => {
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
-    const removeSpy = vi.spyOn(iconEl, 'remove');
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
+    const removeSpy = vi.spyOn(iconElement, 'remove');
     const offrefSpy = vi.spyOn(app.workspace, 'offref');
     stubLeaves(leafOf(view));
 
@@ -397,18 +397,18 @@ describe('lock indicators', () => {
   it('should add a status-bar item when the active note is locked and remove it on unlock', () => {
     const view = createMarkdownView('note.md');
     setActiveView(view);
-    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    const statusBarElement = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
 
     lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
-    expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
+    expect(statusBarElement.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
     // A second reconcile must not duplicate the item.
     app.workspace.trigger('layout-change');
-    expect(statusBarEl.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
+    expect(statusBarElement.querySelectorAll('.obsidian-dev-utils-lock-indicator')).toHaveLength(1);
 
     unlockResourceForPath(app, 'note.md', 'test-plugin');
-    expect(statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
+    expect(statusBarElement.querySelector('.obsidian-dev-utils-lock-indicator')).toBeNull();
   });
 
   it('should not add a status-bar item when the window has no status bar', () => {
@@ -647,13 +647,13 @@ describe('release on abort', () => {
 describe('unlock context menu', () => {
   it('should build an unlock menu item on right-click', () => {
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
 
     const menu = getMenu();
     assertNonNullable(menu);
@@ -665,13 +665,13 @@ describe('unlock context menu', () => {
 
   it('should build an unlock menu item on left-click', () => {
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchClick(iconEl);
+    dispatchClick(iconElement);
 
     const menu = getMenu();
     assertNonNullable(menu);
@@ -684,13 +684,13 @@ describe('unlock context menu', () => {
   it('should build an unlock menu item on middle-click', () => {
     const MIDDLE_MOUSE_BUTTON = 1;
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchAuxClick(iconEl, MIDDLE_MOUSE_BUTTON);
+    dispatchAuxClick(iconElement, MIDDLE_MOUSE_BUTTON);
 
     const menu = getMenu();
     assertNonNullable(menu);
@@ -702,14 +702,14 @@ describe('unlock context menu', () => {
   it('should ignore an auxclick from a non-middle button', () => {
     const RIGHT_MOUSE_BUTTON = 2;
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
     // The right button's auxclick is handled by the contextmenu listener, so auxclick must ignore it.
-    dispatchAuxClick(iconEl, RIGHT_MOUSE_BUTTON);
+    dispatchAuxClick(iconElement, RIGHT_MOUSE_BUTTON);
 
     expect(showSpy).not.toHaveBeenCalled();
   });
@@ -717,14 +717,14 @@ describe('unlock context menu', () => {
   it('should abort and release the lock when the unlock is confirmed', async () => {
     vi.mocked(confirm).mockResolvedValue(true);
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
 
     const menu = getMenu();
     assertNonNullable(menu);
@@ -742,13 +742,13 @@ describe('unlock context menu', () => {
     vi.mocked(confirm).mockResolvedValue(false);
     castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Move selection', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
     const menu = getMenu();
     assertNonNullable(menu);
     const item = menu.items__[0];
@@ -767,8 +767,8 @@ describe('unlock context menu', () => {
     vi.mocked(confirm).mockResolvedValue(false);
     castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
@@ -776,7 +776,7 @@ describe('unlock context menu', () => {
     // The same plugin locks the same note for the same operation twice; the confirmation lists it once.
     component.lockForPath({ abortController: new AbortController(), operationName: 'Move selection', pathOrFile: 'note.md' });
     component.lockForPath({ abortController: new AbortController(), operationName: 'Move selection', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
     const menu = getMenu();
     assertNonNullable(menu);
     const item = menu.items__[0];
@@ -792,14 +792,14 @@ describe('unlock context menu', () => {
   it('should release a lock that has no abort controller when the unlock is confirmed', async () => {
     vi.mocked(confirm).mockResolvedValue(true);
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     // No abortController: the unlock cannot cancel an operation, but must still release the lock.
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
     const menu = getMenu();
     assertNonNullable(menu);
     const item = menu.items__[0];
@@ -813,14 +813,14 @@ describe('unlock context menu', () => {
   it('should abort the lock when the unlock is confirmed', async () => {
     vi.mocked(confirm).mockResolvedValue(true);
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
 
     const menu = getMenu();
     assertNonNullable(menu);
@@ -836,14 +836,14 @@ describe('unlock context menu', () => {
   it('should not abort the lock when the unlock is canceled', async () => {
     vi.mocked(confirm).mockResolvedValue(false);
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     const abortController = new AbortController();
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
 
     const menu = getMenu();
     assertNonNullable(menu);
@@ -862,9 +862,9 @@ describe('unlock context menu', () => {
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
-    assertNonNullable(tabIconEl);
-    dispatchContextMenu(tabIconEl);
+    const tabIconElement = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(tabIconElement);
+    dispatchContextMenu(tabIconElement);
 
     assertNonNullable(getMenu());
   });
@@ -872,14 +872,14 @@ describe('unlock context menu', () => {
   it('should open the unlock menu from the status-bar item for the active note', () => {
     const view = createMarkdownView('note.md');
     setActiveView(view);
-    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    const statusBarElement = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
-    assertNonNullable(statusBarItemEl);
-    dispatchContextMenu(statusBarItemEl);
+    const statusBarItemElement = statusBarElement.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemElement);
+    dispatchContextMenu(statusBarItemElement);
 
     assertNonNullable(getMenu());
   });
@@ -887,17 +887,17 @@ describe('unlock context menu', () => {
   it('should not open a status-bar unlock menu when there is no active note', () => {
     const view = createMarkdownView('note.md');
     setActiveView(view);
-    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    const statusBarElement = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
     lockResourceForPath({ app, operationName: 'Test operation', pathOrFile: 'note.md', pluginId: 'test-plugin' });
-    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
-    assertNonNullable(statusBarItemEl);
+    const statusBarItemElement = statusBarElement.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemElement);
 
     // The active note is gone by the time the status-bar item is right-clicked.
     setActiveView(null);
-    dispatchContextMenu(statusBarItemEl);
+    dispatchContextMenu(statusBarItemElement);
 
     expect(showSpy).not.toHaveBeenCalled();
   });
@@ -906,13 +906,13 @@ describe('unlock context menu', () => {
     vi.mocked(confirm).mockResolvedValue(false);
     castTo<MockAppPlugins>(app).plugins = { manifests: { 'test-plugin': { name: 'Test Plugin' } } };
     const view = createMarkdownView('note.md');
-    const iconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    const iconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconElement);
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    dispatchContextMenu(iconEl);
+    dispatchContextMenu(iconElement);
     const menu = getMenu();
     assertNonNullable(menu);
     const item = menu.items__[0];
@@ -968,25 +968,25 @@ describe('lock type-attempt flash', () => {
 
   it('should flash the lock indicators when typing is attempted in a locked view', () => {
     const view = createMarkdownView('note.md');
-    const actionIconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
+    const actionIconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(actionIconElement);
     stubLeaves(leafOf(view));
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), operationName: 'Test operation', pathOrFile: 'note.md' });
-    const tabIconEl = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
-    assertNonNullable(tabIconEl);
-    expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
+    const tabIconElement = view.leaf.tabHeaderStatusContainerEl?.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(tabIconElement);
+    expect(actionIconElement.hasClass(FLASH_CLASS)).toBe(false);
 
     view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
 
-    expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(true);
-    expect(tabIconEl.hasClass(FLASH_CLASS)).toBe(true);
+    expect(actionIconElement.hasClass(FLASH_CLASS)).toBe(true);
+    expect(tabIconElement.hasClass(FLASH_CLASS)).toBe(true);
   });
 
   it('should stop flashing after the view is unlocked', () => {
     const view = createMarkdownView('note.md');
-    const actionIconEl = createDiv();
-    vi.spyOn(view, 'addAction').mockReturnValue(actionIconEl);
+    const actionIconElement = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(actionIconElement);
     stubLeaves(leafOf(view));
 
     const component = new ResourceLockComponent(app, 'test-plugin');
@@ -995,7 +995,7 @@ describe('lock type-attempt flash', () => {
 
     view.contentEl.dispatchEvent(new Event('beforeinput', { bubbles: true }));
 
-    expect(actionIconEl.hasClass(FLASH_CLASS)).toBe(false);
+    expect(actionIconElement.hasClass(FLASH_CLASS)).toBe(false);
   });
 
   it('should beep once (throttled) on repeated type attempts in a locked view', () => {
@@ -1179,17 +1179,17 @@ describe('subtree locking', () => {
     const lockedView = createMarkdownView('folder/a.md');
     const unlockedView = createMarkdownView('outside.md');
     setActiveView(lockedView);
-    const statusBarEl = lockedView.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    const statusBarElement = lockedView.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(lockedView));
     const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
-    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
-    assertNonNullable(statusBarItemEl);
+    const statusBarItemElement = statusBarElement.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemElement);
 
     // The active note switches to an unlocked one before the right-click, so no owner resolves.
     setActiveView(unlockedView);
-    dispatchContextMenu(statusBarItemEl);
+    dispatchContextMenu(statusBarItemElement);
 
     expect(showSpy).not.toHaveBeenCalled();
   });
@@ -1236,14 +1236,14 @@ describe('subtree locking', () => {
   it('should show and wire the status-bar item for an active note under a subtree lock', () => {
     const view = createMarkdownView('folder/a.md');
     setActiveView(view);
-    const statusBarEl = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
+    const statusBarElement = view.containerEl.ownerDocument.body.createDiv({ cls: 'status-bar' });
     stubLeaves(leafOf(view));
     const getMenu = captureMenuOnShow();
 
     new ResourceLockComponent(app, 'test-plugin').lockForPath({ abortController: new AbortController(), mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
-    const statusBarItemEl = statusBarEl.querySelector('.obsidian-dev-utils-lock-indicator');
-    assertNonNullable(statusBarItemEl);
-    dispatchContextMenu(statusBarItemEl);
+    const statusBarItemElement = statusBarElement.querySelector('.obsidian-dev-utils-lock-indicator');
+    assertNonNullable(statusBarItemElement);
+    dispatchContextMenu(statusBarItemElement);
 
     const menu = getMenu();
     assertNonNullable(menu);

@@ -36,8 +36,8 @@ interface TypingResult {
 }
 
 const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
-const REPORTED_REG_EXP = '/^Inbox\\/[^\\/]*$/';
-const INVALID_REG_EXP = '/^Inbox\\/';
+const REPORTED_REG_EXP = String.raw`/^Inbox\/[^\/]*$/`;
+const INVALID_REG_EXP = String.raw`/^Inbox\/`;
 
 describe('PathSettings', () => {
   it('should keep a real settings tab working while an un-parseable regex is typed', async () => {
@@ -119,19 +119,19 @@ describe('PathSettings', () => {
         const initialNoticeCount = getNoticeCount();
 
         try {
-          const textAreaEl = ensureNonNullable(tab.containerEl.querySelector<HTMLTextAreaElement>('textarea'), 'The multiple text component is missing');
+          const textAreaElement = ensureNonNullable(tab.containerEl.querySelector<HTMLTextAreaElement>('textarea'), 'The multiple text component is missing');
 
           for (let length = 1; length <= reportedRegExp.length; length++) {
-            await type(textAreaEl, reportedRegExp.slice(0, length));
+            await type(textAreaElement, reportedRegExp.slice(0, length));
           }
 
           await waitUntilOrGiveUp(() => savedData !== null);
 
-          const validationMessageForCompletedRegExp = textAreaEl.validationMessage;
+          const validationMessageForCompletedRegExp = textAreaElement.validationMessage;
           const isInboxNoteIgnored = settingsComponent.settings.isPathIgnored('Inbox/note.md');
 
-          await type(textAreaEl, invalidRegExp);
-          await waitUntilOrGiveUp(() => textAreaEl.validationMessage !== '');
+          await type(textAreaElement, invalidRegExp);
+          await waitUntilOrGiveUp(() => textAreaElement.validationMessage !== '');
 
           return {
             asyncErrors,
@@ -140,7 +140,7 @@ describe('PathSettings', () => {
             noticeCount: getNoticeCount(),
             savedExcludePaths: (savedData as null | Record<string, unknown>)?.['excludePaths'],
             validationMessageForCompletedRegExp,
-            validationMessageForInvalidRegExp: textAreaEl.validationMessage
+            validationMessageForInvalidRegExp: textAreaElement.validationMessage
           };
         } finally {
           registration[Symbol.dispose]();
@@ -152,9 +152,9 @@ describe('PathSettings', () => {
           return activeDocument.body.querySelectorAll('.notice').length;
         }
 
-        async function type(textAreaEl: HTMLTextAreaElement, value: string): Promise<void> {
-          textAreaEl.value = value;
-          textAreaEl.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        async function type(textAreaElement: HTMLTextAreaElement, value: string): Promise<void> {
+          textAreaElement.value = value;
+          textAreaElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
           await sleep(KEYSTROKE_SETTLE_TIMEOUT_IN_MILLISECONDS);
         }
 

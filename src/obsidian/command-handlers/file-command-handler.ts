@@ -204,7 +204,7 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
       leaf,
       source
     } = params;
-    if (!abstractFiles.every((f) => isFile(f))) {
+    if (abstractFiles.some((f) => !isFile(f))) {
       return false;
     }
     return this.shouldAddToFilesMenu({

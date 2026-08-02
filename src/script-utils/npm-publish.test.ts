@@ -31,17 +31,17 @@ vi.mock('../script-utils/root.ts', () => ({
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs')>();
+  const $module = await importOriginal<typeof import('node:fs')>();
   return {
-    ...mod,
+    ...$module,
     existsSync: mockExistsSync
   };
 });
 
 vi.mock('node:process', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:process')>();
+  const $module = await importOriginal<typeof import('node:process')>();
   return {
-    ...mod,
+    ...$module,
     default: mockProcess,
     loadEnvFile: mockLoadEnvFile
   };

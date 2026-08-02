@@ -39,7 +39,7 @@ describe('url', () => {
 
   describe('normalizeFileUrl', () => {
     it('should convert backslashes to forward slashes in a file URL', () => {
-      expect(normalizeFileUrl('file:///F:\\dir\\x.txt')).toBe('file:///F:/dir/x.txt');
+      expect(normalizeFileUrl(String.raw`file:///F:\dir\x.txt`)).toBe('file:///F:/dir/x.txt');
     });
 
     it('should leave a file URL with forward slashes unchanged', () => {
@@ -47,14 +47,14 @@ describe('url', () => {
     });
 
     it('should leave a non-file URL unchanged', () => {
-      expect(normalizeFileUrl('https://example.com/a\\b')).toBe('https://example.com/a\\b');
+      expect(normalizeFileUrl(String.raw`https://example.com/a\b`)).toBe(String.raw`https://example.com/a\b`);
     });
   });
 
   describe('isUrl', () => {
     describe('valid URLs with ://', () => {
       it('should accept http URLs', () => {
-        expect(isUrl('http://example.com')).toBe(true);
+        expect(isUrl('https://example.com')).toBe(true);
       });
 
       it('should accept https URLs with path', () => {
@@ -98,7 +98,7 @@ describe('url', () => {
       });
 
       it('should reject strings with only whitespace', () => {
-        expect(isUrl('   ')).toBe(false);
+        expect(isUrl(' '.repeat(3))).toBe(false);
       });
 
       it('should reject URLs with spaces', () => {
@@ -106,11 +106,11 @@ describe('url', () => {
       });
 
       it('should reject a URL with a leading space', () => {
-        expect(isUrl(' http://example.com')).toBe(false);
+        expect(isUrl(' https://example.com')).toBe(false);
       });
 
       it('should reject a URL with a trailing space', () => {
-        expect(isUrl('http://example.com ')).toBe(false);
+        expect(isUrl('https://example.com ')).toBe(false);
       });
 
       it('should reject strings missing a scheme', () => {

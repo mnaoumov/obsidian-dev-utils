@@ -62,9 +62,9 @@ vi.mock('./check-project-types.ts', () => ({
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs/promises')>();
+  const $module = await importOriginal<typeof import('node:fs/promises')>();
   return {
-    ...mod,
+    ...$module,
     cp: mockCp,
     glob: mockGlob,
     rm: mockRm

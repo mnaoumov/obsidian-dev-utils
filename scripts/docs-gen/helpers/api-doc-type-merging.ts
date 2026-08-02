@@ -19,15 +19,15 @@ import { findType } from './api-doc-link-rendering.ts';
  * E.g., parent has `typeParameters: ['Instance extends BaseInstance']` and
  * child extends `Parent<CanvasPluginInstance>` → `{Instance: 'CanvasPluginInstance'}`
  */
-export function buildTypeParamMap(baseInfo: TypeInfo, typeArgs: string[]): Map<string, string> {
+export function buildTypeParamMap(baseInfo: TypeInfo, typeArguments: string[]): Map<string, string> {
   const mapping = new Map<string, string>();
-  const count = Math.min(baseInfo.typeParameters.length, typeArgs.length);
-  for (let i = 0; i < count; i++) {
-    const param = baseInfo.typeParameters[i];
-    const arg = typeArgs[i];
-    if (param && arg) {
-      const bareParam = param.replace(/\s+extends\s+.*$/, '');
-      mapping.set(bareParam, arg);
+  const count = Math.min(baseInfo.typeParameters.length, typeArguments.length);
+  for (let index = 0; index < count; index++) {
+    const parameter = baseInfo.typeParameters[index];
+    const argument = typeArguments[index];
+    if (parameter && argument) {
+      const bareParameter = parameter.replace(/\s+extends\s+.*$/, '');
+      mapping.set(bareParameter, argument);
     }
   }
   return mapping;
@@ -44,7 +44,7 @@ export function parseTypeArguments(baseTypeName: string): string[] {
     return [];
   }
   const inner = baseTypeName.slice(openIndex + 1, -1);
-  const args: string[] = [];
+  const $arguments: string[] = [];
   let depth = 0;
   let current = '';
   for (const ch of inner) {
@@ -55,16 +55,16 @@ export function parseTypeArguments(baseTypeName: string): string[] {
       depth--;
       current += ch;
     } else if (ch === ',' && depth === 0) {
-      args.push(current.trim());
+      $arguments.push(current.trim());
       current = '';
     } else {
       current += ch;
     }
   }
   if (current.trim()) {
-    args.push(current.trim());
+    $arguments.push(current.trim());
   }
-  return args;
+  return $arguments;
 }
 
 export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
@@ -76,12 +76,12 @@ export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
         continue;
       }
 
-      const typeArgs = parseTypeArguments(baseTypeName);
-      const typeParamMap = buildTypeParamMap(baseInfo, typeArgs);
+      const typeArguments = parseTypeArguments(baseTypeName);
+      const typeParameterMap = buildTypeParamMap(baseInfo, typeArguments);
 
-      for (const prop of baseInfo.properties) {
-        if (!info.properties.some((p) => p.name === prop.name)) {
-          info.properties.push(substituteMemberTypes({ ...prop, inheritedFrom: baseInfo.name }, typeParamMap));
+      for (const property of baseInfo.properties) {
+        if (info.properties.every((p) => !(p.name === property.name))) {
+          info.properties.push(substituteMemberTypes({ ...property, inheritedFrom: baseInfo.name }, typeParameterMap));
         }
       }
 
@@ -89,7 +89,7 @@ export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
         const hasOwnMethod = info.methods.some((m) => m.name === method.name && m.signature === method.signature);
         const hasInheritedMethod = info.methods.some((m) => m.inheritedFrom === baseInfo.name && m.overloadKey === method.overloadKey);
         if (!hasOwnMethod && !hasInheritedMethod) {
-          info.methods.push(substituteMemberTypes({ ...method, inheritedFrom: baseInfo.name }, typeParamMap));
+          info.methods.push(substituteMemberTypes({ ...method, inheritedFrom: baseInfo.name }, typeParameterMap));
         }
       }
     }
@@ -118,7 +118,7 @@ export function substituteTypeParams(typeText: string, mapping: Map<string, stri
   if (mapping.size === 0) {
     return typeText;
   }
-  return typeText.replace(/\b(?<typeName>[a-zA-Z][a-zA-Z0-9]*)\b/g, (match) => {
+  return typeText.replaceAll(/\b(?<typeName>[a-zA-Z][a-zA-Z0-9]*)\b/g, (match) => {
     return mapping.get(match) ?? match;
   });
 }

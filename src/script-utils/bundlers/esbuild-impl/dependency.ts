@@ -140,17 +140,17 @@ function extractDependenciesToBundlePlugin(params: ExtractDependenciesToBundlePl
   return {
     name: 'test',
     setup(build): void {
-      build.onResolve({ filter: /^[^./]/ }, (args) => {
-        if (!args.importer.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
+      build.onResolve({ filter: /^[^./]/ }, ($arguments) => {
+        if (!$arguments.importer.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
           const moduleName = trimStart({
             prefix: 'node:',
-            str: ensureNonNullable(args.path.split('/')[0], 'Wrong path')
+            str: ensureNonNullable($arguments.path.split('/', 1)[0], 'Wrong path')
           });
-          if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
-            dependenciesToBundle.add(args.path);
+          if (!dependenciesToSkip.has($arguments.path) && !dependenciesToSkip.has(moduleName)) {
+            dependenciesToBundle.add($arguments.path);
           }
         }
-        return { external: true, path: args.path };
+        return { external: true, path: $arguments.path };
       });
     }
   };

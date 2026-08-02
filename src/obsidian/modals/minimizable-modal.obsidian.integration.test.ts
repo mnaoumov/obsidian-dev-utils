@@ -255,21 +255,21 @@ describe('MinimizableModal', () => {
 
           // Clicking the bar's title (a child of the bar) restores via the bar-level click handler.
           minimizable.minimize();
-          const titleEl = document.body.querySelector(TITLE_SELECTOR);
-          if (!titleEl) {
+          const titleElement = document.body.querySelector(TITLE_SELECTOR);
+          if (!titleElement) {
             throw new Error('minimized bar title not found');
           }
-          titleEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          titleElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
           const restoredByTitleClick = !minimizable.isMinimized;
           const barGoneAfterTitleClick = document.body.querySelector(BAR_SELECTOR) === null;
 
           // Clicking the bar body itself (not the restore button) restores too.
           minimizable.minimize();
-          const barEl = document.body.querySelector(BAR_SELECTOR);
-          if (!barEl) {
+          const barElement = document.body.querySelector(BAR_SELECTOR);
+          if (!barElement) {
             throw new Error('minimized bar not found');
           }
-          barEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          barElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
           const restoredByBarClick = !minimizable.isMinimized;
           const barGoneAfterBarClick = document.body.querySelector(BAR_SELECTOR) === null;
 
@@ -308,12 +308,12 @@ describe('MinimizableModal', () => {
           minimizable.minimize();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
-          const cancelButtonEl = document.body.querySelector(CANCEL_SELECTOR);
-          if (!cancelButtonEl) {
+          const cancelButtonElement = document.body.querySelector(CANCEL_SELECTOR);
+          if (!cancelButtonElement) {
             throw new Error('minimized bar cancel button not found');
           }
           // Clicking Cancel must close the wrapped modal, not trigger the bar-level restore handler.
-          cancelButtonEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          cancelButtonElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           return {
@@ -348,19 +348,19 @@ describe('MinimizableModal', () => {
           minimizable.minimize();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
-          const barEl = document.body.querySelector<HTMLElement>(BAR_SELECTOR);
-          if (!barEl) {
+          const barElement = document.body.querySelector<HTMLElement>(BAR_SELECTOR);
+          if (!barElement) {
             throw new Error('minimized bar not found');
           }
 
           // A trusted pointer move sets a genuine `:hover`, so real theme `var()` values resolve and
           // Composite as they do for the user. `mouseover` events are untrusted (never set `:hover`),
           // And `jsdom` resolves neither `var()` nor composites — so a real-Obsidian test is used.
-          await hoverElement({ element: barEl });
-          const backgroundColorWhileHovered = getComputedStyle(barEl).backgroundColor;
+          await hoverElement({ element: barElement });
+          const backgroundColorWhileHovered = getComputedStyle(barElement).backgroundColor;
           const alphaWhileHovered = alphaOf(backgroundColorWhileHovered);
 
-          await unhoverElement({ element: barEl });
+          await unhoverElement({ element: barElement });
           minimizable.modal.close();
 
           return {

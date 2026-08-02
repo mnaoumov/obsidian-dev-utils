@@ -14,7 +14,7 @@ import { normalizeOptionalProperties } from '../object-utils.ts';
 import { trimEnd } from '../string.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
-  cmdEscapeCommandLine,
+  cmdEscapeCommandLine as commandEscapeCommandLine,
   toCommandLine,
   toPosixCommandLine
 } from './cli-utils.ts';
@@ -247,8 +247,8 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
     if (batchResult) {
       return batchResult;
     }
-    const args = command.filter((part): part is string => typeof part === 'string');
-    const commandLine = buildCommandLine(args);
+    const $arguments = command.filter((part): part is string => typeof part === 'string');
+    const commandLine = buildCommandLine($arguments);
 
     const maxCommandLength = getMaxCommandLength();
     if (commandLine.length > maxCommandLength) {
@@ -262,7 +262,7 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
     return execString({
       command: commandLine,
       options,
-      rawArgs: args
+      rawArgs: $arguments
     });
   }
 
@@ -378,9 +378,9 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
       });
     });
 
-    child.on('error', (err) => {
+    child.on('error', (error) => {
       if (!ignoreExitCode) {
-        reject(err);
+        reject(error);
         return;
       }
 
@@ -522,7 +522,7 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
  */
 function getMaxCommandLength(): number {
   const WINDOWS_MAX_COMMAND_LENGTH = 8191;
-  const UNIX_MAX_COMMAND_LENGTH = 131072;
+  const UNIX_MAX_COMMAND_LENGTH = 131_072;
   return process.platform === 'win32' ? WINDOWS_MAX_COMMAND_LENGTH : UNIX_MAX_COMMAND_LENGTH;
 }
 
@@ -536,22 +536,22 @@ function getMaxCommandLength(): number {
  * @returns A Promise if batching is handled, or `undefined`.
  */
 function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promise<ExecResult | string> | undefined {
-  const execArgs = parts.filter(isExecArg);
-  if (execArgs.length === 0) {
+  const execArguments = parts.filter(isExecArgument);
+  if (execArguments.length === 0) {
     return undefined;
   }
-  if (execArgs.length > 1) {
+  if (execArguments.length > 1) {
     return Promise.reject(new Error('Only one ExecArg with batchedArgs is allowed per command'));
   }
 
-  const execArg = execArgs[0];
-  assertNonNullable(execArg);
+  const execArgument = execArguments[0];
+  assertNonNullable(execArgument);
   const staticParts = parts.filter((part): part is string => typeof part === 'string');
   const baseCommand = buildCommandLine(staticParts);
   const maxCommandLength = getMaxCommandLength();
 
   // Try expanding all args inline
-  const fullCommand = `${baseCommand} ${buildCommandLine([...execArg.batchedArgs])}`;
+  const fullCommand = `${baseCommand} ${buildCommandLine([...execArgument.batchedArgs])}`;
   if (fullCommand.length <= maxCommandLength) {
     return execString({
       command: fullCommand,
@@ -563,20 +563,20 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   const batches: string[][] = [];
   let currentBatch: string[] = [];
 
-  for (const arg of execArg.batchedArgs) {
-    const tentative = `${baseCommand} ${buildCommandLine([...currentBatch, arg])}`;
+  for (const argument of execArgument.batchedArgs) {
+    const tentative = `${baseCommand} ${buildCommandLine([...currentBatch, argument])}`;
     if (tentative.length > maxCommandLength) {
       if (currentBatch.length === 0) {
         return Promise.reject(
           new Error(
-            `Cannot split command into batches: a single argument (${String(arg.length)} chars) plus the base command (${String(baseCommand.length)} chars) exceeds the max command length (${String(maxCommandLength)}).`
+            `Cannot split command into batches: a single argument (${String(argument.length)} chars) plus the base command (${String(baseCommand.length)} chars) exceeds the max command length (${String(maxCommandLength)}).`
           )
         );
       }
       batches.push(currentBatch);
-      currentBatch = [arg];
+      currentBatch = [argument];
     } else {
-      currentBatch.push(arg);
+      currentBatch.push(argument);
     }
   }
   /* v8 ignore start -- Always true after the loop; batchedArgs is non-empty at this point. */
@@ -598,7 +598,7 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
  * @param part - The command part to check.
  * @returns Whether the part is an ExecArg.
  */
-function isExecArg(part: CommandPart): part is ExecArg {
+function isExecArgument(part: CommandPart): part is ExecArg {
   return typeof part === 'object' && 'batchedArgs' in part;
 }
 
@@ -625,16 +625,16 @@ function spawnViaShell(params: SpawnViaShellParams): ChildProcess {
     if (!rawArgs) {
       throw new Error('Commands containing newlines cannot be executed through cmd.exe on Windows. Pass an argument array instead of a string.');
     }
-    const [program, ...args] = rawArgs;
+    const [program, ...$arguments] = rawArgs;
     assertNonNullable(program, 'Command array must not be empty');
-    return spawn(program, args, {
+    return spawn(program, $arguments, {
       cwd,
       env,
       stdio
     });
   }
 
-  const shellCommand = process.platform === 'win32' ? cmdEscapeCommandLine(command) : command;
+  const shellCommand = process.platform === 'win32' ? commandEscapeCommandLine(command) : command;
   return spawn(shellCommand, [], {
     cwd,
     env,

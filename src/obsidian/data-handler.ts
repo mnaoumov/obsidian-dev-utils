@@ -34,8 +34,7 @@ export class PluginDataHandler implements DataHandler {
    *
    * @param plugin - The plugin instance.
    */
-  public constructor(protected readonly plugin: Plugin) {
-  }
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Loads data from the plugin's data file.

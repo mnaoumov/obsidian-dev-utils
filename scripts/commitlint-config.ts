@@ -1,3 +1,1 @@
-import { obsidianDevUtilsConfig } from '../src/script-utils/commitlint-config.ts';
-
-export const config = obsidianDevUtilsConfig;
+export { obsidianDevUtilsConfig as config } from '../src/script-utils/commitlint-config.ts';

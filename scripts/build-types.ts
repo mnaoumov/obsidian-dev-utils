@@ -112,11 +112,11 @@ await wrapCliTask(async () => {
       ctsContent = libDirectives + typesDirectives + ctsContent;
       mtsContent = libDirectives + typesDirectives + mtsContent;
     } else {
-      const ctsLibRef = buildReferencePathDirective(ctsPath, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.DctsExtension);
-      ctsContent = ctsLibRef + ctsContent;
+      const ctsLibReference = buildReferencePathDirective(ctsPath, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.DctsExtension);
+      ctsContent = ctsLibReference + ctsContent;
 
-      const mtsLibRef = buildReferencePathDirective(mtsPath, ObsidianDevUtilsRepoPaths.Esm, ObsidianDevUtilsRepoPaths.DmtsExtension);
-      mtsContent = mtsLibRef + mtsContent;
+      const mtsLibReference = buildReferencePathDirective(mtsPath, ObsidianDevUtilsRepoPaths.Esm, ObsidianDevUtilsRepoPaths.DmtsExtension);
+      mtsContent = mtsLibReference + mtsContent;
     }
 
     await writeFile(ctsPath, ctsContent);

@@ -238,15 +238,15 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
   const { shouldVerifyCommit = true } = options;
   const versionDebugger = getLibDebugger('Version');
 
-  const commitArgs = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
+  const commitArguments = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
   if (!shouldVerifyCommit) {
-    commitArgs.push('--no-verify');
+    commitArguments.push('--no-verify');
   }
 
   for (;;) {
     try {
       await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
-      await execFromRoot(commitArgs, { isQuiet: true });
+      await execFromRoot(commitArguments, { isQuiet: true });
       return;
     } catch (error) {
       if (!process.stdin.isTTY) {
@@ -276,7 +276,7 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
  * @returns The text with every bare URL wrapped in angle brackets.
  */
 export function autolinkBareUrls(text: string): string {
-  return text.replace(/(?<![<[(])https?:\/\/[^\s<>)\]]+/g, (url) => {
+  return text.replaceAll(/(?<![<[(])https?:\/\/[^\s<>)\]]+/g, (url) => {
     const trailingPunctuation = /[.,;:!?]+$/.exec(url)?.[0] ?? '';
     const bareUrl = url.slice(0, url.length - trailingPunctuation.length);
     return `<${bareUrl}>${trailingPunctuation}`;
@@ -384,7 +384,7 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = replaceAll({
-    replacer: '\\.',
+    replacer: String.raw`\.`,
     searchValue: '.',
     str: newVersion
   });
@@ -395,15 +395,10 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
 
   const tags = (await execFromRoot('git tag --sort=-creatordate', { isQuiet: true })).split(/\r?\n/);
   const previousVersion = tags[1];
-  let changesUrl: string;
 
   const repoUrl = await execFromRoot('gh repo view --json url -q .url', { isQuiet: true });
 
-  if (previousVersion) {
-    changesUrl = `${repoUrl}/compare/${previousVersion}...${newVersion}`;
-  } else {
-    changesUrl = `${repoUrl}/commits/${newVersion}`;
-  }
+  const changesUrl = previousVersion ? `${repoUrl}/compare/${previousVersion}...${newVersion}` : `${repoUrl}/commits/${newVersion}`;
 
   releaseNotes += `**Full Changelog**: ${changesUrl}`;
   return releaseNotes;
@@ -424,15 +419,17 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
     case VersionUpdateType.PreMajor:
     case VersionUpdateType.PreMinor:
     case VersionUpdateType.PrePatch:
-    case VersionUpdateType.PreRelease:
+    case VersionUpdateType.PreRelease: {
       return versionUpdateTypeEnum;
+    }
 
-    default:
+    default: {
       if (/^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType)) {
         return VersionUpdateType.Manual;
       }
 
       return VersionUpdateType.Invalid;
+    }
   }
 }
 
@@ -567,8 +564,8 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
     str: previousChangelogLines[0] ?? ''
   });
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-  const commitMessagesStr = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
-  const commitMessages = commitMessagesStr.split('\0').filter(Boolean).map(toFirstLine);
+  const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
+  const commitMessages = commitMessagesString.split('\0').filter(Boolean).map(toFirstLine);
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
@@ -753,8 +750,8 @@ function isPreRelease(version: string): boolean {
   return prerelease(version) !== null;
 }
 
-function toFirstLine(str: string): string {
-  return str.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
+function toFirstLine($string: string): string {
+  return $string.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {

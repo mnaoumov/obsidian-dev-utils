@@ -138,13 +138,13 @@ function wrapProxy<T>(value: unknown): T {
           return proxiedChildren.get(prop);
         }
 
-        const val: unknown = Reflect.get(target, prop, receiver);
-        if (isPlainObject(val)) {
-          const result = wrapProxy<unknown>(val);
+        const $value: unknown = Reflect.get(target, prop, receiver);
+        if (isPlainObject($value)) {
+          const result = wrapProxy<unknown>($value);
           proxiedChildren.set(prop, result);
           return result;
         }
-        return val;
+        return $value;
       }
 
       if (typeof prop === 'symbol' || PASSTHROUGH_PROPS.has(prop)) {

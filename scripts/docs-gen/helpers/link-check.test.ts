@@ -46,7 +46,7 @@ describe('link-check parsing helpers', () => {
   it('derives the served URL from an index page and a leaf page', () => {
     expect(getPageUrl('index.html', SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/');
     expect(getPageUrl('api/foo/index.html', SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/api/foo/');
-    expect(getPageUrl('guides\\bar.html', SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/guides/bar.html');
+    expect(getPageUrl(String.raw`guides\bar.html`, SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/guides/bar.html');
   });
 });
 

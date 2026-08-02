@@ -38,17 +38,17 @@ const STYLES_ID = `${LIBRARY_NAME}-styles`;
  * @param cssClasses - The CSS classes to set.
  */
 export function addPluginCssClasses(el: HTMLElement, cssClasses?: string | string[]): void {
-  const cssClassesArr: string[] = [CssClass.LibraryName];
+  const cssClassesArray: string[] = [CssClass.LibraryName];
   // The scope is empty until the plugin context is initialized; skip it so we never add an empty class.
   if (Library.cssClassScope) {
-    cssClassesArr.push(Library.cssClassScope);
+    cssClassesArray.push(Library.cssClassScope);
   }
   if (Array.isArray(cssClasses)) {
-    cssClassesArr.push(...cssClasses);
+    cssClassesArray.push(...cssClasses);
   } else if (typeof cssClasses === 'string') {
-    cssClassesArr.push(cssClasses);
+    cssClassesArray.push(cssClasses);
   }
-  el.addClass(...cssClassesArr);
+  el.addClass(...cssClassesArray);
 }
 
 /**

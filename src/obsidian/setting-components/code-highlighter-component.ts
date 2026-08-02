@@ -51,7 +51,7 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
    *
    * @returns The validator element of the component.
    */
-  public get validatorEl(): ValidatorElement {
+  public get validatorElement(): ValidatorElement {
     return this.inputEl;
   }
 
@@ -165,13 +165,13 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
    */
   public setLanguage(language: string): this {
     const LANGUAGE_CLASS_PREFIX = 'language-';
-    for (const el of [this.preEl, this.codeEl]) {
-      for (const cls of Array.from(el.classList)) {
+    for (const element of [this.preEl, this.codeEl]) {
+      for (const cls of Array.from(element.classList)) {
         if (cls.startsWith(LANGUAGE_CLASS_PREFIX)) {
-          el.classList.remove(cls);
+          element.classList.remove(cls);
         }
       }
-      el.classList.add(`${LANGUAGE_CLASS_PREFIX}${language}`);
+      element.classList.add(`${LANGUAGE_CLASS_PREFIX}${language}`);
     }
     return this;
   }
@@ -248,19 +248,19 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     });
   }
 
-  private handleKeyDown(evt: KeyboardEvent): void {
-    if (evt.key !== 'Tab') {
+  private handleKeyDown($event: KeyboardEvent): void {
+    if ($event.key !== 'Tab') {
       return;
     }
 
-    evt.preventDefault();
+    $event.preventDefault();
 
-    if (evt.ctrlKey || evt.metaKey) {
+    if ($event.ctrlKey || $event.metaKey) {
       const focusables = Array.from(activeDocument.querySelectorAll<HTMLElement>(
         ':is(a, button, input, select, textarea, [tabindex]):not([tabindex="-1"]):not(:disabled):not([type="hidden"])'
       ));
       const index = focusables.indexOf(this.inputEl);
-      const deltaIndex = evt.shiftKey ? -1 : 1;
+      const deltaIndex = $event.shiftKey ? -1 : 1;
       const nextControl = focusables[(index + deltaIndex + focusables.length) % focusables.length];
       nextControl?.focus();
       return;
@@ -274,7 +274,7 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     const tabs = ' '.repeat(this.tabSize);
     let newBeforeSelection = beforeSelection;
 
-    if (evt.shiftKey) {
+    if ($event.shiftKey) {
       if (beforeSelection.endsWith(tabs)) {
         newBeforeSelection = beforeSelection.slice(0, -this.tabSize);
       }

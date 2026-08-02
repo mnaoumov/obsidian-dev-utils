@@ -309,7 +309,7 @@ export class DemoVaultCoverageChecker {
    */
   public findStaleReferences(params: DemoVaultCoverageCheckerFindStaleReferencesParams): string[] {
     const validMembers = new Set(params.validMembers);
-    const referenced = [...this.readCorpus().matchAll(new RegExp(`${params.receiver}\\.(?<member>\\w+)`, 'g'))]
+    const referenced = [...this.readCorpus().matchAll(new RegExp(String.raw`${params.receiver}\.(?<member>\w+)`, 'g'))]
       .map((match) => getMandatoryNamedGroup(match, 'member'));
     return [...new Set(referenced)].filter((member) => !validMembers.has(member));
   }
@@ -367,7 +367,7 @@ export class DemoVaultCoverageChecker {
    */
   public getInterfaceMembers(params: DemoVaultCoverageCheckerGetInterfaceMembersParams): InterfaceMembers {
     const source = readFileSync(join(this.rootFolder, params.sourcePath), 'utf-8');
-    const match = new RegExp(`export (?<keyword>interface|class|enum) ${params.interfaceName}\\b[^{]*\\{(?<body>[\\s\\S]*?)\\n\\}`).exec(source);
+    const match = new RegExp(String.raw`export (?<keyword>interface|class|enum) ${params.interfaceName}\b[^{]*\{(?<body>[\s\S]*?)\n\}`).exec(source);
     if (!match) {
       throw new Error(`Could not find interface ${params.interfaceName}`);
     }
@@ -461,7 +461,7 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
   });
 }
 
-const CLASS_MEMBER_MODIFIERS = '(?:(?:public|private|protected|readonly|static|abstract|override)\\s+)*';
+const CLASS_MEMBER_MODIFIERS = String.raw`(?:(?:public|private|protected|readonly|static|abstract|override)\s+)*`;
 
 function buildMembers(methods: string[], properties: string[]): InterfaceMembers {
   return {
@@ -472,13 +472,13 @@ function buildMembers(methods: string[], properties: string[]): InterfaceMembers
 }
 
 function extractClassMethodNames(classBody: string): string[] {
-  return [...classBody.matchAll(new RegExp(`^ {2}(?<modifiers>${CLASS_MEMBER_MODIFIERS})(?<name>\\w+)(?:<[^>]*>)?\\(`, 'gm'))]
+  return [...classBody.matchAll(new RegExp(String.raw`^ {2}(?<modifiers>${CLASS_MEMBER_MODIFIERS})(?<name>\w+)(?:<[^>]*>)?\(`, 'gm'))]
     .filter((match) => !isNonPublicMember(getMandatoryNamedGroup(match, 'modifiers')))
     .map((match) => getMandatoryNamedGroup(match, 'name'));
 }
 
 function extractClassPropertyNames(classBody: string): string[] {
-  return [...classBody.matchAll(new RegExp(`^ {2}(?<modifiers>${CLASS_MEMBER_MODIFIERS})(?<name>\\w+)\\s*\\??\\s*[:=]`, 'gm'))]
+  return [...classBody.matchAll(new RegExp(String.raw`^ {2}(?<modifiers>${CLASS_MEMBER_MODIFIERS})(?<name>\w+)\s*\??\s*[:=]`, 'gm'))]
     .filter((match) => !isNonPublicMember(getMandatoryNamedGroup(match, 'modifiers')))
     .map((match) => getMandatoryNamedGroup(match, 'name'));
 }
@@ -501,11 +501,14 @@ function isNonPublicMember(modifiers: string): boolean {
 
 function parseMembers(keyword: string, body: string): InterfaceMembers {
   switch (keyword) {
-    case 'class':
+    case 'class': {
       return buildMembers(extractClassMethodNames(body), extractClassPropertyNames(body));
-    case 'enum':
+    }
+    case 'enum': {
       return buildMembers([], extractEnumMemberNames(body));
-    default:
+    }
+    default: {
       return buildMembers(extractMethodNames(body), extractPropertyNames(body));
+    }
   }
 }

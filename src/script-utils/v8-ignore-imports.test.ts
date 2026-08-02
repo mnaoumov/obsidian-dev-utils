@@ -74,7 +74,7 @@ it('should load all v8-ignored modules so coverage processes their ignore commen
     svelteWrapperPlugin
   ];
 
-  for (const mod of modules) {
-    expect(mod).toBeDefined();
+  for (const $module of modules) {
+    expect($module).toBeDefined();
   }
 });

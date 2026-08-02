@@ -172,7 +172,7 @@ class SuccessTaskResult extends CliTaskResult {
  * @returns A string representing the command-line invocation.
  */
 export function toCommandLine(args: string[]): string {
-  return args.map((arg) => argvQuote(arg)).join(' ');
+  return args.map((argument) => argvQuote(argument)).join(' ');
 }
 
 /**
@@ -194,7 +194,7 @@ export function toCommandLine(args: string[]): string {
  * @returns A string representing the command-line invocation for a POSIX shell.
  */
 export function toPosixCommandLine(args: string[]): string {
-  return args.map((arg) => posixQuote(arg)).join(' ');
+  return args.map((argument) => posixQuote(argument)).join(' ');
 }
 
 /**
@@ -212,7 +212,7 @@ const SINGLE_QUOTE_RE = /'/g;
  * The replacement for a literal single quote inside a single-quoted POSIX span:
  * close the span, add an escaped literal quote, reopen the span.
  */
-const POSIX_ESCAPED_SINGLE_QUOTE = '\'\\\'\'';
+const POSIX_ESCAPED_SINGLE_QUOTE = String.raw`'\''`;
 
 /**
  * Quotes a single argument so that `CommandLineToArgvW` will decode it
@@ -229,24 +229,20 @@ function argvQuote(arg: string): string {
 
   const BACKSLASH_ESCAPE_FACTOR = 2;
   let result = '"';
-  for (let i = 0; i < arg.length; i++) {
-    let numBackslashes = 0;
-    while (i < arg.length && arg[i] === '\\') {
-      i++;
-      numBackslashes++;
+  for (let index = 0; index < arg.length; index++) {
+    let numberBackslashes = 0;
+    while (index < arg.length && arg[index] === '\\') {
+      index++;
+      numberBackslashes++;
     }
 
-    if (i === arg.length) {
-      result += '\\'.repeat(numBackslashes * BACKSLASH_ESCAPE_FACTOR);
+    if (index === arg.length) {
+      result += '\\'.repeat(numberBackslashes * BACKSLASH_ESCAPE_FACTOR);
       break;
     }
 
-    const ch = arg.charAt(i);
-    if (ch === '"') {
-      result += `${'\\'.repeat(numBackslashes * BACKSLASH_ESCAPE_FACTOR + 1)}"`;
-    } else {
-      result += '\\'.repeat(numBackslashes) + ch;
-    }
+    const ch = arg.charAt(index);
+    result += ch === '"' ? `${'\\'.repeat(numberBackslashes * BACKSLASH_ESCAPE_FACTOR + 1)}"` : '\\'.repeat(numberBackslashes) + ch;
   }
 
   result += '"';

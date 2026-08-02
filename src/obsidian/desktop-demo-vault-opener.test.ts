@@ -173,8 +173,8 @@ function latestReleaseResponse(version: string): MockGitHubResponse {
 }
 
 function setLatestReleaseVersion(latestVersion: string, assetStatus = HTTP_STATUS_OK): void {
-  mockRequestUrl.mockImplementation((arg: RequestUrlParam | string) => {
-    const url = typeof arg === 'string' ? arg : arg.url;
+  mockRequestUrl.mockImplementation((argument: RequestUrlParam | string) => {
+    const url = typeof argument === 'string' ? argument : argument.url;
     if (url.includes('releases/latest')) {
       return Promise.resolve(latestReleaseResponse(latestVersion));
     }
@@ -187,8 +187,8 @@ function setLatestReleaseVersion(latestVersion: string, assetStatus = HTTP_STATU
 
 function wasAssetDownloaded(): boolean {
   return mockRequestUrl.mock.calls.some((call) => {
-    const arg = call[0] as RequestUrlParam | string;
-    const url = typeof arg === 'string' ? arg : arg.url;
+    const argument = call[0] as RequestUrlParam | string;
+    const url = typeof argument === 'string' ? argument : argument.url;
     return url.includes('releases/download');
   });
 }
@@ -206,17 +206,19 @@ beforeEach(() => {
     [Symbol.dispose]: vi.fn()
   });
   setLatestReleaseVersion(CURRENT_VERSION);
-  Object.defineProperty(window, 'electron', {
-    configurable: true,
-    value: { ipcRenderer: { sendSync: mockSendSync } }
-  });
-  Object.defineProperty(window, 'require', {
-    configurable: true,
-    value: (id: string): unknown => {
-      if (id === 'node:original-fs') {
-        return { chmodSync: originalFsStubChmodSync };
+  Object.defineProperties(window, {
+    electron: {
+      configurable: true,
+      value: { ipcRenderer: { sendSync: mockSendSync } }
+    },
+    require: {
+      configurable: true,
+      value: (id: string): unknown => {
+        if (id === 'node:original-fs') {
+          return { chmodSync: originalFsStubChmodSync };
+        }
+        throw new Error(`Unexpected require of '${id}'`);
       }
-      throw new Error(`Unexpected require of '${id}'`);
     }
   });
 });

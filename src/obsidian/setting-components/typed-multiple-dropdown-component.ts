@@ -44,7 +44,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    *
    * @returns The validator element.
    */
-  public get validatorEl(): ValidatorElement {
+  public get validatorElement(): ValidatorElement {
     return this.selectEl;
   }
 
@@ -95,7 +95,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    * @returns The component.
    */
   public addOptions(options: Map<T, string>): this {
-    for (const [value, display] of options.entries()) {
+    for (const [value, display] of options) {
       this.addOption(value, display);
     }
     return this;
@@ -107,7 +107,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    * @returns The value of the component.
    */
   public getValue(): readonly T[] {
-    const indices = this.multipleDropdownComponent.getValue().map((str) => parseInt(str, 10));
+    const indices = this.multipleDropdownComponent.getValue().map(($string) => parseInt($string, 10));
     return indices.map((index) => this.values[index]).filter((value): value is T => value !== undefined);
   }
 

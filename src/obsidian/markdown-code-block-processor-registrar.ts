@@ -74,6 +74,6 @@ export class PluginMarkdownCodeBlockProcessorRegistrar implements MarkdownCodeBl
    * @returns The markdown post processor.
    */
   public registerMarkdownCodeBlockProcessor(params: PluginMarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams): MarkdownPostProcessor {
-    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, (source, el, ctx) => normalizePromisable(params.handler(source, el, ctx)), params.sortOrder);
+    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, (source, element, context) => normalizePromisable(params.handler(source, element, context)), params.sortOrder);
   }
 }

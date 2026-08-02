@@ -11,9 +11,9 @@ import { assertNonNullable } from '../../type-guards.ts';
 import { CodeHighlighterComponent } from './code-highlighter-component.ts';
 
 vi.mock('../../async.ts', () => ({
-  convertAsyncToSync: vi.fn((fn: () => unknown) => fn),
-  invokeAsyncSafely: vi.fn((fn: () => unknown) => {
-    fn();
+  convertAsyncToSync: vi.fn(($function: () => unknown) => $function),
+  invokeAsyncSafely: vi.fn(($function: () => unknown) => {
+    $function();
   })
 }));
 
@@ -52,9 +52,9 @@ describe('CodeHighlighterComponent', () => {
     expect(comp.inputEl).toBeInstanceOf(HTMLTextAreaElement);
   });
 
-  it('should return inputEl as validatorEl', () => {
+  it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorEl).toBe(comp.inputEl);
+    expect(comp.validatorElement).toBe(comp.inputEl);
   });
 
   it('should set and get value', () => {
@@ -181,13 +181,13 @@ describe('CodeHighlighterComponent', () => {
     const comp = new CodeHighlighterComponent(container);
     comp.setLanguage('javascript');
     // Add a non-language class via DOM to trigger the false branch of startsWith check
-    const preEl = container.querySelector('pre');
-    assertNonNullable(preEl);
-    preEl.classList.add('custom-class');
+    const preElement = container.querySelector('pre');
+    assertNonNullable(preElement);
+    preElement.classList.add('custom-class');
     comp.setLanguage('typescript');
     // Custom-class should remain, language-javascript should be replaced by language-typescript
-    expect(preEl.classList.contains('custom-class')).toBe(true);
-    expect(preEl.classList.contains('language-typescript')).toBe(true);
-    expect(preEl.classList.contains('language-javascript')).toBe(false);
+    expect(preElement.classList.contains('custom-class')).toBe(true);
+    expect(preElement.classList.contains('language-typescript')).toBe(true);
+    expect(preElement.classList.contains('language-javascript')).toBe(false);
   });
 });

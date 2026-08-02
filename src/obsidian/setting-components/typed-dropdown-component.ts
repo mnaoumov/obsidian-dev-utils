@@ -45,7 +45,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
    *
    * @returns The validator element.
    */
-  public get validatorEl(): ValidatorElement {
+  public get validatorElement(): ValidatorElement {
     return this.selectEl;
   }
 
@@ -96,7 +96,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
    * @returns The component.
    */
   public addOptions(options: Map<T, string>): this {
-    for (const [value, display] of options.entries()) {
+    for (const [value, display] of options) {
       this.addOption(value, display);
     }
     return this;

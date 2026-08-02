@@ -47,6 +47,7 @@ import {
 
 import type { PathOrFile } from './file-system.ts';
 
+import { snapshot } from '../array.ts';
 import { convertAsyncToSync } from '../async.ts';
 import { Beeper } from '../beeper.ts';
 import {
@@ -585,7 +586,7 @@ class ResourceLockManager {
   private abortAndReleaseEntries(app: App, ownerPath: string): void {
     const entries = this.lockEntriesByPath.get(ownerPath);
     assertNonNullable(entries);
-    for (const entry of [...entries]) {
+    for (const entry of snapshot(entries)) {
       entry.abortController?.abort();
     }
     this.lockEntriesByPath.delete(ownerPath);
@@ -612,16 +613,16 @@ class ResourceLockManager {
   }
 
   private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
-    const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
-    this.registerUnlockMenu(app, actionIconEl, () => path);
+    const actionIconElement = view.addAction(LOCK_ICON_ID, tooltip, noop);
+    this.registerUnlockMenu(app, actionIconElement, () => path);
 
-    let tabIconEl: HTMLElement | null = null;
-    const tabStatusContainerEl = view.leaf.tabHeaderStatusContainerEl;
-    if (tabStatusContainerEl) {
-      tabIconEl = tabStatusContainerEl.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
-      setIcon(tabIconEl, LOCK_ICON_ID);
-      setTooltip(tabIconEl, tooltip);
-      this.registerUnlockMenu(app, tabIconEl, () => path);
+    let tabIconElement: HTMLElement | null = null;
+    const tabStatusContainerElement = view.leaf.tabHeaderStatusContainerEl;
+    if (tabStatusContainerElement) {
+      tabIconElement = tabStatusContainerElement.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
+      setIcon(tabIconElement, LOCK_ICON_ID);
+      setTooltip(tabIconElement, tooltip);
+      this.registerUnlockMenu(app, tabIconElement, () => path);
     }
 
     // A locked view is read-only but still editable-focusable, so a keystroke fires `beforeinput`.
@@ -634,11 +635,11 @@ class ResourceLockManager {
     view.contentEl.addEventListener('beforeinput', onTypeAttempt);
 
     return {
-      actionIconEl,
+      actionIconEl: actionIconElement,
       disposeTypeListener: (): void => {
         view.contentEl.removeEventListener('beforeinput', onTypeAttempt);
       },
-      tabIconEl
+      tabIconEl: tabIconElement
     };
   }
 
@@ -671,18 +672,18 @@ class ResourceLockManager {
     this.eventsComponent.load();
   }
 
-  private flashElement(el: HTMLElement): void {
-    el.removeClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
+  private flashElement(element: HTMLElement): void {
+    element.removeClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
     // Read layout to force a reflow so the flash animation restarts on every rejected keystroke.
-    el.getBoundingClientRect();
-    el.addClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
+    element.getBoundingClientRect();
+    element.addClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
   }
 
   private flashIndicators(view: MarkdownView): void {
     const indicators = this.indicatorsByView.get(view);
-    for (const el of [indicators?.actionIconEl, indicators?.tabIconEl, this.statusBarItemEl]) {
-      if (el) {
-        this.flashElement(el);
+    for (const element of [indicators?.actionIconEl, indicators?.tabIconEl, this.statusBarItemEl]) {
+      if (element) {
+        this.flashElement(element);
       }
     }
   }
@@ -832,13 +833,15 @@ class ResourceLockManager {
     }
 
     for (const [view, indicators] of this.indicatorsByView) {
-      if (!viewsToLock.has(view)) {
-        toggleEditorReadOnly(view.editor, false);
-        indicators.disposeTypeListener();
-        indicators.actionIconEl.remove();
-        indicators.tabIconEl?.remove();
-        this.indicatorsByView.delete(view);
+      if (viewsToLock.has(view)) {
+        continue;
       }
+
+      toggleEditorReadOnly(view.editor, false);
+      indicators.disposeTypeListener();
+      indicators.actionIconEl.remove();
+      indicators.tabIconEl?.remove();
+      this.indicatorsByView.delete(view);
     }
 
     this.updateStatusBar(app);
@@ -856,27 +859,27 @@ class ResourceLockManager {
     }
   }
 
-  private registerUnlockMenu(app: App, el: HTMLElement, getContextPath: () => string | undefined): void {
+  private registerUnlockMenu(app: App, element: HTMLElement, getContextPath: () => string | undefined): void {
     // A click of ANY mouse button on a lock indicator opens the same unlock context menu:
     // `click` fires only for the primary (left) button, `contextmenu` for the right button, and
     // `auxclick` for the middle button (the browser fires no `click` for it). `auxclick` also fires for
     // The right button, so it is guarded to the middle button to avoid double-opening alongside `contextmenu`.
     // A plain listener dies with the element when it is `.remove()`d on unlock, so it never leaks.
-    const openUnlockMenu = (evt: MouseEvent): void => {
-      evt.preventDefault();
+    const openUnlockMenu = ($event: MouseEvent): void => {
+      $event.preventDefault();
       const path = getContextPath();
       if (path === undefined) {
         return;
       }
       const menu = new Menu();
       this.addUnlockMenuItem(app, menu, path);
-      menu.showAtMouseEvent(evt);
+      menu.showAtMouseEvent($event);
     };
-    el.addEventListener('click', openUnlockMenu);
-    el.addEventListener('contextmenu', openUnlockMenu);
-    el.addEventListener('auxclick', (evt) => {
-      if (evt.button === MIDDLE_MOUSE_BUTTON) {
-        openUnlockMenu(evt);
+    element.addEventListener('click', openUnlockMenu);
+    element.addEventListener('contextmenu', openUnlockMenu);
+    element.addEventListener('auxclick', ($event) => {
+      if ($event.button === MIDDLE_MOUSE_BUTTON) {
+        openUnlockMenu($event);
       }
     });
   }
@@ -967,11 +970,11 @@ class ResourceLockManager {
     }
 
     if (!this.statusBarItemEl) {
-      const statusBarEl = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
-      if (!statusBarEl) {
+      const statusBarElement = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
+      if (!statusBarElement) {
         return;
       }
-      this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
+      this.statusBarItemEl = statusBarElement.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
       setIcon(this.statusBarItemEl, LOCK_ICON_ID);
       // The single status-bar item is reused across active-note switches.
       // It must resolve the currently active note's owner lock at click time rather than capturing one path.

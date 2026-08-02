@@ -678,7 +678,7 @@ export function findOverExposure(params: FindOverExposureParams): OverExposureFi
     writeFile: (path, content) => {
       sys.writeFile(path, content);
     },
-    ...params.onProgress ? { onProgress: params.onProgress } : {}
+    ...params.onProgress && { onProgress: params.onProgress }
   });
 }
 
@@ -723,13 +723,13 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
     return;
   }
 
-  const declFilePath = toCanonical(sourceFile.fileName);
+  const declarationFilePath = toCanonical(sourceFile.fileName);
   const nameNodes = getExportedNameNodes(declaration);
   const candidates: ExportFindingCandidate[] = [];
   for (const nameNode of nameNodes) {
     const references = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
       .filter((reference) => !isDeclarationItself(reference, nameNode));
-    const otherFileReferences = references.filter((reference) => toCanonical(reference.fileName) !== declFilePath);
+    const otherFileReferences = references.filter((reference) => toCanonical(reference.fileName) !== declarationFilePath);
 
     if (otherFileReferences.length === 0) {
       candidates.push({
@@ -1218,11 +1218,11 @@ function isDerivedFrom(params: IsDerivedFromParams): boolean {
       continue;
     }
     for (const typeExpression of clause.types) {
-      const symbol = checker.getTypeAtLocation(typeExpression.expression).getSymbol();
-      if (symbol === baseSymbol) {
+      const $symbol = checker.getTypeAtLocation(typeExpression.expression).getSymbol();
+      if ($symbol === baseSymbol) {
         return true;
       }
-      for (const declaration of symbol?.declarations ?? []) {
+      for (const declaration of $symbol?.declarations ?? []) {
         if (isClassLike(declaration) && isDerivedFrom({ base, checker, derived: declaration })) {
           return true;
         }

@@ -18,6 +18,7 @@ import {
   abortSignalTimeout,
   waitForAbort
 } from './abort-controller.ts';
+import { snapshot } from './array.ts';
 import {
   getLibDebugger,
   printWithStackTrace
@@ -119,13 +120,13 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
   const ans: T[] = [];
 
   const length = arr.length;
-  for (let i = 0; i < length; i++) {
-    if (!Object.hasOwn(arr, i)) {
+  for (let index = 0; index < length; index++) {
+    if (!Object.hasOwn(arr, index)) {
       continue;
     }
 
-    const item = arr[i] as T;
-    if (await predicate(item, i, arr)) {
+    const item = arr[index] as T;
+    if (await predicate(item, index, arr)) {
       ans.push(item);
     }
   }
@@ -187,33 +188,33 @@ export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: numbe
 /**
  * Converts an asynchronous function to a synchronous one by automatically handling the Promise rejection.
  *
- * @typeParam Args - The types of the arguments the function accepts.
+ * @typeParam Arguments - The types of the arguments the function accepts.
  * @param asyncFunc - The asynchronous function to convert.
  * @param stackTrace - The stack trace of the source function.
  * @returns A function that wraps the asynchronous function in a synchronous interface.
  */
-export function convertAsyncToSync<Args extends unknown[]>(asyncFunc: GenericAsyncFunction<Args>, stackTrace?: string): GenericVoidFunction<Args> {
+export function convertAsyncToSync<Arguments extends unknown[]>(asyncFunc: GenericAsyncFunction<Arguments>, stackTrace?: string): GenericVoidFunction<Arguments> {
   stackTrace ??= getStackTrace(1);
-  return (...args: Args): void => {
+  return (...$arguments: Arguments): void => {
     assertNonNullable(stackTrace);
     const innerStackTrace = getStackTrace(1);
     stackTrace = `${stackTrace}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
-    invokeAsyncSafely(() => asyncFunc(...args), stackTrace);
+    invokeAsyncSafely(() => asyncFunc(...$arguments), stackTrace);
   };
 }
 
 /**
  * Converts a synchronous function to an asynchronous one by wrapping it in a {@link Promise}.
  *
- * @typeParam Args - The types of the arguments the function accepts.
+ * @typeParam Arguments - The types of the arguments the function accepts.
  * @typeParam Result - The type of the function's return value.
  * @param syncFn - The synchronous function to convert.
  * @returns A function that wraps the synchronous function in an asynchronous interface.
  */
-export function convertSyncToAsync<Args extends unknown[], Result>(syncFn: GenericFunction<Args, Result>): GenericAsyncFunction<Args, Result> {
-  return async (...args: Args): Promise<Result> => {
+export function convertSyncToAsync<Arguments extends unknown[], Result>(syncFn: GenericFunction<Arguments, Result>): GenericAsyncFunction<Arguments, Result> {
+  return async (...$arguments: Arguments): Promise<Result> => {
     await noopAsync();
-    return syncFn(...args);
+    return syncFn(...$arguments);
   };
 }
 
@@ -267,11 +268,11 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
   const stackTrace = getStackTrace(1);
   try {
     return await promise;
-  } catch (e) {
+  } catch (error) {
     ignoreErrorDebugger(
       'Ignored error',
       new CustomStackTraceError({
-        cause: e,
+        cause: error,
         message: 'Ignored error',
         stackTrace
       })
@@ -394,8 +395,8 @@ export function isAsyncOperationTrackingEnabled(): boolean {
  */
 export async function promiseAllAsyncFnsSequentially<T>(asyncFns: (() => Promisable<T>)[]): Promise<T[]> {
   const results: T[] = [];
-  for (const asyncFn of asyncFns) {
-    results.push(await asyncFn());
+  for (const asyncFunction of asyncFns) {
+    results.push(await asyncFunction());
   }
   return results;
 }
@@ -425,7 +426,7 @@ export async function waitForAllAsyncOperations(): Promise<void> {
   }
 
   while (pendingAsyncOperations.size > 0) {
-    await Promise.allSettled([...pendingAsyncOperations]);
+    await Promise.allSettled(snapshot(pendingAsyncOperations));
   }
 }
 
@@ -644,7 +645,7 @@ export async function neverEnds(): Promise<never> {
  */
 export async function nextTickAsync(): Promise<void> {
   return new Promise((resolve) => {
-    process.nextTick(() => {
+    queueMicrotask(() => {
       resolve();
     });
   });
@@ -833,8 +834,8 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
         stackTrace
       });
       hasResult = true;
-    } catch (e) {
-      runAbortController.abort(e);
+    } catch (error) {
+      runAbortController.abort(error);
     } finally {
       isCompleted = true;
       timeoutAbortController.abort(new Error('Completed'));
@@ -876,8 +877,8 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
     await waitForAbort(timeoutAbortController.signal);
   }
 
-  function defaultOnTimeout(ctx: TimeoutContext): void {
-    ctx.terminateOperation();
+  function defaultOnTimeout(context: TimeoutContext): void {
+    context.terminateOperation();
   }
 }
 
@@ -952,9 +953,9 @@ export async function timeout(params: TimeoutParams): Promise<never> {
  * @returns A {@link Promise} that resolves with an array of all the elements in the AsyncIterableIterator.
  */
 export async function toArray<T>(iter: AsyncIterableIterator<T>): Promise<T[]> {
-  const arr: T[] = [];
+  const array: T[] = [];
   for await (const item of iter) {
-    arr.push(item);
+    array.push(item);
   }
-  return arr;
+  return array;
 }

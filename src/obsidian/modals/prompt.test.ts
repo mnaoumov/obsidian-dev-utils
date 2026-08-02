@@ -31,9 +31,9 @@ beforeEach(() => {
 });
 
 vi.mock('../../async.ts', () => ({
-  convertAsyncToSync: vi.fn((fn: () => unknown) => fn),
-  invokeAsyncSafely: vi.fn((fn: () => unknown) => {
-    fn();
+  convertAsyncToSync: vi.fn(($function: () => unknown) => $function),
+  invokeAsyncSafely: vi.fn(($function: () => unknown) => {
+    $function();
   })
 }));
 
@@ -73,8 +73,8 @@ describe('prompt', () => {
     buttonInstances.length = 0;
     textInstances.length = 0;
     mockImplementation({
-      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
-        originalImplementation.call(this, containerEl);
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerElement: HTMLElement): ButtonComponentOriginal {
+        originalImplementation.call(this, containerElement);
         buttonInstances.push(this);
         return this;
       },
@@ -82,8 +82,8 @@ describe('prompt', () => {
       obj: ButtonComponentOriginal.prototype
     });
     mockImplementation({
-      impl: function impl(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
-        originalImplementation.call(this, containerEl);
+      impl: function impl(this: TextComponentOriginal, originalImplementation, containerElement: HTMLElement): TextComponentOriginal {
+        originalImplementation.call(this, containerElement);
         textInstances.push(this);
         return this;
       },

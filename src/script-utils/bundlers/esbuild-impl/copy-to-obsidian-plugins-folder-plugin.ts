@@ -157,10 +157,10 @@ async function getOrLaunchDevInstance(vaultPath: string): Promise<ObsidianTransp
   devInstanceTransportPromise ??= launchDevInstance(vaultPath);
   try {
     return await devInstanceTransportPromise;
-  } catch (e) {
+  } catch (error) {
     // Clear the cache so a later rebuild retries the launch.
     devInstanceTransportPromise = undefined;
-    throw e;
+    throw error;
   }
 }
 
@@ -233,9 +233,9 @@ async function launchDevInstance(vaultPath: string): Promise<ObsidianTransport> 
   const transport = await createTransportFromOptions();
   try {
     await transport.registerVault(vaultPath);
-  } catch (e) {
+  } catch (error) {
     transport.disposeSync?.();
-    throw e;
+    throw error;
   }
   registerDevInstanceCleanup(transport);
   return transport;

@@ -18,17 +18,17 @@ import { ComponentEx } from './component-ex.ts';
 /**
  * A type of the factories to apply to the object.
  *
- * @typeParam Obj - The object to patch.
+ * @typeParam $Object - The object to patch.
  */
-export type Factories<Obj extends object> = Partial<FullFactories<Obj>>;
+export type Factories<$Object extends object> = Partial<FullFactories<$Object>>;
 
 /**
  * Keys of `Obj` whose value is callable — a method, or a function-like object such as a `Debouncer`. These are the members
  * accepted by {@link MonkeyAroundComponent#registerFunctionPatch}.
  *
- * @typeParam Obj - The object whose keys are filtered.
+ * @typeParam $Object - The object whose keys are filtered.
  */
-export type FunctionKeys<Obj extends object> = ConditionalKeys<Obj, GenericFunction | undefined> & keyof Obj;
+export type FunctionKeys<$Object extends object> = ConditionalKeys<$Object, GenericFunction | undefined> & keyof $Object;
 
 /**
  * Keys of `Obj` whose value is a plain function (a "real method"). Function-like objects that carry extra members are
@@ -36,17 +36,17 @@ export type FunctionKeys<Obj extends object> = ConditionalKeys<Obj, GenericFunct
  * not {@link MonkeyAroundComponent#registerMethodPatch}. The check is whether the member has any own keys beyond a bare
  * function's (`Exclude<keyof T, keyof GenericFunction>` is `never`).
  *
- * @typeParam Obj - The object whose keys are filtered.
+ * @typeParam $Object - The object whose keys are filtered.
  */
-export type MethodKeys<Obj extends object> = MethodKeysMap<Obj>[FunctionKeys<Obj>];
+export type MethodKeys<$Object extends object> = MethodKeysMap<$Object>[FunctionKeys<$Object>];
 
 /**
  * Parameters passed to {@link MonkeyAroundComponent#registerFunctionPatch}.
  *
- * @typeParam Obj - The object to patch.
+ * @typeParam $Object - The object to patch.
  * @typeParam FunctionName - The function name to patch.
  */
-export interface MonkeyAroundComponentRegisterFunctionPatchParams<Obj extends object, FunctionName extends FunctionKeys<Obj>> {
+export interface MonkeyAroundComponentRegisterFunctionPatchParams<$Object extends object, FunctionName extends FunctionKeys<$Object>> {
   /**
    * The function name to patch.
    */
@@ -55,7 +55,7 @@ export interface MonkeyAroundComponentRegisterFunctionPatchParams<Obj extends ob
   /**
    * The object to patch.
    */
-  readonly obj: Obj;
+  readonly obj: $Object;
 
   /**
    * When `true`, the patch uninstalls itself the first time the patched function is invoked (by
@@ -73,16 +73,16 @@ export interface MonkeyAroundComponentRegisterFunctionPatchParams<Obj extends ob
    * @param originalValue - The original value of the function.
    * @returns The patched value of the function.
    */
-  patchHandler(originalValue: Obj[FunctionName]): Obj[FunctionName];
+  patchHandler(originalValue: $Object[FunctionName]): $Object[FunctionName];
 }
 
 /**
  * Parameters passed to {@link MonkeyAroundComponent#registerMethodPatch}.
  *
- * @typeParam Obj - The object to patch.
+ * @typeParam $Object - The object to patch.
  * @typeParam MethodName - The method name to patch.
  */
-export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
+export interface MonkeyAroundComponentRegisterMethodPatchParams<$Object extends object, MethodName extends MethodKeys<$Object>> {
   /**
    * The method name to patch.
    */
@@ -91,7 +91,7 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends obje
   /**
    * The object to patch.
    */
-  readonly obj: Obj;
+  readonly obj: $Object;
 
   /**
    * When `true`, the patch uninstalls itself the first time the patched method is invoked, restoring
@@ -105,7 +105,7 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends obje
   /**
    * The patch handler function.
    */
-  readonly patchHandler: PatchHandlerFn<Obj, MethodName>;
+  readonly patchHandler: PatchHandlerFn<$Object, MethodName>;
 
   /**
    * An optional token to identify the patch.
@@ -115,88 +115,88 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<Obj extends obje
   /**
    * An optional post-patch handler function that runs after the patch is applied.
    */
-  readonly postPatchHandler?: PostPatchHandlerFn<Obj, MethodName>;
+  readonly postPatchHandler?: PostPatchHandlerFn<$Object, MethodName>;
 }
 
 /**
  * A patch handler function that intercepts calls to a method on an object.
  *
- * @typeParam Obj - The object being patched.
+ * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export type PatchHandlerFn<Obj extends object, MethodName extends MethodKeys<Obj>> = (
-  params: PatchHandlerParams<Obj, MethodName>
-) => ReturnType<ExtractFunction<Obj, MethodName>>;
+export type PatchHandlerFn<$Object extends object, MethodName extends MethodKeys<$Object>> = (
+  params: PatchHandlerParams<$Object, MethodName>
+) => ReturnType<ExtractFunction<$Object, MethodName>>;
 
 /**
  * Parameters passed to a {@link PatchHandlerFn} callback.
  *
- * @typeParam Obj - The object being patched.
+ * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export interface PatchHandlerParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
-  fallback(this: void): ReturnType<ExtractFunction<Obj, MethodName>>;
+export interface PatchHandlerParams<$Object extends object, MethodName extends MethodKeys<$Object>> {
+  fallback(this: void): ReturnType<ExtractFunction<$Object, MethodName>>;
 
   /**
    * The original arguments of the intercepted call, as a tuple.
    */
-  readonly originalArgs: Parameters<ExtractFunction<Obj, MethodName>>;
+  readonly originalArgs: Parameters<ExtractFunction<$Object, MethodName>>;
 
   /**
    * The original (unpatched) method. Call via `originalFn.call(originalThis, ...originalArgs)`.
    */
-  readonly originalMethod: ExtractFunction<Obj, MethodName>;
+  readonly originalMethod: ExtractFunction<$Object, MethodName>;
 
   /**
    * The original method, but with the `this` context already bound to the original object. Call via `originalMethodBound(...originalArgs)`.
    */
-  readonly originalMethodBound: OmitThisParameter<ExtractFunction<Obj, MethodName>>;
+  readonly originalMethodBound: OmitThisParameter<ExtractFunction<$Object, MethodName>>;
 
   /**
    * The original `this` context of the intercepted call.
    */
-  readonly originalThis: Obj;
+  readonly originalThis: $Object;
 }
 
 /**
  * A post-patch handler function that runs after a patch is applied.
  *
- * @typeParam Obj - The object being patched.
+ * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export type PostPatchHandlerFn<Obj extends object, MethodName extends MethodKeys<Obj>> = (
-  params: PostPatchHandlerParams<Obj, MethodName>
-) => MaybeReturn<ExtractFunction<Obj, MethodName>>;
+export type PostPatchHandlerFn<$Object extends object, MethodName extends MethodKeys<$Object>> = (
+  params: PostPatchHandlerParams<$Object, MethodName>
+) => MaybeReturn<ExtractFunction<$Object, MethodName>>;
 
 /**
  * Parameters passed to a {@link PostPatchHandlerFn} callback.
  *
- * @typeParam Obj - The object being patched.
+ * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export interface PostPatchHandlerParams<Obj extends object, MethodName extends MethodKeys<Obj>> {
+export interface PostPatchHandlerParams<$Object extends object, MethodName extends MethodKeys<$Object>> {
   /**
    * The original (unpatched) method. Call via `originalFn.call(originalThis, ...originalArgs)`.
    */
-  readonly originalMethod: ExtractFunction<Obj, MethodName>;
+  readonly originalMethod: ExtractFunction<$Object, MethodName>;
 
   /**
    * The patched method.
    */
-  readonly patchedMethod: ExtractFunction<Obj, MethodName>;
+  readonly patchedMethod: ExtractFunction<$Object, MethodName>;
 }
 
-type ExtractFunction<Obj extends object, MethodName extends MethodKeys<Obj>> = GenericFunction<Parameters<Extract<Obj[MethodName], GenericFunction>>, ReturnType<Extract<Obj[MethodName], GenericFunction>>>;
+type ExtractFunction<$Object extends object, MethodName extends MethodKeys<$Object>> = GenericFunction<Parameters<Extract<$Object[MethodName], GenericFunction>>, ReturnType<Extract<$Object[MethodName], GenericFunction>>>;
 
-type FullFactories<Obj extends object> = {
-  [Key in keyof Obj]: (originalValue: Obj[Key]) => Obj[Key];
+type FullFactories<$Object extends object> = {
+  [Key in keyof $Object]: (originalValue: $Object[Key]) => $Object[Key];
 };
 
-type MethodKeysMap<Obj extends object> = {
-  [Key in FunctionKeys<Obj>]: [Exclude<keyof NonNullable<Obj[Key]>, keyof GenericFunction>] extends [never] ? Key : never;
+type MethodKeysMap<$Object extends object> = {
+  [Key in FunctionKeys<$Object>]: [Exclude<keyof NonNullable<$Object[Key]>, keyof GenericFunction>] extends [never] ? Key : never;
 };
 
-type OriginalFactories<Obj extends GenericObject> = Parameters<typeof originalAround<Obj>>[1];
+type OriginalFactories<$Object extends GenericObject> = Parameters<typeof originalAround<$Object>>[1];
 
 type Uninstaller = () => void;
 
@@ -208,17 +208,18 @@ export class MonkeyAroundComponent extends ComponentEx {
   /**
    * Registers a patch for a single function-like member (a method, or a callable such as a `Debouncer`) using a simplified handler.
    *
-   * @typeParam Obj - The object to patch.
+   * @typeParam $Object - The object to patch.
    * @typeParam FunctionName - The function name to patch.
    * @param params - The parameters of the patch.
    */
-  public registerFunctionPatch<Obj extends object, const FunctionName extends FunctionKeys<Obj>>(
-    params: MonkeyAroundComponentRegisterFunctionPatchParams<Obj, FunctionName>
+  public registerFunctionPatch<$Object extends object, const FunctionName extends FunctionKeys<$Object>>(
+    params: MonkeyAroundComponentRegisterFunctionPatchParams<$Object, FunctionName>
   ): void {
     this.ensureLoaded();
 
-    const factories: Factories<Obj> = {};
-    factories[params.functionName] = (originalValue: Obj[FunctionName]): Obj[FunctionName] => {
+    const factories: Factories<$Object> = {};
+    // eslint-disable-next-line unicorn/no-immediate-mutation -- A computed key in an object literal does not match `Partial<FullFactories<$Object>>` when the key type is generic; assigning after declaration keeps the target type known.
+    factories[params.functionName] = (originalValue: $Object[FunctionName]): $Object[FunctionName] => {
       const patchedValue = params.patchHandler(originalValue);
       if (!params.once) {
         return patchedValue;
@@ -232,14 +233,14 @@ export class MonkeyAroundComponent extends ComponentEx {
       const unloadComponent = (): void => {
         this.unload();
       };
-      function oncePatchedValue(this: unknown, ...args: unknown[]): unknown {
+      function oncePatchedValue(this: unknown, ...$arguments: unknown[]): unknown {
         try {
-          return Reflect.apply(patchedValue, this, args);
+          return Reflect.apply(patchedValue, this, $arguments);
         } finally {
           unloadComponent();
         }
       }
-      return Object.assign(oncePatchedValue, patchedValue) as Obj[FunctionName];
+      return Object.assign(oncePatchedValue, patchedValue) as $Object[FunctionName];
     };
 
     this.registerPatch(params.obj, factories);
@@ -248,12 +249,12 @@ export class MonkeyAroundComponent extends ComponentEx {
   /**
    * Registers a single-method patch using a simplified handler.
    *
-   * @typeParam Obj - The object to patch.
+   * @typeParam $Object - The object to patch.
    * @typeParam MethodName - The method name to patch.
    * @param params - The parameters of the patch.
    */
-  public registerMethodPatch<Obj extends object, const MethodName extends MethodKeys<Obj>>(
-    params: MonkeyAroundComponentRegisterMethodPatchParams<Obj, MethodName>
+  public registerMethodPatch<$Object extends object, const MethodName extends MethodKeys<$Object>>(
+    params: MonkeyAroundComponentRegisterMethodPatchParams<$Object, MethodName>
   ): void {
     this.ensureLoaded();
 
@@ -262,28 +263,28 @@ export class MonkeyAroundComponent extends ComponentEx {
       getMonkeyAroundPatches().set(originalMethod, params.patchToken);
     }
 
-    type Fn = ExtractFunction<Obj, MethodName>;
+    type $Function = ExtractFunction<$Object, MethodName>;
 
     this.registerFunctionPatch({
       functionName: params.methodName,
       obj: params.obj,
       once: params.once ?? false,
       patchHandler: (originalMethodRaw) => {
-        const originalMethod = originalMethodRaw as Fn;
+        const originalMethod = originalMethodRaw as $Function;
         const finalPatchedMethod = params.postPatchHandler?.({
           originalMethod,
           patchedMethod
         }) ?? patchedMethod;
-        return finalPatchedMethod as Obj[MethodName];
+        return finalPatchedMethod as $Object[MethodName];
 
-        function patchedMethod(this: Obj, ...originalArgs: Parameters<Fn>): ReturnType<Fn> {
+        function patchedMethod(this: $Object, ...originalArguments: Parameters<$Function>): ReturnType<$Function> {
           // eslint-disable-next-line consistent-this, @typescript-eslint/no-this-alias -- We need to use the `this` context.
           const originalThis = this;
           return params.patchHandler({
             fallback() {
-              return originalMethod.call(originalThis, ...originalArgs);
+              return originalMethod.call(originalThis, ...originalArguments);
             },
-            originalArgs,
+            originalArgs: originalArguments,
             originalMethod,
             originalMethodBound: originalMethod.bind(originalThis),
             originalThis
@@ -296,11 +297,11 @@ export class MonkeyAroundComponent extends ComponentEx {
   /**
    * Registers a patch using raw factories (advanced API).
    *
-   * @typeParam Obj - The object to patch.
+   * @typeParam $Object - The object to patch.
    * @param obj - The object to patch.
    * @param factories - The factories to apply to the object.
    */
-  public registerPatch<Obj extends object>(obj: Obj, factories: Factories<Obj>): void {
+  public registerPatch<$Object extends object>(obj: $Object, factories: Factories<$Object>): void {
     this.ensureLoaded();
 
     const uninstaller = around(obj, factories);
@@ -312,12 +313,12 @@ export class MonkeyAroundComponent extends ComponentEx {
  * Applies a patch to the object.
  * Better strongly-typed version of `monkey-around`.
  *
- * @typeParam Obj - The object to patch.
+ * @typeParam $Object - The object to patch.
  * @param obj - The object to patch.
  * @param factories - The factories to apply to the object.
  * @returns The uninstaller that removes the patch when called.
  */
-export function around<Obj extends object>(obj: Obj, factories: Factories<Obj>): Uninstaller {
+export function around<$Object extends object>(obj: $Object, factories: Factories<$Object>): Uninstaller {
   return originalAround(obj as GenericObject, factories as OriginalFactories<GenericObject>);
 }
 

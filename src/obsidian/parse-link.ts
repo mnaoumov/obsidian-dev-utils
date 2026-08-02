@@ -456,7 +456,7 @@ export function encodeUrl(url: string): string {
  */
 export function escapeAlias(alias: string): string {
   return replaceAll({
-    replacer: '\\$&',
+    replacer: String.raw`\$&`,
     searchValue: SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX,
     str: alias
   });
@@ -519,7 +519,7 @@ export function parseLinks(str: string): ParseLinkResult[] {
   const DUMMY_CHARACTER = '@';
 
   const EMBED_INSIDE_LINK_REG_EXP = /\[(?<LinkAlias>!\[.*?\]\(.+?\))\]\((?<Link>.+?)\)/g;
-  const noInsideEmbedsLinksStr = replaceAll({
+  const noInsideEmbedsLinksString = replaceAll({
     replacer: ({ capturedGroupArgs: [linkAlias = '', link = ''] }) => {
       const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
       return `[${dummyAlias}](${link})`;
@@ -528,17 +528,17 @@ export function parseLinks(str: string): ParseLinkResult[] {
     str
   });
 
-  const noEmbedStr = replaceAll({
-    replacer: (args) => {
-      embedSymbolOffsets.add(args.offset);
+  const noEmbedString = replaceAll({
+    replacer: ($arguments) => {
+      embedSymbolOffsets.add($arguments.offset);
       return NO_EMBED_LINK_PREFIX;
     },
     searchValue: EMBED_LINK_PREFIX,
-    str: noInsideEmbedsLinksStr
+    str: noInsideEmbedsLinksString
   });
 
   const processor = remark().use(remarkParse).use(wikiLinkPlugin, { aliasDivider: WIKILINK_DIVIDER });
-  const root = processor.parse(noEmbedStr);
+  const root = processor.parse(noEmbedString);
 
   const links: ParseLinkResult[] = [];
   const textLinks: ParseLinkResult[] = [];
@@ -546,14 +546,17 @@ export function parseLinks(str: string): ParseLinkResult[] {
   visit(root, (node: Node) => {
     let link: ParseLinkResult;
     switch (node.type) {
-      case 'link':
+      case 'link': {
         link = parseLinkNode(node as Link, str);
         break;
-      case 'wikiLink':
+      }
+      case 'wikiLink': {
         link = parseWikilinkNode(node as WikiLinkNode, str);
         break;
-      default:
+      }
+      default: {
         return;
+      }
     }
 
     if (embedSymbolOffsets.has(link.startOffset - 1)) {
@@ -705,9 +708,9 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
   });
 }
 
-function getRawLink(node: Node, str: string): string {
+function getRawLink(node: Node, $string: string): string {
   const pos = ensureNonNullable(node.position);
-  return str.slice(pos.start.offset, pos.end.offset);
+  return $string.slice(pos.start.offset, pos.end.offset);
 }
 
 function hasAngleBracketsInLink(params: HasAngleBracketsInLinkParams): boolean {
@@ -727,16 +730,16 @@ function offsetToLoc(content: string, offset: number): Loc {
   };
 }
 
-function parseLinkNode(node: Link, str: string): ParseLinkResult {
+function parseLinkNode(node: Link, $string: string): ParseLinkResult {
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
-  const raw = getRawLink(node, str);
+  const raw = getRawLink(node, $string);
   const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
   const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
   const position = ensureNonNullable(node.position);
   const nodeEndOffset = ensureNonNullable(position.end.offset);
   const nodeStartOffset = ensureNonNullable(position.start.offset);
-  const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
+  const rawUrl = $string.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
   const hasAngleBrackets = hasAngleBracketsInLink({
     raw,
     rawUrl
@@ -750,7 +753,7 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   const alias = extractAlias({
     aliasEndOffset: aliasNodeEndOffset,
     aliasStartOffset: aliasNodeStartOffset,
-    str
+    str: $string
   });
   return normalizeOptionalProperties<ParseLinkResult>({
     alias,
@@ -769,16 +772,16 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   });
 }
 
-function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
+function parseWikilinkNode(node: WikiLinkNode, $string: string): ParseLinkResult {
   const position = ensureNonNullable(node.position);
   return normalizeOptionalProperties<ParseLinkResult>({
-    alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
+    alias: $string.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
     endOffset: ensureNonNullable(position.end.offset),
     isEmbed: false,
     isExternal: false,
     isFileUrl: false,
     isWikilink: true,
-    raw: getRawLink(node, str),
+    raw: getRawLink(node, $string),
     startOffset: ensureNonNullable(position.start.offset),
     url: node.value
   });

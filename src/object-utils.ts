@@ -134,7 +134,7 @@ interface EqualityComparerEntry<T> {
 }
 
 interface JSONSerializable {
-  toJSON(...args: unknown[]): unknown;
+  toJSON(...$arguments: unknown[]): unknown;
 }
 
 interface ModuleWithDefaultExport<T> {
@@ -373,12 +373,12 @@ class ToJsonConverter {
       value
     });
     let json = ensureNonNullable(JSON.stringify(plainObject, null, this.fullOptions.space));
-    const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
+    const placeholderRegExp = new RegExp(String.raw`"\[\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"`, 'g');
     json = replaceAll({
-      replacer: ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
+      replacer: ({ capturedGroupArgs: [key = '', indexString = ''] }) =>
         applySubstitutions({
           functionTexts: this.functionTexts,
-          index: indexStr ? parseInt(indexStr, 10) : 0,
+          index: indexString ? parseInt(indexString, 10) : 0,
           key: key as TokenSubstitutionKey,
           substitutions: this.fullOptions.tokenSubstitutions
         }),
@@ -547,11 +547,11 @@ class ToJsonConverter {
           key,
           value: newValue
         });
-      } catch (e) {
+      } catch (error) {
         if (this.fullOptions.shouldCatchToJSONErrors) {
           return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
         }
-        throw e;
+        throw error;
       }
     }
     return undefined;
@@ -931,21 +931,28 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
 function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
   switch (params.key) {
-    case TokenSubstitutionKey.CircularReference:
+    case TokenSubstitutionKey.CircularReference: {
       return params.substitutions.circularReference;
-    case TokenSubstitutionKey.Function:
+    }
+    case TokenSubstitutionKey.Function: {
       return ensureNonNullable(params.functionTexts[params.index], `Function with index ${String(params.index)} not found`);
-    case TokenSubstitutionKey.MaxDepthLimitReached:
+    }
+    case TokenSubstitutionKey.MaxDepthLimitReached: {
       return params.substitutions.maxDepthLimitReached;
-    case TokenSubstitutionKey.MaxDepthLimitReachedArray:
+    }
+    case TokenSubstitutionKey.MaxDepthLimitReachedArray: {
       return `Array(${String(params.index)})`;
-    case TokenSubstitutionKey.ToJSONFailed:
+    }
+    case TokenSubstitutionKey.ToJSONFailed: {
       return params.substitutions.toJSONFailed;
-    case TokenSubstitutionKey.Undefined:
+    }
+    case TokenSubstitutionKey.Undefined: {
       return 'undefined';
+    }
     /* v8 ignore start -- Exhaustive switch guard; default branch is unreachable. */
-    default:
+    default: {
       assertNever(params.key);
+    }
       /* v8 ignore stop */
   }
 }
@@ -974,7 +981,7 @@ function assignWithNonEnumerablePropertiesImpl(target: object, ...sources: objec
 
   const sourcePrototypes = sources
     .map((source) => getPrototypeOf<object | undefined>(source))
-    .filter((proto): proto is object => !!proto);
+    .filter((prototype): prototype is object => !!prototype);
 
   if (sourcePrototypes.length > 0) {
     const targetPrototype = assignWithNonEnumerablePropertiesImpl({}, getPrototypeOf(target), ...sourcePrototypes);
@@ -1013,7 +1020,7 @@ function deepEqualMap(a: Map<unknown, unknown>, b: Map<unknown, unknown>): boole
     return false;
   }
 
-  for (const [key, value] of a.entries()) {
+  for (const [key, value] of a) {
     if (!b.has(key) || !deepEqual(value, b.get(key))) {
       return false;
     }

@@ -105,9 +105,9 @@ export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
   let debuggerEx = debuggersMap.get(key);
   if (!debuggerEx) {
     debuggerEx = getSharedDebugLibInstance()(namespace);
-    debuggerEx.log = (message: string, ...args: unknown[]): void => {
+    debuggerEx.log = (message: string, ...$arguments: unknown[]): void => {
       logWithCaller({
-        args,
+        args: $arguments,
         framesToSkip,
         message,
         namespace
@@ -174,9 +174,7 @@ function disableNamespaces(namespaces: string | string[]): void {
       continue;
     }
     const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-    if (set.has(namespace)) {
-      set.delete(namespace);
-    }
+    set.delete(namespace);
     set.add(negatedNamespace);
   }
   setNamespaces(Array.from(set));
@@ -187,9 +185,7 @@ function enableNamespaces(namespaces: string | string[]): void {
   for (const namespace of toArray(namespaces)) {
     if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
       const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-      if (set.has(negatedNamespace)) {
-        set.delete(negatedNamespace);
-      }
+      set.delete(negatedNamespace);
     }
     set.add(namespace);
   }

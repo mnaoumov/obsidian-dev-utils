@@ -384,7 +384,7 @@ describe('isTreatedAsAttachment', () => {
   it('should ignore empty configured extensions', () => {
     app = App.createConfigured__({ files: { 'Docs/note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('Docs/note.md');
-    expect(isTreatedAsAttachment({ attachmentExtensions: ['', '   ', '...'], pathOrFile: file })).toBe(false);
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['', ' '.repeat(3), '...'], pathOrFile: file })).toBe(false);
   });
 
   it('should return false when no extensions are configured', () => {

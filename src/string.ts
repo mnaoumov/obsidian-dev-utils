@@ -29,20 +29,20 @@ export const EMPTY = '';
 /**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export type AsyncReplacer<CapturedGroupArgs extends string[]> = ValueProvider<StringReplacement, ReplaceArgs<CapturedGroupArgs>>;
+export type AsyncReplacer<CapturedGroupArguments extends string[]> = ValueProvider<StringReplacement, ReplaceArgs<CapturedGroupArguments>>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
+export interface ReplaceArgs<CapturedGroupArguments extends string[]> {
   /**
    * Captured group arguments.
    */
-  capturedGroupArgs: CapturedGroupArgs;
+  capturedGroupArgs: CapturedGroupArguments;
 
   /**
    * Groups of the match.
@@ -73,9 +73,9 @@ export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
 /**
  * A synchronous function that generates replacement strings, or a string to replace with.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export type Replacer<CapturedGroupArgs extends string[]> = ((args: ReplaceArgs<CapturedGroupArgs>) => StringReplacement) | StringReplacement;
+export type Replacer<CapturedGroupArguments extends string[]> = (($arguments: ReplaceArgs<CapturedGroupArguments>) => StringReplacement) | StringReplacement;
 
 type StringReplacement = MaybeReturn<string>;
 
@@ -83,13 +83,13 @@ type StringReplacement = MaybeReturn<string>;
  * Mapping of special characters to their escaped counterparts.
  */
 const ESCAPE_MAP: Record<string, string> = {
-  '\n': '\\n',
-  '\r': '\\r',
-  '\t': '\\t',
-  '\b': '\\b',
-  '\f': '\\f',
-  '\'': '\\\'',
-  '"': '\\"',
+  '\n': String.raw`\n`,
+  '\r': String.raw`\r`,
+  '\t': String.raw`\t`,
+  '\b': String.raw`\b`,
+  '\f': String.raw`\f`,
+  '\'': String.raw`\'`,
+  '"': String.raw`\"`,
   '\\': '\\\\'
 } as const;
 
@@ -193,9 +193,9 @@ export interface InsertAtParams {
 /**
  * Parameters for {@link replaceAllAsync}.
  *
- * @typeParam ReplaceGroupArgs - The types of the captured group arguments.
+ * @typeParam ReplaceGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceAllAsyncParams<ReplaceGroupArgs extends string[]> {
+export interface ReplaceAllAsyncParams<ReplaceGroupArguments extends string[]> {
   /**
    * The abort signal to control the execution of the function.
    */
@@ -204,7 +204,7 @@ export interface ReplaceAllAsyncParams<ReplaceGroupArgs extends string[]> {
   /**
    * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
    */
-  readonly replacer: AsyncReplacer<ReplaceGroupArgs>;
+  readonly replacer: AsyncReplacer<ReplaceGroupArguments>;
 
   /**
    * The string or regular expression to search for.
@@ -220,13 +220,13 @@ export interface ReplaceAllAsyncParams<ReplaceGroupArgs extends string[]> {
 /**
  * Parameters for {@link replaceAll}.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceAllParams<CapturedGroupArgs extends string[]> {
+export interface ReplaceAllParams<CapturedGroupArguments extends string[]> {
   /**
    * A replacer function that generates replacement strings, or a string to replace with.
    */
-  readonly replacer: Replacer<CapturedGroupArgs>;
+  readonly replacer: Replacer<CapturedGroupArguments>;
 
   /**
    * The string or regular expression to search for.
@@ -358,12 +358,12 @@ export function escape(str: string): string {
 export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOffset: number) => number {
   const lfOffsetToOriginalOffsetMap: number[] = [];
 
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === CR && str[i + 1] === LF) {
-      lfOffsetToOriginalOffsetMap.push(i + 1);
-      i++;
+  for (let index = 0; index < str.length; index++) {
+    if (str[index] === CR && str[index + 1] === LF) {
+      lfOffsetToOriginalOffsetMap.push(index + 1);
+      index++;
     } else {
-      lfOffsetToOriginalOffsetMap.push(i);
+      lfOffsetToOriginalOffsetMap.push(index);
     }
   }
 
@@ -468,14 +468,14 @@ export function replace(str: string, replacementsMap: Record<string, string>): s
 /**
  * Replaces all occurrences of a search string or pattern with the results of an replacer function.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  * @param params - The parameters.
  * @returns The string with all replacements made.
  */
-export function replaceAll<CapturedGroupArgs extends string[]>(params: ReplaceAllParams<CapturedGroupArgs>): string {
+export function replaceAll<CapturedGroupArguments extends string[]>(params: ReplaceAllParams<CapturedGroupArguments>): string {
   const { replacer, str } = params;
   let { searchValue } = params;
-  if (typeof replacer === 'undefined') {
+  if (replacer === undefined) {
     return str;
   }
 
@@ -487,44 +487,44 @@ export function replaceAll<CapturedGroupArgs extends string[]>(params: ReplaceAl
     return str.replaceAll(searchValue, replacer);
   }
 
-  return str.replaceAll(searchValue, (substring: string, ...args: unknown[]) => {
+  return str.replaceAll(searchValue, (substring: string, ...$arguments: unknown[]) => {
     const SOURCE_INDEX_OFFSET_FOR_GROUP_ARG = 2;
-    const hasGroupsArg = typeof args.at(-1) === 'object';
-    const sourceIndex = hasGroupsArg ? args.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : args.length - 1;
+    const hasGroupsArgument = typeof $arguments.at(-1) === 'object';
+    const sourceIndex = hasGroupsArgument ? $arguments.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : $arguments.length - 1;
 
-    const replaceArgs: ReplaceArgs<CapturedGroupArgs> = {
+    const replaceArguments: ReplaceArgs<CapturedGroupArguments> = {
       // eslint-disable-next-line no-restricted-syntax -- Can't avoid.
-      capturedGroupArgs: [] as unknown[] as CapturedGroupArgs,
-      groups: hasGroupsArg ? args.at(-1) as Record<string, string | undefined> : undefined,
+      capturedGroupArgs: [] as unknown[] as CapturedGroupArguments,
+      groups: hasGroupsArgument ? $arguments.at(-1) as Record<string, string | undefined> : undefined,
       missingGroupIndices: [],
-      offset: args.at(sourceIndex - 1) as number,
-      source: args.at(sourceIndex) as string,
+      offset: $arguments.at(sourceIndex - 1) as number,
+      source: $arguments.at(sourceIndex) as string,
       substring
     };
 
-    for (let i = 0; i < sourceIndex - 1; i++) {
-      const item = args[i];
+    for (let index = 0; index < sourceIndex - 1; index++) {
+      const item = $arguments[index];
       if (typeof item === 'string') {
-        replaceArgs.capturedGroupArgs.push(item);
+        replaceArguments.capturedGroupArgs.push(item);
         /* v8 ignore start -- v8 tracks the implicit else branch that never happens. */
-      } else if (typeof item === 'undefined') {
+      } else if (item === undefined) {
         /* v8 ignore stop */
-        replaceArgs.missingGroupIndices.push(i);
+        replaceArguments.missingGroupIndices.push(index);
       }
     }
 
-    return (replacer(replaceArgs) as string | undefined) ?? replaceArgs.substring;
+    return (replacer(replaceArguments) as string | undefined) ?? replaceArguments.substring;
   });
 }
 
 /**
  * Asynchronously replaces all occurrences of a search string or pattern with the results of an asynchronous replacer function.
  *
- * @typeParam ReplaceGroupArgs - The types of the captured group arguments.
+ * @typeParam ReplaceGroupArguments - The types of the captured group arguments.
  * @param params - The parameters.
  * @returns A {@link Promise} that resolves to the string with all replacements made.
  */
-export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(params: ReplaceAllAsyncParams<ReplaceGroupArgs>): Promise<string> {
+export async function replaceAllAsync<ReplaceGroupArguments extends string[]>(params: ReplaceAllAsyncParams<ReplaceGroupArguments>): Promise<string> {
   const { replacer, searchValue, str } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
@@ -539,9 +539,9 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(params:
 
   const replacementAsyncFns: (() => Promise<StringReplacement>)[] = [];
 
-  replaceAll<ReplaceGroupArgs>({
-    replacer: (args) => {
-      replacementAsyncFns.push(() => resolveValue(replacer, { abortSignal, ...args }));
+  replaceAll<ReplaceGroupArguments>({
+    replacer: ($arguments) => {
+      replacementAsyncFns.push(() => resolveValue(replacer, { abortSignal, ...$arguments }));
       return '';
     },
     searchValue,
@@ -550,14 +550,14 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(params:
 
   const replacements: StringReplacement[] = [];
 
-  for (const asyncFn of replacementAsyncFns) {
+  for (const asyncFunction of replacementAsyncFns) {
     abortSignal.throwIfAborted();
-    replacements.push(await asyncFn());
+    replacements.push(await asyncFunction());
   }
 
   abortSignal.throwIfAborted();
   return replaceAll({
-    replacer: (args): string => replacements.shift() ?? args.substring,
+    replacer: ($arguments): string => replacements.shift() ?? $arguments.substring,
     searchValue,
     str
   });

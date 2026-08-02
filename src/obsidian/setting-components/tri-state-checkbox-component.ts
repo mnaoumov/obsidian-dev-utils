@@ -37,7 +37,7 @@ export class TriStateCheckboxComponent extends ValueComponent<boolean | null> im
    *
    * @returns The validator element.
    */
-  public get validatorEl(): ValidatorElement {
+  public get validatorElement(): ValidatorElement {
     return this.inputEl;
   }
 

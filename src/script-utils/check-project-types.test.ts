@@ -91,12 +91,12 @@ afterEach(() => {
 describe('toCanonical', () => {
   it('should lowercase and normalize separators on a case-insensitive file system', () => {
     mockSys.useCaseSensitiveFileNames = false;
-    expect(toCanonical('C:\\Foo\\Bar.TS')).toBe('c:/foo/bar.ts');
+    expect(toCanonical(String.raw`C:\Foo\Bar.TS`)).toBe('c:/foo/bar.ts');
   });
 
   it('should preserve case but normalize separators on a case-sensitive file system', () => {
     mockSys.useCaseSensitiveFileNames = true;
-    expect(toCanonical('C:\\Foo\\Bar.TS')).toBe('C:/Foo/Bar.TS');
+    expect(toCanonical(String.raw`C:\Foo\Bar.TS`)).toBe('C:/Foo/Bar.TS');
   });
 });
 
@@ -257,7 +257,6 @@ describe('parseTsConfig', () => {
     mockFormatDiagnostic.mockReturnValue('unrecoverable config error');
     mockGetParsedCommandLineOfConfigFile.mockImplementation((_configFileName, _optionsToExtend, host) => {
       host.onUnRecoverableConfigFileDiagnostic(diagnostic);
-      return undefined;
     });
 
     expect(() => parseTsConfig('/root/tsconfig.json')).toThrow('unrecoverable config error');

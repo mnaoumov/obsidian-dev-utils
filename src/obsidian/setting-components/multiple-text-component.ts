@@ -45,7 +45,7 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]> imp
    *
    * @returns The validator element of the component.
    */
-  public get validatorEl(): ValidatorElement {
+  public get validatorElement(): ValidatorElement {
     return this.inputEl;
   }
 

@@ -32,7 +32,7 @@ import {
   extractTypeAliasInfo,
   getDescription,
   getExamples,
-  getParamDescriptions,
+  getParamDescriptions as getParameterDescriptions,
   getRemarks,
   getReturnDescription,
   getSince
@@ -44,11 +44,11 @@ const EXCLUDED_DIR_SEGMENTS = new Set(['@types', 'styles', 'test-helpers']);
 
 /** Collect top-level exported functions. */
 export function collectFunctions(src: SourceFile, types: Map<string, TypeInfo>, namespace: string): void {
-  for (const fn of src.getFunctions()) {
-    if (!fn.isExported()) {
+  for (const $function of src.getFunctions()) {
+    if (!$function.isExported()) {
       continue;
     }
-    const name = fn.getName();
+    const name = $function.getName();
     if (!name) {
       continue;
     }
@@ -56,74 +56,74 @@ export function collectFunctions(src: SourceFile, types: Map<string, TypeInfo>, 
     if (types.has(key)) {
       continue;
     }
-    const paramDescriptions = getParamDescriptions(fn);
-    const params = fn.getParameters().map((p) => ({
-      description: paramDescriptions.get(p.getName()) ?? '',
+    const parameterDescriptions = getParameterDescriptions($function);
+    const params = $function.getParameters().map((p) => ({
+      description: parameterDescriptions.get(p.getName()) ?? '',
       name: p.getName(),
       type: simplifyType(p.getType().getText())
     }));
-    const paramStr = params.map((p) => `${p.name}: ${p.type}`).join(', ');
-    const returnType = simplifyType(fn.getReturnType().getText());
-    const signature = `${name}(${paramStr})`;
+    const parameterString = params.map((p) => `${p.name}: ${p.type}`).join(', ');
+    const returnType = simplifyType($function.getReturnType().getText());
+    const signature = `${name}(${parameterString})`;
     types.set(key, {
       baseTypes: [],
-      description: getDescription(fn),
+      description: getDescription($function),
       enumMembers: [],
-      examples: getExamples(fn),
+      examples: getExamples($function),
       implementsTypes: [],
       kind: 'function',
       methods: [{
-        description: getDescription(fn),
-        examples: getExamples(fn),
+        description: getDescription($function),
+        examples: getExamples($function),
         inheritedFrom: '',
         isStatic: false,
         name,
         overloadKey: name,
         parameters: params,
-        remarks: getRemarks(fn),
-        returnDescription: getReturnDescription(fn),
+        remarks: getRemarks($function),
+        returnDescription: getReturnDescription($function),
         returnType,
         signature,
-        since: getSince(fn),
+        since: getSince($function),
         type: ''
       }],
       name,
       namespace,
       properties: [],
-      remarks: getRemarks(fn),
-      typeParameters: fn.getTypeParameters().map((tp) => tp.getText())
+      remarks: getRemarks($function),
+      typeParameters: $function.getTypeParameters().map((tp) => tp.getText())
     });
   }
 }
 
 /** Collect top-level exported variable declarations (e.g. `export const EMPTY = ''`). */
 export function collectVariables(src: SourceFile, types: Map<string, TypeInfo>, namespace: string): void {
-  for (const varStmt of src.getVariableStatements()) {
-    if (!varStmt.isExported()) {
+  for (const variableStatement of src.getVariableStatements()) {
+    if (!variableStatement.isExported()) {
       continue;
     }
-    const declKind = varStmt.getDeclarationKind();
-    for (const decl of varStmt.getDeclarations()) {
-      const name = decl.getName();
+    const declarationKind = variableStatement.getDeclarationKind();
+    for (const declaration of variableStatement.getDeclarations()) {
+      const name = declaration.getName();
       const key = qualifiedKey(namespace, name);
       if (!name || types.has(key)) {
         continue;
       }
       types.set(key, {
         baseTypes: [],
-        description: getDescription(varStmt),
+        description: getDescription(variableStatement),
         enumMembers: [],
-        examples: getExamples(varStmt),
+        examples: getExamples(variableStatement),
         implementsTypes: [],
         kind: 'variable',
         methods: [],
         name,
         namespace,
         properties: [],
-        remarks: getRemarks(varStmt),
+        remarks: getRemarks(variableStatement),
         typeParameters: [],
-        variableKeyword: declKind,
-        variableType: simplifyType(decl.getType().getText())
+        variableKeyword: declarationKind,
+        variableType: simplifyType(declaration.getType().getText())
       });
     }
   }
@@ -156,7 +156,7 @@ export function computeCacheHash(entryFiles: string[]): string {
 
 /** Compute the namespace (POSIX path relative to `src`, no extension) for a source file. */
 export function computeNamespace(srcDir: string, filePath: string): string {
-  return relative(srcDir, filePath).replace(/\\/g, '/').replace(/\.ts$/, '');
+  return relative(srcDir, filePath).replaceAll('\\', '/').replace(/\.ts$/, '');
 }
 
 /**
@@ -193,13 +193,13 @@ export function processSourceFile(src: SourceFile, types: Map<string, TypeInfo>,
     }
   }
 
-  for (const enumDecl of src.getEnums()) {
-    if (!enumDecl.isExported()) {
+  for (const enumDeclaration of src.getEnums()) {
+    if (!enumDeclaration.isExported()) {
       continue;
     }
-    const key = qualifiedKey(namespace, enumDecl.getName());
+    const key = qualifiedKey(namespace, enumDeclaration.getName());
     if (!types.has(key)) {
-      types.set(key, extractEnumInfo(enumDecl, namespace));
+      types.set(key, extractEnumInfo(enumDeclaration, namespace));
     }
   }
 
@@ -239,9 +239,9 @@ export function registerGenericTypeParams(types: Map<string, TypeInfo>): void {
   }
   for (const [, info] of types) {
     for (const tp of info.typeParameters) {
-      const bareParam = tp.replace(/\s+extends\s+.*$/, '');
-      if (!knownNames.has(bareParam)) {
-        GENERIC_TYPE_PARAMS.add(bareParam);
+      const bareParameter = tp.replace(/\s+extends\s+.*$/, '');
+      if (!knownNames.has(bareParameter)) {
+        GENERIC_TYPE_PARAMS.add(bareParameter);
       }
     }
   }

@@ -79,7 +79,7 @@ async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
     }
   }
 
-  for (let i = 0; i < CONCURRENCY; i++) {
+  for (let $index = 0; $index < CONCURRENCY; $index++) {
     pool.push(processNext());
   }
 

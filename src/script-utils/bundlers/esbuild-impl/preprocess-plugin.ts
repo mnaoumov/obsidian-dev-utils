@@ -94,19 +94,19 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
       build.initialOptions.banner['js'] ??= '';
       build.initialOptions.banner['js'] += `\n(${String(isEsm ? initEsm : initCjs)})();\n`;
 
-      build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
-        let contents = await readFile(args.path, 'utf-8');
+      build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async ($arguments) => {
+        let contents = await readFile($arguments.path, 'utf-8');
 
         for (const [key, value] of Object.entries(replacements)) {
           const variable = `__${makeValidVariableName(key)}`;
           if (!contents.includes(key)) {
             continue;
           }
-          const valueStr = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
+          const valueString = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
-          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n${contents}`;
+          contents = `var ${variable} = globalThis['${key}'] ?? ${valueString};\n${contents}`;
         }
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
@@ -165,16 +165,15 @@ function initCjs(): void {
     globalThisRecord[key] ??= newFuncs[key]?.();
   }
 
-  function name(obj: unknown): unknown {
-    return obj;
+  function name($object: unknown): unknown {
+    return $object;
   }
 
   function extractDefault(module: Partial<EsmModule> | undefined): unknown {
     return module && module.__esModule && 'default' in module ? module.default : module;
   }
 
-  const OBSIDIAN_BUILT_IN_MODULE_NAMES = [
-    'obsidian',
+  const OBSIDIAN_BUILT_IN_MODULE_NAMES = new Set([
     '@codemirror/autocomplete',
     '@codemirror/collab',
     '@codemirror/commands',
@@ -185,11 +184,12 @@ function initCjs(): void {
     '@codemirror/text',
     '@codemirror/view',
     '@lezer/common',
+    '@lezer/highlight',
     '@lezer/lr',
-    '@lezer/highlight'
-  ];
+    'obsidian'
+  ]);
 
-  const DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES = [
+  const DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES = new Set([
     '@codemirror/closebrackets',
     '@codemirror/comment',
     '@codemirror/fold',
@@ -202,10 +202,10 @@ function initCjs(): void {
     '@codemirror/rectangular-selection',
     '@codemirror/stream-parser',
     '@codemirror/tooltip'
-  ];
+  ]);
 
   function requirePatched(id: string): unknown {
-    if (OBSIDIAN_BUILT_IN_MODULE_NAMES.includes(id) || DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES.includes(id)) {
+    if (OBSIDIAN_BUILT_IN_MODULE_NAMES.has(id) || DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES.has(id)) {
       return originalRequire?.(id);
     }
 

@@ -44,9 +44,9 @@ describe('CheckboxComponent', () => {
     expect(comp.getValue()).toBe(false);
   });
 
-  it('should return inputEl as validatorEl', () => {
+  it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorEl).toBe(comp.inputEl);
+    expect(comp.validatorElement).toBe(comp.inputEl);
   });
 
   it('should call change callback on change event', () => {

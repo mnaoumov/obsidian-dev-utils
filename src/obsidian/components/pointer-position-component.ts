@@ -45,8 +45,8 @@ export class PointerPositionComponent extends AllWindowsEventComponent {
      * before the menu opens.
      */
     this.registerAllWindowsHandler((win) => {
-      this.registerDomEvent(win.document, 'pointerdown', (evt) => {
-        this.lastAnchor = createAnchorFromPoint(evt.clientX, evt.clientY, win.document);
+      this.registerDomEvent(win.document, 'pointerdown', ($event) => {
+        this.lastAnchor = createAnchorFromPoint($event.clientX, $event.clientY, win.document);
       }, { capture: true });
     });
   }

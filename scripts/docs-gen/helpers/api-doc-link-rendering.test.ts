@@ -69,7 +69,7 @@ describe('api-doc link rendering', () => {
 
     expect(memberHref('showNotice', '', types, 'alpha')).toBe('./showNotice/');
     expect(resolveLinks('{@link PluginNoticeComponent.showNotice}', types, 'alpha')).toBe('[PluginNoticeComponent.showNotice](/obsidian-dev-utils/api/alpha/PluginNoticeComponent/showNotice/)');
-    expect(renderMdxProse('Use <Alpha> and {@link PluginNoticeComponent}.', types, 'alpha')).toBe('Use \\<Alpha> and [PluginNoticeComponent](/obsidian-dev-utils/api/alpha/PluginNoticeComponent/).');
+    expect(renderMdxProse('Use <Alpha> and {@link PluginNoticeComponent}.', types, 'alpha')).toBe(String.raw`Use \<Alpha> and [PluginNoticeComponent](/obsidian-dev-utils/api/alpha/PluginNoticeComponent/).`);
   });
 
   it('converts inline Markdown without emitting unsafe relative links', () => {

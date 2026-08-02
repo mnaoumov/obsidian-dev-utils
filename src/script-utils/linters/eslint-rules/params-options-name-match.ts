@@ -57,16 +57,16 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
           return;
         }
 
-        const fnNode = node as FunctionNodeWithParams & Rule.Node;
+        const functionNode = node as FunctionNodeWithParams & Rule.Node;
         const expectedPrefix = getExpectedPrefix(node);
         if (!expectedPrefix) {
           return;
         }
 
-        const isSoleParam = fnNode.params.length === 1;
+        const isSoleParameter = functionNode.params.length === 1;
 
-        for (const param of fnNode.params) {
-          const typeInfo = getTypeAnnotationInfo(param);
+        for (const parameter of functionNode.params) {
+          const typeInfo = getTypeAnnotationInfo(parameter);
           if (!typeInfo) {
             continue;
           }
@@ -77,7 +77,7 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
 
           // A required sole-argument bag → `*Params`. An optional bag (`?` or a default
           // Value) or a bag supplementary to other parameters → `*Options`.
-          const expectedSuffix = isSoleParam && !isOptionalParam(param) ? PARAMS_SUFFIX : OPTIONS_SUFFIX;
+          const expectedSuffix = isSoleParameter && !isOptionalParameter(parameter) ? PARAMS_SUFFIX : OPTIONS_SUFFIX;
           const expectedName = `${expectedPrefix}${expectedSuffix}`;
 
           if (typeInfo.name !== expectedName) {
@@ -119,8 +119,8 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
 
       // Arrow function in variable: check if the variable declaration is exported
       if (node.parent?.type === 'VariableDeclarator') {
-        const varDecl = node.parent.parent;
-        if (varDecl?.parent?.type === 'ExportNamedDeclaration') {
+        const variableDeclaration = node.parent.parent;
+        if (variableDeclaration?.parent?.type === 'ExportNamedDeclaration') {
           return true;
         }
       }
@@ -193,19 +193,19 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
       return undefined;
     }
 
-    function isOptionalParam(param: Rule.Node): boolean {
+    function isOptionalParameter(parameter: Rule.Node): boolean {
       // `options: FooOptions = {}` is an AssignmentPattern; `options?: FooOptions` carries an
       // `optional` flag. Both make the bag optional → `*Options`.
-      if (param.type === 'AssignmentPattern') {
+      if (parameter.type === 'AssignmentPattern') {
         return true;
       }
-      return (param as MaybeOptionalNode).optional === true;
+      return (parameter as MaybeOptionalNode).optional === true;
     }
 
-    function getTypeAnnotationInfo(param: Rule.Node): TypeAnnotationInfo | undefined {
+    function getTypeAnnotationInfo(parameter: Rule.Node): TypeAnnotationInfo | undefined {
       // Unwrap a defaulted parameter such as `options: FooOptions = {}`.
       // Its type annotation lives on the AssignmentPattern's left-hand binding.
-      const target = param.type === 'AssignmentPattern' ? param.left : param;
+      const target = parameter.type === 'AssignmentPattern' ? parameter.left : parameter;
 
       /* v8 ignore start -- Defensive guard: TypeScript-parsed params always have typeAnnotation when typed. */
       if (!('typeAnnotation' in target) || !target.typeAnnotation) {
@@ -221,11 +221,11 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
       }
       /* v8 ignore stop */
 
-      const typeNodeObj = typeNode as Record<string, unknown>;
+      const typeNodeObject = typeNode as Record<string, unknown>;
 
       // Direct reference: FooBarParams
-      if (typeNodeObj['type'] === 'TSTypeReference' && typeNodeObj['typeName'] && typeof typeNodeObj['typeName'] === 'object') {
-        const typeName = typeNodeObj['typeName'] as Record<string, unknown>;
+      if (typeNodeObject['type'] === 'TSTypeReference' && typeNodeObject['typeName'] && typeof typeNodeObject['typeName'] === 'object') {
+        const typeName = typeNodeObject['typeName'] as Record<string, unknown>;
         /* v8 ignore start -- Defensive guard: TSTypeReference typeName is always an Identifier with a string name. */
         if (typeName['type'] === 'Identifier' && typeof typeName['name'] === 'string') {
           /* v8 ignore stop */

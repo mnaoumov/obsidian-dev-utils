@@ -14,7 +14,7 @@ interface Nested {
   value: number;
 }
 
-interface TestObj {
+interface TestObject {
   fn(): string;
   name: string;
   nested: Nested;
@@ -22,62 +22,62 @@ interface TestObj {
 
 describe('strictProxy', () => {
   it('should return provided properties', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(proxy.name).toBe('test');
   });
 
   it('should throw on unmocked property access', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(() => proxy.fn()).toThrow('Unmocked property "fn" was accessed on mock object');
   });
 
   it('should recursively proxy nested plain objects', () => {
-    const proxy = strictProxy<TestObj>({ nested: { value: 42 } });
+    const proxy = strictProxy<TestObject>({ nested: { value: 42 } });
     expect(proxy.nested.value).toBe(42);
   });
 
   it('should cache proxied children and return the same reference', () => {
-    const proxy = strictProxy<TestObj>({ nested: { value: 42 } });
+    const proxy = strictProxy<TestObject>({ nested: { value: 42 } });
     const first = proxy.nested;
     const second = proxy.nested;
     expect(first).toBe(second);
   });
 
   it('should be idempotent — double-wrapping is a no-op', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
-    const doubleWrapped = strictProxy<TestObj>(proxy);
+    const proxy = strictProxy<TestObject>({ name: 'test' });
+    const doubleWrapped = strictProxy<TestObject>(proxy);
     expect(doubleWrapped).toBe(proxy);
     expect(doubleWrapped.name).toBe('test');
   });
 
   it('should pass through "then" without throwing', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(ensureGenericObject(proxy)['then']).toBeUndefined();
   });
 
   it('should pass through "toJSON" without throwing', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(ensureGenericObject(proxy)['toJSON']).toBeUndefined();
   });
 
   it('should pass through Symbol.iterator without throwing', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(ensureGenericObject(proxy)[Symbol.iterator]).toBeUndefined();
   });
 
   it('should pass through Symbol.toPrimitive without throwing', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(ensureGenericObject(proxy)[Symbol.toPrimitive]).toBeUndefined();
   });
 
   it('should pass through Symbol.toStringTag without throwing', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(ensureGenericObject(proxy)[Symbol.toStringTag]).toBeUndefined();
   });
 
   it('should pass through arbitrary symbols without throwing', () => {
     const sym = Symbol('custom');
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(ensureGenericObject(proxy)[sym]).toBeUndefined();
   });
 
@@ -95,25 +95,25 @@ describe('strictProxy', () => {
     class MyClass {
       public value = 10;
     }
-    interface ObjWithClass {
+    interface ObjectWithClass {
       instance: MyClass;
     }
     const instance = new MyClass();
-    const proxy = strictProxy<ObjWithClass>({ instance });
+    const proxy = strictProxy<ObjectWithClass>({ instance });
     expect(proxy.instance).toBe(instance);
   });
 
   it('should not recursively proxy arrays', () => {
-    interface ObjWithArr {
+    interface ObjectWithArray {
       items: number[];
     }
     const items = [1, 2, 3];
-    const proxy = strictProxy<ObjWithArr>({ items });
+    const proxy = strictProxy<ObjectWithArray>({ items });
     expect(proxy.items).toBe(items);
   });
 
   it('should call provided functions correctly', () => {
-    const proxy = strictProxy<TestObj>({ fn: () => 'result' });
+    const proxy = strictProxy<TestObject>({ fn: () => 'result' });
     expect(proxy.fn()).toBe('result');
   });
 });
@@ -129,23 +129,23 @@ describe('bypassStrictProxy', () => {
   });
 
   it('should return non-proxied objects as-is', () => {
-    const obj = { name: 'test' };
-    expect(bypassStrictProxy(obj)).toBe(obj);
+    const $object = { name: 'test' };
+    expect(bypassStrictProxy($object)).toBe($object);
   });
 
   it('should unwrap a strict proxy to the underlying object', () => {
     const original = { name: 'test' };
-    const proxy = strictProxy<TestObj>(original);
+    const proxy = strictProxy<TestObject>(original);
     const unwrapped = bypassStrictProxy(proxy);
     expect(unwrapped).toBe(original);
     expect(unwrapped).not.toBe(proxy);
   });
 
   it('should allow accessing missing properties on unwrapped object', () => {
-    const proxy = strictProxy<TestObj>({ name: 'test' });
+    const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(() => proxy.fn).toThrow();
 
     const unwrapped = bypassStrictProxy(proxy);
-    expect((unwrapped as Partial<TestObj>).fn).toBeUndefined();
+    expect((unwrapped as Partial<TestObject>).fn).toBeUndefined();
   });
 });

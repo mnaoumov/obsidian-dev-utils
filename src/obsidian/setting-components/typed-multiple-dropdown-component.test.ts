@@ -32,9 +32,9 @@ describe('TypedMultipleDropdownComponent', () => {
     expect(comp.selectEl).toBeInstanceOf(HTMLSelectElement);
   });
 
-  it('should return selectEl as validatorEl', () => {
+  it('should return selectEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorEl).toBe(comp.selectEl);
+    expect(comp.validatorElement).toBe(comp.selectEl);
   });
 
   it('should add options and get values', () => {

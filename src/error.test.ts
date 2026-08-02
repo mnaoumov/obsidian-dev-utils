@@ -41,8 +41,8 @@ describe('throwExpression', () => {
   });
 
   it('should throw non-Error objects', () => {
-    const obj = { code: 42 };
-    expect(() => throwExpression(obj)).toThrow();
+    const $object = { code: 42 };
+    expect(() => throwExpression($object)).toThrow();
   });
 });
 

@@ -23,7 +23,7 @@ import {
 describe('encodeUrl', () => {
   it.each([
     { expected: 'path%20with%20spaces.md', input: 'path with spaces.md' },
-    { expected: 'path%5Cto%5Cfile.md', input: 'path\\to\\file.md' },
+    { expected: 'path%5Cto%5Cfile.md', input: String.raw`path\to\file.md` },
     { expected: 'simple-path/file.md', input: 'simple-path/file.md' },
     { expected: '', input: '' },
     { expected: 'a%20b%20c', input: 'a b c' }
@@ -34,15 +34,15 @@ describe('encodeUrl', () => {
 
 describe('escapeAlias', () => {
   it.each([
-    { expected: '\\*\\*bold\\*\\*', input: '**bold**' },
-    { expected: '\\[link\\]', input: '[link]' },
-    { expected: 'back\\\\slash', input: 'back\\slash' },
-    { expected: '\\_italic\\_', input: '_italic_' },
-    { expected: '\\~\\~strikethrough\\~\\~', input: '~~strikethrough~~' },
+    { expected: String.raw`\*\*bold\*\*`, input: '**bold**' },
+    { expected: String.raw`\[link\]`, input: '[link]' },
+    { expected: String.raw`back\\slash`, input: String.raw`back\slash` },
+    { expected: String.raw`\_italic\_`, input: '_italic_' },
+    { expected: String.raw`\~\~strikethrough\~\~`, input: '~~strikethrough~~' },
     { expected: '\\`code\\`', input: '`code`' },
-    { expected: '\\<tag\\>', input: '<tag>' },
-    { expected: '\\=\\=highlight\\=\\=', input: '==highlight==' },
-    { expected: '\\$math\\$', input: '$math$' },
+    { expected: String.raw`\<tag\>`, input: '<tag>' },
+    { expected: String.raw`\=\=highlight\=\=`, input: '==highlight==' },
+    { expected: String.raw`\$math\$`, input: '$math$' },
     { expected: 'plain text 123', input: 'plain text 123' },
     { expected: '', input: '' }
   ])('should escape "$input" to "$expected"', ({ expected, input }) => {
@@ -52,9 +52,9 @@ describe('escapeAlias', () => {
 
 describe('unescapeAlias', () => {
   it.each([
-    { expected: '**bold**', input: '\\*\\*bold\\*\\*' },
-    { expected: '[link]', input: '\\[link\\]' },
-    { expected: 'back\\slash', input: 'back\\\\slash' },
+    { expected: '**bold**', input: String.raw`\*\*bold\*\*` },
+    { expected: '[link]', input: String.raw`\[link\]` },
+    { expected: String.raw`back\slash`, input: String.raw`back\\slash` },
     { expected: 'plain text', input: 'plain text' },
     { expected: '', input: '' }
   ])('should unescape "$input" to "$expected"', ({ expected, input }) => {
@@ -351,7 +351,7 @@ describe('parseLink', () => {
     it('should decode %5C in a file:// URL to a backslash', () => {
       const result = parseLink('[doc](file:///F:/dir/My%5CNotes.txt)');
       assertNonNullable(result);
-      expect(result.url).toBe('file:///F:/dir/My\\Notes.txt');
+      expect(result.url).toBe(String.raw`file:///F:/dir/My\Notes.txt`);
     });
 
     it('should leave a non-file external URL encoded', () => {
@@ -449,7 +449,7 @@ describe('parseLinks', () => {
     const results = parseLinks('file:///F:%5Cd.txt');
     const fileUrl = results.find((result) => result.isFileUrl);
     assertNonNullable(fileUrl);
-    expect(fileUrl.url).toBe('file:///F:\\d.txt');
+    expect(fileUrl.url).toBe(String.raw`file:///F:\d.txt`);
     expect(fileUrl.raw).toBe('file:///F:%5Cd.txt');
   });
 
@@ -539,7 +539,7 @@ describe('encodeUrl (additional edge cases)', () => {
     { description: 'backspace', expected: 'path%08file.md', input: 'path\x08file.md' },
     { description: 'form feed', expected: 'path%0Cfile.md', input: 'path\x0Cfile.md' },
     { description: 'null character', expected: 'path%00file.md', input: 'path\x00file.md' },
-    { description: 'mixed safe and unsafe', expected: 'path/to%20the%5Cfile.md', input: 'path/to the\\file.md' }
+    { description: 'mixed safe and unsafe', expected: 'path/to%20the%5Cfile.md', input: String.raw`path/to the\file.md` }
   ])('should encode $description correctly', ({ expected, input }) => {
     expect(encodeUrl(input)).toBe(expected);
   });
@@ -547,24 +547,24 @@ describe('encodeUrl (additional edge cases)', () => {
 
 describe('escapeAlias (additional edge cases)', () => {
   it('should escape multiple different special characters in one string', () => {
-    expect(escapeAlias('**[bold]** _italic_')).toBe('\\*\\*\\[bold\\]\\*\\* \\_italic\\_');
+    expect(escapeAlias('**[bold]** _italic_')).toBe(String.raw`\*\*\[bold\]\*\* \_italic\_`);
   });
 
   it('should escape pipe-like characters in complex markdown', () => {
-    expect(escapeAlias('a=b*c')).toBe('a\\=b\\*c');
+    expect(escapeAlias('a=b*c')).toBe(String.raw`a\=b\*c`);
   });
 });
 
 describe('unescapeAlias (additional edge cases)', () => {
   it.each([
-    { description: 'triple backslashes before a special character', expected: '\\*', input: '\\\\\\*' },
-    { description: 'quadruple backslashes before a special character', expected: '\\\\*', input: '\\\\\\\\\\*' },
+    { description: 'triple backslashes before a special character', expected: String.raw`\*`, input: String.raw`\\\*` },
+    { description: 'quadruple backslashes before a special character', expected: String.raw`\\*`, input: String.raw`\\\\\*` },
     { description: 'text without any escape sequences', expected: 'hello world 123', input: 'hello world 123' },
-    { description: 'exclamation marks', expected: '!', input: '\\!' },
-    { description: 'parentheses', expected: '(foo)', input: '\\(foo\\)' },
-    { description: 'curly braces', expected: '{foo}', input: '\\{foo\\}' },
-    { description: 'hash signs', expected: '#heading', input: '\\#heading' },
-    { description: 'tilde', expected: '~strikethrough~', input: '\\~strikethrough\\~' }
+    { description: 'exclamation marks', expected: '!', input: String.raw`\!` },
+    { description: 'parentheses', expected: '(foo)', input: String.raw`\(foo\)` },
+    { description: 'curly braces', expected: '{foo}', input: String.raw`\{foo\}` },
+    { description: 'hash signs', expected: '#heading', input: String.raw`\#heading` },
+    { description: 'tilde', expected: '~strikethrough~', input: String.raw`\~strikethrough\~` }
   ])('should unescape $description', ({ expected, input }) => {
     expect(unescapeAlias(input)).toBe(expected);
   });
@@ -610,7 +610,7 @@ describe('parseLink (additional edge cases)', () => {
   it('should parse a markdown link with encoded special characters', () => {
     const result = parseLink('[link](path%5Cto%5Cfile.md)');
     assertNonNullable(result);
-    expect(result.url).toBe('path\\to\\file.md');
+    expect(result.url).toBe(String.raw`path\to\file.md`);
   });
 
   describe('should parse wikilink with block reference', () => {
@@ -688,7 +688,7 @@ describe('parseLink (additional edge cases)', () => {
   });
 
   describe('should have unescapedAlias for markdown links with escaped alias', () => {
-    const result = parseLink('[\\*bold\\*](note.md)');
+    const result = parseLink(String.raw`[\*bold\*](note.md)`);
 
     it('should not be null', () => {
       expect(result).not.toBeNull();
@@ -696,7 +696,7 @@ describe('parseLink (additional edge cases)', () => {
 
     it('should have the escaped alias', () => {
       assertNonNullable(result);
-      expect(result.alias).toBe('\\*bold\\*');
+      expect(result.alias).toBe(String.raw`\*bold\*`);
     });
 
     it('should have the unescaped alias', () => {
@@ -896,17 +896,17 @@ describe('parseLinks (additional edge cases)', () => {
 
   it('should handle a wikilink followed by a markdown link with no space', () => {
     const results = parseLinks('[[wiki]][md](note.md)');
-    const wikilinks = results.filter((r) => r.isWikilink);
-    const firstWikilink = wikilinks[0];
+    const wikilink = results.find((r) => r.isWikilink);
+    const firstWikilink = wikilink;
     assertNonNullable(firstWikilink);
     expect(firstWikilink.url).toBe('wiki');
   });
 
   it('should sort all links by startOffset', () => {
     const results = parseLinks('[[a]] [b](c.md) [[d]]');
-    for (let i = 1; i < results.length; i++) {
-      const current = results[i];
-      const previous = results[i - 1];
+    for (let index = 1; index < results.length; index++) {
+      const current = results[index];
+      const previous = results[index - 1];
       assertNonNullable(current);
       assertNonNullable(previous);
       expect(current.startOffset).toBeGreaterThanOrEqual(previous.startOffset);

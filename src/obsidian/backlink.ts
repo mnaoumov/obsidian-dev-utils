@@ -114,7 +114,7 @@ export async function renderBacklinksTable(dv: DataviewInlineApi, pathOrFiles?: 
 
       return `${markdownLink} (${backLinkPath})`;
     });
-    if (backlinkLinks.length) {
+    if (backlinkLinks.length > 0) {
       backlinkRows.push([link, backlinkLinks]);
     }
   }

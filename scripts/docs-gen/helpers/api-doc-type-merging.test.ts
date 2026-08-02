@@ -10,7 +10,7 @@ import type {
 } from './api-doc-types.ts';
 
 import {
-  buildTypeParamMap,
+  buildTypeParamMap as buildTypeParameterMap,
   parseTypeArguments,
   resolveInheritedMembers,
   substituteMemberTypes,
@@ -20,7 +20,7 @@ import {
 describe('api-doc type merging', () => {
   it('parses nested generic arguments and maps parent parameters', () => {
     expect(parseTypeArguments('Alpha<Bravo<Charlie>, Delta>')).toEqual(['Bravo<Charlie>', 'Delta']);
-    expect(buildTypeParamMap(createTypeInfo({ typeParameters: ['T extends Base', 'U'] }), ['Bravo', 'Charlie'])).toEqual(new Map([['T', 'Bravo'], ['U', 'Charlie']]));
+    expect(buildTypeParameterMap(createTypeInfo({ typeParameters: ['T extends Base', 'U'] }), ['Bravo', 'Charlie'])).toEqual(new Map([['T', 'Bravo'], ['U', 'Charlie']]));
   });
 
   it('substitutes only whole type-parameter identifiers', () => {

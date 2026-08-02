@@ -20,18 +20,18 @@ import type { GenericObject } from '../type-guards.ts';
 interface ReadNoteContent {
   content: string;
 }
-type ReadNoteContentArgs = GenericObject<ReadNoteContent>;
+type ReadNoteContentArguments = GenericObject<ReadNoteContent>;
 
 describe('markdown-code-block-processor', () => {
   it('should read note content with code block from vault', async () => {
     const content = `${dedent`
-        # Test Note
+      # Test Note
 
-        \`\`\`js
-        console.log("hello");
-        \`\`\`
-      `}\n`;
-    const result = await evalInObsidian<ReadNoteContentArgs, string>({
+      \`\`\`js
+      console.log("hello");
+      \`\`\`
+    `}\n`;
+    const result = await evalInObsidian<ReadNoteContentArguments, string>({
       args: { content },
       async fn({ app, content: noteContent }) {
         const file = await app.vault.create('code-block-test.md', noteContent);

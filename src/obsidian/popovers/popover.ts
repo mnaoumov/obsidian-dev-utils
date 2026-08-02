@@ -114,8 +114,8 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
 
   const doc = anchor.doc;
   const win = getDocumentWindow(doc);
-  const popoverEl = doc.body.createDiv({ cls: 'menu' });
-  addPluginCssClasses(popoverEl, [CssClass.Popover, ...cssClasses ?? []]);
+  const popoverElement = doc.body.createDiv({ cls: 'menu' });
+  addPluginCssClasses(popoverElement, [CssClass.Popover, ...cssClasses ?? []]);
 
   return await new Promise<null | Value>((resolve) => {
     const state = { isClosed: false };
@@ -126,7 +126,7 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
       }
       state.isClosed = true;
       doc.removeEventListener('pointerdown', handlePointerDown, true);
-      popoverEl.remove();
+      popoverElement.remove();
       resolve(result);
     }
 
@@ -146,7 +146,7 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
      * @param evt - The pointer event.
      */
     function handlePointerDown(evt: PointerEvent): void {
-      if (evt.composedPath().includes(popoverEl)) {
+      if (evt.composedPath().includes(popoverElement)) {
         return;
       }
       close(null);
@@ -155,23 +155,23 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
     const getValue = build({
       cancel: handleCancel,
       confirm: handleOk,
-      contentEl: popoverEl
+      contentEl: popoverElement
     });
 
-    popoverEl.addEventListener('keydown', (evt: KeyboardEvent) => {
-      if (evt.key === 'Enter') {
-        evt.preventDefault();
+    popoverElement.addEventListener('keydown', ($event: KeyboardEvent) => {
+      if ($event.key === 'Enter') {
+        $event.preventDefault();
         handleOk();
         return;
       }
 
-      if (evt.key === 'Escape') {
-        evt.preventDefault();
+      if ($event.key === 'Escape') {
+        $event.preventDefault();
         handleCancel();
       }
     });
 
-    const buttonsSetting = new Setting(popoverEl);
+    const buttonsSetting = new Setting(popoverElement);
     buttonsSetting.addButton((button) => {
       button
         .setButtonText(okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok))
@@ -186,9 +186,9 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
         .onClick(handleCancel);
     });
 
-    doc.addEventListener('pointerdown', handlePointerDown, true);
-    positionAtAnchor(popoverEl, anchor, win);
-    focusFirstInput(popoverEl);
+    doc.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    positionAtAnchor(popoverElement, anchor, win);
+    focusFirstInput(popoverElement);
   });
 }
 
@@ -198,13 +198,13 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
  * @param popoverEl - The popover to focus within.
  */
 function focusFirstInput(popoverEl: HTMLElement): void {
-  const inputEl = popoverEl.querySelector('input');
-  if (!inputEl) {
+  const inputElement = popoverEl.querySelector('input');
+  if (!inputElement) {
     return;
   }
 
-  inputEl.focus();
-  inputEl.select();
+  inputElement.focus();
+  inputElement.select();
 }
 
 /**

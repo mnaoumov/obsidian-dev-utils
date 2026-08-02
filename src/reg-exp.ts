@@ -36,7 +36,7 @@ export enum RegExpMergeFlagsConflictStrategy {
  */
 export function escapeRegExp(str: string): string {
   // NOTE: We can't use `replaceAll()` from `String.ts` here because it introduces a circular dependency.
-  return str.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 /**
@@ -166,10 +166,11 @@ class RegExpFlagMerger {
     /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
     switch (this.strategy) {
       /* v8 ignore stop */
-      case RegExpMergeFlagsConflictStrategy.Intersect:
+      case RegExpMergeFlagsConflictStrategy.Intersect: {
         shouldUseUFlag = countU === this.regExps.length;
         shouldUseVFlag = countV === this.regExps.length;
         break;
+      }
       case RegExpMergeFlagsConflictStrategy.Throw: {
         const allU = countU === this.regExps.length;
         const noneU = countU === 0;
@@ -184,13 +185,15 @@ class RegExpFlagMerger {
         shouldUseVFlag = allV;
         break;
       }
-      case RegExpMergeFlagsConflictStrategy.Union:
+      case RegExpMergeFlagsConflictStrategy.Union: {
         shouldUseUFlag = countU > 0;
         shouldUseVFlag = countV > 0;
         break;
-      default:
+      }
+      default: {
         /* v8 ignore start -- Exhaustive switch guard. */
         assertNever(this.strategy);
+      }
         /* v8 ignore stop */
     }
 
@@ -212,15 +215,19 @@ class RegExpFlagMerger {
     /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
     switch (this.strategy) {
       /* v8 ignore stop */
-      case RegExpMergeFlagsConflictStrategy.Intersect:
+      case RegExpMergeFlagsConflictStrategy.Intersect: {
         return count === this.regExps.length;
-      case RegExpMergeFlagsConflictStrategy.Throw:
+      }
+      case RegExpMergeFlagsConflictStrategy.Throw: {
         break;
-      case RegExpMergeFlagsConflictStrategy.Union:
+      }
+      case RegExpMergeFlagsConflictStrategy.Union: {
         return count > 0;
-      default:
+      }
+      default: {
         /* v8 ignore start -- Exhaustive switch guard. */
         assertNever(this.strategy);
+      }
         /* v8 ignore stop */
     }
 

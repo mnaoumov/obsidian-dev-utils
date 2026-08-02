@@ -32,23 +32,23 @@ interface RegisterCall {
 function captureRegisterCalls(scope: Scope): RegisterCall[] {
   const calls: RegisterCall[] = [];
   const originalRegister = scope.register.bind(scope);
-  vi.spyOn(scope, 'register').mockImplementation((modifiers, key, func) => {
-    calls.push({ func, key: key ?? '', modifiers: modifiers ?? [] });
-    return originalRegister(modifiers, key, func);
+  vi.spyOn(scope, 'register').mockImplementation((modifiers, key, $function) => {
+    calls.push({ func: $function, key: key ?? '', modifiers: modifiers ?? [] });
+    return originalRegister(modifiers, key, $function);
   });
   return calls;
 }
 
 function createMockModal(): SuggestModal<unknown> {
-  const instructionsEl = createDiv();
+  const instructionsElement = createDiv();
   const scope = new Scope();
   return strictProxy<SuggestModal<unknown>>({
-    instructionsEl,
+    instructionsEl: instructionsElement,
     scope,
     setInstructions: vi.fn((instructions: Instruction[]) => {
-      instructionsEl.empty();
+      instructionsElement.empty();
       for (const instruction of instructions) {
-        const promptInstruction = instructionsEl.createDiv('prompt-instruction');
+        const promptInstruction = instructionsElement.createDiv('prompt-instruction');
         promptInstruction.createSpan({ text: instruction.command });
         promptInstruction.createSpan({ text: instruction.purpose });
       }
@@ -184,9 +184,9 @@ describe('SuggestModalCommandBuilder', () => {
       builder.addCheckbox({
         key: '1',
         onChange,
-        onInit: (el) => {
-          capturedCheckbox = el;
-          el.disabled = true;
+        onInit: (element) => {
+          capturedCheckbox = element;
+          element.disabled = true;
         },
         purpose: 'Test'
       });
@@ -210,8 +210,8 @@ describe('SuggestModalCommandBuilder', () => {
         key: '1',
         modifiers: ['Alt'],
         onChange,
-        onInit: (el) => {
-          el.checked = false;
+        onInit: (element) => {
+          element.checked = false;
         },
         purpose: 'Test'
       });
@@ -328,8 +328,8 @@ describe('SuggestModalCommandBuilder', () => {
       // This should return early due to disabled check
       handler?.func(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
       // The handler returned early, select index was not changed
-      const selectEl = modal.instructionsEl.querySelector('select');
-      expect(selectEl?.selectedIndex).toBe(0);
+      const selectElement = modal.instructionsEl.querySelector('select');
+      expect(selectElement?.selectedIndex).toBe(0);
     });
 
     it('should return this for chaining', () => {

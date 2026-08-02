@@ -101,14 +101,14 @@ export function setFrontmatter(content: string, newFrontmatter: object): string 
     return content.slice(frontmatterInfo.contentStart);
   }
 
-  const newFrontmatterStr = stringifyYaml(newFrontmatter);
+  const newFrontmatterString = stringifyYaml(newFrontmatter);
 
   return frontmatterInfo.exists
     ? insertAt({
       endIndex: frontmatterInfo.to,
       startIndex: frontmatterInfo.from,
       str: content,
-      substring: newFrontmatterStr
+      substring: newFrontmatterString
     })
-    : `---\n${newFrontmatterStr}---\n${content}`;
+    : `---\n${newFrontmatterString}---\n${content}`;
 }

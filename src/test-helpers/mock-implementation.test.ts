@@ -15,7 +15,7 @@ interface Target {
 
 describe('mockImplementation', () => {
   it('should spy on a required method and expose the original implementation', () => {
-    const obj: Target = {
+    const $object: Target = {
       requiredMethod(x: number): number {
         return x;
       }
@@ -26,16 +26,16 @@ describe('mockImplementation', () => {
         return originalImplementation.call(this, x) + 1;
       },
       method: 'requiredMethod',
-      obj
+      obj: $object
     });
 
-    expect(obj.requiredMethod(3)).toBe(4);
+    expect($object.requiredMethod(3)).toBe(4);
     expect(spy).toHaveBeenCalledTimes(1);
     spy.mockRestore();
   });
 
   it('should spy on an optional method whose type is `Fn | undefined`', () => {
-    const obj: Target = {
+    const $object: Target = {
       optionalMethod(x: number): number {
         return x * 2;
       },
@@ -51,10 +51,10 @@ describe('mockImplementation', () => {
         return originalImplementation.call(this, x) + 1;
       },
       method: 'optionalMethod',
-      obj
+      obj: $object
     });
 
-    expect(obj.optionalMethod?.(3)).toBe(7);
+    expect($object.optionalMethod?.(3)).toBe(7);
     expect(spy).toHaveBeenCalledTimes(1);
     spy.mockRestore();
   });

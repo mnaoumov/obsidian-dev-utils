@@ -84,7 +84,6 @@ export class CustomStackTraceError extends Error {
     this.name = 'CustomStackTraceError';
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
-    Error.captureStackTrace?.(this, CustomStackTraceError);
 
     let rootCause = cause;
     const parentCauses = new Set<CustomStackTraceError>();
@@ -100,7 +99,7 @@ export class CustomStackTraceError extends Error {
     const stackLines = stackTrace.split('\n');
     const ERROR_HEADER_REG_EXP = /^\w*Error(?:: |$)/;
     if (ERROR_HEADER_REG_EXP.test(ensureNonNullable(stackLines[0]))) {
-      stackLines.splice(0, 1);
+      stackLines.shift();
     }
     originalStackLines.splice(1, originalStackLines.length - 1, ...stackLines);
     this.stack = originalStackLines.join('\n');
@@ -121,7 +120,6 @@ export class ErrorWrapper extends Error {
     this.name = 'ErrorWrapper';
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
-    Error.captureStackTrace?.(this, ErrorWrapper);
   }
 
   /**
@@ -151,7 +149,6 @@ export class SilentError extends Error {
     this.name = 'SilentError';
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
-    Error.captureStackTrace?.(this, SilentError);
   }
 }
 
@@ -240,11 +237,11 @@ export function printError(error: unknown, console?: Console): void {
  * @returns A {@link Disposable} that unregisters the handler when disposed, for use with `using`.
  */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): Disposable {
-  const eventRef = errorAsyncEvents.on('asyncError', handler);
+  const eventReference = errorAsyncEvents.on('asyncError', handler);
   asyncErrorHandlerCount++;
   return new CallbackDisposable({
     callback: (): void => {
-      errorAsyncEvents.offref(eventRef);
+      errorAsyncEvents.offref(eventReference);
       asyncErrorHandlerCount--;
     },
     multipleDisposeBehavior: MultipleDisposeBehavior.Ignore

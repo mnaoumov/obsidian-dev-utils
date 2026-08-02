@@ -39,8 +39,8 @@ vi.mock('../abort-controller.ts', () => ({
 }));
 
 vi.mock('../async.ts', () => ({
-  invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
-    fn().catch(() => undefined);
+  invokeAsyncSafely: vi.fn(($function: () => Promise<unknown>) => {
+    $function().catch(() => undefined);
   }),
   requestAnimationFrameAsync: vi.fn(() => noopAsync())
 }));
@@ -254,10 +254,10 @@ describe('loop', () => {
 
     expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalledTimes(1);
 
-    const showNoticeFn = vi.mocked(invokeAsyncSafely).mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
-    expect(showNoticeFn).toBeDefined();
-    if (showNoticeFn) {
-      await showNoticeFn();
+    const showNoticeFunction = vi.mocked(invokeAsyncSafely).mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
+    expect(showNoticeFunction).toBeDefined();
+    if (showNoticeFunction) {
+      await showNoticeFunction();
     }
   });
 
@@ -274,9 +274,9 @@ describe('loop', () => {
   });
 
   it('should call getLibDebugger with Loop namespace', async () => {
-    const mockDebugFn = vi.fn();
+    const mockDebugFunction = vi.fn();
 
-    vi.mocked(getLibDebugger).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFn));
+    vi.mocked(getLibDebugger).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFunction));
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'debug msg'),
@@ -287,7 +287,7 @@ describe('loop', () => {
     });
 
     expect(getLibDebugger).toHaveBeenCalledWith('Loop');
-    expect(mockDebugFn).toHaveBeenCalledWith('debug msg');
+    expect(mockDebugFunction).toHaveBeenCalledWith('debug msg');
   });
 
   it('should call addPluginCssClasses on the progress bar element', async () => {
@@ -309,14 +309,14 @@ describe('loop', () => {
   it('should set progress bar max to items length', async () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
-    let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = mockImplementation({
+    let capturedProgressElement: HTMLProgressElement | null = null;
+    const createElementSpy = mockImplementation({
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-        const el = originalImplementation(tag);
+        const element = originalImplementation(tag);
         if (tag === 'progress') {
-          capturedProgressEl = el as HTMLProgressElement;
+          capturedProgressElement = element as HTMLProgressElement;
         }
-        return el;
+        return element;
       },
       method: 'createEl',
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
@@ -331,12 +331,12 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    assertNonNullable(capturedProgressEl);
-    const progressEl: HTMLProgressElement = capturedProgressEl;
-    expect(progressEl.max).toBe(5);
-    expect(progressEl.value).toBe(5);
+    assertNonNullable(capturedProgressElement);
+    const progressElement: HTMLProgressElement = capturedProgressElement;
+    expect(progressElement.max).toBe(5);
+    expect(progressElement.value).toBe(5);
 
-    createElSpy.mockRestore();
+    createElementSpy.mockRestore();
   });
 
   it('should process items with numeric type', async () => {
@@ -447,14 +447,14 @@ describe('loop', () => {
   });
 
   it('should increment progress bar value for each processed item', async () => {
-    let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = mockImplementation({
+    let capturedProgressElement: HTMLProgressElement | null = null;
+    const createElementSpy = mockImplementation({
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-        const el = originalImplementation(tag);
+        const element = originalImplementation(tag);
         if (tag === 'progress') {
-          capturedProgressEl = el as HTMLProgressElement;
+          capturedProgressElement = element as HTMLProgressElement;
         }
-        return el;
+        return element;
       },
       method: 'createEl',
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
@@ -463,8 +463,8 @@ describe('loop', () => {
 
     const values: number[] = [];
     const processItem = vi.fn(() => {
-      if (capturedProgressEl) {
-        values.push(capturedProgressEl.value);
+      if (capturedProgressElement) {
+        values.push(capturedProgressElement.value);
       }
     });
 
@@ -480,21 +480,21 @@ describe('loop', () => {
     // After each iteration, value is incremented. The values captured during processItem
     // Are 0, 1, 2 because value++ happens after processItem returns.
     expect(values).toEqual([0, 1, 2]);
-    assertNonNullable(capturedProgressEl);
-    expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
+    assertNonNullable(capturedProgressElement);
+    expect((capturedProgressElement as HTMLProgressElement).value).toBe(3);
 
-    createElSpy.mockRestore();
+    createElementSpy.mockRestore();
   });
 
   it('should still increment progress bar value even when processItem throws', async () => {
-    let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = mockImplementation({
+    let capturedProgressElement: HTMLProgressElement | null = null;
+    const createElementSpy = mockImplementation({
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-        const el = originalImplementation(tag);
+        const element = originalImplementation(tag);
         if (tag === 'progress') {
-          capturedProgressEl = el as HTMLProgressElement;
+          capturedProgressElement = element as HTMLProgressElement;
         }
-        return el;
+        return element;
       },
       method: 'createEl',
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
@@ -514,11 +514,11 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    assertNonNullable(capturedProgressEl);
-    expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
+    assertNonNullable(capturedProgressElement);
+    expect((capturedProgressElement as HTMLProgressElement).value).toBe(2);
 
     vi.mocked(console.error).mockRestore();
-    createElSpy.mockRestore();
+    createElementSpy.mockRestore();
   });
 
   it('should work with a single item', async () => {
@@ -560,8 +560,8 @@ describe('loop', () => {
   it('should set notice message when shouldShowProgressBar is false and notice exists', async () => {
     // Make invokeAsyncSafely actually await the function so the notice gets created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');
@@ -583,8 +583,8 @@ describe('loop', () => {
   it('should return early from showNotice when shouldShowProgressBar is false', async () => {
     // Make invokeAsyncSafely actually await so the notice is created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');
@@ -611,8 +611,8 @@ describe('loop', () => {
   it('should set progress bar message when shouldShowProgressBar is true and notice exists', async () => {
     // Make invokeAsyncSafely actually await the function so the notice gets created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');
@@ -636,8 +636,8 @@ describe('loop', () => {
   it('should not create a notice when pluginNoticeComponent is null', async () => {
     // Make invokeAsyncSafely actually await the function so showNotice runs to completion
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure showNotice runs before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');

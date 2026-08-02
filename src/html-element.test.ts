@@ -14,7 +14,7 @@ import type { GenericObject } from './type-guards.ts';
 import { noopAsync } from './function.ts';
 import {
   createDivAsync,
-  createElAsync,
+  createElAsync as createElementAsync,
   createFragmentAsync,
   createSpanAsync,
   createSvgAsync,
@@ -89,65 +89,65 @@ describe('createDivAsync', () => {
 
 describe('createElAsync', () => {
   it('should return the created element', async () => {
-    const result = await createElAsync('p');
+    const result = await createElementAsync('p');
     expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
 
   it('should create an element of the requested tag and apply a class string', async () => {
-    const el = await createElAsync('p', 'my-class');
-    expect(el.tagName).toBe('P');
-    expect(el.className).toBe('my-class');
+    const element = await createElementAsync('p', 'my-class');
+    expect(element.tagName).toBe('P');
+    expect(element.className).toBe('my-class');
   });
 
   it('should apply an array of classes', async () => {
-    const el = await createElAsync('p', { cls: ['class-a', 'class-b'] });
-    expect(el.className).toBe('class-a class-b');
+    const element = await createElementAsync('p', { cls: ['class-a', 'class-b'] });
+    expect(element.className).toBe('class-a class-b');
   });
 
   it('should apply text content', async () => {
-    const el = await createElAsync('p', { text: 'hello' });
-    expect(el.textContent).toBe('hello');
+    const element = await createElementAsync('p', { text: 'hello' });
+    expect(element.textContent).toBe('hello');
   });
 
   it('should apply a DocumentFragment as text content', async () => {
     const fragment = createFragment();
     fragment.appendChild(createSpan());
-    const el = await createElAsync('p', { text: fragment });
-    expect(el.querySelector('span')).not.toBeNull();
+    const element = await createElementAsync('p', { text: fragment });
+    expect(element.querySelector('span')).not.toBeNull();
   });
 
   it('should set and remove attributes (null removes)', async () => {
-    const el = await createElAsync('p', { attr: { 'data-drop': null, 'data-keep': 'value' } });
-    expect(el.getAttribute('data-keep')).toBe('value');
-    expect(el.hasAttribute('data-drop')).toBe(false);
+    const element = await createElementAsync('p', { attr: { 'data-drop': null, 'data-keep': 'value' } });
+    expect(element.getAttribute('data-keep')).toBe('value');
+    expect(Object.hasOwn(element.dataset, 'drop')).toBe(false);
   });
 
   it('should apply the title', async () => {
-    const el = await createElAsync('p', { title: 'my-title' });
-    expect(el.title).toBe('my-title');
+    const element = await createElementAsync('p', { title: 'my-title' });
+    expect(element.title).toBe('my-title');
   });
 
   it('should append to the parent', async () => {
     const parent = createDiv();
-    const el = await createElAsync('p', { parent });
-    expect(parent.lastElementChild).toBe(el);
+    const element = await createElementAsync('p', { parent });
+    expect(parent.lastElementChild).toBe(element);
   });
 
   it('should prepend to the parent', async () => {
     const parent = createDiv();
     parent.appendChild(createSpan());
-    const el = await createElAsync('p', { parent, prepend: true });
-    expect(parent.firstElementChild).toBe(el);
+    const element = await createElementAsync('p', { parent, prepend: true });
+    expect(parent.firstElementChild).toBe(element);
   });
 
   it('should work without a callback', async () => {
-    const result = await createElAsync('p');
+    const result = await createElementAsync('p');
     expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
 
   it('should call the sync callback with the element', async () => {
     const callback = vi.fn();
-    await createElAsync('p', undefined, callback);
+    await createElementAsync('p', undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
   });
 
@@ -155,7 +155,7 @@ describe('createElAsync', () => {
     const callback = vi.fn(async () => {
       await noopAsync();
     });
-    await createElAsync('p', undefined, callback);
+    await createElementAsync('p', undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
   });
 
@@ -165,7 +165,7 @@ describe('createElAsync', () => {
       await noopAsync();
       callbackCompleted = true;
     }
-    await createElAsync('p', undefined, callback);
+    await createElementAsync('p', undefined, callback);
     expect(callbackCompleted).toBe(true);
   });
 });
@@ -329,15 +329,15 @@ describe('getZIndex', () => {
   });
 
   it('should return the z-index from computed style when set', () => {
-    const el = buildElement();
+    const element = buildElement();
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: '10' }));
-    expect(getZIndex(el)).toBe(10);
+    expect(getZIndex(element)).toBe(10);
   });
 
   it('should return 0 for an element with auto z-index and no parent', () => {
-    const el = buildElement();
+    const element = buildElement();
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' }));
-    expect(getZIndex(el)).toBe(0);
+    expect(getZIndex(element)).toBe(0);
   });
 
   it('should return parent z-index if child has auto', () => {
@@ -364,9 +364,9 @@ describe('getZIndex', () => {
   });
 
   it('should return negative z-index values', () => {
-    const el = buildElement();
+    const element = buildElement();
     vi.mocked(getComputedStyle).mockReturnValue(strictProxy<CSSStyleDeclaration>({ zIndex: '-3' }));
-    expect(getZIndex(el)).toBe(-3);
+    expect(getZIndex(element)).toBe(-3);
   });
 
   it('should skip elements with empty z-index string', () => {
@@ -389,208 +389,208 @@ describe('isLoaded', () => {
     });
 
     it('should return true when document.readyState is complete', () => {
-      const el = activeDocument.body;
+      const element = activeDocument.body;
       vi.spyOn(activeDocument, 'readyState', 'get').mockReturnValue('complete');
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return true when document.readyState is interactive', () => {
-      const el = activeDocument.body;
+      const element = activeDocument.body;
       vi.spyOn(activeDocument, 'readyState', 'get').mockReturnValue('interactive');
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when document.readyState is loading', () => {
-      const el = activeDocument.body;
+      const element = activeDocument.body;
       vi.spyOn(activeDocument, 'readyState', 'get').mockReturnValue('loading');
-      expect(isLoaded(el)).toBe(false);
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLImageElement', () => {
     it('should return true when complete is true and naturalWidth > 0', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           complete: true,
           naturalWidth: 100
         },
         tag: 'img'
       });
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when complete is false', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           complete: false,
           naturalWidth: 100
         },
         tag: 'img'
       });
-      expect(isLoaded(el)).toBe(false);
+      expect(isLoaded(element)).toBe(false);
     });
 
     it('should return false when naturalWidth is 0', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           complete: true,
           naturalWidth: 0
         },
         tag: 'img'
       });
-      expect(isLoaded(el)).toBe(false);
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLIFrameElement', () => {
     it('should return true when contentDocument exists', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           contentDocument: {}
         },
         tag: 'iframe'
       });
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when contentDocument is null', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           contentDocument: null
         },
         tag: 'iframe'
       });
-      expect(isLoaded(el)).toBe(false);
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLEmbedElement', () => {
     it('should return true when getSVGDocument returns truthy', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           getSVGDocument: vi.fn(() => ({}))
         },
         tag: 'embed'
       });
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when getSVGDocument returns null', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           getSVGDocument: vi.fn(() => null)
         },
         tag: 'embed'
       });
-      expect(isLoaded(el)).toBe(false);
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLLinkElement', () => {
     it('should return true for stylesheet link with sheet set', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           rel: 'stylesheet',
           sheet: {}
         },
         tag: 'link'
       });
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false for stylesheet link with sheet null', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           rel: 'stylesheet',
           sheet: null
         },
         tag: 'link'
       });
-      expect(isLoaded(el)).toBe(false);
+      expect(isLoaded(element)).toBe(false);
     });
 
     it('should return true for non-stylesheet link', () => {
-      const el = buildElement({
+      const element = buildElement({
         attrs: {
           rel: 'icon',
           sheet: null
         },
         tag: 'link'
       });
-      expect(isLoaded(el)).toBe(true);
+      expect(isLoaded(element)).toBe(true);
     });
   });
 
   describe('HTMLObjectElement', () => {
     it('should return true when contentDocument exists', () => {
-      const el = buildElement({ attrs: { contentDocument: {}, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement({ attrs: { contentDocument: {}, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return true when getSVGDocument returns truthy', () => {
-      const el = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => ({})) }, tag: 'object' });
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => ({})) }, tag: 'object' });
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when both contentDocument and getSVGDocument are falsy', () => {
-      const el = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
-      expect(isLoaded(el)).toBe(false);
+      const element = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLScriptElement', () => {
     it('should always return true', () => {
-      const el = buildElement({ tag: 'script' });
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement({ tag: 'script' });
+      expect(isLoaded(element)).toBe(true);
     });
   });
 
   describe('HTMLStyleElement', () => {
     it('should return true when sheet is set', () => {
-      const el = buildElement({ attrs: { sheet: {} }, tag: 'style' });
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement({ attrs: { sheet: {} }, tag: 'style' });
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when sheet is null', () => {
-      const el = buildElement({ attrs: { sheet: null }, tag: 'style' });
-      expect(isLoaded(el)).toBe(false);
+      const element = buildElement({ attrs: { sheet: null }, tag: 'style' });
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLTrackElement', () => {
     it('should return true when readyState is 2 (loaded)', () => {
-      const el = buildElement({ attrs: { readyState: 2 }, tag: 'track' });
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement({ attrs: { readyState: 2 }, tag: 'track' });
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when readyState is not 2', () => {
-      const el = buildElement({ attrs: { readyState: 0 }, tag: 'track' });
-      expect(isLoaded(el)).toBe(false);
+      const element = buildElement({ attrs: { readyState: 0 }, tag: 'track' });
+      expect(isLoaded(element)).toBe(false);
     });
 
     it('should return false when readyState is 1', () => {
-      const el = buildElement({ attrs: { readyState: 1 }, tag: 'track' });
-      expect(isLoaded(el)).toBe(false);
+      const element = buildElement({ attrs: { readyState: 1 }, tag: 'track' });
+      expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('generic element', () => {
     it('should return true when element has no loadable children', () => {
-      const el = buildElement();
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement();
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return true when all loadable children are loaded', () => {
-      const el = buildElement();
-      buildElement({ parent: el });
-      expect(isLoaded(el)).toBe(true);
+      const element = buildElement();
+      buildElement({ parent: element });
+      expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when a loadable child is not loaded', () => {
       const img = buildElement({ attrs: { complete: false, naturalWidth: 0 }, tag: 'img' });
-      const el = buildElement();
-      el.appendChild(img);
-      expect(isLoaded(el)).toBe(false);
+      const element = buildElement();
+      element.appendChild(img);
+      expect(isLoaded(element)).toBe(false);
     });
   });
 });
@@ -601,56 +601,56 @@ describe('isElementVisibleInOffsetParent', () => {
   });
 
   it('should return false when offsetParent is null', () => {
-    const el = buildElement({ attrs: { offsetParent: null }, tag: 'div' });
-    expect(isElementVisibleInOffsetParent(el)).toBe(false);
+    const element = buildElement({ attrs: { offsetParent: null }, tag: 'div' });
+    expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
 
   it('should return true when element is fully within offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 200, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
-    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
-    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
-    expect(isElementVisibleInOffsetParent(el)).toBe(true);
+    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(element)).toBe(true);
   });
 
   it('should return false when element extends above offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 0, right: 200, toJSON: vi.fn(), top: 50, width: 200, x: 0, y: 50 }));
-    const el = buildElement({ parent });
-    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
-    expect(isElementVisibleInOffsetParent(el)).toBe(false);
+    const element = buildElement({ parent });
+    element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
 
   it('should return false when element extends below offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
-    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
-    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 150, height: 140, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
-    expect(isElementVisibleInOffsetParent(el)).toBe(false);
+    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 150, height: 140, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
 
   it('should return false when element extends left of offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 50, right: 200, toJSON: vi.fn(), top: 0, width: 150, x: 50, y: 0 }));
-    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
-    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
-    expect(isElementVisibleInOffsetParent(el)).toBe(false);
+    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
 
   it('should return false when element extends right of offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
-    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 150, toJSON: vi.fn(), top: 10, width: 140, x: 10, y: 10 }));
-    expect(isElementVisibleInOffsetParent(el)).toBe(false);
+    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 150, toJSON: vi.fn(), top: 10, width: 140, x: 10, y: 10 }));
+    expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
 
   it('should return true when element exactly matches offset parent bounds', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    const el = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
-    el.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    expect(isElementVisibleInOffsetParent(el)).toBe(true);
+    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
+    expect(isElementVisibleInOffsetParent(element)).toBe(true);
   });
 });
 
@@ -745,8 +745,8 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should invoke the callback via requestAnimationFrame when a scroll event fires', () => {
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
-      cb(0);
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation(($callback: FrameRequestCallback) => {
+      $callback(0);
       return 0;
     });
 
@@ -761,7 +761,7 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should debounce multiple rapid event triggers', () => {
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((_cb: FrameRequestCallback) => 0);
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((_callback: FrameRequestCallback) => 0);
 
     const node = buildElement();
     const callback = vi.fn();
@@ -777,8 +777,8 @@ describe('onAncestorScrollOrResize', () => {
   });
 
   it('should allow new events after the requestAnimationFrame callback completes', () => {
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
-      cb(0);
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation(($callback: FrameRequestCallback) => {
+      $callback(0);
       return 0;
     });
 
@@ -806,8 +806,8 @@ describe('onAncestorScrollOrResize', () => {
   it('should reset isEventTriggered even if callback throws', () => {
     const rafCallbacks: FrameRequestCallback[] = [];
 
-    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback) => {
-      rafCallbacks.push(cb);
+    vi.spyOn(activeWindow, 'requestAnimationFrame').mockImplementation(($callback: FrameRequestCallback) => {
+      rafCallbacks.push($callback);
       return 0;
     });
 
@@ -836,17 +836,17 @@ describe('onAncestorScrollOrResize', () => {
 
 describe('ensureLoaded', () => {
   it('should resolve immediately when element is already loaded', async () => {
-    const el = buildElement();
-    await expect(ensureLoaded(el)).resolves.toBeUndefined();
+    const element = buildElement();
+    await expect(ensureLoaded(element)).resolves.toBeUndefined();
   });
 
   it('should resolve immediately for a generic element with no loadable children', async () => {
-    const el = buildElement();
-    await expect(ensureLoaded(el)).resolves.toBeUndefined();
+    const element = buildElement();
+    await expect(ensureLoaded(element)).resolves.toBeUndefined();
   });
 
   it('should wait for load event on an unloaded image', async () => {
-    const el = buildElement({
+    const element = buildElement({
       attrs: {
         complete: false,
         naturalWidth: 0
@@ -854,14 +854,14 @@ describe('ensureLoaded', () => {
       tag: 'img'
     });
 
-    const promise = ensureLoaded(el);
-    el.dispatchEvent(new Event('load'));
+    const promise = ensureLoaded(element);
+    element.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should wait for error event on an unloaded image', async () => {
-    const el = buildElement({
+    const element = buildElement({
       attrs: {
         complete: false,
         naturalWidth: 0
@@ -869,17 +869,17 @@ describe('ensureLoaded', () => {
       tag: 'img'
     });
 
-    const promise = ensureLoaded(el);
-    el.dispatchEvent(new Event('error'));
+    const promise = ensureLoaded(element);
+    element.dispatchEvent(new Event('error'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should recursively ensure all loadable children are loaded for generic elements', async () => {
     const script = buildElement({ tag: 'script' });
-    const el = buildElement();
-    el.appendChild(script);
-    await expect(ensureLoaded(el)).resolves.toBeUndefined();
+    const element = buildElement();
+    element.appendChild(script);
+    await expect(ensureLoaded(element)).resolves.toBeUndefined();
   });
 
   it('should recursively wait for unloaded children inside a generic element', async () => {
@@ -890,39 +890,39 @@ describe('ensureLoaded', () => {
       },
       tag: 'img'
     });
-    const el = buildElement();
-    el.appendChild(img);
+    const element = buildElement();
+    element.appendChild(img);
 
-    const promise = ensureLoaded(el);
+    const promise = ensureLoaded(element);
     img.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should wait for load on an unloaded iframe', async () => {
-    const el = buildElement({
+    const element = buildElement({
       attrs: {
         contentDocument: null
       },
       tag: 'iframe'
     });
 
-    const promise = ensureLoaded(el);
-    el.dispatchEvent(new Event('load'));
+    const promise = ensureLoaded(element);
+    element.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
 
   it('should wait for load on an unloaded style element', async () => {
-    const el = buildElement({
+    const element = buildElement({
       attrs: {
         sheet: null
       },
       tag: 'style'
     });
 
-    const promise = ensureLoaded(el);
-    el.dispatchEvent(new Event('load'));
+    const promise = ensureLoaded(element);
+    element.dispatchEvent(new Event('load'));
 
     await expect(promise).resolves.toBeUndefined();
   });
@@ -930,23 +930,23 @@ describe('ensureLoaded', () => {
 
 describe('waitUntilConnected', () => {
   afterEach(() => {
-    for (const el of Array.from(activeDocument.body.children)) {
-      el.remove();
+    for (const element of Array.from(activeDocument.body.children)) {
+      element.remove();
     }
   });
 
   it('should resolve immediately when the element is already connected', async () => {
-    const el = buildElement({ parent: activeDocument.body });
-    expect(el.isConnected).toBe(true);
-    await expect(waitUntilConnected(el)).resolves.toBeUndefined();
+    const element = buildElement({ parent: activeDocument.body });
+    expect(element.isConnected).toBe(true);
+    await expect(waitUntilConnected(element)).resolves.toBeUndefined();
   });
 
   it('should resolve when a disconnected element is later inserted', async () => {
-    const el = buildElement();
-    expect(el.isConnected).toBe(false);
+    const element = buildElement();
+    expect(element.isConnected).toBe(false);
 
     let isResolved = false;
-    const promise = waitUntilConnected(el).then(() => {
+    const promise = waitUntilConnected(element).then(() => {
       isResolved = true;
     });
 
@@ -955,7 +955,7 @@ describe('waitUntilConnected', () => {
     await flushMutations();
     expect(isResolved).toBe(false);
 
-    activeDocument.body.appendChild(el);
+    activeDocument.body.appendChild(element);
     await promise;
     expect(isResolved).toBe(true);
   });
@@ -968,16 +968,16 @@ interface BuildElementParams {
 }
 
 function buildElement(params: BuildElementParams = {}): HTMLElement {
-  const { attrs = {}, parent, tag = 'div' } = params;
-  const el = createEl(tag);
-  const record = ensureGenericObject(el);
-  for (const [key, value] of Object.entries(attrs)) {
+  const { attrs: attributes = {}, parent, tag = 'div' } = params;
+  const element = createEl(tag);
+  const record = ensureGenericObject(element);
+  for (const [key, value] of Object.entries(attributes)) {
     Object.defineProperty(record, key, { configurable: true, value, writable: true });
   }
   if (parent) {
-    parent.appendChild(el);
+    parent.appendChild(element);
   }
-  return el;
+  return element;
 }
 
 async function flushMutations(): Promise<void> {

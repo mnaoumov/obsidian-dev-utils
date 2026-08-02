@@ -119,7 +119,7 @@ describe('ComponentEx', () => {
 
       const promise = component.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error_: unknown) => error_);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toEqual([error]);
@@ -136,7 +136,7 @@ describe('ComponentEx', () => {
 
       const promise = parent.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toHaveLength(1);
@@ -159,7 +159,7 @@ describe('ComponentEx', () => {
 
       const promise = parent.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toHaveLength(2);
@@ -178,7 +178,7 @@ describe('ComponentEx', () => {
 
       const promise = component.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         const [firstError] = rejection.errors;
@@ -205,7 +205,7 @@ describe('ComponentEx', () => {
 
       const promise = parent.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toHaveLength(1);

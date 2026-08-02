@@ -100,7 +100,7 @@ describe('rename-delete-handler', () => {
           const DST_NOTE = `${DST_FOLDER}/note.md`;
           const SRC_ATTACHMENT = `${SRC_FOLDER}/attachments/img.png`;
           const DST_ATTACHMENT = `${DST_FOLDER}/attachments/img.png`;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
 
           // Core "In subfolder under current folder" mode puts attachments in an `attachments` subfolder next to the note — the only mode in which the issue is observable.
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
@@ -180,7 +180,7 @@ describe('rename-delete-handler', () => {
           const DST_NOTE = `${DST_FOLDER}/note.md`;
           const SRC_ATTACHMENT = `${SRC_FOLDER}/attachments/img.png`;
           const DST_ATTACHMENT = `${DST_FOLDER}/attachments/img.png`;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
 
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
           app.vault.setConfig('attachmentFolderPath', './attachments');

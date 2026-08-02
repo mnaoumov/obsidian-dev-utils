@@ -24,19 +24,19 @@ const OG_HASH_LENGTH = 16;
 const FONT_VARIANT_COUNT = 2;
 const FONT_WEIGHT_REGULAR = 400;
 const FONT_WEIGHT_BOLD = 700;
-const PNG_SIGNATURE = Buffer.from('\x89PNG\r\n\x1a\n', 'binary');
+const PNG_SIGNATURE = Buffer.from('\x89PNG\r\n\x1A\n', 'binary');
 
-const tempDirs: string[] = [];
+const temporaryDirectories: string[] = [];
 
 afterAll(() => {
-  for (const dir of tempDirs) {
+  for (const dir of temporaryDirectories) {
     rmSync(dir, { force: true, recursive: true });
   }
 });
 
 function makeTempDir(): string {
   const dir = mkdtempSync(join(tmpdir(), 'og-fonts-'));
-  tempDirs.push(dir);
+  temporaryDirectories.push(dir);
   return dir;
 }
 

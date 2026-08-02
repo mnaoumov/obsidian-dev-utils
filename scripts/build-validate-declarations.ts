@@ -7,10 +7,10 @@ import {
 } from '../src/script-utils/cli-utils.ts';
 import { validateDeclarations } from '../src/script-utils/validate-declarations.ts';
 
-const [, , ...args] = process.argv;
+const [, , ...$arguments] = process.argv;
 
 const { values } = parseArgs({
-  args,
+  args: $arguments,
   options: {
     verbose: { type: 'boolean' }
   }

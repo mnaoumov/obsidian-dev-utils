@@ -82,74 +82,74 @@ function makeReferenceCache(original: string, startOffset: number): Reference {
 
 describe('isCanvasReference', () => {
   it('should return true for a canvas reference', () => {
-    const ref = makeCanvasReference('file', 'k');
-    expect(isCanvasReference(ref)).toBe(true);
+    const reference = makeCanvasReference('file', 'k');
+    expect(isCanvasReference(reference)).toBe(true);
   });
 
   it('should return false for a regular reference cache', () => {
-    const ref = makeReferenceCache('[[link]]', 0);
-    expect(isCanvasReference(ref)).toBe(false);
+    const reference = makeReferenceCache('[[link]]', 0);
+    expect(isCanvasReference(reference)).toBe(false);
   });
 
   it('should return false for a frontmatter link without isCanvas', () => {
-    const ref = makeFrontmatterLink('link', 'aliases');
-    expect(isCanvasReference(ref)).toBe(false);
+    const reference = makeFrontmatterLink('link', 'aliases');
+    expect(isCanvasReference(reference)).toBe(false);
   });
 });
 
 describe('isCanvasFileNodeReference', () => {
   it('should return true for a canvas file node reference', () => {
-    const ref = makeCanvasReference('file', 'k');
-    expect(isCanvasFileNodeReference(ref)).toBe(true);
+    const reference = makeCanvasReference('file', 'k');
+    expect(isCanvasFileNodeReference(reference)).toBe(true);
   });
 
   it('should return false for a canvas text node reference', () => {
-    const ref = makeCanvasReference('text', 'k');
-    expect(isCanvasFileNodeReference(ref)).toBe(false);
+    const reference = makeCanvasReference('text', 'k');
+    expect(isCanvasFileNodeReference(reference)).toBe(false);
   });
 
   it('should return false for a regular reference', () => {
-    const ref = makeReferenceCache('[[link]]', 0);
-    expect(isCanvasFileNodeReference(ref)).toBe(false);
+    const reference = makeReferenceCache('[[link]]', 0);
+    expect(isCanvasFileNodeReference(reference)).toBe(false);
   });
 });
 
 describe('isCanvasTextNodeReference', () => {
   it('should return true for a canvas text node reference', () => {
-    const ref = makeCanvasReference('text', 'k');
-    expect(isCanvasTextNodeReference(ref)).toBe(true);
+    const reference = makeCanvasReference('text', 'k');
+    expect(isCanvasTextNodeReference(reference)).toBe(true);
   });
 
   it('should return false for a canvas file node reference', () => {
-    const ref = makeCanvasReference('file', 'k');
-    expect(isCanvasTextNodeReference(ref)).toBe(false);
+    const reference = makeCanvasReference('file', 'k');
+    expect(isCanvasTextNodeReference(reference)).toBe(false);
   });
 
   it('should return false for a regular reference', () => {
-    const ref = makeReferenceCache('[[link]]', 0);
-    expect(isCanvasTextNodeReference(ref)).toBe(false);
+    const reference = makeReferenceCache('[[link]]', 0);
+    expect(isCanvasTextNodeReference(reference)).toBe(false);
   });
 });
 
 describe('referenceToFileChange', () => {
   it('should use full original for a regular reference cache', () => {
-    const ref = makeReferenceCache('[[link]]', 10);
-    const change = referenceToFileChange(ref, '[[new]]');
+    const reference = makeReferenceCache('[[link]]', 10);
+    const change = referenceToFileChange(reference, '[[new]]');
     expect(change.oldContent).toBe('[[link]]');
     expect(change.newContent).toBe('[[new]]');
-    expect(change.reference).toBe(ref);
+    expect(change.reference).toBe(reference);
   });
 
   it('should use full original for a frontmatter link without offsets', () => {
-    const ref = makeFrontmatterLink('link', 'aliases');
-    const change = referenceToFileChange(ref, 'new');
+    const reference = makeFrontmatterLink('link', 'aliases');
+    const change = referenceToFileChange(reference, 'new');
     expect(change.oldContent).toBe('link');
     expect(change.newContent).toBe('new');
   });
 
   it('should slice original using offsets for frontmatter link with offsets', () => {
-    const ref = makeFrontmatterLinkWithOffsets('hello world', 'aliases', 6, 11);
-    const change = referenceToFileChange(ref, 'replaced');
+    const reference = makeFrontmatterLinkWithOffsets('hello world', 'aliases', 6, 11);
+    const change = referenceToFileChange(reference, 'replaced');
     expect(change.oldContent).toBe('world');
     expect(change.newContent).toBe('replaced');
   });
@@ -157,25 +157,25 @@ describe('referenceToFileChange', () => {
 
 describe('sortReferences', () => {
   it('should sort reference caches by position offset', () => {
-    const ref1 = makeReferenceCache('[[a]]', 50);
-    const ref2 = makeReferenceCache('[[b]]', 10);
-    const ref3 = makeReferenceCache('[[c]]', 30);
-    const sorted = sortReferences([ref1, ref2, ref3]);
-    expect(sorted).toEqual([ref2, ref3, ref1]);
+    const reference1 = makeReferenceCache('[[a]]', 50);
+    const reference2 = makeReferenceCache('[[b]]', 10);
+    const reference3 = makeReferenceCache('[[c]]', 30);
+    const sorted = sortReferences([reference1, reference2, reference3]);
+    expect(sorted).toEqual([reference2, reference3, reference1]);
   });
 
   it('should sort frontmatter links by key', () => {
-    const ref1 = makeFrontmatterLink('link1', 'beta');
-    const ref2 = makeFrontmatterLink('link2', 'alpha');
-    const sorted = sortReferences([ref1, ref2]);
-    expect(sorted).toEqual([ref2, ref1]);
+    const reference1 = makeFrontmatterLink('link1', 'beta');
+    const reference2 = makeFrontmatterLink('link2', 'alpha');
+    const sorted = sortReferences([reference1, reference2]);
+    expect(sorted).toEqual([reference2, reference1]);
   });
 
   it('should place frontmatter links after reference caches', () => {
-    const refCache = makeReferenceCache('[[link]]', 0);
+    const referenceCache = makeReferenceCache('[[link]]', 0);
     const fmLink = makeFrontmatterLink('link', 'aliases');
-    const sorted = sortReferences([fmLink, refCache]);
-    expect(sorted).toEqual([refCache, fmLink]);
+    const sorted = sortReferences([fmLink, referenceCache]);
+    expect(sorted).toEqual([referenceCache, fmLink]);
   });
 
   it('should sort frontmatter links with offsets before those without for same key', () => {
@@ -198,13 +198,13 @@ describe('sortReferences', () => {
   });
 
   it('should handle mixed reference types', () => {
-    const ref1 = makeReferenceCache('[[a]]', 100);
-    const ref2 = makeReferenceCache('[[b]]', 50);
+    const reference1 = makeReferenceCache('[[a]]', 100);
+    const reference2 = makeReferenceCache('[[b]]', 50);
     const fm1 = makeFrontmatterLink('link1', 'z');
     const fm2 = makeFrontmatterLink('link2', 'a');
-    const sorted = sortReferences([fm1, ref1, fm2, ref2]);
-    expect(sorted[0]).toBe(ref2);
-    expect(sorted[1]).toBe(ref1);
+    const sorted = sortReferences([fm1, reference1, fm2, reference2]);
+    expect(sorted[0]).toBe(reference2);
+    expect(sorted[1]).toBe(reference1);
     expect(sorted[2]).toBe(fm2);
     expect(sorted[3]).toBe(fm1);
   });

@@ -86,7 +86,7 @@ import {
   referenceToFileChange
 } from './reference.ts';
 
-const ESCAPED_WIKILINK_DIVIDER = '\\|';
+const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
 
 /**
  * Regular expression for unescaped pipes.
@@ -1200,7 +1200,7 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
     isEmptyEmbedAliasAllowed: true
   };
 
-  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFn) => defaultParamsFn());
+  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFunction) => defaultParamsFunction());
   params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
   const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
 
@@ -1298,7 +1298,7 @@ export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
   const cleanDisplayText = replaceAll({
     replacer: '',
     searchValue: /^\.\//g,
-    str: normalizePath(ensureNonNullable(displayText.split(' > ')[0]))
+    str: normalizePath(ensureNonNullable(displayText.split(' > ', 1)[0]))
   }).toLowerCase();
 
   for (const alias of aliasesToReset) {
@@ -1468,11 +1468,10 @@ export function updateLink(params: UpdateLinkParams): string {
 
   const { subpath } = splitSubpath(link.link);
 
-  if (isCanvasFile(newSourcePathOrFile)) {
-    /* v8 ignore start -- Canvas file node reference branch is hard to reproduce in unit tests. */
-    if (isCanvasFileNodeReference(link)) {
-      return newTargetFile.path + subpath;
-    }
+  /* v8 ignore start -- Canvas file node reference branch is hard to reproduce in unit tests. */
+  if (isCanvasFile(newSourcePathOrFile) && isCanvasFileNodeReference(link)) {
+    return newTargetFile.path + subpath;
+
     /* v8 ignore stop */
   }
 
@@ -1659,18 +1658,20 @@ function generateLinkText(params: GenerateLinkTextParams): string {
     /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
     switch (config.linkPathStyle) {
       /* v8 ignore stop */
-      case FinalLinkPathStyle.AbsolutePathInVault:
+      case FinalLinkPathStyle.AbsolutePathInVault: {
         linkText = targetFile.path;
         if (config.shouldUseLeadingSlashForAbsolutePaths && !linkText.startsWith('/')) {
           linkText = `/${linkText}`;
         }
         break;
-      case FinalLinkPathStyle.RelativePathToTheSource:
+      }
+      case FinalLinkPathStyle.RelativePathToTheSource: {
         linkText = relative(dirname(sourcePath), targetFile.path);
         if (config.shouldUseLeadingDotForRelativePaths && !linkText.startsWith('.')) {
           linkText = `./${linkText}`;
         }
         break;
+      }
       case FinalLinkPathStyle.ShortestPathWhenPossible: {
         const shortestName = isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
         const matchedFiles = app.metadataCache.getLinkpathDest(shortestName, sourcePath);
@@ -1678,8 +1679,9 @@ function generateLinkText(params: GenerateLinkTextParams): string {
         break;
       }
       /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above. */
-      default:
+      default: {
         assertNever(config.linkPathStyle);
+      }
         /* v8 ignore stop */
     }
   }
@@ -1802,7 +1804,6 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
         changes.push(fileChange);
       } else {
         console.error('Unsupported file change', fileChange);
-        continue;
       }
     } else {
       if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
@@ -1818,16 +1819,21 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
 function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLinkPathStyle {
   const resolvedStyle = linkPathStyle ?? LinkPathStyle.ObsidianSettingsDefault;
   switch (resolvedStyle) {
-    case LinkPathStyle.AbsolutePathInVault:
+    case LinkPathStyle.AbsolutePathInVault: {
       return FinalLinkPathStyle.AbsolutePathInVault;
-    case LinkPathStyle.ObsidianSettingsDefault:
+    }
+    case LinkPathStyle.ObsidianSettingsDefault: {
       return resolveFinalLinkPathStyleFromObsidianSettings(app);
-    case LinkPathStyle.RelativePathToTheSource:
+    }
+    case LinkPathStyle.RelativePathToTheSource: {
       return FinalLinkPathStyle.RelativePathToTheSource;
-    case LinkPathStyle.ShortestPathWhenPossible:
+    }
+    case LinkPathStyle.ShortestPathWhenPossible: {
       return FinalLinkPathStyle.ShortestPathWhenPossible;
-    default:
+    }
+    default: {
       assertNever(resolvedStyle);
+    }
   }
 }
 
@@ -1881,14 +1887,18 @@ function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean):
 function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathStyle {
   const newLinkFormat = getNewLinkFormat(app);
   switch (newLinkFormat) {
-    case 'absolute':
+    case 'absolute': {
       return FinalLinkPathStyle.AbsolutePathInVault;
-    case 'relative':
+    }
+    case 'relative': {
       return FinalLinkPathStyle.RelativePathToTheSource;
-    case 'shortest':
+    }
+    case 'shortest': {
       return FinalLinkPathStyle.ShortestPathWhenPossible;
-    default:
+    }
+    default: {
       assertNever(newLinkFormat);
+    }
   }
 }
 
@@ -1910,15 +1920,20 @@ function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {
   const { app, linkStyle, originalLink } = params;
   const resolvedStyle = linkStyle ?? LinkStyle.PreserveExisting;
   switch (resolvedStyle) {
-    case LinkStyle.Markdown:
+    case LinkStyle.Markdown: {
       return false;
-    case LinkStyle.ObsidianSettingsDefault:
+    }
+    case LinkStyle.ObsidianSettingsDefault: {
       return shouldUseWikilinks(app);
-    case LinkStyle.PreserveExisting:
+    }
+    case LinkStyle.PreserveExisting: {
       return originalLink === undefined ? shouldUseWikilinks(app) : testWikilink(originalLink);
-    case LinkStyle.Wikilink:
+    }
+    case LinkStyle.Wikilink: {
       return true;
-    default:
+    }
+    default: {
       assertNever(resolvedStyle);
+    }
   }
 }

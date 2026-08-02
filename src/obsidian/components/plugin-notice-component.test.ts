@@ -39,7 +39,7 @@ const app = strictProxy<AppOriginal>({});
 
 const mocks = vi.hoisted(() => {
   const instances: NoticeInstance[] = [];
-  const NoticeMock = vi.fn(function noticeMock(this: NoticeInstance, ..._args: unknown[]) {
+  const NoticeMock = vi.fn(function noticeMock(this: NoticeInstance, ..._arguments: unknown[]) {
     this.hide = vi.fn();
     this.setMessage = vi.fn();
     this.messageEl = createDiv();
@@ -103,10 +103,10 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Something happened');
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const nameEl = fragment.querySelector('span');
-    expect(nameEl?.textContent).toBe('My Plugin');
-    expect(nameEl?.classList.contains(CssClass.LibraryName)).toBe(true);
-    expect(nameEl?.classList.contains(CssClass.PluginNoticeName)).toBe(true);
+    const nameElement = fragment.querySelector('span');
+    expect(nameElement?.textContent).toBe('My Plugin');
+    expect(nameElement?.classList.contains(CssClass.LibraryName)).toBe(true);
+    expect(nameElement?.classList.contains(CssClass.PluginNoticeName)).toBe(true);
   });
 
   it('should wrap the notice content in a container carrying the plugin-notice-content class', () => {
@@ -115,10 +115,10 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Something happened');
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const contentEl = fragment.firstElementChild;
-    expect(contentEl?.classList.contains(CssClass.PluginNoticeContent)).toBe(true);
+    const contentElement = fragment.firstElementChild;
+    expect(contentElement?.classList.contains(CssClass.PluginNoticeContent)).toBe(true);
     // The whole message lives inside that single wrapper.
-    expect(contentEl?.textContent).toBe('My Plugin\nSomething happened');
+    expect(contentElement?.textContent).toBe('My Plugin\nSomething happened');
   });
 
   it('should keep the notice open when an interactive element inside it is clicked', () => {
@@ -131,13 +131,13 @@ describe('PluginNoticeComponent', () => {
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     // Stand in for Obsidian's noticeEl, whose own bubble-phase click handler dismisses the notice.
-    const noticeElStub = createDiv();
-    noticeElStub.appendChild(fragment);
+    const noticeElementStub = createDiv();
+    noticeElementStub.appendChild(fragment);
     const dismissListener = vi.fn();
-    noticeElStub.addEventListener('click', dismissListener);
+    noticeElementStub.addEventListener('click', dismissListener);
 
-    const linkEl = ensureNonNullable(noticeElStub.querySelector('a'));
-    linkEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const linkElement = ensureNonNullable(noticeElementStub.querySelector('a'));
+    linkElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).not.toHaveBeenCalled();
   });
@@ -148,14 +148,14 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Something happened');
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const noticeElStub = createDiv();
-    noticeElStub.appendChild(fragment);
+    const noticeElementStub = createDiv();
+    noticeElementStub.appendChild(fragment);
     const dismissListener = vi.fn();
-    noticeElStub.addEventListener('click', dismissListener);
+    noticeElementStub.addEventListener('click', dismissListener);
 
     // The plugin-name prefix is non-interactive, so its click must still reach the dismiss handler.
-    const nameEl = ensureNonNullable(noticeElStub.querySelector('span'));
-    nameEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const nameElement = ensureNonNullable(noticeElementStub.querySelector('span'));
+    nameElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).toHaveBeenCalledTimes(1);
   });
@@ -166,13 +166,13 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Something happened');
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const noticeElStub = createDiv();
-    noticeElStub.appendChild(fragment);
+    const noticeElementStub = createDiv();
+    noticeElementStub.appendChild(fragment);
     const dismissListener = vi.fn();
-    noticeElStub.addEventListener('click', dismissListener);
+    noticeElementStub.addEventListener('click', dismissListener);
 
-    const contentEl = ensureNonNullable(noticeElStub.querySelector(`.${CssClass.PluginNoticeContent}`));
-    const textNode = ensureNonNullable(Array.from(contentEl.childNodes).find((node) => node.nodeType === Node.TEXT_NODE));
+    const contentElement = ensureNonNullable(noticeElementStub.querySelector(`.${CssClass.PluginNoticeContent}`));
+    const textNode = ensureNonNullable(Array.from(contentElement.childNodes).find((node) => node.nodeType === Node.TEXT_NODE));
     textNode.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).toHaveBeenCalledTimes(1);
@@ -369,14 +369,14 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Locked', { shouldHideOnClick: false });
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const noticeElStub = createDiv();
-    noticeElStub.appendChild(fragment);
+    const noticeElementStub = createDiv();
+    noticeElementStub.appendChild(fragment);
     const dismissListener = vi.fn();
-    noticeElStub.addEventListener('click', dismissListener);
+    noticeElementStub.addEventListener('click', dismissListener);
 
     // Even a non-interactive element (the plugin-name prefix) must not dismiss it.
-    const nameEl = ensureNonNullable(noticeElStub.querySelector('span'));
-    nameEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const nameElement = ensureNonNullable(noticeElementStub.querySelector('span'));
+    nameElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).not.toHaveBeenCalled();
   });
@@ -710,15 +710,15 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
 
     const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const noticeElStub = createDiv();
-    noticeElStub.appendChild(content);
+    const noticeElementStub = createDiv();
+    noticeElementStub.appendChild(content);
     const dismissListener = vi.fn();
-    noticeElStub.addEventListener('click', dismissListener);
+    noticeElementStub.addEventListener('click', dismissListener);
 
-    const buttonEl = ensureNonNullable(noticeElStub.querySelector('button'));
-    expect(buttonEl.textContent).toBe('Cancel');
+    const buttonElement = ensureNonNullable(noticeElementStub.querySelector('button'));
+    expect(buttonElement.textContent).toBe('Cancel');
 
-    buttonEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    buttonElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(abortController.signal.aborted).toBe(true);
     expect(dismissListener).not.toHaveBeenCalled();

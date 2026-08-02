@@ -13,7 +13,7 @@ import { noop } from './function.ts';
 /**
  * A constant representing an infinite timeout.
  */
-export const INFINITE_TIMEOUT = Number.POSITIVE_INFINITY;
+export const INFINITE_TIMEOUT = Infinity;
 
 /**
  * An abort signal that aborts when any of the given abort signals abort.
@@ -119,8 +119,8 @@ export function onAbort(abortSignal: AbortSignal, callback: (abortSignal: AbortS
     }
   });
 
-  function wrappedCallback(evt: Event): void {
-    callback(evt.target as AbortSignal);
+  function wrappedCallback($event: Event): void {
+    callback($event.target as AbortSignal);
   }
 }
 

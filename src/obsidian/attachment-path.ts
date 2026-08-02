@@ -128,7 +128,7 @@ export interface GetAvailablePathForAttachmentsExtendedFnParams {
 /**
  * {@link Vault.getAvailablePathForAttachments} extended wrapper.
  */
-export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePathForAttachmentsFn {
+export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePathForAttachmentsFunction {
   /**
    * Get available path for attachments with additional params.
    *
@@ -138,7 +138,7 @@ export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePa
   extended(params: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string>;
 }
 
-type GetAvailablePathForAttachmentsFn = Vault['getAvailablePathForAttachments'];
+type GetAvailablePathForAttachmentsFunction = Vault['getAvailablePathForAttachments'];
 
 /**
  * Dummy path.
@@ -303,9 +303,9 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
   const attachmentFile = getFileOrNull({ app, pathOrFile: attachmentPath });
 
-  const extendedFn = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
-  if (extendedFn) {
-    return extendedFn({
+  const extendedFunction = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
+  if (extendedFunction) {
+    return extendedFunction({
       attachmentFileBaseName,
       attachmentFileExtension: attachmentFileExtension.slice(1),
       attachmentFileStats: attachmentFile?.stat,

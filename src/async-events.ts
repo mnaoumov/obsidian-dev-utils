@@ -78,7 +78,7 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * Remove an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The arguments of the event.
+   * @typeParam Arguments - The arguments of the event.
    * @param name - The name of the event.
    * @param callback - The callback to remove.
    *
@@ -88,19 +88,19 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  off<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+  off<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>
+    callback: (...$arguments: Arguments) => Promisable<void>
   ): void;
 
   /**
    * Add an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The arguments of the event.
+   * @typeParam Arguments - The arguments of the event.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -114,10 +114,10 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  on<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+  on<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>,
-    thisArg?: unknown
+    callback: (...$arguments: Arguments) => Promisable<void>,
+    thisArgument?: unknown
   ): AsyncEventRef;
 
   /**
@@ -126,7 +126,7 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -140,10 +140,10 @@ export interface AsyncEventSource<EventMap extends EventMapConstraint<EventMap> 
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  once<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+  once<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>,
-    thisArg?: unknown
+    callback: (...$arguments: Arguments) => Promisable<void>,
+    thisArgument?: unknown
   ): AsyncEventRef;
 }
 
@@ -178,23 +178,23 @@ export interface AsyncEventTrigger<EventMap extends EventMapConstraint<EventMap>
   /**
    * Try to trigger an event, executing all the listeners in order even if some of them throw an error.
    *
-   * @typeParam Args - The types of the arguments the function accepts.
-   * @param eventRef - The event reference.
-   * @param args - The data to pass to the event listeners.
+   * @typeParam Arguments - The types of the arguments the function accepts.
+   * @param eventReference - The event reference.
+   * @param $arguments - The data to pass to the event listeners.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void;
+  tryTrigger<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): void;
 
   /**
    * Try to trigger an event asynchronously.
    *
-   * @typeParam Args - The types of the arguments the function accepts.
-   * @param eventRef - The event reference.
-   * @param args - The data to pass to the event listeners.
+   * @typeParam Arguments - The types of the arguments the function accepts.
+   * @param eventReference - The event reference.
+   * @param $arguments - The data to pass to the event listeners.
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void>;
+  tryTriggerAsync<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): Promise<void>;
 }
 
 /**
@@ -258,7 +258,7 @@ export interface SubscribeAsyncDisposableEventParams<Source extends GenericAsync
 }
 
 // The callback type for a given event on an async event source, with its argument tuple inferred from the source's event map.
-type AsyncEventCallbackOf<Source extends GenericAsyncEventSource, EventName extends AsyncEventNameOf<Source>> = EventMapOf<Source>[EventName] extends infer Args extends unknown[] ? (...args: Args) => Promisable<void>
+type AsyncEventCallbackOf<Source extends GenericAsyncEventSource, EventName extends AsyncEventNameOf<Source>> = EventMapOf<Source>[EventName] extends infer Arguments extends unknown[] ? (...$arguments: Arguments) => Promisable<void>
   : never;
 
 // The union of known event names for an async event source, derived from its event map.
@@ -327,7 +327,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * Remove an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to remove.
    *
@@ -337,17 +337,17 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public off<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+  public off<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>
+    callback: (...$arguments: Arguments) => Promisable<void>
   ): void {
-    const eventRefs = this.eventRefsMap.get(name);
-    if (!eventRefs) {
+    const eventReferences = this.eventRefsMap.get(name);
+    if (!eventReferences) {
       return;
     }
 
-    filterInPlace(eventRefs, (eventRef) => eventRef.callback !== callback);
-    if (eventRefs.length === 0) {
+    filterInPlace(eventReferences, (eventReference) => eventReference.callback !== callback);
+    if (eventReferences.length === 0) {
       this.eventRefsMap.delete(name);
     }
   }
@@ -363,13 +363,13 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   public offref(eventRef: AsyncEventRef): void {
-    const eventRefs = this.eventRefsMap.get(eventRef.name);
-    if (!eventRefs) {
+    const eventReferences = this.eventRefsMap.get(eventRef.name);
+    if (!eventReferences) {
       return;
     }
 
-    filterInPlace(eventRefs, (storedEventRef) => storedEventRef !== eventRef);
-    if (eventRefs.length === 0) {
+    filterInPlace(eventReferences, (storedEventReference) => storedEventReference !== eventRef);
+    if (eventReferences.length === 0) {
       this.eventRefsMap.delete(eventRef.name);
     }
   }
@@ -378,10 +378,10 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * Add an event listener.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -395,35 +395,35 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public on<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+  public on<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>,
-    thisArg?: unknown
+    callback: (...$arguments: Arguments) => Promisable<void>,
+    thisArgument?: unknown
   ): AsyncEventRef {
-    let eventRefs = this.eventRefsMap.get(name);
-    if (!eventRefs) {
-      eventRefs = [];
-      this.eventRefsMap.set(name, eventRefs);
+    let eventReferences = this.eventRefsMap.get(name);
+    if (!eventReferences) {
+      eventReferences = [];
+      this.eventRefsMap.set(name, eventReferences);
     }
 
-    const eventRef: AsyncEventRef = {
+    const eventReference: AsyncEventRef = {
       asyncEventSource: this,
       callback: callback as GenericCallback,
       name,
-      thisArg
+      thisArg: thisArgument
     };
-    eventRefs.push(eventRef);
-    return eventRef;
+    eventReferences.push(eventReference);
+    return eventReference;
   }
 
   /**
    * Add an event listener that will be triggered only once.
    *
    * @typeParam EventName - The name of the event.
-   * @typeParam Args - The types of the arguments the event callback accepts.
+   * @typeParam Arguments - The types of the arguments the event callback accepts.
    * @param name - The name of the event.
    * @param callback - The callback to call when the event is triggered.
-   * @param thisArg - The context passed as `this` to the `callback`.
+   * @param thisArgument - The context passed as `this` to the `callback`.
    * @returns A reference to the event listener.
    *
    * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
@@ -437,17 +437,17 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public once<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+  public once<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
     name: EventName,
-    callback: (...args: Args) => Promisable<void>,
-    thisArg?: unknown
+    callback: (...$arguments: Arguments) => Promisable<void>,
+    thisArgument?: unknown
   ): AsyncEventRef {
-    const originalEventRef = this.on(name, callback, thisArg);
-    const cleanupEventRef = this.on(name, () => {
-      this.offref(originalEventRef);
-      this.offref(cleanupEventRef);
+    const originalEventReference = this.on(name, callback, thisArgument);
+    const cleanupEventReference = this.on(name, () => {
+      this.offref(originalEventReference);
+      this.offref(cleanupEventReference);
     });
-    return originalEventRef;
+    return originalEventReference;
   }
 
   /**
@@ -463,9 +463,9 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void {
-    const eventRefs = this.eventRefsMap.get(name) ?? [];
-    for (const eventRef of eventRefs.slice()) {
-      this.tryTrigger(eventRef, args);
+    const eventReferences = this.eventRefsMap.get(name) ?? [];
+    for (const eventReference of eventReferences.slice()) {
+      this.tryTrigger(eventReference, args);
     }
   }
 
@@ -478,18 +478,18 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
   protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void> {
-    const eventRefs = this.eventRefsMap.get(name) ?? [];
-    for (const eventRef of eventRefs.slice()) {
-      await this.tryTriggerAsync(eventRef, args);
+    const eventReferences = this.eventRefsMap.get(name) ?? [];
+    for (const eventReference of eventReferences.slice()) {
+      await this.tryTriggerAsync(eventReference, args);
     }
   }
 
   /**
    * Try to trigger an event, executing all the listeners in order even if some of them throw an error.
    *
-   * @typeParam Args - The types of the arguments the function accepts.
-   * @param eventRef - The event reference.
-   * @param args - The data to pass to the event listeners.
+   * @typeParam Arguments - The types of the arguments the function accepts.
+   * @param eventReference - The event reference.
+   * @param $arguments - The data to pass to the event listeners.
    *
    * @example
    * ```ts
@@ -497,31 +497,31 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  protected tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
+  protected tryTrigger<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): void {
     try {
-      const result = eventRef.callback.call(eventRef.thisArg, ...args);
+      const result = eventReference.callback.call(eventReference.thisArg, ...$arguments);
       if (result instanceof Promise) {
         result.catch(throwDelayed);
       }
-    } catch (e) {
-      throwDelayed(e);
+    } catch (error) {
+      throwDelayed(error);
     }
   }
 
   /**
    * Try to trigger an event asynchronously, executing all the listeners in order even if some of them throw an error.
    *
-   * @typeParam Args - The types of the arguments the function accepts.
-   * @param eventRef - The event reference.
-   * @param args - The data to pass to the event listeners.
+   * @typeParam Arguments - The types of the arguments the function accepts.
+   * @param eventReference - The event reference.
+   * @param $arguments - The data to pass to the event listeners.
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  protected async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
+  protected async tryTriggerAsync<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): Promise<void> {
     try {
-      await eventRef.callback.call(eventRef.thisArg, ...args);
-    } catch (e) {
-      throwDelayed(e);
+      await eventReference.callback.call(eventReference.thisArg, ...$arguments);
+    } catch (error) {
+      throwDelayed(error);
     }
   }
 }
@@ -562,26 +562,26 @@ export class AsyncEvents<EventMap extends EventMapConstraint<EventMap> = EventMa
   /**
    * Try to trigger an event, executing all the listeners in order even if some of them throw an error.
    *
-   * @typeParam Args - The types of the arguments the function accepts.
-   * @param eventRef - The event reference.
-   * @param args - The data to pass to the event listeners.
+   * @typeParam Arguments - The types of the arguments the function accepts.
+   * @param eventReference - The event reference.
+   * @param $arguments - The data to pass to the event listeners.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public override tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
-    super.tryTrigger(eventRef, args);
+  public override tryTrigger<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): void {
+    super.tryTrigger(eventReference, $arguments);
   }
 
   /**
    * Try to trigger an event asynchronously, executing all the listeners in order even if some of them throw an error.
    *
-   * @typeParam Args - The types of the arguments the function accepts.
-   * @param eventRef - The event reference.
-   * @param args - The data to pass to the event listeners.
+   * @typeParam Arguments - The types of the arguments the function accepts.
+   * @param eventReference - The event reference.
+   * @param $arguments - The data to pass to the event listeners.
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-  public override async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
-    return super.tryTriggerAsync(eventRef, args);
+  public override async tryTriggerAsync<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): Promise<void> {
+    return super.tryTriggerAsync(eventReference, $arguments);
   }
 }
 
@@ -616,14 +616,14 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * Remove an event listener.
        *
        * @typeParam EventName - The name of the event.
-       * @typeParam Args - The types of the arguments the event callback accepts.
+       * @typeParam Arguments - The types of the arguments the event callback accepts.
        * @param name - The name of the event.
        * @param callback - The callback to remove.
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-      public off<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+      public off<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
         name: EventName,
-        callback: (...args: Args) => Promisable<void>
+        callback: (...$arguments: Arguments) => Promisable<void>
       ): void {
         this.#asyncEvents.off(name, callback);
       }
@@ -641,42 +641,42 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        * Add an event listener.
        *
        * @typeParam EventName - The name of the event.
-       * @typeParam Args - The types of the arguments the event callback accepts.
+       * @typeParam Arguments - The types of the arguments the event callback accepts.
        * @param name - The name of the event.
        * @param callback - The callback to call when the event is triggered.
-       * @param thisArg - The context passed as `this` to the `callback`.
+       * @param thisArgument - The context passed as `this` to the `callback`.
        * @returns A reference to the event listener.
        *
        * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-      public on<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+      public on<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
         name: EventName,
-        callback: (...args: Args) => Promisable<void>,
-        thisArg?: unknown
+        callback: (...$arguments: Arguments) => Promisable<void>,
+        thisArgument?: unknown
       ): AsyncEventRef {
-        return this.#asyncEvents.on(name, callback, thisArg);
+        return this.#asyncEvents.on(name, callback, thisArgument);
       }
 
       /**
        * Add an event listener that will be called only once.
        *
        * @typeParam EventName - The name of the event.
-       * @typeParam Args - The types of the arguments the event callback accepts.
+       * @typeParam Arguments - The types of the arguments the event callback accepts.
        * @param name - The name of the event.
        * @param callback - The callback to call when the event is triggered.
-       * @param thisArg - The context passed as `this` to the `callback`.
+       * @param thisArgument - The context passed as `this` to the `callback`.
        * @returns A reference to the event listener.
        *
        * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#Events#on} (or once, correspondingly).
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
-      public once<EventName extends StringKeys<EventMap>, Args extends CallbackArgs<EventMap, EventName>>(
+      public once<EventName extends StringKeys<EventMap>, Arguments extends CallbackArgs<EventMap, EventName>>(
         name: EventName,
-        callback: (...args: Args) => Promisable<void>,
-        thisArg?: unknown
+        callback: (...$arguments: Arguments) => Promisable<void>,
+        thisArgument?: unknown
       ): AsyncEventRef {
-        return this.#asyncEvents.once(name, callback, thisArg);
+        return this.#asyncEvents.once(name, callback, thisArgument);
       }
 
       /**
@@ -705,26 +705,26 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
       /**
        * Try to trigger an event, executing all the listeners in order even if some of them throw an error.
        *
-       * @typeParam Args - The types of the arguments the function accepts.
-       * @param eventRef - The event reference.
-       * @param args - The data to pass to the event listeners.
+       * @typeParam Arguments - The types of the arguments the function accepts.
+       * @param eventReference - The event reference.
+       * @param $arguments - The data to pass to the event listeners.
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- Parity with Obsidian's Events.tryTrigger.
-      protected tryTrigger<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): void {
-        this.#asyncEvents.tryTrigger(eventRef, args);
+      protected tryTrigger<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): void {
+        this.#asyncEvents.tryTrigger(eventReference, $arguments);
       }
 
       /**
        * Try to trigger an event asynchronously, executing all the listeners in order even if some of them throw an error.
        *
-       * @typeParam Args - The types of the arguments the function accepts.
-       * @param eventRef - The event reference.
-       * @param args - The data to pass to the event listeners.
+       * @typeParam Arguments - The types of the arguments the function accepts.
+       * @param eventReference - The event reference.
+       * @param $arguments - The data to pass to the event listeners.
        * @returns A {@link Promise} that resolves when all listeners have completed.
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- Parity with Obsidian's Events.tryTrigger.
-      protected async tryTriggerAsync<Args extends unknown[]>(eventRef: AsyncEventRef, args: Args): Promise<void> {
-        await this.#asyncEvents.tryTriggerAsync(eventRef, args);
+      protected async tryTriggerAsync<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): Promise<void> {
+        await this.#asyncEvents.tryTriggerAsync(eventReference, $arguments);
       }
     }
 

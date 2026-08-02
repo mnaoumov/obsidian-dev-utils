@@ -51,7 +51,7 @@ export const requireSuperCall: Rule.RuleModule = {
 
     return {
       'AssignmentExpression'(node: Rule.Node): void {
-        const current = methodStack[methodStack.length - 1];
+        const current = methodStack.at(-1);
         if (current?.kind !== 'set') {
           return;
         }
@@ -62,7 +62,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
       },
       'CallExpression'(node: Rule.Node): void {
-        const current = methodStack[methodStack.length - 1];
+        const current = methodStack.at(-1);
         if (current?.kind !== 'method') {
           return;
         }
@@ -73,7 +73,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
       },
       'MemberExpression'(node: Rule.Node): void {
-        const current = methodStack[methodStack.length - 1];
+        const current = methodStack.at(-1);
         if (current?.kind !== 'get') {
           return;
         }
@@ -106,7 +106,7 @@ export const requireSuperCall: Rule.RuleModule = {
         });
       },
       'MethodDefinition:exit'(): void {
-        const info = methodStack[methodStack.length - 1];
+        const info = methodStack.at(-1);
         if (!info) {
           return;
         }
@@ -177,7 +177,7 @@ function checkIsAbstract(decl: Declaration): boolean {
   assert(canHaveModifiers(decl), 'Expected method declaration to support modifiers');
 
   const modifiers = getModifiers(decl);
-  return modifiers?.some((mod) => mod.kind === SyntaxKind.AbstractKeyword) ?? false;
+  return modifiers?.some(($module) => $module.kind === SyntaxKind.AbstractKeyword) ?? false;
 }
 
 /**
@@ -198,8 +198,8 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
   }
 
   const checker = services.program.getTypeChecker();
-  const classDecl = methodNode.parent.parent;
-  const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDecl);
+  const classDeclaration = methodNode.parent.parent;
+  const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDeclaration);
   const classType = checker.getTypeAtLocation(tsClassNode);
   const baseTypes = classType.getBaseTypes();
 
@@ -208,20 +208,20 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
   }
 
   for (const baseType of baseTypes) {
-    const prop = baseType.getProperty(methodName);
+    const property = baseType.getProperty(methodName);
 
-    if (!prop) {
+    if (!property) {
       continue;
     }
 
-    const declarations = prop.getDeclarations();
+    const declarations = property.getDeclarations();
 
     if (!declarations) {
       continue;
     }
 
-    for (const decl of declarations) {
-      if (checkIsAbstract(decl)) {
+    for (const declaration of declarations) {
+      if (checkIsAbstract(declaration)) {
         return true;
       }
     }

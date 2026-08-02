@@ -62,9 +62,9 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addComponentClass<T extends BaseComponent>(componentClass: new (containerEl: HTMLElement) => T, cb: (component: T) => void): this {
-    return this.addComponent((el) => {
-      const component = new componentClass(el);
+  public addComponentClass<T extends BaseComponent>(componentClass: new (containerElement: HTMLElement) => T, cb: (component: T) => void): this {
+    return this.addComponent((element) => {
+      const component = new componentClass(element);
       cb(component);
       return component;
     });
@@ -166,7 +166,7 @@ export class SettingEx extends Setting {
    * @param cb - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addNumber(cb: (number: NumberComponent) => void): this {
+  public addNumber(cb: ($number: NumberComponent) => void): this {
     return this.addComponentClass(NumberComponent, cb);
   }
 

@@ -42,7 +42,7 @@ export function extractClassInfo(cls: ClassDeclaration, namespace: string): Type
     description: getDescription(cls),
     enumMembers: [],
     examples: getExamples(cls),
-    implementsTypes: cls.getImplements().map((i) => i.getText()),
+    implementsTypes: cls.getImplements().map((index) => index.getText()),
     kind: 'class',
     methods: cls.getMethods().filter((m) => m.getScope() !== Scope.Private).map((m) => extractMethodInfo(m)),
     name,
@@ -54,17 +54,17 @@ export function extractClassInfo(cls: ClassDeclaration, namespace: string): Type
 }
 
 export function extractConstructorInfo(ctor: ConstructorDeclaration): MemberInfo {
-  const paramDescriptions = getParamDescriptions(ctor);
+  const parameterDescriptions = getParamDescriptions(ctor);
   const params = ctor.getParameters().map((p) => {
     const isOptional = p.isOptional();
     const optionalSuffix = isOptional ? '?' : '';
     return {
-      description: paramDescriptions.get(p.getName()) ?? (isOptional ? '*(Optional)*' : ''),
+      description: parameterDescriptions.get(p.getName()) ?? (isOptional ? '*(Optional)*' : ''),
       name: `${p.getName()}${optionalSuffix}`,
       type: simplifyType(p.getType().getText())
     };
   });
-  const paramStr = params.map((p) => `${p.name}: ${p.type}`).join(', ');
+  const parameterString = params.map((p) => `${p.name}: ${p.type}`).join(', ');
   return {
     description: getDescription(ctor),
     examples: getExamples(ctor),
@@ -76,14 +76,14 @@ export function extractConstructorInfo(ctor: ConstructorDeclaration): MemberInfo
     remarks: getRemarks(ctor),
     returnDescription: '',
     returnType: '',
-    signature: `(${paramStr})`,
+    signature: `(${parameterString})`,
     since: getSince(ctor),
     type: ''
   };
 }
 
-export function extractEnumInfo(enumDecl: EnumDeclaration, namespace: string): TypeInfo {
-  const members: EnumMemberInfo[] = enumDecl.getMembers().map((m) => {
+export function extractEnumInfo(enumDeclaration: EnumDeclaration, namespace: string): TypeInfo {
+  const members: EnumMemberInfo[] = enumDeclaration.getMembers().map((m) => {
     const initializer = m.getInitializer()?.getText() ?? '';
     return {
       description: getDescription(m),
@@ -93,16 +93,16 @@ export function extractEnumInfo(enumDecl: EnumDeclaration, namespace: string): T
   });
   return {
     baseTypes: [],
-    description: getDescription(enumDecl),
+    description: getDescription(enumDeclaration),
     enumMembers: members,
-    examples: getExamples(enumDecl),
+    examples: getExamples(enumDeclaration),
     implementsTypes: [],
     kind: 'enum',
     methods: [],
-    name: enumDecl.getName(),
+    name: enumDeclaration.getName(),
     namespace,
     properties: [],
-    remarks: getRemarks(enumDecl),
+    remarks: getRemarks(enumDeclaration),
     typeParameters: []
   };
 }
@@ -145,17 +145,17 @@ export function extractInterfaceInfo(iface: InterfaceDeclaration, namespace: str
 
 export function extractMethodInfo(method: MethodDeclaration): MemberInfo {
   const name = method.getName();
-  const paramDescriptions = getParamDescriptions(method);
+  const parameterDescriptions = getParamDescriptions(method);
   const params = method.getParameters().map((p) => {
     const isOptional = p.isOptional();
     const optionalSuffix = isOptional ? '?' : '';
     return {
-      description: paramDescriptions.get(p.getName()) ?? (isOptional ? '*(Optional)*' : ''),
+      description: parameterDescriptions.get(p.getName()) ?? (isOptional ? '*(Optional)*' : ''),
       name: `${p.getName()}${optionalSuffix}`,
       type: simplifyType(p.getType().getText())
     };
   });
-  const paramStr = params.map((p) => `${p.name}: ${p.type}`).join(', ');
+  const parameterString = params.map((p) => `${p.name}: ${p.type}`).join(', ');
   const info: MemberInfo = {
     description: getDescription(method),
     examples: getExamples(method),
@@ -167,7 +167,7 @@ export function extractMethodInfo(method: MethodDeclaration): MemberInfo {
     remarks: getRemarks(method),
     returnDescription: getReturnDescription(method),
     returnType: getDeclaredReturnType(method),
-    signature: `${name}(${paramStr})`,
+    signature: `${name}(${parameterString})`,
     since: getSince(method),
     type: ''
   };
@@ -177,17 +177,17 @@ export function extractMethodInfo(method: MethodDeclaration): MemberInfo {
 
 export function extractMethodSignatureInfo(method: MethodSignature): MemberInfo {
   const name = method.getName();
-  const paramDescriptions = getParamDescriptions(method);
+  const parameterDescriptions = getParamDescriptions(method);
   const params = method.getParameters().map((p) => {
     const isOptional = p.isOptional();
     const optionalSuffix = isOptional ? '?' : '';
     return {
-      description: paramDescriptions.get(p.getName()) ?? (isOptional ? '*(Optional)*' : ''),
+      description: parameterDescriptions.get(p.getName()) ?? (isOptional ? '*(Optional)*' : ''),
       name: `${p.getName()}${optionalSuffix}`,
       type: simplifyType(p.getType().getText())
     };
   });
-  const paramStr = params.map((p) => `${p.name}: ${p.type}`).join(', ');
+  const parameterString = params.map((p) => `${p.name}: ${p.type}`).join(', ');
   const info: MemberInfo = {
     description: getDescription(method),
     examples: getExamples(method),
@@ -199,7 +199,7 @@ export function extractMethodSignatureInfo(method: MethodSignature): MemberInfo 
     remarks: getRemarks(method),
     returnDescription: getReturnDescription(method),
     returnType: getDeclaredReturnType(method),
-    signature: `${name}(${paramStr})`,
+    signature: `${name}(${parameterString})`,
     since: getSince(method),
     type: ''
   };
@@ -207,45 +207,45 @@ export function extractMethodSignatureInfo(method: MethodSignature): MemberInfo 
   return info;
 }
 
-export function extractPropertyInfo(prop: PropertyDeclaration): MemberInfo {
-  const name = prop.getName();
-  const isOptional = prop.hasQuestionToken();
+export function extractPropertyInfo(property: PropertyDeclaration): MemberInfo {
+  const name = property.getName();
+  const isOptional = property.hasQuestionToken();
   const optionalSuffix = isOptional ? '?' : '';
   return {
-    description: getDescription(prop),
-    examples: getExamples(prop),
+    description: getDescription(property),
+    examples: getExamples(property),
     inheritedFrom: '',
-    isStatic: prop.isStatic(),
+    isStatic: property.isStatic(),
     name: `${name}${optionalSuffix}`,
     overloadKey: '',
     parameters: [],
-    remarks: getRemarks(prop),
+    remarks: getRemarks(property),
     returnDescription: '',
     returnType: '',
     signature: `${name}${optionalSuffix}`,
-    since: getSince(prop),
-    type: getPropertyType(prop)
+    since: getSince(property),
+    type: getPropertyType(property)
   };
 }
 
-export function extractPropertySignatureInfo(prop: PropertySignature): MemberInfo {
-  const name = prop.getName();
-  const isOptional = prop.hasQuestionToken();
+export function extractPropertySignatureInfo(property: PropertySignature): MemberInfo {
+  const name = property.getName();
+  const isOptional = property.hasQuestionToken();
   const optionalSuffix = isOptional ? '?' : '';
   return {
-    description: getDescription(prop),
-    examples: getExamples(prop),
+    description: getDescription(property),
+    examples: getExamples(property),
     inheritedFrom: '',
     isStatic: false,
     name: `${name}${optionalSuffix}`,
     overloadKey: '',
     parameters: [],
-    remarks: getRemarks(prop),
+    remarks: getRemarks(property),
     returnDescription: '',
     returnType: '',
     signature: `${name}${optionalSuffix}`,
-    since: getSince(prop),
-    type: getPropertyType(prop)
+    since: getSince(property),
+    type: getPropertyType(property)
   };
 }
 
@@ -281,7 +281,7 @@ export function getDescription(node: JSDocableNode): string {
   if (docs.length === 0) {
     return '';
   }
-  const raw = docs[docs.length - 1]?.getDescription().trim() ?? '';
+  const raw = docs.at(-1)?.getDescription().trim() ?? '';
   return foldTsDocParagraphs(raw);
 }
 
@@ -290,11 +290,13 @@ export function getExamples(node: JSDocableNode): string[] {
   const examples: string[] = [];
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
-      if (tag.getTagName() === 'example') {
-        const text = tag.getCommentText()?.trim() ?? '';
-        if (text) {
-          examples.push(text);
-        }
+      if (!(tag.getTagName() === 'example')) {
+        continue;
+      }
+
+      const text = tag.getCommentText()?.trim() ?? '';
+      if (text) {
+        examples.push(text);
       }
     }
   }
@@ -307,13 +309,15 @@ export function getParamDescriptions(node: JSDocableNode): Map<string, string> {
   const docs = node.getJsDocs();
   for (const doc of docs) {
     for (const tag of doc.getTags()) {
-      if (tag.getTagName() === 'param') {
-        const comment = foldTsDocParagraphs(tag.getCommentText()?.trim().replace(/\s*\*\s*$/g, '').replace(/^-\s*/, '').trim() ?? '');
-        const tagText = tag.getText();
-        const nameMatch = /@param\s+(?:\{[^}]*\}\s+)?(?<paramName>\w+)/.exec(tagText);
-        if (nameMatch?.groups) {
-          result.set(nameMatch.groups['paramName'] ?? '', comment);
-        }
+      if (!(tag.getTagName() === 'param')) {
+        continue;
+      }
+
+      const comment = foldTsDocParagraphs(tag.getCommentText()?.trim().replaceAll(/\s*\*\s*$/g, '').replace(/^-\s*/, '').trim() ?? '');
+      const tagText = tag.getText();
+      const nameMatch = /@param\s+(?:\{[^}]*\}\s+)?(?<paramName>\w+)/.exec(tagText);
+      if (nameMatch?.groups) {
+        result.set(nameMatch.groups['paramName'] ?? '', comment);
       }
     }
   }
@@ -321,12 +325,12 @@ export function getParamDescriptions(node: JSDocableNode): Map<string, string> {
 }
 
 /** Strip `| undefined` only when it was implicitly added by ts-morph for optional properties */
-export function getPropertyType(prop: PropertyDeclaration | PropertySignature): string {
-  const typeNode = prop.getTypeNode();
+export function getPropertyType(property: PropertyDeclaration | PropertySignature): string {
+  const typeNode = property.getTypeNode();
   if (typeNode) {
-    return resolveTypeofAliases(simplifyType(typeNode.getText()), prop.getSourceFile());
+    return resolveTypeofAliases(simplifyType(typeNode.getText()), property.getSourceFile());
   }
-  return simplifyType(prop.getType().getText());
+  return simplifyType(property.getType().getText());
 }
 
 /** Extract @remarks text from JSDoc */
@@ -334,7 +338,7 @@ export function getRemarks(node: JSDocableNode): string {
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
       if (tag.getTagName() === 'remarks' || tag.getTagName() === 'remark') {
-        return foldTsDocParagraphs(tag.getCommentText()?.trim().replace(/\s*\*\s*$/g, '').trim() ?? '');
+        return foldTsDocParagraphs(tag.getCommentText()?.trim().replaceAll(/\s*\*\s*$/g, '').trim() ?? '');
       }
     }
   }
@@ -346,7 +350,7 @@ export function getReturnDescription(node: JSDocableNode): string {
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
       if (tag.getTagName() === 'returns') {
-        return foldTsDocParagraphs(tag.getCommentText()?.trim().replace(/^-\s*/, '').replace(/\s*\*\s*$/g, '').trim() ?? '');
+        return foldTsDocParagraphs(tag.getCommentText()?.trim().replace(/^-\s*/, '').replaceAll(/\s*\*\s*$/g, '').trim() ?? '');
       }
     }
   }
@@ -358,7 +362,7 @@ export function getSince(node: JSDocableNode): string {
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
       if (tag.getTagName() === 'since') {
-        return tag.getCommentText()?.trim().replace(/\s*\*\s*$/g, '').trim() ?? '';
+        return tag.getCommentText()?.trim().replaceAll(/\s*\*\s*$/g, '').trim() ?? '';
       }
     }
   }
@@ -370,9 +374,9 @@ export function getSince(node: JSDocableNode): string {
  * E.g., `typeof momentInstance` → `typeof moment` when `import { moment as momentInstance }`.
  */
 export function resolveTypeofAliases(typeText: string, sourceFile: SourceFile): string {
-  return typeText.replace(/\btypeof (?<alias>[a-zA-Z][a-zA-Z0-9]*)\b/g, (match, alias: string) => {
-    for (const importDecl of sourceFile.getImportDeclarations()) {
-      for (const namedImport of importDecl.getNamedImports()) {
+  return typeText.replaceAll(/\btypeof (?<alias>[a-zA-Z][a-zA-Z0-9]*)\b/g, (match, alias: string) => {
+    for (const importDeclaration of sourceFile.getImportDeclarations()) {
+      for (const namedImport of importDeclaration.getNamedImports()) {
         if (namedImport.getAliasNode()?.getText() === alias) {
           return `typeof ${namedImport.getName()}`;
         }

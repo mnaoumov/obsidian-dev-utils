@@ -71,7 +71,7 @@ ruleTester.run('kebab-case-file-name', toRuleTesterModule(kebabCaseFileName), {
     {
       code: 'export const a = 1;',
       errors: [{ data: { name: 'App' }, messageId: MESSAGE_ID }],
-      filename: 'C:\\repo\\src\\App.ts',
+      filename: String.raw`C:\repo\src\App.ts`,
       name: 'Windows path separators'
     },
     {
@@ -121,7 +121,7 @@ ruleTester.run('kebab-case-file-name', toRuleTesterModule(kebabCaseFileName), {
     },
     {
       code: 'export const a = 1;',
-      filename: 'C:\\repo\\src\\syntax-highlighting-component.ts',
+      filename: String.raw`C:\repo\src\syntax-highlighting-component.ts`,
       name: 'Windows path separators'
     },
     {

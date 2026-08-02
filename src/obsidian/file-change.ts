@@ -28,7 +28,7 @@ import type {
   CanvasTextNodeReference
 } from './reference.ts';
 import type {
-  ContentArgs,
+  ContentArgs as ContentArguments,
   ProcessOptions,
   ProcessParams
 } from './vault.ts';
@@ -60,7 +60,7 @@ import {
 } from './reference.ts';
 import { process } from './vault.ts';
 
-const ESCAPED_WIKILINK_DIVIDER = '\\|';
+const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
 const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 
 /**
@@ -75,7 +75,7 @@ export interface ApplyContentChangesParams {
   /**
    * A provider that returns an array of content changes to apply.
    */
-  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArguments>;
 
   /**
    * The content to which the changes should be applied.
@@ -110,7 +110,7 @@ export interface ApplyFileChangesParams extends ApplyFileChangesOptions {
   /**
    * A provider that returns an array of file changes to apply.
    */
-  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArguments>;
 
   /**
    * The path or file to which the changes should be applied.
@@ -152,7 +152,7 @@ interface ApplyCanvasChangesParams {
   /**
    * A provider that returns an array of file changes to apply.
    */
-  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArguments>;
 
   /**
    * The content to which the changes should be applied.
@@ -519,7 +519,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
     }
   }
 
-  for (const [nodeIndex, canvasTextChangesForNode] of canvasTextChanges.entries()) {
+  for (const [nodeIndex, canvasTextChangesForNode] of canvasTextChanges) {
     const node = canvasData.nodes[nodeIndex];
     /* v8 ignore start -- Node existence is already verified in the first loop above. */
     if (!node) {
@@ -641,7 +641,7 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
     frontmatterChangesWithOffsetMap,
     path
   } = params;
-  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap.entries()) {
+  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap) {
     const propertyValue = getNestedPropertyValue(frontmatter, key);
     /* v8 ignore start -- Validation ensures the property is a string before reaching this point. */
     if (typeof propertyValue !== 'string') {

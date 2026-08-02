@@ -232,10 +232,10 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
-    const frontmatterFn = vi.fn();
-    await processFrontmatter({ app, frontmatterFn, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
+    const frontmatterFunction = vi.fn();
+    await processFrontmatter({ app, frontmatterFn: frontmatterFunction, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(process).toHaveBeenCalled();
-    expect(frontmatterFn).toHaveBeenCalled();
+    expect(frontmatterFunction).toHaveBeenCalled();
   });
 
   it('should return null when frontmatterFn returns null', async () => {

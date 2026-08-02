@@ -48,6 +48,6 @@ export class MapTransformer extends TypedTransformer<Map<unknown, unknown>, MapE
    * @returns The transformed value.
    */
   public override transformValue(value: Map<unknown, unknown>): MapEntry[] {
-    return Array.from(value.entries());
+    return Array.from(value);
   }
 }

@@ -96,14 +96,16 @@ export function renderCallout(params: RenderCalloutParams): void {
 
   const observer = new IntersectionObserver((entries: IntersectionObserverEntry[]) => {
     for (const entry of entries) {
-      if (entry.isIntersecting) {
-        observer.unobserve(entry.target);
-        addToQueue(normalizeOptionalProperties<AddToQueueParams>({
-          abortSignal: params.abortSignal,
-          operationFn: loadContent,
-          operationName: t(($) => $.obsidianDevUtils.callout.loadContent)
-        }));
+      if (!entry.isIntersecting) {
+        continue;
       }
+
+      observer.unobserve(entry.target);
+      addToQueue(normalizeOptionalProperties<AddToQueueParams>({
+        abortSignal: params.abortSignal,
+        operationFn: loadContent,
+        operationName: t(($) => $.obsidianDevUtils.callout.loadContent)
+      }));
     }
   });
   observer.observe(contentDiv);
@@ -145,13 +147,17 @@ export function wrapForCallout(content: string): string {
  */
 function getModifier(mode: CalloutMode): string {
   switch (mode) {
-    case CalloutMode.Default:
+    case CalloutMode.Default: {
       return '';
-    case CalloutMode.FoldableCollapsed:
+    }
+    case CalloutMode.FoldableCollapsed: {
       return '-';
-    case CalloutMode.FoldableExpanded:
+    }
+    case CalloutMode.FoldableExpanded: {
       return '+';
-    default:
+    }
+    default: {
       assertNever(mode);
+    }
   }
 }

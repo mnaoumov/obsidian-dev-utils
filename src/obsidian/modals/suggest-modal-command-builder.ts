@@ -159,7 +159,7 @@ export interface SuggestModalCommandBuilderBuildOptions {
 }
 
 interface InstructionEx extends Instruction {
-  init?(purposeEl: HTMLSpanElement, scope: Scope): void;
+  init?(purposeElement: HTMLSpanElement, scope: Scope): void;
   registerScope?(scope: Scope): void;
 }
 
@@ -180,19 +180,19 @@ export class SuggestModalCommandBuilder {
   public addCheckbox(command: CheckboxCommand): this {
     this.instructions.push({
       command: this.buildCommand(command),
-      init: (purposeEl, scope) => {
-        const checkboxEl = purposeEl.createEl('input', { type: 'checkbox' });
-        command.onInit(checkboxEl);
-        checkboxEl.addEventListener('change', () => {
-          command.onChange(checkboxEl.checked);
+      init: (purposeElement, scope) => {
+        const checkboxElement = purposeElement.createEl('input', { type: 'checkbox' });
+        command.onInit(checkboxElement);
+        checkboxElement.addEventListener('change', () => {
+          command.onChange(checkboxElement.checked);
         });
 
         scope.register(command.modifiers ?? [], command.key, () => {
-          if (checkboxEl.disabled) {
+          if (checkboxElement.disabled) {
             return;
           }
-          checkboxEl.checked = !checkboxEl.checked;
-          checkboxEl.trigger('change');
+          checkboxElement.checked = !checkboxElement.checked;
+          checkboxElement.trigger('change');
         });
       },
       purpose: command.purpose
@@ -210,9 +210,9 @@ export class SuggestModalCommandBuilder {
   public addDropDown(command: DropDownCommand): this {
     this.instructions.push({
       command: this.buildCommand(command),
-      init: (purposeEl, scope) => {
-        purposeEl.appendText(' ');
-        const dropdownComponent = new DropdownComponent(purposeEl);
+      init: (purposeElement, scope) => {
+        purposeElement.appendText(' ');
+        const dropdownComponent = new DropdownComponent(purposeElement);
         command.onInit(dropdownComponent);
         dropdownComponent.onChange((value) => {
           command.onChange(value);
@@ -224,9 +224,9 @@ export class SuggestModalCommandBuilder {
           if (dropdownComponent.disabled) {
             return;
           }
-          const selectEl = dropdownComponent.selectEl;
-          selectEl.selectedIndex = (selectEl.selectedIndex + 1) % selectEl.options.length;
-          selectEl.trigger('change');
+          const selectElement = dropdownComponent.selectEl;
+          selectElement.selectedIndex = (selectElement.selectedIndex + 1) % selectElement.options.length;
+          selectElement.trigger('change');
         });
       },
       purpose: command.purpose
@@ -278,15 +278,10 @@ export class SuggestModalCommandBuilder {
 
     modal.setInstructions(this.instructions);
     const purposeEls = Array.from(modal.instructionsEl.findAll('.prompt-instruction > span:nth-child(2)')) as HTMLSpanElement[];
-    for (let i = 0; i < purposeEls.length; i++) {
-      const purposeEl = purposeEls[i];
-      /* v8 ignore start -- purposeEls[i] is always defined within loop bounds. */
-      if (!purposeEl) {
-        continue;
-      }
+    for (const [index, purposeElement] of purposeEls.entries()) {
       /* v8 ignore stop */
 
-      this.instructions[i]?.init?.(purposeEl, modal.scope);
+      this.instructions[index]?.init?.(purposeElement, modal.scope);
     }
   }
 
@@ -302,18 +297,24 @@ export class SuggestModalCommandBuilder {
 
   private getModifierString(modifier: Modifier): string {
     switch (modifier) {
-      case 'Alt':
+      case 'Alt': {
         return 'alt';
-      case 'Ctrl':
+      }
+      case 'Ctrl': {
         return 'ctrl';
-      case 'Meta':
+      }
+      case 'Meta': {
         return Platform.isMacOS ? 'cmd' : 'win';
-      case 'Mod':
+      }
+      case 'Mod': {
         return Platform.isMacOS ? 'cmd' : 'ctrl';
-      case 'Shift':
+      }
+      case 'Shift': {
         return 'shift';
-      default:
+      }
+      default: {
         return modifier;
+      }
     }
   }
 }

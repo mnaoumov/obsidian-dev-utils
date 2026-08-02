@@ -78,7 +78,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../object-utils.ts', async (importOriginal) => ({
   ...await importOriginal<typeof import('../object-utils.ts')>(),
-  normalizeOptionalProperties: vi.fn((obj: unknown) => obj)
+  normalizeOptionalProperties: vi.fn(($object: unknown) => $object)
 }));
 
 vi.mock('../value-provider.ts', () => ({
@@ -169,7 +169,7 @@ describe('renderCallout', () => {
 
     // Obsidian extends HTMLElement with .empty()
     HTMLElement.prototype.empty = function empty(this: HTMLElement): void {
-      this.innerHTML = '';
+      this.replaceChildren();
     };
   });
 
@@ -179,8 +179,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE]- \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE]- \n>\n> <div class="content"></div>');
   });
 
   it('should create a callout paragraph with Default mode (no modifier)', async () => {
@@ -189,8 +189,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.Default });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE] \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE] \n>\n> <div class="content"></div>');
   });
 
   it('should create a callout paragraph with FoldableExpanded modifier', async () => {
@@ -199,8 +199,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.FoldableExpanded });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE]+ \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE]+ \n>\n> <div class="content"></div>');
   });
 
   it('should use the specified type in the callout', async () => {
@@ -209,8 +209,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), type: 'WARNING' });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!WARNING]- \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!WARNING]- \n>\n> <div class="content"></div>');
   });
 
   it('should use the specified header in the callout', async () => {
@@ -219,8 +219,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), header: 'My Header' });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE]- My Header\n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE]- My Header\n>\n> <div class="content"></div>');
   });
 
   it('should show "Loading..." initially in the content div', async () => {
@@ -247,8 +247,8 @@ describe('renderCallout', () => {
     // The observed element should be the .content div
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedEl = firstObserveCall[0] as HTMLElement;
-    expect(observedEl.className).toBe('content');
+    const observedElement = firstObserveCall[0] as HTMLElement;
+    expect(observedElement.className).toBe('content');
   });
 
   it('should call addToQueue when IntersectionObserver fires with isIntersecting', async () => {
@@ -259,15 +259,15 @@ describe('renderCallout', () => {
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedEl = firstObserveCall[0] as HTMLElement;
+    const observedElement = firstObserveCall[0] as HTMLElement;
 
     // Simulate intersection
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
       strictProxy<IntersectionObserver>({})
     );
 
-    expect(mockUnobserve).toHaveBeenCalledWith(observedEl);
+    expect(mockUnobserve).toHaveBeenCalledWith(observedElement);
     expect(mocks.addToQueue).toHaveBeenCalledTimes(1);
     expect(mocks.addToQueue).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -285,10 +285,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedEl = firstObserveCall[0] as HTMLElement;
+    const observedElement = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: observedElement })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -305,10 +305,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedEl = firstObserveCall[0] as HTMLElement;
+    const observedElement = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -332,10 +332,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall1 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall1);
-    const observedEl = firstObserveCall1[0] as HTMLElement;
+    const observedElement = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -346,13 +346,13 @@ describe('renderCallout', () => {
       expect(dv.paragraph.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
-    const lastCall = dv.paragraph.mock.calls[dv.paragraph.mock.calls.length - 1] as unknown[];
+    const lastCall = dv.paragraph.mock.calls.at(-1) as unknown[];
     expect(lastCall[0]).toBe('Hello World');
   });
 
   it('should render content from a function contentProvider', async () => {
     const dv = createMockDv();
-    const contentFn = vi.fn(() => 'Dynamic Content');
+    const contentFunction = vi.fn(() => 'Dynamic Content');
 
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
@@ -360,14 +360,14 @@ describe('renderCallout', () => {
       await params.operationFn(abortController.signal);
     });
 
-    renderCallout({ contentProvider: contentFn, dv: castTo<DataviewInlineApi>(dv) });
+    renderCallout({ contentProvider: contentFunction, dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall2 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall2);
-    const observedEl = firstObserveCall2[0] as HTMLElement;
+    const observedElement = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -375,7 +375,7 @@ describe('renderCallout', () => {
       expect(dv.paragraph.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
-    const lastCall = dv.paragraph.mock.calls[dv.paragraph.mock.calls.length - 1] as unknown[];
+    const lastCall = dv.paragraph.mock.calls.at(-1) as unknown[];
     expect(lastCall[0]).toBe('Dynamic Content');
   });
 
@@ -394,10 +394,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall3 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall3);
-    const observedEl = firstObserveCall3[0] as HTMLElement;
+    const observedElement = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -406,7 +406,7 @@ describe('renderCallout', () => {
     });
 
     // When contentProvider resolves to undefined, content ??= paragraph (the getRenderedContainer result)
-    const lastCall = dv.paragraph.mock.calls[dv.paragraph.mock.calls.length - 1] as unknown[];
+    const lastCall = dv.paragraph.mock.calls.at(-1) as unknown[];
     expect(lastCall[0]).toBeInstanceOf(HTMLParagraphElement);
   });
 
@@ -421,8 +421,8 @@ describe('renderCallout', () => {
       type: 'TIP'
     });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!TIP]+ Important\n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!TIP]+ Important\n>\n> <div class="content"></div>');
   });
 });
 
@@ -444,7 +444,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     }));
 
     HTMLElement.prototype.empty = function empty(this: HTMLElement): void {
-      this.innerHTML = '';
+      this.replaceChildren();
     };
   });
 

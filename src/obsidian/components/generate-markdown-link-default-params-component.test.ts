@@ -14,11 +14,11 @@ vi.mock('../link.ts', () => ({
   getGenerateMarkdownLinkDefaultParamsFns: vi.fn()
 }));
 
-type DefaultParamsFn = (this: void) => Partial<GenerateMarkdownLinkParams>;
+type DefaultParamsFunction = (this: void) => Partial<GenerateMarkdownLinkParams>;
 
 describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
   it('should append the default-params function on load and remove it on unload', () => {
-    const fns: DefaultParamsFn[] = [];
+    const fns: DefaultParamsFunction[] = [];
     vi.mocked(getGenerateMarkdownLinkDefaultParamsFns).mockReturnValue(fns);
 
     const component = new GenerateMarkdownLinkDefaultParamsComponent({ getDefaultParams });
