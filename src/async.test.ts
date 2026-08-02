@@ -853,12 +853,12 @@ describe('Async', () => {
     });
 
     it('should call onOperationCompleted callback when operation finishes after timeout', async () => {
-      let completedCallbackCalled = false;
+      let wasCompletedCallbackCalled = false;
 
       await runWithTimeout({
         onTimeout(context) {
           context.onOperationCompleted(() => {
-            completedCallbackCalled = true;
+            wasCompletedCallbackCalled = true;
           });
         },
         async operationFn() {
@@ -870,7 +870,7 @@ describe('Async', () => {
         timeoutInMilliseconds: 10
       });
 
-      expect(completedCallbackCalled).toBe(true);
+      expect(wasCompletedCallbackCalled).toBe(true);
     });
 
     it('should pass abortSignal to operationFn', async () => {

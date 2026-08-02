@@ -710,8 +710,8 @@ class ResourceLockManager {
         if (!entry.blocksMutations || !entry.abortController) {
           continue;
         }
-        const coversPath = lockedPath === path || (entry.mode === 'subtree' && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }));
-        if (coversPath) {
+        const doesCoverPath = lockedPath === path || (entry.mode === 'subtree' && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }));
+        if (doesCoverPath) {
           entry.abortController.abort();
         }
       }

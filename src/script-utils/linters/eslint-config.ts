@@ -806,7 +806,7 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * config level rather than annotated at each call site.
          */
         'unicorn/prefer-url-can-parse': 'off',
-        // The codebase already spells encodings the WHATWG way (`utf-8`), which is also what `TextDecoder` reports. Keep the rule enforcing consistency, just in the direction already in use.
+        // The codebase already spells encodings the way the Encoding Standard does (`utf-8`), which is also what `TextDecoder` reports. Keep the rule enforcing consistency, just in the direction already in use.
         'unicorn/text-encoding-identifier-case': [
           'error',
           {

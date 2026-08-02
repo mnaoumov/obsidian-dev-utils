@@ -143,16 +143,16 @@ function checkClass(params: CheckClassParams): void {
 
   const className = classId.name;
   const { abstract: isAbstract } = classNode;
-  const endsWithComponentBase = className.endsWith('ComponentBase');
-  const endsWithComponent = !endsWithComponentBase && className.endsWith('Component');
+  const hasComponentBaseSuffix = className.endsWith('ComponentBase');
+  const hasComponentSuffix = !hasComponentBaseSuffix && className.endsWith('Component');
 
   // Correct: non-abstract ending with Component
-  if (endsWithComponent && !isAbstract) {
+  if (hasComponentSuffix && !isAbstract) {
     return;
   }
 
   // Correct: abstract ending with ComponentBase
-  if (endsWithComponentBase && isAbstract) {
+  if (hasComponentBaseSuffix && isAbstract) {
     return;
   }
 
@@ -170,7 +170,7 @@ function checkClass(params: CheckClassParams): void {
     }
   }
 
-  if (endsWithComponentBase && !isAbstract) {
+  if (hasComponentBaseSuffix && !isAbstract) {
     context.report({
       data: { className },
       messageId: MESSAGE_ID_BASE_NOT_ABSTRACT,

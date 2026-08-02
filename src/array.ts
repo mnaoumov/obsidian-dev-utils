@@ -9,9 +9,9 @@
  *
  * @typeParam T - The type of the array elements.
  * @param arr - The array to filter.
- * @param predicate - The predicate to filter the array.
+ * @param shouldKeep - The predicate to filter the array.
  */
-export function filterInPlace<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => boolean): void {
+export function filterInPlace<T>(arr: T[], shouldKeep: (value: T, index: number, array: T[]) => boolean): void {
   const length = arr.length;
   let writeIndex = 0;
   for (let readIndex = 0; readIndex < length; readIndex++) {
@@ -20,7 +20,7 @@ export function filterInPlace<T>(arr: T[], predicate: (value: T, index: number, 
     }
 
     const current = arr[readIndex] as T;
-    if (predicate(current, readIndex, arr)) {
+    if (shouldKeep(current, readIndex, arr)) {
       arr[writeIndex++] = current;
     }
   }

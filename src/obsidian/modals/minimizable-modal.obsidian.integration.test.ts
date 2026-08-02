@@ -260,8 +260,8 @@ describe('MinimizableModal', () => {
             throw new Error('minimized bar title not found');
           }
           titleElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          const restoredByTitleClick = !minimizable.isMinimized;
-          const barGoneAfterTitleClick = document.body.querySelector(BAR_SELECTOR) === null;
+          const wasRestoredByTitleClick = !minimizable.isMinimized;
+          const isBarGoneAfterTitleClick = document.body.querySelector(BAR_SELECTOR) === null;
 
           // Clicking the bar body itself (not the restore button) restores too.
           minimizable.minimize();
@@ -270,16 +270,16 @@ describe('MinimizableModal', () => {
             throw new Error('minimized bar not found');
           }
           barElement.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          const restoredByBarClick = !minimizable.isMinimized;
-          const barGoneAfterBarClick = document.body.querySelector(BAR_SELECTOR) === null;
+          const wasRestoredByBarClick = !minimizable.isMinimized;
+          const isBarGoneAfterBarClick = document.body.querySelector(BAR_SELECTOR) === null;
 
           minimizable.modal.close();
 
           return {
-            barGoneAfterBarClick,
-            barGoneAfterTitleClick,
-            restoredByBarClick,
-            restoredByTitleClick
+            barGoneAfterBarClick: isBarGoneAfterBarClick,
+            barGoneAfterTitleClick: isBarGoneAfterTitleClick,
+            restoredByBarClick: wasRestoredByBarClick,
+            restoredByTitleClick: wasRestoredByTitleClick
           };
         }
       });

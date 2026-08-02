@@ -385,7 +385,7 @@ describe('addUpdatedFilesToGit', () => {
   });
 
   it('should retry the commit after the user fixes the issue in an interactive terminal', async () => {
-    const originalIsTty = process.stdin.isTTY;
+    const isOriginallyTty = process.stdin.isTTY;
     setIsTty(true);
     try {
       const question = vi.fn().mockResolvedValue(undefined);
@@ -409,12 +409,12 @@ describe('addUpdatedFilesToGit', () => {
       const gitAddCalls = mockExecFromRoot.mock.calls.filter((call: unknown[]) => Array.isArray(call[0]) && (call[0] as string[]).join(' ') === 'git add --all');
       expect(gitAddCalls).toHaveLength(2);
     } finally {
-      setIsTty(originalIsTty);
+      setIsTty(isOriginallyTty);
     }
   });
 
   it('should re-throw the commit error without prompting in a non-interactive environment', async () => {
-    const originalIsTty = process.stdin.isTTY;
+    const isOriginallyTty = process.stdin.isTTY;
     setIsTty(false);
     try {
       mockExecFromRoot.mockImplementation((command: string | string[]) => {
@@ -428,7 +428,7 @@ describe('addUpdatedFilesToGit', () => {
       await expect(addUpdatedFilesToGit('1.0.0')).rejects.toThrow('Unknown word in cspell');
       expect(mockCreateInterface).not.toHaveBeenCalled();
     } finally {
-      setIsTty(originalIsTty);
+      setIsTty(isOriginallyTty);
     }
   });
 });

@@ -108,12 +108,12 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
   /**
    * Sets the disabled state of the component.
    *
-   * @param disabled - Whether the component is disabled.
+   * @param isDisabled - Whether the component is disabled.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.textComponent.setDisabled(disabled);
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.textComponent.setDisabled(isDisabled);
     return this;
   }
 

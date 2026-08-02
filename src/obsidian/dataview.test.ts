@@ -208,15 +208,15 @@ describe('getRenderedContainer', () => {
 
   it('should handle async renderer', async () => {
     const dv = createMockDv();
-    let resolved = false;
+    let isResolved = false;
     async function renderer(): Promise<void> {
       await noopAsync();
-      resolved = true;
+      isResolved = true;
     }
 
     await getRenderedContainer(dv, renderer);
 
-    expect(resolved).toBe(true);
+    expect(isResolved).toBe(true);
   });
 });
 

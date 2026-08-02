@@ -57,12 +57,12 @@ export async function lint(options?: LintOptions): Promise<void> {
     ObsidianPluginRepoPaths.EslintConfigCts
   ];
 
-  const configFileExist = configFiles.some((configFile) => {
+  const doesConfigFileExist = configFiles.some((configFile) => {
     const configFilePath = resolvePathFromRootSafe({ path: configFile });
     return existsSync(configFilePath);
   });
 
-  if (!configFileExist) {
+  if (!doesConfigFileExist) {
     getLibDebugger('ESLint:lint')('ESLint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Package folder not found');

@@ -86,7 +86,7 @@ describe('SyntaxHighlightingComponent', () => {
 
         // A highlighted fence splits into token spans (`cm-keyword`, `cm-def`, ...); an unhighlighted one
         // Stays a single `cm-hmd-codeblock` span.
-        function checkHasKeywordToken(): boolean {
+        function hasKeywordToken(): boolean {
           return (readCodeLineElement()?.querySelector('.cm-keyword') ?? null) !== null;
         }
 
@@ -99,14 +99,14 @@ describe('SyntaxHighlightingComponent', () => {
           if (isHighlightingExpected) {
             await waitUntil({
               message: 'the fence should be tokenized by the registered editor mode',
-              predicate: checkHasKeywordToken,
+              predicate: hasKeywordToken,
               timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
           } else {
             await sleep(SETTLE_IN_MILLISECONDS);
           }
 
-          return checkHasKeywordToken();
+          return hasKeywordToken();
         }
 
         function readCodeLineElement(): Element | null {
@@ -180,7 +180,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         // Prism wraps every matched construct in a `.token` span.
-        function checkHasPrismToken(): boolean {
+        function hasPrismToken(): boolean {
           return (readCodeElement()?.querySelector('.token') ?? null) !== null;
         }
 
@@ -192,14 +192,14 @@ describe('SyntaxHighlightingComponent', () => {
           if (isHighlightingExpected) {
             await waitUntil({
               message: 'the fence should be tokenized by the registered Prism grammar',
-              predicate: checkHasPrismToken,
+              predicate: hasPrismToken,
               timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
           } else {
             await sleep(SETTLE_IN_MILLISECONDS);
           }
 
-          return checkHasPrismToken();
+          return hasPrismToken();
         }
 
         function readCodeElement(): Element | null {

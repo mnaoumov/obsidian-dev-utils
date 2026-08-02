@@ -172,17 +172,17 @@ class RegExpFlagMerger {
         break;
       }
       case RegExpMergeFlagsConflictStrategy.Throw: {
-        const allU = countU === this.regExps.length;
-        const noneU = countU === 0;
-        const allV = countV === this.regExps.length;
-        const noneV = countV === 0;
+        const haveAllUFlag = countU === this.regExps.length;
+        const haveNoUFlag = countU === 0;
+        const haveAllVFlag = countV === this.regExps.length;
+        const haveNoVFlag = countV === 0;
 
-        if (!(allU || noneU) || !(allV || noneV)) {
+        if (!(haveAllUFlag || haveNoUFlag) || !(haveAllVFlag || haveNoVFlag)) {
           throw new Error('Conflicting \'u\'/\'v\' flags across patterns.');
         }
 
-        shouldUseUFlag = allU;
-        shouldUseVFlag = allV;
+        shouldUseUFlag = haveAllUFlag;
+        shouldUseVFlag = haveAllVFlag;
         break;
       }
       case RegExpMergeFlagsConflictStrategy.Union: {
@@ -231,8 +231,8 @@ class RegExpFlagMerger {
         /* v8 ignore stop */
     }
 
-    const allSame = count === 0 || count === this.regExps.length;
-    if (!allSame) {
+    const haveAllSameFlag = count === 0 || count === this.regExps.length;
+    if (!haveAllSameFlag) {
       throw new Error(`Conflicting flag '${flag}' across patterns.`);
     }
     return count === this.regExps.length;

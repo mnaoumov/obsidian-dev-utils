@@ -558,20 +558,20 @@ describe('MonkeyAroundComponent', () => {
       component.load();
       const $object = createTestObject();
       const token = Symbol('test-patch');
-      let detectedToken = false;
+      let wasTokenDetected = false;
 
       component.registerMethodPatch<TestObject, 'greet'>({
         methodName: 'greet',
         obj: $object,
         patchHandler: ({ fallback, originalMethod }) => {
-          detectedToken = hasPatchToken(originalMethod, token);
+          wasTokenDetected = hasPatchToken(originalMethod, token);
           return fallback();
         },
         patchToken: token
       });
 
       $object.greet('world');
-      expect(detectedToken).toBe(true);
+      expect(wasTokenDetected).toBe(true);
     });
 
     it('should return false for a different token on the original method', () => {
@@ -580,20 +580,20 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
       const token1 = Symbol('token-1');
       const token2 = Symbol('token-2');
-      let detectedToken = false;
+      let wasTokenDetected = false;
 
       component.registerMethodPatch<TestObject, 'greet'>({
         methodName: 'greet',
         obj: $object,
         patchHandler: ({ fallback, originalMethod }) => {
-          detectedToken = hasPatchToken(originalMethod, token2);
+          wasTokenDetected = hasPatchToken(originalMethod, token2);
           return fallback();
         },
         patchToken: token1
       });
 
       $object.greet('world');
-      expect(detectedToken).toBe(false);
+      expect(wasTokenDetected).toBe(false);
     });
 
     it('should allow a second independent patch to detect the first via Symbol.for', () => {
@@ -602,7 +602,7 @@ describe('MonkeyAroundComponent', () => {
       const component2 = new MonkeyAroundComponent();
       component2.load();
       const $object = createTestObject();
-      let secondPatchDetectedFirst = false;
+      let wasSecondPatchDetectedFirst = false;
 
       component1.registerMethodPatch<TestObject, 'greet'>({
         methodName: 'greet',
@@ -615,14 +615,14 @@ describe('MonkeyAroundComponent', () => {
         methodName: 'greet',
         obj: $object,
         patchHandler: ({ fallback, originalMethod }) => {
-          secondPatchDetectedFirst = hasPatchToken(originalMethod, Symbol.for('my-patch'));
+          wasSecondPatchDetectedFirst = hasPatchToken(originalMethod, Symbol.for('my-patch'));
           return fallback();
         },
         patchToken: Symbol.for('my-patch')
       });
 
       $object.greet('world');
-      expect(secondPatchDetectedFirst).toBe(true);
+      expect(wasSecondPatchDetectedFirst).toBe(true);
     });
 
     it('should track token on the original function, not the wrapped one', () => {

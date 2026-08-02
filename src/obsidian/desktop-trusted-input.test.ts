@@ -50,10 +50,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function createElement(rect: DOMRect, matchesHover: () => boolean): HTMLElement {
+function createElement(rect: DOMRect, doesMatchHover: () => boolean): HTMLElement {
   return strictProxy<HTMLElement>({
     getBoundingClientRect: (): DOMRect => rect,
-    matches: (selector: string): boolean => selector === ':hover' && matchesHover()
+    matches: (selector: string): boolean => selector === ':hover' && doesMatchHover()
   });
 }
 

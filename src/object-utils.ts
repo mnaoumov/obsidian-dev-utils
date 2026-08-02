@@ -685,13 +685,13 @@ export function deepEqual(a: unknown, b: unknown): boolean {
  * @returns `true` if any of the properties were present, otherwise `false`.
  */
 export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof T)[]): boolean {
-  let ans = false;
+  let hasDeletedAny = false;
 
   for (const propertyName of propertyNames) {
-    ans = deleteProperty(obj, propertyName) || ans;
+    hasDeletedAny = deleteProperty(obj, propertyName) || hasDeletedAny;
   }
 
-  return ans;
+  return hasDeletedAny;
 }
 
 /**
@@ -1042,14 +1042,14 @@ function deepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
     if (b.has(valueA)) {
       continue;
     }
-    let found = false;
+    let hasMatch = false;
     for (const valueB of b) {
       if (deepEqual(valueA, valueB)) {
-        found = true;
+        hasMatch = true;
         break;
       }
     }
-    if (!found) {
+    if (!hasMatch) {
       return false;
     }
   }

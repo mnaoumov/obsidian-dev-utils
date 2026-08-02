@@ -842,7 +842,7 @@ export async function process(params: ProcessParams): Promise<void> {
       abortSignal.throwIfAborted();
 
       if (oldContent === null) {
-        return handleMissingFile();
+        return shouldTreatMissingFileAsSuccess();
       }
 
       const newContent = await resolveValue(newContentProvider, { abortSignal, content: oldContent });
@@ -878,12 +878,12 @@ export async function process(params: ProcessParams): Promise<void> {
       });
 
       if (!doesFileExist) {
-        return handleMissingFile();
+        return shouldTreatMissingFileAsSuccess();
       }
 
       return isSuccess;
 
-      function handleMissingFile(): boolean {
+      function shouldTreatMissingFileAsSuccess(): boolean {
         if (fullOptions.shouldFailOnMissingFile) {
           throw new Error(`File '${path}' not found`);
         }

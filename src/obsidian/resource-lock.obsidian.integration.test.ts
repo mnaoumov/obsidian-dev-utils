@@ -134,7 +134,7 @@ describe('resource-lock', () => {
           await settle();
           const disposable = lockResourceForPath({ app, operationName: 'Integration test', pathOrFile: lockedFile, pluginId: 'integration-test' });
           await settle();
-          const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
+          const isCurrentTabLocked = isLeafReadOnly(currentTabLeaf);
 
           // Open the SAME note in a split — a future editor.
           // Its first (synchronous) reconcile runs before the editor is ready.
@@ -143,26 +143,26 @@ describe('resource-lock', () => {
           await separateTabLeaf.openFile(lockedFile);
           await settle();
           await reconcile();
-          const isSeparateTabLocked = readLeafReadOnly(separateTabLeaf);
+          const isSeparateTabLocked = isLeafReadOnly(separateTabLeaf);
 
           // Open the same note a third time in a popout window — another future editor.
           const popoutLeaf = app.workspace.openPopoutLeaf();
           await popoutLeaf.openFile(lockedFile);
           await settle();
           await reconcile();
-          const isPopoutLocked = readLeafReadOnly(popoutLeaf);
+          const isPopoutLocked = isLeafReadOnly(popoutLeaf);
 
           // Open a different note, which must stay editable.
           const otherNoteLeaf = app.workspace.getLeaf('split');
           await otherNoteLeaf.openFile(otherFile);
           await settle();
           await reconcile();
-          const isOtherNoteLocked = readLeafReadOnly(otherNoteLeaf);
+          const isOtherNoteLocked = isLeafReadOnly(otherNoteLeaf);
 
           // Releasing the lock makes the note editable again.
           dispose(disposable);
           await settle();
-          const isCurrentTabLockedAfterUnlock = readLeafReadOnly(currentTabLeaf);
+          const isCurrentTabLockedAfterUnlock = isLeafReadOnly(currentTabLeaf);
 
           return {
             isCurrentTabLocked,
@@ -172,7 +172,7 @@ describe('resource-lock', () => {
             isSeparateTabLocked
           };
 
-          function readLeafReadOnly(leaf: unknown): boolean {
+          function isLeafReadOnly(leaf: unknown): boolean {
             const editor = (leaf as ReadableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');
@@ -386,18 +386,18 @@ describe('resource-lock', () => {
           const disposable = component.lockForPath({ mode: 'subtree', operationName: 'Integration test', pathOrFile: folderPath });
           await settle();
           await reconcile();
-          const isChildLockedUnderSubtree = readLeafReadOnly(leaf);
+          const isChildLockedUnderSubtree = isLeafReadOnly(leaf);
 
           dispose(disposable);
           await settle();
-          const isChildLockedAfterUnlock = readLeafReadOnly(leaf);
+          const isChildLockedAfterUnlock = isLeafReadOnly(leaf);
 
           return {
             isChildLockedAfterUnlock,
             isChildLockedUnderSubtree
           };
 
-          function readLeafReadOnly(readLeaf: unknown): boolean {
+          function isLeafReadOnly(readLeaf: unknown): boolean {
             const editor = (readLeaf as ReadableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');
@@ -446,12 +446,12 @@ describe('resource-lock', () => {
           // Re-run the manager's reconcile against the now-settled editor so the read-only re-apply takes hold.
           app.workspace.trigger('layout-change');
           await sleep(SETTLE_DELAY_MILLISECONDS);
-          const isLockedBeforeUnlock = readLeafReadOnly(leaf);
+          const isLockedBeforeUnlock = isLeafReadOnly(leaf);
 
           // Force-unlock aborts the controller (cancel) AND removes the lock entry (release).
           component.requestUnlockForPath(lockedFile);
           await sleep(SETTLE_DELAY_MILLISECONDS);
-          const isLockedAfterUnlock = readLeafReadOnly(leaf);
+          const isLockedAfterUnlock = isLeafReadOnly(leaf);
           const wasAborted = abortController.signal.aborted;
 
           return {
@@ -460,7 +460,7 @@ describe('resource-lock', () => {
             wasAborted
           };
 
-          function readLeafReadOnly(readLeaf: unknown): boolean {
+          function isLeafReadOnly(readLeaf: unknown): boolean {
             const editor = (readLeaf as ReadableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');

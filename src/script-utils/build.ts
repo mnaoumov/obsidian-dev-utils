@@ -81,7 +81,7 @@ export async function buildCompileSvelte(): Promise<void> {
  * Compiles the TypeScript code.
  *
  * The general `tsc` pass runs with `skipLibCheck: true` (configured in `tsconfig.json`) so it does
- * not fail on broken upstream `.d.ts` files we do not control. Afterwards, {@link validateProjectTypes}
+ * not fail on broken upstream `.d.ts` files we do not control. Afterwards, {@link areProjectTypesValid}
  * re-runs the type-check in-memory with `skipLibCheck: false`, reporting only diagnostics from the
  * files we own, so the declarations we author are still fully validated.
  *
@@ -91,7 +91,7 @@ export async function buildCompileSvelte(): Promise<void> {
 export async function buildCompileTypeScript(): Promise<void> {
   await execFromRoot(['npx', 'tsc', '--build', '--force']);
 
-  if (!validateProjectTypes()) {
+  if (!areProjectTypesValid()) {
     throw new Error('TypeScript declaration validation failed.');
   }
 }
@@ -144,24 +144,13 @@ interface ShouldKeepProjectFileParams {
 }
 
 /**
- * Determines whether a file belongs to the project (under the root folder, outside `node_modules`).
- *
- * @param params - The parameters for the check.
- * @returns `true` when the file belongs to the project.
- */
-function shouldKeepProjectFile(params: ShouldKeepProjectFileParams): boolean {
-  const { fileName, rootCanonical } = params;
-  return fileName.startsWith(`${rootCanonical}/`) && !fileName.includes(NODE_MODULES_SEGMENT);
-}
-
-/**
  * Re-runs the project type-check in-memory with `skipLibCheck: false`, reporting only diagnostics
  * whose source file belongs to the project (under the root folder, outside `node_modules`).
  *
  * @returns `true` when the project's own files have no type errors, `false` otherwise.
  * @throws If the root folder cannot be found.
  */
-function validateProjectTypes(): boolean {
+function areProjectTypesValid(): boolean {
   const root = getRootFolder();
 
   if (!root) {
@@ -176,4 +165,15 @@ function validateProjectTypes(): boolean {
     rootNames: fileNames,
     shouldKeepFile: (fileName) => shouldKeepProjectFile({ fileName, rootCanonical })
   });
+}
+
+/**
+ * Determines whether a file belongs to the project (under the root folder, outside `node_modules`).
+ *
+ * @param params - The parameters for the check.
+ * @returns `true` when the file belongs to the project.
+ */
+function shouldKeepProjectFile(params: ShouldKeepProjectFileParams): boolean {
+  const { fileName, rootCanonical } = params;
+  return fileName.startsWith(`${rootCanonical}/`) && !fileName.includes(NODE_MODULES_SEGMENT);
 }

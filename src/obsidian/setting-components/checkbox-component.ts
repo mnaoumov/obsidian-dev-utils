@@ -41,7 +41,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
     return this.inputEl;
   }
 
-  private changeCallback?: (newValue: boolean) => void;
+  private changeCallback?: (isChecked: boolean) => void;
 
   /**
    * Creates a new checkbox component.
@@ -70,7 +70,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
    * @param callback - The callback to be called when the checkbox is changed.
    * @returns The component.
    */
-  public onChange(callback: (newValue: boolean) => void): this {
+  public onChange(callback: (isChecked: boolean) => void): this {
     this.changeCallback = callback;
     return this;
   }
@@ -85,23 +85,23 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
   /**
    * Sets the disabled state of the checkbox.
    *
-   * @param disabled - The disabled state of the checkbox.
+   * @param isDisabled - The disabled state of the checkbox.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.inputEl.disabled = disabled;
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.inputEl.disabled = isDisabled;
     return this;
   }
 
   /**
    * Sets the value of the checkbox.
    *
-   * @param value - The value to set the checkbox to.
+   * @param isChecked - The value to set the checkbox to.
    * @returns The component.
    */
-  public override setValue(value: boolean): this {
-    this.inputEl.checked = value;
+  public override setValue(isChecked: boolean): this {
+    this.inputEl.checked = isChecked;
     return this;
   }
 }

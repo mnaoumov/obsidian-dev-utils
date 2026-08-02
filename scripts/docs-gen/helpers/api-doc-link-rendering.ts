@@ -56,6 +56,11 @@ const typeRouteSegments = new Map<string, string>();
  */
 const generatedMemberPages = new Set<string>();
 
+/** Whether a member page will be generated for `routeSegment` on the given type. */
+export function doesMemberPageExist(namespace: string, typeName: string, routeSegment: string): boolean {
+  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
+}
+
 /**
  * Resolve a bare type name to a documented `TypeInfo`.
  *
@@ -138,7 +143,7 @@ export function memberHref(memberSlugString: string, inheritedFrom: string, allT
     return `./${memberSlugString}/`;
   }
   const parentInfo = findType(allTypes, inheritedFrom, currentNamespace);
-  if (!parentInfo || !memberPageExists(parentInfo.namespace, parentInfo.name, memberSlugString)) {
+  if (!parentInfo || !doesMemberPageExist(parentInfo.namespace, parentInfo.name, memberSlugString)) {
     // The declaring parent has no generated page for this member (it inherited the member too, or is
     // Undocumented). Return no href so the caller renders plain text instead of a broken link.
     return '';
@@ -147,13 +152,8 @@ export function memberHref(memberSlugString: string, inheritedFrom: string, allT
   return `${BASE_PATH}/api/${parentNsDir}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugString}/`;
 }
 
-/** Whether a member page will be generated for `routeSegment` on the given type. */
-export function memberPageExists(namespace: string, typeName: string, routeSegment: string): boolean {
-  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
-}
-
 /**
- * Populate {@link memberPageExists}. Mirrors `generateMemberPages`'s own filtering exactly (one page
+ * Populate {@link doesMemberPageExist}. Mirrors `generateMemberPages`'s own filtering exactly (one page
  * per non-inherited property, one per non-inherited method overload key). Must run once before any
  * link is rendered.
  */
@@ -344,7 +344,7 @@ export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, self
       const typeName = dotMatch.groups['typeName'] ?? '';
       const memberName = dotMatch.groups['memberName'] ?? '';
       const typeInfo = findType(allTypes, typeName, selfNamespace);
-      if (typeInfo && memberPageExists(typeInfo.namespace, typeInfo.name, memberRouteSegment(memberName))) {
+      if (typeInfo && doesMemberPageExist(typeInfo.namespace, typeInfo.name, memberRouteSegment(memberName))) {
         const targetNsDir = getNamespaceDir(typeInfo.namespace);
         return `[${display}](${BASE_PATH}/api/${targetNsDir}/${toTypeRouteSegment(typeInfo.namespace, typeInfo.name)}/${memberRouteSegment(memberName)}/)`;
       }

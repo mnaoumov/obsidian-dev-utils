@@ -78,13 +78,13 @@ describe('createDivAsync', () => {
   });
 
   it('should await the async callback before returning', async () => {
-    let callbackCompleted = false;
+    let wasCallbackCompleted = false;
     async function callback(): Promise<void> {
       await noopAsync();
-      callbackCompleted = true;
+      wasCallbackCompleted = true;
     }
     await createDivAsync(undefined, callback);
-    expect(callbackCompleted).toBe(true);
+    expect(wasCallbackCompleted).toBe(true);
   });
 });
 
@@ -161,13 +161,13 @@ describe('createElAsync', () => {
   });
 
   it('should await the async callback before returning', async () => {
-    let callbackCompleted = false;
+    let wasCallbackCompleted = false;
     async function callback(): Promise<void> {
       await noopAsync();
-      callbackCompleted = true;
+      wasCallbackCompleted = true;
     }
     await createElementAsync('p', undefined, callback);
-    expect(callbackCompleted).toBe(true);
+    expect(wasCallbackCompleted).toBe(true);
   });
 });
 
@@ -202,13 +202,13 @@ describe('createSpanAsync', () => {
   });
 
   it('should await the async callback before returning', async () => {
-    let callbackCompleted = false;
+    let wasCallbackCompleted = false;
     async function callback(): Promise<void> {
       await noopAsync();
-      callbackCompleted = true;
+      wasCallbackCompleted = true;
     }
     await createSpanAsync(undefined, callback);
-    expect(callbackCompleted).toBe(true);
+    expect(wasCallbackCompleted).toBe(true);
   });
 });
 
@@ -238,13 +238,13 @@ describe('createFragmentAsync', () => {
   });
 
   it('should await the async callback before returning', async () => {
-    let callbackCompleted = false;
+    let wasCallbackCompleted = false;
     async function callback(): Promise<void> {
       await noopAsync();
-      callbackCompleted = true;
+      wasCallbackCompleted = true;
     }
     await createFragmentAsync(callback);
-    expect(callbackCompleted).toBe(true);
+    expect(wasCallbackCompleted).toBe(true);
   });
 });
 
@@ -296,13 +296,13 @@ describe('createSvgAsync', () => {
   });
 
   it('should await the async callback before returning', async () => {
-    let callbackCompleted = false;
+    let wasCallbackCompleted = false;
     async function callback(): Promise<void> {
       await noopAsync();
-      callbackCompleted = true;
+      wasCallbackCompleted = true;
     }
     await createSvgAsync('svg', undefined, callback);
-    expect(callbackCompleted).toBe(true);
+    expect(wasCallbackCompleted).toBe(true);
   });
 });
 

@@ -59,9 +59,9 @@ export interface CheckboxCommand {
   /**
    * Called when the checkbox value changes.
    *
-   * @param value - The new checked state.
+   * @param isChecked - The new checked state.
    */
-  onChange(value: boolean): void;
+  onChange(isChecked: boolean): void;
 
   /**
    * Called once with the created checkbox element, to initialize its state.

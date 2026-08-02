@@ -49,7 +49,7 @@ describe('fixTitle', () => {
   function createMockDv(app: AppOriginal): DataviewInlineApi {
     return strictProxy<DataviewInlineApi>({
       app,
-      fileLink: (path: string, _embed: boolean, title: string): Link =>
+      fileLink: (path: string, _isEmbed: boolean, title: string): Link =>
         castTo<Link>({
           path,
           title

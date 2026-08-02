@@ -22,8 +22,8 @@ const mocks = vi.hoisted(() => {
       noop();
     }
 
-    public setDisabled(disabled: boolean): this {
-      this.disabled = disabled;
+    public setDisabled(isDisabled: boolean): this {
+      this.disabled = isDisabled;
       return this;
     }
 

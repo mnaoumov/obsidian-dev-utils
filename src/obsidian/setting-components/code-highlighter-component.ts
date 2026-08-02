@@ -148,12 +148,12 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
   /**
    * Sets the disabled state of the component.
    *
-   * @param disabled - The disabled state to set.
+   * @param isDisabled - The disabled state to set.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.textAreaComponent.setDisabled(disabled);
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.textAreaComponent.setDisabled(isDisabled);
     return this;
   }
 

@@ -57,7 +57,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
 
         const assignNode = node as TSESTree.AssignmentExpression;
-        if (checkIsSuperPropertyAccess(assignNode.left, current.methodName)) {
+        if (isSuperPropertyAccess(assignNode.left, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
@@ -68,7 +68,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
 
         const callNode = node as TSESTree.CallExpression;
-        if (checkIsSuperMethodCall(callNode, current.methodName)) {
+        if (isSuperMethodCall(callNode, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
@@ -79,7 +79,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
 
         const memberNode = node as TSESTree.MemberExpression;
-        if (checkIsSuperPropertyAccess(memberNode, current.methodName)) {
+        if (isSuperPropertyAccess(memberNode, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
@@ -118,7 +118,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
 
         if (
-          checkIsParentMethodAbstract({
+          isParentMethodAbstract({
             context,
             methodName: info.methodName,
             methodNode: info.node
@@ -148,7 +148,7 @@ export const requireSuperCall: Rule.RuleModule = {
 };
 
 /**
- * Parameters for {@link checkIsParentMethodAbstract}.
+ * Parameters for {@link isParentMethodAbstract}.
  */
 interface CheckIsParentMethodAbstractParams {
   /**
@@ -173,7 +173,7 @@ interface CheckIsParentMethodAbstractParams {
  * @param decl - The TypeScript declaration to inspect.
  * @returns `true` if the declaration is abstract.
  */
-function checkIsAbstract(decl: Declaration): boolean {
+function isAbstract(decl: Declaration): boolean {
   assert(canHaveModifiers(decl), 'Expected method declaration to support modifiers');
 
   const modifiers = getModifiers(decl);
@@ -189,7 +189,7 @@ function checkIsAbstract(decl: Declaration): boolean {
  * @param params - The parameters for the check.
  * @returns `true` if the parent method is abstract.
  */
-function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams): boolean {
+function isParentMethodAbstract(params: CheckIsParentMethodAbstractParams): boolean {
   const { context, methodName, methodNode } = params;
   const services = context.sourceCode.parserServices as Partial<ParserServicesWithTypeInformation>;
 
@@ -221,7 +221,7 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
     }
 
     for (const declaration of declarations) {
-      if (checkIsAbstract(declaration)) {
+      if (isAbstract(declaration)) {
         return true;
       }
     }
@@ -237,7 +237,7 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
  * @param methodName - The expected method name.
  * @returns `true` if the node is a matching super method call.
  */
-function checkIsSuperMethodCall(node: TSESTree.CallExpression, methodName: string): boolean {
+function isSuperMethodCall(node: TSESTree.CallExpression, methodName: string): boolean {
   const callee = node.callee;
   /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
   return callee.type === 'MemberExpression'
@@ -254,7 +254,7 @@ function checkIsSuperMethodCall(node: TSESTree.CallExpression, methodName: strin
  * @param propertyName - The expected property name.
  * @returns `true` if the node is a matching super property access.
  */
-function checkIsSuperPropertyAccess(node: TSESTree.Node, propertyName: string): boolean {
+function isSuperPropertyAccess(node: TSESTree.Node, propertyName: string): boolean {
   /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
   return node.type === 'MemberExpression'
     && node.object.type === 'Super'

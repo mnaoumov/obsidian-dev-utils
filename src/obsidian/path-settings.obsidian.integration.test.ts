@@ -166,11 +166,11 @@ describe('PathSettings', () => {
          * Before the fix the throw escaped the setter, so the debounced save never completed and this
          * would otherwise fail as a bare "test timed out" with nothing pointing at the cause.
          */
-        async function waitUntilOrGiveUp(predicate: () => boolean): Promise<void> {
+        async function waitUntilOrGiveUp(isDone: () => boolean): Promise<void> {
           try {
             await waitUntil({
               message: 'the settings pipeline settles',
-              predicate,
+              predicate: isDone,
               timeoutInMilliseconds: SETTLE_TIMEOUT_IN_MILLISECONDS
             });
           } catch {

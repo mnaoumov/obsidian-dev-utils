@@ -310,7 +310,7 @@ export async function applyContentChanges(params: ApplyContentChangesParams): Pr
 
   const { frontmatter, hasFrontmatterError } = parseFrontmatterSafely({ content, path });
 
-  if (!validateChanges({ changes, content, frontmatter, path })) {
+  if (!areChangesValid({ changes, content, frontmatter, path })) {
     return shouldRetryOnInvalidChanges ? null : content;
   }
 
@@ -690,6 +690,77 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
   }
 }
 
+function areChangesValid(params: ValidateChangesParams): boolean {
+  const {
+    changes,
+    content,
+    frontmatter,
+    path
+  } = params;
+  const validateChangesDebugger = getLibDebugger('FileChange:validateChanges');
+  for (const change of changes) {
+    /* v8 ignore start -- All change types are handled; the false branch leads to other else-if checks. */
+    if (isContentChange(change)) {
+      /* v8 ignore stop */
+      const startOffset = change.reference.position.start.offset;
+      const endOffset = change.reference.position.end.offset;
+      const actualContent = content.slice(startOffset, endOffset);
+      if (actualContent !== change.oldContent) {
+        validateChangesDebugger('Content mismatch', {
+          actualContent,
+          endOffset,
+          expectedContent: change.oldContent,
+          path,
+          startOffset
+        });
+
+        return false;
+      }
+      /* v8 ignore start -- All change types are handled; no unknown change types in practice. */
+    } else if (isFrontmatterChangeWithOffsets(change)) {
+      /* v8 ignore stop */
+      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.key);
+      if (typeof propertyValue !== 'string') {
+        validateChangesDebugger('Property value is not a string', {
+          frontmatterKey: change.reference.key,
+          path,
+          propertyValue
+        });
+        return false;
+      }
+
+      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
+      if (actualContent !== change.oldContent) {
+        validateChangesDebugger('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.key,
+          path,
+          startOffset: change.reference.startOffset
+        });
+
+        return false;
+      }
+      /* v8 ignore start -- All change types are handled above; no unknown change types in practice. */
+    } else if (isFrontmatterChange(change)) {
+      /* v8 ignore stop */
+      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
+      if (actualContent !== change.oldContent) {
+        validateChangesDebugger('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.key,
+          path
+        });
+
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 function buildFinalContent(params: BuildFinalContentParams): string {
   const {
     frontmatter,
@@ -760,75 +831,4 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
     }
     return !deepEqual(change, changes[index - 1]);
   });
-}
-
-function validateChanges(params: ValidateChangesParams): boolean {
-  const {
-    changes,
-    content,
-    frontmatter,
-    path
-  } = params;
-  const validateChangesDebugger = getLibDebugger('FileChange:validateChanges');
-  for (const change of changes) {
-    /* v8 ignore start -- All change types are handled; the false branch leads to other else-if checks. */
-    if (isContentChange(change)) {
-      /* v8 ignore stop */
-      const startOffset = change.reference.position.start.offset;
-      const endOffset = change.reference.position.end.offset;
-      const actualContent = content.slice(startOffset, endOffset);
-      if (actualContent !== change.oldContent) {
-        validateChangesDebugger('Content mismatch', {
-          actualContent,
-          endOffset,
-          expectedContent: change.oldContent,
-          path,
-          startOffset
-        });
-
-        return false;
-      }
-      /* v8 ignore start -- All change types are handled; no unknown change types in practice. */
-    } else if (isFrontmatterChangeWithOffsets(change)) {
-      /* v8 ignore stop */
-      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.key);
-      if (typeof propertyValue !== 'string') {
-        validateChangesDebugger('Property value is not a string', {
-          frontmatterKey: change.reference.key,
-          path,
-          propertyValue
-        });
-        return false;
-      }
-
-      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
-      if (actualContent !== change.oldContent) {
-        validateChangesDebugger('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.reference.key,
-          path,
-          startOffset: change.reference.startOffset
-        });
-
-        return false;
-      }
-      /* v8 ignore start -- All change types are handled above; no unknown change types in practice. */
-    } else if (isFrontmatterChange(change)) {
-      /* v8 ignore stop */
-      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
-      if (actualContent !== change.oldContent) {
-        validateChangesDebugger('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.reference.key,
-          path
-        });
-
-        return false;
-      }
-    }
-  }
-
-  return true;
 }

@@ -51,7 +51,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   });
 
   it('should throw on mobile devices', async () => {
-    const originalIsMobile = Platform.isMobile;
+    const isOriginallyMobile = Platform.isMobile;
     try {
       Platform.isMobile = true;
 
@@ -59,7 +59,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       await expect(printToPdf(element, {})).rejects.toThrow('Printing to PDF is not supported on mobile devices.');
     } finally {
       // eslint-disable-next-line require-atomic-updates -- Restoring a mock property in a finally block is intentional.
-      Platform.isMobile = originalIsMobile;
+      Platform.isMobile = isOriginallyMobile;
     }
   });
 

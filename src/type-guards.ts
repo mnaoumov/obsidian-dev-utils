@@ -21,11 +21,11 @@ type NullableConstraint<T> = null extends T ? unknown : undefined extends T ? un
  * Use in place of `/* v8 ignore *\/` for defensive guards that should
  * never trigger at runtime but would otherwise create uncovered branches.
  *
- * @param condition - The condition to assert.
+ * @param isTrue - The condition to assert.
  * @param errorOrMessage - The error or message to throw if the condition is `false`.
  */
-export function assert(condition: boolean, errorOrMessage: Error | string): asserts condition {
-  if (!condition) {
+export function assert(isTrue: boolean, errorOrMessage: Error | string): asserts isTrue {
+  if (!isTrue) {
     throw typeof errorOrMessage === 'string' ? new Error(errorOrMessage) : errorOrMessage;
   }
 }

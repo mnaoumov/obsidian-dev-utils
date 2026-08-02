@@ -90,12 +90,12 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         let onHideCallCount = 0;
-        let onHideIsUserAction = false;
-        let onHideIsCloseButtonClicked = false;
+        let isOnHideUserAction = false;
+        let isOnHideCloseButtonClicked = false;
         const notice = component.showNotice('Locked action', {
           onHide: (info) => {
-            onHideIsUserAction = info.isUserAction;
-            onHideIsCloseButtonClicked = info.isCloseButtonClicked;
+            isOnHideUserAction = info.isUserAction;
+            isOnHideCloseButtonClicked = info.isCloseButtonClicked;
             onHideCallCount += 1;
           },
           shouldHideOnClick: false
@@ -161,8 +161,8 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
             isShownAfterOtherNotice,
             isShownAfterPaddingClick,
             onHideCallCount,
-            onHideIsCloseButtonClicked,
-            onHideIsUserAction
+            onHideIsCloseButtonClicked: isOnHideCloseButtonClicked,
+            onHideIsUserAction: isOnHideUserAction
           };
         } finally {
           notice.hide();

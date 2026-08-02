@@ -57,7 +57,7 @@ describe('demo-vault-helper bootstrap', () => {
         args: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
-          const cstInstalled = Boolean(app.plugins.manifests[cstPluginId]);
+          const isCstInstalled = Boolean(app.plugins.manifests[cstPluginId]);
           let noticeText = '';
           for (const noticeElement of Array.from(document.querySelectorAll('.notice'))) {
             if (noticeElement.textContent.includes('Demo Vault Helper')) {
@@ -67,8 +67,8 @@ describe('demo-vault-helper bootstrap', () => {
           return {
             activeFilePath: app.workspace.getActiveFile()?.path ?? null,
             cstEnabled: app.plugins.enabledPlugins.has(cstPluginId),
-            cstInstalled,
-            dataJson: cstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
+            cstInstalled: isCstInstalled,
+            dataJson: isCstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
             helperEnabled: app.plugins.enabledPlugins.has(helperPluginId),
             helperInstalled: Boolean(app.plugins.manifests[helperPluginId]),
             noticeText,
