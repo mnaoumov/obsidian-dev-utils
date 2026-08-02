@@ -277,7 +277,7 @@ export class SuggestModalCommandBuilder {
     }
 
     modal.setInstructions(this.instructions);
-    const purposeEls = Array.from(modal.instructionsEl.findAll('.prompt-instruction > span:nth-child(2)')) as HTMLSpanElement[];
+    const purposeEls = [...modal.instructionsEl.findAll('.prompt-instruction > span:nth-child(2)')] as HTMLSpanElement[];
     for (const [index, purposeElement] of purposeEls.entries()) {
       /* v8 ignore stop */
 

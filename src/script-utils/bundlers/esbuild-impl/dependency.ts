@@ -88,7 +88,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
 
   const buildContext = await context(buildOptions);
   await invokeEsbuild(buildContext, true);
-  return Array.from(dependenciesToBundle).sort();
+  return [...dependenciesToBundle].sort();
 }
 
 /**

@@ -62,7 +62,7 @@ describe('selectOption', () => {
         };
 
         function getButtons(): HTMLButtonElement[] {
-          return Array.from(document.querySelectorAll<HTMLButtonElement>('.select-option-modal .modal-content button'));
+          return [...document.querySelectorAll<HTMLButtonElement>('.select-option-modal .modal-content button')];
         }
       }
     });

@@ -501,7 +501,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
 
 function getLanguageFromElement(element: HTMLElement): string {
   const BLOCK_LANGUAGE_PREFIX = 'block-language-';
-  return Array.from(element.classList).find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
+  return [...element.classList].find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
 }
 
 function insertText(params: InsertTextParams): string {
@@ -509,7 +509,7 @@ function insertText(params: InsertTextParams): string {
   let { insertLineIndex } = params;
 
   const lines = content.split('\n');
-  const newLines = lines.slice();
+  const newLines = [...lines];
   const textLines = text.split('\n');
 
   if (insertLineIndex < 0) {

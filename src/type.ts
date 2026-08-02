@@ -187,12 +187,14 @@ export class TypeAsserter<Type> {
       assertAllKeys<const Keys extends readonly string[]>(
         keys: ExactMembers<StringKeys<object & Type>, Keys>
       ): readonly (keyof (object & Type))[] {
-        return Object.freeze(keys.slice() as (keyof (object & Type))[]);
+        // eslint-disable-next-line unicorn/prefer-spread -- `Type` may be a string, and spreading one splits surrogate pairs (`@typescript-eslint/no-misused-spread`).
+        return Object.freeze(Array.from(keys) as (keyof (object & Type))[]);
       },
       assertAllMembers<const Keys extends readonly LiteralKey[]>(
         keys: ExactMembers<LiteralKey & Type, Keys>
       ): readonly (LiteralKey & Type)[] {
-        return Object.freeze(keys.slice() as (LiteralKey & Type)[]);
+        // eslint-disable-next-line unicorn/prefer-spread -- `Type` may be a string, and spreading one splits surrogate pairs (`@typescript-eslint/no-misused-spread`).
+        return Object.freeze(Array.from(keys) as (LiteralKey & Type)[]);
       }
     });
     this.assertAllKeys = assertions.assertAllKeys;

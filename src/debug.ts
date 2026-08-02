@@ -177,7 +177,7 @@ function disableNamespaces(namespaces: string | string[]): void {
     set.delete(namespace);
     set.add(negatedNamespace);
   }
-  setNamespaces(Array.from(set));
+  setNamespaces([...set]);
 }
 
 function enableNamespaces(namespaces: string | string[]): void {
@@ -189,7 +189,7 @@ function enableNamespaces(namespaces: string | string[]): void {
     }
     set.add(namespace);
   }
-  setNamespaces(Array.from(set));
+  setNamespaces([...set]);
 }
 
 function getNamespaces(): string[] {

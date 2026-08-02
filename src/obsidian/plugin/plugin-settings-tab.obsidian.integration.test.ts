@@ -158,7 +158,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         return result2;
 
         function findRowElement(): HTMLElement {
-          const rowElement = Array.from(tab.containerEl.querySelectorAll<HTMLElement>('.setting-item'))
+          const rowElement = [...tab.containerEl.querySelectorAll<HTMLElement>('.setting-item')]
             .find((element) => element.querySelector('.setting-item-name')?.textContent === 'Dependent');
           if (!rowElement) {
             throw new Error('the dependent row was not rendered');
@@ -279,7 +279,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         };
 
         function readRowNames(): string[] {
-          return Array.from(tab.containerEl.querySelectorAll('.setting-item-name')).map((element) => element.textContent);
+          return [...tab.containerEl.querySelectorAll('.setting-item-name')].map((element) => element.textContent);
         }
 
         async function settle(): Promise<void> {
@@ -368,9 +368,9 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const result2: GroupResult = {
           boundInputValue: tab.containerEl.querySelector<HTMLInputElement>('input[type="number"]')?.value ?? null,
-          headings: Array.from(tab.containerEl.querySelectorAll('.setting-item-heading .setting-item-name')).map((element) => element.textContent),
+          headings: [...tab.containerEl.querySelectorAll('.setting-item-heading .setting-item-name')].map((element) => element.textContent),
           isSettingEx,
-          rowNames: Array.from(tab.containerEl.querySelectorAll('.setting-item:not(.setting-item-heading) .setting-item-name')).map((element) => element.textContent)
+          rowNames: [...tab.containerEl.querySelectorAll('.setting-item:not(.setting-item-heading) .setting-item-name')].map((element) => element.textContent)
         };
 
         app.setting.close();

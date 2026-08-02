@@ -173,7 +173,7 @@ describe('PluginNoticeComponent', () => {
     noticeElementStub.addEventListener('click', dismissListener);
 
     const contentElement = ensureNonNullable(noticeElementStub.querySelector(`.${CssClass.PluginNoticeContent}`));
-    const textNode = ensureNonNullable(Array.from(contentElement.childNodes).find((node) => node.nodeType === Node.TEXT_NODE));
+    const textNode = ensureNonNullable([...contentElement.childNodes].find((node) => node.nodeType === Node.TEXT_NODE));
     textNode.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).toHaveBeenCalledTimes(1);

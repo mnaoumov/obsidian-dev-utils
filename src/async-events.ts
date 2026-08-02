@@ -13,7 +13,10 @@ import type { AsyncDisposableEx } from './disposable.ts';
 import type { GenericPromisableVoidFunction } from './function.ts';
 import type { StringKeys } from './type.ts';
 
-import { filterInPlace } from './array.ts';
+import {
+  filterInPlace,
+  snapshot
+} from './array.ts';
 import { AsyncDisposableBase } from './disposable.ts';
 
 declare const ASYNC_EVENT_MAP: unique symbol;
@@ -464,7 +467,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    */
   protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void {
     const eventReferences = this.eventRefsMap.get(name) ?? [];
-    for (const eventReference of eventReferences.slice()) {
+    for (const eventReference of snapshot(eventReferences)) {
       this.tryTrigger(eventReference, args);
     }
   }
@@ -479,7 +482,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    */
   protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void> {
     const eventReferences = this.eventRefsMap.get(name) ?? [];
-    for (const eventReference of eventReferences.slice()) {
+    for (const eventReference of snapshot(eventReferences)) {
       await this.tryTriggerAsync(eventReference, args);
     }
   }

@@ -353,7 +353,7 @@ export function insertCodeBlock(params: InsertCodeBlockParams): void {
   const MIN_FENCE_LENGTH = 3;
   const fenceRegExp = new RegExp(`^\`{${String(MIN_FENCE_LENGTH)},}`, 'gm');
   const fenceMatches = code.matchAll(fenceRegExp);
-  const fenceLengths = Array.from(fenceMatches).map((fenceMatch) => fenceMatch[0].length);
+  const fenceLengths = [...fenceMatches].map((fenceMatch) => fenceMatch[0].length);
   const maxFenceLength = Math.max(0, ...fenceLengths);
   const resultFenceLength = Math.max(MIN_FENCE_LENGTH, maxFenceLength + 1);
   const resultFence = '`'.repeat(resultFenceLength);

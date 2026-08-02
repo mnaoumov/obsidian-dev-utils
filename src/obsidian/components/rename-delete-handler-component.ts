@@ -237,7 +237,7 @@ class SettingsManager {
   }
 
   public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
+    const settingsBuilders = [...this.renameDeleteHandlersMap.values()].reverse();
 
     const settings: Partial<RenameDeleteHandlerSettings> = {};
     // eslint-disable-next-line unicorn/no-immediate-mutation -- Folding these into the object literal keeps them optional under `Partial<>`, losing the narrowing that makes them callable below without a nullish check.
@@ -341,7 +341,7 @@ class DeleteHandler {
     await cleanupEmptyFolders({
       app: this.app,
       emptyFolderBehavior: settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
-      folderPaths: Array.from(parentFolderPaths)
+      folderPaths: [...parentFolderPaths]
     });
     this.abortSignal.throwIfAborted();
 
@@ -645,7 +645,7 @@ class RenameHandler {
       await cleanupEmptyFolders({
         app: this.app,
         emptyFolderBehavior: settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
-        folderPaths: Array.from(parentFolderPaths)
+        folderPaths: [...parentFolderPaths]
       });
       this.abortSignal.throwIfAborted();
 
@@ -658,9 +658,7 @@ class RenameHandler {
         return;
       }
 
-      const backlinkEntries = Array.from(combinedBacklinksMap).concat(
-        Array.from(this.interruptedCombinedBacklinksMap)
-      );
+      const backlinkEntries = [...combinedBacklinksMap, ...this.interruptedCombinedBacklinksMap];
       let processedBacklinkFiles = 0;
       for (const [newBacklinkPath, linkJsonToPathMap] of backlinkEntries) {
         let linkIndex = 0;
@@ -726,7 +724,7 @@ class RenameHandler {
         });
       }
     } finally {
-      const orphanKeys = Array.from(this.handledRenames.keys());
+      const orphanKeys = [...this.handledRenames.keys()];
       addToQueue({
         abortSignal: this.abortSignal,
         operationFn: () => {
@@ -1240,13 +1238,13 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   private logRegisteredHandlers(): void {
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
     getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
-      `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
+      `Plugins with registered rename/delete handlers: ${JSON.stringify([...renameDeleteHandlersMap.keys()])}`
     );
   }
 
   private shouldInvokeHandler(): boolean {
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-    const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
+    const mainPluginId = [...renameDeleteHandlersMap.keys()][0];
     return mainPluginId === this.pluginId;
   }
 }

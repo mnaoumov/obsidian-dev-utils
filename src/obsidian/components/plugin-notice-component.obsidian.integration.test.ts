@@ -84,7 +84,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
         function findLockedContentElement(): HTMLElement | null {
-          const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
+          const els = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')];
           return els.find((element) => element.textContent.includes('Locked action')) ?? null;
         }
 
@@ -196,7 +196,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
         function findActionContentElement(): HTMLElement | null {
-          const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
+          const els = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')];
           return els.find((element) => element.textContent.includes('Action notice')) ?? null;
         }
 
@@ -275,7 +275,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
         // Scope the lookup to this notice by its text, so a previous test's notice still fading out
         // (same class) is never mistaken for ours.
         function findContentElement(textIncludes: string): Element | null {
-          const els = Array.from(activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content'));
+          const els = [...activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content')];
           return els.find((element) => element.textContent.includes(textIncludes)) ?? null;
         }
 

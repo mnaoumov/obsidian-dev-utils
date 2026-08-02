@@ -141,7 +141,7 @@ describe('editFieldsInPopover', () => {
     });
 
     const popoverElement = ensureNonNullable(document.body.querySelector('.popover'));
-    const inputEls = Array.from(popoverElement.querySelectorAll('input'));
+    const inputEls = [...popoverElement.querySelectorAll('input')];
 
     expect(popoverElement.textContent).toContain('URL');
     expect(popoverElement.textContent).toContain('Alias');

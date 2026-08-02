@@ -84,7 +84,7 @@ describe('editFieldsInPopover', () => {
           const inputEls = getInputEls();
           const inputValues = inputEls.map((inputElement) => inputElement.value);
           // The buttons row is a `Setting` too, so it contributes an empty name element to skip.
-          const fieldNames = Array.from(popoverElement.querySelectorAll('.setting-item-name'))
+          const fieldNames = [...popoverElement.querySelectorAll('.setting-item-name')]
             .map((nameElement) => nameElement.textContent)
             .filter((name) => Boolean(name));
 
@@ -112,7 +112,7 @@ describe('editFieldsInPopover', () => {
         }
 
         function getInputEls(): HTMLInputElement[] {
-          return Array.from(getPopoverElement()?.querySelectorAll<HTMLInputElement>('input') ?? []);
+          return [...getPopoverElement()?.querySelectorAll<HTMLInputElement>('input') ?? []];
         }
 
         function getPopoverElement(): HTMLElement | null {

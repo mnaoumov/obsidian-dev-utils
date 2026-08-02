@@ -19,6 +19,7 @@ import type { TextBasedComponent } from './text-based-component.ts';
 import type { ValidatorComponent } from './validator-component.ts';
 import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
 
+import { snapshot } from '../../array.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
@@ -166,7 +167,7 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
   public setLanguage(language: string): this {
     const LANGUAGE_CLASS_PREFIX = 'language-';
     for (const element of [this.preEl, this.codeEl]) {
-      for (const cls of Array.from(element.classList)) {
+      for (const cls of snapshot(element.classList)) {
         if (cls.startsWith(LANGUAGE_CLASS_PREFIX)) {
           element.classList.remove(cls);
         }
@@ -256,9 +257,9 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     $event.preventDefault();
 
     if ($event.ctrlKey || $event.metaKey) {
-      const focusables = Array.from(activeDocument.querySelectorAll<HTMLElement>(
+      const focusables = [...activeDocument.querySelectorAll<HTMLElement>(
         ':is(a, button, input, select, textarea, [tabindex]):not([tabindex="-1"]):not(:disabled):not([type="hidden"])'
-      ));
+      )];
       const index = focusables.indexOf(this.inputEl);
       const deltaIndex = $event.shiftKey ? -1 : 1;
       const nextControl = focusables[(index + deltaIndex + focusables.length) % focusables.length];

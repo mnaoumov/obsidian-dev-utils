@@ -11,6 +11,7 @@ import {
 
 import type { GenericObject } from './type-guards.ts';
 
+import { snapshot } from './array.ts';
 import { dispose } from './disposable.ts';
 import { noopAsync } from './function.ts';
 import {
@@ -931,7 +932,7 @@ describe('ensureLoaded', () => {
 
 describe('waitUntilConnected', () => {
   afterEach(() => {
-    for (const element of Array.from(activeDocument.body.children)) {
+    for (const element of snapshot(activeDocument.body.children)) {
       element.remove();
     }
   });

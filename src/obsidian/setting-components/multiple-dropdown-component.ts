@@ -96,7 +96,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @returns The value of the component.
    */
   public getValue(): readonly string[] {
-    return Array.from(this.dropdownComponent.selectEl.selectedOptions).map((o) => o.value);
+    return [...this.dropdownComponent.selectEl.selectedOptions].map((o) => o.value);
   }
 
   /**
@@ -133,7 +133,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    * @returns The component.
    */
   public setValue(value: readonly string[]): this {
-    for (const option of Array.from(this.dropdownComponent.selectEl.options)) {
+    for (const option of this.dropdownComponent.selectEl.options) {
       option.selected = value.includes(option.value);
     }
 

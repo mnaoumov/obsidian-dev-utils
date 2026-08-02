@@ -1023,7 +1023,7 @@ export async function editBacklinks(params: EditBacklinksParams): Promise<void> 
     ...options
   } = params;
   const backlinks = await getBacklinksForFileSafe({ app, pathOrFile, ...options });
-  const backlinkNotePaths = Array.from(backlinks.keys());
+  const backlinkNotePaths = [...backlinks.keys()];
   let processed = 0;
   for (const backlinkNotePath of backlinkNotePaths) {
     const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));

@@ -110,7 +110,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         function readCodeLineElement(): Element | null {
-          const lineEls = Array.from(leaf.view.containerEl.querySelectorAll('.cm-content .cm-line'));
+          const lineEls = [...leaf.view.containerEl.querySelectorAll('.cm-content .cm-line')];
           return lineEls.find((lineElement) => lineElement.textContent.includes(CODE)) ?? null;
         }
 
@@ -203,7 +203,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         function readCodeElement(): Element | null {
-          const codeEls = Array.from(leaf.view.containerEl.querySelectorAll('.markdown-preview-view pre > code'));
+          const codeEls = [...leaf.view.containerEl.querySelectorAll('.markdown-preview-view pre > code')];
           return codeEls.find((codeElement) => codeElement.textContent.includes(CODE)) ?? null;
         }
 

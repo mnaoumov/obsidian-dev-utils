@@ -637,7 +637,7 @@ describe('renderPaginated page navigation', () => {
 
     // On page 1, there should be no leading ellipsis, but there might be a trailing one
     const spans = dv.container.querySelectorAll('.pagination span');
-    const texts = Array.from(spans).map((s) => s.textContent);
+    const texts = [...spans].map((s) => s.textContent);
     // For page 1 with 10 pages, there should be trailing "..." because page 1 < totalPages - 2
     expect(texts.includes('...')).toBe(true);
   });
@@ -810,7 +810,7 @@ describe('renderPaginated page navigation', () => {
 
     // On page 5, there should be a leading "..." since pageNumber (5) > MORE_PAGE_NUMBER (3)
     const spans = dv.container.querySelectorAll('.pagination span');
-    const texts = Array.from(spans).map((s) => s.textContent);
+    const texts = [...spans].map((s) => s.textContent);
     expect(texts.filter((t) => t === '...').length).toBeGreaterThanOrEqual(1);
   });
 

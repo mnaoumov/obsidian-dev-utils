@@ -102,7 +102,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  for (const element of Array.from(activeDocument.body.querySelectorAll('.status-bar'))) {
+  for (const element of activeDocument.body.querySelectorAll('.status-bar')) {
     element.remove();
   }
 });

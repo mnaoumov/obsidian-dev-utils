@@ -20,6 +20,7 @@ import type {
   TAbstractFile
 } from 'obsidian';
 
+import { snapshot } from '../array.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 
 const STATE_KEY = 'caseInsensitiveFileIndex';
@@ -59,7 +60,7 @@ export class CaseInsensitiveFileIndex {
     const key = path.toLowerCase();
     this.map.delete(key);
     const descendantPrefix = `${key}/`;
-    for (const existingKey of Array.from(this.map.keys())) {
+    for (const existingKey of snapshot(this.map.keys())) {
       if (existingKey.startsWith(descendantPrefix)) {
         this.map.delete(existingKey);
       }
@@ -105,7 +106,7 @@ export class CaseInsensitiveFileIndex {
 
     const oldDescendantPrefix = `${oldKey}/`;
     const newDescendantPrefix = `${newKey}/`;
-    for (const [existingKey, existingValue] of Array.from(this.map)) {
+    for (const [existingKey, existingValue] of snapshot(this.map)) {
       if (!existingKey.startsWith(oldDescendantPrefix)) {
         continue;
       }

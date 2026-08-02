@@ -8,6 +8,7 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
+import { snapshot } from '../../array.ts';
 import { dispose } from '../../disposable.ts';
 import {
   ErrorWrapper,
@@ -82,7 +83,7 @@ export class ComponentEx extends Component implements Disposable {
       this.appendEagerLoadStep(onloadAsyncPromise);
     }
 
-    for (const child of this._children.slice()) {
+    for (const child of snapshot(this._children)) {
       this.appendSequentialLoadStep(() => this.extractLoadPromisable(child));
     }
 

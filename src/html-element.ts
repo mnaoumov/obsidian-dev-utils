@@ -415,7 +415,7 @@ function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, o?: stri
 }
 
 function getLoadableElements(element: Element): Element[] {
-  return Array.from(element.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
+  return [...element.querySelectorAll('body, img, iframe, embed, link, object, script, style, track')];
 }
 
 // eslint-disable-next-line obsidianmd/no-global-this -- Type-only: the resolved window needs the global DOM constructor typings.

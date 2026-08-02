@@ -22,7 +22,7 @@ export function ensureWrapped(el: HTMLElement): HTMLDivElement {
     return parent as HTMLDivElement;
   }
 
-  const children = Array.from(parent.children);
+  const children = [...parent.children];
   const wrapper = createDiv();
   addPluginCssClasses(wrapper, CssClass.SettingComponentWrapper);
   for (const child of children) {
