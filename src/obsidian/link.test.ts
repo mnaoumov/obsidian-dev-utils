@@ -806,6 +806,7 @@ describe('app-dependent functions', () => {
       return undefined;
     });
 
+    // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
     app.metadataCache.getLinkpathDest = vi.fn((linkpath: string) => {
       const allFiles = app.vault.getAllLoadedFiles();
       return allFiles.filter((f): f is TFileOriginal => f instanceof TFile && (f.basename === linkpath || f.name === linkpath));
@@ -849,6 +850,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for absolute path when shouldAllowNonExistingFile is true', () => {
       const link = { link: '/target.md', original: '[[/target.md]]' } as Reference;
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'note.md' });
       assertNonNullable(result);
@@ -857,6 +859,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for relative path when shouldAllowNonExistingFile is true', () => {
       const link = { link: 'other.md', original: '[[other.md]]' } as Reference;
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'folder/source.md' });
       assertNonNullable(result);
@@ -865,6 +868,7 @@ describe('app-dependent functions', () => {
 
     it('should return null when relative path goes outside vault', () => {
       const link = { link: '../../outside', original: '[[../../outside]]' } as Reference;
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'note.md' });
       expect(result).toBeNull();
@@ -973,6 +977,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use full path when multiple files match shortest name', () => {
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getLinkpathDest = vi.fn(() => [
         ensureNonNullable(app.vault.getFileByPath('folder/other.md')),
         ensureNonNullable(app.vault.getFileByPath('folder/same.md'))
