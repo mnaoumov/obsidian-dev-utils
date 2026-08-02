@@ -31,10 +31,10 @@ interface MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorP
    * Handler function for the code block processor.
    *
    * @param source - The source code of the code block.
-   * @param el - The HTML element representing the code block.
+   * @param element - The HTML element representing the code block.
    * @param ctx - The context for the markdown post processor.
    */
-  handler(this: void, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
+  handler(this: void, source: string, element: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
 
   /**
    * The language of the code block to register the processor for.

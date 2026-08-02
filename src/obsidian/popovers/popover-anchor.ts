@@ -61,14 +61,14 @@ export function createAnchorFromDocumentCenter(doc: Document): PopoverAnchor {
  * Anchors a popover just below an element — used for a clicked element, whose rect is exactly where
  * the user is looking.
  *
- * @param el - The element to anchor at.
+ * @param element - The element to anchor at.
  * @returns The anchor.
  */
-export function createAnchorFromElement(el: HTMLElement): PopoverAnchor {
-  const rect = el.getBoundingClientRect();
+export function createAnchorFromElement(element: HTMLElement): PopoverAnchor {
+  const rect = element.getBoundingClientRect();
   return {
     bottom: rect.bottom,
-    doc: el.ownerDocument,
+    doc: element.ownerDocument,
     left: rect.left
   };
 }

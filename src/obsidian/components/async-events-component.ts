@@ -12,10 +12,10 @@ import type { AsyncEventRef as AsyncEventReference } from '../../async-events.ts
  * Registers an async event.
  *
  * @param component - The component.
- * @param eventRef - The event reference.
+ * @param eventReference - The event reference.
  */
-export function registerAsyncEvent(component: Component, eventRef: AsyncEventReference): void {
+export function registerAsyncEvent(component: Component, eventReference: AsyncEventReference): void {
   component.register(() => {
-    eventRef.asyncEventSource.offref(eventRef);
+    eventReference.asyncEventSource.offref(eventReference);
   });
 }

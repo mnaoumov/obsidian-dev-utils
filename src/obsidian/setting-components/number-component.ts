@@ -26,11 +26,11 @@ export class NumberComponent extends TypedRangeTextComponent<number> implements 
   /**
    * Creates a new number component.
    *
-   * @param containerEl - The container element of the component.
+   * @param containerElement - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement) {
+  public constructor(containerElement: HTMLElement) {
     super({
-      containerEl,
+      containerEl: containerElement,
       cssClass: CssClass.NumberComponent,
       type: 'number'
     });

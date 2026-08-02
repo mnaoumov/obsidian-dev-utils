@@ -376,10 +376,10 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   /**
    * Remove an event listener by reference.
    *
-   * @param eventRef - The reference to the event listener.
+   * @param eventReference - The reference to the event listener.
    */
-  public offref(eventRef: AsyncEventReference): void {
-    this.asyncEvents.offref(eventRef);
+  public offref(eventReference: AsyncEventReference): void {
+    this.asyncEvents.offref(eventReference);
   }
 
   /**

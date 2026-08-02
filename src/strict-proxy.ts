@@ -127,31 +127,31 @@ function wrapProxy<T>(value: unknown): T {
      * Intercepts property access on the proxied object, throwing on unmocked properties.
      *
      * @param target - The proxied target object.
-     * @param prop - The property being accessed.
+     * @param property - The property being accessed.
      * @param receiver - The proxy or an object that inherits from it.
      * @returns The property value.
      * @remarks Not refactored to parameter-object pattern, to keep the parity with the {@link ProxyHandler.get} trap.
      */
-    get(target, prop, receiver): unknown {
-      if (prop in target) {
-        if (proxiedChildren.has(prop)) {
-          return proxiedChildren.get(prop);
+    get(target, property, receiver): unknown {
+      if (property in target) {
+        if (proxiedChildren.has(property)) {
+          return proxiedChildren.get(property);
         }
 
-        const $value: unknown = Reflect.get(target, prop, receiver);
+        const $value: unknown = Reflect.get(target, property, receiver);
         if (isPlainObject($value)) {
           const result = wrapProxy<unknown>($value);
-          proxiedChildren.set(prop, result);
+          proxiedChildren.set(property, result);
           return result;
         }
         return $value;
       }
 
-      if (typeof prop === 'symbol' || PASSTHROUGH_PROPS.has(prop)) {
-        return Reflect.get(target, prop, receiver);
+      if (typeof property === 'symbol' || PASSTHROUGH_PROPS.has(property)) {
+        return Reflect.get(target, property, receiver);
       }
 
-      throw new Error(`Unmocked property "${prop}" was accessed on mock object`);
+      throw new Error(`Unmocked property "${property}" was accessed on mock object`);
     }
   }) as T;
 }

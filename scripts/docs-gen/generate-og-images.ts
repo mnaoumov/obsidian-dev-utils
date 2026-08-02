@@ -200,10 +200,10 @@ function toPosixPath(filePath: string): string {
   return filePath.replaceAll('\\', '/');
 }
 
-async function walkDir(dir: string, contentDocsDir: string, pages: PageEntry[]): Promise<void> {
-  const entries = await readdir(dir, { withFileTypes: true });
+async function walkDir(directory: string, contentDocsDir: string, pages: PageEntry[]): Promise<void> {
+  const entries = await readdir(directory, { withFileTypes: true });
   for (const entry of entries) {
-    const fullPath = `${dir}/${entry.name}`;
+    const fullPath = `${directory}/${entry.name}`;
     if (entry.isDirectory()) {
       await walkDir(fullPath, contentDocsDir, pages);
     } else if (entry.name.endsWith('.md') || entry.name.endsWith('.mdx')) {

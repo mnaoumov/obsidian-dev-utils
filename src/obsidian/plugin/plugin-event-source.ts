@@ -61,10 +61,10 @@ export class PluginEventSourceImpl implements PluginEventSource {
   /**
    * Remove an event listener by reference.
    *
-   * @param eventRef - The reference to remove.
+   * @param eventReference - The reference to remove.
    */
-  public offref(eventRef: AsyncEventReference): void {
-    this.plugin.offref(eventRef);
+  public offref(eventReference: AsyncEventReference): void {
+    this.plugin.offref(eventReference);
   }
 
   /**

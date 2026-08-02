@@ -37,21 +37,21 @@ export class SettingEx extends Setting {
   /**
    * Adds a {@link CheckboxComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addCheckbox(cb: (checkbox: CheckboxComponent) => void): this {
-    return this.addComponentClass(CheckboxComponent, cb);
+  public addCheckbox(callback: (checkbox: CheckboxComponent) => void): this {
+    return this.addComponentClass(CheckboxComponent, callback);
   }
 
   /**
    * Adds a {@link CodeHighlighterComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addCodeHighlighter(cb: (codeHighlighter: CodeHighlighterComponent) => void): this {
-    return this.addComponentClass(CodeHighlighterComponent, cb);
+  public addCodeHighlighter(callback: (codeHighlighter: CodeHighlighterComponent) => void): this {
+    return this.addComponentClass(CodeHighlighterComponent, callback);
   }
 
   /**
@@ -59,13 +59,13 @@ export class SettingEx extends Setting {
    *
    * @typeParam T - The type of the component to add.
    * @param componentClass - The class of the component to add.
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addComponentClass<T extends BaseComponent>(componentClass: new (containerElement: HTMLElement) => T, cb: (component: T) => void): this {
+  public addComponentClass<T extends BaseComponent>(componentClass: new (containerElement: HTMLElement) => T, callback: (component: T) => void): this {
     return this.addComponent((element) => {
       const component = new componentClass(element);
-      cb(component);
+      callback(component);
       return component;
     });
   }
@@ -73,183 +73,183 @@ export class SettingEx extends Setting {
   /**
    * Adds a {@link DateComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addDate(cb: (date: DateComponent) => void): this {
-    return this.addComponentClass(DateComponent, cb);
+  public addDate(callback: (date: DateComponent) => void): this {
+    return this.addComponentClass(DateComponent, callback);
   }
 
   /**
    * Adds a {@link DateTimeComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addDateTime(cb: (dateTime: DateTimeComponent) => void): this {
-    return this.addComponentClass(DateTimeComponent, cb);
+  public addDateTime(callback: (dateTime: DateTimeComponent) => void): this {
+    return this.addComponentClass(DateTimeComponent, callback);
   }
 
   /**
    * Adds an {@link EmailComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addEmail(cb: (email: EmailComponent) => void): this {
-    return this.addComponentClass(EmailComponent, cb);
+  public addEmail(callback: (email: EmailComponent) => void): this {
+    return this.addComponentClass(EmailComponent, callback);
   }
 
   /**
    * Adds a {@link FileComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addFile(cb: (file: FileComponent) => void): this {
-    return this.addComponentClass(FileComponent, cb);
+  public addFile(callback: (file: FileComponent) => void): this {
+    return this.addComponentClass(FileComponent, callback);
   }
 
   /**
    * Adds a {@link MonthComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMonth(cb: (month: MonthComponent) => void): this {
-    return this.addComponentClass(MonthComponent, cb);
+  public addMonth(callback: (month: MonthComponent) => void): this {
+    return this.addComponentClass(MonthComponent, callback);
   }
 
   /**
    * Adds a {@link MultipleDropdownComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleDropdown(cb: (multipleDropdown: MultipleDropdownComponent) => void): this {
-    return this.addComponentClass(MultipleDropdownComponent, cb);
+  public addMultipleDropdown(callback: (multipleDropdown: MultipleDropdownComponent) => void): this {
+    return this.addComponentClass(MultipleDropdownComponent, callback);
   }
 
   /**
    * Adds a {@link MultipleEmailComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleEmail(cb: (multipleEmail: MultipleEmailComponent) => void): this {
-    return this.addComponentClass(MultipleEmailComponent, cb);
+  public addMultipleEmail(callback: (multipleEmail: MultipleEmailComponent) => void): this {
+    return this.addComponentClass(MultipleEmailComponent, callback);
   }
 
   /**
    * Adds a {@link MultipleFileComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleFile(cb: (multipleFile: MultipleFileComponent) => void): this {
-    return this.addComponentClass(MultipleFileComponent, cb);
+  public addMultipleFile(callback: (multipleFile: MultipleFileComponent) => void): this {
+    return this.addComponentClass(MultipleFileComponent, callback);
   }
 
   /**
    * Adds a {@link MultipleTextComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addMultipleText(cb: (multipleText: MultipleTextComponent) => void): this {
-    return this.addComponentClass(MultipleTextComponent, cb);
+  public addMultipleText(callback: (multipleText: MultipleTextComponent) => void): this {
+    return this.addComponentClass(MultipleTextComponent, callback);
   }
 
   /**
    * Adds a {@link NumberComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addNumber(cb: ($number: NumberComponent) => void): this {
-    return this.addComponentClass(NumberComponent, cb);
+  public addNumber(callback: ($number: NumberComponent) => void): this {
+    return this.addComponentClass(NumberComponent, callback);
   }
 
   /**
    * Adds a {@link PasswordComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addPassword(cb: (password: PasswordComponent) => void): this {
-    return this.addComponentClass(PasswordComponent, cb);
+  public addPassword(callback: (password: PasswordComponent) => void): this {
+    return this.addComponentClass(PasswordComponent, callback);
   }
 
   /**
    * Adds a {@link TelephoneComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTelephone(cb: (telephone: TelephoneComponent) => void): this {
-    return this.addComponentClass(TelephoneComponent, cb);
+  public addTelephone(callback: (telephone: TelephoneComponent) => void): this {
+    return this.addComponentClass(TelephoneComponent, callback);
   }
 
   /**
    * Adds a {@link TimeComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTime(cb: (time: TimeComponent) => void): this {
-    return this.addComponentClass(TimeComponent, cb);
+  public addTime(callback: (time: TimeComponent) => void): this {
+    return this.addComponentClass(TimeComponent, callback);
   }
 
   /**
    * Adds a {@link TriStateCheckboxComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTriStateCheckbox(cb: (triStateCheckbox: TriStateCheckboxComponent) => void): this {
-    return this.addComponentClass(TriStateCheckboxComponent, cb);
+  public addTriStateCheckbox(callback: (triStateCheckbox: TriStateCheckboxComponent) => void): this {
+    return this.addComponentClass(TriStateCheckboxComponent, callback);
   }
 
   /**
    * Adds a {@link TypedDropdownComponent} to the setting.
    *
    * @typeParam T - The type of the dropdown items.
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTypedDropdown<T>(cb: (typedDropdown: TypedDropdownComponent<T>) => void): this {
-    return this.addComponentClass(TypedDropdownComponent<T>, cb);
+  public addTypedDropdown<T>(callback: (typedDropdown: TypedDropdownComponent<T>) => void): this {
+    return this.addComponentClass(TypedDropdownComponent<T>, callback);
   }
 
   /**
    * Adds a {@link TypedMultipleDropdownComponent} to the setting.
    *
    * @typeParam T - The type of the items in the dropdown.
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addTypedMultipleDropdown<T>(cb: (typedMultipleDropdown: TypedMultipleDropdownComponent<T>) => void): this {
-    return this.addComponentClass(TypedMultipleDropdownComponent<T>, cb);
+  public addTypedMultipleDropdown<T>(callback: (typedMultipleDropdown: TypedMultipleDropdownComponent<T>) => void): this {
+    return this.addComponentClass(TypedMultipleDropdownComponent<T>, callback);
   }
 
   /**
    * Adds an {@link UrlComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addUrl(cb: (url: UrlComponent) => void): this {
-    return this.addComponentClass(UrlComponent, cb);
+  public addUrl(callback: (url: UrlComponent) => void): this {
+    return this.addComponentClass(UrlComponent, callback);
   }
 
   /**
    * Adds a {@link WeekComponent} to the setting.
    *
-   * @param cb - The callback to call with the component.
+   * @param callback - The callback to call with the component.
    * @returns The setting instance.
    */
-  public addWeek(cb: (week: WeekComponent) => void): this {
-    return this.addComponentClass(WeekComponent, cb);
+  public addWeek(callback: (week: WeekComponent) => void): this {
+    return this.addComponentClass(WeekComponent, callback);
   }
 }
 

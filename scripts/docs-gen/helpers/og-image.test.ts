@@ -29,15 +29,15 @@ const PNG_SIGNATURE = Buffer.from('\x89PNG\r\n\x1A\n', 'binary');
 const temporaryDirectories: string[] = [];
 
 afterAll(() => {
-  for (const dir of temporaryDirectories) {
-    rmSync(dir, { force: true, recursive: true });
+  for (const directory of temporaryDirectories) {
+    rmSync(directory, { force: true, recursive: true });
   }
 });
 
 function makeTempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'og-fonts-'));
-  temporaryDirectories.push(dir);
-  return dir;
+  const directory = mkdtempSync(join(tmpdir(), 'og-fonts-'));
+  temporaryDirectories.push(directory);
+  return directory;
 }
 
 describe('computeOgHash', () => {
@@ -76,10 +76,10 @@ describe('loadFonts', () => {
   });
 
   it('falls back to any single font file for both weights', async () => {
-    const dir = makeTempDir();
-    writeFileSync(join(dir, 'stray.otf'), Buffer.from('not-a-real-font'));
+    const directory = makeTempDir();
+    writeFileSync(join(directory, 'stray.otf'), Buffer.from('not-a-real-font'));
 
-    const fonts = await loadFonts(dir);
+    const fonts = await loadFonts(directory);
 
     expect(fonts).toHaveLength(FONT_VARIANT_COUNT);
     expect(fonts?.map((font) => font.weight)).toEqual([FONT_WEIGHT_REGULAR, FONT_WEIGHT_BOLD]);

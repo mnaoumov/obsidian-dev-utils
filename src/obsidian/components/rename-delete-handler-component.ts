@@ -975,10 +975,10 @@ class RenameMap {
           this.abortSignal.throwIfAborted();
         }
       } else {
-        const dir = dirname(newAttachmentFilePath);
+        const directory = dirname(newAttachmentFilePath);
         const extension = extname(newAttachmentFilePath);
         const baseName = basename(newAttachmentFilePath, extension);
-        newAttachmentFilePath = this.app.vault.getAvailablePath(join(dir, baseName), extension.slice(1));
+        newAttachmentFilePath = this.app.vault.getAvailablePath(join(directory, baseName), extension.slice(1));
       }
       this.map.set(oldAttachmentFile.path, newAttachmentFilePath);
     }

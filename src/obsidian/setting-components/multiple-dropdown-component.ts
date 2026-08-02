@@ -58,13 +58,13 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
   /**
    * Creates a new multiple dropdown component.
    *
-   * @param containerEl - The container element of the component.
+   * @param containerElement - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement) {
+  public constructor(containerElement: HTMLElement) {
     super();
-    this.dropdownComponent = new DropdownComponent(containerEl);
+    this.dropdownComponent = new DropdownComponent(containerElement);
     this.dropdownComponent.selectEl.multiple = true;
-    addPluginCssClasses(containerEl, CssClass.MultipleDropdownComponent);
+    addPluginCssClasses(containerElement, CssClass.MultipleDropdownComponent);
   }
 
   /**

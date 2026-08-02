@@ -14,11 +14,11 @@ import { CssClass } from './css-class.ts';
  * Appends a code block to the given DocumentFragment or HTMLElement, styled to match Obsidian's
  * rendered-markdown inline code.
  *
- * @param el - The DocumentFragment or HTMLElement to append the code block to.
+ * @param element - The DocumentFragment or HTMLElement to append the code block to.
  * @param code - The code to be displayed in the code block.
  */
-export function appendCodeBlock(el: DocumentFragment | HTMLElement, code: string): void {
-  el.createEl('strong', { cls: `${CssClass.MarkdownRendered} ${CssClass.Code}` }, (strong) => {
+export function appendCodeBlock(element: DocumentFragment | HTMLElement, code: string): void {
+  element.createEl('strong', { cls: `${CssClass.MarkdownRendered} ${CssClass.Code}` }, (strong) => {
     strong.createEl('code', { text: code });
   });
 }

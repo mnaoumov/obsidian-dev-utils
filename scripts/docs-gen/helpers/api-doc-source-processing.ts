@@ -166,10 +166,10 @@ export function computeNamespace(srcDir: string, filePath: string): string {
  * `index.ts`, `__merged.ts`, `setup.ts`, `*-setup.ts`, and any subtree under a `@types`,
  * `styles`, or `test-helpers` directory.
  */
-export function findEntryFiles(dir: string): string[] {
+export function findEntryFiles(directory: string): string[] {
   const results: string[] = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = join(dir, entry.name);
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const fullPath = join(directory, entry.name);
     if (entry.isDirectory()) {
       if (EXCLUDED_DIR_SEGMENTS.has(entry.name)) {
         continue;

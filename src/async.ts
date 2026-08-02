@@ -112,21 +112,21 @@ export async function addErrorHandler(asyncFn: () => Promise<unknown>, stackTrac
  * Filters an array asynchronously, keeping only the elements that satisfy the provided predicate function.
  *
  * @typeParam T - The type of elements in the input array.
- * @param arr - The array to filter.
+ * @param array - The array to filter.
  * @param predicate - The predicate function to test each element.
  * @returns A {@link Promise} that resolves with an array of elements that satisfy the predicate function.
  */
-export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<T[]> {
+export async function asyncFilter<T>(array: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<T[]> {
   const ans: T[] = [];
 
-  const length = arr.length;
+  const length = array.length;
   for (let index = 0; index < length; index++) {
-    if (!Object.hasOwn(arr, index)) {
+    if (!Object.hasOwn(array, index)) {
       continue;
     }
 
-    const item = arr[index] as T;
-    if (await predicate(item, index, arr)) {
+    const item = array[index] as T;
+    if (await predicate(item, index, array)) {
       ans.push(item);
     }
   }
@@ -138,25 +138,25 @@ export async function asyncFilter<T>(arr: T[], predicate: (value: T, index: numb
  * Filters an array asynchronously in place, keeping only the elements that satisfy the provided predicate function.
  *
  * @typeParam T - The type of elements in the input array.
- * @param arr - The array to filter.
+ * @param array - The array to filter.
  * @param predicate - The predicate function to test each element.
  * @returns A {@link Promise} that resolves when the array is filtered.
  */
-export async function asyncFilterInPlace<T>(arr: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<void> {
-  const length = arr.length;
+export async function asyncFilterInPlace<T>(array: T[], predicate: (value: T, index: number, array: T[]) => Promisable<boolean>): Promise<void> {
+  const length = array.length;
   let writeIndex = 0;
   for (let readIndex = 0; readIndex < length; readIndex++) {
-    if (!Object.hasOwn(arr, readIndex)) {
+    if (!Object.hasOwn(array, readIndex)) {
       continue;
     }
 
-    const current = arr[readIndex] as T;
-    if (await predicate(current, readIndex, arr)) {
+    const current = array[readIndex] as T;
+    if (await predicate(current, readIndex, array)) {
       // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
-      arr[writeIndex++] = current;
+      array[writeIndex++] = current;
     }
   }
-  arr.length = writeIndex;
+  array.length = writeIndex;
 }
 
 /**
@@ -164,12 +164,12 @@ export async function asyncFilterInPlace<T>(arr: T[], predicate: (value: T, inde
  *
  * @typeParam T - The type of elements in the input array.
  * @typeParam U - The type of elements in the output array.
- * @param arr - The array to map over and flatten.
+ * @param array - The array to map over and flatten.
  * @param callback - The callback function to apply to each element.
  * @returns A {@link Promise} that resolves with a flattened array of the results of the callback function.
  */
-export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U[]>): Promise<U[]> {
-  return (await asyncMap(arr, callback)).flat();
+export async function asyncFlatMap<T, U>(array: T[], callback: (value: T, index: number, array: T[]) => Promisable<U[]>): Promise<U[]> {
+  return (await asyncMap(array, callback)).flat();
 }
 
 /**
@@ -177,12 +177,12 @@ export async function asyncFlatMap<T, U>(arr: T[], callback: (value: T, index: n
  *
  * @typeParam T - The type of elements in the input array.
  * @typeParam U - The type of elements in the output array.
- * @param arr - The array to map over.
+ * @param array - The array to map over.
  * @param callback - The callback function to apply to each element.
  * @returns A {@link Promise} that resolves with an array of the results of the callback function.
  */
-export async function asyncMap<T, U>(arr: T[], callback: (value: T, index: number, array: T[]) => Promisable<U>): Promise<U[]> {
-  return await promiseAllSequentially(arr.map(callback));
+export async function asyncMap<T, U>(array: T[], callback: (value: T, index: number, array: T[]) => Promisable<U>): Promise<U[]> {
+  return await promiseAllSequentially(array.map(callback));
 }
 
 /**

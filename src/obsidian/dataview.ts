@@ -56,10 +56,10 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * Wraps an array of items into a {@link DataArray} object.
    *
    * @typeParam T - The type of the items in the array.
-   * @param arr - The array of items to wrap.
+   * @param array - The array of items to wrap.
    * @returns A {@link DataArray} containing the items.
    */
-  array<T>(arr: T[]): DataArray<T>;
+  array<T>(array: T[]): DataArray<T>;
 
   /**
    * Retrieves the current page, with an optional custom page type.

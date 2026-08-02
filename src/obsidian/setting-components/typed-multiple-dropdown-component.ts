@@ -63,12 +63,12 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
   /**
    * Creates a new multiple dropdown component.
    *
-   * @param containerEl - The container element of the component.
+   * @param containerElement - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement) {
+  public constructor(containerElement: HTMLElement) {
     super();
-    this.multipleDropdownComponent = new MultipleDropdownComponent(containerEl);
-    addPluginCssClasses(containerEl, CssClass.TypedMultipleDropdownComponent);
+    this.multipleDropdownComponent = new MultipleDropdownComponent(containerElement);
+    addPluginCssClasses(containerElement, CssClass.TypedMultipleDropdownComponent);
   }
 
   /**

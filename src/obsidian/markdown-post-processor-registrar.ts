@@ -30,11 +30,11 @@ export interface MarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorPara
   /**
    * Post processor function to register.
    *
-   * @param el - The HTML element to process.
+   * @param element - The HTML element to process.
    * @param ctx - The markdown post processor context.
    * @returns A promisable that resolves when the post processing is complete.
    */
-  postProcessor(el: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
+  postProcessor(element: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
 
   /**
    * Optional sort order for the post processor. Lower numbers are processed first.

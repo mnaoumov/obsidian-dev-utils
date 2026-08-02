@@ -64,12 +64,12 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
   /**
    * Creates a new multiple dropdown component.
    *
-   * @param containerEl - The container element of the component.
+   * @param containerElement - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement) {
+  public constructor(containerElement: HTMLElement) {
     super();
-    this.dropdownComponent = new DropdownComponent(containerEl);
-    addPluginCssClasses(containerEl, CssClass.TypedDropdownComponent);
+    this.dropdownComponent = new DropdownComponent(containerElement);
+    addPluginCssClasses(containerElement, CssClass.TypedDropdownComponent);
   }
 
   /**

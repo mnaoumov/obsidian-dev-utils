@@ -135,32 +135,32 @@ export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
 /**
  * Ensures that the given element is loaded.
  *
- * @param el - The element to ensure is loaded.
+ * @param element - The element to ensure is loaded.
  * @returns A {@link Promise} that resolves when the element is loaded.
  */
-export async function ensureLoaded(el: Element): Promise<void> {
-  if (isLoaded(el)) {
+export async function ensureLoaded(element: Element): Promise<void> {
+  if (isLoaded(element)) {
     return;
   }
-  const win = getNodeWindow(el);
+  const win = getNodeWindow(element);
   if (
-    isInstanceOf(el, win.HTMLBodyElement)
-    || isInstanceOf(el, win.HTMLImageElement)
-    || isInstanceOf(el, win.HTMLIFrameElement)
-    || isInstanceOf(el, win.HTMLEmbedElement)
-    || isInstanceOf(el, win.HTMLLinkElement)
-    || isInstanceOf(el, win.HTMLObjectElement)
-    || isInstanceOf(el, win.HTMLStyleElement)
-    || isInstanceOf(el, win.HTMLTrackElement)
+    isInstanceOf(element, win.HTMLBodyElement)
+    || isInstanceOf(element, win.HTMLImageElement)
+    || isInstanceOf(element, win.HTMLIFrameElement)
+    || isInstanceOf(element, win.HTMLEmbedElement)
+    || isInstanceOf(element, win.HTMLLinkElement)
+    || isInstanceOf(element, win.HTMLObjectElement)
+    || isInstanceOf(element, win.HTMLStyleElement)
+    || isInstanceOf(element, win.HTMLTrackElement)
   ) {
     await new Promise((resolve) => {
-      el.addEventListener('load', resolve);
-      el.addEventListener('error', resolve);
+      element.addEventListener('load', resolve);
+      element.addEventListener('error', resolve);
     });
     return;
   }
 
-  await Promise.all(getLoadableElements(el).map(ensureLoaded));
+  await Promise.all(getLoadableElements(element).map(ensureLoaded));
 }
 
 /**
@@ -181,11 +181,11 @@ export function getDocumentWindow(doc: Document): Window {
 /**
  * Gets the z-index of the given element.
  *
- * @param el - The element to get the z-index of.
+ * @param element - The element to get the z-index of.
  * @returns The z-index of the element.
  */
-export function getZIndex(el: Element): number {
-  let element2: Element | null = el;
+export function getZIndex(element: Element): number {
+  let element2: Element | null = element;
 
   while (element2) {
     const zIndexString = getComputedStyle(element2).zIndex;
@@ -202,16 +202,16 @@ export function getZIndex(el: Element): number {
 /**
  * Checks if the element is visible in the offset parent.
  *
- * @param el - The element to check.
+ * @param element - The element to check.
  * @returns `true` if the element is visible in the offset parent, `false` otherwise.
  */
-export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
-  const parentElement = el.offsetParent;
+export function isElementVisibleInOffsetParent(element: HTMLElement): boolean {
+  const parentElement = element.offsetParent;
   if (!parentElement) {
     return false;
   }
 
-  const elementRect = el.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
   const parentElementRect = parentElement.getBoundingClientRect();
 
   return (
@@ -225,51 +225,51 @@ export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
 /**
  * Checks if the element is loaded.
  *
- * @param el - The element to check.
+ * @param element - The element to check.
  * @returns `true` if the element is loaded, `false` otherwise.
  */
-export function isLoaded(el: Element): boolean {
-  const win = getNodeWindow(el);
+export function isLoaded(element: Element): boolean {
+  const win = getNodeWindow(element);
 
-  if (isInstanceOf(el, win.HTMLBodyElement)) {
-    const readyState = el.ownerDocument.readyState;
+  if (isInstanceOf(element, win.HTMLBodyElement)) {
+    const readyState = element.ownerDocument.readyState;
     return readyState === 'complete' || readyState === 'interactive';
   }
 
-  if (isInstanceOf(el, win.HTMLImageElement)) {
-    return el.complete && el.naturalWidth > 0;
+  if (isInstanceOf(element, win.HTMLImageElement)) {
+    return element.complete && element.naturalWidth > 0;
   }
 
-  if (isInstanceOf(el, win.HTMLIFrameElement)) {
-    return !!el.contentDocument;
+  if (isInstanceOf(element, win.HTMLIFrameElement)) {
+    return !!element.contentDocument;
   }
 
-  if (isInstanceOf(el, win.HTMLEmbedElement)) {
-    return !!el.getSVGDocument();
+  if (isInstanceOf(element, win.HTMLEmbedElement)) {
+    return !!element.getSVGDocument();
   }
 
-  if (isInstanceOf(el, win.HTMLLinkElement)) {
-    return el.rel === 'stylesheet' ? el.sheet !== null : true;
+  if (isInstanceOf(element, win.HTMLLinkElement)) {
+    return element.rel === 'stylesheet' ? element.sheet !== null : true;
   }
 
-  if (isInstanceOf(el, win.HTMLObjectElement)) {
-    return !!el.contentDocument || !!el.getSVGDocument();
+  if (isInstanceOf(element, win.HTMLObjectElement)) {
+    return !!element.contentDocument || !!element.getSVGDocument();
   }
 
-  if (isInstanceOf(el, win.HTMLScriptElement)) {
+  if (isInstanceOf(element, win.HTMLScriptElement)) {
     return true;
   }
 
-  if (isInstanceOf(el, win.HTMLStyleElement)) {
-    return !!el.sheet;
+  if (isInstanceOf(element, win.HTMLStyleElement)) {
+    return !!element.sheet;
   }
 
-  if (isInstanceOf(el, win.HTMLTrackElement)) {
+  if (isInstanceOf(element, win.HTMLTrackElement)) {
     const READY_STATE_LOADED = 2;
-    return el.readyState === READY_STATE_LOADED;
+    return element.readyState === READY_STATE_LOADED;
   }
 
-  return getLoadableElements(el).every(isLoaded);
+  return getLoadableElements(element).every(isLoaded);
 }
 
 /**
@@ -336,21 +336,21 @@ export function toPx(value: number): string {
 /**
  * Waits until the given element is connected to the DOM.
  *
- * @param el - The element to check.
+ * @param element - The element to check.
  * @returns A promise that resolves when the element is connected.
  */
-export function waitUntilConnected(el: HTMLElement): Promise<void> {
+export function waitUntilConnected(element: HTMLElement): Promise<void> {
   return new Promise((resolve) => {
-    if (el.isConnected) {
+    if (element.isConnected) {
       resolve();
       return;
     }
 
     // Obsidian's `el.onNodeInserted` uses a `node-inserted` CSS keyframe from Obsidian's stylesheet.
     // The agnostic equivalent instead observes the element's document for it becoming connected.
-    const ownerDocument = el.ownerDocument;
-    const observer = new (getNodeWindow(el)).MutationObserver(() => {
-      if (!el.isConnected) {
+    const ownerDocument = element.ownerDocument;
+    const observer = new (getNodeWindow(element)).MutationObserver(() => {
+      if (!element.isConnected) {
         return;
       }
 
@@ -368,25 +368,25 @@ export function waitUntilConnected(el: HTMLElement): Promise<void> {
  * NOT ported (no internal caller needs them); extend this if a consumer does — and revalidate against
  * `enhance.js` (see the `@file` note and `CLAUDE.md`).
  *
- * @param el - The element to apply the info to.
+ * @param element - The element to apply the info to.
  * @param o - The element info (or a bare class string).
  */
-function applyDomElementInfo(el: HTMLElement, o: DomElementInfo | string | undefined): void {
+function applyDomElementInfo(element: HTMLElement, o: DomElementInfo | string | undefined): void {
   const info: DomElementInfo = typeof o === 'string' ? { cls: o } : o ?? {};
 
   if (info.cls !== undefined) {
-    el.className = Array.isArray(info.cls) ? info.cls.join(' ') : info.cls;
+    element.className = Array.isArray(info.cls) ? info.cls.join(' ') : info.cls;
   }
   if (info.text !== undefined) {
-    setElementText(el, info.text);
+    setElementText(element, info.text);
   }
   if (info.attr) {
-    setElementAttributes(el, info.attr);
+    setElementAttributes(element, info.attr);
   }
   if (info.title !== undefined) {
-    el.title = info.title;
+    element.title = info.title;
   }
-  insertIntoParent(el, info);
+  insertIntoParent(element, info);
 }
 
 function createHtmlElement<K extends keyof HTMLElementTagNameMap>(tag: K, o?: DomElementInfo | string): HTMLElementTagNameMap[K] {

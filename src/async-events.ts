@@ -227,9 +227,9 @@ export interface GenericAsyncEventSource {
   /**
    * Remove an event listener by reference.
    *
-   * @param eventRef - The reference to remove.
+   * @param eventReference - The reference to remove.
    */
-  offref(eventRef: AsyncEventRef): void;
+  offref(eventReference: AsyncEventRef): void;
 }
 
 /**
@@ -358,22 +358,22 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
   /**
    * Remove an event listener by reference.
    *
-   * @param eventRef - The reference to the event listener.
+   * @param eventReference - The reference to the event listener.
    *
    * @example
    * ```ts
    * events.offref(myRef);
    * ```
    */
-  public offref(eventRef: AsyncEventRef): void {
-    const eventReferences = this.eventRefsMap.get(eventRef.name);
+  public offref(eventReference: AsyncEventRef): void {
+    const eventReferences = this.eventRefsMap.get(eventReference.name);
     if (!eventReferences) {
       return;
     }
 
-    filterInPlace(eventReferences, (storedEventReference) => storedEventReference !== eventRef);
+    filterInPlace(eventReferences, (storedEventReference) => storedEventReference !== eventReference);
     if (eventReferences.length === 0) {
-      this.eventRefsMap.delete(eventRef.name);
+      this.eventRefsMap.delete(eventReference.name);
     }
   }
 
@@ -634,10 +634,10 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
       /**
        * Remove an event listener by reference.
        *
-       * @param eventRef - The event reference to remove.
+       * @param eventReference - The event reference to remove.
        */
-      public offref(eventRef: AsyncEventRef): void {
-        this.#asyncEvents.offref(eventRef);
+      public offref(eventReference: AsyncEventRef): void {
+        this.#asyncEvents.offref(eventReference);
       }
 
       /**

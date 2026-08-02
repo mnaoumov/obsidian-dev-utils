@@ -26,11 +26,11 @@ export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
   /**
    * Creates a new multiple file component.
    *
-   * @param containerEl - The container element of the component.
+   * @param containerElement - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement) {
+  public constructor(containerElement: HTMLElement) {
     super({
-      containerEl,
+      containerEl: containerElement,
       cssClass: CssClass.MultipleFileComponent,
       type: 'file'
     });

@@ -47,11 +47,11 @@ export class WeekComponent extends TypedRangeTextComponent<IsoWeek> {
   /**
    * Creates a new Week component.
    *
-   * @param containerEl - The container element of the component.
+   * @param containerElement - The container element of the component.
    */
-  public constructor(containerEl: HTMLElement) {
+  public constructor(containerElement: HTMLElement) {
     super({
-      containerEl,
+      containerEl: containerElement,
       cssClass: CssClass.WeekComponent,
       type: 'week'
     });
