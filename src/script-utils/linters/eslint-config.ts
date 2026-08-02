@@ -694,6 +694,18 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
           }
         ],
         /*
+         * Unsatisfiable alongside `perfectionist/sort-classes`, which is configured here as a plain
+         * alphabetical sort. This rule wants a category order (all fields, then the constructor, then all
+         * methods), so the extremely common `private _x` field paired with a `public get x()` accessor is
+         * rejected by whichever rule loses: alphabetically the accessor precedes the field, by category the
+         * field precedes the accessor. Unlike `prefer-global-this` the clash produces no
+         * `ESLintCircularFixesWarning`, only because this rule ships no fixer -- both rules are `error`, so no
+         * arrangement of members satisfies them both. The alphabetical sort is the one already rolled out
+         * across the plugins consuming this config, so it keeps precedence. Re-enabling this rule would mean
+         * giving `perfectionist/sort-classes` a matching `groups` option and reordering every class.
+         */
+        'unicorn/consistent-class-member-order': 'off',
+        /*
          * The default style for `node:path` is a default import, but this codebase imports its members by name
          * throughout, consistently with every other `node:` module it uses. Configure the rule to enforce the
          * style actually in use rather than annotate 17 sites that are not going to change.
