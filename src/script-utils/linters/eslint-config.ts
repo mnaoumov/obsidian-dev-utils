@@ -673,6 +673,42 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * el: HTMLElement)`) are renamed while `this.el` and `Enum.Member` references are left dangling. Apply
          * its reports by hand; never run `--fix` over it.
          */
+        /*
+         * A good rule, but its default prefixes force ungrammatical names: `memberPageExists` would become
+         * `isMemberPageExists` rather than `doesMemberPageExist`. These entries EXTEND the defaults (`is`,
+         * `has`, `can`, `should`, ...) rather than replacing them, so a boolean with no boolean-reading prefix
+         * at all is still rejected -- the rule just stops insisting the prefix come from a shorter list.
+         */
+        'unicorn/consistent-boolean-name': [
+          'error',
+          {
+            prefixes: {
+              allows: true,
+              contains: true,
+              does: true,
+              includes: true,
+              must: true,
+              needs: true,
+              supports: true
+            }
+          }
+        ],
+        /*
+         * The default style for `node:path` is a default import, but this codebase imports its members by name
+         * throughout, consistently with every other `node:` module it uses. Configure the rule to enforce the
+         * style actually in use rather than annotate 17 sites that are not going to change.
+         */
+        'unicorn/import-style': [
+          'error',
+          {
+            styles: {
+              // Keyed by the UNPREFIXED module name: the rule's own table uses `path`, so a `node:path` key never matches.
+              path: {
+                named: true
+              }
+            }
+          }
+        ],
         'unicorn/name-replacements': [
           'error',
           {
