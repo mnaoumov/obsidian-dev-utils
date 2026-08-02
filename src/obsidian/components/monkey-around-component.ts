@@ -298,13 +298,13 @@ export class MonkeyAroundComponent extends ComponentEx {
    * Registers a patch using raw factories (advanced API).
    *
    * @typeParam $Object - The object to patch.
-   * @param obj - The object to patch.
+   * @param $object - The object to patch.
    * @param factories - The factories to apply to the object.
    */
-  public registerPatch<$Object extends object>(obj: $Object, factories: Factories<$Object>): void {
+  public registerPatch<$Object extends object>($object: $Object, factories: Factories<$Object>): void {
     this.ensureLoaded();
 
-    const uninstaller = around(obj, factories);
+    const uninstaller = around($object, factories);
     this.register(uninstaller);
   }
 }
@@ -314,23 +314,23 @@ export class MonkeyAroundComponent extends ComponentEx {
  * Better strongly-typed version of `monkey-around`.
  *
  * @typeParam $Object - The object to patch.
- * @param obj - The object to patch.
+ * @param $object - The object to patch.
  * @param factories - The factories to apply to the object.
  * @returns The uninstaller that removes the patch when called.
  */
-export function around<$Object extends object>(obj: $Object, factories: Factories<$Object>): Uninstaller {
-  return originalAround(obj as GenericObject, factories as OriginalFactories<GenericObject>);
+export function around<$Object extends object>($object: $Object, factories: Factories<$Object>): Uninstaller {
+  return originalAround($object as GenericObject, factories as OriginalFactories<GenericObject>);
 }
 
 /**
  * Checks if a function has a specific patch token.
  *
- * @param fn - The function to check.
+ * @param $function - The function to check.
  * @param patchToken - The patch token to check for.
  * @returns Whether the function has the patch token.
  */
-export function hasPatchToken(fn: GenericFunction, patchToken: symbol): boolean {
-  return getMonkeyAroundPatches().get(fn) === patchToken;
+export function hasPatchToken($function: GenericFunction, patchToken: symbol): boolean {
+  return getMonkeyAroundPatches().get($function) === patchToken;
 }
 
 function getMonkeyAroundPatches(): WeakMap<GenericFunction, symbol> {

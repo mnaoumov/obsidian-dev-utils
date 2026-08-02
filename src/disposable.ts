@@ -504,45 +504,45 @@ export async function disposeAsync(asyncDisposable: AsyncDisposable): Promise<vo
 /**
  * Type guard to check if an object implements the {@link AsyncDisposable} interface.
  *
- * @param obj - the object to check for the {@link AsyncDisposable} interface
+ * @param $object - the object to check for the {@link AsyncDisposable} interface
  * @returns Whether the object implements the {@link AsyncDisposable} interface
  */
-export function isAsyncDisposable(obj: unknown): obj is AsyncDisposable {
-  const asyncDisposable = obj as Partial<AsyncDisposable>;
+export function isAsyncDisposable($object: unknown): $object is AsyncDisposable {
+  const asyncDisposable = $object as Partial<AsyncDisposable>;
   return !!asyncDisposable[Symbol.asyncDispose];
 }
 
 /**
  * Type guard to check if an object implements the {@link AsyncDisposableEx} interface.
  *
- * @param obj - the object to check for the {@link AsyncDisposableEx} interface
+ * @param $object - the object to check for the {@link AsyncDisposableEx} interface
  * @returns Whether the object implements the {@link AsyncDisposableEx} interface
  */
-export function isAsyncDisposableEx(obj: unknown): obj is AsyncDisposableEx {
-  const asyncDisposableEx = obj as Partial<AsyncDisposableEx>;
-  return isAsyncDisposable(obj) && typeof asyncDisposableEx.asyncDispose === 'function';
+export function isAsyncDisposableEx($object: unknown): $object is AsyncDisposableEx {
+  const asyncDisposableEx = $object as Partial<AsyncDisposableEx>;
+  return isAsyncDisposable($object) && typeof asyncDisposableEx.asyncDispose === 'function';
 }
 
 /**
  * Type guard to check if an object implements the {@link Disposable} interface.
  *
- * @param obj - the object to check for the {@link Disposable} interface
+ * @param $object - the object to check for the {@link Disposable} interface
  * @returns Whether the object implements the {@link Disposable} interface
  */
-export function isDisposable(obj: unknown): obj is Disposable {
-  const disposable = obj as Partial<Disposable>;
+export function isDisposable($object: unknown): $object is Disposable {
+  const disposable = $object as Partial<Disposable>;
   return !!disposable[Symbol.dispose];
 }
 
 /**
  * Type guard to check if an object implements the {@link DisposableEx} interface.
  *
- * @param obj - the object to check for the {@link DisposableEx} interface
+ * @param $object - the object to check for the {@link DisposableEx} interface
  * @returns Whether the object implements the {@link DisposableEx} interface
  */
-export function isDisposableEx(obj: unknown): obj is DisposableEx {
-  const disposableEx = obj as Partial<DisposableEx>;
-  return isDisposable(obj) && typeof disposableEx.dispose === 'function';
+export function isDisposableEx($object: unknown): $object is DisposableEx {
+  const disposableEx = $object as Partial<DisposableEx>;
+  return isDisposable($object) && typeof disposableEx.dispose === 'function';
 }
 
 /**

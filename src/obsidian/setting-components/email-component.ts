@@ -66,10 +66,10 @@ export class EmailComponent extends TypedTextComponent<string> implements TextBa
   /**
    * Converts a string to an email address.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The email address.
    */
-  public override valueFromString(str: string): string {
-    return str;
+  public override valueFromString($string: string): string {
+    return $string;
   }
 }

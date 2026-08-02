@@ -89,11 +89,11 @@ export function assertNonNullable<T extends NullableConstraint<T>>(value: T, err
  * Ensures that a value is a generic object, returning it with narrowed type.
  *
  * @typeParam T - The type of the value.
- * @param obj - The value to ensure.
+ * @param $object - The value to ensure.
  * @returns The value as a generic object.
  */
-export function ensureGenericObject<T>(obj: T): GenericObject<T> {
-  return obj as GenericObject<T>;
+export function ensureGenericObject<T>($object: T): GenericObject<T> {
+  return $object as GenericObject<T>;
 }
 
 /**

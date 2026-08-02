@@ -321,11 +321,11 @@ export function ensureEndsWith(params: EnsureEndsWithParams): string {
  *
  * It replaces `CRLF` line endings with `LF`.
  *
- * @param str - The string.
+ * @param $string - The string.
  * @returns The string with `LF` line endings.
  */
-export function ensureLfEndings(str: string): string {
-  return str.replaceAll(/\r\n?/g, '\n');
+export function ensureLfEndings($string: string): string {
+  return $string.replaceAll(/\r\n?/g, '\n');
 }
 
 /**
@@ -342,24 +342,24 @@ export function ensureStartsWith(params: EnsureStartsWithParams): string {
 /**
  * Escapes special characters in a string.
  *
- * @param str - The string to escape.
+ * @param $string - The string to escape.
  * @returns The escaped string.
  */
-export function escape(str: string): string {
-  return replace(str, ESCAPE_MAP);
+export function escape($string: string): string {
+  return replace($string, ESCAPE_MAP);
 }
 
 /**
  * Returns a function that maps LF-normalized offsets to original offsets.
  *
- * @param str - The string to get the LF-normalized indices from.
+ * @param $string - The string to get the LF-normalized indices from.
  * @returns A function that maps LF-normalized offsets to original offsets.
  */
-export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOffset: number) => number {
+export function getLfNormalizedOffsetToOriginalOffsetMapper($string: string): (lfOffset: number) => number {
   const lfOffsetToOriginalOffsetMap: number[] = [];
 
-  for (let index = 0; index < str.length; index++) {
-    if (str[index] === CR && str[index + 1] === LF) {
+  for (let index = 0; index < $string.length; index++) {
+    if ($string[index] === CR && $string[index + 1] === LF) {
       lfOffsetToOriginalOffsetMap.push(index + 1);
       index++;
     } else {
@@ -372,7 +372,7 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
       return lfOffset;
     }
     if (lfOffset >= lfOffsetToOriginalOffsetMap.length) {
-      return lfOffset - lfOffsetToOriginalOffsetMap.length + str.length;
+      return lfOffset - lfOffsetToOriginalOffsetMap.length + $string.length;
     }
 
     assert(lfOffsetToOriginalOffsetMap[lfOffset] !== undefined, 'Could not map offset');
@@ -424,44 +424,44 @@ export function insertAt(params: InsertAtParams): string {
 /**
  * Converts a string into a valid JavaScript variable name by replacing invalid characters with underscores.
  *
- * @param str - The string to convert.
+ * @param $string - The string to convert.
  * @returns The valid variable name.
  */
-export function makeValidVariableName(str: string): string {
+export function makeValidVariableName($string: string): string {
   return replaceAll({
     replacer: '_',
     searchValue: /[^a-zA-Z0-9_]/g,
-    str
+    str: $string
   });
 }
 
 /**
  * Normalizes a string by converting it to the NFC form and replacing non-breaking spaces with regular spaces.
  *
- * @param str - The string to normalize.
+ * @param $string - The string to normalize.
  * @returns The normalized string.
  */
-export function normalizeString(str: string): string {
+export function normalizeString($string: string): string {
   return replaceAll({
     replacer: ' ',
     searchValue: /\u00A0|\u202F/g,
-    str
+    str: $string
   }).normalize('NFC');
 }
 
 /**
  * Replaces occurrences of strings in a given string based on a replacements map.
  *
- * @param str - The string to perform replacements on.
+ * @param $string - The string to perform replacements on.
  * @param replacementsMap - An object mapping strings to their replacement values.
  * @returns The modified string with replacements applied.
  */
-export function replace(str: string, replacementsMap: Record<string, string>): string {
+export function replace($string: string, replacementsMap: Record<string, string>): string {
   const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
   return replaceAll({
     replacer: ({ substring: source }) => ensureNonNullable(replacementsMap[source]),
     searchValue: regExp,
-    str
+    str: $string
   });
 }
 
@@ -606,11 +606,11 @@ export function trimStart(params: TrimStartParams): string {
 /**
  * Unescapes a string by replacing escape sequences with their corresponding characters.
  *
- * @param str - The string to unescape.
+ * @param $string - The string to unescape.
  * @returns The unescaped string.
  */
-export function unescape(str: string): string {
-  return replace(str, UNESCAPE_MAP);
+export function unescape($string: string): string {
+  return replace($string, UNESCAPE_MAP);
 }
 
 /**

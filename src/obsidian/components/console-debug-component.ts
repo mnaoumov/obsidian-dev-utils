@@ -28,15 +28,15 @@ export class ConsoleDebugComponent extends ComponentEx {
    * Logs a message to the console under the plugin's debugger namespace.
    *
    * @param message - The message to log.
-   * @param args - Additional arguments to log.
+   * @param $arguments - Additional arguments to log.
    */
-  public consoleDebug(message: string, ...args: unknown[]): void {
+  public consoleDebug(message: string, ...$arguments: unknown[]): void {
     // Skip the `consoleDebug()` call itself
     const FRAMES_TO_SKIP = 1;
     const pluginDebugger = getDebugger(this.pluginId, FRAMES_TO_SKIP);
     if (!this._loaded) {
       pluginDebugger('Plugin is unloaded but sent the following message:');
     }
-    pluginDebugger(message, ...args);
+    pluginDebugger(message, ...$arguments);
   }
 }

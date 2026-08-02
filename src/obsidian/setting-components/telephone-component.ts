@@ -68,10 +68,10 @@ export class TelephoneComponent extends TypedTextComponent<string> implements Te
   /**
    * Gets the value from a string.
    *
-   * @param str - The string to get the value from.
+   * @param $string - The string to get the value from.
    * @returns The value from the string.
    */
-  public override valueFromString(str: string): string {
-    return str;
+  public override valueFromString($string: string): string {
+    return $string;
   }
 }

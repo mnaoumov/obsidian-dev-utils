@@ -52,17 +52,17 @@ const PASSTHROUGH_PROPS = new Set<string | symbol>([
  * optional properties without triggering the proxy's error on missing props.
  *
  * @typeParam T - The object type.
- * @param obj - The object to bypass.
+ * @param $object - The object to bypass.
  * @returns The unwrapped object.
  */
-export function bypassStrictProxy<T>(obj: T): T {
-  if (!isObjectLike(obj)) {
-    return obj;
+export function bypassStrictProxy<T>($object: T): T {
+  if (!isObjectLike($object)) {
+    return $object;
   }
-  if (!(STRICT_PROXY_TARGET_SYMBOL in obj)) {
-    return obj;
+  if (!(STRICT_PROXY_TARGET_SYMBOL in $object)) {
+    return $object;
   }
-  return obj[STRICT_PROXY_TARGET_SYMBOL] as T;
+  return $object[STRICT_PROXY_TARGET_SYMBOL] as T;
 }
 
 /**

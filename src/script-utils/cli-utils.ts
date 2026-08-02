@@ -168,11 +168,11 @@ class SuccessTaskResult extends CliTaskResult {
  * a specific shell (cmd.exe, PowerShell, sh) must apply shell-specific
  * escaping on top — see {@link cmdEscapeCommandLine}.
  *
- * @param args - The array of command-line arguments to convert.
+ * @param $arguments - The array of command-line arguments to convert.
  * @returns A string representing the command-line invocation.
  */
-export function toCommandLine(args: string[]): string {
-  return args.map((argument) => argvQuote(argument)).join(' ');
+export function toCommandLine($arguments: string[]): string {
+  return $arguments.map((argument) => argvQuote(argument)).join(' ');
 }
 
 /**
@@ -190,11 +190,11 @@ export function toCommandLine(args: string[]): string {
  * Windows, use {@link toCommandLine} plus {@link cmdEscapeCommandLine} instead —
  * the two conventions are not interchangeable.
  *
- * @param args - The array of command-line arguments to convert.
+ * @param $arguments - The array of command-line arguments to convert.
  * @returns A string representing the command-line invocation for a POSIX shell.
  */
-export function toPosixCommandLine(args: string[]): string {
-  return args.map((argument) => posixQuote(argument)).join(' ');
+export function toPosixCommandLine($arguments: string[]): string {
+  return $arguments.map((argument) => posixQuote(argument)).join(' ');
 }
 
 /**
@@ -219,29 +219,29 @@ const POSIX_ESCAPED_SINGLE_QUOTE = String.raw`'\''`;
  * unchanged. Implements the ArgvQuote algorithm from
  * {@link https://learn.microsoft.com/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way | Everyone quotes command line arguments the wrong way}.
  *
- * @param arg - The raw argument string.
+ * @param argument - The raw argument string.
  * @returns The quoted argument string.
  */
-function argvQuote(arg: string): string {
-  if (arg.length > 0 && !/[\s\t\n\v"]/.test(arg)) {
-    return arg;
+function argvQuote(argument: string): string {
+  if (argument.length > 0 && !/[\s\t\n\v"]/.test(argument)) {
+    return argument;
   }
 
   const BACKSLASH_ESCAPE_FACTOR = 2;
   let result = '"';
-  for (let index = 0; index < arg.length; index++) {
+  for (let index = 0; index < argument.length; index++) {
     let numberBackslashes = 0;
-    while (index < arg.length && arg[index] === '\\') {
+    while (index < argument.length && argument[index] === '\\') {
       index++;
       numberBackslashes++;
     }
 
-    if (index === arg.length) {
+    if (index === argument.length) {
       result += '\\'.repeat(numberBackslashes * BACKSLASH_ESCAPE_FACTOR);
       break;
     }
 
-    const ch = arg.charAt(index);
+    const ch = argument.charAt(index);
     result += ch === '"' ? `${'\\'.repeat(numberBackslashes * BACKSLASH_ESCAPE_FACTOR + 1)}"` : '\\'.repeat(numberBackslashes) + ch;
   }
 
@@ -254,14 +254,14 @@ function argvQuote(arg: string): string {
  * An empty argument becomes `''`; an argument of only safe characters is
  * returned unchanged; anything else is single-quoted.
  *
- * @param arg - The raw argument string.
+ * @param argument - The raw argument string.
  * @returns The quoted argument string.
  */
-function posixQuote(arg: string): string {
-  if (POSIX_SAFE_ARG_RE.test(arg)) {
-    return arg;
+function posixQuote(argument: string): string {
+  if (POSIX_SAFE_ARG_RE.test(argument)) {
+    return argument;
   }
-  return `'${replaceAll({ replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE, str: arg })}'`;
+  return `'${replaceAll({ replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE, str: argument })}'`;
 }
 
 /**

@@ -620,27 +620,27 @@ export function castTo<T>(value: unknown): T {
  * Clones an object, including non-enumerable properties.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to clone.
+ * @param $object - The object to clone.
  * @returns A new object with the same properties as the original object, including non-enumerable properties.
  */
-export function cloneWithNonEnumerableProperties<T extends object>(obj: T): T {
-  return Object.create(getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj)) as T;
+export function cloneWithNonEnumerableProperties<T extends object>($object: T): T {
+  return Object.create(getPrototypeOf($object), Object.getOwnPropertyDescriptors($object)) as T;
 }
 
 /**
  * Deletes multiple properties from an object.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to delete the properties from.
+ * @param $object - The object to delete the properties from.
  * @param propertyNames - The names of the properties to delete.
  * @returns `true` if any of the properties were present, otherwise `false`.
  */
 // eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was deleted.
-export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof T)[]): boolean {
+export function deleteProperties<T extends object>($object: T, propertyNames: (keyof T)[]): boolean {
   let hasDeletedAny = false;
 
   for (const propertyName of propertyNames) {
-    hasDeletedAny = deleteProperty(obj, propertyName) || hasDeletedAny;
+    hasDeletedAny = deleteProperty($object, propertyName) || hasDeletedAny;
   }
 
   return hasDeletedAny;
@@ -650,17 +650,17 @@ export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof
  * Deletes a property from an object.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to delete the property from.
+ * @param $object - The object to delete the property from.
  * @param propertyName - The name of the property to delete.
  * @returns `true` if the property was present, otherwise `false`.
  */
 // eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether the property was deleted.
-export function deleteProperty<T extends object>(obj: T, propertyName: keyof T): boolean {
-  if (!Object.hasOwn(obj, propertyName)) {
+export function deleteProperty<T extends object>($object: T, propertyName: keyof T): boolean {
+  if (!Object.hasOwn($object, propertyName)) {
     return false;
   }
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
-  delete obj[propertyName];
+  delete $object[propertyName];
   return true;
 }
 
@@ -689,11 +689,11 @@ export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T
  * Gets all entries of an object.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to get the entries of.
+ * @param $object - The object to get the entries of.
  * @returns An array of all entries of the object.
  */
-export function getAllEntries<T extends object>(obj: T): [StringKeys<T>, T[StringKeys<T>]][] {
-  return getAllKeys(obj).map((key) => [key, obj[key]]);
+export function getAllEntries<T extends object>($object: T): [StringKeys<T>, T[StringKeys<T>]][] {
+  return getAllKeys($object).map((key) => [key, $object[key]]);
 }
 
 /**
@@ -701,12 +701,12 @@ export function getAllEntries<T extends object>(obj: T): [StringKeys<T>, T[Strin
  * Includes fields and properties.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to get the keys of.
+ * @param $object - The object to get the keys of.
  * @returns An array of all keys of the object.
  */
-export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
+export function getAllKeys<T extends object>($object: T): StringKeys<T>[] {
   const keys: StringKeys<T>[] = [];
-  let current: null | object = obj;
+  let current: null | object = $object;
   while (current) {
     const descriptors = Object.getOwnPropertyDescriptors(current);
     for (const [key, descriptor] of Object.entries(descriptors)) {
@@ -740,12 +740,12 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
 /**
  * Gets the value of a nested property from an object.
  *
- * @param obj - The object to get the nested property value from.
+ * @param $object - The object to get the nested property value from.
  * @param path - The path to the nested property.
  * @returns The value of the nested property.
  */
-export function getNestedPropertyValue(obj: GenericObject, path: string): unknown {
-  let node: GenericObject | undefined = obj;
+export function getNestedPropertyValue($object: GenericObject, path: string): unknown {
+  let node: GenericObject | undefined = $object;
   const keys = path.split(KEY_SEPARATOR);
   for (const key of keys) {
     if (node === undefined) {
@@ -846,49 +846,49 @@ export function nameof<T extends object>(name: StringKeys<T>): StringKeys<T> {
  * ```
  *
  * @typeParam T - The target type with optional properties to normalize.
- * @param obj - The object to normalize, allowing explicit `undefined` for optional properties.
+ * @param $object - The object to normalize, allowing explicit `undefined` for optional properties.
  * @returns The normalized object, compatible with `exactOptionalPropertyTypes`.
  */
-export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): T {
-  return obj as T;
+export function normalizeOptionalProperties<T>($object: UndefinedOnPartialDeep<T>): T {
+  return $object as T;
 }
 /**
  * Removes all `undefined` properties from an object when there are no mandatory keys with `undefined` values.
  *
  * @typeParam Type - The type of the object.
- * @param args - The arguments to the function.
+ * @param $arguments - The arguments to the function.
  * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object>(
-  ...args: RemoveUndefinedOverload<Type>
+  ...$arguments: RemoveUndefinedOverload<Type>
 ): Type;
 /**
  * Removes all `undefined` properties from an object when there are mandatory keys with `undefined` values.
  *
  * @typeParam Type - The type of the object.
  * @typeParam KeysToKeep - The keys to keep.
- * @param args - The arguments to the function.
+ * @param $arguments - The arguments to the function.
  * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object, const KeysToKeep extends readonly string[]>(
-  ...args: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
+  ...$arguments: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
 ): Type;
 /**
  * Removes all `undefined` properties from an object.
  *
  * @typeParam Type - The type of the object.
- * @param obj - The object to remove `undefined` properties from.
+ * @param $object - The object to remove `undefined` properties from.
  * @param keysToKeep - The keys to keep.
  * @returns The object with all `undefined` properties removed.
  */
-export function removeUndefinedProperties<Type extends object>(obj: Type, keysToKeep?: readonly string[]): Type {
-  for (const [key, value] of Object.entries(obj) as [StringKeys<Type>, unknown][]) {
+export function removeUndefinedProperties<Type extends object>($object: Type, keysToKeep?: readonly string[]): Type {
+  for (const [key, value] of Object.entries($object) as [StringKeys<Type>, unknown][]) {
     if (value === undefined && !keysToKeep?.includes(key)) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
-      delete obj[key];
+      delete $object[key];
     }
   }
-  return obj;
+  return $object;
 }
 
 /**

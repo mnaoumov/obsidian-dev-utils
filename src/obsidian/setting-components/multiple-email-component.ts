@@ -39,11 +39,11 @@ export class MultipleEmailComponent extends TypedTextComponent<readonly string[]
   /**
    * Converts a string to an email address.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The email address.
    */
-  public override valueFromString(str: string): readonly string[] {
-    return str.split(',').map((email) => email.trim());
+  public override valueFromString($string: string): readonly string[] {
+    return $string.split(',').map((email) => email.trim());
   }
 
   /**

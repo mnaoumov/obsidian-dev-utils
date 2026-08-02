@@ -30,7 +30,7 @@ export interface MockImplementationParams<
    * @param $arguments - The real call arguments.
    * @returns The return value of the method.
    */
-  impl(this: T, originalImplementation: F, ...args: Parameters<F>): ReturnType<F>;
+  impl(this: T, originalImplementation: F, ...$arguments: Parameters<F>): ReturnType<F>;
 
   /**
    * The method name.

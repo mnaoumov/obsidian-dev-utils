@@ -77,10 +77,10 @@ export class NumberComponent extends TypedRangeTextComponent<number> implements 
   /**
    * Converts a string to a number.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The number.
    */
-  public override valueFromString(str: string): number {
-    return parseInt(str, 10);
+  public override valueFromString($string: string): number {
+    return parseInt($string, 10);
   }
 }

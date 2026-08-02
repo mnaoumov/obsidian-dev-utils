@@ -454,13 +454,13 @@ export async function gitPush(): Promise<void> {
  * - `--no-demo-vault` — skip archiving the plugin's demo vault (`demo-vault/`) as a release artifact.
  * - `--no-release` — run all local steps but skip the push and the GitHub release.
  *
- * @param args - The command-line arguments to parse (typically `process.argv.slice(2)`).
+ * @param $arguments - The command-line arguments to parse (typically `process.argv.slice(2)`).
  * @returns The {@link ParsedVersionArgs} containing the version update type and the options.
  */
-export function parseVersionArguments(args: string[]): ParsedVersionArgs {
+export function parseVersionArguments($arguments: string[]): ParsedVersionArgs {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
-    args,
+    args: $arguments,
     options: {
       'no-build': { type: 'boolean' },
       'no-changelog-editing': { type: 'boolean' },

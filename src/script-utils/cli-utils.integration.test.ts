@@ -20,8 +20,8 @@ const ECHO_ARGS = resolve(dirname(fileURLToPath(import.meta.url)), '../../script
  * @param $arguments - The arguments to pass.
  * @returns The argv array as received by the child process.
  */
-async function echoArguments(...args: string[]): Promise<string[]> {
-  const result = await exec(['node', ECHO_ARGS, ...args], { isQuiet: true });
+async function echoArguments(...$arguments: string[]): Promise<string[]> {
+  const result = await exec(['node', ECHO_ARGS, ...$arguments], { isQuiet: true });
   return JSON.parse(result) as string[];
 }
 

@@ -103,12 +103,12 @@ export function noopAsync(): Promise<void> {
  * Makes an async function that calls the original async function with the provided arguments and omits the return value.
  *
  * @typeParam Arguments - Arguments to be passed to the function.
- * @param fn - Function to be called.
+ * @param $function - Function to be called.
  * @returns An async function that calls the original function with the provided arguments and omits the return value.
  */
-export function omitAsyncReturnType<Arguments extends unknown[]>(fn: GenericAsyncFunction<Arguments>): GenericAsyncVoidFunction<Arguments> {
+export function omitAsyncReturnType<Arguments extends unknown[]>($function: GenericAsyncFunction<Arguments>): GenericAsyncVoidFunction<Arguments> {
   return async (...$arguments: Arguments) => {
-    await fn(...$arguments);
+    await $function(...$arguments);
   };
 }
 
@@ -146,14 +146,14 @@ type MapToArgumentNames<TArguments extends readonly unknown[]> = {
  * This is useful for creating a new instance of a function that has the same behavior but is not strictly equal to the original function.
  *
  * @typeParam TFunction - The type of the function to clone.
- * @param fn - The function to clone.
+ * @param $function - The function to clone.
  * @returns A new function that has the same behavior as the original function.
  */
-export function cloneFunction<TFunction extends GenericFunction>(fn: TFunction): TFunction {
+export function cloneFunction<TFunction extends GenericFunction>($function: TFunction): TFunction {
   return clonedFunction as TFunction;
 
   function clonedFunction(this: ThisParameterType<TFunction>, ...$arguments: Parameters<TFunction>): ReturnType<TFunction> {
-    return fn.apply(this, $arguments) as ReturnType<TFunction>;
+    return $function.apply(this, $arguments) as ReturnType<TFunction>;
   }
 }
 /**
@@ -197,11 +197,11 @@ export function createFunction<TFunction extends GenericFunction>(
  * Makes a function that calls the original function with the provided arguments and omits the return value.
  *
  * @typeParam Arguments - Arguments to be passed to the function.
- * @param fn - Function to be called.
+ * @param $function - Function to be called.
  * @returns A function that calls the original function with the provided arguments and omits the return value.
  */
-export function omitReturnType<Arguments extends unknown[]>(fn: GenericFunction<Arguments>): GenericVoidFunction<Arguments> {
+export function omitReturnType<Arguments extends unknown[]>($function: GenericFunction<Arguments>): GenericVoidFunction<Arguments> {
   return (...$arguments: Arguments) => {
-    fn(...$arguments);
+    $function(...$arguments);
   };
 }

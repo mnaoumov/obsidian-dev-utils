@@ -497,21 +497,21 @@ export function parseFrontmatterLinks(frontmatter: unknown): ParseFrontmatterLin
 /**
  * Parses a link into its components.
  *
- * @param str - The link to parse.
+ * @param $string - The link to parse.
  * @returns The parsed link.
  */
-export function parseLink(str: string): null | ParseLinkResult {
-  const links = parseLinks(str);
-  return links[0]?.raw === str ? links[0] : null;
+export function parseLink($string: string): null | ParseLinkResult {
+  const links = parseLinks($string);
+  return links[0]?.raw === $string ? links[0] : null;
 }
 
 /**
  * Parses all links in a string.
  *
- * @param str - The string to parse the links in.
+ * @param $string - The string to parse the links in.
  * @returns The parsed links.
  */
-export function parseLinks(str: string): ParseLinkResult[] {
+export function parseLinks($string: string): ParseLinkResult[] {
   const embedSymbolOffsets = new Set<number>();
 
   const EMBED_LINK_PREFIX = '![';
@@ -525,7 +525,7 @@ export function parseLinks(str: string): ParseLinkResult[] {
       return `[${dummyAlias}](${link})`;
     },
     searchValue: EMBED_INSIDE_LINK_REG_EXP,
-    str
+    str: $string
   });
 
   const noEmbedString = replaceAll({
@@ -547,11 +547,11 @@ export function parseLinks(str: string): ParseLinkResult[] {
     let link: ParseLinkResult;
     switch (node.type) {
       case 'link': {
-        link = parseLinkNode(node as Link, str);
+        link = parseLinkNode(node as Link, $string);
         break;
       }
       case 'wikiLink': {
-        link = parseWikilinkNode(node as WikiLinkNode, str);
+        link = parseWikilinkNode(node as WikiLinkNode, $string);
         break;
       }
       default: {
@@ -578,16 +578,16 @@ export function parseLinks(str: string): ParseLinkResult[] {
     extractTextLinks({
       endOffset: link.startOffset - 1,
       startOffset: textStartOffset,
-      str,
+      str: $string,
       textLinks
     });
     textStartOffset = link.endOffset + 1;
   }
 
   extractTextLinks({
-    endOffset: str.length - 1,
+    endOffset: $string.length - 1,
     startOffset: textStartOffset,
-    str,
+    str: $string,
     textLinks
   });
 

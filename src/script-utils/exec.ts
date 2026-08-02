@@ -480,11 +480,11 @@ interface SpawnViaShellParams {
  *
  * The platform branch here MUST stay in sync with the one in {@link spawnViaShell}.
  *
- * @param args - The argument array to quote and join.
+ * @param $arguments - The argument array to quote and join.
  * @returns The quoted command-line string for the current platform's shell.
  */
-function buildCommandLine(args: string[]): string {
-  return process.platform === 'win32' ? toCommandLine(args) : toPosixCommandLine(args);
+function buildCommandLine($arguments: string[]): string {
+  return process.platform === 'win32' ? toCommandLine($arguments) : toPosixCommandLine($arguments);
 }
 
 /**

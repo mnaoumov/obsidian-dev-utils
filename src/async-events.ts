@@ -164,19 +164,19 @@ export interface AsyncEventTrigger<EventMap extends EventMapConstraint<EventMap>
    *
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
-   * @param args - The data to pass to the event listeners.
+   * @param $arguments - The data to pass to the event listeners.
    */
-  trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void;
+  trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): void;
 
   /**
    * Trigger an event asynchronously.
    *
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
-   * @param args - The data to pass to the event listeners.
+   * @param $arguments - The data to pass to the event listeners.
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
-  triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void>;
+  triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): Promise<void>;
 
   /**
    * Try to trigger an event, executing all the listeners in order even if some of them throw an error.
@@ -458,17 +458,17 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    *
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
-   * @param args - The data to pass to the event listeners.
+   * @param $arguments - The data to pass to the event listeners.
    *
    * @example
    * ```ts
    * events.trigger('my-event', 'arg1', 'arg2');
    * ```
    */
-  protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void {
+  protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): void {
     const eventReferences = this.eventRefsMap.get(name) ?? [];
     for (const eventReference of snapshot(eventReferences)) {
-      this.tryTrigger(eventReference, args);
+      this.tryTrigger(eventReference, $arguments);
     }
   }
 
@@ -477,13 +477,13 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    *
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
-   * @param args - The data to pass to the event listeners.
+   * @param $arguments - The data to pass to the event listeners.
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
-  protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void> {
+  protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): Promise<void> {
     const eventReferences = this.eventRefsMap.get(name) ?? [];
     for (const eventReference of snapshot(eventReferences)) {
-      await this.tryTriggerAsync(eventReference, args);
+      await this.tryTriggerAsync(eventReference, $arguments);
     }
   }
 
@@ -544,10 +544,10 @@ export class AsyncEvents<EventMap extends EventMapConstraint<EventMap> = EventMa
    *
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
-   * @param args - The data to pass to the event listeners.
+   * @param $arguments - The data to pass to the event listeners.
    */
-  public override trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void {
-    super.trigger(name, ...args);
+  public override trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): void {
+    super.trigger(name, ...$arguments);
   }
 
   /**
@@ -555,11 +555,11 @@ export class AsyncEvents<EventMap extends EventMapConstraint<EventMap> = EventMa
    *
    * @typeParam EventName - The name of the event.
    * @param name - The name of the event.
-   * @param args - The data to pass to the event listeners.
+   * @param $arguments - The data to pass to the event listeners.
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
-  public override triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void> {
-    return super.triggerAsync(name, ...args);
+  public override triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): Promise<void> {
+    return super.triggerAsync(name, ...$arguments);
   }
 
   /**
@@ -687,10 +687,10 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        *
        * @typeParam EventName - The name of the event.
        * @param name - The name of the event.
-       * @param args - The data to pass to the event listeners.
+       * @param $arguments - The data to pass to the event listeners.
        */
-      protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): void {
-        this.#asyncEvents.trigger(name, ...args);
+      protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): void {
+        this.#asyncEvents.trigger(name, ...$arguments);
       }
 
       /**
@@ -698,11 +698,11 @@ export function mixinAsyncEvents<EventMap extends EventMapConstraint<EventMap> =
        *
        * @typeParam EventName - The name of the event.
        * @param name - The name of the event.
-       * @param args - The data to pass to the event listeners.
+       * @param $arguments - The data to pass to the event listeners.
        * @returns A {@link Promise} that resolves when all listeners have completed.
        */
-      protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...args: CallbackArgs<EventMap, EventName>): Promise<void> {
-        await this.#asyncEvents.triggerAsync(name, ...args);
+      protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): Promise<void> {
+        await this.#asyncEvents.triggerAsync(name, ...$arguments);
       }
 
       /**

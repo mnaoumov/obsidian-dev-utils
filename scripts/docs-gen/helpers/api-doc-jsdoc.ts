@@ -128,7 +128,7 @@ export function extractFileOverview(src: SourceFile): string {
 
 export function extractInterfaceInfo(iface: InterfaceDeclaration, namespace: string): TypeInfo {
   return {
-    baseTypes: iface.getExtends().map((e) => e.getText()),
+    baseTypes: iface.getExtends().map((error) => error.getText()),
     description: getDescription(iface),
     enumMembers: [],
     examples: getExamples(iface),

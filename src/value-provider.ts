@@ -26,14 +26,14 @@ interface CommonArguments {
  * @typeParam Arguments - The types of arguments passed to the function if the provider is a function.
  * @typeParam Value - The type of the value provided.
  * @param provider - The value provider to resolve.
- * @param args - The arguments to pass to the function if the provider is a function.
+ * @param $arguments - The arguments to pass to the function if the provider is a function.
  * @returns A {@link Promise} that resolves with the value provided by the value provider.
  */
 export async function resolveValue<Value, Arguments extends object = object>(
   provider: ValueProvider<Value, Arguments>,
-  args: Arguments & Partial<CommonArguments>
+  $arguments: Arguments & Partial<CommonArguments>
 ): Promise<Value> {
-  const fullArguments = { ...args, abortSignal: args.abortSignal ?? abortSignalNever() };
+  const fullArguments = { ...$arguments, abortSignal: $arguments.abortSignal ?? abortSignalNever() };
   fullArguments.abortSignal.throwIfAborted();
   if (isFunction(provider)) {
     return await provider(fullArguments);

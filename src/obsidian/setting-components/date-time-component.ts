@@ -45,11 +45,11 @@ export class DateTimeComponent extends TypedRangeTextComponent<Date> {
   /**
    * Converts a string to a date.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The date.
    */
-  public override valueFromString(str: string): Date {
-    return moment(str, DATE_TIME_FORMAT).toDate();
+  public override valueFromString($string: string): Date {
+    return moment($string, DATE_TIME_FORMAT).toDate();
   }
 
   /**

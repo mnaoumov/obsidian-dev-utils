@@ -612,15 +612,15 @@ export function isCachedMetadataEx(cache: CachedMetadata): cache is CachedMetada
  * Parses the metadata for a given string.
  *
  * @param app - The Obsidian app instance.
- * @param str - The string to parse the metadata for.
+ * @param $string - The string to parse the metadata for.
  * @param options - The parse options controlling which additional links to parse.
  * @returns The parsed metadata.
  */
-export async function parseMetadata(app: App, str: string, options: ParseMetadataOptions = {}): Promise<CachedMetadataEx> {
+export async function parseMetadata(app: App, $string: string, options: ParseMetadataOptions = {}): Promise<CachedMetadataEx> {
   const encoder = new TextEncoder();
-  const buffer = encoder.encode(str).buffer;
+  const buffer = encoder.encode($string).buffer;
   const cache = await app.metadataCache.computeMetadataAsync(buffer) ?? {};
-  return toParsedCachedMetadataEx({ cache, content: str, options });
+  return toParsedCachedMetadataEx({ cache, content: $string, options });
 }
 
 /**

@@ -131,10 +131,10 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
   /**
    * Converts a string to a value.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The value.
    */
-  public abstract valueFromString(str: string): T;
+  public abstract valueFromString($string: string): T;
 
   /**
    * Converts a value to a string.

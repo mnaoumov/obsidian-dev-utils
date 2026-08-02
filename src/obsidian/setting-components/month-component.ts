@@ -60,11 +60,11 @@ export class MonthComponent extends TypedRangeTextComponent<IsoMonth> {
   /**
    * Converts a string to a month.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The month.
    */
-  public override valueFromString(str: string): IsoMonth {
-    const parsed = moment(str, DATE_FORMAT);
+  public override valueFromString($string: string): IsoMonth {
+    const parsed = moment($string, DATE_FORMAT);
 
     if (!parsed.isValid()) {
       throw new Error('Invalid month');

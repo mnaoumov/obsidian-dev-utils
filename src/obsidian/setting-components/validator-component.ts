@@ -95,44 +95,44 @@ class ValidatorElementWrapper implements ValidatorComponent {
 /**
  * Gets a validator component related to the given object.
  *
- * @param obj - Any object.
+ * @param $object - Any object.
  * @returns The related validator component or `null` if no related validator component is found.
  */
-export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
-  if (isValidatorComponent(obj)) {
-    return obj;
+export function getValidatorComponent($object: unknown): null | ValidatorComponent {
+  if (isValidatorComponent($object)) {
+    return $object;
   }
 
-  if (obj instanceof ColorComponent) {
-    return new ValidatorElementWrapper(obj.colorPickerEl);
+  if ($object instanceof ColorComponent) {
+    return new ValidatorElementWrapper($object.colorPickerEl);
   }
 
-  if (obj instanceof DropdownComponent) {
-    return new ValidatorElementWrapper(obj.selectEl);
+  if ($object instanceof DropdownComponent) {
+    return new ValidatorElementWrapper($object.selectEl);
   }
 
-  if (obj instanceof ProgressBarComponent) {
-    return new OverlayValidatorComponent(obj.progressBar);
+  if ($object instanceof ProgressBarComponent) {
+    return new OverlayValidatorComponent($object.progressBar);
   }
 
-  if (obj instanceof SearchComponent) {
-    return new ValidatorElementWrapper(obj.inputEl);
+  if ($object instanceof SearchComponent) {
+    return new ValidatorElementWrapper($object.inputEl);
   }
 
-  if (obj instanceof SliderComponent) {
-    return new ValidatorElementWrapper(obj.sliderEl);
+  if ($object instanceof SliderComponent) {
+    return new ValidatorElementWrapper($object.sliderEl);
   }
 
-  if (obj instanceof TextAreaComponent) {
-    return new ValidatorElementWrapper(obj.inputEl);
+  if ($object instanceof TextAreaComponent) {
+    return new ValidatorElementWrapper($object.inputEl);
   }
 
-  if (obj instanceof TextComponent) {
-    return new ValidatorElementWrapper(obj.inputEl);
+  if ($object instanceof TextComponent) {
+    return new ValidatorElementWrapper($object.inputEl);
   }
 
-  if (obj instanceof ToggleComponent) {
-    return new OverlayValidatorComponent(obj.toggleEl);
+  if ($object instanceof ToggleComponent) {
+    return new OverlayValidatorComponent($object.toggleEl);
   }
 
   return null;

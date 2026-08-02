@@ -40,11 +40,11 @@ export class TimeComponent extends TypedRangeTextComponent<moment.Duration> {
   /**
    * Converts a string to a time.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The date.
    */
-  public override valueFromString(str: string): moment.Duration {
-    return moment.duration(str);
+  public override valueFromString($string: string): moment.Duration {
+    return moment.duration($string);
   }
 
   /**

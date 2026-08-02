@@ -43,7 +43,7 @@ import { ensureNonNullable } from './type-guards.ts';
  *
  * @param fn - The callback to register with the hook.
  */
-export type HookRegistrar = (fn: () => Promise<void> | void) => void;
+export type HookRegistrar = ($function: () => Promise<void> | void) => void;
 
 /**
  * Parameters for {@link setup}.
