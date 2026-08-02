@@ -780,6 +780,14 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         // `Array.fromAsync` is ES2024. See the ES2022 floor note above.
         'unicorn/prefer-array-from-async': 'off',
         /*
+         * Every hit here is a promise deliberately NOT awaited, and `await` would change what the code does.
+         * `result.catch(throwDelayed)` in `async-events.ts` is the fire-and-forget error path the module is
+         * built on; the rest hold an unresolved promise and assert the callback has not fired yet, so awaiting
+         * would hang the test or invert what it proves. The rule cannot tell a forgotten `await` from an
+         * intentional one, and this codebase schedules fire-and-forget work as a core pattern.
+         */
+        'unicorn/prefer-await': 'off',
+        /*
          * Directly contradicts `obsidianmd/no-global-this`: this rule rewrites `window.x` to `globalThis.x`, and
          * that one forbids `globalThis` outright. With both enabled, `--fix` applies one and then the other
          * reverts it, which ESLint reports as `ESLintCircularFixesWarning` across 29 files. Obsidian's own
