@@ -35,8 +35,14 @@ import {
 } from './api-doc-text-utils.ts';
 
 /** Loaded from typedoc-plugin-mdn-links data at runtime */
-let webApiTypes: Record<string, unknown> = {};
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+interface ModuleState {
+  webApiTypes: Record<string, unknown>;
+}
 
+const moduleState: ModuleState = {
+  webApiTypes: {}
+};
 /** Lowercased, collision-disambiguated ON-DISK segment per qualified type key (`${namespace}#${name}`). */
 const typeFileSegments = new Map<string, string>();
 /** Case-preserved URL/route segment per qualified type key (`${namespace}#${name}`). */
@@ -100,8 +106,8 @@ export function linkBaseType(typeName: string, allTypes: Map<string, TypeInfo>, 
 export function loadExternalTypeMaps(): void {
   try {
     const dataPath = join(process.cwd(), 'node_modules/typedoc-plugin-mdn-links/data/web-api.json');
-    webApiTypes = JSON.parse(readFileSync(dataPath, 'utf-8')) as Record<string, unknown>;
-    console.warn(`Loaded ${String(Object.keys(webApiTypes).length)} Web API type links`);
+    moduleState.webApiTypes = JSON.parse(readFileSync(dataPath, 'utf-8')) as Record<string, unknown>;
+    console.warn(`Loaded ${String(Object.keys(moduleState.webApiTypes).length)} Web API type links`);
   } catch {
     console.warn('typedoc-plugin-mdn-links data not found — Web API links will be unavailable.');
   }
@@ -371,10 +377,10 @@ export function resolveTsUtilityUrl(name: string): string | undefined {
 }
 
 export function resolveWebApiUrl(name: string): string | undefined {
-  if (!Object.hasOwn(webApiTypes, name)) {
+  if (!Object.hasOwn(moduleState.webApiTypes, name)) {
     return undefined;
   }
-  const entry = webApiTypes[name];
+  const entry = moduleState.webApiTypes[name];
   if (typeof entry === 'string') {
     return entry;
   }

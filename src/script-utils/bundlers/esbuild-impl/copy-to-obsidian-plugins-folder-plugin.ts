@@ -97,10 +97,18 @@ interface InstallAndEnableHotReloadParams {
 
 // The `npm run dev`-owned Obsidian instance: launched on the first rebuild and reused across rebuilds.
 // It is closed when the `npm run dev` process terminates (see `registerDevInstanceCleanup`).
-let devInstanceTransportPromise: Promise<ObsidianTransport> | undefined;
-let isDevInstanceCleanupRegistered = false;
-let isDevInstanceDisposed = false;
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+interface ModuleState {
+  devInstanceTransportPromise: Promise<ObsidianTransport> | undefined;
+  isDevInstanceCleanupRegistered: boolean;
+  isDevInstanceDisposed: boolean;
+}
 
+const moduleState: ModuleState = {
+  devInstanceTransportPromise: undefined,
+  isDevInstanceCleanupRegistered: false,
+  isDevInstanceDisposed: false
+};
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
  *
@@ -154,12 +162,12 @@ export function copyToObsidianPluginsFolderPlugin(params: CopyToObsidianPluginsF
  * @returns A {@link Promise} resolving to the owned {@link ObsidianTransport}.
  */
 async function getOrLaunchDevInstance(vaultPath: string): Promise<ObsidianTransport> {
-  devInstanceTransportPromise ??= launchDevInstance(vaultPath);
+  moduleState.devInstanceTransportPromise ??= launchDevInstance(vaultPath);
   try {
-    return await devInstanceTransportPromise;
+    return await moduleState.devInstanceTransportPromise;
   } catch (error) {
     // Clear the cache so a later rebuild retries the launch.
-    devInstanceTransportPromise = undefined;
+    moduleState.devInstanceTransportPromise = undefined;
     throw error;
   }
 }
@@ -248,10 +256,10 @@ async function launchDevInstance(vaultPath: string): Promise<ObsidianTransport> 
  * @param transport - The owned transport to dispose on shutdown.
  */
 function registerDevInstanceCleanup(transport: ObsidianTransport): void {
-  if (isDevInstanceCleanupRegistered) {
+  if (moduleState.isDevInstanceCleanupRegistered) {
     return;
   }
-  isDevInstanceCleanupRegistered = true;
+  moduleState.isDevInstanceCleanupRegistered = true;
 
   // `exit` covers any `process.exit()`, but a default Ctrl+C terminates WITHOUT firing `exit`, so the signal handlers guarantee the owned Obsidian is killed on shutdown.
   process.on('exit', disposeDevInstance);
@@ -263,10 +271,10 @@ function registerDevInstanceCleanup(transport: ObsidianTransport): void {
   }
 
   function disposeDevInstance(): void {
-    if (isDevInstanceDisposed) {
+    if (moduleState.isDevInstanceDisposed) {
       return;
     }
-    isDevInstanceDisposed = true;
+    moduleState.isDevInstanceDisposed = true;
     transport.disposeSync?.();
   }
 }

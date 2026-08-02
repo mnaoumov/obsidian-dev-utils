@@ -282,8 +282,10 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
 }
 
 const pendingAsyncOperations = new Set<Promise<void>>();
-let isTrackingEnabled = false;
-
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+const moduleState = {
+  isTrackingEnabled: false
+};
 /**
  * Parameters for {@link invokeAsyncSafelyAfterDelay}.
  */
@@ -317,7 +319,7 @@ export interface InvokeAsyncSafelyAfterDelayParams {
  * Disables tracking previously enabled via {@link enableAsyncOperationTracking} and forgets any currently-tracked operations.
  */
 export function disableAsyncOperationTracking(): void {
-  isTrackingEnabled = false;
+  moduleState.isTrackingEnabled = false;
   pendingAsyncOperations.clear();
 }
 
@@ -331,7 +333,7 @@ export function disableAsyncOperationTracking(): void {
  * @returns A {@link Disposable} that disables tracking again (via {@link disableAsyncOperationTracking}) when disposed, for use with `using`.
  */
 export function enableAsyncOperationTracking(): Disposable {
-  isTrackingEnabled = true;
+  moduleState.isTrackingEnabled = true;
   return new CallbackDisposable({
     callback: disableAsyncOperationTracking
   });
@@ -383,7 +385,7 @@ export function invokeAsyncSafelyAfterDelay(params: InvokeAsyncSafelyAfterDelayP
  * @returns `true` if tracking is enabled, `false` otherwise.
  */
 export function isAsyncOperationTrackingEnabled(): boolean {
-  return isTrackingEnabled;
+  return moduleState.isTrackingEnabled;
 }
 
 /**
@@ -421,7 +423,7 @@ export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Prom
  * @throws If tracking is not enabled. Otherwise this would silently resolve as if all operations were finished, masking a missing {@link enableAsyncOperationTracking} call.
  */
 export async function waitForAllAsyncOperations(): Promise<void> {
-  if (!isTrackingEnabled) {
+  if (!moduleState.isTrackingEnabled) {
     throw new Error('Async operation tracking is not enabled. Call enableAsyncOperationTracking() before waitForAllAsyncOperations().');
   }
 
@@ -431,7 +433,7 @@ export async function waitForAllAsyncOperations(): Promise<void> {
 }
 
 function trackAsyncOperation(operation: Promise<void>): void {
-  if (!isTrackingEnabled) {
+  if (!moduleState.isTrackingEnabled) {
     return;
   }
 

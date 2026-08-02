@@ -18,30 +18,38 @@ interface ErrorAsyncEventMap {
 const errorAsyncEvents = new AsyncEvents<ErrorAsyncEventMap>();
 errorAsyncEvents.on('asyncError', handleAsyncError);
 
-/**
- * The number of consumer handlers currently registered via {@link registerAsyncErrorEventHandler}.
- *
- * The built-in {@link handleAsyncError} listener is registered directly on the event source and is
- * deliberately not counted, so a value of `0` means no consumer is listening and an emitted async
- * error is therefore considered unhandled (see {@link emitAsyncErrorEvent}).
- */
-let asyncErrorHandlerCount = 0;
+interface ModuleState {
+  /**
+   * The number of consumer handlers currently registered via {@link registerAsyncErrorEventHandler}.
+   *
+   * The built-in {@link handleAsyncError} listener is registered directly on the event source and is
+   * deliberately not counted, so a value of `0` means no consumer is listening and an emitted async
+   * error is therefore considered unhandled (see {@link emitAsyncErrorEvent}).
+   */
+  asyncErrorHandlerCount: number;
 
-/**
- * The buffer that collects unhandled async errors while a collection window is open, or `null` when
- * no window is open (the default in production). Opened by {@link startCollectingUnhandledAsyncErrors}
- * and drained by {@link stopCollectingUnhandledAsyncErrors} — used by the test harness to fail a test
- * that swallowed an async error.
- */
-let collectedUnhandledAsyncErrors: null | unknown[] = null;
+  /**
+   * The nesting depth of active {@link startAsyncErrorIgnoreContext} scopes. While greater than `0`, an
+   * async error emitted (or a fire-and-forget operation whose rejection was captured) within the scope is
+   * treated as expected and not collected as unhandled.
+   */
+  asyncErrorIgnoreContextDepth: number;
 
-/**
- * The nesting depth of active {@link startAsyncErrorIgnoreContext} scopes. While greater than `0`, an
- * async error emitted (or a fire-and-forget operation whose rejection was captured) within the scope is
- * treated as expected and not collected as unhandled.
- */
-let asyncErrorIgnoreContextDepth = 0;
+  /**
+   * The buffer that collects unhandled async errors while a collection window is open, or `null` when
+   * no window is open (the default in production). Opened by {@link startCollectingUnhandledAsyncErrors}
+   * and drained by {@link stopCollectingUnhandledAsyncErrors} — used by the test harness to fail a test
+   * that swallowed an async error.
+   */
+  collectedUnhandledAsyncErrors: null | unknown[];
+}
 
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+const moduleState: ModuleState = {
+  asyncErrorHandlerCount: 0,
+  asyncErrorIgnoreContextDepth: 0,
+  collectedUnhandledAsyncErrors: null
+};
 /**
  * A message of the AsyncWrapperError.
  */
@@ -83,8 +91,6 @@ export class CustomStackTraceError extends Error {
     super(message, { cause });
     this.name = 'CustomStackTraceError';
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
-
     let rootCause = cause;
     const parentCauses = new Set<CustomStackTraceError>();
     while (rootCause instanceof CustomStackTraceError) {
@@ -118,8 +124,6 @@ export class ErrorWrapper extends Error {
   public constructor(thrownValue: unknown) {
     super(`A non-Error value was thrown: ${String(thrownValue)}`, { cause: thrownValue });
     this.name = 'ErrorWrapper';
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
   }
 
   /**
@@ -147,8 +151,6 @@ export class SilentError extends Error {
   public constructor(message: string) {
     super(message);
     this.name = 'SilentError';
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `?.` is used to support iOS before 17.2.
   }
 }
 
@@ -163,9 +165,9 @@ export class SilentError extends Error {
  * @param shouldIgnore - Whether to treat the error as expected and never collect it as unhandled, regardless of the active ignore context. Used to carry the schedule-time ignore decision of a deferred fire-and-forget rejection.
  */
 export function emitAsyncErrorEvent(asyncError: unknown, shouldIgnore = false): void {
-  const isIgnored = shouldIgnore || asyncErrorIgnoreContextDepth > 0;
-  if (collectedUnhandledAsyncErrors && !isIgnored && asyncErrorHandlerCount === 0) {
-    collectedUnhandledAsyncErrors.push(asyncError);
+  const isIgnored = shouldIgnore || moduleState.asyncErrorIgnoreContextDepth > 0;
+  if (moduleState.collectedUnhandledAsyncErrors && !isIgnored && moduleState.asyncErrorHandlerCount === 0) {
+    moduleState.collectedUnhandledAsyncErrors.push(asyncError);
   }
   errorAsyncEvents.trigger('asyncError', asyncError);
 }
@@ -215,7 +217,7 @@ export function getStackTrace(framesToSkip = 0): string {
  * @returns `true` if at least one ignore context is active, `false` otherwise.
  */
 export function isAsyncErrorIgnoreContextActive(): boolean {
-  return asyncErrorIgnoreContextDepth > 0;
+  return moduleState.asyncErrorIgnoreContextDepth > 0;
 }
 
 /**
@@ -238,11 +240,11 @@ export function printError(error: unknown, console?: Console): void {
  */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): Disposable {
   const eventReference = errorAsyncEvents.on('asyncError', handler);
-  asyncErrorHandlerCount++;
+  moduleState.asyncErrorHandlerCount++;
   return new CallbackDisposable({
     callback: (): void => {
       errorAsyncEvents.offref(eventReference);
-      asyncErrorHandlerCount--;
+      moduleState.asyncErrorHandlerCount--;
     },
     multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
   });
@@ -270,10 +272,10 @@ export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) =>
  * @returns A {@link Disposable} that closes the ignore context when disposed, for use with `using`.
  */
 export function startAsyncErrorIgnoreContext(): Disposable {
-  asyncErrorIgnoreContextDepth++;
+  moduleState.asyncErrorIgnoreContextDepth++;
   return new CallbackDisposable({
     callback: (): void => {
-      asyncErrorIgnoreContextDepth--;
+      moduleState.asyncErrorIgnoreContextDepth--;
     },
     multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
   });
@@ -288,7 +290,7 @@ export function startAsyncErrorIgnoreContext(): Disposable {
  * emitting an async error carries no bookkeeping overhead.
  */
 export function startCollectingUnhandledAsyncErrors(): void {
-  collectedUnhandledAsyncErrors = [];
+  moduleState.collectedUnhandledAsyncErrors = [];
 }
 
 /**
@@ -298,8 +300,8 @@ export function startCollectingUnhandledAsyncErrors(): void {
  * @returns The collected unhandled async errors, or an empty array if no window was open.
  */
 export function stopCollectingUnhandledAsyncErrors(): unknown[] {
-  const collectedErrors = collectedUnhandledAsyncErrors ?? [];
-  collectedUnhandledAsyncErrors = null;
+  const collectedErrors = moduleState.collectedUnhandledAsyncErrors ?? [];
+  moduleState.collectedUnhandledAsyncErrors = null;
   return collectedErrors;
 }
 

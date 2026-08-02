@@ -40,8 +40,14 @@ import {
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
-let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+interface ModuleState {
+  domEventsHandlersConstructor: DomEventsHandlersConstructor | null;
+}
 
+const moduleState: ModuleState = {
+  domEventsHandlersConstructor: null
+};
 /**
  * The params for the full render.
  */
@@ -297,10 +303,10 @@ export async function registerLinkHandlers(params: RegisterLinkHandlersParams): 
     sourcePath
   } = params;
   // eslint-disable-next-line require-atomic-updates -- No race condition.
-  domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
+  moduleState.domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
   MarkdownPreviewRenderer.registerDomEvents(
     el,
-    new domEventsHandlersConstructor(
+    new moduleState.domEventsHandlersConstructor(
       new FixedZIndexDomEventsHandlersInfo({
         app,
         el,
