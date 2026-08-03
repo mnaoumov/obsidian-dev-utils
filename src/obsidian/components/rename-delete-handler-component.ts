@@ -55,6 +55,7 @@ import {
   hasOwnAttachmentFolder
 } from '../attachment-path.ts';
 import { getCanvasReferences } from '../canvas.ts';
+import { waitForPendingLinkUpdates } from '../file-manager.ts';
 import {
   CANVAS_FILE_EXTENSION,
   getFile,
@@ -547,7 +548,6 @@ class RenameHandler {
   private readonly oldCache: CachedMetadata | null;
   private readonly oldPath: string;
   private readonly oldPathBacklinksMap: Map<string, Reference[]>;
-  private readonly oldPathLinks: Reference[];
   private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly resourceLockComponent: null | ResourceLockComponent;
   private readonly settingsManager: SettingsManager;
@@ -564,7 +564,6 @@ class RenameHandler {
     this.oldCache = params.oldCache;
     this.oldPath = params.oldPath;
     this.oldPathBacklinksMap = params.oldPathBacklinksMap;
-    this.oldPathLinks = this.oldCache ? getLinks({ cache: this.oldCache }) : [];
     this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsManager = params.settingsManager;
   }
@@ -574,10 +573,28 @@ class RenameHandler {
       return;
     }
     this.abortSignal.throwIfAborted();
+
+    /*
+     * The rename that triggered this handler is very likely still inside Obsidian's own
+     * `FileManager.runAsyncLinkUpdate` cycle, which is about to decide — synchronously — which links to
+     * rewrite, by re-resolving each one. Everything below temporarily registers a phantom file at the
+     * old path (`registerFiles`, directly here and inside `RenameMap`) and holds it across an `await`;
+     * seen mid-decision, that phantom makes the old path still resolve, so Obsidian concludes nothing
+     * changed and rewrites nothing. Standing invariant: never touch the vault index while Obsidian is
+     * mid-decision. See https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/47.
+     */
+    await waitForPendingLinkUpdates(this.app);
+    this.abortSignal.throwIfAborted();
+
     await this.continueInterruptedRenames();
     this.abortSignal.throwIfAborted();
-    await this.refreshLinks();
-    this.abortSignal.throwIfAborted();
+
+    // The refreshed backlinks feed `oldPathBacklinksMap`, which only the link-rewrite steps below read, and those are gated on the same flag.
+    if (this.settingsManager.getSettings().shouldHandleRenames) {
+      await this.refreshLinks();
+      this.abortSignal.throwIfAborted();
+    }
+
     if (await this.handleCaseCollision()) {
       return;
     }
@@ -797,21 +814,12 @@ class RenameHandler {
   }
 
   private async refreshLinks(): Promise<void> {
-    const cache = this.app.metadataCache.getCache(this.oldPath) ?? this.app.metadataCache.getCache(this.newPath);
-    const oldPathLinksRefreshed = cache ? getLinks({ cache }) : [];
     const fakeOldFile = getFile({ app: this.app, pathOrFile: this.oldPath, shouldIncludeNonExisting: true });
     let oldPathBacklinksMapRefreshed: Map<string, Reference[]>;
     {
       using _registration = registerFiles(this.app, [fakeOldFile]);
       const fakeOldFileBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile });
       oldPathBacklinksMapRefreshed = fakeOldFileBacklinks.data;
-    }
-
-    for (const link of oldPathLinksRefreshed) {
-      if (this.oldPathLinks.includes(link)) {
-        continue;
-      }
-      this.oldPathLinks.push(link);
     }
 
     for (const [backlinkPath, refreshedLinks] of oldPathBacklinksMapRefreshed) {
@@ -1204,6 +1212,13 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       return;
     }
 
+    if (this.isNoOpRename(settings, oldPath, newPath)) {
+      getLibDebugger('RenameDeleteHandler:handleRename')(
+        `Skipping rename handler of ${oldPath} -> ${newPath} as it is not a note and there is nothing to do with link updates disabled.`
+      );
+      return;
+    }
+
     if (settings.isPathIgnored?.(oldPath)) {
       getLibDebugger('RenameDeleteHandler:handleRename')(`Skipping rename handler of old path ${oldPath} as the path is ignored.`);
       return;
@@ -1235,6 +1250,23 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
         }).handle(),
       operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleRename, { newPath, oldPath })
     });
+  }
+
+  /**
+   * With link rewriting off, the handler's only remaining jobs are moving a NOTE's attachments and pruning
+   * the folder a moved file vacated. A non-note rename needs neither when empty folders are kept, so there
+   * is nothing to queue.
+   *
+   * @param settings - The aggregated rename/delete handler settings.
+   * @param oldPath - The path the file was renamed from.
+   * @param newPath - The path the file was renamed to.
+   * @returns `true` when the handler would do no work for this rename.
+   */
+  private isNoOpRename(settings: Partial<RenameDeleteHandlerSettings>, oldPath: string, newPath: string): boolean {
+    return !settings.shouldHandleRenames
+      && !(settings.isNote?.(oldPath) ?? false)
+      && !(settings.isNote?.(newPath) ?? false)
+      && (settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep) === EmptyFolderBehavior.Keep;
   }
 
   private logRegisteredHandlers(): void {

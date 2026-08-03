@@ -1,5 +1,7 @@
+import type { LinkUpdatesHandler } from '@obsidian-typings/obsidian-public-latest';
 import type {
   App as AppOriginal,
+  FileManager,
   TFile
 } from 'obsidian';
 
@@ -24,7 +26,8 @@ import { resolveValue } from '../value-provider.ts';
 import {
   addAlias,
   deleteAlias,
-  processFrontmatter
+  processFrontmatter,
+  waitForPendingLinkUpdates
 } from './file-manager.ts';
 import {
   getFile,
@@ -144,6 +147,35 @@ describe('addAlias', () => {
 
     await addAlias({ alias: 'existing-alias', app, pathOrFile: 'note.md', resourceLockComponent });
     expect(frontmatter.aliases).toEqual(['existing-alias']);
+  });
+});
+
+describe('waitForPendingLinkUpdates', () => {
+  interface InProgressUpdatesHolder {
+    inProgressUpdates: LinkUpdatesHandler[] | null;
+  }
+
+  function makeApp(holder: InProgressUpdatesHolder): AppOriginal {
+    return strictProxy<AppOriginal>({ fileManager: strictProxy<FileManager>(holder) });
+  }
+
+  it('should resolve immediately when no link update is in flight', async () => {
+    await expect(waitForPendingLinkUpdates(makeApp({ inProgressUpdates: null }))).resolves.toBeUndefined();
+  });
+
+  it('should wait until the in-flight link update finishes', async () => {
+    const holder: InProgressUpdatesHolder = { inProgressUpdates: [] };
+    const DELAY_IN_MILLISECONDS = 10;
+    const timeoutId = window.setTimeout(() => {
+      holder.inProgressUpdates = null;
+    }, DELAY_IN_MILLISECONDS);
+
+    try {
+      await waitForPendingLinkUpdates(makeApp(holder));
+      expect(holder.inProgressUpdates).toBeNull();
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   });
 });
 

@@ -16,6 +16,7 @@ import type {
   ProcessParams
 } from './vault.ts';
 
+import { retryWithTimeout } from '../async.ts';
 import {
   isDeepEqual,
   normalizeOptionalProperties
@@ -235,4 +236,35 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(params: Pr
     pathOrFile,
     ...options
   }));
+}
+
+/**
+ * Waits until Obsidian's own in-flight link update has decided which links to rewrite.
+ *
+ * `FileManager.runAsyncLinkUpdate()` snapshots every reference's resolved paths, sets
+ * `FileManager.inProgressUpdates` to an array, and invokes the passed handler — the handler being what
+ * performs the actual rename. In its `finally` block it sets `inProgressUpdates` back to `null` and
+ * then immediately calls `FileManager.updateAllLinks()`, whose per-reference decision — rewrite only
+ * when the link's resolved paths changed — runs synchronously, with no `await` in between. So
+ * observing a `null` `inProgressUpdates` proves that decision has already been made.
+ *
+ * That matters for any code that temporarily registers a phantom file at a path that no longer exists
+ * (see `registerFiles` in `metadata-cache.ts`) and holds that registration across an `await`: while it
+ * is live, a link to the old path still resolves, so Obsidian concludes nothing changed and silently
+ * rewrites nothing. Awaiting this function before registering keeps the phantom out of that decision.
+ *
+ * @param app - The Obsidian app instance.
+ * @returns A {@link Promise} that resolves once no link update is in flight.
+ */
+export async function waitForPendingLinkUpdates(app: App): Promise<void> {
+  const TIMEOUT_IN_MILLISECONDS = 60_000;
+  await retryWithTimeout({
+    operationFunction: () => app.fileManager.inProgressUpdates === null,
+    operationName: 'waitForPendingLinkUpdates',
+    retryOptions: {
+      // Poll on the macrotask queue: the link update settles through microtasks, so any positive delay only adds latency.
+      retryDelayInMilliseconds: 0,
+      timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+    }
+  });
 }

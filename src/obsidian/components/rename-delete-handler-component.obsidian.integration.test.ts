@@ -28,6 +28,13 @@ interface AttachmentMoveResult {
 }
 
 /**
+ * Result of a test asserting that Obsidian's own post-rename link update rewrote a link.
+ */
+interface NativeLinkUpdateResult {
+  readonly referencingNoteContent: string;
+}
+
+/**
  * Result of the rename test.
  */
 interface RenameTestResult {
@@ -260,6 +267,157 @@ describe('rename-delete-handler', () => {
       // The foreign transaction owns its own link/attachment consistency, so the handler must stay out of the way: it does NOT move the attachment.
       expect(result.hasDestinationAttachment).toBe(false);
       expect(result.hasSrcAttachment).toBe(true);
+    });
+  });
+
+  describe('does not disarm Obsidian\'s own link update when "Update links" is off (issue #47)', () => {
+    it('should let Obsidian rewrite the embed when an attachment is renamed', async () => {
+      const result = await evalInObsidian<Record<string, never>, NativeLinkUpdateResult>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
+        async fn({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+          const PLUGIN_ID = 'rdh-attachment-rename-test';
+          const FOLDER = 'rdh-attachment-rename';
+          const NOTE = `${FOLDER}/note.md`;
+          const OLD_ATTACHMENT = `${FOLDER}/attachments/img.png`;
+          const NEW_ATTACHMENT = `${FOLDER}/attachments/renamed.png`;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+          const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
+          app.vault.setConfig('attachmentFolderPath', './attachments');
+          // Obsidian only rewrites links without prompting when this is on; the prompt would block the headless run.
+          const originalAlwaysUpdateLinks = app.vault.getConfig('alwaysUpdateLinks');
+          app.vault.setConfig('alwaysUpdateLinks', true);
+
+          const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+          const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Attachment Rename Test' });
+          const handlerComponent = new RenameDeleteHandlerComponent({
+            abortSignalComponent,
+            app,
+            pluginId: PLUGIN_ID,
+            pluginNoticeComponent,
+            resourceLockComponent: null,
+            // The issue's settings combination: the handler still runs (it renames attachment files) but delegates every link rewrite to Obsidian.
+            settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+              isNote: (path: string): boolean => path.endsWith('.md'),
+              shouldHandleRenames: false,
+              shouldRenameAttachmentFiles: true
+            })
+          });
+          handlerComponent.load();
+
+          try {
+            await app.vault.createFolder(`${FOLDER}/attachments`);
+            await app.vault.createBinary(OLD_ATTACHMENT, new ArrayBuffer(8));
+            const note = await app.vault.create(NOTE, `![[${OLD_ATTACHMENT}]]\n`);
+
+            await waitUntil({
+              message: 'note embed indexed by the metadata cache',
+              predicate: () => (app.metadataCache.getFileCache(note)?.embeds?.length ?? 0) > 0,
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            const attachment = app.vault.getFileByPath(OLD_ATTACHMENT);
+            if (!attachment) {
+              throw new Error(`Attachment ${OLD_ATTACHMENT} not found.`);
+            }
+            await app.fileManager.renameFile(attachment, NEW_ATTACHMENT);
+            // Obsidian's link update and the handler's own queued work both settle after the rename resolves.
+            await flushQueue();
+            await waitUntil({
+              message: 'renamed attachment indexed by the metadata cache',
+              predicate: () => app.vault.getAbstractFileByPath(NEW_ATTACHMENT) !== null,
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            return { referencingNoteContent: await app.vault.read(note) };
+          } finally {
+            handlerComponent.unload();
+            app.vault.setConfig('attachmentFolderPath', originalAttachmentFolderPath);
+            app.vault.setConfig('alwaysUpdateLinks', originalAlwaysUpdateLinks);
+            const folder = app.vault.getAbstractFileByPath(FOLDER);
+            if (folder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(folder, true);
+            }
+          }
+        }
+      });
+
+      expect(result.referencingNoteContent).toContain('renamed.png');
+      expect(result.referencingNoteContent).not.toContain('img.png');
+    });
+
+    it('should let Obsidian rewrite a backlink when a note is renamed', async () => {
+      const result = await evalInObsidian<Record<string, never>, NativeLinkUpdateResult>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
+        async fn({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+          const PLUGIN_ID = 'rdh-note-rename-test';
+          const FOLDER = 'rdh-note-rename';
+          const OLD_NOTE = `${FOLDER}/note.md`;
+          const NEW_NOTE = `${FOLDER}/renamed-note.md`;
+          const REFERENCING_NOTE = `${FOLDER}/referencing-note.md`;
+          const ATTACHMENT = `${FOLDER}/attachments/img.png`;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+          const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
+          app.vault.setConfig('attachmentFolderPath', './attachments');
+          const originalAlwaysUpdateLinks = app.vault.getConfig('alwaysUpdateLinks');
+          app.vault.setConfig('alwaysUpdateLinks', true);
+
+          const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+          const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Note Rename Test' });
+          const handlerComponent = new RenameDeleteHandlerComponent({
+            abortSignalComponent,
+            app,
+            pluginId: PLUGIN_ID,
+            pluginNoticeComponent,
+            resourceLockComponent: null,
+            settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+              isNote: (path: string): boolean => path.endsWith('.md'),
+              shouldHandleRenames: false,
+              shouldRenameAttachmentFolder: true
+            })
+          });
+          handlerComponent.load();
+
+          try {
+            await app.vault.createFolder(`${FOLDER}/attachments`);
+            await app.vault.createBinary(ATTACHMENT, new ArrayBuffer(8));
+            // The renamed note owns an attachment, so the handler reaches the attachment-folder lookup that registers the phantom old note.
+            const note = await app.vault.create(OLD_NOTE, `![[${ATTACHMENT}]]\n`);
+            const referencingNote = await app.vault.create(REFERENCING_NOTE, `[[${OLD_NOTE}]]\n`);
+
+            await waitUntil({
+              message: 'backlink to the renamed note indexed by the metadata cache',
+              predicate: () =>
+                (app.metadataCache.getFileCache(referencingNote)?.links?.length ?? 0) > 0
+                && (app.metadataCache.getFileCache(note)?.embeds?.length ?? 0) > 0,
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            await app.fileManager.renameFile(note, NEW_NOTE);
+            await flushQueue();
+            await waitUntil({
+              message: 'renamed note indexed by the metadata cache',
+              predicate: () => app.vault.getAbstractFileByPath(NEW_NOTE) !== null,
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            return { referencingNoteContent: await app.vault.read(referencingNote) };
+          } finally {
+            handlerComponent.unload();
+            app.vault.setConfig('attachmentFolderPath', originalAttachmentFolderPath);
+            app.vault.setConfig('alwaysUpdateLinks', originalAlwaysUpdateLinks);
+            const folder = app.vault.getAbstractFileByPath(FOLDER);
+            if (folder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(folder, true);
+            }
+          }
+        }
+      });
+
+      expect(result.referencingNoteContent).toContain('renamed-note');
     });
   });
 });
