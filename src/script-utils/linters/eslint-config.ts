@@ -466,7 +466,6 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
         'obsidian-dev-utils': obsidianDevUtilsPlugin
       },
       rules: {
-        'obsidian-dev-utils/kebab-case-file-name': 'error',
         'obsidian-dev-utils/no-async-callback-to-unsafe-return': 'error',
         'obsidian-dev-utils/no-unused-params-members': 'error',
         'obsidian-dev-utils/no-used-underscore-variables': 'error',

@@ -6,7 +6,10 @@
  * PluginBase registers universal components (context, i18n, error handling, abort signal, lifecycle events, debug).
  */
 
-import type { Component } from 'obsidian';
+import type {
+  Component,
+  IconName
+} from 'obsidian';
 import type { Promisable } from 'type-fest';
 
 import { Plugin } from 'obsidian';
@@ -30,6 +33,7 @@ import { AsyncErrorHandlerComponent } from '../components/async-error-handler-co
 import { ComponentEx } from '../components/component-ex.ts';
 import { ConsoleDebugComponent } from '../components/console-debug-component.ts';
 import { MenuEventRegistrarComponent } from '../components/menu-event-registrar-component.ts';
+import { NotebookNavigatorMenuEventRegistrarComponent } from '../components/notebook-navigator-menu-event-registrar-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 import { initI18N } from '../i18n/i18n.ts';
@@ -240,16 +244,28 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       this.abortSignalComponent = this.addChild(new AbortSignalComponent(this.manifest.id));
       this.consoleDebugComponent = this.addChild(new ConsoleDebugComponent(this.manifest.id));
       this.resourceLockComponent = this.addChild(new ResourceLockComponent(this.app, this.manifest.id));
+      // Notebook Navigator draws its own file tree and never raises Obsidian's `file-menu` /
+      // `files-menu` events, so every plugin's context-menu items would vanish for anyone browsing
+      // Through it. Wired here rather than per-plugin: the bridge stays dormant when Notebook
+      // Navigator is not installed, and a plugin with no file/folder handlers contributes nothing.
+      const notebookNavigatorMenuEventRegistrarComponent = this.addChild(
+        new NotebookNavigatorMenuEventRegistrarComponent({
+          app: this.app,
+          pluginName: this.manifest.name,
+          submenuIcon: this.getNotebookNavigatorMenuSubmenuIcon()
+        })
+      );
       this.commandHandlerComponent = this.addChild(
         new CommandHandlerComponent({
           activeFileProvider: new AppActiveFileProvider(this.app),
+          additionalMenuEventRegistrars: [notebookNavigatorMenuEventRegistrarComponent],
           commandRegistrar: new PluginCommandRegistrar(this),
           menuEventRegistrar: this.addChild(new MenuEventRegistrarComponent(this.app)),
           pluginName: this.manifest.name
         })
       );
       // Always available; the command's own `canExecute` hides it unless the active note is locked.
-      this.commandHandlerComponent.registerCommandHandlers([
+      this.commandHandlerComponent.registerCommandHandlers(() => [
         new UnlockActiveNoteCommandHandler({
           app: this.app,
           resourceLockComponent: this.resourceLockComponent
@@ -290,6 +306,19 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    */
   protected createTranslationsMap(): TranslationsMap {
     return defaultTranslationsMap;
+  }
+
+  /**
+   * Provides the icon shown on the plugin's parent entry in Notebook Navigator's context menus.
+   *
+   * Override in subclass to brand that entry; the default leaves it without an icon. The entry is
+   * titled with the plugin name and is added automatically — see
+   * {@link NotebookNavigatorMenuEventRegistrarComponent}.
+   *
+   * @returns The icon, or `''` for no icon.
+   */
+  protected getNotebookNavigatorMenuSubmenuIcon(): IconName {
+    return '';
   }
 
   /**

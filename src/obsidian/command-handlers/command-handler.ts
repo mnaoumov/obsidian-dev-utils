@@ -53,6 +53,17 @@ export interface CommandHandlerRegistrationContext {
    * The name of the plugin that owns this command.
    */
   readonly pluginName: string;
+
+  /**
+   * Overrides the handler's own `shouldAddCommandToSubmenu`, or `undefined` to leave it alone.
+   *
+   * A menu surface that already wraps every contributed item in a plugin-titled parent entry — such as
+   * `NotebookNavigatorMenuEventRegistrarComponent` — sets this to `false`, because a handler declaring
+   * a section submenu of its own would make `Menu.sort()` nest a second plugin-titled entry inside the
+   * first. Only `AbstractFileCommandHandler` reads it: the surfaces that need it bridge file and
+   * folder menus, never the editor menu.
+   */
+  readonly shouldAddCommandToSubmenu?: boolean | undefined;
 }
 
 /**

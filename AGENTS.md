@@ -185,7 +185,7 @@ export function myFunction(param: Type): ReturnType {
 - Custom ESLint rule `obsidian-dev-utils/no-unused-params-members` flags `*Params`/`*Options` interface members never read by the receiving function; spreading, rest-destructuring, forwarding, returning, or storing the whole object counts as using all members.
 - The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by
   `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts` driven by `rule-tester-helper.ts`:
-  `kebab-case-file-name`, `no-async-callback-to-unsafe-return`, `no-unused-params-members`,
+  `no-async-callback-to-unsafe-return`, `no-unused-params-members`,
   `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`,
   `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`,
   `require-super-call`.
@@ -193,8 +193,19 @@ export function myFunction(param: Type): ReturnType {
   (`getUnicornConfigs()` in `src/script-utils/linters/eslint-config.ts`), adopted repo-wide in
   `7808eeb1`. It is a curated adoption, not a blanket one: a long explicit off-list turns off the rules
   that fight this codebase, and `unicorn/name-replacements` carries custom replacements because unicorn
-  substitutes at the word level inside compound names. Note `kebab-case-file-name` stays the in-house
-  rule — `unicorn/filename-case` was not swapped in for it.
+  substitutes at the word level inside compound names.
+- **File-name casing is `unicorn/filename-case`'s job — do not re-add an in-house rule for it.** The
+  migration above initially kept `obsidian-dev-utils/kebab-case-file-name` alongside it, so every bad
+  name was reported twice; it was deleted once measured. `unicorn/filename-case` arrives enabled with
+  the `recommended` preset (nothing here turns it off) and defaults to `case: 'kebabCase'`, and it
+  already does everything the in-house rule did: `multipleFileExtensions` (default on) makes it judge
+  only the part before the FIRST dot, so `foo.obsidian.integration.test.ts` reduces to `foo` exactly
+  as before. It additionally checks DIRECTORY names, which the in-house rule never did. The only
+  divergence is that unicorn exempts a name starting with `$` (`filename.startsWith('$')`) — no such
+  file exists here. The in-house rule's other claimed edge, stripping a leading dot so
+  `.markdownlint-cli2.mjs` is judged as `markdownlint-cli2`, never actually ran: root dotfiles are not
+  in `EslintConfigContext.allFiles()` (test + script + source files plus three named root configs), so
+  no rule sees them.
 
 ## Rules
 
@@ -314,6 +325,28 @@ export function myFunction(param: Type): ReturnType {
   `src/script-utils/npm.ts` for the reference case.
 - (cannot be forced by ESLint — the opposing rule is the one ESLint has; `build:validate-declarations` is
   the check that catches it)
+
+### L9. Another plugin's API: hand-declared narrow types + a runtime guard, never a build-time dependency
+
+- A plugin whose surface this library integrates with (today: Notebook Navigator, see
+  `src/obsidian/notebook-navigator.ts`) is reached through `app.plugins.getPlugin(<id>)` and typed by
+  **interfaces declared here**, narrowed to the members actually called. Do NOT add the other plugin as
+  a dependency — most ship a `.d.ts` for download rather than an npm package, and depending on one
+  turns an optional integration into a build requirement. This mirrors the vendored
+  `src/obsidian/@types/dataview/**`, minus the vendored tree when the used slice is small.
+- The value arrives as `unknown`, so narrow it with a **runtime type-guard predicate**, never an `as`
+  cast (R1 G43). A version that predates the API, renames it, or breaks it then reads as "not there"
+  and the integration stays dormant, instead of throwing while the user's context menu is opening.
+- Bind at **layout-ready**, not `onload`: plugin load order is not ours to choose, and the other
+  plugin's API only exists once it is up.
+- **Menu surfaces plug in as additional `MenuEventRegistrar`s.** `CommandHandlerComponent` takes
+  `additionalMenuEventRegistrars` and calls the `CommandHandlerFactory` once per surface, so a plugin
+  declares its handlers ONCE. The extra passes add no commands (the palette already has them) and
+  carry `CommandHandlerRegistrationContext.shouldAddCommandToSubmenu: false`, because such a bridge
+  wraps everything in its own plugin-titled parent entry — a handler's own section submenu would make
+  `Menu.sort()` nest a second, identical entry inside the first. Each surface needs its OWN handler
+  instances: a handler carries per-registration state, which is exactly why the API is a factory.
+- (cannot be forced by ESLint — an API-integration convention)
 
 ## Testing
 

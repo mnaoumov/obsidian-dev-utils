@@ -100,9 +100,14 @@ function createComponent(commandRegistrar: CommandRegistrar): CommandHandlerComp
   });
 }
 
-function createComponentWith(commandRegistrar: CommandRegistrar, menuEventRegistrar: MenuEventRegistrar): CommandHandlerComponent {
+function createComponentWith(
+  commandRegistrar: CommandRegistrar,
+  menuEventRegistrar: MenuEventRegistrar,
+  additionalMenuEventRegistrars?: readonly MenuEventRegistrar[]
+): CommandHandlerComponent {
   return new CommandHandlerComponent({
     activeFileProvider: createMockActiveFileProvider(),
+    additionalMenuEventRegistrars,
     commandRegistrar,
     menuEventRegistrar,
     pluginName: 'Test Plugin'
@@ -159,7 +164,7 @@ describe('CommandHandlerComponent', () => {
     const commandRegistrar = createMockCommandRegistrar();
     const component = createComponent(commandRegistrar);
 
-    component.registerCommandHandlers([new TestHandler(createParams())]);
+    component.registerCommandHandlers(() => [new TestHandler(createParams())]);
 
     expect(commandRegistrar.addCommand).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -173,7 +178,7 @@ describe('CommandHandlerComponent', () => {
     const commandHandler = new TestHandler(createParams());
     const component = createComponent(createMockCommandRegistrar());
 
-    component.registerCommandHandlers([commandHandler]);
+    component.registerCommandHandlers(() => [commandHandler]);
     await waitForAllAsyncOperations();
 
     expect(commandHandler.registeredContext).toBeDefined();
@@ -192,7 +197,7 @@ describe('CommandHandlerComponent', () => {
     const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
     const component = createComponent(commandRegistrar);
 
-    component.registerCommandHandlers([commandHandler]);
+    component.registerCommandHandlers(() => [commandHandler]);
 
     // Handler should be unaffected.
     expect(commandHandler.buildCommand().id).toBe('original-id');
@@ -207,7 +212,7 @@ describe('CommandHandlerComponent', () => {
     });
     const component = createComponent(commandRegistrar);
 
-    const disposable = component.registerCommandHandlers([new TestHandler(createParams({ id: 'my-cmd' }))]);
+    const disposable = component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
     expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
 
     dispose(disposable);
@@ -221,7 +226,7 @@ describe('CommandHandlerComponent', () => {
     const component = createComponent(commandRegistrar);
     component.load();
 
-    component.registerCommandHandlers([new TestHandler(createParams({ id: 'my-cmd' }))]);
+    component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
     component.unload();
 
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
@@ -231,7 +236,7 @@ describe('CommandHandlerComponent', () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
-    const disposable = component.registerCommandHandlers([new MenuRegisteringHandler(createParams())]);
+    const disposable = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(1);
@@ -247,8 +252,8 @@ describe('CommandHandlerComponent', () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
-    const disposableA = component.registerCommandHandlers([new MenuRegisteringHandler(createParams({ id: 'a' }))]);
-    component.registerCommandHandlers([new MenuRegisteringHandler(createParams({ id: 'b' }))]);
+    const disposableA = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'a' }))]);
+    component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'b' }))]);
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(2);
@@ -267,7 +272,7 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
     // Dispose the batch before the fire-and-forget onRegistered has run.
-    const disposable = component.registerCommandHandlers([new MenuRegisteringHandler(createParams())]);
+    const disposable = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
     dispose(disposable);
 
     await waitForAllAsyncOperations();
@@ -282,7 +287,7 @@ describe('CommandHandlerComponent', () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
-    const disposable = component.registerCommandHandlers([new AllMenusRegisteringHandler(createParams())]);
+    const disposable = component.registerCommandHandlers(() => [new AllMenusRegisteringHandler(createParams())]);
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(3);
@@ -290,5 +295,82 @@ describe('CommandHandlerComponent', () => {
     for (const menuDisposeSpy of menuDisposeSpies) {
       expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it('should build a separate handler set for every additional menu surface', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createMockMenuEventRegistrar(), [additional.registrar]);
+    const commandHandlers: TestHandler[] = [];
+    const commandHandlerFactory = vi.fn(() => {
+      const commandHandler = new TestHandler(createParams());
+      commandHandlers.push(commandHandler);
+      return [commandHandler];
+    });
+
+    component.registerCommandHandlers(commandHandlerFactory);
+    await waitForAllAsyncOperations();
+
+    // Once for Obsidian's own workspace events, once for the additional surface.
+    expect(commandHandlerFactory).toHaveBeenCalledTimes(2);
+    expect(commandHandlers).toHaveLength(2);
+    expect(commandHandlers[0]).not.toBe(commandHandlers[1]);
+  });
+
+  it('should add each command exactly once regardless of how many menu surfaces there are', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(commandRegistrar, createMockMenuEventRegistrar(), [additional.registrar]);
+
+    component.registerCommandHandlers(() => [new TestHandler(createParams())]);
+    await waitForAllAsyncOperations();
+
+    expect(commandRegistrar.addCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('should force the section submenu off for an additional menu surface only', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createMockMenuEventRegistrar(), [additional.registrar]);
+    const commandHandlers: TestHandler[] = [];
+
+    component.registerCommandHandlers(() => {
+      const commandHandler = new TestHandler(createParams());
+      commandHandlers.push(commandHandler);
+      return [commandHandler];
+    });
+    await waitForAllAsyncOperations();
+
+    expect(commandHandlers).toHaveLength(2);
+    expect(commandHandlers[0]?.registeredContext?.shouldAddCommandToSubmenu).toBeUndefined();
+    expect(commandHandlers[1]?.registeredContext?.shouldAddCommandToSubmenu).toBe(false);
+  });
+
+  it('should dispose an additional surface\'s menu registrations when the returned disposable is disposed', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
+
+    const disposable = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    await waitForAllAsyncOperations();
+
+    expect(additional.menuDisposeSpies).toHaveLength(1);
+    const menuDisposeSpy = additional.menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).not.toHaveBeenCalled();
+
+    dispose(disposable);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should dispose an additional surface\'s menu registrations on component unload', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
+    component.load();
+
+    component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    await waitForAllAsyncOperations();
+    component.unload();
+
+    const menuDisposeSpy = additional.menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
   });
 });
