@@ -61,7 +61,7 @@ describe('TriStateCheckboxComponent', () => {
     expect(comp.inputEl.indeterminate).toBe(false);
   });
 
-  it('should return inputEl as validatorEl', () => {
+  it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
     expect(comp.validatorEl).toBe(comp.inputEl);
   });

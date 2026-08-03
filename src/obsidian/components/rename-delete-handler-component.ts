@@ -94,8 +94,6 @@ import {
   MonkeyAroundComponent
 } from './monkey-around-component.ts';
 
-export { EmptyFolderBehavior };
-
 /**
  * Settings for the rename/delete handler.
  */
@@ -217,7 +215,7 @@ interface FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams {
 interface MetadataDeletedHandlerConstructorParams {
   readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   readonly file: TAbstractFile;
-  readonly prevCache: CachedMetadata | null;
+  readonly previousCache: CachedMetadata | null;
   readonly settingsManager: SettingsManager;
 }
 
@@ -239,9 +237,10 @@ class SettingsManager {
   }
 
   public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = Array.from(this.renameDeleteHandlersMap.values()).reverse();
+    const settingsBuilders = [...this.renameDeleteHandlersMap.values()].reverse();
 
     const settings: Partial<RenameDeleteHandlerSettings> = {};
+    // eslint-disable-next-line unicorn/no-immediate-mutation -- Folding these into the object literal keeps them optional under `Partial<>`, losing the narrowing that makes them callable below without a nullish check.
     settings.isNote = (path: string): boolean => isNote(path);
     settings.isPathIgnored = (): boolean => false;
 
@@ -342,7 +341,7 @@ class DeleteHandler {
     await cleanupEmptyFolders({
       app: this.app,
       emptyFolderBehavior: settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
-      folderPaths: Array.from(parentFolderPaths)
+      folderPaths: [...parentFolderPaths]
     });
     this.abortSignal.throwIfAborted();
 
@@ -397,11 +396,11 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.fileManager,
       methodName: 'runAsyncLinkUpdate',
-      obj: this.fileManager,
       patchHandler: ({
         fallback,
-        originalArgs: [linkUpdatesHandler],
+        originalArguments: [linkUpdatesHandler],
         originalMethod,
         originalMethodBound
       }) => {
@@ -509,13 +508,13 @@ class HandledRenames {
 class MetadataDeletedHandler {
   private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   private readonly file: TAbstractFile;
-  private readonly prevCache: CachedMetadata | null;
+  private readonly previousCache: CachedMetadata | null;
   private readonly settingsManager: SettingsManager;
 
   public constructor(params: MetadataDeletedHandlerConstructorParams) {
     this.deletedMetadataCacheMap = params.deletedMetadataCacheMap;
     this.file = params.file;
-    this.prevCache = params.prevCache;
+    this.previousCache = params.previousCache;
     this.settingsManager = params.settingsManager;
   }
 
@@ -531,8 +530,8 @@ class MetadataDeletedHandler {
       return;
     }
 
-    if (isMarkdownFile(this.file) && this.prevCache) {
-      this.deletedMetadataCacheMap.set(this.file.path, this.prevCache);
+    if (isMarkdownFile(this.file) && this.previousCache) {
+      this.deletedMetadataCacheMap.set(this.file.path, this.previousCache);
     }
   }
 }
@@ -620,7 +619,8 @@ class RenameHandler {
           if (attachmentOldPath === this.oldPath) {
             continue;
           }
-          const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath })).data;
+          const attachmentOldPathBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath });
+          const attachmentOldPathBacklinksMap = attachmentOldPathBacklinks.data;
           this.abortSignal.throwIfAborted();
           renameMap.initBacklinksMap({
             combinedBacklinksMap,
@@ -646,7 +646,7 @@ class RenameHandler {
       await cleanupEmptyFolders({
         app: this.app,
         emptyFolderBehavior: settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
-        folderPaths: Array.from(parentFolderPaths)
+        folderPaths: [...parentFolderPaths]
       });
       this.abortSignal.throwIfAborted();
 
@@ -659,9 +659,7 @@ class RenameHandler {
         return;
       }
 
-      const backlinkEntries = Array.from(combinedBacklinksMap.entries()).concat(
-        Array.from(this.interruptedCombinedBacklinksMap.entries())
-      );
+      const backlinkEntries = [...combinedBacklinksMap, ...this.interruptedCombinedBacklinksMap];
       let processedBacklinkFiles = 0;
       for (const [newBacklinkPath, linkJsonToPathMap] of backlinkEntries) {
         let linkIndex = 0;
@@ -727,10 +725,10 @@ class RenameHandler {
         });
       }
     } finally {
-      const orphanKeys = Array.from(this.handledRenames.keys());
+      const orphanKeys = [...this.handledRenames.keys()];
       addToQueue({
         abortSignal: this.abortSignal,
-        operationFn: () => {
+        operationFunction: () => {
           for (const orphanKey of orphanKeys) {
             this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
           }
@@ -776,8 +774,8 @@ class RenameHandler {
       return false;
     }
 
-    const tempPath = join(dirname(this.newPath), `__temp__${basename(this.newPath)}`);
-    await this.renameHandled(this.newPath, tempPath);
+    const temporaryPath = join(dirname(this.newPath), `__temp__${basename(this.newPath)}`);
+    await this.renameHandled(this.newPath, temporaryPath);
 
     await new RenameHandler({
       abortSignal: this.abortSignal,
@@ -785,7 +783,7 @@ class RenameHandler {
       handledRenames: this.handledRenames,
       interruptedRenamesMap: this.interruptedRenamesMap,
       linkUpdateProgressReporter: this.linkUpdateProgressReporter,
-      newPath: tempPath,
+      newPath: temporaryPath,
       oldCache: this.oldCache,
       oldPath: this.oldPath,
       oldPathBacklinksMap: this.oldPathBacklinksMap,
@@ -794,7 +792,7 @@ class RenameHandler {
       settingsManager: this.settingsManager
     }).handle();
 
-    await this.app.fileManager.renameFile(getFile({ app: this.app, pathOrFile: tempPath }), this.newPath);
+    await this.app.fileManager.renameFile(getFile({ app: this.app, pathOrFile: temporaryPath }), this.newPath);
     return true;
   }
 
@@ -805,7 +803,8 @@ class RenameHandler {
     let oldPathBacklinksMapRefreshed: Map<string, Reference[]>;
     {
       using _registration = registerFiles(this.app, [fakeOldFile]);
-      oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile })).data;
+      const fakeOldFileBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile });
+      oldPathBacklinksMapRefreshed = fakeOldFileBacklinks.data;
     }
 
     for (const link of oldPathLinksRefreshed) {
@@ -815,7 +814,7 @@ class RenameHandler {
       this.oldPathLinks.push(link);
     }
 
-    for (const [backlinkPath, refreshedLinks] of oldPathBacklinksMapRefreshed.entries()) {
+    for (const [backlinkPath, refreshedLinks] of oldPathBacklinksMapRefreshed) {
       let oldLinks = this.oldPathBacklinksMap.get(backlinkPath);
       if (!oldLinks) {
         oldLinks = [];
@@ -978,10 +977,10 @@ class RenameMap {
           this.abortSignal.throwIfAborted();
         }
       } else {
-        const dir = dirname(newAttachmentFilePath);
-        const ext = extname(newAttachmentFilePath);
-        const baseName = basename(newAttachmentFilePath, ext);
-        newAttachmentFilePath = this.app.vault.getAvailablePath(join(dir, baseName), ext.slice(1));
+        const directory = dirname(newAttachmentFilePath);
+        const extension = extname(newAttachmentFilePath);
+        const baseName = basename(newAttachmentFilePath, extension);
+        newAttachmentFilePath = this.app.vault.getAvailablePath(join(directory, baseName), extension.slice(1));
       }
       this.map.set(oldAttachmentFile.path, newAttachmentFilePath);
     }
@@ -997,7 +996,7 @@ class RenameMap {
       path,
       singleBacklinksMap
     } = params;
-    for (const [backlinkPath, links] of singleBacklinksMap.entries()) {
+    for (const [backlinkPath, links] of singleBacklinksMap) {
       const newBacklinkPath = this.map.get(backlinkPath) ?? backlinkPath;
       const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
       combinedBacklinksMap.set(newBacklinkPath, linkJsonToPathMap);
@@ -1013,8 +1012,7 @@ class RenameMap {
       if (!oldAttachmentFile) {
         continue;
       }
-      const backlinksMap = new Map<string, Reference[]>();
-      backlinksMap.set(this.newPath, [oldPathLink]);
+      const backlinksMap = new Map<string, Reference[]>([[this.newPath, [oldPathLink]]]);
       this.initBacklinksMap({
         combinedBacklinksMap,
         path: oldAttachmentFile.path,
@@ -1142,7 +1140,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       return;
     }
     addToQueue({
-      operationFn: (abortSignal) =>
+      operationFunction: (abortSignal) =>
         new DeleteHandler({
           abortSignal,
           app: this.app,
@@ -1154,14 +1152,14 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     });
   }
 
-  private handleMetadataDeleted(file: TAbstractFile, prevCache: CachedMetadata | null): void {
+  private handleMetadataDeleted(file: TAbstractFile, previousCache: CachedMetadata | null): void {
     if (!this.shouldInvokeHandler()) {
       return;
     }
     new MetadataDeletedHandler({
       deletedMetadataCacheMap: this.deletedMetadataCacheMap,
       file,
-      prevCache,
+      previousCache,
       settingsManager: this.settingsManager
     }).handle();
   }
@@ -1220,7 +1218,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
     addToQueue({
       abortSignal: this.abortSignalComponent.abortSignal,
-      operationFn: (abortSignal) =>
+      operationFunction: (abortSignal) =>
         new RenameHandler({
           abortSignal,
           app: this.app,
@@ -1242,15 +1240,17 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   private logRegisteredHandlers(): void {
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
     getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
-      `Plugins with registered rename/delete handlers: ${JSON.stringify(Array.from(renameDeleteHandlersMap.keys()))}`
+      `Plugins with registered rename/delete handlers: ${JSON.stringify([...renameDeleteHandlersMap.keys()])}`
     );
   }
 
   private shouldInvokeHandler(): boolean {
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-    const mainPluginId = Array.from(renameDeleteHandlersMap.keys())[0];
+    const mainPluginId = [...renameDeleteHandlersMap.keys()][0];
     return mainPluginId === this.pluginId;
   }
 }
 
 /* v8 ignore stop */
+
+export { EmptyFolderBehavior } from '../vault.ts';

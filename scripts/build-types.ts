@@ -70,14 +70,14 @@ await wrapCliTask(async () => {
     const isLibraryFile = name === LIBRARY_FILE_NAME && folder === '.';
 
     let ctsContent = replaceAll({
+      $string: content,
       replacer: 'from \'$<ImportPath>.cjs\';',
-      searchValue: STATIC_IMPORT_REG_EXP,
-      str: content
+      searchValue: STATIC_IMPORT_REG_EXP
     });
     ctsContent = replaceAll({
+      $string: ctsContent,
       replacer: 'import($<Quote>$<ImportPath>.cjs$<Quote>)',
-      searchValue: DYNAMIC_IMPORT_REG_EXP,
-      str: ctsContent
+      searchValue: DYNAMIC_IMPORT_REG_EXP
     });
 
     // A `.d.cts` file is a CommonJS module. Type-only imports of a bare specifier resolving to an
@@ -85,25 +85,25 @@ await wrapCliTask(async () => {
     // Passing `'import'` is valid for CommonJS targets too, so every bare specifier receives it.
     // The ESM `.d.mts` needs no such attribute, so this transform runs on CommonJS content only.
     ctsContent = replaceAll({
+      $string: ctsContent,
       replacer: 'import type $<Clause> from \'$<Specifier>\' with { \'resolution-mode\': \'import\' };',
-      searchValue: BARE_TYPE_IMPORT_REG_EXP,
-      str: ctsContent
+      searchValue: BARE_TYPE_IMPORT_REG_EXP
     });
     ctsContent = replaceAll({
+      $string: ctsContent,
       replacer: 'import("$<Specifier>", { with: { \'resolution-mode\': \'import\' } })',
-      searchValue: BARE_INLINE_IMPORT_TYPE_REG_EXP,
-      str: ctsContent
+      searchValue: BARE_INLINE_IMPORT_TYPE_REG_EXP
     });
 
     let mtsContent = replaceAll({
+      $string: content,
       replacer: 'from \'$<ImportPath>.mjs\';',
-      searchValue: STATIC_IMPORT_REG_EXP,
-      str: content
+      searchValue: STATIC_IMPORT_REG_EXP
     });
     mtsContent = replaceAll({
+      $string: mtsContent,
       replacer: 'import($<Quote>$<ImportPath>.mjs$<Quote>)',
-      searchValue: DYNAMIC_IMPORT_REG_EXP,
-      str: mtsContent
+      searchValue: DYNAMIC_IMPORT_REG_EXP
     });
 
     if (isLibraryFile) {
@@ -122,60 +122,60 @@ await wrapCliTask(async () => {
     await writeFile(ctsPath, ctsContent);
     await writeFile(mtsPath, mtsContent);
   }
-
-  async function collectAllLibs(): Promise<string[]> {
-    const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
-    const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
-    const libs = new Set((tsconfig.compilerOptions?.lib ?? []).map((lib) => lib.toLowerCase()));
-
-    for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-      const sourceFilePath = join(ObsidianDevUtilsRepoPaths.Src, file);
-      if (!file.endsWith('.ts')) {
-        continue;
-      }
-
-      const sourceContent = readFileSync(sourceFilePath, 'utf-8');
-      for (const match of sourceContent.matchAll(REFERENCE_LIB_REG_EXP)) {
-        libs.add((match.groups?.['Lib'] ?? '').toLowerCase());
-      }
-    }
-
-    return [...libs].sort();
-  }
-
-  async function collectAllTypes(): Promise<string[]> {
-    const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
-    const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
-    return (tsconfig.compilerOptions?.types ?? [])
-      .filter((type) => DECLARATION_REFERENCE_TYPES.has(type))
-      .sort();
-  }
-
-  function buildAllReferenceLibDirectives(libs: string[]): string {
-    return `${
-      libs
-        .map((lib) => `/// <reference lib="${lib}" />`)
-        .join('\n')
-    }\n`;
-  }
-
-  function buildAllReferenceTypesDirectives(types: string[]): string {
-    if (types.length === 0) {
-      return '';
-    }
-    return `${
-      types
-        .map((type) => `/// <reference types="${type}" />`)
-        .join('\n')
-    }\n`;
-  }
-
-  function buildReferencePathDirective(declarationFilePath: string, moduleDir: string, extension: string): string {
-    const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDir, LIBRARY_FILE_NAME + extension);
-    let relativePath = relative(dirname(declarationFilePath), libraryFilePath).replaceAll('\\', '/');
-    if (!relativePath.startsWith('.')) {
-      relativePath = `./${relativePath}`;
-    }
-    return `/// <reference path="${relativePath}" />\n`;
-  }
 });
+
+function buildAllReferenceLibDirectives(libs: string[]): string {
+  return `${
+    libs
+      .map((lib) => `/// <reference lib="${lib}" />`)
+      .join('\n')
+  }\n`;
+}
+
+function buildAllReferenceTypesDirectives(types: string[]): string {
+  if (types.length === 0) {
+    return '';
+  }
+  return `${
+    types
+      .map((type) => `/// <reference types="${type}" />`)
+      .join('\n')
+  }\n`;
+}
+
+function buildReferencePathDirective(declarationFilePath: string, moduleDirectory: string, extension: string): string {
+  const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDirectory, LIBRARY_FILE_NAME + extension);
+  let relativePath = relative(dirname(declarationFilePath), libraryFilePath).replaceAll('\\', '/');
+  if (!relativePath.startsWith('.')) {
+    relativePath = `./${relativePath}`;
+  }
+  return `/// <reference path="${relativePath}" />\n`;
+}
+
+async function collectAllLibs(): Promise<string[]> {
+  const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
+  const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
+  const libs = new Set((tsconfig.compilerOptions?.lib ?? []).map((lib) => lib.toLowerCase()));
+
+  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
+    const sourceFilePath = join(ObsidianDevUtilsRepoPaths.Src, file);
+    if (!file.endsWith('.ts')) {
+      continue;
+    }
+
+    const sourceContent = readFileSync(sourceFilePath, 'utf-8');
+    for (const match of sourceContent.matchAll(REFERENCE_LIB_REG_EXP)) {
+      libs.add((match.groups?.['Lib'] ?? '').toLowerCase());
+    }
+  }
+
+  return [...libs].sort();
+}
+
+async function collectAllTypes(): Promise<string[]> {
+  const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
+  const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
+  return (tsconfig.compilerOptions?.types ?? [])
+    .filter((type) => DECLARATION_REFERENCE_TYPES.has(type))
+    .sort();
+}

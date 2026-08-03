@@ -13,15 +13,7 @@ import { assertNonNullable } from './type-guards.ts';
  * @returns A {@link Promise} that resolves to an {@link ArrayBuffer}.
  */
 export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
-  return await new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.addEventListener('loadend', handleLoadEnd);
-    reader.readAsArrayBuffer(blob);
-
-    function handleLoadEnd(): void {
-      resolve(reader.result as ArrayBuffer);
-    }
-  });
+  return await blob.arrayBuffer();
 }
 
 /**
@@ -101,8 +93,9 @@ export function dataUrlToArrayBuffer(dataUrl: string): ArrayBuffer {
 
   const uInt8Array = new Uint8Array(rawLength);
 
-  for (let i = 0; i < rawLength; i++) {
-    uInt8Array[i] = raw.charCodeAt(i);
+  for (let index = 0; index < rawLength; index++) {
+    // eslint-disable-next-line unicorn/prefer-code-point -- `raw` is a binary string, one byte per code unit. `codePointAt` would combine a surrogate pair into a value above 255 and consume two positions, which is exactly the wrong reading here.
+    uInt8Array[index] = raw.charCodeAt(index);
   }
   return uInt8Array.buffer;
 }

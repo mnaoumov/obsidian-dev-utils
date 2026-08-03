@@ -21,6 +21,7 @@ const SHARED_COVERAGE = {
 };
 
 const SHARED_SERVER = {
+  // eslint-disable-next-line unicorn/name-replacements -- `deps` is a Vitest config key.
   deps: {
     inline: ['@obsidian-typings']
   }

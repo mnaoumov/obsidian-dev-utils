@@ -4,6 +4,7 @@
  * Component that handles async errors by showing a notice to the user.
  */
 
+import { dispose } from '../../disposable.ts';
 import { registerAsyncErrorEventHandler } from '../../error.ts';
 import { t } from '../i18n/i18n.ts';
 import { ComponentEx } from './component-ex.ts';
@@ -28,7 +29,7 @@ export class AsyncErrorHandlerComponent extends ComponentEx {
   public override onload(): void {
     const asyncErrorHandlerDisposable = registerAsyncErrorEventHandler(this.handleAsyncError.bind(this));
     this.register(() => {
-      asyncErrorHandlerDisposable[Symbol.dispose]();
+      dispose(asyncErrorHandlerDisposable);
     });
   }
 

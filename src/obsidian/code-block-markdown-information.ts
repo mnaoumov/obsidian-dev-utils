@@ -18,7 +18,7 @@ export interface CodeBlockMarkdownInformation {
   /**
    * Arguments of the code block.
    */
-  args: string[];
+  $arguments: string[];
 
   /**
    * An end delimiter of the code block.
@@ -48,7 +48,7 @@ export interface CodeBlockMarkdownInformation {
   /**
    * Raw arguments string of the code block.
    */
-  rawArgsStr: string;
+  rawArgumentsString: string;
 
   /**
    * A section information of the code block.

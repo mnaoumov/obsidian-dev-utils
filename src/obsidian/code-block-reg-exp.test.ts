@@ -18,7 +18,7 @@ interface ParsedCodeBlock {
 }
 
 function parseCodeBlocks(text: string): ParsedCodeBlock[] {
-  return Array.from(text.matchAll(createCodeBlockRegExp())).map((match) => ({
+  return [...text.matchAll(createCodeBlockRegExp())].map((match) => ({
     content: getOptionalNamedGroup(match, 'CodeBlockContent'),
     language: getMandatoryNamedGroup(match, 'CodeBlockLanguage')
   }));

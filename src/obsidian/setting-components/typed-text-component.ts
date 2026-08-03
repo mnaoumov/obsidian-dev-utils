@@ -108,12 +108,12 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
   /**
    * Sets the disabled state of the component.
    *
-   * @param disabled - Whether the component is disabled.
+   * @param isDisabled - Whether the component is disabled.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.textComponent.setDisabled(disabled);
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.textComponent.setDisabled(isDisabled);
     return this;
   }
 
@@ -131,10 +131,10 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
   /**
    * Converts a string to a value.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The value.
    */
-  public abstract valueFromString(str: string): T;
+  public abstract valueFromString($string: string): T;
 
   /**
    * Converts a value to a string.
@@ -142,6 +142,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @param value - The value to convert.
    * @returns The string.
    */
+  // eslint-disable-next-line unicorn/prefer-native-coercion-functions -- This is an overridable method on the component's public surface, and subclasses replace it to control how their value is rendered. Turning it into a `valueToString = String` field would change the class shape and take `override` with it.
   public valueToString(value: T): string {
     return String(value);
   }

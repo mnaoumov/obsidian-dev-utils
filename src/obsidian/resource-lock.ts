@@ -47,6 +47,7 @@ import {
 
 import type { PathOrFile } from './file-system.ts';
 
+import { snapshot } from '../array.ts';
 import { convertAsyncToSync } from '../async.ts';
 import { Beeper } from '../beeper.ts';
 import {
@@ -293,105 +294,105 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
     super.onload();
 
     this.registerMethodPatch<Vault, 'append'>({
+      $object: Vault.prototype,
       methodName: 'append',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'copy'>({
+      $object: Vault.prototype,
       methodName: 'copy',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [, newPath] }) => {
+      patchHandler: ({ fallback, originalArguments: [, newPath] }) => {
         this.assertNotBlocked([newPath]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'create'>({
+      $object: Vault.prototype,
       methodName: 'create',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [path] }) => {
+      patchHandler: ({ fallback, originalArguments: [path] }) => {
         this.assertNotBlocked([path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'createBinary'>({
+      $object: Vault.prototype,
       methodName: 'createBinary',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [path] }) => {
+      patchHandler: ({ fallback, originalArguments: [path] }) => {
         this.assertNotBlocked([path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'createFolder'>({
+      $object: Vault.prototype,
       methodName: 'createFolder',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [path] }) => {
+      patchHandler: ({ fallback, originalArguments: [path] }) => {
         this.assertNotBlocked([path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'delete'>({
+      $object: Vault.prototype,
       methodName: 'delete',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'modify'>({
+      $object: Vault.prototype,
       methodName: 'modify',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'modifyBinary'>({
+      $object: Vault.prototype,
       methodName: 'modifyBinary',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'process'>({
+      $object: Vault.prototype,
       methodName: 'process',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'rename'>({
+      $object: Vault.prototype,
       methodName: 'rename',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file, newPath] }) => {
+      patchHandler: ({ fallback, originalArguments: [file, newPath] }) => {
         this.assertNotBlocked([file.path, newPath]);
         return fallback();
       }
     });
     this.registerMethodPatch<Vault, 'trash'>({
+      $object: Vault.prototype,
       methodName: 'trash',
-      obj: Vault.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
     });
     this.registerMethodPatch<FileManager, 'renameFile'>({
+      $object: FileManager.prototype,
       methodName: 'renameFile',
-      obj: FileManager.prototype,
-      patchHandler: ({ fallback, originalArgs: [file, newPath] }) => {
+      patchHandler: ({ fallback, originalArguments: [file, newPath] }) => {
         this.assertNotBlocked([file.path, newPath]);
         return fallback();
       }
     });
     this.registerMethodPatch<FileManager, 'trashFile'>({
+      $object: FileManager.prototype,
       methodName: 'trashFile',
-      obj: FileManager.prototype,
-      patchHandler: ({ fallback, originalArgs: [file] }) => {
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
         this.assertNotBlocked([file.path]);
         return fallback();
       }
@@ -585,7 +586,7 @@ class ResourceLockManager {
   private abortAndReleaseEntries(app: App, ownerPath: string): void {
     const entries = this.lockEntriesByPath.get(ownerPath);
     assertNonNullable(entries);
-    for (const entry of [...entries]) {
+    for (const entry of snapshot(entries)) {
       entry.abortController?.abort();
     }
     this.lockEntriesByPath.delete(ownerPath);
@@ -671,18 +672,18 @@ class ResourceLockManager {
     this.eventsComponent.load();
   }
 
-  private flashElement(el: HTMLElement): void {
-    el.removeClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
+  private flashElement(element: HTMLElement): void {
+    element.removeClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
     // Read layout to force a reflow so the flash animation restarts on every rejected keystroke.
-    el.getBoundingClientRect();
-    el.addClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
+    element.getBoundingClientRect();
+    element.addClass(LOCK_INDICATOR_FLASH_CSS_CLASS);
   }
 
   private flashIndicators(view: MarkdownView): void {
     const indicators = this.indicatorsByView.get(view);
-    for (const el of [indicators?.actionIconEl, indicators?.tabIconEl, this.statusBarItemEl]) {
-      if (el) {
-        this.flashElement(el);
+    for (const element of [indicators?.actionIconEl, indicators?.tabIconEl, this.statusBarItemEl]) {
+      if (element) {
+        this.flashElement(element);
       }
     }
   }
@@ -709,8 +710,8 @@ class ResourceLockManager {
         if (!entry.blocksMutations || !entry.abortController) {
           continue;
         }
-        const coversPath = lockedPath === path || (entry.mode === 'subtree' && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }));
-        if (coversPath) {
+        const doesCoverPath = lockedPath === path || (entry.mode === 'subtree' && isChild({ app, childPathOrFile: path, parentPathOrFile: lockedPath }));
+        if (doesCoverPath) {
           entry.abortController.abort();
         }
       }
@@ -832,13 +833,15 @@ class ResourceLockManager {
     }
 
     for (const [view, indicators] of this.indicatorsByView) {
-      if (!viewsToLock.has(view)) {
-        toggleEditorReadOnly(view.editor, false);
-        indicators.disposeTypeListener();
-        indicators.actionIconEl.remove();
-        indicators.tabIconEl?.remove();
-        this.indicatorsByView.delete(view);
+      if (viewsToLock.has(view)) {
+        continue;
       }
+
+      toggleEditorReadOnly(view.editor, false);
+      indicators.disposeTypeListener();
+      indicators.actionIconEl.remove();
+      indicators.tabIconEl?.remove();
+      this.indicatorsByView.delete(view);
     }
 
     this.updateStatusBar(app);
@@ -856,27 +859,27 @@ class ResourceLockManager {
     }
   }
 
-  private registerUnlockMenu(app: App, el: HTMLElement, getContextPath: () => string | undefined): void {
+  private registerUnlockMenu(app: App, element: HTMLElement, getContextPath: () => string | undefined): void {
     // A click of ANY mouse button on a lock indicator opens the same unlock context menu:
     // `click` fires only for the primary (left) button, `contextmenu` for the right button, and
     // `auxclick` for the middle button (the browser fires no `click` for it). `auxclick` also fires for
     // The right button, so it is guarded to the middle button to avoid double-opening alongside `contextmenu`.
     // A plain listener dies with the element when it is `.remove()`d on unlock, so it never leaks.
-    const openUnlockMenu = (evt: MouseEvent): void => {
-      evt.preventDefault();
+    const openUnlockMenu = ($event: MouseEvent): void => {
+      $event.preventDefault();
       const path = getContextPath();
       if (path === undefined) {
         return;
       }
       const menu = new Menu();
       this.addUnlockMenuItem(app, menu, path);
-      menu.showAtMouseEvent(evt);
+      menu.showAtMouseEvent($event);
     };
-    el.addEventListener('click', openUnlockMenu);
-    el.addEventListener('contextmenu', openUnlockMenu);
-    el.addEventListener('auxclick', (evt) => {
-      if (evt.button === MIDDLE_MOUSE_BUTTON) {
-        openUnlockMenu(evt);
+    element.addEventListener('click', openUnlockMenu);
+    element.addEventListener('contextmenu', openUnlockMenu);
+    element.addEventListener('auxclick', ($event) => {
+      if ($event.button === MIDDLE_MOUSE_BUTTON) {
+        openUnlockMenu($event);
       }
     });
   }

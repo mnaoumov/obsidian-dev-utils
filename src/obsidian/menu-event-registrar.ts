@@ -21,7 +21,7 @@ import type { DisposableEx } from '../disposable.ts';
  * @param editor - The editor instance.
  * @param ctx - The markdown file context.
  */
-export type EditorMenuEventHandler = (menu: Menu, editor: Editor, ctx: MarkdownFileInfo) => void;
+export type EditorMenuEventHandler = (menu: Menu, editor: Editor, context: MarkdownFileInfo) => void;
 
 /**
  * Handler for the single-file context menu event.

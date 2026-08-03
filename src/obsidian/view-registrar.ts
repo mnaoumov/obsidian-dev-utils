@@ -49,8 +49,7 @@ export class PluginViewRegistrar implements ViewRegistrar {
    *
    * @param plugin - The Obsidian plugin instance used to register views.
    */
-  public constructor(protected readonly plugin: Plugin) {
-  }
+  public constructor(protected readonly plugin: Plugin) {}
 
   /**
    * Registers a view type with a view creator.

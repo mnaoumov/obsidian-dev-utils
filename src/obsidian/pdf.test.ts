@@ -34,7 +34,7 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     printDiv = createDiv();
     printDiv.remove = vi.fn() as () => void;
     activeDocument.body.createDiv = vi.fn((): HTMLDivElement => {
-      activeDocument.body.appendChild(printDiv);
+      activeDocument.body.append(printDiv);
       return printDiv;
     });
 
@@ -51,15 +51,15 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
   });
 
   it('should throw on mobile devices', async () => {
-    const originalIsMobile = Platform.isMobile;
+    const isOriginallyMobile = Platform.isMobile;
     try {
       Platform.isMobile = true;
 
-      const el = createDiv();
-      await expect(printToPdf(el, {})).rejects.toThrow('Printing to PDF is not supported on mobile devices.');
+      const element = createDiv();
+      await expect(printToPdf(element, {})).rejects.toThrow('Printing to PDF is not supported on mobile devices.');
     } finally {
       // eslint-disable-next-line require-atomic-updates -- Restoring a mock property in a finally block is intentional.
-      Platform.isMobile = originalIsMobile;
+      Platform.isMobile = isOriginallyMobile;
     }
   });
 
@@ -69,12 +69,12 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = createSpan();
+    const element = createSpan();
 
-    await printToPdf(el, {});
+    await printToPdf(element, {});
 
     expect(activeDocument.body.createDiv).toHaveBeenCalledWith('print');
-    expect(printDiv.contains(el)).toBe(true);
+    expect(printDiv.contains(element)).toBe(true);
   });
 
   it('should call ensureLoaded on the print div', async () => {
@@ -82,9 +82,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = createDiv();
+    const element = createDiv();
 
-    await printToPdf(el, {});
+    await printToPdf(element, {});
 
     expect(ensureLoaded).toHaveBeenCalledWith(printDiv);
   });
@@ -94,9 +94,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = createDiv();
+    const element = createDiv();
 
-    await printToPdf(el, { filepath: 'test.pdf', landscape: true });
+    await printToPdf(element, { filepath: 'test.pdf', landscape: true });
 
     const DEFAULT_SCALE_FACTOR = 100;
     expect(mockIpcRenderer.send).toHaveBeenCalledWith('print-to-pdf', {
@@ -116,9 +116,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = createDiv();
+    const element = createDiv();
 
-    await printToPdf(el, {});
+    await printToPdf(element, {});
 
     const DEFAULT_SCALE_FACTOR = 100;
     expect(mockIpcRenderer.send).toHaveBeenCalledWith('print-to-pdf', {
@@ -138,9 +138,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = createDiv();
+    const element = createDiv();
 
-    await printToPdf(el, {});
+    await printToPdf(element, {});
 
     expect(mockIpcRenderer.once).toHaveBeenCalledWith('print-to-pdf', expect.any(Function));
   });
@@ -150,9 +150,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       resolve();
     });
 
-    const el = createDiv();
+    const element = createDiv();
 
-    await printToPdf(el, {});
+    await printToPdf(element, {});
 
     expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
   });
@@ -165,9 +165,9 @@ describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       throw new Error('IPC error');
     });
 
-    const el = createDiv();
+    const element = createDiv();
 
-    await expect(printToPdf(el, {})).rejects.toThrow('IPC error');
+    await expect(printToPdf(element, {})).rejects.toThrow('IPC error');
     expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
   });
 });

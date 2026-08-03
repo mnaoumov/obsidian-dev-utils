@@ -48,7 +48,7 @@ import {
 } from '../../function.ts';
 import {
   castTo,
-  deepEqual,
+  isDeepEqual,
   normalizeOptionalProperties
 } from '../../object-utils.ts';
 import { assertNonNullable } from '../../type-guards.ts';
@@ -416,7 +416,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
    * @returns The debounce timeout for saving settings.
    */
   protected get saveSettingsDebounceTimeoutInMilliseconds(): number {
-    const DEFAULT = 2_000;
+    const DEFAULT = 2000;
     return DEFAULT;
   }
 
@@ -510,7 +510,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       shouldShowValidationMessage: true
     };
 
-    const optionsExt: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = { ...DEFAULT_OPTIONS, ...options };
+    const optionsExtension: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = { ...DEFAULT_OPTIONS, ...options };
 
     const validatorEl = getValidatorComponent(valueComponent)?.validatorEl;
 
@@ -519,7 +519,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     const readonlyValue = this.getPluginSettingsProperty(propertyName);
     const defaults = this.pluginSettingsComponent.defaultSettings as PluginSettings;
     const defaultValue = defaults[propertyName];
-    const defaultComponentValue = optionsExt.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
+    const defaultComponentValue = optionsExtension.pluginSettingsToComponentValueConverter(defaultValue as ReadonlyDeep<PropertyType>);
     textBasedComponent?.setPlaceholderValue(defaultComponentValue);
 
     let validationMessage: string;
@@ -533,7 +533,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       const tooltipArrowEl = tooltipEl.createDiv();
       addPluginCssClasses(tooltipArrowEl, CssClass.TooltipArrow);
       tooltipEl.hide();
-      wrapper.appendChild(tooltipEl);
+      wrapper.append(tooltipEl);
     }
 
     registerAsyncEvent(
@@ -544,22 +544,22 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
         }
 
         validationMessage = anotherValidationMessage;
-        updateValidatorElDebounced();
+        updateValidatorElementDebounced();
       })
     );
 
     let shouldEmptyOnBlur = false;
     let shouldRevertToDefaultValueOnBlur = false;
 
-    if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && deepEqual(readonlyValue, defaultValue)) {
+    if (textBasedComponent && optionsExtension.shouldShowPlaceholderForDefaultValues && isDeepEqual(readonlyValue, defaultValue)) {
       textBasedComponent.empty();
     } else {
-      valueComponent.setValue(optionsExt.pluginSettingsToComponentValueConverter(readonlyValue));
+      valueComponent.setValue(optionsExtension.pluginSettingsToComponentValueConverter(readonlyValue));
     }
 
     let shouldSkipOnChange = false;
     const UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS = 100;
-    const updateValidatorElDebounced = debounce(() => {
+    const updateValidatorElementDebounced = debounce(() => {
       window.requestAnimationFrame(() => {
         updateValidatorEl();
       });
@@ -574,13 +574,13 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       shouldEmptyOnBlur = false;
 
       const oldValue = this.getPluginSettingsProperty(propertyName);
-      let newValue: PropertyType | undefined = undefined;
+      let newValue: PropertyType | undefined;
       let shouldSetProperty = true;
-      shouldRevertToDefaultValueOnBlur = !!textBasedComponent?.isEmpty() && optionsExt.shouldResetSettingWhenComponentIsEmpty;
+      shouldRevertToDefaultValueOnBlur = !!textBasedComponent?.isEmpty() && optionsExtension.shouldResetSettingWhenComponentIsEmpty;
       if (shouldRevertToDefaultValueOnBlur) {
         newValue = defaultValue;
       } else {
-        const convertedValue = optionsExt.componentToPluginSettingsValueConverter(uiValue);
+        const convertedValue = optionsExtension.componentToPluginSettingsValueConverter(uiValue);
         if (isValidationMessageHolder(convertedValue)) {
           validationMessage = convertedValue.validationMessage;
           shouldSetProperty = false;
@@ -591,33 +591,33 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
       if (shouldSetProperty) {
         validationMessage = await this.pluginSettingsComponent.setProperty(propertyName, newValue as PluginSettings[PropertyName]);
-        if (textBasedComponent && optionsExt.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && deepEqual(newValue, defaultValue)) {
+        if (textBasedComponent && optionsExtension.shouldShowPlaceholderForDefaultValues && !textBasedComponent.isEmpty() && isDeepEqual(newValue, defaultValue)) {
           shouldEmptyOnBlur = true;
         }
       }
 
-      updateValidatorElDebounced();
+      updateValidatorElementDebounced();
       if (shouldSetProperty) {
-        await optionsExt.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue);
+        await optionsExtension.onChanged(newValue as ReadonlyDeep<PropertyType>, oldValue);
       }
       this.saveSettingsDebounced();
     }));
 
     validatorEl?.addEventListener('focus', () => {
-      updateValidatorElDebounced();
+      updateValidatorElementDebounced();
     });
     validatorEl?.addEventListener('blur', () => {
-      updateValidatorElDebounced();
+      updateValidatorElementDebounced();
     });
     validatorEl?.addEventListener('click', () => {
       window.requestAnimationFrame(() => {
-        updateValidatorElDebounced();
+        updateValidatorElementDebounced();
       });
     });
 
     const validationMessages = this.pluginSettingsComponent.settingsState.validationMessages as Record<string, string>;
     validationMessage = validationMessages[propertyName] ?? '';
-    updateValidatorElDebounced();
+    updateValidatorElementDebounced();
 
     return valueComponent;
 
@@ -653,7 +653,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       }
 
       validatorEl.setCustomValidity(validationMessage);
-      if (optionsExt.shouldShowValidationMessage) {
+      if (optionsExtension.shouldShowValidationMessage) {
         tooltipContentEl.textContent = validationMessage;
         tooltipEl?.toggle(!!validationMessage);
       } else if (validationMessage) {

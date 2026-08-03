@@ -52,10 +52,9 @@ interface MockTypeCheckerOverrides {
 function createMockRuleContext(typeCheckerOverrides: MockTypeCheckerOverrides): MockRuleContextResult {
   const report = vi.fn();
 
-  const classDecl = {};
+  const classDeclaration = {};
   const tsNode = {};
-  const esTreeNodeToTSNodeMap = new Map();
-  esTreeNodeToTSNodeMap.set(classDecl, tsNode);
+  const esTreeNodeToTSNodeMap = new Map([[classDeclaration, tsNode]]);
 
   const classType = {
     getBaseTypes: typeCheckerOverrides.getBaseTypes ?? ((): undefined => undefined)
@@ -82,7 +81,7 @@ function createMockRuleContext(typeCheckerOverrides: MockTypeCheckerOverrides): 
     key: strictProxy<TSESTree.Identifier>({ name: 'method', type: 'Identifier' as TSESTree.Identifier['type'] }),
     kind: 'method',
     override: true,
-    parent: { parent: classDecl }
+    parent: { parent: classDeclaration }
   });
 
   const methodDefinitionVisitor = visitors['MethodDefinition'];

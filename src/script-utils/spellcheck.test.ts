@@ -35,7 +35,7 @@ describe('spellcheck', () => {
       '--gitignore',
       '--gitignore-root',
       '/root',
-      { batchedArgs: ['.'] }
+      { batchedArguments: ['.'] }
     ]);
   });
 
@@ -48,7 +48,7 @@ describe('spellcheck', () => {
       '--no-progress',
       '--no-must-find-files',
       '--gitignore',
-      { batchedArgs: ['.'] }
+      { batchedArguments: ['.'] }
     ]);
   });
 });

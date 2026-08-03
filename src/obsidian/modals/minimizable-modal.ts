@@ -147,8 +147,8 @@ class PeekLockComponent extends MonkeyAroundComponent {
     // Block opening any OTHER modal while a modal is minimized (the command palette, a re-fired
     // Command, another plugin modal, …).
     this.registerMethodPatch<Modal, 'open'>({
+      $object: Modal.prototype,
       methodName: 'open',
-      obj: Modal.prototype,
       patchHandler: ({ fallback, originalThis }): void => {
         blockOrFallback(originalThis, fallback);
       }
@@ -160,8 +160,8 @@ class PeekLockComponent extends MonkeyAroundComponent {
     // Therefore blocks the render but leaves an empty settings window behind — the reported bad UX.
     // Guarding the settings modal's own `open()` blocks it *before* the window is created.
     this.registerMethodPatch<App['setting'], 'open'>({
+      $object: this.app.setting,
       methodName: 'open',
-      obj: this.app.setting,
       patchHandler: ({ fallback, originalThis }): void => {
         blockOrFallback(originalThis, fallback);
       }
@@ -307,11 +307,11 @@ export class MinimizableModal<TModal extends Modal> {
       const cancelButtonEl = barEl.createEl('button', { cls: CssClass.CancelButton });
       setIcon(cancelButtonEl, CANCEL_ICON_ID);
       setTooltip(cancelButtonEl, 'Cancel');
-      cancelButtonEl.addEventListener('click', (evt) => {
+      cancelButtonEl.addEventListener('click', ($event) => {
         // The whole bar restores on click; stop propagation so Cancel closes the modal instead of
         // Restoring it. Closing runs the wrapped modal's onClose (peek lock lifted, bar removed), so
         // The consumer's onClose decides what "cancel" means (e.g. releasing a held lock).
-        evt.stopPropagation();
+        $event.stopPropagation();
         this.modal.close();
       });
     }
@@ -373,8 +373,8 @@ export class MinimizableModal<TModal extends Modal> {
 
   private patchOnClose(modal: Modal): void {
     this.closePatchComponent.registerMethodPatch<Modal, 'onClose'>({
+      $object: modal,
       methodName: 'onClose',
-      obj: modal,
       patchHandler: ({ fallback }): void => {
         fallback();
         this.handleClose();
@@ -388,9 +388,9 @@ export class MinimizableModal<TModal extends Modal> {
   }
 }
 
-function blockEvent(evt: Event): void {
-  evt.preventDefault();
-  evt.stopImmediatePropagation();
+function blockEvent($event: Event): void {
+  $event.preventDefault();
+  $event.stopImmediatePropagation();
   signalBlockedAttempt();
 }
 
@@ -419,14 +419,14 @@ function isMinimizedInnerModal(modal: Modal): boolean {
   return false;
 }
 
-function isPeekAllowedKey(evt: KeyboardEvent): boolean {
+function isPeekAllowedKey($event: KeyboardEvent): boolean {
   // Navigation moves the cursor/scrolls (allowed), but Shift+navigation extends the selection (not
   // Needed for inspection), so it is blocked. Bare modifier presses pass through on their own.
-  if (NAVIGATION_KEYS.has(evt.key)) {
-    return !evt.shiftKey;
+  if (NAVIGATION_KEYS.has($event.key)) {
+    return !$event.shiftKey;
   }
 
-  return MODIFIER_KEYS.has(evt.key);
+  return MODIFIER_KEYS.has($event.key);
 }
 
 function isPeekLocked(): boolean {
@@ -452,18 +452,18 @@ function signalBlockedAttempt(): void {
   beeper.beep();
 }
 
-function suppressKeydownWhilePeekLocked(evt: KeyboardEvent): void {
-  if (!isPeekLocked() || isPeekAllowedKey(evt)) {
+function suppressKeydownWhilePeekLocked($event: KeyboardEvent): void {
+  if (!isPeekLocked() || isPeekAllowedKey($event)) {
     return;
   }
 
-  blockEvent(evt);
+  blockEvent($event);
 }
 
-function suppressWhilePeekLocked(evt: Event): void {
+function suppressWhilePeekLocked($event: Event): void {
   if (!isPeekLocked()) {
     return;
   }
 
-  blockEvent(evt);
+  blockEvent($event);
 }

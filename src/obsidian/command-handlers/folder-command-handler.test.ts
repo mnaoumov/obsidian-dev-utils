@@ -54,16 +54,16 @@ interface MutableParent {
 }
 
 class TestFolderHandler extends FolderCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   protected override canExecuteFolder(folder: TFolderOriginal): boolean {
     super.canExecuteFolder(folder);
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async executeFolder(_folder: TFolderOriginal): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 
   protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {
@@ -367,17 +367,17 @@ describe('FolderCommandHandler', () => {
       const folder2 = createMockTFolder('b');
 
       const menu = strictProxy<MenuOriginal>({});
-      const addItem = vi.fn((cb: (item: unknown) => void) => {
+      const addItem = vi.fn((callback: (item: unknown) => void) => {
         const item = {
-          onClick: vi.fn((clickCb: () => void) => {
-            clickCb();
+          onClick: vi.fn((clickCallback: () => void) => {
+            clickCallback();
             return item;
           }),
           setIcon: vi.fn().mockReturnThis(),
           setSection: vi.fn().mockReturnThis(),
           setTitle: vi.fn().mockReturnThis()
         };
-        cb(item);
+        callback(item);
         return menu;
       });
       Object.assign(menu, { addItem });

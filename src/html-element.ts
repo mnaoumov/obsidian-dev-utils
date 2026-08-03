@@ -56,7 +56,7 @@ export interface ValidatorElement extends HTMLElement {
  */
 export async function createDivAsync(
   o?: DomElementInfo | string,
-  callback?: (el: HTMLDivElement) => Promisable<void>
+  callback?: (element: HTMLDivElement) => Promisable<void>
 ): Promise<HTMLDivElement> {
   const div = createHtmlElement('div', o);
   await callback?.(div);
@@ -76,11 +76,11 @@ export async function createDivAsync(
 export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   o?: DomElementInfo | string,
-  callback?: (el: HTMLElementTagNameMap[K]) => Promisable<void>
+  callback?: (element: HTMLElementTagNameMap[K]) => Promisable<void>
 ): Promise<HTMLElementTagNameMap[K]> {
-  const el = createHtmlElement(tag, o);
-  await callback?.(el);
-  return el;
+  const element = createHtmlElement(tag, o);
+  await callback?.(element);
+  return element;
 }
 
 /**
@@ -89,7 +89,7 @@ export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
  * @param callback - The callback to call when the DocumentFragment is created.
  * @returns A {@link Promise} that resolves to the DocumentFragment.
  */
-export async function createFragmentAsync(callback?: (el: DocumentFragment) => Promisable<void>): Promise<DocumentFragment> {
+export async function createFragmentAsync(callback?: (element: DocumentFragment) => Promisable<void>): Promise<DocumentFragment> {
   // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
   const fragment = document.createDocumentFragment();
   await callback?.(fragment);
@@ -105,7 +105,7 @@ export async function createFragmentAsync(callback?: (el: DocumentFragment) => P
  */
 export async function createSpanAsync(
   o?: DomElementInfo | string,
-  callback?: (el: HTMLSpanElement) => Promisable<void>
+  callback?: (element: HTMLSpanElement) => Promisable<void>
 ): Promise<HTMLSpanElement> {
   const span = createHtmlElement('span', o);
   await callback?.(span);
@@ -125,7 +125,7 @@ export async function createSpanAsync(
 export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
   tag: K,
   o?: string | SvgElementInfo,
-  callback?: (el: SVGElementTagNameMap[K]) => Promisable<void>
+  callback?: (element: SVGElementTagNameMap[K]) => Promisable<void>
 ): Promise<SVGElementTagNameMap[K]> {
   const svg = createSvgElement(tag, o);
   await callback?.(svg);
@@ -135,32 +135,32 @@ export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
 /**
  * Ensures that the given element is loaded.
  *
- * @param el - The element to ensure is loaded.
+ * @param element - The element to ensure is loaded.
  * @returns A {@link Promise} that resolves when the element is loaded.
  */
-export async function ensureLoaded(el: Element): Promise<void> {
-  if (isLoaded(el)) {
+export async function ensureLoaded(element: Element): Promise<void> {
+  if (isLoaded(element)) {
     return;
   }
-  const win = getNodeWindow(el);
+  const win = getNodeWindow(element);
   if (
-    isInstanceOf(el, win.HTMLBodyElement)
-    || isInstanceOf(el, win.HTMLImageElement)
-    || isInstanceOf(el, win.HTMLIFrameElement)
-    || isInstanceOf(el, win.HTMLEmbedElement)
-    || isInstanceOf(el, win.HTMLLinkElement)
-    || isInstanceOf(el, win.HTMLObjectElement)
-    || isInstanceOf(el, win.HTMLStyleElement)
-    || isInstanceOf(el, win.HTMLTrackElement)
+    isInstanceOf(element, win.HTMLBodyElement)
+    || isInstanceOf(element, win.HTMLImageElement)
+    || isInstanceOf(element, win.HTMLIFrameElement)
+    || isInstanceOf(element, win.HTMLEmbedElement)
+    || isInstanceOf(element, win.HTMLLinkElement)
+    || isInstanceOf(element, win.HTMLObjectElement)
+    || isInstanceOf(element, win.HTMLStyleElement)
+    || isInstanceOf(element, win.HTMLTrackElement)
   ) {
     await new Promise((resolve) => {
-      el.addEventListener('load', resolve);
-      el.addEventListener('error', resolve);
+      element.addEventListener('load', resolve);
+      element.addEventListener('error', resolve);
     });
     return;
   }
 
-  await Promise.all(getLoadableElements(el).map(ensureLoaded));
+  await Promise.all(getLoadableElements(element).map((loadableElement) => ensureLoaded(loadableElement)));
 }
 
 /**
@@ -181,19 +181,19 @@ export function getDocumentWindow(doc: Document): Window {
 /**
  * Gets the z-index of the given element.
  *
- * @param el - The element to get the z-index of.
+ * @param element - The element to get the z-index of.
  * @returns The z-index of the element.
  */
-export function getZIndex(el: Element): number {
-  let el2: Element | null = el;
+export function getZIndex(element: Element): number {
+  let element2: Element | null = element;
 
-  while (el2) {
-    const zIndexStr = getComputedStyle(el2).zIndex;
-    const zIndex = Number.parseInt(zIndexStr, 10);
+  while (element2) {
+    const zIndexString = getComputedStyle(element2).zIndex;
+    const zIndex = Number.parseInt(zIndexString, 10);
     if (!Number.isNaN(zIndex)) {
       return zIndex;
     }
-    el2 = el2.parentElement;
+    element2 = element2.parentElement;
   }
 
   return 0;
@@ -202,74 +202,74 @@ export function getZIndex(el: Element): number {
 /**
  * Checks if the element is visible in the offset parent.
  *
- * @param el - The element to check.
+ * @param element - The element to check.
  * @returns `true` if the element is visible in the offset parent, `false` otherwise.
  */
-export function isElementVisibleInOffsetParent(el: HTMLElement): boolean {
-  const parentEl = el.offsetParent;
-  if (!parentEl) {
+export function isElementVisibleInOffsetParent(element: HTMLElement): boolean {
+  const parentElement = element.offsetParent;
+  if (!parentElement) {
     return false;
   }
 
-  const elRect = el.getBoundingClientRect();
-  const parentElRect = parentEl.getBoundingClientRect();
+  const elementRect = element.getBoundingClientRect();
+  const parentElementRect = parentElement.getBoundingClientRect();
 
   return (
-    parentElRect.top <= elRect.top
-    && elRect.bottom <= parentElRect.bottom
-    && parentElRect.left <= elRect.left
-    && elRect.right <= parentElRect.right
+    parentElementRect.top <= elementRect.top
+    && elementRect.bottom <= parentElementRect.bottom
+    && parentElementRect.left <= elementRect.left
+    && elementRect.right <= parentElementRect.right
   );
 }
 
 /**
  * Checks if the element is loaded.
  *
- * @param el - The element to check.
+ * @param element - The element to check.
  * @returns `true` if the element is loaded, `false` otherwise.
  */
-export function isLoaded(el: Element): boolean {
-  const win = getNodeWindow(el);
+export function isLoaded(element: Element): boolean {
+  const win = getNodeWindow(element);
 
-  if (isInstanceOf(el, win.HTMLBodyElement)) {
-    const readyState = el.ownerDocument.readyState;
+  if (isInstanceOf(element, win.HTMLBodyElement)) {
+    const readyState = element.ownerDocument.readyState;
     return readyState === 'complete' || readyState === 'interactive';
   }
 
-  if (isInstanceOf(el, win.HTMLImageElement)) {
-    return el.complete && el.naturalWidth > 0;
+  if (isInstanceOf(element, win.HTMLImageElement)) {
+    return element.complete && element.naturalWidth > 0;
   }
 
-  if (isInstanceOf(el, win.HTMLIFrameElement)) {
-    return !!el.contentDocument;
+  if (isInstanceOf(element, win.HTMLIFrameElement)) {
+    return !!element.contentDocument;
   }
 
-  if (isInstanceOf(el, win.HTMLEmbedElement)) {
-    return !!el.getSVGDocument();
+  if (isInstanceOf(element, win.HTMLEmbedElement)) {
+    return !!element.getSVGDocument();
   }
 
-  if (isInstanceOf(el, win.HTMLLinkElement)) {
-    return el.rel === 'stylesheet' ? el.sheet !== null : true;
+  if (isInstanceOf(element, win.HTMLLinkElement)) {
+    return element.rel === 'stylesheet' ? element.sheet !== null : true;
   }
 
-  if (isInstanceOf(el, win.HTMLObjectElement)) {
-    return !!el.contentDocument || !!el.getSVGDocument();
+  if (isInstanceOf(element, win.HTMLObjectElement)) {
+    return !!element.contentDocument || !!element.getSVGDocument();
   }
 
-  if (isInstanceOf(el, win.HTMLScriptElement)) {
+  if (isInstanceOf(element, win.HTMLScriptElement)) {
     return true;
   }
 
-  if (isInstanceOf(el, win.HTMLStyleElement)) {
-    return !!el.sheet;
+  if (isInstanceOf(element, win.HTMLStyleElement)) {
+    return !!element.sheet;
   }
 
-  if (isInstanceOf(el, win.HTMLTrackElement)) {
+  if (isInstanceOf(element, win.HTMLTrackElement)) {
     const READY_STATE_LOADED = 2;
-    return el.readyState === READY_STATE_LOADED;
+    return element.readyState === READY_STATE_LOADED;
   }
 
-  return getLoadableElements(el).every(isLoaded);
+  return getLoadableElements(element).every((loadableElement) => isLoaded(loadableElement));
 }
 
 /**
@@ -281,9 +281,7 @@ export function isLoaded(el: Element): boolean {
  */
 export function onAncestorScrollOrResize(node: Node, callback: () => void): Disposable {
   const win = getNodeWindow(node);
-  const ancestors: EventTarget[] = [];
-  ancestors.push(node.ownerDocument ?? win.document);
-  ancestors.push(win);
+  const ancestors: EventTarget[] = [node.ownerDocument ?? win.document, win];
 
   let currentNode: Node | null = node;
 
@@ -338,24 +336,26 @@ export function toPx(value: number): string {
 /**
  * Waits until the given element is connected to the DOM.
  *
- * @param el - The element to check.
+ * @param element - The element to check.
  * @returns A promise that resolves when the element is connected.
  */
-export function waitUntilConnected(el: HTMLElement): Promise<void> {
+export function waitUntilConnected(element: HTMLElement): Promise<void> {
   return new Promise((resolve) => {
-    if (el.isConnected) {
+    if (element.isConnected) {
       resolve();
       return;
     }
 
     // Obsidian's `el.onNodeInserted` uses a `node-inserted` CSS keyframe from Obsidian's stylesheet.
     // The agnostic equivalent instead observes the element's document for it becoming connected.
-    const ownerDocument = el.ownerDocument;
-    const observer = new (getNodeWindow(el)).MutationObserver(() => {
-      if (el.isConnected) {
-        observer.disconnect();
-        resolve();
+    const ownerDocument = element.ownerDocument;
+    const observer = new (getNodeWindow(element)).MutationObserver(() => {
+      if (!element.isConnected) {
+        return;
       }
+
+      observer.disconnect();
+      resolve();
     });
     observer.observe(ownerDocument, { childList: true, subtree: true });
   });
@@ -368,32 +368,32 @@ export function waitUntilConnected(el: HTMLElement): Promise<void> {
  * NOT ported (no internal caller needs them); extend this if a consumer does — and revalidate against
  * `enhance.js` (see the `@file` note and `CLAUDE.md`).
  *
- * @param el - The element to apply the info to.
+ * @param element - The element to apply the info to.
  * @param o - The element info (or a bare class string).
  */
-function applyDomElementInfo(el: HTMLElement, o: DomElementInfo | string | undefined): void {
+function applyDomElementInfo(element: HTMLElement, o: DomElementInfo | string | undefined): void {
   const info: DomElementInfo = typeof o === 'string' ? { cls: o } : o ?? {};
 
   if (info.cls !== undefined) {
-    el.className = Array.isArray(info.cls) ? info.cls.join(' ') : info.cls;
+    element.className = Array.isArray(info.cls) ? info.cls.join(' ') : info.cls;
   }
   if (info.text !== undefined) {
-    setElementText(el, info.text);
+    setElementText(element, info.text);
   }
   if (info.attr) {
-    setElementAttrs(el, info.attr);
+    setElementAttributes(element, info.attr);
   }
   if (info.title !== undefined) {
-    el.title = info.title;
+    element.title = info.title;
   }
-  insertIntoParent(el, info);
+  insertIntoParent(element, info);
 }
 
 function createHtmlElement<K extends keyof HTMLElementTagNameMap>(tag: K, o?: DomElementInfo | string): HTMLElementTagNameMap[K] {
   // eslint-disable-next-line obsidianmd/prefer-create-el -- Agnostic module.
-  const el = document.createElement(tag);
-  applyDomElementInfo(el, o);
-  return el;
+  const element = document.createElement(tag);
+  applyDomElementInfo(element, o);
+  return element;
 }
 
 function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, o?: string | SvgElementInfo): SVGElementTagNameMap[K] {
@@ -408,14 +408,14 @@ function createSvgElement<K extends keyof SVGElementTagNameMap>(tag: K, o?: stri
     }
   }
   if (info.attr) {
-    setElementAttrs(svg, info.attr);
+    setElementAttributes(svg, info.attr);
   }
   insertIntoParent(svg, info);
   return svg;
 }
 
-function getLoadableElements(el: Element): Element[] {
-  return Array.from(el.querySelectorAll('body, img, iframe, embed, link, object, script, style, track'));
+function getLoadableElements(element: Element): Element[] {
+  return [...element.querySelectorAll('body, img, iframe, embed, link, object, script, style, track')];
 }
 
 // eslint-disable-next-line obsidianmd/no-global-this -- Type-only: the resolved window needs the global DOM constructor typings.
@@ -423,38 +423,40 @@ function getNodeWindow(node: Node): typeof globalThis & Window {
   return node.ownerDocument?.defaultView ?? window;
 }
 
-function insertIntoParent(el: Element, info: DomElementInfo | SvgElementInfo): void {
+function insertIntoParent(element: Element, info: DomElementInfo | SvgElementInfo): void {
   if (!info.parent) {
     return;
   }
   if (info.prepend) {
-    info.parent.insertBefore(el, info.parent.firstChild);
+    info.parent.insertBefore(element, info.parent.firstChild);
   } else {
-    info.parent.appendChild(el);
+    // eslint-disable-next-line unicorn/prefer-dom-node-append -- `parent` is a `Node`, and `append` is declared on `ParentNode`, not on `Node`.
+    info.parent.appendChild(element);
   }
 }
 
-function isInstanceOf<T extends Node>(node: Node, ctor: abstract new (...args: never[]) => T): node is T {
+function isInstanceOf<T extends Node>(node: Node, ctor: abstract new (...$arguments: never[]) => T): node is T {
   // Agnostic reimplementation of Obsidian's `Node.prototype.instanceOf` (enhance.js).
   // The caller resolves `ctor` in the node's own realm (via `getNodeWindow`), keeping it cross-window safe.
   // eslint-disable-next-line obsidianmd/prefer-instanceof -- This IS the agnostic `.instanceOf` replacement.
   return node instanceof ctor;
 }
 
-function setElementAttrs(el: Element, attr: NonNullable<DomElementInfo['attr']>): void {
-  for (const [name, value] of Object.entries(attr)) {
+function setElementAttributes(element: Element, attribute: NonNullable<DomElementInfo['attr']>): void {
+  for (const [name, value] of Object.entries(attribute)) {
+    // eslint-disable-next-line unicorn/prefer-toggle-attribute -- `toggleAttribute` only ever sets the empty string, so it cannot carry `String(value)`. The rule matches the remove/set shape without seeing that the value is what this branch exists to write.
     if (value === null) {
-      el.removeAttribute(name);
+      element.removeAttribute(name);
     } else {
-      el.setAttribute(name, String(value));
+      element.setAttribute(name, String(value));
     }
   }
 }
 
-function setElementText(el: HTMLElement, text: DocumentFragment | string): void {
+function setElementText(element: HTMLElement, text: DocumentFragment | string): void {
   if (text instanceof DocumentFragment) {
-    el.replaceChildren(text);
+    element.replaceChildren(text);
   } else {
-    el.textContent = text;
+    element.textContent = text;
   }
 }

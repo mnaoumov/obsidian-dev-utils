@@ -37,8 +37,8 @@ function createLoadedComponent(app: App): AllWindowsEventComponent {
 function createMockApp(params: CreateMockAppParams): App {
   const {
     domWindows = [],
-    onLayoutReady = (cb: () => void): void => {
-      cb();
+    onLayoutReady = (callback: () => void): void => {
+      callback();
     },
     onWindowOpen = vi.fn().mockReturnValue(strictProxy<EventRef>({}))
   } = params;
@@ -128,8 +128,8 @@ describe('AllWindowsEventComponent', () => {
 
     it('should call handler for future popup windows on window-open event', () => {
       let windowOpenCallback: undefined | WindowOpenCallback;
-      const onWindowOpen = vi.fn().mockImplementation((_event: string, cb: WindowOpenCallback) => {
-        windowOpenCallback = cb;
+      const onWindowOpen = vi.fn().mockImplementation((_event: string, callback: WindowOpenCallback) => {
+        windowOpenCallback = callback;
         return strictProxy<EventRef>({});
       }) as Workspace['on'];
       const app = createMockApp({ onWindowOpen });
@@ -176,8 +176,8 @@ describe('AllWindowsEventComponent', () => {
       const popupWin = strictProxy<Window>({});
       const app = createMockApp({
         domWindows: [activeWindow, popupWin],
-        onLayoutReady: (cb: () => void): void => {
-          layoutReadyCallback = cb;
+        onLayoutReady: (callback: () => void): void => {
+          layoutReadyCallback = callback;
         }
       });
       const handler = vi.fn();
@@ -198,8 +198,8 @@ describe('AllWindowsEventComponent', () => {
       const popupWin = strictProxy<Window>({});
       const app = createMockApp({
         domWindows: [activeWindow, popupWin],
-        onLayoutReady: (cb: () => void): void => {
-          layoutReadyCallback = cb;
+        onLayoutReady: (callback: () => void): void => {
+          layoutReadyCallback = callback;
         }
       });
       const component = createLoadedComponent(app);

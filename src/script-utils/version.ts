@@ -69,7 +69,7 @@ export interface AddUpdatedFilesToGitOptions {
 /**
  * The result of parsing the command-line arguments for a version update.
  */
-export interface ParsedVersionArgs {
+export interface ParsedVersionArguments {
   /**
    * The {@link UpdateVersionOptions} parsed from the flags.
    */
@@ -238,15 +238,15 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
   const { shouldVerifyCommit = true } = options;
   const versionDebugger = getLibDebugger('Version');
 
-  const commitArgs = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
+  const commitArguments = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
   if (!shouldVerifyCommit) {
-    commitArgs.push('--no-verify');
+    commitArguments.push('--no-verify');
   }
 
   for (;;) {
     try {
       await execFromRoot(['git', 'add', '--all'], { isQuiet: true });
-      await execFromRoot(commitArgs, { isQuiet: true });
+      await execFromRoot(commitArguments, { isQuiet: true });
       return;
     } catch (error) {
       if (!process.stdin.isTTY) {
@@ -259,6 +259,54 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
       );
       await createInterface(process.stdin, process.stdout).question('Press Enter to retry the commit...');
     }
+  }
+}
+
+/**
+ * Checks if the GitHub CLI is installed on the system.
+ *
+ * Throws an error if the GitHub CLI is not installed.
+ *
+ * @throws Error if the GitHub CLI is not installed.
+ */
+export async function assertGitHubCliInstalled(): Promise<void> {
+  try {
+    await execFromRoot('gh --version', { isQuiet: true });
+  } catch {
+    throw new Error('GitHub CLI is not installed. Please install it from https://cli.github.com/');
+  }
+}
+
+/**
+ * Checks if Git is installed on the system.
+ *
+ * Throws an error if Git is not installed.
+ *
+ * @throws Error if Git is not installed.
+ */
+export async function assertGitInstalled(): Promise<void> {
+  try {
+    await execFromRoot('git --version', { isQuiet: true });
+  } catch {
+    throw new Error('Git is not installed. Please install it from https://git-scm.com/');
+  }
+}
+
+/**
+ * Checks if the Git repository is clean, meaning there are no uncommitted changes.
+ *
+ * Throws an error if the Git repository is not clean.
+ *
+ * @throws Error if the Git repository is not clean.
+ */
+export async function assertGitRepoClean(): Promise<void> {
+  try {
+    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { isQuiet: true });
+    if (stdout) {
+      throw new Error();
+    }
+  } catch {
+    throw new Error('Git repository is not clean. Please commit or stash your changes before releasing a new version.');
   }
 }
 
@@ -276,59 +324,11 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
  * @returns The text with every bare URL wrapped in angle brackets.
  */
 export function autolinkBareUrls(text: string): string {
-  return text.replace(/(?<![<[(])https?:\/\/[^\s<>)\]]+/g, (url) => {
+  return text.replaceAll(/(?<![<[(])https?:\/\/[^\s<>)\]]+/g, (url) => {
     const trailingPunctuation = /[.,;:!?]+$/.exec(url)?.[0] ?? '';
     const bareUrl = url.slice(0, url.length - trailingPunctuation.length);
     return `<${bareUrl}>${trailingPunctuation}`;
   });
-}
-
-/**
- * Checks if the GitHub CLI is installed on the system.
- *
- * Throws an error if the GitHub CLI is not installed.
- *
- * @throws Error if the GitHub CLI is not installed.
- */
-export async function checkGitHubCliInstalled(): Promise<void> {
-  try {
-    await execFromRoot('gh --version', { isQuiet: true });
-  } catch {
-    throw new Error('GitHub CLI is not installed. Please install it from https://cli.github.com/');
-  }
-}
-
-/**
- * Checks if Git is installed on the system.
- *
- * Throws an error if Git is not installed.
- *
- * @throws Error if Git is not installed.
- */
-export async function checkGitInstalled(): Promise<void> {
-  try {
-    await execFromRoot('git --version', { isQuiet: true });
-  } catch {
-    throw new Error('Git is not installed. Please install it from https://git-scm.com/');
-  }
-}
-
-/**
- * Checks if the Git repository is clean, meaning there are no uncommitted changes.
- *
- * Throws an error if the Git repository is not clean.
- *
- * @throws Error if the Git repository is not clean.
- */
-export async function checkGitRepoClean(): Promise<void> {
-  try {
-    const stdout = await execFromRoot('git status --porcelain --untracked-files=all', { isQuiet: true });
-    if (stdout) {
-      throw new Error();
-    }
-  } catch {
-    throw new Error('Git repository is not clean. Please commit or stash your changes before releasing a new version.');
-  }
 }
 
 /**
@@ -384,26 +384,22 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = replaceAll({
-    replacer: '\\.',
-    searchValue: '.',
-    str: newVersion
+    $string: newVersion,
+    replacer: String.raw`\.`,
+    searchValue: '.'
   });
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
   /* v8 ignore start -- v8 tracks optional chaining and ternary as separate branches; both paths are tested. */
   let releaseNotes = match?.[1] ? `${match[1]}\n\n` : '';
   /* v8 ignore stop */
 
-  const tags = (await execFromRoot('git tag --sort=-creatordate', { isQuiet: true })).split(/\r?\n/);
+  const tagOutput = await execFromRoot('git tag --sort=-creatordate', { isQuiet: true });
+  const tags = tagOutput.split(/\r?\n/);
   const previousVersion = tags[1];
-  let changesUrl: string;
 
   const repoUrl = await execFromRoot('gh repo view --json url -q .url', { isQuiet: true });
 
-  if (previousVersion) {
-    changesUrl = `${repoUrl}/compare/${previousVersion}...${newVersion}`;
-  } else {
-    changesUrl = `${repoUrl}/commits/${newVersion}`;
-  }
+  const changesUrl = previousVersion ? `${repoUrl}/compare/${previousVersion}...${newVersion}` : `${repoUrl}/commits/${newVersion}`;
 
   releaseNotes += `**Full Changelog**: ${changesUrl}`;
   return releaseNotes;
@@ -424,15 +420,17 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
     case VersionUpdateType.PreMajor:
     case VersionUpdateType.PreMinor:
     case VersionUpdateType.PrePatch:
-    case VersionUpdateType.PreRelease:
+    case VersionUpdateType.PreRelease: {
       return versionUpdateTypeEnum;
+    }
 
-    default:
+    default: {
       if (/^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType)) {
         return VersionUpdateType.Manual;
       }
 
       return VersionUpdateType.Invalid;
+    }
   }
 }
 
@@ -457,13 +455,14 @@ export async function gitPush(): Promise<void> {
  * - `--no-demo-vault` — skip archiving the plugin's demo vault (`demo-vault/`) as a release artifact.
  * - `--no-release` — run all local steps but skip the push and the GitHub release.
  *
- * @param args - The command-line arguments to parse (typically `process.argv.slice(2)`).
- * @returns The {@link ParsedVersionArgs} containing the version update type and the options.
+ * @param $arguments - The command-line arguments to parse (typically `process.argv.slice(2)`).
+ * @returns The {@link ParsedVersionArguments} containing the version update type and the options.
  */
-export function parseVersionArgs(args: string[]): ParsedVersionArgs {
+export function parseVersionArguments($arguments: string[]): ParsedVersionArguments {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
-    args,
+    // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
+    args: $arguments,
     options: {
       'no-build': { type: 'boolean' },
       'no-changelog-editing': { type: 'boolean' },
@@ -562,13 +561,13 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
   }
 
   const lastTag = replaceAll({
+    $string: previousChangelogLines[0] ?? '',
     replacer: '',
-    searchValue: '## ',
-    str: previousChangelogLines[0] ?? ''
+    searchValue: '## '
   });
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-  const commitMessagesStr = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
-  const commitMessages = commitMessagesStr.split('\0').filter(Boolean).map(toFirstLine);
+  const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
+  const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toFirstLine(commitMessage));
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
@@ -649,14 +648,18 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
     throw new Error('No version update type provided');
   }
 
-  const isObsidianPlugin = existsSync(resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ManifestJson })) && (await readPackageJson()).name !== 'obsidian-dev-utils';
+  let isObsidianPlugin = false;
+  if (existsSync(resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ManifestJson }))) {
+    const packageJson = await readPackageJson();
+    isObsidianPlugin = packageJson.name !== 'obsidian-dev-utils';
+  }
 
   validate(versionUpdateType);
-  await checkGitInstalled();
-  await checkGitHubCliInstalled();
+  await assertGitInstalled();
+  await assertGitHubCliInstalled();
 
   if (shouldRunChecks) {
-    await checkGitRepoClean();
+    await assertGitRepoClean();
     await npmRun('format:check');
     await npmRun('spellcheck');
     await npmRun('lint:md');
@@ -753,8 +756,8 @@ function isPreRelease(version: string): boolean {
   return prerelease(version) !== null;
 }
 
-function toFirstLine(str: string): string {
-  return str.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
+function toFirstLine($string: string): string {
+  return $string.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {
@@ -766,7 +769,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
       { force: true }
     );
     await editJson<Manifest>({
-      editFn: (manifest) => {
+      editFunction: (manifest) => {
         manifest.version = newVersion;
       },
       path: ObsidianPluginRepoPaths.ManifestBetaJson
@@ -775,7 +778,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
     const latestObsidianVersion = await getLatestObsidianVersion();
 
     await editJson<Manifest>({
-      editFn: (manifest) => {
+      editFunction: (manifest) => {
         manifest.minAppVersion = latestObsidianVersion;
         manifest.version = newVersion;
       },
@@ -783,7 +786,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
     });
 
     await editJson<Record<string, string>>({
-      editFn: (versions) => {
+      editFunction: (versions) => {
         versions[newVersion] = latestObsidianVersion;
       },
       path: ObsidianPluginRepoPaths.VersionsJson

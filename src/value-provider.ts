@@ -12,31 +12,31 @@ import { abortSignalNever } from './abort-controller.ts';
  * Value provider that can either be a direct value of type {@link Value} or a function that returns a value of type {@link Value}.
  *
  * @typeParam Value - The type of the value provided.
- * @typeParam Args - The types of arguments passed to the function if the provider is a function.
+ * @typeParam Arguments - The types of arguments passed to the function if the provider is a function.
  */
-export type ValueProvider<Value, Args extends object = object> = ((args: Args & CommonArgs) => Promisable<Value>) | Value;
+export type ValueProvider<Value, Arguments extends object = object> = (($arguments: Arguments & CommonArguments) => Promisable<Value>) | Value;
 
-interface CommonArgs {
+interface CommonArguments {
   abortSignal: AbortSignal;
 }
 
 /**
  * Resolves a value from a value provider, which can be either a direct value or a function that returns a value.
  *
- * @typeParam Args - The types of arguments passed to the function if the provider is a function.
+ * @typeParam Arguments - The types of arguments passed to the function if the provider is a function.
  * @typeParam Value - The type of the value provided.
  * @param provider - The value provider to resolve.
- * @param args - The arguments to pass to the function if the provider is a function.
+ * @param $arguments - The arguments to pass to the function if the provider is a function.
  * @returns A {@link Promise} that resolves with the value provided by the value provider.
  */
-export async function resolveValue<Value, Args extends object = object>(
-  provider: ValueProvider<Value, Args>,
-  args: Args & Partial<CommonArgs>
+export async function resolveValue<Value, Arguments extends object = object>(
+  provider: ValueProvider<Value, Arguments>,
+  $arguments: Arguments & Partial<CommonArguments>
 ): Promise<Value> {
-  const fullArgs = { ...args, abortSignal: args.abortSignal ?? abortSignalNever() };
-  fullArgs.abortSignal.throwIfAborted();
+  const fullArguments = { ...$arguments, abortSignal: $arguments.abortSignal ?? abortSignalNever() };
+  fullArguments.abortSignal.throwIfAborted();
   if (isFunction(provider)) {
-    return await provider(fullArgs);
+    return await provider(fullArguments);
   }
   return provider;
 }
@@ -45,10 +45,10 @@ export async function resolveValue<Value, Args extends object = object>(
  * Determines whether a given value provider is a function.
  *
  * @typeParam Value - The type of the value provided.
- * @typeParam Args - The types of arguments passed to the function if the provider is a function.
+ * @typeParam Arguments - The types of arguments passed to the function if the provider is a function.
  * @param value - The value provider to check.
  * @returns `true` if the value provider is a function, otherwise `false`.
  */
-function isFunction<Value, Args extends object = object>(value: ValueProvider<Value, Args>): value is (args: Args & CommonArgs) => Promisable<Value> {
+function isFunction<Value, Arguments extends object = object>(value: ValueProvider<Value, Arguments>): value is ($arguments: Arguments & CommonArguments) => Promisable<Value> {
   return typeof value === 'function';
 }

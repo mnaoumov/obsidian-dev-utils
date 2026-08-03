@@ -39,8 +39,8 @@ vi.mock('../abort-controller.ts', () => ({
 }));
 
 vi.mock('../async.ts', () => ({
-  invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
-    fn().catch(() => undefined);
+  invokeAsyncSafely: vi.fn(($function: () => Promise<unknown>) => {
+    $function().catch(() => undefined);
   }),
   requestAnimationFrameAsync: vi.fn(() => noopAsync())
 }));
@@ -52,11 +52,11 @@ vi.mock('../debug.ts', () => ({
 vi.mock('../error.ts', () => ({
   ASYNC_WRAPPER_ERROR_MESSAGE: 'async wrapper error',
   CustomStackTraceError: class CustomStackTraceError extends Error {
-    public stackTraceStr: string;
+    public stackTraceString: string;
 
     public constructor(params: CustomStackTraceErrorConstructorParams) {
       super(params.message, { cause: params.cause });
-      this.stackTraceStr = params.stackTrace;
+      this.stackTraceString = params.stackTrace;
       this.name = 'CustomStackTraceError';
     }
   },
@@ -149,8 +149,8 @@ describe('loop', () => {
     });
 
     expect(buildNoticeMessage).toHaveBeenCalledTimes(2);
-    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'x', iterationStr: '# 1 / 2' });
-    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'y', iterationStr: '# 2 / 2' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'x', iterationString: '# 1 / 2' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'y', iterationString: '# 2 / 2' });
   });
 
   it('should stop processing when abortSignal is already aborted', async () => {
@@ -254,10 +254,10 @@ describe('loop', () => {
 
     expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalledTimes(1);
 
-    const showNoticeFn = vi.mocked(invokeAsyncSafely).mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
-    expect(showNoticeFn).toBeDefined();
-    if (showNoticeFn) {
-      await showNoticeFn();
+    const showNoticeFunction = vi.mocked(invokeAsyncSafely).mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
+    expect(showNoticeFunction).toBeDefined();
+    if (showNoticeFunction) {
+      await showNoticeFunction();
     }
   });
 
@@ -274,9 +274,9 @@ describe('loop', () => {
   });
 
   it('should call getLibDebugger with Loop namespace', async () => {
-    const mockDebugFn = vi.fn();
+    const mockDebugFunction = vi.fn();
 
-    vi.mocked(getLibDebugger).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFn));
+    vi.mocked(getLibDebugger).mockReturnValue(castTo<ReturnType<typeof getLibDebugger>>(mockDebugFunction));
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'debug msg'),
@@ -287,7 +287,7 @@ describe('loop', () => {
     });
 
     expect(getLibDebugger).toHaveBeenCalledWith('Loop');
-    expect(mockDebugFn).toHaveBeenCalledWith('debug msg');
+    expect(mockDebugFunction).toHaveBeenCalledWith('debug msg');
   });
 
   it('should call addPluginCssClasses on the progress bar element', async () => {
@@ -310,17 +310,17 @@ describe('loop', () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
     let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = mockImplementation({
-      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-        const el = originalImplementation(tag);
-        if (tag === 'progress') {
-          capturedProgressEl = el as HTMLProgressElement;
-        }
-        return el;
-      },
-      method: 'createEl',
+    const createElementSpy = mockImplementation({
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      obj: globalThis
+      $object: globalThis,
+      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+        const element = originalImplementation(tag);
+        if (tag === 'progress') {
+          capturedProgressEl = element as HTMLProgressElement;
+        }
+        return element;
+      },
+      method: 'createEl'
     });
 
     await loop({
@@ -336,7 +336,7 @@ describe('loop', () => {
     expect(progressEl.max).toBe(5);
     expect(progressEl.value).toBe(5);
 
-    createElSpy.mockRestore();
+    createElementSpy.mockRestore();
   });
 
   it('should process items with numeric type', async () => {
@@ -344,7 +344,7 @@ describe('loop', () => {
     const items = [1, 2, 3];
 
     await loop({
-      buildNoticeMessage: vi.fn((params: LoopBuildNoticeMessageParams<number>) => `Processing ${params.iterationStr}`),
+      buildNoticeMessage: vi.fn((params: LoopBuildNoticeMessageParams<number>) => `Processing ${params.iterationString}`),
       items,
       pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
@@ -448,17 +448,17 @@ describe('loop', () => {
 
   it('should increment progress bar value for each processed item', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = mockImplementation({
-      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-        const el = originalImplementation(tag);
-        if (tag === 'progress') {
-          capturedProgressEl = el as HTMLProgressElement;
-        }
-        return el;
-      },
-      method: 'createEl',
+    const createElementSpy = mockImplementation({
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      obj: globalThis
+      $object: globalThis,
+      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+        const element = originalImplementation(tag);
+        if (tag === 'progress') {
+          capturedProgressEl = element as HTMLProgressElement;
+        }
+        return element;
+      },
+      method: 'createEl'
     });
 
     const values: number[] = [];
@@ -483,22 +483,22 @@ describe('loop', () => {
     assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
 
-    createElSpy.mockRestore();
+    createElementSpy.mockRestore();
   });
 
   it('should still increment progress bar value even when processItem throws', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
-    const createElSpy = mockImplementation({
-      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
-        const el = originalImplementation(tag);
-        if (tag === 'progress') {
-          capturedProgressEl = el as HTMLProgressElement;
-        }
-        return el;
-      },
-      method: 'createEl',
+    const createElementSpy = mockImplementation({
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      obj: globalThis
+      $object: globalThis,
+      impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
+        const element = originalImplementation(tag);
+        if (tag === 'progress') {
+          capturedProgressEl = element as HTMLProgressElement;
+        }
+        return element;
+      },
+      method: 'createEl'
     });
 
     vi.spyOn(console, 'error').mockImplementation(() => {
@@ -518,7 +518,7 @@ describe('loop', () => {
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
 
     vi.mocked(console.error).mockRestore();
-    createElSpy.mockRestore();
+    createElementSpy.mockRestore();
   });
 
   it('should work with a single item', async () => {
@@ -535,7 +535,7 @@ describe('loop', () => {
 
     expect(processItem).toHaveBeenCalledTimes(1);
     expect(processItem).toHaveBeenCalledWith('only');
-    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'only', iterationStr: '# 1 / 1' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'only', iterationString: '# 1 / 1' });
   });
 
   it('should call requestAnimationFrameAsync when UI update threshold is exceeded', async () => {
@@ -560,8 +560,8 @@ describe('loop', () => {
   it('should set notice message when shouldShowProgressBar is false and notice exists', async () => {
     // Make invokeAsyncSafely actually await the function so the notice gets created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');
@@ -583,8 +583,8 @@ describe('loop', () => {
   it('should return early from showNotice when shouldShowProgressBar is false', async () => {
     // Make invokeAsyncSafely actually await so the notice is created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');
@@ -611,8 +611,8 @@ describe('loop', () => {
   it('should set progress bar message when shouldShowProgressBar is true and notice exists', async () => {
     // Make invokeAsyncSafely actually await the function so the notice gets created
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');
@@ -636,8 +636,8 @@ describe('loop', () => {
   it('should not create a notice when pluginNoticeComponent is null', async () => {
     // Make invokeAsyncSafely actually await the function so showNotice runs to completion
     // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure showNotice runs before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async (fn: () => unknown) => {
-      await fn();
+    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
+      await $function();
     });
 
     vi.spyOn(Notice.prototype, 'setMessage');

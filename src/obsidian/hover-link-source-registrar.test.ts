@@ -25,6 +25,7 @@ describe('PluginHoverLinkSourceRegistrar', () => {
     const plugin = strictProxy<PluginOriginal>({ registerHoverLinkSource });
     const registrar = new PluginHoverLinkSourceRegistrar(plugin);
     const info = strictProxy<HoverLinkSourceOriginal>({
+      // eslint-disable-next-line unicorn/name-replacements -- `defaultMod` is declared by `obsidian`; renaming it here would not match the API.
       defaultMod: false,
       display: 'My Source'
     });

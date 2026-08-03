@@ -105,7 +105,7 @@ export declare class Link {
   static header(path: string, header: string, embed?: boolean, display?: string): Link;
   /** Create a link to a specific file and block in that file. */
   static block(path: string, blockId: string, embed?: boolean, display?: string): Link;
-  static fromObject(object: Record<string, any>): Link;
+  static fromObject($object: Record<string, any>): Link;
   private constructor();
   /** Checks for link equality (i.e., that the links are pointing to the same exact location). */
   equals(other: Link): boolean;

@@ -38,8 +38,8 @@ vi.mock('../../error.ts', async (importOriginal) => {
 
 vi.mock('../i18n/i18n.ts', () => ({
   initI18N: vi.fn(),
-  t: vi.fn((fn: (t: unknown) => string) =>
-    fn({
+  t: vi.fn(($function: (t: unknown) => string) =>
+    $function({
       obsidianDevUtils: { notices: { unhandledError: 'error' } }
     })
   )
@@ -84,7 +84,7 @@ vi.mock('../../async.ts', async (importOriginal) => {
   return {
     ...actual,
     invokeAsyncSafelyAfterDelay: vi.fn((
-      asyncFn: (abortSignal: AbortSignal) => Promise<void>,
+      asyncFunction: (abortSignal: AbortSignal) => Promise<void>,
       _delayInMilliseconds?: number,
       _stackTrace?: string,
       abortSignal?: AbortSignal
@@ -92,7 +92,7 @@ vi.mock('../../async.ts', async (importOriginal) => {
       if (abortSignal?.aborted) {
         return;
       }
-      asyncFn(abortSignal ?? new AbortController().signal).catch(() => {
+      asyncFunction(abortSignal ?? new AbortController().signal).catch(() => {
         /* Swallow errors in test mock. */
       });
     })
@@ -147,8 +147,8 @@ class TestPlugin extends PluginBase {
 beforeEach(() => {
   vi.clearAllMocks();
   const appMock = App.createConfigured__();
-  appMock.workspace.onLayoutReady = vi.fn((cb: () => void) => {
-    cb();
+  appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
+    callback();
   });
   app = appMock.asOriginalType__();
 });

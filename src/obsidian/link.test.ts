@@ -49,15 +49,15 @@ import {
   fixFrontmatterMarkdownLinks,
   generateMarkdownLink,
   generateRawMarkdownLink,
+  hasAngleBrackets,
+  hasEmbedSyntax,
+  hasLeadingDot,
+  hasLeadingSlash,
+  hasWikilinkSyntax,
   LinkPathStyle,
   LinkStyle,
   shouldResetAlias,
   splitSubpath,
-  testAngleBrackets,
-  testEmbed,
-  testLeadingDot,
-  testLeadingSlash,
-  testWikilink,
   updateFileUrlLinksInContent,
   updateFileUrlLinksInFile,
   updateLink,
@@ -285,7 +285,7 @@ describe('generateRawMarkdownLink', () => {
         shouldEscapeAlias: true,
         url: 'note.md'
       });
-      expect(result).toBe('[\\*\\*bold\\*\\*](note.md)');
+      expect(result).toBe(String.raw`[\*\*bold\*\*](note.md)`);
     });
 
     it('should not escape alias when shouldEscapeAlias is false', () => {
@@ -328,7 +328,7 @@ describe('generateRawMarkdownLink', () => {
   });
 });
 
-describe('testWikilink', () => {
+describe('hasWikilinkSyntax', () => {
   it.each([
     { description: 'a wikilink', expected: true, input: '[[note]]' },
     { description: 'an embed wikilink', expected: true, input: '![[note]]' },
@@ -337,11 +337,11 @@ describe('testWikilink', () => {
     { description: 'an embed markdown link', expected: false, input: '![alt](image.png)' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testWikilink(input)).toBe(expected);
+    expect(hasWikilinkSyntax(input)).toBe(expected);
   });
 });
 
-describe('testEmbed', () => {
+describe('hasEmbedSyntax', () => {
   it.each([
     { description: 'an embed wikilink', expected: true, input: '![[image.png]]' },
     { description: 'an embed markdown link', expected: true, input: '![alt](image.png)' },
@@ -349,11 +349,11 @@ describe('testEmbed', () => {
     { description: 'a non-embed markdown link', expected: false, input: '[alias](note.md)' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testEmbed(input)).toBe(expected);
+    expect(hasEmbedSyntax(input)).toBe(expected);
   });
 });
 
-describe('testAngleBrackets', () => {
+describe('hasAngleBrackets', () => {
   it.each([
     { description: 'a markdown link with angle brackets', expected: true, input: '[link](<path with spaces.md>)' },
     { description: 'an embed with angle brackets', expected: true, input: '![alt](<image file.png>)' },
@@ -361,11 +361,11 @@ describe('testAngleBrackets', () => {
     { description: 'a wikilink', expected: false, input: '[[note]]' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testAngleBrackets(input)).toBe(expected);
+    expect(hasAngleBrackets(input)).toBe(expected);
   });
 });
 
-describe('testLeadingDot', () => {
+describe('hasLeadingDot', () => {
   it.each([
     { description: 'a wikilink with a leading dot', expected: true, input: '[[./note]]' },
     { description: 'a markdown link with a leading dot', expected: true, input: '[link](./note.md)' },
@@ -374,11 +374,11 @@ describe('testLeadingDot', () => {
     { description: 'an absolute path', expected: false, input: '[[note]]' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testLeadingDot(input)).toBe(expected);
+    expect(hasLeadingDot(input)).toBe(expected);
   });
 });
 
-describe('testLeadingSlash', () => {
+describe('hasLeadingSlash', () => {
   it.each([
     { description: 'a wikilink with a leading slash', expected: true, input: '[[/note]]' },
     { description: 'a markdown link with a leading slash', expected: true, input: '[link](/note.md)' },
@@ -387,7 +387,7 @@ describe('testLeadingSlash', () => {
     { description: 'a relative path', expected: false, input: '[[note]]' },
     { description: 'plain text', expected: false, input: 'just text' }
   ])('should return $expected for $description', ({ expected, input }) => {
-    expect(testLeadingSlash(input)).toBe(expected);
+    expect(hasLeadingSlash(input)).toBe(expected);
   });
 });
 
@@ -399,10 +399,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -450,10 +450,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return false', () => {
-      expect(result).toBe(false);
+      expect(wereLinksFixed).toBe(false);
     });
 
     it('should not define frontmatterLinks', () => {
@@ -469,8 +469,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   it('should ignore external URLs in frontmatter', () => {
@@ -481,8 +481,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   describe('should handle nested objects in frontmatter', () => {
@@ -494,10 +494,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -525,10 +525,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -549,8 +549,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   it('should handle numeric and boolean frontmatter values', () => {
@@ -562,8 +562,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
       frontmatterLinks: undefined
     });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 
   describe('should handle a markdown link without alias (empty alias)', () => {
@@ -573,10 +573,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
       },
       frontmatterLinks: undefined
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should define frontmatterLinks', () => {
@@ -609,10 +609,10 @@ describe('fixFrontmatterMarkdownLinks', () => {
         original: '[old](old-note.md)'
       }]
     });
-    const result = fixFrontmatterMarkdownLinks(cache);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
 
     it('should return true', () => {
-      expect(result).toBe(true);
+      expect(wereLinksFixed).toBe(true);
     });
 
     it('should have 1 frontmatter link', () => {
@@ -645,8 +645,8 @@ describe('fixFrontmatterMarkdownLinks', () => {
   it('should handle undefined frontmatter gracefully', () => {
     const cache: CachedMetadata = castTo<CachedMetadata>({ frontmatter: undefined, frontmatterLinks: undefined });
 
-    const result = fixFrontmatterMarkdownLinks(cache);
-    expect(result).toBe(false);
+    const wereLinksFixed = fixFrontmatterMarkdownLinks(cache);
+    expect(wereLinksFixed).toBe(false);
   });
 });
 
@@ -703,7 +703,7 @@ describe('generateRawMarkdownLink (additional edge cases)', () => {
       title: 'hover text',
       url: 'note.md'
     });
-    expect(result).toBe('[\\*\\*bold\\*\\*](note.md "hover text")');
+    expect(result).toBe(String.raw`[\*\*bold\*\*](note.md "hover text")`);
   });
 
   it('should generate an embed markdown link with title', () => {
@@ -802,9 +802,11 @@ describe('app-dependent functions', () => {
       if (key === 'newLinkFormat') {
         return 'shortest';
       }
+      // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
       return undefined;
     });
 
+    // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
     app.metadataCache.getLinkpathDest = vi.fn((linkpath: string) => {
       const allFiles = app.vault.getAllLoadedFiles();
       return allFiles.filter((f): f is TFileOriginal => f instanceof TFile && (f.basename === linkpath || f.name === linkpath));
@@ -848,6 +850,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for absolute path when shouldAllowNonExistingFile is true', () => {
       const link = { link: '/target.md', original: '[[/target.md]]' } as Reference;
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'note.md' });
       assertNonNullable(result);
@@ -856,6 +859,7 @@ describe('app-dependent functions', () => {
 
     it('should return file for relative path when shouldAllowNonExistingFile is true', () => {
       const link = { link: 'other.md', original: '[[other.md]]' } as Reference;
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'folder/source.md' });
       assertNonNullable(result);
@@ -864,6 +868,7 @@ describe('app-dependent functions', () => {
 
     it('should return null when relative path goes outside vault', () => {
       const link = { link: '../../outside', original: '[[../../outside]]' } as Reference;
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getFirstLinkpathDest = (): null | TFileOriginal => null;
       const result = extractLinkFile({ app, link, shouldAllowNonExistingFile: true, sourcePathOrFile: 'note.md' });
       expect(result).toBeNull();
@@ -972,6 +977,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should use full path when multiple files match shortest name', () => {
+      // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
       app.metadataCache.getLinkpathDest = vi.fn(() => [
         ensureNonNullable(app.vault.getFileByPath('folder/other.md')),
         ensureNonNullable(app.vault.getFileByPath('folder/same.md'))
@@ -1025,6 +1031,7 @@ describe('app-dependent functions', () => {
         if (key === 'newLinkFormat') {
           return 'shortest';
         }
+        // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
         return undefined;
       });
       const result = generateMarkdownLink({
@@ -1216,7 +1223,7 @@ describe('app-dependent functions', () => {
 
   describe('shouldResetAlias', () => {
     it('should return false when isWikilink is false', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'any',
         isWikilink: false,
@@ -1224,77 +1231,77 @@ describe('app-dependent functions', () => {
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(false);
+      expect(shouldReset).toBe(false);
     });
 
     it('should return true when displayText is undefined', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: undefined,
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should return true when displayText matches target path', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target.md',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should return true when displayText matches basename without extension', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should return false when displayText does not match any alias', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'completely-different-text',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(false);
+      expect(shouldReset).toBe(false);
     });
 
     it('should handle displayText with separator >', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target > extra',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
 
     it('should skip falsy pathOrFile in loop', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'completely-different-text',
         newSourcePathOrFile: 'note.md',
         oldTargetPath: '',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(false);
+      expect(shouldReset).toBe(false);
     });
 
     it('should use oldSourcePathOrFile when provided', () => {
-      const result = shouldResetAlias({
+      const shouldReset = shouldResetAlias({
         app,
         displayText: 'target',
         newSourcePathOrFile: 'folder/other.md',
@@ -1302,7 +1309,7 @@ describe('app-dependent functions', () => {
         oldTargetPath: 'target.md',
         targetPathOrFile: 'target.md'
       });
-      expect(result).toBe(true);
+      expect(shouldReset).toBe(true);
     });
   });
 
@@ -1668,10 +1675,12 @@ describe('app-dependent functions', () => {
     it('should edit external links via editLinks', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
@@ -1795,10 +1804,12 @@ describe('app-dependent functions', () => {
     it('should invoke changesProvider when applyFileChanges calls it', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
 
@@ -1828,10 +1839,12 @@ describe('app-dependent functions', () => {
     it('should return null from changesProvider when content differs from cachedRead', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: 'different content' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: 'different content' });
         }
       );
 
@@ -1870,10 +1883,12 @@ describe('app-dependent functions', () => {
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
 
@@ -1913,10 +1928,12 @@ describe('app-dependent functions', () => {
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
 
@@ -2089,10 +2106,12 @@ describe('app-dependent functions', () => {
     it('should skip links when shouldUpdateEmbedOnlyLinks does not match', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
@@ -2121,10 +2140,12 @@ describe('app-dependent functions', () => {
     it('should invoke convertLink for matching links', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
         }
       );
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
@@ -2198,10 +2219,12 @@ describe('app-dependent functions', () => {
 
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
         }
       );
 
@@ -2244,10 +2267,12 @@ describe('app-dependent functions', () => {
 
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (typeof changesProvider === 'function') {
-            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-            await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
+          if (typeof changesProvider !== 'function') {
+            return;
           }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: '{"nodes":[]}' });
         }
       );
 

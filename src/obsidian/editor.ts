@@ -30,8 +30,10 @@ const compartmentByCodeMirror = new WeakMap<Editor['cm'], Compartment>();
 // Set true while a locked editor processes a `keydown` synchronously.
 // The read-only change filter reads it to block a keyboard-driven edit but pass a programmatic one.
 // It is reset in a microtask, after the key event's synchronous dispatch completes.
-let isProcessingLockedEditorKeydown = false;
-
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+const moduleState = {
+  isProcessingLockedEditorKeydown: false
+};
 /**
  * Overwrites the buffer of every open {@link MarkdownView} currently showing the given path so that
  * it reflects `content`, in any window or popout.
@@ -137,14 +139,14 @@ function readOnlyExtension(): Extension {
     EditorState.readOnly.of(true),
     Prec.highest(EditorView.domEventHandlers({
       keydown: (): boolean => {
-        isProcessingLockedEditorKeydown = true;
+        moduleState.isProcessingLockedEditorKeydown = true;
         queueMicrotask(() => {
-          isProcessingLockedEditorKeydown = false;
+          moduleState.isProcessingLockedEditorKeydown = false;
         });
         // Do not consume the event: let CodeMirror's keymap run so navigation/selection keys work.
         return false;
       }
     })),
-    EditorState.changeFilter.of(() => !isProcessingLockedEditorKeydown)
+    EditorState.changeFilter.of(() => !moduleState.isProcessingLockedEditorKeydown)
   ];
 }

@@ -88,7 +88,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
 
   const buildContext = await context(buildOptions);
   await invokeEsbuild(buildContext, true);
-  return Array.from(dependenciesToBundle).sort();
+  return [...dependenciesToBundle].sort();
 }
 
 /**
@@ -98,7 +98,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const packageJson = await readPackageJson(getFolderName(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(packageJson.dependencies ?? {}).filter(canSkipFromBundling)]);
+  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(packageJson.dependencies ?? {}).filter((dependency) => canSkipFromBundling(dependency))]);
   return dependenciesToSkip;
 }
 
@@ -140,17 +140,17 @@ function extractDependenciesToBundlePlugin(params: ExtractDependenciesToBundlePl
   return {
     name: 'test',
     setup(build): void {
-      build.onResolve({ filter: /^[^./]/ }, (args) => {
-        if (!args.importer.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
+      build.onResolve({ filter: /^[^./]/ }, ($arguments) => {
+        if (!$arguments.importer.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
           const moduleName = trimStart({
-            prefix: 'node:',
-            str: ensureNonNullable(args.path.split('/')[0], 'Wrong path')
+            $string: ensureNonNullable($arguments.path.split('/', 1)[0], 'Wrong path'),
+            prefix: 'node:'
           });
-          if (!dependenciesToSkip.has(args.path) && !dependenciesToSkip.has(moduleName)) {
-            dependenciesToBundle.add(args.path);
+          if (!dependenciesToSkip.has($arguments.path) && !dependenciesToSkip.has(moduleName)) {
+            dependenciesToBundle.add($arguments.path);
           }
         }
-        return { external: true, path: args.path };
+        return { external: true, path: $arguments.path };
       });
     }
   };

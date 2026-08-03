@@ -213,7 +213,7 @@ export abstract class FolderCommandHandler extends AbstractFileCommandHandler {
       leaf,
       source
     } = params;
-    if (!abstractFiles.every((f) => isFolder(f))) {
+    if (abstractFiles.some((f) => !isFolder(f))) {
       return false;
     }
     return this.shouldAddToFoldersMenu({

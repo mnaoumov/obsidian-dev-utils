@@ -78,7 +78,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../object-utils.ts', async (importOriginal) => ({
   ...await importOriginal<typeof import('../object-utils.ts')>(),
-  normalizeOptionalProperties: vi.fn((obj: unknown) => obj)
+  normalizeOptionalProperties: vi.fn(($unknown: unknown) => $unknown)
 }));
 
 vi.mock('../value-provider.ts', () => ({
@@ -133,10 +133,10 @@ function createMockDv(): MockDv {
         // eslint-disable-next-line @microsoft/sdl/no-inner-html, no-unsanitized/property -- test setup
         p.innerHTML = text;
       } else if (text instanceof Node) {
-        p.appendChild(text);
+        p.append(text);
       }
       const target = options?.container ?? container;
-      target.appendChild(p);
+      target.append(p);
       return p;
     })
   };
@@ -169,7 +169,7 @@ describe('renderCallout', () => {
 
     // Obsidian extends HTMLElement with .empty()
     HTMLElement.prototype.empty = function empty(this: HTMLElement): void {
-      this.innerHTML = '';
+      this.replaceChildren();
     };
   });
 
@@ -179,8 +179,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv) });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE]- \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE]- \n>\n> <div class="content"></div>');
   });
 
   it('should create a callout paragraph with Default mode (no modifier)', async () => {
@@ -189,8 +189,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.Default });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE] \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE] \n>\n> <div class="content"></div>');
   });
 
   it('should create a callout paragraph with FoldableExpanded modifier', async () => {
@@ -199,8 +199,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), mode: CalloutMode.FoldableExpanded });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE]+ \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE]+ \n>\n> <div class="content"></div>');
   });
 
   it('should use the specified type in the callout', async () => {
@@ -209,8 +209,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), type: 'WARNING' });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!WARNING]- \n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!WARNING]- \n>\n> <div class="content"></div>');
   });
 
   it('should use the specified header in the callout', async () => {
@@ -219,8 +219,8 @@ describe('renderCallout', () => {
 
     renderCallout({ dv: castTo<DataviewInlineApi>(dv), header: 'My Header' });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!NOTE]- My Header\n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!NOTE]- My Header\n>\n> <div class="content"></div>');
   });
 
   it('should show "Loading..." initially in the content div', async () => {
@@ -271,7 +271,7 @@ describe('renderCallout', () => {
     expect(mocks.addToQueue).toHaveBeenCalledTimes(1);
     expect(mocks.addToQueue).toHaveBeenCalledWith(
       expect.objectContaining({
-        operationFn: expect.any(Function) as unknown,
+        operationFunction: expect.any(Function) as unknown,
         operationName: 'mock-translation'
       })
     );
@@ -325,7 +325,7 @@ describe('renderCallout', () => {
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
-      await params.operationFn(abortController.signal);
+      await params.operationFunction(abortController.signal);
     });
 
     renderCallout({ contentProvider: 'Hello World', dv: castTo<DataviewInlineApi>(dv) });
@@ -346,21 +346,21 @@ describe('renderCallout', () => {
       expect(dv.paragraph.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
-    const lastCall = dv.paragraph.mock.calls[dv.paragraph.mock.calls.length - 1] as unknown[];
+    const lastCall = dv.paragraph.mock.calls.at(-1) as unknown[];
     expect(lastCall[0]).toBe('Hello World');
   });
 
   it('should render content from a function contentProvider', async () => {
     const dv = createMockDv();
-    const contentFn = vi.fn(() => 'Dynamic Content');
+    const contentFunction = vi.fn(() => 'Dynamic Content');
 
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
-      await params.operationFn(abortController.signal);
+      await params.operationFunction(abortController.signal);
     });
 
-    renderCallout({ contentProvider: contentFn, dv: castTo<DataviewInlineApi>(dv) });
+    renderCallout({ contentProvider: contentFunction, dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall2 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall2);
@@ -375,7 +375,7 @@ describe('renderCallout', () => {
       expect(dv.paragraph.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
-    const lastCall = dv.paragraph.mock.calls[dv.paragraph.mock.calls.length - 1] as unknown[];
+    const lastCall = dv.paragraph.mock.calls.at(-1) as unknown[];
     expect(lastCall[0]).toBe('Dynamic Content');
   });
 
@@ -385,7 +385,7 @@ describe('renderCallout', () => {
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (options: AddToQueueParams) => {
       const abortController = new AbortController();
-      await options.operationFn(abortController.signal);
+      await options.operationFunction(abortController.signal);
     });
 
     // Use a function that returns undefined so resolveValue returns undefined,
@@ -406,7 +406,7 @@ describe('renderCallout', () => {
     });
 
     // When contentProvider resolves to undefined, content ??= paragraph (the getRenderedContainer result)
-    const lastCall = dv.paragraph.mock.calls[dv.paragraph.mock.calls.length - 1] as unknown[];
+    const lastCall = dv.paragraph.mock.calls.at(-1) as unknown[];
     expect(lastCall[0]).toBeInstanceOf(HTMLParagraphElement);
   });
 
@@ -421,8 +421,8 @@ describe('renderCallout', () => {
       type: 'TIP'
     });
 
-    const firstCallArgs = dv.paragraph.mock.calls[0] as unknown[];
-    expect(firstCallArgs[0]).toBe('> [!TIP]+ Important\n>\n> <div class="content"></div>');
+    const firstCallArguments = dv.paragraph.mock.calls[0] as unknown[];
+    expect(firstCallArguments[0]).toBe('> [!TIP]+ Important\n>\n> <div class="content"></div>');
   });
 });
 
@@ -444,7 +444,7 @@ describe('getModifier (tested indirectly through renderCallout)', () => {
     }));
 
     HTMLElement.prototype.empty = function empty(this: HTMLElement): void {
-      this.innerHTML = '';
+      this.replaceChildren();
     };
   });
 

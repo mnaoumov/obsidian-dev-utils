@@ -122,6 +122,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
         read: adapterRead,
         write: adapterWrite
       }),
+      // eslint-disable-next-line unicorn/name-replacements -- `configDir` is declared by `obsidian`; renaming it here would not match the API.
       configDir: `${EMPTY}.obsidian`
     })
   });
@@ -138,8 +139,8 @@ function createApp(options: CreateAppOptions = {}): AppMock {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRequestUrl.mockImplementation((arg: RequestUrlParam | string) => {
-    const url = typeof arg === 'string' ? arg : arg.url;
+  mockRequestUrl.mockImplementation((argument: RequestUrlParam | string) => {
+    const url = typeof argument === 'string' ? argument : argument.url;
     if (url.includes('community-plugins.json')) {
       return Promise.resolve({ json: REGISTRY });
     }

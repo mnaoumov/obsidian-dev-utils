@@ -8,6 +8,8 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
+import { snapshot } from '../../array.ts';
+import { dispose } from '../../disposable.ts';
 import {
   ErrorWrapper,
   SilentError
@@ -81,7 +83,7 @@ export class ComponentEx extends Component implements Disposable {
       this.appendEagerLoadStep(onloadAsyncPromise);
     }
 
-    for (const child of this._children.slice()) {
+    for (const child of snapshot(this._children)) {
       this.appendSequentialLoadStep(() => this.extractLoadPromisable(child));
     }
 
@@ -142,7 +144,7 @@ export class ComponentEx extends Component implements Disposable {
    */
   public registerDisposable<TDisposable extends Disposable>(disposable: TDisposable): TDisposable {
     this.register(() => {
-      disposable[Symbol.dispose]();
+      dispose(disposable);
     });
     return disposable;
   }
@@ -262,16 +264,16 @@ export class ComponentEx extends Component implements Disposable {
   /**
    * Sequences a deferred load step into the load promise, running it only after previously-appended steps settle.
    *
-   * @param loadPromisableFn - A function that starts the load step and returns its result.
+   * @param loadPromisableFunction - A function that starts the load step and returns its result.
    */
-  private appendSequentialLoadStep(loadPromisableFn: () => null | Promisable<void>): void {
+  private appendSequentialLoadStep(loadPromisableFunction: () => null | Promisable<void>): void {
     const previous = this.loadPromise;
     if (previous) {
-      this.setLoadPromise(previous.then(() => this.runAndCapture(loadPromisableFn)));
+      this.setLoadPromise(previous.then(() => this.runAndCapture(loadPromisableFunction)));
       return;
     }
 
-    const captured = this.captureSync(loadPromisableFn);
+    const captured = this.captureSync(loadPromisableFunction);
     if (captured) {
       this.setLoadPromise(captured);
     }
@@ -300,7 +302,7 @@ export class ComponentEx extends Component implements Disposable {
       return null;
     }
 
-    return Promise.resolve(loadPromisable).then(noop, (error: unknown) => {
+    return Promise.resolve(loadPromisable).then(noop).catch((error: unknown) => {
       this.captureError(error);
     });
   }
@@ -308,13 +310,13 @@ export class ComponentEx extends Component implements Disposable {
   /**
    * Runs a load step synchronously, recording a synchronous throw, and wraps any async tail so it never rejects.
    *
-   * @param loadPromisableFn - A function that starts the load step and returns its result.
+   * @param loadPromisableFunction - A function that starts the load step and returns its result.
    * @returns A never-rejecting {@link Promise}, or `null` if the step is fully synchronous.
    */
-  private captureSync(loadPromisableFn: () => null | Promisable<void>): null | Promise<void> {
+  private captureSync(loadPromisableFunction: () => null | Promisable<void>): null | Promise<void> {
     let loadPromisable: null | Promisable<void>;
     try {
-      loadPromisable = loadPromisableFn();
+      loadPromisable = loadPromisableFunction();
     } catch (error) {
       this.captureError(error);
       return null;
@@ -342,11 +344,11 @@ export class ComponentEx extends Component implements Disposable {
   /**
    * Runs a deferred load step, recording a synchronous throw or an async rejection without ever re-throwing.
    *
-   * @param loadPromisableFn - A function that starts the load step and returns its result.
+   * @param loadPromisableFunction - A function that starts the load step and returns its result.
    */
-  private async runAndCapture(loadPromisableFn: () => null | Promisable<void>): Promise<void> {
+  private async runAndCapture(loadPromisableFunction: () => null | Promisable<void>): Promise<void> {
     try {
-      await (loadPromisableFn() ?? undefined);
+      await (loadPromisableFunction() ?? undefined);
     } catch (error) {
       this.captureError(error);
     }

@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import { dispose } from './disposable.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
   CustomStackTraceError,
@@ -41,8 +42,8 @@ describe('throwExpression', () => {
   });
 
   it('should throw non-Error objects', () => {
-    const obj = { code: 42 };
-    expect(() => throwExpression(obj)).toThrow();
+    const $object = { code: 42 };
+    expect(() => throwExpression($object)).toThrow();
   });
 });
 
@@ -528,7 +529,7 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     const handler = vi.fn();
     const registration = registerAsyncErrorEventHandler(handler);
 
-    registration[Symbol.dispose]();
+    dispose(registration);
 
     // No consumer handler remains, so mark the deliberate emit as expected for the test harness.
     using _ignore = startAsyncErrorIgnoreContext();
@@ -569,7 +570,7 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     const registration1 = registerAsyncErrorEventHandler(handler1);
     using _registration2 = registerAsyncErrorEventHandler(handler2);
 
-    registration1[Symbol.dispose]();
+    dispose(registration1);
 
     emitAsyncErrorEvent(new Error('selective'));
 

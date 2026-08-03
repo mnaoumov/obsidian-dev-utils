@@ -41,7 +41,7 @@ beforeEach(() => {
   // `process` and `modify` actually mutate the in-memory vault.
   mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
     const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-    await params.operationFn(abortSignal);
+    await params.operationFunction(abortSignal);
   });
 });
 

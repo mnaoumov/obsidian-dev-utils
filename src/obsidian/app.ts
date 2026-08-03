@@ -28,7 +28,7 @@ export function getApp(): App {
   }
 
   try {
-    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+    // eslint-disable-next-line obsidianmd/no-global-this, unicorn/no-unnecessary-global-this -- Actively use globalThis: this module is emitted as ESM, where a bare `require` is not in scope at all, so the property access is what makes the Obsidian-injected loader reachable.
     return globalThis.require('obsidian/app') as App;
   } catch {
     throw new Error('Obsidian App global instance not found');

@@ -14,7 +14,7 @@ import type {
   MenuEventRegistrar
 } from '../menu-event-registrar.ts';
 
-import { EventRefDisposable } from '../events.ts';
+import { EventRefDisposable as EventReferenceDisposable } from '../events.ts';
 import { ComponentEx } from './component-ex.ts';
 
 /**
@@ -40,7 +40,7 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    */
   public registerEditorMenuEventHandler(handler: EditorMenuEventHandler): DisposableEx {
     this.ensureLoaded();
-    return this.registerDisposable(new EventRefDisposable(this.app.workspace.on('editor-menu', handler)));
+    return this.registerDisposable(new EventReferenceDisposable(this.app.workspace.on('editor-menu', handler)));
   }
 
   /**
@@ -51,7 +51,7 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    */
   public registerFileMenuEventHandler(handler: FileMenuEventHandler): DisposableEx {
     this.ensureLoaded();
-    return this.registerDisposable(new EventRefDisposable(this.app.workspace.on('file-menu', handler)));
+    return this.registerDisposable(new EventReferenceDisposable(this.app.workspace.on('file-menu', handler)));
   }
 
   /**
@@ -62,6 +62,6 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
    */
   public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): DisposableEx {
     this.ensureLoaded();
-    return this.registerDisposable(new EventRefDisposable(this.app.workspace.on('files-menu', handler)));
+    return this.registerDisposable(new EventReferenceDisposable(this.app.workspace.on('files-menu', handler)));
   }
 }

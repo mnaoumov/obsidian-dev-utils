@@ -43,7 +43,7 @@ export class MultipleFileComponent extends TypedTextComponent<readonly File[]> {
    * @returns The value of the component.
    */
   public override getValue(): readonly File[] {
-    return Array.from(ensureNonNullable(this.inputEl.files));
+    return [...ensureNonNullable(this.inputEl.files)];
   }
 
   /**

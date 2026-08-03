@@ -31,10 +31,10 @@ interface MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorP
    * Handler function for the code block processor.
    *
    * @param source - The source code of the code block.
-   * @param el - The HTML element representing the code block.
-   * @param ctx - The context for the markdown post processor.
+   * @param element - The HTML element representing the code block.
+   * @param context - The context for the markdown post processor.
    */
-  handler(this: void, source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
+  handler(this: void, source: string, element: HTMLElement, context: MarkdownPostProcessorContext): Promisable<void>;
 
   /**
    * The language of the code block to register the processor for.
@@ -74,6 +74,6 @@ export class PluginMarkdownCodeBlockProcessorRegistrar implements MarkdownCodeBl
    * @returns The markdown post processor.
    */
   public registerMarkdownCodeBlockProcessor(params: PluginMarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams): MarkdownPostProcessor {
-    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, (source, el, ctx) => normalizePromisable(params.handler(source, el, ctx)), params.sortOrder);
+    return this.plugin.registerMarkdownCodeBlockProcessor(params.language, (source, element, context) => normalizePromisable(params.handler(source, element, context)), params.sortOrder);
   }
 }

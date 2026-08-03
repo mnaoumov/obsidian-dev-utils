@@ -9,7 +9,7 @@ import { noopAsync } from './function.ts';
 import { assertNonNullable } from './type-guards.ts';
 import { resolveValue } from './value-provider.ts';
 
-interface Args {
+interface Arguments {
   readonly a: number;
   readonly b: string;
 }
@@ -27,9 +27,9 @@ describe('resolveValue', () => {
     });
 
     it('should return an object value by reference', async () => {
-      const obj = { key: 'value' };
-      const result = await resolveValue(obj, {});
-      expect(result).toBe(obj);
+      const $object = { key: 'value' };
+      const result = await resolveValue($object, {});
+      expect(result).toBe($object);
     });
   });
 
@@ -83,7 +83,7 @@ describe('resolveValue', () => {
 
   describe('arguments passing', () => {
     it('should return the correct result from extra arguments', async () => {
-      const provider = vi.fn(({ a, b }: Args): string => {
+      const provider = vi.fn(({ a, b }: Arguments): string => {
         return `${String(a)}-${b}`;
       });
       const result = await resolveValue(provider, { a: 42, b: 'hello' });
@@ -91,7 +91,7 @@ describe('resolveValue', () => {
     });
 
     it('should call the function exactly once with extra arguments', async () => {
-      const provider = vi.fn(({ a, b }: Args): string => {
+      const provider = vi.fn(({ a, b }: Arguments): string => {
         return `${String(a)}-${b}`;
       });
       await resolveValue(provider, { a: 42, b: 'hello' });
@@ -99,7 +99,7 @@ describe('resolveValue', () => {
     });
 
     it('should pass the first extra argument correctly', async () => {
-      const provider = vi.fn(({ a, b }: Args): string => {
+      const provider = vi.fn(({ a, b }: Arguments): string => {
         return `${String(a)}-${b}`;
       });
       await resolveValue(provider, { a: 42, b: 'hello' });
@@ -109,7 +109,7 @@ describe('resolveValue', () => {
     });
 
     it('should pass the second extra argument correctly', async () => {
-      const provider = vi.fn(({ a, b }: Args): string => {
+      const provider = vi.fn(({ a, b }: Arguments): string => {
         return `${String(a)}-${b}`;
       });
       await resolveValue(provider, { a: 42, b: 'hello' });

@@ -55,16 +55,16 @@ class AbstractTextComponentWrapper<T> implements TextBasedComponent<T> {
  * Gets the text based component value of the component.
  *
  * @typeParam T - The type of the value to get.
- * @param obj - Any object.
+ * @param $unknown - Any object.
  * @returns The text based component value of the component or `null` if the component is not a text based component.
  */
-export function getTextBasedComponentValue<T>(obj: unknown): null | TextBasedComponent<T> {
-  if (isTextBasedComponent(obj)) {
-    return obj;
+export function getTextBasedComponentValue<T>($unknown: unknown): null | TextBasedComponent<T> {
+  if (isTextBasedComponent($unknown)) {
+    return $unknown;
   }
 
-  if (obj instanceof AbstractTextComponent) {
-    return new AbstractTextComponentWrapper<T>(obj);
+  if ($unknown instanceof AbstractTextComponent) {
+    return new AbstractTextComponentWrapper<T>($unknown);
   }
 
   return null;

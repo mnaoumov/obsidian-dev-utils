@@ -30,11 +30,11 @@ export interface MarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorPara
   /**
    * Post processor function to register.
    *
-   * @param el - The HTML element to process.
-   * @param ctx - The markdown post processor context.
+   * @param element - The HTML element to process.
+   * @param context - The markdown post processor context.
    * @returns A promisable that resolves when the post processing is complete.
    */
-  postProcessor(el: HTMLElement, ctx: MarkdownPostProcessorContext): Promisable<void>;
+  postProcessor(element: HTMLElement, context: MarkdownPostProcessorContext): Promisable<void>;
 
   /**
    * Optional sort order for the post processor. Lower numbers are processed first.
@@ -63,6 +63,6 @@ export class PluginMarkdownPostProcessorRegistrar implements MarkdownPostProcess
    * @param params - The parameters for the markdown post processor registration.
    */
   public registerMarkdownPostProcessor(params: PluginMarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorParams): void {
-    this.plugin.registerMarkdownPostProcessor((el, ctx) => normalizePromisable(params.postProcessor(el, ctx)), params.sortOrder);
+    this.plugin.registerMarkdownPostProcessor((element, context) => normalizePromisable(params.postProcessor(element, context)), params.sortOrder);
   }
 }

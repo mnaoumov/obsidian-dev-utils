@@ -46,6 +46,6 @@ export class SetTransformer extends TypedTransformer<Set<unknown>, unknown[]> {
    * @returns The transformed value.
    */
   public override transformValue(value: Set<unknown>): unknown[] {
-    return Array.from(value);
+    return [...value];
   }
 }

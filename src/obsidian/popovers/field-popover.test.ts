@@ -54,22 +54,22 @@ describe('editFieldsInPopover', () => {
     textInstances.length = 0;
     document.body.empty();
     mockImplementation({
+      $object: ButtonComponentOriginal.prototype,
       impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
-      method: 'constructor2__',
-      obj: ButtonComponentOriginal.prototype
+      method: 'constructor2__'
     });
     mockImplementation({
+      $object: TextComponentOriginal.prototype,
       impl: function impl(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
         originalImplementation.call(this, containerEl);
         textInstances.push(this);
         return this;
       },
-      method: 'constructor4__',
-      obj: TextComponentOriginal.prototype
+      method: 'constructor4__'
     });
   });
 
@@ -141,7 +141,7 @@ describe('editFieldsInPopover', () => {
     });
 
     const popoverEl = ensureNonNullable(document.body.querySelector('.popover'));
-    const inputEls = Array.from(popoverEl.querySelectorAll('input'));
+    const inputEls = [...popoverEl.querySelectorAll('input')];
 
     expect(popoverEl.textContent).toContain('URL');
     expect(popoverEl.textContent).toContain('Alias');

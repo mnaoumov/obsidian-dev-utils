@@ -85,12 +85,12 @@ export class TriStateCheckboxComponent extends ValueComponent<boolean | null> im
   /**
    * Sets the disabled state of the checkbox.
    *
-   * @param disabled - The disabled state of the checkbox.
+   * @param isDisabled - The disabled state of the checkbox.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.inputEl.disabled = disabled;
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.inputEl.disabled = isDisabled;
     return this;
   }
 

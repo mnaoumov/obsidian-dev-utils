@@ -162,7 +162,7 @@ function demoVaultFolderName(version: string): string {
   return `${PLUGIN_ID}-${version}.demo-vault`;
 }
 
-function getOpenedVaultDir(): string {
+function getOpenedVaultDirectory(): string {
   const call = mockSendSync.mock.calls.at(-1);
   return call?.[1] as string;
 }
@@ -173,8 +173,8 @@ function latestReleaseResponse(version: string): MockGitHubResponse {
 }
 
 function setLatestReleaseVersion(latestVersion: string, assetStatus = HTTP_STATUS_OK): void {
-  mockRequestUrl.mockImplementation((arg: RequestUrlParam | string) => {
-    const url = typeof arg === 'string' ? arg : arg.url;
+  mockRequestUrl.mockImplementation((argument: RequestUrlParam | string) => {
+    const url = typeof argument === 'string' ? argument : argument.url;
     if (url.includes('releases/latest')) {
       return Promise.resolve(latestReleaseResponse(latestVersion));
     }
@@ -187,8 +187,8 @@ function setLatestReleaseVersion(latestVersion: string, assetStatus = HTTP_STATU
 
 function wasAssetDownloaded(): boolean {
   return mockRequestUrl.mock.calls.some((call) => {
-    const arg = call[0] as RequestUrlParam | string;
-    const url = typeof arg === 'string' ? arg : arg.url;
+    const argument = call[0] as RequestUrlParam | string;
+    const url = typeof argument === 'string' ? argument : argument.url;
     return url.includes('releases/download');
   });
 }
@@ -206,17 +206,19 @@ beforeEach(() => {
     [Symbol.dispose]: vi.fn()
   });
   setLatestReleaseVersion(CURRENT_VERSION);
-  Object.defineProperty(window, 'electron', {
-    configurable: true,
-    value: { ipcRenderer: { sendSync: mockSendSync } }
-  });
-  Object.defineProperty(window, 'require', {
-    configurable: true,
-    value: (id: string): unknown => {
-      if (id === 'node:original-fs') {
-        return { chmodSync: originalFsStubChmodSync };
+  Object.defineProperties(window, {
+    electron: {
+      configurable: true,
+      value: { ipcRenderer: { sendSync: mockSendSync } }
+    },
+    require: {
+      configurable: true,
+      value: (id: string): unknown => {
+        if (id === 'node:original-fs') {
+          return { chmodSync: originalFsStubChmodSync };
+        }
+        throw new Error(`Unexpected require of '${id}'`);
       }
-      throw new Error(`Unexpected require of '${id}'`);
     }
   });
 });
@@ -237,13 +239,13 @@ describe('openDemoVault', () => {
     setLatestReleaseVersion(CURRENT_VERSION);
     await openDemoVault(buildParams());
     expect(mockSelectOption).not.toHaveBeenCalled();
-    expect(basename(getOpenedVaultDir())).toBe(demoVaultFolderName(CURRENT_VERSION));
+    expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
     expect(mockSendSync).toHaveBeenCalledWith('vault-open', expect.any(String), false);
   });
 
   it('should name the extracted vault folder <plugin-id>-<version>.demo-vault', async () => {
     await openDemoVault(buildParams());
-    expect(basename(getOpenedVaultDir())).toBe(demoVaultFolderName(CURRENT_VERSION));
+    expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
   });
 
   it('should show a notice and not open when the plugin is not in the registry', async () => {
@@ -264,14 +266,14 @@ describe('openDemoVault', () => {
       'Open demo vault for current version (v1.0.0)',
       'Cancel'
     ]);
-    expect(basename(getOpenedVaultDir())).toBe(demoVaultFolderName('2.0.0'));
+    expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName('2.0.0'));
   });
 
   it('should open the current version when chosen from the dialog', async () => {
     setLatestReleaseVersion('2.0.0');
     mockSelectOption.mockResolvedValue(CURRENT_VERSION);
     await openDemoVault(buildParams());
-    expect(basename(getOpenedVaultDir())).toBe(demoVaultFolderName(CURRENT_VERSION));
+    expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
   });
 
   it('should do nothing when the version dialog is cancelled', async () => {
@@ -290,7 +292,7 @@ describe('openDemoVault', () => {
     });
     expect(mockWriteFileSync).toHaveBeenCalledWith(expect.stringContaining(archiveFileName(CURRENT_VERSION)), expect.any(Buffer));
     expect(mockExtractAllTo).toHaveBeenCalledTimes(1);
-    expect(basename(getOpenedVaultDir())).toBe(demoVaultFolderName(CURRENT_VERSION));
+    expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
   });
 
   it('should reuse the cached archive without re-downloading it', async () => {
@@ -333,7 +335,7 @@ describe('openDemoVault', () => {
       throw new Error('EBUSY');
     });
     await openDemoVault(buildParams());
-    expect(basename(getOpenedVaultDir())).toBe(demoVaultFolderName(CURRENT_VERSION));
+    expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
   });
 
   it('should hand adm-zip Electron original-fs so chmod-ing an extracted .asar file cannot crash', async () => {

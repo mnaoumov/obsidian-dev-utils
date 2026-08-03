@@ -130,12 +130,12 @@ export async function readdirPosix(
 ): Promise<Buffer[] | Dirent[] | string[]> {
   if (isStringResultOptions(options)) {
     const paths = await readdir(path, options);
-    return paths.map(toPosixPath);
+    return paths.map((entryPath) => toPosixPath(entryPath));
   }
 
   if (isBufferResultOptions(options)) {
     const buffers = await readdir(path, options);
-    return buffers.map(toPosixBuffer);
+    return buffers.map((buffer) => toPosixBuffer(buffer));
   }
 
   const dirents = await readdir(path, options);

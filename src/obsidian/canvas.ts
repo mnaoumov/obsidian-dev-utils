@@ -95,8 +95,9 @@ export async function getCanvasReferences(app: App, pathOrFile: PathOrFile): Pro
         }
         break;
       }
-      default:
+      default: {
         break;
+      }
     }
   }
 

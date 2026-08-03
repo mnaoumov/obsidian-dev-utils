@@ -55,7 +55,9 @@ const STAGING_FOLDER_PATH = '.obsidian-dev-utils-temp';
 describe('VaultTransaction', () => {
   it('should soft-delete a file on trash and restore it with its original content on rollback', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: { stagingFolderPath: STAGING_FOLDER_PATH },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<TrashRollbackResult> {
         const adapter = app.vault.adapter;
         const targetPath = 'vt-trash-target.md';
@@ -90,7 +92,9 @@ describe('VaultTransaction', () => {
 
   it('should remove a soft-deleted file for real and drop the staging folder on commit', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: { stagingFolderPath: STAGING_FOLDER_PATH },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<CommitResult> {
         const adapter = app.vault.adapter;
         const targetPath = 'vt-commit-target.md';
@@ -127,7 +131,9 @@ describe('VaultTransaction', () => {
 
   it('should soft-delete a whole folder subtree on trash and restore it on rollback', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: { stagingFolderPath: STAGING_FOLDER_PATH },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<SubtreeRollbackResult> {
         const adapter = app.vault.adapter;
         const folderPath = 'vt-subtree';
@@ -136,10 +142,9 @@ describe('VaultTransaction', () => {
 
         await app.vault.createFolder(folderPath);
         await app.vault.createFolder('vt-subtree/nested');
-        for (let i = 0; i < childPaths.length; i++) {
-          const path = childPaths[i];
-          const content = childContents[i];
-          if (path === undefined || content === undefined) {
+        for (const [index, path] of childPaths.entries()) {
+          const content = childContents[index];
+          if (content === undefined) {
             throw new Error('test fixture mismatch');
           }
           await app.vault.create(path, content);
@@ -149,7 +154,7 @@ describe('VaultTransaction', () => {
         try {
           await vaultTransaction.trash(folderPath);
           const goneFlags = await Promise.all(childPaths.map(async (path) => !await adapter.exists(path)));
-          const areChildrenGoneAfterTrash = goneFlags.every((isGone) => isGone);
+          const areChildrenGoneAfterTrash = goneFlags.every(Boolean);
 
           await vaultTransaction.rollback();
           const restoredChildContents: string[] = [];
@@ -179,6 +184,7 @@ describe('VaultTransaction', () => {
 
   it('should mutate and roll back a mutation-blocked file when given an openMutationBypass', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { ResourceLockComponent, VaultTransaction } }): Promise<BypassResult> {
         const folderPath = 'vt-bypass-folder';
         const filePath = `${folderPath}/note.md`;
@@ -223,6 +229,7 @@ describe('VaultTransaction', () => {
 
   it('should leave both disk and an open editor at the restored content after rollback', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { VaultTransaction }, obsidianModule }): Promise<EditorClobberResult> {
         const { MarkdownView } = obsidianModule;
         const targetPath = 'vt-editor-clobber.md';
@@ -235,7 +242,7 @@ describe('VaultTransaction', () => {
           await leaf.openFile(file);
           const view = leaf.view;
           if (!(view instanceof MarkdownView)) {
-            throw new Error('expected a MarkdownView');
+            throw new TypeError('expected a MarkdownView');
           }
           const editor = view.editor;
 

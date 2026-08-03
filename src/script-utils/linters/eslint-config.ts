@@ -26,6 +26,8 @@ import nodePlugin from 'eslint-plugin-n';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `index` is too confusing.
+import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig } from 'eslint/config';
 import { existsSync } from 'node:fs';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
@@ -134,6 +136,7 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
     ...getStylisticConfigs(context),
     ...getImportXConfigs(context),
     ...getPerfectionistConfigs(context),
+    ...getUnicornConfigs(context),
     ...getEslintImportResolverTypescriptConfigs(),
     ...getEslintCommentsConfigs(context),
     ...getObsidianDevUtilsPluginConfigs(context),
@@ -410,9 +413,16 @@ function getIntegrationTestConfigs(): Linter.Config[] {
 }
 
 function getNodeCompatConfigs(context: EslintConfigContext): Linter.Config[] {
-  // The minimum Obsidian installer that still receives app updates (0.14.5) ships Electron 18.0.3, which runs Node 16.13.2.
-  // Shipped source must therefore avoid Node/ES runtime builtins unavailable in that version. Tests and scripts are dev-only and exempt.
-  const minimumNodeVersion = '>=16.13.2';
+  /*
+   * The minimum Obsidian installer that still receives app updates and works is 1.1.9, which ships Electron
+   * 21.3.3 and runs Node 16.16.0. Shipped source must therefore avoid Node/ES runtime builtins unavailable in
+   * that version. Tests and scripts are dev-only and exempt.
+   *
+   * Source of truth: `obsidian-integration-testing/metadata.json` — the newest release carrying the field
+   * (1.13.1) declares `minRunnableInstallerVersion: "1.1.9"`, and that installer's `runtimeVersions` gives the
+   * Electron and Node versions above. Re-derive from there rather than editing this number by hand.
+   */
+  const minimumNodeVersion = '>=16.16.0';
 
   return defineConfig([
     {
@@ -571,6 +581,7 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
             jsx: true
           },
           projectService: true,
+          // eslint-disable-next-line unicorn/name-replacements -- `tsconfigRootDir` is a `typescript-eslint` parser option.
           tsconfigRootDir: getRootFolder() ?? ''
         }
       },
@@ -592,12 +603,15 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
         '@typescript-eslint/no-unused-vars': [
           'error',
           {
+            // eslint-disable-next-line unicorn/name-replacements -- `args` is an ESLint rule option name.
             args: 'all',
+            // eslint-disable-next-line unicorn/name-replacements -- `argsIgnorePattern` is a `typescript-eslint` rule option name.
             argsIgnorePattern: '^_',
             caughtErrors: 'all',
             caughtErrorsIgnorePattern: '^_',
             destructuredArrayIgnorePattern: '^_',
             ignoreRestSiblings: true,
+            // eslint-disable-next-line unicorn/name-replacements -- `varsIgnorePattern` is a `typescript-eslint` rule option name.
             varsIgnorePattern: '^_'
           }
         ],
@@ -619,6 +633,391 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
         react: {
           version: 'detect'
         }
+      }
+    }
+  ]);
+}
+
+function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
+  return defineConfig([
+    {
+      extends: [unicorn.configs.recommended],
+      files: context.allFiles(),
+      rules: {
+        /*
+         * These entries are not abbreviations to be expanded — they are established vocabulary here.
+         *
+         * Brand: `dev`, `lib`, `util`/`utils` spell the product's own name. Left on, the rule rewrites
+         * `ObsidianDevUtilsRepoPaths` to `ObsidianDevelopmentUtilitiesRepoPaths` and `getLibDebugger` to
+         * `getLibraryDebugger`, renaming exported API after the package it belongs to.
+         *
+         * Convention: `params` is the parameter-bag convention, enforced by
+         * `obsidian-dev-utils/params-options-name-match`, which requires bag types to be named
+         * `<Owner>Params` / `<Owner>Options`. Expanding it to `Parameters` would put the two rules in direct
+         * contradiction and break 300+ exported type names.
+         *
+         * Reserved words: a bare `args`, `fn`, `str`, `mod` or `evt` expands to an identifier that is already
+         * taken, so the rule suggests `$arguments`, `$function`, and so on. Spell those `$arguments` /
+         * `$function` instead — a `$` prefix reads better than a trailing underscore. This is deliberately NOT
+         * configured as a custom replacement: unicorn substitutes at the word level inside compound names, so
+         * redirecting the whole entry turns `asyncFn` into `async$function`. Compounds want the plain expansion
+         * (`asyncFunction`); only the bare, genuinely-colliding identifiers take the `$` form.
+         *
+         * Domain words: `doc`/`docs`, `env`, `dist` and `src` are the clearer spelling in this codebase.
+         * Expanding `doc` also picks the wrong word — the `api-doc-*` modules generate API *documentation*, not
+         * documents. `src` additionally corrupts code: the fixer renames the `Src` member of the exported
+         * `ObsidianPluginRepoPaths` / `ObsidianDevUtilsRepoPaths` enums while leaving every `.Src` reference
+         * dangling, because `checkProperties` exempts property accesses but not the declarations they point at.
+         *
+         * Disabling the replacement entries protects these permanently; an `allowList` would instead need every
+         * affected identifier enumerated by hand and re-enumerated for every new one.
+         *
+         * NOTE: this rule's autofix is NOT reference-aware for declarations that participate in a contract —
+         * enum members, interface members, and TypeScript parameter properties (`constructor(private readonly
+         * el: HTMLElement)`) are renamed while `this.el` and `Enum.Member` references are left dangling. Apply
+         * its reports by hand; never run `--fix` over it.
+         */
+        /*
+         * A good rule, but its default prefixes force ungrammatical names: `memberPageExists` would become
+         * `isMemberPageExists` rather than `doesMemberPageExist`. These entries EXTEND the defaults (`is`,
+         * `has`, `can`, `should`, ...) rather than replacing them, so a boolean with no boolean-reading prefix
+         * at all is still rejected -- the rule just stops insisting the prefix come from a shorter list.
+         *
+         * The list is bidirectional: adding a prefix also asserts that everything named with it IS a boolean.
+         * `check` earns its place on both counts, since the handful of non-boolean `check*` names it surfaced
+         * were genuinely mis-named (void functions that throw, a probe returning an HTTP status). `test` was
+         * measured and rejected: it would validate five `test*` link predicates that read better as `is*`
+         * anyway, at the cost of renaming SCREAMING_CASE test fixtures and the `testCoverage`/`testWatch`
+         * runners that deliberately mirror the `test:coverage`/`test:watch` npm scripts.
+         */
+        'unicorn/consistent-boolean-name': [
+          'error',
+          {
+            prefixes: {
+              allows: true,
+              check: true,
+              contains: true,
+              does: true,
+              includes: true,
+              must: true,
+              needs: true,
+              supports: true
+            }
+          }
+        ],
+        /*
+         * Unsatisfiable alongside `perfectionist/sort-classes`, which is configured here as a plain
+         * alphabetical sort. This rule wants a category order (all fields, then the constructor, then all
+         * methods), so the extremely common `private _x` field paired with a `public get x()` accessor is
+         * rejected by whichever rule loses: alphabetically the accessor precedes the field, by category the
+         * field precedes the accessor. Unlike `prefer-global-this` the clash produces no
+         * `ESLintCircularFixesWarning`, only because this rule ships no fixer -- both rules are `error`, so no
+         * arrangement of members satisfies them both. The alphabetical sort is the one already rolled out
+         * across the plugins consuming this config, so it keeps precedence. Re-enabling this rule would mean
+         * giving `perfectionist/sort-classes` a matching `groups` option and reordering every class.
+         */
+        'unicorn/consistent-class-member-order': 'off',
+        /*
+         * Every report is `new Error().stack`, which captures a stack trace and never surfaces its message,
+         * or `new AggregateError(errors)`, whose message is optional precisely because the collected errors
+         * carry the detail. The rule cannot tell either from an error that is actually thrown at a user.
+         */
+        'unicorn/error-message': 'off',
+        /*
+         * The default style for `node:path` is a default import, but this codebase imports its members by name
+         * throughout, consistently with every other `node:` module it uses. Configure the rule to enforce the
+         * style actually in use rather than annotate 17 sites that are not going to change.
+         */
+        'unicorn/import-style': [
+          'error',
+          {
+            styles: {
+              // Keyed by the UNPREFIXED module name: the rule's own table uses `path`, so a `node:path` key never matches.
+              path: {
+                named: true
+              }
+            }
+          }
+        ],
+        /*
+         * The rule counts constructor calls and counts through array and object literals, so its default of 3
+         * reports ordinary composition: `Promise.reject(new Error('boom'))` inside an assertion, a test fixture
+         * built as `createTypeInfo({ methods: [createMemberInfo({ ... })] })`, `this.addChild(new C(this.app))`
+         * inside a params bag. Raising the limit by one clears every report here while still catching the
+         * genuinely unreadable nesting the rule is for.
+         */
+        'unicorn/max-nested-calls': [
+          'error',
+          {
+            max: 4
+          }
+        ],
+        'unicorn/name-replacements': [
+          'error',
+          {
+            /*
+             * Property and member names are checked too, so an abbreviation cannot survive by living on an
+             * object rather than in a variable.
+             *
+             * The rule is purely syntactic: it cannot tell a member we declare from one belonging to a
+             * dependency, and it offers no autofix for properties (measured: 681 hits, 0 with a fixer). Sites
+             * naming a foreign member -- `DomElementInfo.attr`, `EvalInObsidianParams.fn`, and the like -- are
+             * therefore impossible to satisfy and carry an inline disable, so everything still reported is ours
+             * to rename.
+             *
+             * When renaming the rest, note that `tsc` alone is NOT a sufficient gate: object-literal keys in
+             * loosely typed positions (`expect.arrayContaining([{ batchedArguments: ... }])`) are not contextually
+             * typed, so a rename leaves them behind and breaks the suite where the type checker sees nothing.
+             * Rename in small batches with the full test run in the loop.
+             *
+             * The disabled replacements below are established vocabulary rather than abbreviations to be
+             * expanded. `el` is exempt because Obsidian names every element member that way -- `containerEl`,
+             * `contentEl`, `inputEl`, `selectEl` -- so expanding ours to `*Element` would leave our components
+             * reading inconsistently beside the Obsidian ones they sit next to. Disabling the replacement also
+             * covers compound names, which is 72 sites that would otherwise each need an inline disable.
+             *
+             * `ref` is exempt for the same reason: `AsyncEventRef` is the async counterpart of Obsidian's
+             * `EventRef`, handed to the same `offref` / `registerEvent` shapes, so the two names have to match
+             * to read as a pair.
+             */
+            checkProperties: true,
+            replacements: {
+              /*
+               * `attr` / `attrs` are Obsidian's own: `createEl('a', { attr: { ... } })` takes them by those
+               * names on `DomElementInfo`, so ours have to match to be passed through. `props` is the
+               * universal component vocabulary, exempt for the same reason `params` is.
+               */
+              attr: false,
+              attrs: false,
+              dev: false,
+              /*
+               * Every `dir` here is a filesystem directory, never a direction, so the rule is narrowed to the
+               * one expansion rather than left offering a choice it cannot make.
+               */
+              // eslint-disable-next-line unicorn/name-replacements -- This is the rule's own replacement key, which has to be spelled the way the rule reads it.
+              dir: {
+                direction: false,
+                directory: true
+              },
+              dist: false,
+              doc: false,
+              docs: false,
+              el: false,
+              env: false,
+              lib: false,
+              params: false,
+              props: false,
+              ref: false,
+              refs: false,
+              src: false,
+              util: false,
+              utils: false
+            }
+          }
+        ],
+        /*
+         * The next six rules all suggest an API newer than this project's `lib` (`ES2022`), so following any of
+         * them fails to compile. The target is not arbitrary: `obsidian-integration-testing/metadata.json`
+         * records `ecmaScriptVersion: "ES2022"` for installer 1.1.9, the oldest one still able to run current
+         * Obsidian. Each is off at the config level rather than annotated per site, because none can ever be
+         * satisfied while that floor holds. Revisit them together if the floor moves.
+         *
+         * `Array#toReversed` and `Array#toSorted` are ES2023.
+         */
+        'unicorn/no-array-reverse': 'off',
+        'unicorn/no-array-sort': 'off',
+        /*
+         * `continue` inside a nested loop is ordinary, readable control flow here. The rule's remedy is to
+         * extract every such loop into its own function, which spreads one coherent traversal across two
+         * declarations without making anything clearer.
+         */
+        'unicorn/no-break-in-nested-loop': 'off',
+        /*
+         * The rule cannot see through a hoisted function declaration, so it treats a binding that a nested
+         * function already read as unused before the exit. In `runWithTimeout` that is `let isCompleted`, which
+         * `run()` and `innerTimeout()` both touch while the `Promise.race` above the exit is still running --
+         * moving the declaration past the exit, as the rule asks, would leave those reads in the temporal dead
+         * zone. Its own fixer declines all 15 sites for the same reason it cannot prove them safe, so following
+         * the rule is entirely manual. What is left after that is placement style: the remaining reports are
+         * named constants and derived paths deliberately grouped at the top of a function, and pushing each one
+         * below the first guard splits a cohesive block to no benefit. The three sites where deferring skipped
+         * real work (a second `computeNeededExposure` walk, a `toJson` serialization, an `ensureLfEndings` pass)
+         * were applied by hand instead.
+         */
+        'unicorn/no-declarations-before-early-exit': 'off',
+        /*
+         * Assigning onto the global object is how this library installs and restores test doubles, and how a
+         * few Obsidian-runtime globals are reached at all. The rule cannot separate that from an accidental
+         * global write, and it has no fixer.
+         */
+        'unicorn/no-global-object-property-assignment': 'off',
+        // `null` is load-bearing here: an optional collaborator is modelled as a required `null | X` field rather than an optional `X`, so `null` and `undefined` are not interchangeable.
+        /*
+         * The rule's list of standard `Symbol` properties predates explicit resource management, so it reports
+         * `Symbol.dispose` and `Symbol.asyncDispose` as non-standard. Both are part of the language that this
+         * library is built on -- 114 files here use `using` declarations, and the disposable types are a
+         * public part of its surface -- so all 59 reports are the rule being out of date rather than a finding.
+         */
+        'unicorn/no-nonstandard-builtin-properties': 'off',
+        'unicorn/no-null': 'off',
+        /*
+         * TypeScript's explicit `this` parameter (`function get(this: Holder) { return this.value; }`) makes
+         * `this` outside a class both legal and type-checked, but the rule is syntactic and flags it identically
+         * to a genuinely unbound `this`. It has no options (`schema: []`) and no fixer, so there is no way to
+         * separate the idiom from the bug it targets. Most hits here were typed `this` parameters and tests that
+         * deliberately assert `this` binding.
+         */
+        'unicorn/no-this-outside-of-class': 'off',
+        // Same call as its object counterpart above: the destructuring depth flagged here is deliberate and reads well.
+        'unicorn/no-unreadable-array-destructuring': 'off',
+        /*
+         * The reports are all `for (const file of await readdirPosix(...))`, which reads exactly as intended.
+         * Hoisting the awaited call into a variable named after the loop's own iterable adds a line and a name
+         * without adding information.
+         */
+        'unicorn/no-unreadable-for-of-expression': 'off',
+        /*
+         * The nested destructuring this flags is deliberate here and reads well: pulling a member out of a
+         * params bag in one step states where the value comes from, which a second intermediate binding only
+         * obscures. The rule takes no options, so there is no way to keep the depth limit it is really after
+         * while allowing the shape in use.
+         */
+        'unicorn/no-unreadable-object-destructuring': 'off',
+        /*
+         * `checkArguments` strips `undefined` arguments, which shifts the remaining positional arguments into
+         * the wrong slots; `checkArrowFunctionBody` removes `return undefined;` from arrow bodies whose other
+         * branches do return a value, which violates the `noImplicitReturns` setting this project compiles with.
+         * The rule's remaining cases (a bare `undefined` initializer, `return undefined;` in a void function)
+         * are still worth having.
+         */
+        'unicorn/no-useless-undefined': [
+          'error',
+          {
+            checkArguments: false,
+            checkArrowFunctionBody: false
+          }
+        ],
+        // `Array.fromAsync` is ES2024. See the ES2022 floor note above.
+        'unicorn/prefer-array-from-async': 'off',
+        /*
+         * Every hit here is a promise deliberately NOT awaited, and `await` would change what the code does.
+         * `result.catch(throwDelayed)` in `async-events.ts` is the fire-and-forget error path the module is
+         * built on; the rest hold an unresolved promise and assert the callback has not fired yet, so awaiting
+         * would hang the test or invert what it proves. The rule cannot tell a forgotten `await` from an
+         * intentional one, and this codebase schedules fire-and-forget work as a core pattern.
+         */
+        'unicorn/prefer-await': 'off',
+        /*
+         * All three reports read HTML out (`const html = el.innerHTML`), never write it, and for a read
+         * `getHTML()` returns the same string. What it adds is shadow-root serialization options that nothing
+         * here asks for, in exchange for a much newer platform floor than `innerHTML` -- a bad trade for a
+         * library that has to run on whatever Chromium the installed Obsidian ships. The rule's other half,
+         * rewriting writes to the sanitizing `setHTML()`, would be worth having; it just never fires here.
+         */
+        'unicorn/prefer-dom-node-html-methods': 'off',
+        /*
+         * Obsidian's `Component` has its own `removeChild(component)` for the component lifecycle, unrelated
+         * to `Node#removeChild`. The rule matches on the method name alone, so every report here is a
+         * component being unloaded, and following the advice calls a `remove()` that does not exist -- which
+         * is what `tsc` said when the fixer was let loose on them.
+         */
+        'unicorn/prefer-dom-node-remove': 'off',
+        /*
+         * Directly contradicts `obsidianmd/no-global-this`: this rule rewrites `window.x` to `globalThis.x`, and
+         * that one forbids `globalThis` outright. With both enabled, `--fix` applies one and then the other
+         * reverts it, which ESLint reports as `ESLintCircularFixesWarning` across 29 files. Obsidian's own
+         * guidance wins in an Obsidian library, so this is the rule that gives way.
+         */
+        'unicorn/prefer-global-this': 'off',
+        /*
+         * Iterator helpers (`Iterator#some` and friends) are ES2025, so this belongs with `no-array-reverse` and
+         * `no-array-sort` above: the same ES2022 floor rules it out, and the same note applies -- revisit them
+         * together if that floor moves.
+         */
+        'unicorn/prefer-iterator-helpers': 'off',
+        // `Iterator#toArray` is ES2025. See the ES2022 floor note above.
+        'unicorn/prefer-iterator-to-array': 'off',
+        /*
+         * The suggested replacement is `Math.trunc(Number(x))`, which is longer than `parseInt(x, 10)` and no
+         * clearer, and it is not the same function: `parseInt` stops at the first character that cannot be part
+         * of the number, so `'12abc'` parses to 12 where `Number` yields `NaN`. Two of the reports read user
+         * input through that difference -- the page-jump box in the Dataview helper, and
+         * `NumberComponent.valueFromString`, whose lenient parse is part of a published component's behavior.
+         * The rest parse machine-generated strings, where the two agree but the shorter spelling still wins.
+         */
+        'unicorn/prefer-number-coercion': 'off',
+        // `Promise.withResolvers` is ES2024. See the ES2022 floor note above.
+        'unicorn/prefer-promise-with-resolvers': 'off',
+        // `Set#union` and friends are ES2025. See the ES2022 floor note above.
+        'unicorn/prefer-set-methods': 'off',
+        /*
+         * The rule ranks operands by syntactic shape, not cost, so every report here swaps one property read
+         * ahead of another and buys nothing. Its own message concedes it cannot check the part that matters --
+         * "after verifying short-circuit behavior" -- and one report sits directly under a comment recording
+         * that the operands change inside a `rename` event handler, which is where order stops being free.
+         * The current orders also carry intent: a null guard before the use it guards, and the condition being
+         * reported before the state it contradicts.
+         */
+        'unicorn/prefer-simple-condition-first': 'off',
+        /*
+         * `URL.canParse` requires Node 18.17, well above the Node 16.16.0 floor that shipped source targets
+         * (see `minimumNodeVersion` below). The rule can therefore never be satisfied here, so it is off at the
+         * config level rather than annotated at each call site.
+         */
+        'unicorn/prefer-url-can-parse': 'off',
+        /*
+         * Every array reported here holds strings, where the default sort is already well defined and correct.
+         * Adding the comparator the rule asks for would mean choosing between code-unit and locale ordering,
+         * so following it would CHANGE the sort rather than document it. The rule earns its place on numeric
+         * arrays; it does not have any here.
+         */
+        'unicorn/require-array-sort-compare': 'off',
+        // The codebase already spells encodings the way the Encoding Standard does (`utf-8`), which is also what `TextDecoder` reports. Keep the rule enforcing consistency, just in the direction already in use.
+        'unicorn/text-encoding-identifier-case': [
+          'error',
+          {
+            withDash: true
+          }
+        ]
+      }
+    },
+    {
+      // Build/lint/version scripts are CLI entry points, where exiting with a status code is the interface.
+      files: context.scriptFiles,
+      rules: {
+        'unicorn/no-process-exit': 'off'
+      }
+    },
+    {
+      /*
+       * A module-level fixture assigned from `beforeEach` is the standard test shape:
+       *
+       *   let app: App;
+       *   beforeEach(() => { app = App.createConfigured__(); });
+       *
+       * The rule is right about production code -- module state reassigned from inside a function is worth
+       * flagging, and the fix is to hold it in a `const` object instead. In tests that would replace every
+       * `app` with `STATE.app` and make each file read worse for no gain, since the fixture is reset per test
+       * by design. Scoped off here rather than disabled outright, so production code keeps the check.
+       */
+      files: context.testFiles,
+      rules: {
+        /*
+         * Two shapes here cannot follow the advice. A helper defined inside an `evalInObsidian` callback
+         * cannot be hoisted at all: the callback is serialized with `toString()` and runs inside Obsidian, so
+         * anything left behind in the module scope is simply not there. And a per-suite factory
+         * (`createComponent`, `createMockPlugin`) is deliberately local, keeping each suite's fixture next to
+         * the assertions that read it. Production code keeps the check.
+         */
+        'unicorn/consistent-function-scoping': 'off',
+        /*
+         * A test binding is named after the thing it captures, not after what it does: `createElementSpy`
+         * holds the spy on `createElement`, and `createProgramOptions` holds the options `createProgram` was
+         * called with. The verb belongs to the name being referenced, so the rule reads it as a function name
+         * that is not a function. Left on for production code, where the complaint is the right one.
+         */
+        'unicorn/no-non-function-verb-prefix': 'off',
+        'unicorn/no-top-level-assignment-in-function': 'off'
       }
     }
   ]);

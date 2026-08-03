@@ -13,7 +13,7 @@ import { noop } from './function.ts';
 /**
  * A constant representing an infinite timeout.
  */
-export const INFINITE_TIMEOUT = Number.POSITIVE_INFINITY;
+export const INFINITE_TIMEOUT = Infinity;
 
 /**
  * An abort signal that aborts when any of the given abort signals abort.
@@ -46,11 +46,7 @@ export function abortSignalAny(...maybeAbortSignals: (AbortSignal | undefined)[]
     }
   }
 
-  const abortHandlerDisposables: Disposable[] = [];
-
-  for (const abortSignal of abortSignals) {
-    abortHandlerDisposables.push(onAbort(abortSignal, handleAbort));
-  }
+  const abortHandlerDisposables: Disposable[] = Array.from(abortSignals, (abortSignal) => onAbort(abortSignal, handleAbort));
 
   const combinedAbortHandlerDisposable = new CombineDisposable({ disposables: abortHandlerDisposables });
 
@@ -91,7 +87,7 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
   // The abort reason mirrors the native one -- a `DOMException` named `TimeoutError` -- matching
   // `AbortSignal.timeout` for `reason.name` checks.
   const abortController = new AbortController();
-  // eslint-disable-next-line obsidianmd/no-global-this -- Intentional: `globalThis.setTimeout` (not `window`) so this timeout primitive also works in a Node environment where `window` is undefined; the specific window is irrelevant for a plain timer.
+  // eslint-disable-next-line obsidianmd/no-global-this, unicorn/no-unnecessary-global-this -- Intentional: `globalThis.setTimeout` (not `window`) so this timeout primitive also works in a Node environment where `window` is undefined; the specific window is irrelevant for a plain timer. The explicit `globalThis` is also what keeps the sibling `obsidianmd/prefer-window-timers` rule from rewriting it back to `window`.
   globalThis.setTimeout(() => {
     // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `DOMException` is a DOM global always present in the Obsidian/Electron (Chromium) runtime this code targets, and is also a Node global from Node 17 onward.
     abortController.abort(new DOMException(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`, 'TimeoutError'));
@@ -119,8 +115,8 @@ export function onAbort(abortSignal: AbortSignal, callback: (abortSignal: AbortS
     }
   });
 
-  function wrappedCallback(evt: Event): void {
-    callback(evt.target as AbortSignal);
+  function wrappedCallback($event: Event): void {
+    callback($event.target as AbortSignal);
   }
 }
 

@@ -5,7 +5,7 @@
  */
 
 import type {
-  EventRef as EventRefOriginal,
+  EventRef as EventReferenceOriginal,
   Events as EventsOriginal
 } from 'obsidian';
 
@@ -16,15 +16,16 @@ import {
   vi
 } from 'vitest';
 
+import { dispose } from '../disposable.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
-  EventRefDisposable,
+  EventRefDisposable as EventReferenceDisposable,
   subscribeDisposableEvent,
   subscribeEvent
 } from './events.ts';
 
 interface Mocks {
-  eventRef: EventRefOriginal;
+  eventRef: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
   source: TestEventSource;
@@ -33,13 +34,14 @@ interface Mocks {
 // A minimal typed event source: extends the base `Events` (one `on` overload) plus one concrete overload — small
 // Enough to avoid the deep-instantiation limit that the real `Workspace` (27 overloads) would hit.
 interface TestEventSource extends EventsOriginal {
-  on(name: 'my-event', callback: (value: number) => void): EventRefOriginal;
+  on(name: 'my-event', callback: (value: number) => void): EventReferenceOriginal;
 }
 
 function createMocks(): Mocks {
   const offref = vi.fn();
   const events = strictProxy<EventsOriginal>({ offref });
-  const eventRef = strictProxy<EventRefOriginal>({ e: events });
+  // eslint-disable-next-line unicorn/name-replacements -- `e` is declared by `@obsidian-typings/obsidian-public-1.13.4`; renaming it here would not match the API.
+  const eventRef = strictProxy<EventReferenceOriginal>({ e: events });
   const on = vi.fn(() => eventRef);
   const source = strictProxy<TestEventSource>({ on });
   return {
@@ -97,7 +99,7 @@ describe('EventRefDisposable', () => {
       eventRef,
       offref
     } = createMocks();
-    const disposable = new EventRefDisposable(eventRef);
+    const disposable = new EventReferenceDisposable(eventRef);
 
     disposable.dispose();
     disposable.dispose();
@@ -111,9 +113,9 @@ describe('EventRefDisposable', () => {
       eventRef,
       offref
     } = createMocks();
-    const disposable = new EventRefDisposable(eventRef);
+    const disposable = new EventReferenceDisposable(eventRef);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(offref).toHaveBeenCalledWith(eventRef);
   });

@@ -40,13 +40,13 @@ describe('selectOption', () => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     mockImplementation({
+      $object: ButtonComponentOriginal.prototype,
       impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
-      method: 'constructor2__',
-      obj: ButtonComponentOriginal.prototype
+      method: 'constructor2__'
     });
   });
 

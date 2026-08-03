@@ -66,10 +66,10 @@ export class UrlComponent extends TypedTextComponent<string> implements TextBase
   /**
    * Converts a string to an url.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The url.
    */
-  public override valueFromString(str: string): string {
-    return str;
+  public override valueFromString($string: string): string {
+    return $string;
   }
 }

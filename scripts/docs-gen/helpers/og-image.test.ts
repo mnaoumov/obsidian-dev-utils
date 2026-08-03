@@ -24,20 +24,20 @@ const OG_HASH_LENGTH = 16;
 const FONT_VARIANT_COUNT = 2;
 const FONT_WEIGHT_REGULAR = 400;
 const FONT_WEIGHT_BOLD = 700;
-const PNG_SIGNATURE = Buffer.from('\x89PNG\r\n\x1a\n', 'binary');
+const PNG_SIGNATURE = Buffer.from('\u{89}PNG\r\n\u{1A}\n', 'binary');
 
-const tempDirs: string[] = [];
+const temporaryDirectories: string[] = [];
 
 afterAll(() => {
-  for (const dir of tempDirs) {
-    rmSync(dir, { force: true, recursive: true });
+  for (const directory of temporaryDirectories) {
+    rmSync(directory, { force: true, recursive: true });
   }
 });
 
-function makeTempDir(): string {
-  const dir = mkdtempSync(join(tmpdir(), 'og-fonts-'));
-  tempDirs.push(dir);
-  return dir;
+function makeTemporaryDirectory(): string {
+  const directory = mkdtempSync(join(tmpdir(), 'og-fonts-'));
+  temporaryDirectories.push(directory);
+  return directory;
 }
 
 describe('computeOgHash', () => {
@@ -71,15 +71,15 @@ describe('loadFonts', () => {
   });
 
   it('returns null when the directory has no font files', async () => {
-    expect(await loadFonts(join(makeTempDir(), 'does-not-exist'))).toBeNull();
-    expect(await loadFonts(makeTempDir())).toBeNull();
+    expect(await loadFonts(join(makeTemporaryDirectory(), 'does-not-exist'))).toBeNull();
+    expect(await loadFonts(makeTemporaryDirectory())).toBeNull();
   });
 
   it('falls back to any single font file for both weights', async () => {
-    const dir = makeTempDir();
-    writeFileSync(join(dir, 'stray.otf'), Buffer.from('not-a-real-font'));
+    const directory = makeTemporaryDirectory();
+    writeFileSync(join(directory, 'stray.otf'), Buffer.from('not-a-real-font'));
 
-    const fonts = await loadFonts(dir);
+    const fonts = await loadFonts(directory);
 
     expect(fonts).toHaveLength(FONT_VARIANT_COUNT);
     expect(fonts?.map((font) => font.weight)).toEqual([FONT_WEIGHT_REGULAR, FONT_WEIGHT_BOLD]);
@@ -89,7 +89,7 @@ describe('loadFonts', () => {
 
 describe('loadLogoDataUri', () => {
   it('returns null when the favicon is missing', async () => {
-    expect(await loadLogoDataUri(join(makeTempDir(), 'missing-favicon.svg'))).toBeNull();
+    expect(await loadLogoDataUri(join(makeTemporaryDirectory(), 'missing-favicon.svg'))).toBeNull();
   });
 });
 

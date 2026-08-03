@@ -13,7 +13,7 @@ import {
   vi
 } from 'vitest';
 
-import type { GetAvailablePathForAttachmentsExtendedFnParams } from './attachment-path.ts';
+import type { GetAvailablePathForAttachmentsExtendedFunctionParams } from './attachment-path.ts';
 
 import { castTo } from '../object-utils.ts';
 import {
@@ -52,7 +52,7 @@ function createApp(attachmentFolderPath: string, extraFiles?: Record<string, str
  * Models what an attachment-location plugin does: derive the attachment folder from the note's NAME.
  */
 function stubNoteNameFolder(app: AppOriginal): void {
-  const extended = vi.fn((params: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string> => {
+  const extended = vi.fn((params: GetAvailablePathForAttachmentsExtendedFunctionParams): Promise<string> => {
     const notePath = params.notePathOrFile as string;
     const noteFolderPath = dirname(notePath);
     const noteBaseName = basename(notePath, extname(notePath));
@@ -258,7 +258,7 @@ describe('getAttachmentFilePath', () => {
       })
     ).toBe('Docs/img.png');
 
-    const params = castTo<GetAvailablePathForAttachmentsExtendedFnParams>(extended.mock.calls[0]?.[0]);
+    const params = castTo<GetAvailablePathForAttachmentsExtendedFunctionParams>(extended.mock.calls[0]?.[0]);
     expect(params.attachmentFileBaseName).toBe('img');
     expect(params.attachmentFileExtension).toBe('png');
     expect(params.attachmentFileStats).toBeDefined();
@@ -283,7 +283,7 @@ describe('getAttachmentFilePath', () => {
       shouldSkipDuplicateCheck: true
     });
 
-    const params = castTo<GetAvailablePathForAttachmentsExtendedFnParams>(extended.mock.calls[0]?.[0]);
+    const params = castTo<GetAvailablePathForAttachmentsExtendedFunctionParams>(extended.mock.calls[0]?.[0]);
     expect(params.attachmentFileStats).toBeUndefined();
     expect(params.readAttachmentFileContent).toBeNull();
   });
@@ -383,13 +383,13 @@ describe('isAtProperAttachmentPath', () => {
 
   it('should forward the note, attachment, and explicit context to the proper-path lookup', async () => {
     const extended = stubProperPath('attachments/img.png');
-    const result = await isAtProperAttachmentPath({
+    const isAtProperPath = await isAtProperAttachmentPath({
       app,
       attachmentPathOrFile: 'attachments/img 1.png',
       context: AttachmentPathContext.RenameNote,
       notePathOrFile: 'note.md'
     });
-    expect(result).toBe(true);
+    expect(isAtProperPath).toBe(true);
     expect(extended).toHaveBeenCalledTimes(1);
     expect(extended).toHaveBeenCalledWith(expect.objectContaining({
       context: AttachmentPathContext.RenameNote,

@@ -68,12 +68,12 @@ export async function lint(options?: LintOptions): Promise<void> {
     ObsidianPluginRepoPaths.MarkdownlintConfigMjs
   ];
 
-  const configFileExist = configFiles.some((configFile) => {
+  const doesConfigFileExist = configFiles.some((configFile) => {
     const configFilePath = resolvePathFromRootSafe({ path: configFile });
     return existsSync(configFilePath);
   });
 
-  if (!configFileExist) {
+  if (!doesConfigFileExist) {
     getLibDebugger('markdownlint:lint')('markdownlint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Package folder not found');
@@ -86,12 +86,12 @@ export async function lint(options?: LintOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branches are only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
   /* v8 ignore stop */
-  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
+  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArguments: targets }]);
 
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const rootFolder = getRootFolder() ?? process.cwd();
   const mdFiles = paths?.length
-    ? paths.map((p) => relative(rootFolder, p).replace(/\\/g, '/') || p)
+    ? paths.map((p) => relative(rootFolder, p).replaceAll('\\', '/') || p)
     : await getMarkdownFiles();
   /* v8 ignore stop */
   await execFromRoot([
@@ -104,10 +104,10 @@ export async function lint(options?: LintOptions): Promise<void> {
     '--retry-errors-jitter',
     '5',
     '--url-rewrite-search',
-    'https://www\\.npmjs\\.com/package/',
+    String.raw`https://www\.npmjs\.com/package/`,
     '--url-rewrite-replace',
     'https://registry.npmjs.org/',
-    { batchedArgs: mdFiles }
+    { batchedArguments: mdFiles }
   ]);
 }
 

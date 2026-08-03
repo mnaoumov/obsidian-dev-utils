@@ -26,7 +26,7 @@ describe('registerAsyncEvent', () => {
       asyncEventSource: { offref },
       callback: vi.fn(),
       name: 'test',
-      thisArg: undefined
+      thisArgument: undefined
     };
 
     registerAsyncEvent(component, eventRef);

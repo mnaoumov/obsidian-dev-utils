@@ -26,8 +26,9 @@ interface SelectOptionResult {
 describe('selectOption', () => {
   it('should render one button per option and resolve the chosen value', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { selectOption, waitUntil } }): Promise<SelectOptionResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30000;
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const EXPECTED_OPTION_COUNT = 3;
 
         const resultPromise = selectOption<string>({
@@ -62,7 +63,7 @@ describe('selectOption', () => {
         };
 
         function getButtons(): HTMLButtonElement[] {
-          return Array.from(document.querySelectorAll<HTMLButtonElement>('.select-option-modal .modal-content button'));
+          return [...document.querySelectorAll<HTMLButtonElement>('.select-option-modal .modal-content button')];
         }
       }
     });

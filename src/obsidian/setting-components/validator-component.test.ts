@@ -40,9 +40,9 @@ describe('getValidatorComponent', () => {
 
   it('should return the object itself if it already implements ValidatorComponent', () => {
     const validatorEl = createEl('input');
-    const obj = { validatorEl };
-    const result = getValidatorComponent(obj);
-    expect(result).toBe(obj);
+    const $object = { validatorEl };
+    const result = getValidatorComponent($object);
+    expect(result).toBe($object);
   });
 
   it('should wrap ColorComponent with ValidatorElementWrapper', () => {
@@ -107,13 +107,13 @@ describe('getValidatorComponent', () => {
   it('should create OverlayValidatorComponent for ProgressBarComponent', () => {
     const parent = createDiv();
     const container = createDiv();
-    parent.appendChild(container);
+    parent.append(container);
     const comp = new ProgressBarComponent(container);
     // Pre-assign progressBar so the strict proxy allows access
     const progressBar = createDiv();
     comp.progressBar = progressBar;
     // ProgressBarComponent.progressBar needs to be inside parent
-    parent.appendChild(progressBar);
+    parent.append(progressBar);
 
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
@@ -124,9 +124,9 @@ describe('getValidatorComponent', () => {
   it('should create OverlayValidatorComponent for ToggleComponent', () => {
     const parent = createDiv();
     const container = createDiv();
-    parent.appendChild(container);
+    parent.append(container);
     const comp = new ToggleComponent(container);
-    parent.appendChild(comp.toggleEl);
+    parent.append(comp.toggleEl);
 
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
@@ -136,10 +136,10 @@ describe('getValidatorComponent', () => {
 
   it('should handle focus on overlay validator element', () => {
     const parent = createDiv();
-    const el = createDiv();
-    parent.appendChild(el);
+    const element = createDiv();
+    parent.append(element);
     const comp = new ToggleComponent(parent);
-    parent.appendChild(comp.toggleEl);
+    parent.append(comp.toggleEl);
 
     const result = getValidatorComponent(comp);
     assertNonNullable(result);
@@ -149,10 +149,10 @@ describe('getValidatorComponent', () => {
 
   it('should handle focusin on overlay element', () => {
     const parent = createDiv();
-    const el = createDiv();
-    parent.appendChild(el);
+    const element = createDiv();
+    parent.append(element);
     const comp = new ToggleComponent(parent);
-    parent.appendChild(comp.toggleEl);
+    parent.append(comp.toggleEl);
 
     getValidatorComponent(comp);
     comp.toggleEl.dispatchEvent(new Event('focusin'));
@@ -160,10 +160,10 @@ describe('getValidatorComponent', () => {
 
   it('should handle click on overlay element', () => {
     const parent = createDiv();
-    const el = createDiv();
-    parent.appendChild(el);
+    const element = createDiv();
+    parent.append(element);
     const comp = new ToggleComponent(parent);
-    parent.appendChild(comp.toggleEl);
+    parent.append(comp.toggleEl);
 
     getValidatorComponent(comp);
     comp.toggleEl.dispatchEvent(new Event('click'));
@@ -173,10 +173,10 @@ describe('getValidatorComponent', () => {
     await noopAsync();
     vi.useFakeTimers();
     const parent = createDiv();
-    const el = createDiv();
-    parent.appendChild(el);
+    const element = createDiv();
+    parent.append(element);
     const comp = new ToggleComponent(parent);
-    parent.appendChild(comp.toggleEl);
+    parent.append(comp.toggleEl);
 
     getValidatorComponent(comp);
     comp.toggleEl.dispatchEvent(new Event('focusout'));
@@ -187,16 +187,16 @@ describe('getValidatorComponent', () => {
   it('should skip blur when element is still active during focusout', () => {
     vi.useFakeTimers();
     const parent = createDiv();
-    activeDocument.body.appendChild(parent);
-    const el = createDiv();
-    el.tabIndex = 0;
-    parent.appendChild(el);
+    activeDocument.body.append(parent);
+    const element = createDiv();
+    element.tabIndex = 0;
+    parent.append(element);
     const comp = new ToggleComponent(parent);
-    Object.defineProperty(comp, 'toggleEl', { value: el });
+    Object.defineProperty(comp, 'toggleEl', { value: element });
 
     getValidatorComponent(comp);
-    el.focus();
-    el.dispatchEvent(new Event('focusout'));
+    element.focus();
+    element.dispatchEvent(new Event('focusout'));
     vi.advanceTimersByTime(1);
     vi.useRealTimers();
     activeDocument.body.removeChild(parent);
@@ -204,14 +204,14 @@ describe('getValidatorComponent', () => {
 
   it('should use element with tabindex if present', () => {
     const parent = createDiv();
-    const el = createDiv();
+    const element = createDiv();
     const tabEl = createEl('button');
     tabEl.setAttribute('tabindex', '0');
-    el.appendChild(tabEl);
-    parent.appendChild(el);
+    element.append(tabEl);
+    parent.append(element);
     const comp = new ProgressBarComponent(parent);
     // Override progressBar to be our element with a child that has tabindex
-    Object.defineProperty(comp, 'progressBar', { value: el });
+    Object.defineProperty(comp, 'progressBar', { value: element });
 
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
@@ -219,12 +219,12 @@ describe('getValidatorComponent', () => {
 
   it('should set tabIndex on element without tabindex attribute', () => {
     const parent = createDiv();
-    const el = createDiv();
-    parent.appendChild(el);
+    const element = createDiv();
+    parent.append(element);
     const comp = new ToggleComponent(parent);
-    Object.defineProperty(comp, 'toggleEl', { value: el });
+    Object.defineProperty(comp, 'toggleEl', { value: element });
 
     getValidatorComponent(comp);
-    expect(el.tabIndex).toBe(-1);
+    expect(element.tabIndex).toBe(-1);
   });
 });

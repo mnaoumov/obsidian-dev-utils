@@ -52,22 +52,22 @@ describe('confirm', () => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     mockImplementation({
+      $object: ButtonComponentOriginal.prototype,
       impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
-      method: 'constructor2__',
-      obj: ButtonComponentOriginal.prototype
+      method: 'constructor2__'
     });
   });
 
   it('should resolve false when modal is closed without confirming', async () => {
-    const result = await confirm({
+    const isConfirmed = await confirm({
       app,
       message: 'Are you sure?'
     });
-    expect(result).toBe(false);
+    expect(isConfirmed).toBe(false);
   });
 
   it('should resolve true when OK button is clicked', async () => {
@@ -81,27 +81,27 @@ describe('confirm', () => {
       const okButton = buttonInstances[0];
       castTo<ButtonComponent>(okButton).simulateClick__();
     });
-    const result = await resultPromise;
-    expect(result).toBe(true);
+    const isConfirmed = await resultPromise;
+    expect(isConfirmed).toBe(true);
   });
 
   it('should accept custom button texts and title', async () => {
-    const result = await confirm({
+    const isConfirmed = await confirm({
       app,
       cancelButtonText: 'No',
       message: 'Continue?',
       okButtonText: 'Yes',
       title: 'Confirm Action'
     });
-    expect(typeof result).toBe('boolean');
+    expect(typeof isConfirmed).toBe('boolean');
   });
 
   it('should accept custom css class', async () => {
-    const result = await confirm({
+    const isConfirmed = await confirm({
       app,
       cssClasses: ['custom-confirm'],
       message: 'Continue?'
     });
-    expect(typeof result).toBe('boolean');
+    expect(typeof isConfirmed).toBe('boolean');
   });
 });

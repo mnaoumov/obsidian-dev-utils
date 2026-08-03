@@ -121,7 +121,7 @@ export function checkProjectTypes(params: CheckProjectTypesParams): boolean {
     process.stdout.write(formatDiagnosticsWithColorAndContext(ignoredDiagnostics, FORMAT_HOST));
   }
 
-  return !keptDiagnostics.some((diagnostic) => diagnostic.category === DiagnosticCategory.Error);
+  return keptDiagnostics.every((diagnostic) => diagnostic.category !== DiagnosticCategory.Error);
 }
 
 /**
@@ -139,7 +139,7 @@ export function parseTsConfig(tsConfigPath: string): ParsedTsConfig {
     onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
       throw new Error(formatDiagnostic(diagnostic, FORMAT_HOST));
     },
-    readDirectory: (rootDir, extensions, excludes, includes, depth) => sys.readDirectory(rootDir, extensions, excludes, includes, depth),
+    readDirectory: (rootDirectory, extensions, excludes, includes, depth) => sys.readDirectory(rootDirectory, extensions, excludes, includes, depth),
     readFile: (path) => sys.readFile(path),
     useCaseSensitiveFileNames: sys.useCaseSensitiveFileNames
   };

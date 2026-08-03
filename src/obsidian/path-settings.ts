@@ -44,13 +44,16 @@ class PathSetting {
     /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
     switch (this.type) {
       /* v8 ignore stop */
-      case PathSettingType.Exclude:
+      case PathSettingType.Exclude: {
         return this.regExp.test(path);
-      case PathSettingType.Include:
+      }
+      case PathSettingType.Include: {
         return !this.regExp.test(path);
-      default:
+      }
+      default: {
         /* v8 ignore start -- Exhaustive switch guard. */
         assertNever(this.type);
+      }
         /* v8 ignore stop */
     }
   }
@@ -132,13 +135,16 @@ function getDefaultRegExp(type: PathSettingType): RegExp {
   /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
   switch (type) {
     /* v8 ignore stop */
-    case PathSettingType.Exclude:
+    case PathSettingType.Exclude: {
       return NEVER_MATCH_REG_EXP;
-    case PathSettingType.Include:
+    }
+    case PathSettingType.Include: {
       return ALWAYS_MATCH_REG_EXP;
-    default:
+    }
+    default: {
       /* v8 ignore start -- Exhaustive switch guard. */
       assertNever(type);
+    }
       /* v8 ignore stop */
   }
 }
@@ -148,7 +154,7 @@ function makeRegExp(paths: string[], defaultRegExp: RegExp): null | RegExp {
     return defaultRegExp;
   }
 
-  const regExpStrCombined = paths.map((path) => {
+  const regExpStringCombined = paths.map((path) => {
     if (path === '/') {
       return defaultRegExp.source;
     }
@@ -158,16 +164,16 @@ function makeRegExp(paths: string[], defaultRegExp: RegExp): null | RegExp {
     }
 
     path = trimEnd({
-      str: path,
+      $string: path,
       suffix: '/'
     });
     return `^${escapeRegExp(path)}(/|$)`;
   })
-    .map((regExpStr) => `(${regExpStr})`)
+    .map((regExpString) => `(${regExpString})`)
     .join('|');
 
   try {
-    return new RegExp(regExpStrCombined);
+    return new RegExp(regExpStringCombined);
   } catch {
     // A partially typed regex literal (`/^Inbox\/`) is not parseable.
     // Report it instead of throwing from a settings setter, which would break both the settings UI and the save path.

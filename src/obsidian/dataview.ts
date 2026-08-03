@@ -56,10 +56,10 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * Wraps an array of items into a {@link DataArray} object.
    *
    * @typeParam T - The type of the items in the array.
-   * @param arr - The array of items to wrap.
+   * @param array - The array of items to wrap.
    * @returns A {@link DataArray} containing the items.
    */
-  array<T>(arr: T[]): DataArray<T>;
+  array<T>(array: T[]): DataArray<T>;
 
   /**
    * Retrieves the current page, with an optional custom page type.
@@ -322,21 +322,21 @@ interface CreatePageLinkParams {
  */
 export async function getRenderedContainer(dv: DataviewInlineApi, renderer: () => Promisable<void>): Promise<HTMLParagraphElement> {
   const oldContainer = dv.container;
-  const tempContainer = dv.paragraph('');
-  dv.container = tempContainer;
+  const temporaryContainer = dv.paragraph('');
+  dv.container = temporaryContainer;
   dv.container.empty();
 
   try {
     await renderer();
-  } catch (e) {
-    dv.paragraph(`❌${errorToString(e)}`);
+  } catch (error) {
+    dv.paragraph(`❌${errorToString(error)}`);
   } finally {
     // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
     dv.container = oldContainer;
-    tempContainer.remove();
+    temporaryContainer.remove();
   }
 
-  return tempContainer;
+  return temporaryContainer;
 }
 
 /**
@@ -353,7 +353,7 @@ export function insertCodeBlock(params: InsertCodeBlockParams): void {
   const MIN_FENCE_LENGTH = 3;
   const fenceRegExp = new RegExp(`^\`{${String(MIN_FENCE_LENGTH)},}`, 'gm');
   const fenceMatches = code.matchAll(fenceRegExp);
-  const fenceLengths = Array.from(fenceMatches).map((fenceMatch) => fenceMatch[0].length);
+  const fenceLengths = [...fenceMatches].map((fenceMatch) => fenceMatch[0].length);
   const maxFenceLength = Math.max(0, ...fenceLengths);
   const resultFenceLength = Math.max(MIN_FENCE_LENGTH, maxFenceLength + 1);
   const resultFence = '`'.repeat(resultFenceLength);
@@ -479,9 +479,9 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
       paginationRow1Div.createSpan({ text: '...' });
     }
 
-    for (let i = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); i <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); i++) {
-      const pageLink = createPageLink({ currentPageNumber: i, disabled: i === pageNumber, text: String(i) });
-      if (i === pageNumber) {
+    for (let index = Math.max(1, pageNumber - SECOND_PAGE_NUMBER); index <= Math.min(totalPages, pageNumber + SECOND_PAGE_NUMBER); index++) {
+      const pageLink = createPageLink({ currentPageNumber: index, disabled: index === pageNumber, text: String(index) });
+      if (index === pageNumber) {
         pageLink.addClass('current');
       }
     }
@@ -498,9 +498,9 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     paginationRow2Div.createSpan({ text: ` ${t(($) => $.obsidianDevUtils.dataview.itemsPerPage)} ` });
 
     const itemsPerPageSelect = paginationRow2Div.createEl('select');
-    itemsPerPageOptions.forEach((option: number): void => {
+    for (const option of itemsPerPageOptions) {
       itemsPerPageSelect.createEl('option', { text: String(option), value: String(option) });
-    });
+    }
     itemsPerPageSelect.value = String(itemsPerPage);
     itemsPerPageSelect.addEventListener(
       'change',
@@ -517,11 +517,13 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     jumpToPageInput.addEventListener(
       'keydown',
       convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
-        if (event.key === 'Enter') {
-          const page = parseInt(jumpToPageInput.value, 10);
-          if (page >= 1 && page <= totalPages) {
-            await renderPage(page);
-          }
+        if (event.key !== 'Enter') {
+          return;
+        }
+
+        const page = parseInt(jumpToPageInput.value, 10);
+        if (page >= 1 && page <= totalPages) {
+          await renderPage(page);
         }
       })
     );
@@ -537,17 +539,16 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
       const link = paginationRow1Div.createEl('a', { cls: 'page-link', href: `#${String(currentPageNumber)}`, text });
       if (disabled) {
         link.addClass('disabled');
+        // eslint-disable-next-line unicorn/prefer-add-event-listener -- The handler is assigned to `onclick` so it stays readable back off the element, which is how it is invoked in tests and how a later assignment can replace it.
         link.onclick = (event: MouseEvent): void => {
           event.preventDefault();
         };
       } else {
-        link.addEventListener(
-          'click',
-          convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
-            event.preventDefault();
-            await renderPage(currentPageNumber);
-          })
-        );
+        // eslint-disable-next-line unicorn/prefer-add-event-listener -- The handler is assigned to `onclick` so it stays readable back off the element, which is how it is invoked in tests and how a later assignment can replace it.
+        link.onclick = convertAsyncToSync(async (event: MouseEvent): Promise<void> => {
+          event.preventDefault();
+          await renderPage(currentPageNumber);
+        });
       }
       return link;
     }
@@ -567,8 +568,8 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     dv.container = container;
     try {
       await params.renderer(rowsForCurrentPage);
-    } catch (e) {
-      dv.paragraph(`❌${errorToString(e)}`);
+    } catch (error) {
+      dv.paragraph(`❌${errorToString(error)}`);
     } finally {
       // eslint-disable-next-line require-atomic-updates -- Yes, it is a potential race condition, but I don't an elegant way to fix it.
       dv.container = oldContainer;

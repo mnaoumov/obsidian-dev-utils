@@ -6,7 +6,7 @@
 
 import type {
   App as AppOriginal,
-  EventRef as EventRefOriginal,
+  EventRef as EventReferenceOriginal,
   Events as EventsOriginal
 } from 'obsidian';
 
@@ -22,7 +22,7 @@ import { MenuEventRegistrarComponent } from './menu-event-registrar-component.ts
 
 interface Mocks {
   app: AppOriginal;
-  eventRef: EventRefOriginal;
+  eventRef: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   registeredEvents: string[];
 }
@@ -31,7 +31,8 @@ function createMocks(): Mocks {
   const registeredEvents: string[] = [];
   const offref = vi.fn();
   const events = strictProxy<EventsOriginal>({ offref });
-  const eventRef = strictProxy<EventRefOriginal>({ e: events });
+  // eslint-disable-next-line unicorn/name-replacements -- `e` is declared by `@obsidian-typings/obsidian-public-1.13.4`; renaming it here would not match the API.
+  const eventRef = strictProxy<EventReferenceOriginal>({ e: events });
 
   const app = strictProxy<AppOriginal>({
     workspace: {

@@ -46,5 +46,5 @@ export function relativePathToResourceUrl(params: RelativePathToResourceUrlParam
   const noteFullPath = toPosixPath(getDataAdapterEx(app).getFullRealPath(notePath));
   const noteUrl = `${Platform.resourcePathPrefix}${noteFullPath}`;
   const relativeUrl = new URL(relativePath, noteUrl);
-  return String(relativeUrl);
+  return relativeUrl.href;
 }

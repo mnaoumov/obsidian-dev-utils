@@ -36,17 +36,19 @@ interface TypingResult {
 }
 
 const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
-const REPORTED_REG_EXP = '/^Inbox\\/[^\\/]*$/';
-const INVALID_REG_EXP = '/^Inbox\\/';
+const REPORTED_REG_EXP = String.raw`/^Inbox\/[^\/]*$/`;
+const INVALID_REG_EXP = String.raw`/^Inbox\/`;
 
 describe('PathSettings', () => {
   it('should keep a real settings tab working while an un-parseable regex is typed', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: {
         harnessPluginId: HARNESS_PLUGIN_ID,
         invalidRegExp: INVALID_REG_EXP,
         reportedRegExp: REPORTED_REG_EXP
       },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({
         app,
         harnessPluginId,
@@ -108,7 +110,7 @@ describe('PathSettings', () => {
           plugin: ensureNonNullable(app.plugins.getPlugin(harnessPluginId), 'The integration test harness plugin is not loaded'),
           pluginSettingsComponent: settingsComponent
         });
-        activeDocument.body.appendChild(tab.containerEl);
+        activeDocument.body.append(tab.containerEl);
         // eslint-disable-next-line @typescript-eslint/no-deprecated -- The override clears the upstream deprecation, but the rule walks the inheritance chain (AGENTS.md L1).
         tab.display();
 
@@ -164,11 +166,11 @@ describe('PathSettings', () => {
          * Before the fix the throw escaped the setter, so the debounced save never completed and this
          * would otherwise fail as a bare "test timed out" with nothing pointing at the cause.
          */
-        async function waitUntilOrGiveUp(predicate: () => boolean): Promise<void> {
+        async function waitUntilOrGiveUp(isDone: () => boolean): Promise<void> {
           try {
             await waitUntil({
               message: 'the settings pipeline settles',
-              predicate,
+              predicate: isDone,
               timeoutInMilliseconds: SETTLE_TIMEOUT_IN_MILLISECONDS
             });
           } catch {

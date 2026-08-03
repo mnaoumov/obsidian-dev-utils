@@ -25,15 +25,15 @@ vi.mock('node:fs', async (importOriginal) => ({
 }));
 
 vi.mock('node:process', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:process')>();
+  const $module = await importOriginal<typeof import('node:process')>();
   return {
-    ...mod,
+    ...$module,
     default: {
-      ...mod,
+      ...$module,
       exit: mockExit,
       loadEnvFile: mockLoadEnvFile,
       stdout: {
-        ...mod.stdout,
+        ...$module.stdout,
         write: mockStdoutWrite
       }
     }

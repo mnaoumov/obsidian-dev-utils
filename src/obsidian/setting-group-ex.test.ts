@@ -28,10 +28,10 @@ describe('SettingGroupEx', () => {
   });
 
   it('should add a SettingEx and call the callback', () => {
-    const cb = vi.fn();
-    const result = settingGroupEx.addSettingEx(cb);
+    const callback = vi.fn();
+    const result = settingGroupEx.addSettingEx(callback);
     expect(result).toBe(settingGroupEx);
-    expect(cb).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledTimes(1);
     expect(SettingEx).toHaveBeenCalledWith(settingGroupEx.listEl);
   });
 });

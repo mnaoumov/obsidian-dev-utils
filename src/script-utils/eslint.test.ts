@@ -31,17 +31,17 @@ vi.mock('../script-utils/root.ts', () => ({
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs')>();
+  const $module = await importOriginal<typeof import('node:fs')>();
   return {
-    ...mod,
+    ...$module,
     existsSync: mockExistsSync
   };
 });
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs/promises')>();
+  const $module = await importOriginal<typeof import('node:fs/promises')>();
   return {
-    ...mod,
+    ...$module,
     cp: mockCp
   };
 });
@@ -62,7 +62,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', { batchedArgs: ['.'] }])
+      expect.arrayContaining(['npx', 'eslint', { batchedArguments: ['.'] }])
     );
     expect(mockCp).not.toHaveBeenCalled();
   });
@@ -71,7 +71,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', '--fix', { batchedArgs: ['.'] }])
+      expect.arrayContaining(['npx', 'eslint', '--fix', { batchedArguments: ['.'] }])
     );
   });
 

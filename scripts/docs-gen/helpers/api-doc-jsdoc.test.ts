@@ -11,7 +11,7 @@ import {
   extractInterfaceInfo,
   getDescription,
   getExamples,
-  getParamDescriptions,
+  getParameterDescriptions,
   getRemarks,
   getReturnDescription,
   getSince
@@ -71,7 +71,7 @@ export interface Bravo {
     });
     expect(getDescription(bravo)).toBe('Bravo interface.');
     expect(getExamples(bravo)).toEqual([]);
-    expect(getParamDescriptions(bravo)).toEqual(new Map());
+    expect(getParameterDescriptions(bravo)).toEqual(new Map());
     expect(getRemarks(bravo)).toBe('');
     expect(getReturnDescription(bravo)).toBe('');
   });

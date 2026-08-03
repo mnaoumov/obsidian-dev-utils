@@ -15,12 +15,13 @@ import {
   onAbort,
   waitForAbort
 } from './abort-controller.ts';
+import { dispose } from './disposable.ts';
 import { castTo } from './object-utils.ts';
 import { assertNonNullable } from './type-guards.ts';
 
 describe('INFINITE_TIMEOUT', () => {
   it('should equal Number.POSITIVE_INFINITY', () => {
-    expect(INFINITE_TIMEOUT).toBe(Number.POSITIVE_INFINITY);
+    expect(INFINITE_TIMEOUT).toBe(Infinity);
   });
 });
 
@@ -399,7 +400,7 @@ describe('onAbort', () => {
 
     // Disposing should be a noop (no error when disposed)
     expect(() => {
-      disposable[Symbol.dispose]();
+      dispose(disposable);
     }).not.toThrow();
   });
 
@@ -451,7 +452,7 @@ describe('onAbort', () => {
     const callback = vi.fn();
 
     const disposable = onAbort(controller.signal, callback);
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     controller.abort(new Error('should not fire'));
     expect(callback).not.toHaveBeenCalled();

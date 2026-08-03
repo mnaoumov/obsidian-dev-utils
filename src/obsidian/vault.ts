@@ -104,7 +104,7 @@ export interface CleanupEmptyFoldersParams {
 /**
  * Arguments for {@link process}.
  */
-export interface ContentArgs {
+export interface ContentArguments {
   readonly content: string;
 }
 
@@ -193,16 +193,16 @@ export interface GetSafeRenamePathParams {
  */
 export interface InvokeWithFileSystemLockParams {
   /**
-   * The application instance.
-   */
-  readonly app: App;
-
-  /**
    * The function to execute.
    *
    * @param content - The content of the file.
    */
-  fn(this: void, content: string): void;
+  $function(this: void, content: string): void;
+
+  /**
+   * The application instance.
+   */
+  readonly app: App;
 
   /**
    * The path or file to execute the function with the file system lock of.
@@ -296,7 +296,7 @@ export interface ProcessParams extends ProcessOptions {
    * It can be a string or a function that takes the old content as an argument and returns the new content.
    * If function is provided, it should return `null` if the process should be retried.
    */
-  readonly newContentProvider: ValueProvider<null | string, ContentArgs>;
+  readonly newContentProvider: ValueProvider<null | string, ContentArguments>;
 
   /**
    * The path or file to be processed. It can be a string representing the path or a file object.
@@ -358,16 +358,20 @@ export async function cleanupEmptyFolders(params: CleanupEmptyFoldersParams): Pr
   } = params;
   for (const folderPath of folderPaths) {
     switch (emptyFolderBehavior) {
-      case EmptyFolderBehavior.Delete:
+      case EmptyFolderBehavior.Delete: {
         await deleteEmptyFolder(app, folderPath);
         break;
-      case EmptyFolderBehavior.DeleteWithEmptyParents:
+      }
+      case EmptyFolderBehavior.DeleteWithEmptyParents: {
         await deleteEmptyFolderHierarchy(app, folderPath);
         break;
-      case EmptyFolderBehavior.Keep:
+      }
+      case EmptyFolderBehavior.Keep: {
         break;
-      default:
+      }
+      default: {
         assertNever(emptyFolderBehavior);
+      }
     }
   }
 }
@@ -397,9 +401,9 @@ export async function copySafe(params: CopySafeParams): Promise<string> {
 
   try {
     await app.vault.copy(file, newAvailablePath);
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(newAvailablePath)) {
-      throw e;
+      throw error;
     }
   }
 
@@ -422,9 +426,9 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
   try {
     await app.vault.createFolder(path);
     return true;
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(path)) {
-      throw e;
+      throw error;
     }
     return true;
   }
@@ -437,19 +441,19 @@ export async function createFolderSafe(app: App, path: string): Promise<boolean>
  * @param path - The path of the file to create.
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary file and all its created parents.
  */
-export async function createTempFile(app: App, path: string): Promise<() => Promise<void>> {
+export async function createTemporaryFile(app: App, path: string): Promise<() => Promise<void>> {
   let file = getFileOrNull({ app, pathOrFile: path });
   if (file) {
     return noopAsync;
   }
 
-  const folderCleanup = await createTempFolder(app, parentFolderPath(path));
+  const folderCleanup = await createTemporaryFolder(app, parentFolderPath(path));
 
   try {
     await app.vault.create(path, '');
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(path)) {
-      throw e;
+      throw error;
     }
   }
 
@@ -469,16 +473,16 @@ export async function createTempFile(app: App, path: string): Promise<() => Prom
  * @param path - The path of the folder to create.
  * @returns A {@link Promise} that resolves to a function that can be called to delete the temporary folder and all its created parents.
  */
-export async function createTempFolder(app: App, path: string): Promise<() => Promise<void>> {
+export async function createTemporaryFolder(app: App, path: string): Promise<() => Promise<void>> {
   let folder = getFolderOrNull({ app, pathOrFolder: path });
   if (folder) {
     return noopAsync;
   }
 
   const folderPath = parentFolderPath(path);
-  await createTempFolder(app, folderPath);
+  await createTemporaryFolder(app, folderPath);
 
-  const folderCleanup = await createTempFolder(app, parentFolderPath(path));
+  const folderCleanup = await createTemporaryFolder(app, parentFolderPath(path));
 
   await createFolderSafe(app, path);
 
@@ -558,8 +562,8 @@ export function getAbstractFilePathSafe(params: GetAbstractFilePathSafeParams): 
  * @returns The available path for the file.
  */
 export function getAvailablePath(app: App, path: string): string {
-  const ext = extname(path);
-  return app.vault.getAvailablePath(join(dirname(path), basename(path, ext)), ext.slice(1));
+  const extension = extname(path);
+  return app.vault.getAvailablePath(join(dirname(path), basename(path, extension)), extension.slice(1));
 }
 
 /**
@@ -626,12 +630,15 @@ export async function getOrCreateAbstractFileSafe(params: GetOrCreateAbstractFil
   }
 
   switch (type) {
-    case FileSystemType.File:
+    case FileSystemType.File: {
       return await app.vault.create(path, '');
-    case FileSystemType.Folder:
+    }
+    case FileSystemType.Folder: {
       return await app.vault.createFolder(path);
-    default:
+    }
+    default: {
       assertNever(type);
+    }
   }
 }
 
@@ -705,13 +712,13 @@ export function getSafeRenamePath(params: GetSafeRenamePathParams): string {
  */
 export async function invokeWithFileSystemLock(params: InvokeWithFileSystemLockParams): Promise<void> {
   const {
+    $function,
     app,
-    fn,
     pathOrFile
   } = params;
   const file = getFile({ app, pathOrFile });
   await app.vault.process(file, (content) => {
-    fn(content);
+    $function(content);
     return content;
   });
 }
@@ -782,15 +789,16 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
   const path = getPath(app, pathOrFolder);
   const EMPTY = { files: [], folders: [] };
 
-  if ((await app.vault.adapter.stat(path))?.type !== 'folder') {
+  const pathStats = await app.vault.adapter.stat(path);
+  if (pathStats?.type !== 'folder') {
     return EMPTY;
   }
 
   try {
     return await app.vault.adapter.list(path);
-  } catch (e) {
+  } catch (error) {
     if (await app.vault.exists(path)) {
-      throw e;
+      throw error;
     }
     return EMPTY;
   }
@@ -828,14 +836,14 @@ export async function process(params: ProcessParams): Promise<void> {
   using _lock = resourceLockComponent?.lockForPath({ operationName: 'Process note', pathOrFile });
 
   await retryWithTimeoutNotice({
-    async operationFn(abortSignal) {
+    async operationFunction(abortSignal) {
       abortSignal.throwIfAborted();
 
       const oldContent = await readSafe(app, pathOrFile);
       abortSignal.throwIfAborted();
 
       if (oldContent === null) {
-        return handleMissingFile();
+        return shouldTreatMissingFileAsSuccess();
       }
 
       const newContent = await resolveValue(newContentProvider, { abortSignal, content: oldContent });
@@ -871,12 +879,13 @@ export async function process(params: ProcessParams): Promise<void> {
       });
 
       if (!doesFileExist) {
-        return handleMissingFile();
+        return shouldTreatMissingFileAsSuccess();
       }
 
       return isSuccess;
 
-      function handleMissingFile(): boolean {
+      // eslint-disable-next-line unicorn/consistent-function-scoping -- Closes over `fullOptions` and `path` from the enclosing scope, so it cannot be hoisted.
+      function shouldTreatMissingFileAsSuccess(): boolean {
         if (fullOptions.shouldFailOnMissingFile) {
           throw new Error(`File '${path}' not found`);
         }
@@ -941,9 +950,9 @@ export async function renameSafe(params: RenameSafeParams): Promise<string> {
 
   try {
     await app.fileManager.renameFile(oldAbstractFile, newAvailablePath);
-  } catch (e) {
+  } catch (error) {
     if (!await app.vault.exists(newAvailablePath) || await app.vault.exists(oldAbstractFile.path)) {
-      throw e;
+      throw error;
     }
   }
 
@@ -986,12 +995,12 @@ export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promi
 
   try {
     await app.fileManager.trashFile(file);
-  } catch (e) {
+  } catch (error) {
     if (await app.vault.exists(file.path)) {
-      throw e;
+      throw error;
     }
 
-    getLibDebugger('Vault:trashSafe')(`An error occurred while trashing ${file.path}, but the file no longer exists.`, { error: e, path: file.path });
+    getLibDebugger('Vault:trashSafe')(`An error occurred while trashing ${file.path}, but the file no longer exists.`, { error, path: file.path });
   }
 }
 
@@ -1009,11 +1018,11 @@ async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise
   try {
     await fileAction(file);
     return true;
-  } catch (e) {
+  } catch (error) {
     file = getFileOrNull({ app, pathOrFile: path });
     if (!file || file.deleted) {
       return false;
     }
-    throw e;
+    throw error;
   }
 }

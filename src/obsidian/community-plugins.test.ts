@@ -88,7 +88,7 @@ const MANIFEST: PluginManifest = {
 };
 
 function createApp(options: CreateAppOptions = {}): AppMock {
-  const enabledPlugins = new Set(options.enabledIds ?? []);
+  const enabledPlugins = new Set(options.enabledIds);
   const disablePluginAndSave = vi.fn<App['plugins']['disablePluginAndSave']>().mockImplementation((id) => {
     enabledPlugins.delete(id);
     return noopAsync();
@@ -129,6 +129,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
         read: adapterRead,
         write: adapterWrite
       }),
+      // eslint-disable-next-line unicorn/name-replacements -- `configDir` is declared by `obsidian`; renaming it here would not match the API.
       configDir: `${EMPTY}.obsidian`
     })
   });
@@ -144,8 +145,8 @@ function createApp(options: CreateAppOptions = {}): AppMock {
 }
 
 function mockRegistryAndReleases(): void {
-  mockRequestUrl.mockImplementation((arg: RequestUrlParam | string) => {
-    const url = typeof arg === 'string' ? arg : arg.url;
+  mockRequestUrl.mockImplementation((argument: RequestUrlParam | string) => {
+    const url = typeof argument === 'string' ? argument : argument.url;
     if (url.includes('community-plugins.json')) {
       return Promise.resolve({ json: REGISTRY });
     }
@@ -285,8 +286,8 @@ describe('configureCommunityPlugin', () => {
 
   it('should return false and not write when the settings are already present', async () => {
     const { adapterWrite, app } = createApp({ existingPluginData: { modulesRoot: 'root-x' } });
-    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
-    expect(result).toBe(false);
+    const hasDataJsonChanged = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(hasDataJsonChanged).toBe(false);
     expect(adapterWrite).not.toHaveBeenCalled();
   });
 });

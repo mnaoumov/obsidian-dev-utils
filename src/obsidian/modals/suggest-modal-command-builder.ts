@@ -59,9 +59,9 @@ export interface CheckboxCommand {
   /**
    * Called when the checkbox value changes.
    *
-   * @param value - The new checked state.
+   * @param isChecked - The new checked state.
    */
-  onChange(value: boolean): void;
+  onChange(isChecked: boolean): void;
 
   /**
    * Called once with the created checkbox element, to initialize its state.
@@ -132,11 +132,11 @@ export interface KeyboardCommand {
    * The handler invoked when the shortcut is pressed. When omitted, the command is a hint only and no
    * scope handler is registered.
    *
-   * @param evt - The keyboard event.
-   * @param ctx - The keymap context.
+   * @param $event - The keyboard event.
+   * @param context - The keymap context.
    * @returns `false` to prevent Obsidian's default handling, or `void`/`true` otherwise.
    */
-  onKey?(evt: KeyboardEvent, ctx: KeymapContext): boolean;
+  onKey?($event: KeyboardEvent, context: KeymapContext): boolean;
 
   /**
    * The human-readable description shown next to the key in the instruction bar.
@@ -277,16 +277,11 @@ export class SuggestModalCommandBuilder {
     }
 
     modal.setInstructions(this.instructions);
-    const purposeEls = Array.from(modal.instructionsEl.findAll('.prompt-instruction > span:nth-child(2)')) as HTMLSpanElement[];
-    for (let i = 0; i < purposeEls.length; i++) {
-      const purposeEl = purposeEls[i];
-      /* v8 ignore start -- purposeEls[i] is always defined within loop bounds. */
-      if (!purposeEl) {
-        continue;
-      }
+    const purposeEls = [...modal.instructionsEl.findAll('.prompt-instruction > span:nth-child(2)')] as HTMLSpanElement[];
+    for (const [index, purposeEl] of purposeEls.entries()) {
       /* v8 ignore stop */
 
-      this.instructions[i]?.init?.(purposeEl, modal.scope);
+      this.instructions[index]?.init?.(purposeEl, modal.scope);
     }
   }
 
@@ -302,18 +297,24 @@ export class SuggestModalCommandBuilder {
 
   private getModifierString(modifier: Modifier): string {
     switch (modifier) {
-      case 'Alt':
+      case 'Alt': {
         return 'alt';
-      case 'Ctrl':
+      }
+      case 'Ctrl': {
         return 'ctrl';
-      case 'Meta':
+      }
+      case 'Meta': {
         return Platform.isMacOS ? 'cmd' : 'win';
-      case 'Mod':
+      }
+      case 'Mod': {
         return Platform.isMacOS ? 'cmd' : 'ctrl';
-      case 'Shift':
+      }
+      case 'Shift': {
         return 'shift';
-      default:
+      }
+      default: {
         return modifier;
+      }
     }
   }
 }

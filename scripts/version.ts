@@ -13,15 +13,15 @@ import {
   resolvePathFromRootSafe
 } from '../src/script-utils/root.ts';
 import {
-  parseVersionArgs,
+  parseVersionArguments,
   updateVersion
 } from '../src/script-utils/version.ts';
 
-const [, , ...args] = process.argv;
+const [, , ...$arguments] = process.argv;
 
 await wrapCliTask(async () => {
   await execFromRoot(['npm', 'run', 'build:templates']);
-  const { options, versionUpdateType } = parseVersionArgs(args);
+  const { options, versionUpdateType } = parseVersionArguments($arguments);
   await updateVersion(versionUpdateType, {
     ...options,
     prepareGitHubRelease
@@ -44,8 +44,11 @@ async function prepareGitHubRelease(newVersion: string): Promise<void> {
 
   for (const generatedPath of [generatedCjsPath, generatedMjsPath]) {
     let generatedContent = await readFile(generatedPath, 'utf-8');
-    generatedContent = generatedContent.replace('$(LIBRARY_VERSION)', newVersion);
-    generatedContent = generatedContent.replace('"$(LIBRARY_STYLES)"', stylesCssContentJson);
+    // The replacements go through a function so the inserted text is taken literally. As a plain string,
+    // A `$&` or `$'` anywhere in the stylesheet would be expanded by `String#replace` -- and `$'` occurs in
+    // Ordinary CSS, for example in a `[href$='...']` selector.
+    generatedContent = generatedContent.replace('$(LIBRARY_VERSION)', () => newVersion);
+    generatedContent = generatedContent.replace('"$(LIBRARY_STYLES)"', () => stylesCssContentJson);
     await writeFile(generatedPath, generatedContent, 'utf-8');
   }
 }

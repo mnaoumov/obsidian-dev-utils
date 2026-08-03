@@ -41,6 +41,7 @@ const FENCE_CODE = 'const syntaxHighlightingTest = 1;';
 describe('SyntaxHighlightingComponent', () => {
   it('should highlight a fence in the editor while registered and render it cleanly after unload', async () => {
     const result = await evalInObsidian<Record<string, never>, EditorHighlightingResult>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
         const LANGUAGE = 'odu-syntax-highlighting-editor-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
@@ -61,11 +62,11 @@ describe('SyntaxHighlightingComponent', () => {
             editorMode: 'text/typescript',
             language: LANGUAGE
           });
-          const hasModeWhileRegistered = LANGUAGE in window.CodeMirror.modes;
+          const hasModeWhileRegistered = Object.hasOwn(window.CodeMirror.modes, LANGUAGE);
           const isHighlightedWhileRegistered = await checkIsHighlightedAsync(true);
 
           component.unload();
-          const hasModeAfterUnload = LANGUAGE in window.CodeMirror.modes;
+          const hasModeAfterUnload = Object.hasOwn(window.CodeMirror.modes, LANGUAGE);
           const isHighlightedAfterUnload = await checkIsHighlightedAsync(false);
           const textAfterUnload = readCodeLineEl()?.textContent ?? '';
 
@@ -86,7 +87,7 @@ describe('SyntaxHighlightingComponent', () => {
 
         // A highlighted fence splits into token spans (`cm-keyword`, `cm-def`, ...); an unhighlighted one
         // Stays a single `cm-hmd-codeblock` span.
-        function checkHasKeywordToken(): boolean {
+        function hasKeywordToken(): boolean {
           return (readCodeLineEl()?.querySelector('.cm-keyword') ?? null) !== null;
         }
 
@@ -99,18 +100,18 @@ describe('SyntaxHighlightingComponent', () => {
           if (isHighlightingExpected) {
             await waitUntil({
               message: 'the fence should be tokenized by the registered editor mode',
-              predicate: checkHasKeywordToken,
+              predicate: hasKeywordToken,
               timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
           } else {
             await sleep(SETTLE_IN_MILLISECONDS);
           }
 
-          return checkHasKeywordToken();
+          return hasKeywordToken();
         }
 
         function readCodeLineEl(): Element | null {
-          const lineEls = Array.from(leaf.view.containerEl.querySelectorAll('.cm-content .cm-line'));
+          const lineEls = [...leaf.view.containerEl.querySelectorAll(':scope .cm-content .cm-line')];
           return lineEls.find((lineEl) => lineEl.textContent.includes(CODE)) ?? null;
         }
 
@@ -142,6 +143,7 @@ describe('SyntaxHighlightingComponent', () => {
 
   it('should highlight a fence in reading view while registered and drop the grammar after unload', async () => {
     const result = await evalInObsidian<Record<string, never>, ReadingViewHighlightingResult>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
         const LANGUAGE = 'odu-syntax-highlighting-reading-view-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
@@ -180,7 +182,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         // Prism wraps every matched construct in a `.token` span.
-        function checkHasPrismToken(): boolean {
+        function hasPrismToken(): boolean {
           return (readCodeEl()?.querySelector('.token') ?? null) !== null;
         }
 
@@ -192,18 +194,18 @@ describe('SyntaxHighlightingComponent', () => {
           if (isHighlightingExpected) {
             await waitUntil({
               message: 'the fence should be tokenized by the registered Prism grammar',
-              predicate: checkHasPrismToken,
+              predicate: hasPrismToken,
               timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
           } else {
             await sleep(SETTLE_IN_MILLISECONDS);
           }
 
-          return checkHasPrismToken();
+          return hasPrismToken();
         }
 
         function readCodeEl(): Element | null {
-          const codeEls = Array.from(leaf.view.containerEl.querySelectorAll('.markdown-preview-view pre > code'));
+          const codeEls = [...leaf.view.containerEl.querySelectorAll(':scope .markdown-preview-view pre > code')];
           return codeEls.find((codeEl) => codeEl.textContent.includes(CODE)) ?? null;
         }
 

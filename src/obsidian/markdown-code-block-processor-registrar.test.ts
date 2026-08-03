@@ -38,10 +38,10 @@ describe('PluginMarkdownCodeBlockProcessorRegistrar', () => {
     expect(registerMarkdownCodeBlockProcessor).toHaveBeenCalledWith('dataview', expect.any(Function), 100);
     expect(result).toBe(mockPostProcessor);
 
-    const el = strictProxy<HTMLElement>({});
-    const ctx = strictProxy<MarkdownPostProcessorContext>({});
+    const element = strictProxy<HTMLElement>({});
+    const context = strictProxy<MarkdownPostProcessorContext>({});
     const wrappedHandler = registerMarkdownCodeBlockProcessor.mock.calls[0]?.[1];
-    await wrappedHandler?.('source', el, ctx);
-    expect(handler).toHaveBeenCalledWith('source', el, ctx);
+    await wrappedHandler?.('source', element, context);
+    expect(handler).toHaveBeenCalledWith('source', element, context);
   });
 });

@@ -58,30 +58,30 @@ describe('addPluginCssClasses', () => {
 
   it('should add library name, plugin id, and custom css class string', () => {
     const addClass = vi.fn();
-    const el = strictProxy<HTMLElement>({ addClass });
-    addPluginCssClasses(el, 'custom-class');
+    const element = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(element, 'custom-class');
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'custom-class');
   });
 
   it('should add library name, plugin id, and custom css classes array', () => {
     const addClass = vi.fn();
-    const el = strictProxy<HTMLElement>({ addClass });
-    addPluginCssClasses(el, ['class-a', 'class-b']);
+    const element = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(element, ['class-a', 'class-b']);
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin', 'class-a', 'class-b');
   });
 
   it('should add only library name and plugin id when no css classes provided', () => {
     const addClass = vi.fn();
-    const el = strictProxy<HTMLElement>({ addClass });
-    addPluginCssClasses(el);
+    const element = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(element);
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'test-plugin');
   });
 
   it('should omit the scope class when the css class scope is empty', () => {
     Library.resetToDefault();
     const addClass = vi.fn();
-    const el = strictProxy<HTMLElement>({ addClass });
-    addPluginCssClasses(el, 'custom-class');
+    const element = strictProxy<HTMLElement>({ addClass });
+    addPluginCssClasses(element, 'custom-class');
     expect(addClass).toHaveBeenCalledWith('obsidian-dev-utils', 'custom-class');
   });
 });
@@ -93,52 +93,52 @@ describe('initDebugController', () => {
 
   it('should set DEBUG on window', () => {
     const win = {} as Window;
-    const registerFn = vi.fn();
+    const registerFunction = vi.fn();
     const mockComponent = strictProxy<Component>({
-      register: registerFn
+      register: registerFunction
     });
     initDebugController(win, mockComponent);
     expect(ensureGenericObject(win)['DEBUG']).toBeDefined();
-    expect(registerFn).toHaveBeenCalled();
+    expect(registerFunction).toHaveBeenCalled();
     expect(mocks.getDebugController).toHaveBeenCalled();
   });
 
   it('should restore old DEBUG on cleanup when DEBUG is still ours', () => {
     const oldDebug = { old: true };
     const win = castTo<Window>({ DEBUG: oldDebug });
-    const registerFn = vi.fn();
+    const registerFunction = vi.fn();
     const mockComponent = strictProxy<Component>({
-      register: registerFn
+      register: registerFunction
     });
     initDebugController(win, mockComponent);
-    const winObj = ensureGenericObject(win);
+    const winObject = ensureGenericObject(win);
 
     // The cleanup function was registered
-    const cleanupFn = registerFn.mock.calls[0]?.[0] as () => void;
+    const cleanupFunction = registerFunction.mock.calls[0]?.[0] as () => void;
 
     // DEBUG is still ours, so cleanup should restore old value
-    cleanupFn();
-    expect(winObj['DEBUG']).toBe(oldDebug);
+    cleanupFunction();
+    expect(winObject['DEBUG']).toBe(oldDebug);
   });
 
   it('should not restore old DEBUG on cleanup when DEBUG was changed by another plugin', () => {
     const win = {} as Window;
-    const registerFn = vi.fn();
+    const registerFunction = vi.fn();
     const mockComponent = strictProxy<Component>({
-      register: registerFn
+      register: registerFunction
     });
     initDebugController(win, mockComponent);
-    const winObj = ensureGenericObject(win);
+    const winObject = ensureGenericObject(win);
 
-    const cleanupFn = registerFn.mock.calls[0]?.[0] as () => void;
+    const cleanupFunction = registerFunction.mock.calls[0]?.[0] as () => void;
 
     // Simulate another plugin changing DEBUG
     const anotherDebug = { another: true };
-    winObj['DEBUG'] = anotherDebug;
+    winObject['DEBUG'] = anotherDebug;
 
-    cleanupFn();
+    cleanupFunction();
     // Should NOT restore, since DEBUG was changed by someone else
-    expect(winObj['DEBUG']).toBe(anotherDebug);
+    expect(winObject['DEBUG']).toBe(anotherDebug);
   });
 });
 
@@ -172,10 +172,10 @@ describe('initPluginContext', () => {
     mocks.compareVersions.mockReturnValue(1);
     const oldStyleEl = strictProxy<Element>({ remove: vi.fn() });
     vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl);
-    const createElSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
+    const createElementSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
     expect(oldStyleEl.remove).toHaveBeenCalled();
-    expect(createElSpy).toHaveBeenCalledWith('style', {
+    expect(createElementSpy).toHaveBeenCalledWith('style', {
       attr: { id: 'obsidian-dev-utils-styles' },
       text: '.test { color: red; }'
     });

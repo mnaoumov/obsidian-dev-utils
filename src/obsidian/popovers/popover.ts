@@ -143,10 +143,10 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
      * rather than `click` matters: a popover is typically opened from a `click` handler, and the very
      * same click would otherwise reach this listener and close the popover the instant it appears.
      *
-     * @param evt - The pointer event.
+     * @param $event - The pointer event.
      */
-    function handlePointerDown(evt: PointerEvent): void {
-      if (evt.composedPath().includes(popoverEl)) {
+    function handlePointerDown($event: PointerEvent): void {
+      if ($event.composedPath().includes(popoverEl)) {
         return;
       }
       close(null);
@@ -158,15 +158,15 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
       contentEl: popoverEl
     });
 
-    popoverEl.addEventListener('keydown', (evt: KeyboardEvent) => {
-      if (evt.key === 'Enter') {
-        evt.preventDefault();
+    popoverEl.addEventListener('keydown', ($event: KeyboardEvent) => {
+      if ($event.key === 'Enter') {
+        $event.preventDefault();
         handleOk();
         return;
       }
 
-      if (evt.key === 'Escape') {
-        evt.preventDefault();
+      if ($event.key === 'Escape') {
+        $event.preventDefault();
         handleCancel();
       }
     });
@@ -186,7 +186,7 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
         .onClick(handleCancel);
     });
 
-    doc.addEventListener('pointerdown', handlePointerDown, true);
+    doc.addEventListener('pointerdown', handlePointerDown, { capture: true });
     positionAtAnchor(popoverEl, anchor, win);
     focusFirstInput(popoverEl);
   });

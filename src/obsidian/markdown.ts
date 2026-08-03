@@ -40,8 +40,14 @@ import {
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
-let domEventsHandlersConstructor: DomEventsHandlersConstructor | null = null;
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+interface ModuleState {
+  domEventsHandlersConstructor: DomEventsHandlersConstructor | null;
+}
 
+const moduleState: ModuleState = {
+  domEventsHandlersConstructor: null
+};
 /**
  * The params for the full render.
  */
@@ -178,11 +184,11 @@ class EmbedByExtensionMdPatchComponent extends MonkeyAroundComponent {
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.embedByExtension,
       methodName: 'md',
-      obj: this.embedByExtension,
       patchHandler: ({
         fallback,
-        originalArgs: [context]
+        originalArguments: [context]
       }) => {
         context.displayMode = false;
         return fallback();
@@ -224,8 +230,8 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
     });
   }
 
-  private updateZIndex(el: HTMLElement): void {
-    this.zIndex = getZIndex(el) + 1;
+  private updateZIndex(element: HTMLElement): void {
+    this.zIndex = getZIndex(element) + 1;
   }
 }
 
@@ -297,10 +303,10 @@ export async function registerLinkHandlers(params: RegisterLinkHandlersParams): 
     sourcePath
   } = params;
   // eslint-disable-next-line require-atomic-updates -- No race condition.
-  domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
+  moduleState.domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
   MarkdownPreviewRenderer.registerDomEvents(
     el,
-    new domEventsHandlersConstructor(
+    new moduleState.domEventsHandlersConstructor(
       new FixedZIndexDomEventsHandlersInfo({
         app,
         el,
@@ -352,8 +358,8 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
   const displayText = params.displayText ?? path;
   if (isFolder(abstractFile)) {
     return createEl('a', { text: displayText }, (aEl) => {
-      aEl.addEventListener('click', (evt) => {
-        evt.preventDefault();
+      aEl.addEventListener('click', ($event) => {
+        $event.preventDefault();
         app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
       });
     });

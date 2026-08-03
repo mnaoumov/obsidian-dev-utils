@@ -1,8 +1,8 @@
-import type { MarkdownlintCli2ConfigurationSchema } from '../src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
+import type { MarkdownlintCli2ConfigurationSchema as MarkdownlintCli2ConfigSchema } from '../src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
 
 import { obsidianDevUtilsConfig } from '../src/script-utils/linters/markdownlint-cli2-config.ts';
 
-export const config: MarkdownlintCli2ConfigurationSchema = {
+export const config: MarkdownlintCli2ConfigSchema = {
   ...obsidianDevUtilsConfig,
   // The `docs/` Astro + Starlight sub-project follows Starlight's frontmatter-driven conventions
   // (title in frontmatter, no body H1) and holds generated API markdown; it is validated by its own

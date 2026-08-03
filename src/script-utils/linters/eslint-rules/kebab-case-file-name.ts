@@ -79,7 +79,7 @@ export const kebabCaseFileName: Rule.RuleModule = {
  */
 function getFileNameStem(filename: string): string {
   const segments = filename.split(PATH_SEPARATOR_REG_EXP);
-  const baseName = segments[segments.length - 1] ?? '';
+  const baseName = segments.at(-1) ?? '';
   const nameWithoutLeadingDot = baseName.startsWith('.') ? baseName.slice(1) : baseName;
-  return nameWithoutLeadingDot.split('.')[0] ?? '';
+  return nameWithoutLeadingDot.split('.', 1)[0] ?? '';
 }

@@ -49,7 +49,7 @@ export const requireComponentSuffix: Rule.RuleModule = {
 
     return {
       'ClassDeclaration[id]'(node: Rule.Node): void {
-        checkClass({
+        reportClass({
           checker,
           context,
           node,
@@ -57,7 +57,7 @@ export const requireComponentSuffix: Rule.RuleModule = {
         });
       },
       'ClassExpression[id]'(node: Rule.Node): void {
-        checkClass({
+        reportClass({
           checker,
           context,
           node,
@@ -81,9 +81,9 @@ export const requireComponentSuffix: Rule.RuleModule = {
 };
 
 /**
- * Parameters for {@link checkClass}.
+ * Parameters for {@link reportClass}.
  */
-interface CheckClassParams {
+interface ReportClassParams {
   /**
    * The TypeScript type checker.
    */
@@ -126,72 +126,6 @@ interface WalkAncestorsParams {
 }
 
 /**
- * Checks a single class declaration or expression.
- *
- * @param params - The parameters for the check.
- */
-function checkClass(params: CheckClassParams): void {
-  const { checker, context, node, services } = params;
-  const classNode = node as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
-  const classId = classNode.id;
-
-  /* v8 ignore start -- ESLint selector `[id]` guarantees classId is present. */
-  if (!classId) {
-    return;
-  }
-  /* v8 ignore stop */
-
-  const className = classId.name;
-  const { abstract: isAbstract } = classNode;
-  const endsWithComponentBase = className.endsWith('ComponentBase');
-  const endsWithComponent = !endsWithComponentBase && className.endsWith('Component');
-
-  // Correct: non-abstract ending with Component
-  if (endsWithComponent && !isAbstract) {
-    return;
-  }
-
-  // Correct: abstract ending with ComponentBase
-  if (endsWithComponentBase && isAbstract) {
-    return;
-  }
-
-  const tsNode = services.esTreeNodeToTSNodeMap.get(classNode);
-  const classType = checker.getTypeAtLocation(tsNode);
-  const ancestors = collectAncestorNames(classType);
-
-  if (!ancestors.has(REQUIRED_ANCESTOR)) {
-    return;
-  }
-
-  for (const excluded of EXCLUDED_ANCESTORS) {
-    if (ancestors.has(excluded)) {
-      return;
-    }
-  }
-
-  if (endsWithComponentBase && !isAbstract) {
-    context.report({
-      data: { className },
-      messageId: MESSAGE_ID_BASE_NOT_ABSTRACT,
-      node
-    });
-  } else if (isAbstract) {
-    context.report({
-      data: { className },
-      messageId: MESSAGE_ID_ABSTRACT_NEEDS_BASE,
-      node
-    });
-  } else {
-    context.report({
-      data: { className },
-      messageId: MESSAGE_ID_MISSING_SUFFIX,
-      node
-    });
-  }
-}
-
-/**
  * Collects the names of all ancestor types in the inheritance chain.
  *
  * @param type - The TypeScript type to start from.
@@ -229,10 +163,10 @@ function collectAncestorNames(type: Type): Set<string> {
     }
 
     for (const baseType of baseTypes) {
-      const symbol = baseType.getSymbol();
+      const $symbol = baseType.getSymbol();
 
-      if (symbol) {
-        collectedNames.add(symbol.getName());
+      if ($symbol) {
+        collectedNames.add($symbol.getName());
       }
 
       walkAncestors({
@@ -241,5 +175,71 @@ function collectAncestorNames(type: Type): Set<string> {
         visitedTypes
       });
     }
+  }
+}
+
+/**
+ * Checks a single class declaration or expression.
+ *
+ * @param params - The parameters for the check.
+ */
+function reportClass(params: ReportClassParams): void {
+  const { checker, context, node, services } = params;
+  const classNode = node as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+  const classId = classNode.id;
+
+  /* v8 ignore start -- ESLint selector `[id]` guarantees classId is present. */
+  if (!classId) {
+    return;
+  }
+  /* v8 ignore stop */
+
+  const className = classId.name;
+  const { abstract: isAbstract } = classNode;
+  const hasComponentBaseSuffix = className.endsWith('ComponentBase');
+  const hasComponentSuffix = !hasComponentBaseSuffix && className.endsWith('Component');
+
+  // Correct: non-abstract ending with Component
+  if (hasComponentSuffix && !isAbstract) {
+    return;
+  }
+
+  // Correct: abstract ending with ComponentBase
+  if (hasComponentBaseSuffix && isAbstract) {
+    return;
+  }
+
+  const tsNode = services.esTreeNodeToTSNodeMap.get(classNode);
+  const classType = checker.getTypeAtLocation(tsNode);
+  const ancestors = collectAncestorNames(classType);
+
+  if (!ancestors.has(REQUIRED_ANCESTOR)) {
+    return;
+  }
+
+  for (const excluded of EXCLUDED_ANCESTORS) {
+    if (ancestors.has(excluded)) {
+      return;
+    }
+  }
+
+  if (hasComponentBaseSuffix && !isAbstract) {
+    context.report({
+      data: { className },
+      messageId: MESSAGE_ID_BASE_NOT_ABSTRACT,
+      node
+    });
+  } else if (isAbstract) {
+    context.report({
+      data: { className },
+      messageId: MESSAGE_ID_ABSTRACT_NEEDS_BASE,
+      node
+    });
+  } else {
+    context.report({
+      data: { className },
+      messageId: MESSAGE_ID_MISSING_SUFFIX,
+      node
+    });
   }
 }

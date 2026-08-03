@@ -17,7 +17,7 @@ import type { GetFileParams } from './file-system.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 
 import { noop } from '../function.ts';
-import { deepEqual } from '../object-utils.ts';
+import { isDeepEqual } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import { resolveValue } from '../value-provider.ts';
@@ -44,7 +44,7 @@ vi.mock('../object-utils.ts', async (importOriginal) => {
   const original = await importOriginal<typeof import('../object-utils.ts')>();
   return {
     ...original,
-    deepEqual: vi.fn(() => false)
+    isDeepEqual: vi.fn(() => false)
   };
 });
 
@@ -88,7 +88,7 @@ describe('addAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
   });
 
   it('should do nothing when alias is empty', async () => {
@@ -156,7 +156,7 @@ describe('deleteAlias', () => {
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '---\naliases: some-alias\n---\ncontent' });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ aliases: ['some-alias'] });
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
   });
 
   it('should do nothing when alias is empty', async () => {
@@ -217,12 +217,12 @@ describe('processFrontmatter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(isMarkdownFile).mockReturnValue(true);
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
   });
 
   it('should throw when file is not a markdown file', async () => {
     vi.mocked(isMarkdownFile).mockReturnValue(false);
-    await expect(processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'image.png', pluginNoticeComponent: null, resourceLockComponent })).rejects.toThrow('not a markdown file');
+    await expect(processFrontmatter({ app, frontmatterFunction: vi.fn(), pathOrFile: 'image.png', pluginNoticeComponent: null, resourceLockComponent })).rejects.toThrow('not a markdown file');
   });
 
   it('should call process with the file', async () => {
@@ -232,10 +232,10 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
-    const frontmatterFn = vi.fn();
-    await processFrontmatter({ app, frontmatterFn, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
+    const frontmatterFunction = vi.fn();
+    await processFrontmatter({ app, frontmatterFunction, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(process).toHaveBeenCalled();
-    expect(frontmatterFn).toHaveBeenCalled();
+    expect(frontmatterFunction).toHaveBeenCalled();
   });
 
   it('should return null when frontmatterFn returns null', async () => {
@@ -247,7 +247,7 @@ describe('processFrontmatter', () => {
     });
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
-    await processFrontmatter({ app, frontmatterFn: () => null, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
+    await processFrontmatter({ app, frontmatterFunction: () => null, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(resultContent).toBeNull();
   });
 
@@ -255,21 +255,21 @@ describe('processFrontmatter', () => {
     const content = '---\ntitle: test\n---\ncontent';
     let resultContent: null | string = null;
 
-    vi.mocked(deepEqual).mockReturnValue(true);
+    vi.mocked(isDeepEqual).mockReturnValue(true);
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content });
     });
     vi.mocked(parseFrontmatter).mockReturnValue({ title: 'test' });
 
-    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
+    await processFrontmatter({ app, frontmatterFunction: vi.fn(), pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent });
     expect(resultContent).toBe(content);
     expect(setFrontmatter).not.toHaveBeenCalled();
   });
 
   it('should call setFrontmatter when frontmatter changed', async () => {
     const content = '---\ntitle: old\n---\ncontent';
-    vi.mocked(deepEqual).mockReturnValue(false);
+    vi.mocked(isDeepEqual).mockReturnValue(false);
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
       await resolveValue(newContentProvider, { abortSignal: controller.signal, content });
@@ -279,7 +279,7 @@ describe('processFrontmatter', () => {
 
     await processFrontmatter({
       app,
-      frontmatterFn: (fm) => {
+      frontmatterFunction: (fm) => {
         fm['title'] = 'new';
       },
       pathOrFile: 'note.md',
@@ -297,7 +297,7 @@ describe('processFrontmatter', () => {
     vi.mocked(parseFrontmatter).mockReturnValue({});
 
     const processOptions = { timeoutInMilliseconds: 5000 };
-    await processFrontmatter({ app, frontmatterFn: vi.fn(), pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent, ...processOptions });
+    await processFrontmatter({ app, frontmatterFunction: vi.fn(), pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent, ...processOptions });
     const params = vi.mocked(process).mock.calls[0]?.[0];
     expect(params?.app).toBe(app);
     expect(params?.pathOrFile).toBe('note.md');

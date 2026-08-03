@@ -11,9 +11,9 @@ import { assertNonNullable } from '../../type-guards.ts';
 import { CodeHighlighterComponent } from './code-highlighter-component.ts';
 
 vi.mock('../../async.ts', () => ({
-  convertAsyncToSync: vi.fn((fn: () => unknown) => fn),
-  invokeAsyncSafely: vi.fn((fn: () => unknown) => {
-    fn();
+  convertAsyncToSync: vi.fn(($function: () => unknown) => $function),
+  invokeAsyncSafely: vi.fn(($function: () => unknown) => {
+    $function();
   })
 }));
 
@@ -52,7 +52,7 @@ describe('CodeHighlighterComponent', () => {
     expect(comp.inputEl).toBeInstanceOf(HTMLTextAreaElement);
   });
 
-  it('should return inputEl as validatorEl', () => {
+  it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
     expect(comp.validatorEl).toBe(comp.inputEl);
   });

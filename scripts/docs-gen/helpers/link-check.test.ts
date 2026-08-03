@@ -11,8 +11,8 @@ import type {
 } from './link-check.ts';
 
 import {
-  checkExternalTargets,
-  checkLinks,
+  collectBrokenExternalLinks,
+  collectBrokenLinks,
   collectExternalTargets,
   extractIds,
   extractLinks,
@@ -46,7 +46,7 @@ describe('link-check parsing helpers', () => {
   it('derives the served URL from an index page and a leaf page', () => {
     expect(getPageUrl('index.html', SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/');
     expect(getPageUrl('api/foo/index.html', SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/api/foo/');
-    expect(getPageUrl('guides\\bar.html', SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/guides/bar.html');
+    expect(getPageUrl(String.raw`guides\bar.html`, SITE_BASE_URL)).toBe('https://mnaoumov.dev/obsidian-dev-utils/guides/bar.html');
   });
 });
 
@@ -97,7 +97,7 @@ describe('checkLinks (internal, offline)', () => {
   };
 
   it('reports missing pages and missing fragments while ignoring external and non-http links', () => {
-    expect(checkLinks(pages, fileSystem, SITE_BASE_URL)).toEqual([
+    expect(collectBrokenLinks(pages, fileSystem, SITE_BASE_URL)).toEqual([
       { pageUrl: 'https://mnaoumov.dev/obsidian-dev-utils/api/alpha/', reason: 'missing-fragment', targetUrl: 'https://mnaoumov.dev/obsidian-dev-utils/api/bravo/#ghost' },
       { pageUrl: 'https://mnaoumov.dev/obsidian-dev-utils/api/alpha/', reason: 'missing-page', targetUrl: 'https://mnaoumov.dev/obsidian-dev-utils/api/missing/' }
     ]);
@@ -130,11 +130,11 @@ describe('checkExternalTargets (network, concurrency-bounded)', () => {
       'https://missing.example/': HTTP_NOT_FOUND,
       'https://ok.example/': HTTP_OK
     };
-    const checkUrl = vi.fn((url: string) => Promise.resolve(statusByUrl[url] ?? HTTP_OK));
+    const fetchUrlStatus = vi.fn((url: string) => Promise.resolve(statusByUrl[url] ?? HTTP_OK));
 
-    const brokenLinks = await checkExternalTargets(targets, checkUrl, UNBOUNDED_CONCURRENCY);
+    const brokenLinks = await collectBrokenExternalLinks(targets, fetchUrlStatus, UNBOUNDED_CONCURRENCY);
 
-    expect(checkUrl).toHaveBeenCalledTimes(UNIQUE_URL_COUNT);
+    expect(fetchUrlStatus).toHaveBeenCalledTimes(UNIQUE_URL_COUNT);
     expect(brokenLinks).toEqual([
       { httpStatus: NETWORK_FAILURE_STATUS, pageUrl: 'https://mnaoumov.dev/obsidian-dev-utils/p/', reason: 'external-error', targetUrl: 'https://down.example/' },
       { httpStatus: HTTP_NOT_FOUND, pageUrl: 'https://mnaoumov.dev/obsidian-dev-utils/p/', reason: 'external-error', targetUrl: 'https://missing.example/' }
@@ -146,7 +146,7 @@ describe('checkExternalTargets (network, concurrency-bounded)', () => {
     let inFlight = 0;
     let maxInFlight = 0;
 
-    function checkUrl(): Promise<number> {
+    function fetchUrlStatus(): Promise<number> {
       inFlight++;
       maxInFlight = Math.max(maxInFlight, inFlight);
       return new Promise((resolvePromise) => {
@@ -157,7 +157,7 @@ describe('checkExternalTargets (network, concurrency-bounded)', () => {
       });
     }
 
-    await checkExternalTargets(targets, checkUrl, CONCURRENCY_LIMIT);
+    await collectBrokenExternalLinks(targets, fetchUrlStatus, CONCURRENCY_LIMIT);
 
     expect(maxInFlight).toBe(CONCURRENCY_LIMIT);
   });

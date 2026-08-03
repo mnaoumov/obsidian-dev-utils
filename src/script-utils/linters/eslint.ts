@@ -57,12 +57,12 @@ export async function lint(options?: LintOptions): Promise<void> {
     ObsidianPluginRepoPaths.EslintConfigCts
   ];
 
-  const configFileExist = configFiles.some((configFile) => {
+  const doesConfigFileExist = configFiles.some((configFile) => {
     const configFilePath = resolvePathFromRootSafe({ path: configFile });
     return existsSync(configFilePath);
   });
 
-  if (!configFileExist) {
+  if (!doesConfigFileExist) {
     getLibDebugger('ESLint:lint')('ESLint configuration file not found. Creating default config...');
     const packageFolder = getRootFolder(getFolderName(import.meta.url));
     assertNonNullable(packageFolder, 'Package folder not found');
@@ -75,5 +75,5 @@ export async function lint(options?: LintOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
   /* v8 ignore stop */
-  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
+  await execFromRoot(['npx', 'eslint', ...(shouldFix ? ['--fix'] : []), { batchedArguments: targets }]);
 }

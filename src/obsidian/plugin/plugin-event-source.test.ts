@@ -60,13 +60,13 @@ describe('PluginEventSourceImpl', () => {
 
   it('should delegate on() with thisArg to plugin', () => {
     const callback = vi.fn();
-    const thisArg = { context: true };
+    const thisArgument = { context: true };
     const expectedRef = strictProxy<AsyncEventRef>({});
     mockOn.mockReturnValue(expectedRef);
 
-    const result = eventSource.on('externalSettingsChange', callback, thisArg);
+    const result = eventSource.on('externalSettingsChange', callback, thisArgument);
 
-    expect(mockOn).toHaveBeenCalledWith('externalSettingsChange', callback, thisArg);
+    expect(mockOn).toHaveBeenCalledWith('externalSettingsChange', callback, thisArgument);
     expect(result).toBe(expectedRef);
   });
 
@@ -83,13 +83,13 @@ describe('PluginEventSourceImpl', () => {
 
   it('should delegate once() with thisArg to plugin', () => {
     const callback = vi.fn();
-    const thisArg = { context: true };
+    const thisArgument = { context: true };
     const expectedRef = strictProxy<AsyncEventRef>({});
     mockOnce.mockReturnValue(expectedRef);
 
-    const result = eventSource.once('externalSettingsChange', callback, thisArg);
+    const result = eventSource.once('externalSettingsChange', callback, thisArgument);
 
-    expect(mockOnce).toHaveBeenCalledWith('externalSettingsChange', callback, thisArg);
+    expect(mockOnce).toHaveBeenCalledWith('externalSettingsChange', callback, thisArgument);
     expect(result).toBe(expectedRef);
   });
 });

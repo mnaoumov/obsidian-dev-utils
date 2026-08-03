@@ -21,11 +21,11 @@ type NullableConstraint<T> = null extends T ? unknown : undefined extends T ? un
  * Use in place of `/* v8 ignore *\/` for defensive guards that should
  * never trigger at runtime but would otherwise create uncovered branches.
  *
- * @param condition - The condition to assert.
+ * @param isTrue - The condition to assert.
  * @param errorOrMessage - The error or message to throw if the condition is `false`.
  */
-export function assert(condition: boolean, errorOrMessage: Error | string): asserts condition {
-  if (!condition) {
+export function assert(isTrue: boolean, errorOrMessage: Error | string): asserts isTrue {
+  if (!isTrue) {
     throw typeof errorOrMessage === 'string' ? new Error(errorOrMessage) : errorOrMessage;
   }
 }
@@ -34,9 +34,9 @@ export function assert(condition: boolean, errorOrMessage: Error | string): asse
  * Asserts that a value is a generic object, narrowing its type in place.
  *
  * @typeParam T - The type of the value.
- * @param _obj - The value to assert.
+ * @param _object - The value to assert.
  */
-export function assertGenericObject<T>(_obj: T): asserts _obj is GenericObject<T> {
+export function assertGenericObject<T>(_object: T): asserts _object is GenericObject<T> {
   noop();
 }
 
@@ -89,11 +89,11 @@ export function assertNonNullable<T extends NullableConstraint<T>>(value: T, err
  * Ensures that a value is a generic object, returning it with narrowed type.
  *
  * @typeParam T - The type of the value.
- * @param obj - The value to ensure.
+ * @param $object - The value to ensure.
  * @returns The value as a generic object.
  */
-export function ensureGenericObject<T>(obj: T): GenericObject<T> {
-  return obj as GenericObject<T>;
+export function ensureGenericObject<T>($object: T): GenericObject<T> {
+  return $object as GenericObject<T>;
 }
 
 /**

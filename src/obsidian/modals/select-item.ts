@@ -37,7 +37,7 @@ export interface SelectItemParams<T> extends ModalParamsBase {
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  itemTextFunc(this: void, item: T): string;
+  itemTextFunction(this: void, item: T): string;
 
   /**
    * A placeholder text for the input field.
@@ -52,14 +52,14 @@ type ItemSelectModalConstructorParams<T> = ModalBaseConstructorParams<null | T> 
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
   private readonly items: T[];
-  private readonly itemTextFunc: (this: void, item: T) => string;
+  private readonly itemTextFunction: (this: void, item: T) => string;
   private readonly placeholder: string | undefined;
   private readonly promiseResolve: PromiseResolve<null | T>;
 
   public constructor(params: ItemSelectModalConstructorParams<T>) {
     super(params.app);
     this.items = params.items;
-    this.itemTextFunc = params.itemTextFunc;
+    this.itemTextFunction = params.itemTextFunction;
     this.placeholder = params.placeholder;
     this.promiseResolve = params.promiseResolve;
 
@@ -73,7 +73,7 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   }
 
   public override getItemText(item: T): string {
-    return this.itemTextFunc(item);
+    return this.itemTextFunction(item);
   }
 
   public override onChooseItem(item: T): void {
@@ -86,9 +86,9 @@ class ItemSelectModal<T> extends FuzzySuggestModal<T> {
     }
   }
 
-  public override selectSuggestion(value: FuzzyMatch<T>, evt: KeyboardEvent | MouseEvent): void {
+  public override selectSuggestion(value: FuzzyMatch<T>, $event: KeyboardEvent | MouseEvent): void {
     this.isSelected = true;
-    super.selectSuggestion(value, evt);
+    super.selectSuggestion(value, $event);
   }
 }
 

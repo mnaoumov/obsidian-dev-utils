@@ -86,7 +86,7 @@ import {
   referenceToFileChange
 } from './reference.ts';
 
-const ESCAPED_WIKILINK_DIVIDER = '\\|';
+const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
 
 /**
  * Regular expression for unescaped pipes.
@@ -431,7 +431,7 @@ export interface GenerateMarkdownLinkParams {
    *
    * If provided, it will be used to infer the values of
    *
-   * - {@link isEmbed}
+   * - {@link hasEmbedSyntax}
    * - {@link linkStyle}
    * - {@link shouldUseAngleBrackets}
    * - {@link shouldUseLeadingDotForRelativePaths}
@@ -551,14 +551,14 @@ export interface GenerateRawMarkdownLinkParams {
   readonly isWikilink: boolean;
 
   /**
-   * Whether to escape the alias. Applicable only if {@link isWikilink} is `false`.
+   * Whether to escape the alias. Applicable only if {@link hasWikilinkSyntax} is `false`.
    *
    * @default `false`
    */
   readonly shouldEscapeAlias?: boolean;
 
   /**
-   * Whether to use angle brackets. Applicable only if {@link isWikilink} is `false`.
+   * Whether to use angle brackets. Applicable only if {@link hasWikilinkSyntax} is `false`.
    *
    * @default `false`
    */
@@ -1023,7 +1023,7 @@ export async function editBacklinks(params: EditBacklinksParams): Promise<void> 
     ...options
   } = params;
   const backlinks = await getBacklinksForFileSafe({ app, pathOrFile, ...options });
-  const backlinkNotePaths = Array.from(backlinks.keys());
+  const backlinkNotePaths = [...backlinks.keys()];
   let processed = 0;
   for (const backlinkNotePath of backlinkNotePaths) {
     const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
@@ -1183,6 +1183,7 @@ export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
  * @param cache - The metadata cache to fix the frontmatter markdown links in.
  * @returns Whether the frontmatter markdown links were fixed.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was fixed.
 export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
   return fixFrontmatterMarkdownLinksImpl({ cache, key: '', value: cache.frontmatter });
 }
@@ -1200,7 +1201,7 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
     isEmptyEmbedAliasAllowed: true
   };
 
-  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFn) => defaultParamsFn());
+  const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFunction) => defaultParamsFunction());
   params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
   const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
 
@@ -1246,6 +1247,68 @@ export function generateRawMarkdownLink(params: GenerateRawMarkdownLinkParams): 
  */
 export function getGenerateMarkdownLinkDefaultParamsFns(): (() => Partial<GenerateMarkdownLinkParams>)[] {
   return getObsidianDevUtilsState<(() => Partial<GenerateMarkdownLinkParams>)[]>('generateMarkdownLinkDefaultParamsFns', []).value;
+}
+
+/**
+ * Tests whether a link uses angle brackets, possibly embed:
+ * `[title](<link>)`, `![title](<link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link uses angle brackets
+ */
+export function hasAngleBrackets(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.hasAngleBrackets ?? false;
+}
+
+/**
+ * Tests whether a link is an embed link:
+ * `![[link]]`, `![title](link)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link is an embed link
+ */
+export function hasEmbedSyntax(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.isEmbed ?? false;
+}
+
+/**
+ * Tests whether a link has a leading dot, possibly embed:
+ * `[[./link]]`, `[title](./link)`, `[title](<./link>)`,
+ * `![[./link]]`, `![title](./link)`, `![title](<./link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link has a leading dot
+ */
+export function hasLeadingDot(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.url.startsWith('./') ?? false;
+}
+
+/**
+ * Tests whether a link has a leading slash, possibly embed:
+ * `[[/link]]`, `[title](/link)`, `[title](</link>)`,
+ * `![[/link]]`, `![title](/link)`, `![title](</link>)`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link has a leading slash
+ */
+export function hasLeadingSlash(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.url.startsWith('/') ?? false;
+}
+
+/**
+ * Tests whether a link is a wikilink, possibly embed:
+ * `[[link]]`, `![[link]]`.
+ *
+ * @param link - Link to test
+ * @returns Whether the link is a wikilink
+ */
+export function hasWikilinkSyntax(link: string): boolean {
+  const parseLinkResult = parseLink(link);
+  return parseLinkResult?.isWikilink ?? false;
 }
 
 /**
@@ -1296,9 +1359,9 @@ export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
   }
 
   const cleanDisplayText = replaceAll({
+    $string: normalizePath(ensureNonNullable(displayText.split(' > ', 1)[0])),
     replacer: '',
-    searchValue: /^\.\//g,
-    str: normalizePath(ensureNonNullable(displayText.split(' > ')[0]))
+    searchValue: /^\.\//g
   }).toLowerCase();
 
   for (const alias of aliasesToReset) {
@@ -1328,68 +1391,6 @@ export function splitSubpath(link: string): SplitSubpathResult {
     linkPath: parsed.path,
     subpath: parsed.subpath
   };
-}
-
-/**
- * Tests whether a link uses angle brackets, possibly embed:
- * `[title](<link>)`, `![title](<link>)`.
- *
- * @param link - Link to test
- * @returns Whether the link uses angle brackets
- */
-export function testAngleBrackets(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.hasAngleBrackets ?? false;
-}
-
-/**
- * Tests whether a link is an embed link:
- * `![[link]]`, `![title](link)`.
- *
- * @param link - Link to test
- * @returns Whether the link is an embed link
- */
-export function testEmbed(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.isEmbed ?? false;
-}
-
-/**
- * Tests whether a link has a leading dot, possibly embed:
- * `[[./link]]`, `[title](./link)`, `[title](<./link>)`,
- * `![[./link]]`, `![title](./link)`, `![title](<./link>)`.
- *
- * @param link - Link to test
- * @returns Whether the link has a leading dot
- */
-export function testLeadingDot(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.url.startsWith('./') ?? false;
-}
-
-/**
- * Tests whether a link has a leading slash, possibly embed:
- * `[[/link]]`, `[title](/link)`, `[title](</link>)`,
- * `![[/link]]`, `![title](/link)`, `![title](</link>)`.
- *
- * @param link - Link to test
- * @returns Whether the link has a leading slash
- */
-export function testLeadingSlash(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.url.startsWith('/') ?? false;
-}
-
-/**
- * Tests whether a link is a wikilink, possibly embed:
- * `[[link]]`, `![[link]]`.
- *
- * @param link - Link to test
- * @returns Whether the link is a wikilink
- */
-export function testWikilink(link: string): boolean {
-  const parseLinkResult = parseLink(link);
-  return parseLinkResult?.isWikilink ?? false;
 }
 
 /**
@@ -1468,11 +1469,10 @@ export function updateLink(params: UpdateLinkParams): string {
 
   const { subpath } = splitSubpath(link.link);
 
-  if (isCanvasFile(newSourcePathOrFile)) {
-    /* v8 ignore start -- Canvas file node reference branch is hard to reproduce in unit tests. */
-    if (isCanvasFileNodeReference(link)) {
-      return newTargetFile.path + subpath;
-    }
+  /* v8 ignore start -- Canvas file node reference branch is hard to reproduce in unit tests. */
+  if (isCanvasFile(newSourcePathOrFile) && isCanvasFileNodeReference(link)) {
+    return newTargetFile.path + subpath;
+
     /* v8 ignore stop */
   }
 
@@ -1541,7 +1541,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
     app,
     content,
     linkConverter: (link) => {
-      const isEmbedLink = testEmbed(link.original);
+      const isEmbedLink = hasEmbedSyntax(link.original);
       if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
         return;
       }
@@ -1580,7 +1580,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   await editLinks({
     ...params,
     linkConverter: (link) => {
-      const isEmbedLink = testEmbed(link.original);
+      const isEmbedLink = hasEmbedSyntax(link.original);
       if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
         return;
       }
@@ -1597,6 +1597,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   });
 }
 
+// eslint-disable-next-line unicorn/consistent-boolean-name -- Mirrors the exported function it implements.
 function fixFrontmatterMarkdownLinksImpl(params: FixFrontmatterMarkdownLinksImplParams): boolean {
   const {
     cache,
@@ -1659,18 +1660,20 @@ function generateLinkText(params: GenerateLinkTextParams): string {
     /* v8 ignore start -- All branches covered but v8 reports switch as partial. */
     switch (config.linkPathStyle) {
       /* v8 ignore stop */
-      case FinalLinkPathStyle.AbsolutePathInVault:
+      case FinalLinkPathStyle.AbsolutePathInVault: {
         linkText = targetFile.path;
         if (config.shouldUseLeadingSlashForAbsolutePaths && !linkText.startsWith('/')) {
           linkText = `/${linkText}`;
         }
         break;
-      case FinalLinkPathStyle.RelativePathToTheSource:
+      }
+      case FinalLinkPathStyle.RelativePathToTheSource: {
         linkText = relative(dirname(sourcePath), targetFile.path);
         if (config.shouldUseLeadingDotForRelativePaths && !linkText.startsWith('.')) {
           linkText = `./${linkText}`;
         }
         break;
+      }
       case FinalLinkPathStyle.ShortestPathWhenPossible: {
         const shortestName = isMarkdownFile(targetFile) ? targetFile.basename : targetFile.name;
         const matchedFiles = app.metadataCache.getLinkpathDest(shortestName, sourcePath);
@@ -1678,15 +1681,16 @@ function generateLinkText(params: GenerateLinkTextParams): string {
         break;
       }
       /* v8 ignore start -- All valid FinalLinkPathStyle values are handled above. */
-      default:
+      default: {
         assertNever(config.linkPathStyle);
+      }
         /* v8 ignore stop */
     }
   }
 
   linkText = config.isWikilink
     ? trimEnd({
-      str: linkText,
+      $string: linkText,
       suffix: `.${MARKDOWN_FILE_EXTENSION}`
     })
     : linkText;
@@ -1802,11 +1806,10 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
         changes.push(fileChange);
       } else {
         console.error('Unsupported file change', fileChange);
-        continue;
       }
     } else {
       if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
-        fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER);
+        fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER);
       }
 
       changes.push(fileChange);
@@ -1818,23 +1821,28 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
 function getFinalLinkPathStyle(app: App, linkPathStyle?: LinkPathStyle): FinalLinkPathStyle {
   const resolvedStyle = linkPathStyle ?? LinkPathStyle.ObsidianSettingsDefault;
   switch (resolvedStyle) {
-    case LinkPathStyle.AbsolutePathInVault:
+    case LinkPathStyle.AbsolutePathInVault: {
       return FinalLinkPathStyle.AbsolutePathInVault;
-    case LinkPathStyle.ObsidianSettingsDefault:
+    }
+    case LinkPathStyle.ObsidianSettingsDefault: {
       return resolveFinalLinkPathStyleFromObsidianSettings(app);
-    case LinkPathStyle.RelativePathToTheSource:
+    }
+    case LinkPathStyle.RelativePathToTheSource: {
       return FinalLinkPathStyle.RelativePathToTheSource;
-    case LinkPathStyle.ShortestPathWhenPossible:
+    }
+    case LinkPathStyle.ShortestPathWhenPossible: {
       return FinalLinkPathStyle.ShortestPathWhenPossible;
-    default:
+    }
+    default: {
       assertNever(resolvedStyle);
+    }
   }
 }
 
 function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
   const { app } = params;
   return {
-    isEmbed: params.isEmbed ?? (params.originalLink ? testEmbed(params.originalLink) : false),
+    isEmbed: params.isEmbed ?? (params.originalLink ? hasEmbedSyntax(params.originalLink) : false),
     isSingleSubpathAllowed: params.isSingleSubpathAllowed ?? true,
     isWikilink: shouldUseWikilinkStyle(normalizeOptionalProperties<ShouldUseWikilinkStyleParams>({
       app,
@@ -1842,11 +1850,11 @@ function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
       originalLink: params.originalLink
     })),
     linkPathStyle: getFinalLinkPathStyle(app, params.linkPathStyle),
-    shouldUseAngleBrackets: params.shouldUseAngleBrackets ?? (params.originalLink ? testAngleBrackets(params.originalLink) : undefined) ?? false,
+    shouldUseAngleBrackets: params.shouldUseAngleBrackets ?? (params.originalLink ? hasAngleBrackets(params.originalLink) : undefined) ?? false,
     shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths
-      ?? (params.originalLink ? testLeadingDot(params.originalLink) : undefined) ?? false,
+      ?? (params.originalLink ? hasLeadingDot(params.originalLink) : undefined) ?? false,
     shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
-      ?? (params.originalLink ? testLeadingSlash(params.originalLink) : undefined) ?? false
+      ?? (params.originalLink ? hasLeadingSlash(params.originalLink) : undefined) ?? false
   };
 }
 
@@ -1881,14 +1889,18 @@ function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean):
 function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathStyle {
   const newLinkFormat = getNewLinkFormat(app);
   switch (newLinkFormat) {
-    case 'absolute':
+    case 'absolute': {
       return FinalLinkPathStyle.AbsolutePathInVault;
-    case 'relative':
+    }
+    case 'relative': {
       return FinalLinkPathStyle.RelativePathToTheSource;
-    case 'shortest':
+    }
+    case 'shortest': {
       return FinalLinkPathStyle.ShortestPathWhenPossible;
-    default:
+    }
+    default: {
       assertNever(newLinkFormat);
+    }
   }
 }
 
@@ -1910,15 +1922,20 @@ function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {
   const { app, linkStyle, originalLink } = params;
   const resolvedStyle = linkStyle ?? LinkStyle.PreserveExisting;
   switch (resolvedStyle) {
-    case LinkStyle.Markdown:
+    case LinkStyle.Markdown: {
       return false;
-    case LinkStyle.ObsidianSettingsDefault:
+    }
+    case LinkStyle.ObsidianSettingsDefault: {
       return shouldUseWikilinks(app);
-    case LinkStyle.PreserveExisting:
-      return originalLink === undefined ? shouldUseWikilinks(app) : testWikilink(originalLink);
-    case LinkStyle.Wikilink:
+    }
+    case LinkStyle.PreserveExisting: {
+      return originalLink === undefined ? shouldUseWikilinks(app) : hasWikilinkSyntax(originalLink);
+    }
+    case LinkStyle.Wikilink: {
       return true;
-    default:
+    }
+    default: {
       assertNever(resolvedStyle);
+    }
   }
 }

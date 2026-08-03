@@ -24,12 +24,12 @@ export class SettingGroupEx extends SettingGroup {
   /**
    * Adds a extended setting to the setting group.
    *
-   * @param cb - The callback to add the setting.
+   * @param callback - The callback to add the setting.
    * @returns The setting group.
    */
-  public addSettingEx(cb: (setting: SettingEx) => void): this {
+  public addSettingEx(callback: (setting: SettingEx) => void): this {
     const setting = new SettingEx(this.listEl);
-    cb(setting);
+    callback(setting);
     return this;
   }
 }

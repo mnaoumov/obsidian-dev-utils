@@ -24,6 +24,7 @@ import type {
 
 import type { PathOrAbstractFile } from './file-system.ts';
 
+import { dispose } from '../disposable.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import { syncOpenEditorBuffersForPath } from './editor.ts';
 import {
@@ -296,7 +297,9 @@ export class VaultTransaction {
   }
 
   private disposeMutationBypass(): void {
-    this.mutationBypass?.[Symbol.dispose]();
+    if (this.mutationBypass) {
+      dispose(this.mutationBypass);
+    }
     this.mutationBypass = null;
   }
 

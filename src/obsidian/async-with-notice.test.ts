@@ -37,8 +37,8 @@ import { t } from './i18n/i18n.ts';
 const asyncMock = vi.hoisted(() => {
   const invokePromises: Promise<unknown>[] = [];
   return {
-    invokeAsyncSafely: vi.fn((fn: () => unknown) => {
-      invokePromises.push(Promise.resolve(fn()));
+    invokeAsyncSafely: vi.fn(($function: () => unknown) => {
+      invokePromises.push(Promise.resolve($function()));
     }),
     settleInvocations: async (): Promise<void> => {
       await Promise.all(invokePromises);
@@ -50,20 +50,21 @@ vi.mock('../async.ts', () => ({
   invokeAsyncSafely: asyncMock.invokeAsyncSafely,
   retryWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
-      (options['_captureOnTimeout'] as (fn: unknown) => void)(options['onTimeout']);
+      (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
-    if (typeof options['operationFn'] === 'function') {
-      await (options['operationFn'] as (signal: AbortSignal) => Promise<unknown>)(new AbortController().signal);
+    if (typeof options['operationFunction'] === 'function') {
+      await (options['operationFunction'] as (signal: AbortSignal) => Promise<unknown>)(new AbortController().signal);
     }
   }),
   runWithTimeout: vi.fn(async (options: GenericObject) => {
     await noopAsync();
     if (typeof options['_captureOnTimeout'] === 'function') {
-      (options['_captureOnTimeout'] as (fn: unknown) => void)(options['onTimeout']);
+      (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
-    if (typeof options['operationFn'] === 'function') {
-      return (options['operationFn'] as (signal: AbortSignal) => unknown)(new AbortController().signal);
+    if (typeof options['operationFunction'] === 'function') {
+      return (options['operationFunction'] as (signal: AbortSignal) => unknown)(new AbortController().signal);
     }
+    // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
     return undefined;
   })
 }));
@@ -73,7 +74,7 @@ vi.mock('../debug.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((selectorFn: (translations: GenericObject) => string, _options?: GenericObject) => {
+  t: vi.fn((selectorFunction: (translations: GenericObject) => string, _options?: GenericObject) => {
     const translations = {
       obsidianDevUtils: {
         asyncWithNotice: {
@@ -89,7 +90,7 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
       }
     };
     try {
-      return selectorFn(translations);
+      return selectorFunction(translations);
     } catch {
       return 'mock-translation';
     }
@@ -120,12 +121,12 @@ function createMockPluginNoticeComponent(): PluginNoticeComponent {
  */
 function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
   let lastFragment: DocumentFragment | null = null;
-  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  const originalCreateFragment = globalThis.createFragment;
+
+  const originalCreateFragment = createFragment;
 
   // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  globalThis.createFragment = vi.fn((cb?: (f: DocumentFragment) => void): DocumentFragment => {
-    const fragment = originalCreateFragment(cb);
+  globalThis.createFragment = vi.fn((callback?: (f: DocumentFragment) => void): DocumentFragment => {
+    const fragment = originalCreateFragment(callback);
     lastFragment = fragment;
     return fragment;
   });
@@ -146,83 +147,83 @@ describe('AsyncWithNotice', () => {
 
   describe('retryWithTimeoutNotice', () => {
     it('should call retryWithTimeout with the provided options', async () => {
-      const operationFn = vi.fn(async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         operationName: 'testOp',
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
       expect(retryWithTimeout).toHaveBeenCalledTimes(1);
     });
 
-    it('should forward operationFn to retryWithTimeout', async () => {
-      const operationFn = vi.fn(async () => {
+    it('should forward operationFunction to retryWithTimeout', async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
-      const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
-      expect(callArgs.operationFn).toBe(operationFn);
+      const callArguments = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
+      expect(callArguments.operationFunction).toBe(operationFunction);
     });
 
     it('should forward operationName to retryWithTimeout', async () => {
-      const operationFn = vi.fn(async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         operationName: 'myOperation',
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
-      const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
-      expect(callArgs.operationName).toBe('myOperation');
+      const callArguments = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
+      expect(callArguments.operationName).toBe('myOperation');
     });
 
     it('should forward retryOptions to retryWithTimeout', async () => {
-      const operationFn = vi.fn(async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return true;
       });
       const retryOptions = { retryDelayInMilliseconds: 200, timeoutInMilliseconds: 3000 };
       await retryWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         retryOptions
       });
-      const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
-      expect(callArgs.retryOptions).toBe(retryOptions);
+      const callArguments = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
+      expect(callArguments.retryOptions).toBe(retryOptions);
     });
 
     it('should forward stackTrace to retryWithTimeout', async () => {
-      const operationFn = vi.fn(async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         stackTrace: 'custom-stack'
       });
-      const callArgs = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
-      expect(callArgs.stackTrace).toBe('custom-stack');
+      const callArguments = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
+      expect(callArguments.stackTrace).toBe('custom-stack');
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {
-      let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeout: ((context: TimeoutContext) => void) | null = null;
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedOnTimeout = options.onTimeout as (context: TimeoutContext) => void;
       });
 
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -234,14 +235,14 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should pass onTimeoutWithoutNotice as onTimeout when shouldShowTimeoutNotice is false', async () => {
-      let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeout: ((context: TimeoutContext) => void) | null = null;
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedOnTimeout = options.onTimeout as (context: TimeoutContext) => void;
       });
 
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -253,15 +254,15 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is undefined', async () => {
-      let capturedOnTimeoutWithFalse: ((ctx: TimeoutContext) => void) | null = null;
-      let capturedOnTimeoutWithUndefined: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutWithFalse: ((context: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutWithUndefined: ((context: TimeoutContext) => void) | null = null;
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutWithFalse = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutWithFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -271,10 +272,10 @@ describe('AsyncWithNotice', () => {
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutWithUndefined = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutWithUndefined = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -286,15 +287,15 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should use a different onTimeout for true vs false shouldShowTimeoutNotice', async () => {
-      let capturedOnTimeoutTrue: ((ctx: TimeoutContext) => void) | null = null;
-      let capturedOnTimeoutFalse: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutTrue: ((context: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutFalse: ((context: TimeoutContext) => void) | null = null;
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutTrue = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutTrue = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -304,10 +305,10 @@ describe('AsyncWithNotice', () => {
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutFalse = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedOnTimeoutFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -319,15 +320,15 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should use onTimeoutWithoutNotice when no pluginNoticeComponent is supplied, even when notices are enabled', async () => {
-      let capturedWithoutComponent: ((ctx: TimeoutContext) => void) | null = null;
-      let capturedSilent: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedWithoutComponent: ((context: TimeoutContext) => void) | null = null;
+      let capturedSilent: ((context: TimeoutContext) => void) | null = null;
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedWithoutComponent = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedWithoutComponent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -337,10 +338,10 @@ describe('AsyncWithNotice', () => {
 
       vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedSilent = options.onTimeout as (ctx: TimeoutContext) => void;
+        capturedSilent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -356,12 +357,12 @@ describe('AsyncWithNotice', () => {
 
   describe('runWithTimeoutNotice', () => {
     it('should call runWithTimeout with the provided options', async () => {
-      const operationFn = vi.fn(async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return 42;
       });
       await runWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
@@ -370,7 +371,7 @@ describe('AsyncWithNotice', () => {
 
     it('should return the result from the operation', async () => {
       const result = await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'test-result';
         },
@@ -380,32 +381,32 @@ describe('AsyncWithNotice', () => {
       expect(result).toBe('test-result');
     });
 
-    it('should return the result for synchronous operationFn', async () => {
+    it('should return the result for synchronous operationFunction', async () => {
       const result = await runWithTimeoutNotice({
-        operationFn: () => 123,
+        operationFunction: () => 123,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       expect(result).toBe(123);
     });
 
-    it('should forward operationFn to runWithTimeout', async () => {
-      const operationFn = vi.fn(async () => {
+    it('should forward operationFunction to runWithTimeout', async () => {
+      const operationFunction = vi.fn(async () => {
         await noopAsync();
         return 'value';
       });
       await runWithTimeoutNotice({
-        operationFn,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
-      const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
-      expect(callArgs.operationFn).toBe(operationFn);
+      const callArguments = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
+      expect(callArguments.operationFunction).toBe(operationFunction);
     });
 
     it('should forward operationName to runWithTimeout', async () => {
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -413,26 +414,26 @@ describe('AsyncWithNotice', () => {
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
-      const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
-      expect(callArgs.operationName).toBe('myOp');
+      const callArguments = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
+      expect(callArguments.operationName).toBe('myOp');
     });
 
     it('should forward timeoutInMilliseconds to runWithTimeout', async () => {
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 3000
       });
-      const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
-      expect(callArgs.timeoutInMilliseconds).toBe(3000);
+      const callArguments = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
+      expect(callArguments.timeoutInMilliseconds).toBe(3000);
     });
 
     it('should forward stackTrace to runWithTimeout', async () => {
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -440,34 +441,33 @@ describe('AsyncWithNotice', () => {
         stackTrace: 'my-stack',
         timeoutInMilliseconds: 5000
       });
-      const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
-      expect(callArgs.stackTrace).toBe('my-stack');
+      const callArguments = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
+      expect(callArguments.stackTrace).toBe('my-stack');
     });
 
     it('should forward context to runWithTimeout', async () => {
       const context = { some: 'data' };
       await runWithTimeoutNotice({
         context,
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
-      const callArgs = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
-      expect(callArgs.context).toBe(context);
+      const callArguments = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
+      expect(callArguments.context).toBe(context);
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is true', async () => {
-      const onTimeout = await new Promise<(ctx: TimeoutContext) => void>((resolve) => {
+      const onTimeout = await new Promise<(context: TimeoutContext) => void>((resolve) => {
         vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
           await noopAsync();
-          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
-          return undefined;
+          resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         runWithTimeoutNotice({
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return 'value';
           },
@@ -492,15 +492,14 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should pass onTimeoutWithoutNotice as onTimeout when shouldShowTimeoutNotice is false', async () => {
-      let capturedOnTimeout: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeout: ((context: TimeoutContext) => void) | null = null;
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeout = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedOnTimeout = options.onTimeout as (context: TimeoutContext) => void;
       });
 
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -513,16 +512,15 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should use different onTimeout functions for true vs false', async () => {
-      let capturedOnTimeoutTrue: ((ctx: TimeoutContext) => void) | null = null;
-      let capturedOnTimeoutFalse: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutTrue: ((context: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutFalse: ((context: TimeoutContext) => void) | null = null;
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutTrue = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedOnTimeoutTrue = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -533,11 +531,10 @@ describe('AsyncWithNotice', () => {
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutFalse = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedOnTimeoutFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -550,16 +547,15 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should pass onTimeoutNotice as onTimeout when shouldShowTimeoutNotice is undefined', async () => {
-      let capturedOnTimeoutWithFalse: ((ctx: TimeoutContext) => void) | null = null;
-      let capturedOnTimeoutWithUndefined: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutWithFalse: ((context: TimeoutContext) => void) | null = null;
+      let capturedOnTimeoutWithUndefined: ((context: TimeoutContext) => void) | null = null;
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutWithFalse = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedOnTimeoutWithFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -570,11 +566,10 @@ describe('AsyncWithNotice', () => {
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedOnTimeoutWithUndefined = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedOnTimeoutWithUndefined = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -587,16 +582,15 @@ describe('AsyncWithNotice', () => {
     });
 
     it('should use onTimeoutWithoutNotice when no pluginNoticeComponent is supplied, even when notices are enabled', async () => {
-      let capturedWithoutComponent: ((ctx: TimeoutContext) => void) | null = null;
-      let capturedSilent: ((ctx: TimeoutContext) => void) | null = null;
+      let capturedWithoutComponent: ((context: TimeoutContext) => void) | null = null;
+      let capturedSilent: ((context: TimeoutContext) => void) | null = null;
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedWithoutComponent = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedWithoutComponent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -607,11 +601,10 @@ describe('AsyncWithNotice', () => {
 
       vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
         await noopAsync();
-        capturedSilent = options.onTimeout as (ctx: TimeoutContext) => void;
-        return undefined;
+        capturedSilent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -627,14 +620,14 @@ describe('AsyncWithNotice', () => {
   });
 
   describe('onTimeoutNotice (tested indirectly)', () => {
-    function captureOnTimeoutNotice(): Promise<(ctx: TimeoutContext) => void> {
+    function captureOnTimeoutNotice(): Promise<(context: TimeoutContext) => void> {
       return new Promise((resolve) => {
         vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
           await noopAsync();
-          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
+          resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         retryWithTimeoutNotice({
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return true;
           },
@@ -658,11 +651,11 @@ describe('AsyncWithNotice', () => {
 
     it('should create a Notice when timeout fires with operationName', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext({ operationName: 'myOp' });
+      const context = createMockTimeoutContext({ operationName: 'myOp' });
 
       const { cleanup } = setupCreateFragmentGlobal();
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       // Verify that t() was called for the operation translation
       expect(t).toHaveBeenCalled();
@@ -672,11 +665,11 @@ describe('AsyncWithNotice', () => {
 
     it('should create a Notice when timeout fires without operationName', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext({ operationName: '' });
+      const context = createMockTimeoutContext({ operationName: '' });
 
       const { cleanup } = setupCreateFragmentGlobal();
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       // The fragment should NOT contain 'Operation' text for empty operationName
       // Because the `if (ctx.operationName)` branch is skipped
@@ -688,11 +681,11 @@ describe('AsyncWithNotice', () => {
     it('should call terminateOperation when cancel button is clicked', async () => {
       const onTimeout = await captureOnTimeoutNotice();
       const terminateOperation = vi.fn();
-      const ctx = createMockTimeoutContext({ terminateOperation });
+      const context = createMockTimeoutContext({ terminateOperation });
 
       const { cleanup, getLastFragment } = setupCreateFragmentGlobal();
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       const fragment = getLastFragment();
       expect(fragment).not.toBeNull();
@@ -708,10 +701,10 @@ describe('AsyncWithNotice', () => {
     it('should clear interval and hide notice when operation completes', async () => {
       const onTimeout = await captureOnTimeoutNotice();
       const onOperationCompletedCallbacks: (() => void)[] = [];
-      const onOperationCompletedMock = vi.fn((cb: () => void) => {
-        onOperationCompletedCallbacks.push(cb);
+      const onOperationCompletedMock = vi.fn(($callback: () => void) => {
+        onOperationCompletedCallbacks.push($callback);
       });
-      const ctx = createMockTimeoutContext({
+      const context = createMockTimeoutContext({
         onOperationCompleted: onOperationCompletedMock
       });
 
@@ -719,7 +712,7 @@ describe('AsyncWithNotice', () => {
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.spyOn(globalThis, 'clearInterval');
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       expect(onOperationCompletedMock).toHaveBeenCalledTimes(1);
       expect(onOperationCompletedCallbacks.length).toBe(1);
@@ -729,60 +722,56 @@ describe('AsyncWithNotice', () => {
       assertNonNullable(callback);
       callback();
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      expect(vi.mocked(globalThis.clearInterval)).toHaveBeenCalled();
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      vi.mocked(globalThis.clearInterval).mockRestore();
+      expect(vi.mocked(clearInterval)).toHaveBeenCalled();
+
+      vi.mocked(clearInterval).mockRestore();
       cleanup();
     });
 
     it('should set up an interval to update running time', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext();
+      const context = createMockTimeoutContext();
 
       const { cleanup } = setupCreateFragmentGlobal();
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.spyOn(globalThis, 'setInterval');
 
-      onTimeout(ctx);
+      onTimeout(context);
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      expect(vi.mocked(globalThis.setInterval)).toHaveBeenCalledWith(expect.any(Function), 1000);
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      vi.mocked(globalThis.setInterval).mockRestore();
+      expect(vi.mocked(setInterval)).toHaveBeenCalledWith(expect.any(Function), 1000);
+
+      vi.mocked(setInterval).mockRestore();
       cleanup();
     });
 
     it('should clear interval when cancel button is clicked', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext();
+      const context = createMockTimeoutContext();
 
       const { cleanup, getLastFragment } = setupCreateFragmentGlobal();
       // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
       vi.spyOn(globalThis, 'clearInterval');
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       const fragment = getLastFragment();
       const button = fragment?.querySelector('button');
       expect(button).not.toBeNull();
       button?.click();
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      expect(vi.mocked(globalThis.clearInterval)).toHaveBeenCalled();
+      expect(vi.mocked(clearInterval)).toHaveBeenCalled();
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      vi.mocked(globalThis.clearInterval).mockRestore();
+      vi.mocked(clearInterval).mockRestore();
       cleanup();
     });
 
     it('should create a span element for running time', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext();
+      const context = createMockTimeoutContext();
 
       const { cleanup, getLastFragment } = setupCreateFragmentGlobal();
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       const fragment = getLastFragment();
       const span = fragment?.querySelector('span');
@@ -795,11 +784,11 @@ describe('AsyncWithNotice', () => {
 
     it('should create br elements for line breaks', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext({ operationName: 'someOp' });
+      const context = createMockTimeoutContext({ operationName: 'someOp' });
 
       const { cleanup, getLastFragment } = setupCreateFragmentGlobal();
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       const fragment = getLastFragment();
       const brElements = fragment?.querySelectorAll('br');
@@ -811,11 +800,11 @@ describe('AsyncWithNotice', () => {
 
     it('should have cancel button with correct text', async () => {
       const onTimeout = await captureOnTimeoutNotice();
-      const ctx = createMockTimeoutContext();
+      const context = createMockTimeoutContext();
 
       const { cleanup, getLastFragment } = setupCreateFragmentGlobal();
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       const fragment = getLastFragment();
       const button = fragment?.querySelector('button');
@@ -827,14 +816,14 @@ describe('AsyncWithNotice', () => {
   });
 
   describe('onTimeoutWithoutNotice (tested indirectly)', () => {
-    function captureOnTimeoutWithoutNotice(): Promise<(ctx: TimeoutContext) => void> {
+    function captureOnTimeoutWithoutNotice(): Promise<(context: TimeoutContext) => void> {
       return new Promise((resolve) => {
         vi.mocked(retryWithTimeout).mockImplementationOnce(async (options) => {
           await noopAsync();
-          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
+          resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         retryWithTimeoutNotice({
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return true;
           },
@@ -859,11 +848,11 @@ describe('AsyncWithNotice', () => {
     it('should register a completion handler', async () => {
       const onTimeout = await captureOnTimeoutWithoutNotice();
       const onOperationCompletedMock = vi.fn();
-      const ctx = createMockTimeoutContext({
+      const context = createMockTimeoutContext({
         onOperationCompleted: onOperationCompletedMock
       });
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       expect(onOperationCompletedMock).toHaveBeenCalledTimes(1);
       expect(onOperationCompletedMock).toHaveBeenCalledWith(expect.any(Function));
@@ -872,13 +861,13 @@ describe('AsyncWithNotice', () => {
     it('should call getDebugger when operation completes', async () => {
       const onTimeout = await captureOnTimeoutWithoutNotice();
       const onOperationCompletedCallbacks: (() => void)[] = [];
-      const ctx = createMockTimeoutContext({
-        onOperationCompleted: vi.fn((cb: () => void) => {
-          onOperationCompletedCallbacks.push(cb);
+      const context = createMockTimeoutContext({
+        onOperationCompleted: vi.fn(($callback: () => void) => {
+          onOperationCompletedCallbacks.push($callback);
         })
       });
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       expect(onOperationCompletedCallbacks.length).toBe(1);
       const callback = onOperationCompletedCallbacks[0];
@@ -890,24 +879,24 @@ describe('AsyncWithNotice', () => {
 
     it('should log debug info with operation name and total duration when operation completes', async () => {
       const onTimeout = await captureOnTimeoutWithoutNotice();
-      const mockDebugFn = vi.fn();
-      vi.mocked(getDebugger).mockReturnValue(castTo<Debugger>(mockDebugFn));
+      const mockDebugFunction = vi.fn();
+      vi.mocked(getDebugger).mockReturnValue(castTo<Debugger>(mockDebugFunction));
 
       const onOperationCompletedCallbacks: (() => void)[] = [];
-      const ctx = createMockTimeoutContext({
-        onOperationCompleted: vi.fn((cb: () => void) => {
-          onOperationCompletedCallbacks.push(cb);
+      const context = createMockTimeoutContext({
+        onOperationCompleted: vi.fn(($callback: () => void) => {
+          onOperationCompletedCallbacks.push($callback);
         }),
         operationName: 'debugOp'
       });
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       const callback = onOperationCompletedCallbacks[0];
       assertNonNullable(callback);
       callback();
 
-      expect(mockDebugFn).toHaveBeenCalledWith(
+      expect(mockDebugFunction).toHaveBeenCalledWith(
         'Operation completed after timeout',
         expect.objectContaining({
           operationName: 'debugOp',
@@ -919,27 +908,26 @@ describe('AsyncWithNotice', () => {
     it('should not call terminateOperation', async () => {
       const onTimeout = await captureOnTimeoutWithoutNotice();
       const terminateOperationMock = vi.fn();
-      const ctx = createMockTimeoutContext({
+      const context = createMockTimeoutContext({
         terminateOperation: terminateOperationMock
       });
 
-      onTimeout(ctx);
+      onTimeout(context);
 
       expect(terminateOperationMock).not.toHaveBeenCalled();
     });
   });
 
   describe('onTimeoutNotice with custom content', () => {
-    function captureRunOnTimeout(content: ValueProvider<DocumentFragment | string>, pluginNoticeComponent: PluginNoticeComponent): Promise<(ctx: TimeoutContext) => void> {
+    function captureRunOnTimeout(content: ValueProvider<DocumentFragment | string>, pluginNoticeComponent: PluginNoticeComponent): Promise<(context: TimeoutContext) => void> {
       return new Promise((resolve) => {
         vi.mocked(runWithTimeout).mockImplementationOnce(async (options) => {
           await noopAsync();
-          resolve(options.onTimeout as (ctx: TimeoutContext) => void);
-          return undefined;
+          resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         runWithTimeoutNotice({
           content,
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return 'value';
           },

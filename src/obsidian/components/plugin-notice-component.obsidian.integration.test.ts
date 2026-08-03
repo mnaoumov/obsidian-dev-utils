@@ -19,6 +19,7 @@ import {
 describe('PluginNoticeComponent styling', () => {
   it('should render the plugin name with the accent color and bold weight, distinct from the body', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       fn({ app, lib: { PluginNoticeComponent } }) {
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         const notice = component.showNotice('Body text');
@@ -77,23 +78,24 @@ describe('PluginNoticeComponent styling', () => {
 describe('PluginNoticeComponent hard-to-close notice', () => {
   it('should not dismiss on stray clicks and close directly via the close button', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
         function findLockedContentEl(): HTMLElement | null {
-          const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
-          return els.find((el) => el.textContent.includes('Locked action')) ?? null;
+          const els = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')];
+          return els.find((element) => element.textContent.includes('Locked action')) ?? null;
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         let onHideCallCount = 0;
-        let onHideIsUserAction = false;
-        let onHideIsCloseButtonClicked = false;
+        let isOnHideUserAction = false;
+        let isOnHideCloseButtonClicked = false;
         const notice = component.showNotice('Locked action', {
           onHide: (info) => {
-            onHideIsUserAction = info.isUserAction;
-            onHideIsCloseButtonClicked = info.isCloseButtonClicked;
+            isOnHideUserAction = info.isUserAction;
+            isOnHideCloseButtonClicked = info.isCloseButtonClicked;
             onHideCallCount += 1;
           },
           shouldHideOnClick: false
@@ -159,8 +161,8 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
             isShownAfterOtherNotice,
             isShownAfterPaddingClick,
             onHideCallCount,
-            onHideIsCloseButtonClicked,
-            onHideIsUserAction
+            onHideIsCloseButtonClicked: isOnHideCloseButtonClicked,
+            onHideIsUserAction: isOnHideUserAction
           };
         } finally {
           notice.hide();
@@ -189,13 +191,14 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
 
   it('should run an interactive button handler in the message without dismissing the notice', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
         function findActionContentEl(): HTMLElement | null {
-          const els = Array.from(activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content'));
-          return els.find((el) => el.textContent.includes('Action notice')) ?? null;
+          const els = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')];
+          return els.find((element) => element.textContent.includes('Action notice')) ?? null;
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
@@ -260,6 +263,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
 describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   it('shows a cancellable notice after the delay whose interactive click does not dismiss it', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { PluginNoticeComponent } }) {
         const DELAY_IN_MILLISECONDS = 50;
         const SETTLE_IN_MILLISECONDS = 250;
@@ -273,8 +277,8 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
         // Scope the lookup to this notice by its text, so a previous test's notice still fading out
         // (same class) is never mistaken for ours.
         function findContentEl(textIncludes: string): Element | null {
-          const els = Array.from(activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content'));
-          return els.find((el) => el.textContent.includes(textIncludes)) ?? null;
+          const els = [...activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content')];
+          return els.find((element) => element.textContent.includes(textIncludes)) ?? null;
         }
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });

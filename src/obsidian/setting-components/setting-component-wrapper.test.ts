@@ -24,7 +24,7 @@ describe('ensureWrapped', () => {
     const parent = createDiv();
     parent.classList.add('setting-component-wrapper');
     const child = createSpan();
-    parent.appendChild(child);
+    parent.append(child);
 
     const result = ensureWrapped(child);
     expect(result).toBe(parent);
@@ -34,8 +34,8 @@ describe('ensureWrapped', () => {
     const grandparent = createDiv();
     const child1 = createSpan();
     const child2 = createEl('input');
-    grandparent.appendChild(child1);
-    grandparent.appendChild(child2);
+    grandparent.append(child1);
+    grandparent.append(child2);
 
     const wrapper = ensureWrapped(child1);
     expect(wrapper.tagName).toBe('DIV');

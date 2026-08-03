@@ -63,7 +63,7 @@ export interface EditorCommandHandlerEditorCheckCallbackParams {
   /**
    * The markdown file context.
    */
-  readonly ctx: MarkdownFileInfo;
+  readonly context: MarkdownFileInfo;
 
   /**
    * The editor instance.
@@ -78,7 +78,7 @@ export interface EditorCommandHandlerHandleEditorMenuParams {
   /**
    * The markdown file context.
    */
-  readonly ctx: MarkdownFileInfo;
+  readonly context: MarkdownFileInfo;
 
   /**
    * The editor instance.
@@ -151,10 +151,10 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override buildCommand(): Command {
     return {
-      editorCheckCallback: (checking, editor, ctx) =>
+      editorCheckCallback: (checking, editor, context) =>
         this.editorCheckCallback({
           checking,
-          ctx,
+          context,
           editor
         }),
       icon: this.icon,
@@ -170,9 +170,9 @@ export abstract class EditorCommandHandler extends CommandHandler {
    */
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
-    context.menuEventRegistrar.registerEditorMenuEventHandler((menu, editor, ctx) => {
+    context.menuEventRegistrar.registerEditorMenuEventHandler((menu, editor, $context) => {
       this.handleEditorMenu({
-        ctx,
+        context: $context,
         editor,
         menu
       });
@@ -183,10 +183,10 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * Checks whether the command can execute for the given editor and context.
    *
    * @param _editor - The editor instance.
-   * @param _ctx - The markdown file context.
+   * @param _context - The markdown file context.
    * @returns Whether the command can execute.
    */
-  protected canExecuteEditor(_editor: Editor, _ctx: MarkdownFileInfo): boolean {
+  protected canExecuteEditor(_editor: Editor, _context: MarkdownFileInfo): boolean {
     return true;
   }
 
@@ -194,9 +194,9 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * Executes the command for the given editor and context.
    *
    * @param editor - The editor instance.
-   * @param ctx - The markdown file context.
+   * @param context - The markdown file context.
    */
-  protected abstract executeEditor(editor: Editor, ctx: MarkdownFileInfo): Promisable<void>;
+  protected abstract executeEditor(editor: Editor, context: MarkdownFileInfo): Promisable<void>;
 
   /**
    * Gets whether to add the command to a submenu.
@@ -220,29 +220,29 @@ export abstract class EditorCommandHandler extends CommandHandler {
    * Checks whether the command should appear in the editor context menu.
    *
    * @param _editor - The editor instance.
-   * @param _ctx - The markdown file context.
+   * @param _context - The markdown file context.
    * @returns Whether to add to the editor menu.
    */
-  protected shouldAddToEditorMenu(_editor: Editor, _ctx: MarkdownFileInfo): boolean {
+  protected shouldAddToEditorMenu(_editor: Editor, _context: MarkdownFileInfo): boolean {
     return false;
   }
 
   private editorCheckCallback(params: EditorCommandHandlerEditorCheckCallbackParams): boolean {
     const {
       checking,
-      ctx,
+      context,
       editor
     } = params;
     if (!this.shouldAddToCommandPalette()) {
       return false;
     }
 
-    if (!this.canExecuteEditor(editor, ctx)) {
+    if (!this.canExecuteEditor(editor, context)) {
       return false;
     }
 
     if (!checking) {
-      invokeAsyncSafely(() => this.executeEditor(editor, ctx));
+      invokeAsyncSafely(() => this.executeEditor(editor, context));
     }
 
     return true;
@@ -250,15 +250,15 @@ export abstract class EditorCommandHandler extends CommandHandler {
 
   private handleEditorMenu(params: EditorCommandHandlerHandleEditorMenuParams): void {
     const {
-      ctx,
+      context,
       editor,
       menu
     } = params;
-    if (!this.shouldAddToEditorMenu(editor, ctx)) {
+    if (!this.shouldAddToEditorMenu(editor, context)) {
       return;
     }
 
-    if (!this.canExecuteEditor(editor, ctx)) {
+    if (!this.canExecuteEditor(editor, context)) {
       return;
     }
 
@@ -275,7 +275,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
         .setTitle(this.editorMenuItemName ?? this.name)
         .setIcon(this.icon)
         .setSection(section)
-        .onClick(convertAsyncToSync(async () => this.executeEditor(editor, ctx)));
+        .onClick(convertAsyncToSync(async () => this.executeEditor(editor, context)));
     });
   }
 }

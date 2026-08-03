@@ -23,9 +23,9 @@ const {
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs')>();
+  const $module = await importOriginal<typeof import('node:fs')>();
   return {
-    ...mod,
+    ...$module,
     existsSync: mockExistsSync
   };
 });

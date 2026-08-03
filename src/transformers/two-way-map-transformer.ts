@@ -49,6 +49,6 @@ export class TwoWayMapTransformer extends TypedTransformer<TwoWayMap<unknown, un
    * @returns The array of entries.
    */
   public override transformValue(value: TwoWayMap<unknown, unknown>): MapEntry[] {
-    return Array.from(value.entries());
+    return [...value.entries()];
   }
 }

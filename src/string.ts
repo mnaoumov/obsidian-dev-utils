@@ -29,20 +29,20 @@ export const EMPTY = '';
 /**
  * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export type AsyncReplacer<CapturedGroupArgs extends string[]> = ValueProvider<StringReplacement, ReplaceArgs<CapturedGroupArgs>>;
+export type AsyncReplacer<CapturedGroupArguments extends string[]> = ValueProvider<StringReplacement, ReplaceArguments<CapturedGroupArguments>>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
+export interface ReplaceArguments<CapturedGroupArguments extends string[]> {
   /**
    * Captured group arguments.
    */
-  capturedGroupArgs: CapturedGroupArgs;
+  capturedGroupArguments: CapturedGroupArguments;
 
   /**
    * Groups of the match.
@@ -73,9 +73,9 @@ export interface ReplaceArgs<CapturedGroupArgs extends string[]> {
 /**
  * A synchronous function that generates replacement strings, or a string to replace with.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export type Replacer<CapturedGroupArgs extends string[]> = ((args: ReplaceArgs<CapturedGroupArgs>) => StringReplacement) | StringReplacement;
+export type Replacer<CapturedGroupArguments extends string[]> = (($arguments: ReplaceArguments<CapturedGroupArguments>) => StringReplacement) | StringReplacement;
 
 type StringReplacement = MaybeReturn<string>;
 
@@ -83,13 +83,13 @@ type StringReplacement = MaybeReturn<string>;
  * Mapping of special characters to their escaped counterparts.
  */
 const ESCAPE_MAP: Record<string, string> = {
-  '\n': '\\n',
-  '\r': '\\r',
-  '\t': '\\t',
-  '\b': '\\b',
-  '\f': '\\f',
-  '\'': '\\\'',
-  '"': '\\"',
+  '\n': String.raw`\n`,
+  '\r': String.raw`\r`,
+  '\t': String.raw`\t`,
+  '\b': String.raw`\b`,
+  '\f': String.raw`\f`,
+  '\'': String.raw`\'`,
+  '"': String.raw`\"`,
   '\\': '\\\\'
 } as const;
 
@@ -112,7 +112,7 @@ export interface EnsureEndsWithParams {
   /**
    * The string to check.
    */
-  readonly str: string;
+  readonly $string: string;
 
   /**
    * The suffix to ensure.
@@ -125,14 +125,14 @@ export interface EnsureEndsWithParams {
  */
 export interface EnsureStartsWithParams {
   /**
+   * The string to check.
+   */
+  readonly $string: string;
+
+  /**
    * The prefix to ensure.
    */
   readonly prefix: string;
-
-  /**
-   * The string to check.
-   */
-  readonly str: string;
 }
 
 /**
@@ -140,14 +140,14 @@ export interface EnsureStartsWithParams {
  */
 export interface HasSingleOccurrenceParams {
   /**
+   * The string to check.
+   */
+  readonly $string: string;
+
+  /**
    * The search value to check for.
    */
   readonly searchValue: string;
-
-  /**
-   * The string to check.
-   */
-  readonly str: string;
 }
 
 /**
@@ -170,6 +170,11 @@ export interface IndentParams {
  */
 export interface InsertAtParams {
   /**
+   * The string to insert the substring into.
+   */
+  readonly $string: string;
+
+  /**
    * The index to end the substring at.
    */
   readonly endIndex?: number;
@@ -180,11 +185,6 @@ export interface InsertAtParams {
   readonly startIndex: number;
 
   /**
-   * The string to insert the substring into.
-   */
-  readonly str: string;
-
-  /**
    * The substring to insert.
    */
   readonly substring: string;
@@ -193,9 +193,14 @@ export interface InsertAtParams {
 /**
  * Parameters for {@link replaceAllAsync}.
  *
- * @typeParam ReplaceGroupArgs - The types of the captured group arguments.
+ * @typeParam ReplaceGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceAllAsyncParams<ReplaceGroupArgs extends string[]> {
+export interface ReplaceAllAsyncParams<ReplaceGroupArguments extends string[]> {
+  /**
+   * The string in which to perform replacements.
+   */
+  readonly $string: string;
+
   /**
    * The abort signal to control the execution of the function.
    */
@@ -204,39 +209,34 @@ export interface ReplaceAllAsyncParams<ReplaceGroupArgs extends string[]> {
   /**
    * A synchronous/asynchronous function that generates replacement strings, or a string to replace with.
    */
-  readonly replacer: AsyncReplacer<ReplaceGroupArgs>;
+  readonly replacer: AsyncReplacer<ReplaceGroupArguments>;
 
   /**
    * The string or regular expression to search for.
    */
   readonly searchValue: RegExp | string;
-
-  /**
-   * The string in which to perform replacements.
-   */
-  readonly str: string;
 }
 
 /**
  * Parameters for {@link replaceAll}.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceAllParams<CapturedGroupArgs extends string[]> {
+export interface ReplaceAllParams<CapturedGroupArguments extends string[]> {
+  /**
+   * The string in which to perform replacements.
+   */
+  readonly $string: string;
+
   /**
    * A replacer function that generates replacement strings, or a string to replace with.
    */
-  readonly replacer: Replacer<CapturedGroupArgs>;
+  readonly replacer: Replacer<CapturedGroupArguments>;
 
   /**
    * The string or regular expression to search for.
    */
   readonly searchValue: RegExp | string;
-
-  /**
-   * The string in which to perform replacements.
-   */
-  readonly str: string;
 }
 
 /**
@@ -244,16 +244,16 @@ export interface ReplaceAllParams<CapturedGroupArgs extends string[]> {
  */
 export interface TrimEndParams {
   /**
+   * The string to trim.
+   */
+  readonly $string: string;
+
+  /**
    * If `true`, throws an error if the string does not end with the suffix.
    *
    * @default `false`
    */
   readonly shouldValidate?: boolean;
-
-  /**
-   * The string to trim.
-   */
-  readonly str: string;
 
   /**
    * The suffix to remove from the end of the string.
@@ -266,6 +266,11 @@ export interface TrimEndParams {
  */
 export interface TrimStartParams {
   /**
+   * The string to trim.
+   */
+  readonly $string: string;
+
+  /**
    * The prefix to remove from the start of the string.
    */
   readonly prefix: string;
@@ -276,11 +281,6 @@ export interface TrimStartParams {
    * @default `false`
    */
   readonly shouldValidate?: boolean;
-
-  /**
-   * The string to trim.
-   */
-  readonly str: string;
 }
 
 /**
@@ -312,8 +312,8 @@ export interface UnindentParams {
  * @returns The string that ends with the suffix.
  */
 export function ensureEndsWith(params: EnsureEndsWithParams): string {
-  const { str, suffix } = params;
-  return str.endsWith(suffix) ? str : str + suffix;
+  const { $string, suffix } = params;
+  return $string.endsWith(suffix) ? $string : $string + suffix;
 }
 
 /**
@@ -321,11 +321,11 @@ export function ensureEndsWith(params: EnsureEndsWithParams): string {
  *
  * It replaces `CRLF` line endings with `LF`.
  *
- * @param str - The string.
+ * @param $string - The string.
  * @returns The string with `LF` line endings.
  */
-export function ensureLfEndings(str: string): string {
-  return str.replaceAll(/\r\n?/g, '\n');
+export function ensureLfEndings($string: string): string {
+  return $string.replaceAll(/\r\n?/g, '\n');
 }
 
 /**
@@ -335,35 +335,35 @@ export function ensureLfEndings(str: string): string {
  * @returns The string that starts with the prefix.
  */
 export function ensureStartsWith(params: EnsureStartsWithParams): string {
-  const { prefix, str } = params;
-  return str.startsWith(prefix) ? str : prefix + str;
+  const { $string, prefix } = params;
+  return $string.startsWith(prefix) ? $string : prefix + $string;
 }
 
 /**
  * Escapes special characters in a string.
  *
- * @param str - The string to escape.
+ * @param $string - The string to escape.
  * @returns The escaped string.
  */
-export function escape(str: string): string {
-  return replace(str, ESCAPE_MAP);
+export function escape($string: string): string {
+  return replace($string, ESCAPE_MAP);
 }
 
 /**
  * Returns a function that maps LF-normalized offsets to original offsets.
  *
- * @param str - The string to get the LF-normalized indices from.
+ * @param $string - The string to get the LF-normalized indices from.
  * @returns A function that maps LF-normalized offsets to original offsets.
  */
-export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOffset: number) => number {
+export function getLfNormalizedOffsetToOriginalOffsetMapper($string: string): (lfOffset: number) => number {
   const lfOffsetToOriginalOffsetMap: number[] = [];
 
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === CR && str[i + 1] === LF) {
-      lfOffsetToOriginalOffsetMap.push(i + 1);
-      i++;
+  for (let index = 0; index < $string.length; index++) {
+    if ($string[index] === CR && $string[index + 1] === LF) {
+      lfOffsetToOriginalOffsetMap.push(index + 1);
+      index++;
     } else {
-      lfOffsetToOriginalOffsetMap.push(i);
+      lfOffsetToOriginalOffsetMap.push(index);
     }
   }
 
@@ -372,7 +372,7 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
       return lfOffset;
     }
     if (lfOffset >= lfOffsetToOriginalOffsetMap.length) {
-      return lfOffset - lfOffsetToOriginalOffsetMap.length + str.length;
+      return lfOffset - lfOffsetToOriginalOffsetMap.length + $string.length;
     }
 
     assert(lfOffsetToOriginalOffsetMap[lfOffset] !== undefined, 'Could not map offset');
@@ -387,9 +387,9 @@ export function getLfNormalizedOffsetToOriginalOffsetMapper(str: string): (lfOff
  * @returns `true` if the string has a single occurrence of the search value, `false` otherwise.
  */
 export function hasSingleOccurrence(params: HasSingleOccurrenceParams): boolean {
-  const { searchValue, str } = params;
-  const firstIndex = str.indexOf(searchValue);
-  const lastIndex = str.lastIndexOf(searchValue);
+  const { $string, searchValue } = params;
+  const firstIndex = $string.indexOf(searchValue);
+  const lastIndex = $string.lastIndexOf(searchValue);
   return firstIndex !== NOT_FOUND_INDEX && firstIndex === lastIndex;
 }
 
@@ -412,71 +412,72 @@ export function indent(params: IndentParams): string {
  */
 export function insertAt(params: InsertAtParams): string {
   const {
+    $string,
     endIndex,
     startIndex,
-    str,
     substring
   } = params;
   const effectiveEndIndex = endIndex ?? startIndex;
-  return str.slice(0, startIndex) + substring + str.slice(effectiveEndIndex);
+  return $string.slice(0, startIndex) + substring + $string.slice(effectiveEndIndex);
 }
 
 /**
  * Converts a string into a valid JavaScript variable name by replacing invalid characters with underscores.
  *
- * @param str - The string to convert.
+ * @param $string - The string to convert.
  * @returns The valid variable name.
  */
-export function makeValidVariableName(str: string): string {
+export function makeValidVariableName($string: string): string {
   return replaceAll({
+    $string,
     replacer: '_',
-    searchValue: /[^a-zA-Z0-9_]/g,
-    str
+    searchValue: /[^a-zA-Z0-9_]/g
   });
 }
 
 /**
  * Normalizes a string by converting it to the NFC form and replacing non-breaking spaces with regular spaces.
  *
- * @param str - The string to normalize.
+ * @param $string - The string to normalize.
  * @returns The normalized string.
  */
-export function normalizeString(str: string): string {
+export function normalizeString($string: string): string {
   return replaceAll({
+    $string,
     replacer: ' ',
-    searchValue: /\u00A0|\u202F/g,
-    str
+    // eslint-disable-next-line unicorn/prefer-unicode-code-point-escapes -- These are the conventional spellings for U+00A0 and U+202F. The code-point form is only unambiguous with the `u` flag, so taking the fix would also change how the pattern is parsed.
+    searchValue: /\u00A0|\u202F/g
   }).normalize('NFC');
 }
 
 /**
  * Replaces occurrences of strings in a given string based on a replacements map.
  *
- * @param str - The string to perform replacements on.
+ * @param $string - The string to perform replacements on.
  * @param replacementsMap - An object mapping strings to their replacement values.
  * @returns The modified string with replacements applied.
  */
-export function replace(str: string, replacementsMap: Record<string, string>): string {
+export function replace($string: string, replacementsMap: Record<string, string>): string {
   const regExp = new RegExp(Object.keys(replacementsMap).map((source) => escapeRegExp(source)).join('|'), 'g');
   return replaceAll({
+    $string,
     replacer: ({ substring: source }) => ensureNonNullable(replacementsMap[source]),
-    searchValue: regExp,
-    str
+    searchValue: regExp
   });
 }
 
 /**
  * Replaces all occurrences of a search string or pattern with the results of an replacer function.
  *
- * @typeParam CapturedGroupArgs - The types of the captured group arguments.
+ * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  * @param params - The parameters.
  * @returns The string with all replacements made.
  */
-export function replaceAll<CapturedGroupArgs extends string[]>(params: ReplaceAllParams<CapturedGroupArgs>): string {
-  const { replacer, str } = params;
+export function replaceAll<CapturedGroupArguments extends string[]>(params: ReplaceAllParams<CapturedGroupArguments>): string {
+  const { $string, replacer } = params;
   let { searchValue } = params;
-  if (typeof replacer === 'undefined') {
-    return str;
+  if (replacer === undefined) {
+    return $string;
   }
 
   if (searchValue instanceof RegExp && !searchValue.global) {
@@ -484,82 +485,83 @@ export function replaceAll<CapturedGroupArgs extends string[]>(params: ReplaceAl
   }
 
   if (typeof replacer === 'string') {
-    return str.replaceAll(searchValue, replacer);
+    // eslint-disable-next-line unicorn/no-unsafe-string-replacement -- The pass-through is load-bearing: callers rely on `$&` and friends being expanded. `escapeAlias` passes `\$&` to prefix each matched character with a backslash, and `cli-utils` passes `^$&`. Inserting the string literally would break both.
+    return $string.replaceAll(searchValue, replacer);
   }
 
-  return str.replaceAll(searchValue, (substring: string, ...args: unknown[]) => {
+  return $string.replaceAll(searchValue, (substring: string, ...$arguments: unknown[]) => {
     const SOURCE_INDEX_OFFSET_FOR_GROUP_ARG = 2;
-    const hasGroupsArg = typeof args.at(-1) === 'object';
-    const sourceIndex = hasGroupsArg ? args.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : args.length - 1;
+    const hasGroupsArgument = typeof $arguments.at(-1) === 'object';
+    const sourceIndex = hasGroupsArgument ? $arguments.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : $arguments.length - 1;
 
-    const replaceArgs: ReplaceArgs<CapturedGroupArgs> = {
+    const replaceArguments: ReplaceArguments<CapturedGroupArguments> = {
       // eslint-disable-next-line no-restricted-syntax -- Can't avoid.
-      capturedGroupArgs: [] as unknown[] as CapturedGroupArgs,
-      groups: hasGroupsArg ? args.at(-1) as Record<string, string | undefined> : undefined,
+      capturedGroupArguments: [] as unknown[] as CapturedGroupArguments,
+      groups: hasGroupsArgument ? $arguments.at(-1) as Record<string, string | undefined> : undefined,
       missingGroupIndices: [],
-      offset: args.at(sourceIndex - 1) as number,
-      source: args.at(sourceIndex) as string,
+      offset: $arguments.at(sourceIndex - 1) as number,
+      source: $arguments.at(sourceIndex) as string,
       substring
     };
 
-    for (let i = 0; i < sourceIndex - 1; i++) {
-      const item = args[i];
+    for (let index = 0; index < sourceIndex - 1; index++) {
+      const item = $arguments[index];
       if (typeof item === 'string') {
-        replaceArgs.capturedGroupArgs.push(item);
+        replaceArguments.capturedGroupArguments.push(item);
         /* v8 ignore start -- v8 tracks the implicit else branch that never happens. */
-      } else if (typeof item === 'undefined') {
+      } else if (item === undefined) {
         /* v8 ignore stop */
-        replaceArgs.missingGroupIndices.push(i);
+        replaceArguments.missingGroupIndices.push(index);
       }
     }
 
-    return (replacer(replaceArgs) as string | undefined) ?? replaceArgs.substring;
+    return (replacer(replaceArguments) as string | undefined) ?? replaceArguments.substring;
   });
 }
 
 /**
  * Asynchronously replaces all occurrences of a search string or pattern with the results of an asynchronous replacer function.
  *
- * @typeParam ReplaceGroupArgs - The types of the captured group arguments.
+ * @typeParam ReplaceGroupArguments - The types of the captured group arguments.
  * @param params - The parameters.
  * @returns A {@link Promise} that resolves to the string with all replacements made.
  */
-export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(params: ReplaceAllAsyncParams<ReplaceGroupArgs>): Promise<string> {
-  const { replacer, searchValue, str } = params;
+export async function replaceAllAsync<ReplaceGroupArguments extends string[]>(params: ReplaceAllAsyncParams<ReplaceGroupArguments>): Promise<string> {
+  const { $string, replacer, searchValue } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
   if (typeof replacer === 'string') {
     return replaceAll({
+      $string,
       replacer,
-      searchValue,
-      str
+      searchValue
     });
   }
 
   const replacementAsyncFns: (() => Promise<StringReplacement>)[] = [];
 
-  replaceAll<ReplaceGroupArgs>({
-    replacer: (args) => {
-      replacementAsyncFns.push(() => resolveValue(replacer, { abortSignal, ...args }));
+  replaceAll<ReplaceGroupArguments>({
+    $string,
+    replacer: ($arguments) => {
+      replacementAsyncFns.push(() => resolveValue(replacer, { abortSignal, ...$arguments }));
       return '';
     },
-    searchValue,
-    str
+    searchValue
   });
 
   const replacements: StringReplacement[] = [];
 
-  for (const asyncFn of replacementAsyncFns) {
+  for (const asyncFunction of replacementAsyncFns) {
     abortSignal.throwIfAborted();
-    replacements.push(await asyncFn());
+    replacements.push(await asyncFunction());
   }
 
   abortSignal.throwIfAborted();
   return replaceAll({
-    replacer: (args): string => replacements.shift() ?? args.substring,
-    searchValue,
-    str
+    $string,
+    replacer: ($arguments): string => replacements.shift() ?? $arguments.substring,
+    searchValue
   });
 }
 
@@ -571,16 +573,16 @@ export async function replaceAllAsync<ReplaceGroupArgs extends string[]>(params:
  * @throws If `shouldValidate` is `true` and the string does not end with the suffix.
  */
 export function trimEnd(params: TrimEndParams): string {
-  const { shouldValidate, str, suffix } = params;
-  if (str.endsWith(suffix)) {
-    return str.slice(0, -suffix.length);
+  const { $string, shouldValidate, suffix } = params;
+  if ($string.endsWith(suffix)) {
+    return $string.slice(0, -suffix.length);
   }
 
   if (shouldValidate) {
-    throw new Error(`String ${str} does not end with suffix ${suffix}`);
+    throw new Error(`String ${$string} does not end with suffix ${suffix}`);
   }
 
-  return str;
+  return $string;
 }
 
 /**
@@ -591,26 +593,26 @@ export function trimEnd(params: TrimEndParams): string {
  * @throws If `shouldValidate` is `true` and the string does not start with the prefix.
  */
 export function trimStart(params: TrimStartParams): string {
-  const { prefix, shouldValidate, str } = params;
-  if (str.startsWith(prefix)) {
-    return str.slice(prefix.length);
+  const { $string, prefix, shouldValidate } = params;
+  if ($string.startsWith(prefix)) {
+    return $string.slice(prefix.length);
   }
 
   if (shouldValidate) {
-    throw new Error(`String ${str} does not start with prefix ${prefix}`);
+    throw new Error(`String ${$string} does not start with prefix ${prefix}`);
   }
 
-  return str;
+  return $string;
 }
 
 /**
  * Unescapes a string by replacing escape sequences with their corresponding characters.
  *
- * @param str - The string to unescape.
+ * @param $string - The string to unescape.
  * @returns The unescaped string.
  */
-export function unescape(str: string): string {
-  return replace(str, UNESCAPE_MAP);
+export function unescape($string: string): string {
+  return replace($string, UNESCAPE_MAP);
 }
 
 /**

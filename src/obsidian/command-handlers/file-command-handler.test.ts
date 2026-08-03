@@ -49,16 +49,16 @@ interface MockContext {
 }
 
 class TestFileHandler extends FileCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   protected override canExecuteFile(file: TFileOriginal): boolean {
     super.canExecuteFile(file);
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async executeFile(_file: TFileOriginal): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 
   protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
@@ -149,10 +149,10 @@ describe('FileCommandHandler', () => {
   describe('default methods', () => {
     it('should use default canExecuteFile returning true', async () => {
       class DefaultFileHandler extends FileCommandHandler {
-        public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+        public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
         protected override async executeFile(_file: TFileOriginal): Promise<void> {
-          await this.executeFn();
+          await this.executeFunction();
         }
       }
 
@@ -349,17 +349,17 @@ describe('FileCommandHandler', () => {
       const file2 = createMockTFile('b.md');
 
       const menu = strictProxy<MenuOriginal>({});
-      const addItem = vi.fn((cb: (item: unknown) => void) => {
+      const addItem = vi.fn((callback: (item: unknown) => void) => {
         const item = {
-          onClick: vi.fn((clickCb: () => void) => {
-            clickCb();
+          onClick: vi.fn((clickCallback: () => void) => {
+            clickCallback();
             return item;
           }),
           setIcon: vi.fn().mockReturnThis(),
           setSection: vi.fn().mockReturnThis(),
           setTitle: vi.fn().mockReturnThis()
         };
-        cb(item);
+        callback(item);
         return menu;
       });
       Object.assign(menu, { addItem });

@@ -31,8 +31,8 @@ function createMockApp(): MockApp {
 
   const app = strictProxy<AppOriginal>({
     workspace: {
-      onLayoutReady: vi.fn((cb: () => void) => {
-        layoutReadyCallback = cb;
+      onLayoutReady: vi.fn((callback: () => void) => {
+        layoutReadyCallback = callback;
       })
     }
   });

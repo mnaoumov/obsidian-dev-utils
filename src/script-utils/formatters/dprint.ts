@@ -60,5 +60,5 @@ export async function format(options?: FormatOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : ['**/*'];
   /* v8 ignore stop */
-  await execFromRoot(['npx', 'dprint', command, '--config', dprintJsonPath, { batchedArgs: targets }]);
+  await execFromRoot(['npx', 'dprint', command, '--config', dprintJsonPath, { batchedArguments: targets }]);
 }

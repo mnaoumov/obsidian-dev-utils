@@ -12,7 +12,10 @@ import {
   vi
 } from 'vitest';
 
-import { isDisposable } from '../../disposable.ts';
+import {
+  dispose,
+  isDisposable
+} from '../../disposable.ts';
 import { castTo } from '../../object-utils.ts';
 import { asDisposableComponent } from './disposable-component.ts';
 
@@ -24,7 +27,7 @@ describe('asDisposableComponent', () => {
     expect(isDisposable(wrapped)).toBe(true);
 
     const unloadSpy = vi.spyOn(component, 'unload');
-    wrapped[Symbol.dispose]();
+    dispose(wrapped);
     expect(unloadSpy).toHaveBeenCalledOnce();
   });
 

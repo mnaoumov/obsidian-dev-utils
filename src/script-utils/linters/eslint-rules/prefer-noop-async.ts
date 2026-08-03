@@ -21,7 +21,7 @@ export const preferNoopAsync: Rule.RuleModule = {
       'CallExpression'(node: Rule.Node): void {
         const callNode = node as TSESTree.CallExpression;
 
-        if (!checkIsPromiseResolveWithNoArgs(callNode)) {
+        if (!isPromiseResolveWithNoArguments(callNode)) {
           return;
         }
 
@@ -54,7 +54,7 @@ export const preferNoopAsync: Rule.RuleModule = {
  * @param node - The call expression node.
  * @returns `true` if the node is `Promise.resolve()` with no arguments.
  */
-function checkIsPromiseResolveWithNoArgs(node: TSESTree.CallExpression): boolean {
+function isPromiseResolveWithNoArguments(node: TSESTree.CallExpression): boolean {
   if (node.arguments.length > 0) {
     return false;
   }

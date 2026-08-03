@@ -44,17 +44,17 @@ interface GenerateOptions {
   readonly fonts: Font[];
   readonly logoDataUri: null | string;
   readonly manifest: CacheManifest;
-  readonly outputDir: string;
+  readonly outputDirectory: string;
 }
 
-async function collectPages(contentDocsDir: string): Promise<PageEntry[]> {
+async function collectPages(contentDocsDirectory: string): Promise<PageEntry[]> {
   const pages: PageEntry[] = [];
-  await walkDir(contentDocsDir, contentDocsDir, pages);
+  await walkDirectory(contentDocsDirectory, contentDocsDirectory, pages);
   return pages;
 }
 
 async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
-  const { changedPages, fonts, logoDataUri, manifest, outputDir } = options;
+  const { changedPages, fonts, logoDataUri, manifest, outputDirectory } = options;
   let completed = 0;
   const total = changedPages.length;
 
@@ -67,7 +67,7 @@ async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
       if (!page) {
         continue;
       }
-      const outputPath = `${outputDir}/${page.slug}.png`;
+      const outputPath = `${outputDirectory}/${page.slug}.png`;
       await mkdir(dirname(outputPath), { recursive: true });
       const png = await renderOgImage(page.params, fonts, logoDataUri);
       await writeFile(outputPath, png);
@@ -79,7 +79,7 @@ async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
     }
   }
 
-  for (let i = 0; i < CONCURRENCY; i++) {
+  for (let $index = 0; $index < CONCURRENCY; $index++) {
     pool.push(processNext());
   }
 
@@ -96,32 +96,32 @@ async function loadCacheManifest(manifestPath: string): Promise<CacheManifest> {
 
 async function main(): Promise<void> {
   // Scripts/docs-gen/generate-og-images.ts → repo root is three levels up.
-  const scriptDir = dirname(toPosixPath(fileURLToPath(import.meta.url)));
-  const repoRoot = dirname(dirname(scriptDir));
-  const docsDir = `${repoRoot}/docs`;
-  const contentDocsDir = `${docsDir}/src/content/docs`;
-  const outputDir = `${docsDir}/public/og`;
-  const manifestPath = `${outputDir}/.cache-manifest.json`;
-  const fontsDir = `${scriptDir}/assets/fonts`;
-  const faviconPath = `${docsDir}/public/favicon.svg`;
+  const scriptDirectory = dirname(toPosixPath(fileURLToPath(import.meta.url)));
+  const repoRoot = dirname(dirname(scriptDirectory));
+  const docsDirectory = `${repoRoot}/docs`;
+  const contentDocsDirectory = `${docsDirectory}/src/content/docs`;
+  const outputDirectory = `${docsDirectory}/public/og`;
+  const manifestPath = `${outputDirectory}/.cache-manifest.json`;
+  const fontsDirectory = `${scriptDirectory}/assets/fonts`;
+  const faviconPath = `${docsDirectory}/public/favicon.svg`;
 
-  if (!existsSync(contentDocsDir)) {
-    console.warn(`OG images: content dir not found (${contentDocsDir}); skipping.`);
+  if (!existsSync(contentDocsDirectory)) {
+    console.warn(`OG images: content dir not found (${contentDocsDirectory}); skipping.`);
     return;
   }
 
   // Load fonts first — satori cannot render without them.
-  const fonts = await loadFonts(fontsDir);
+  const fonts = await loadFonts(fontsDirectory);
   if (!fonts) {
     console.warn(
-      `OG images: no fonts available in ${fontsDir}; skipping OG image generation. `
+      `OG images: no fonts available in ${fontsDirectory}; skipping OG image generation. `
         + 'Add Inter TTFs (inter-latin-400-normal.ttf / inter-latin-700-normal.ttf) there to enable it.'
     );
     return;
   }
 
   // Collect all pages
-  const pages = await collectPages(contentDocsDir);
+  const pages = await collectPages(contentDocsDirectory);
   console.warn(`OG images: found ${String(pages.length)} pages`);
 
   // Load cache manifest
@@ -148,7 +148,7 @@ async function main(): Promise<void> {
     fonts,
     logoDataUri,
     manifest,
-    outputDir
+    outputDirectory
   });
 
   // Write updated manifest
@@ -165,7 +165,7 @@ function parseFrontMatter(content: string): Record<string, unknown> {
   return (parseYaml(frontMatter) as null | Record<string, unknown>) ?? {};
 }
 
-async function parsePage(filePath: string, contentDocsDir: string): Promise<null | PageEntry> {
+async function parsePage(filePath: string, contentDocsDirectory: string): Promise<null | PageEntry> {
   const content = await readFile(filePath, 'utf-8');
   const data = parseFrontMatter(content);
 
@@ -181,7 +181,7 @@ async function parsePage(filePath: string, contentDocsDir: string): Promise<null
     | undefined;
   const badgeText = badge?.['text'];
 
-  const slug = getOgImagePageSlug(data, filePath, contentDocsDir);
+  const slug = getOgImagePageSlug(data, filePath, contentDocsDirectory);
   const params: OgImageParams = {
     badge: badgeText,
     description,
@@ -200,14 +200,14 @@ function toPosixPath(filePath: string): string {
   return filePath.replaceAll('\\', '/');
 }
 
-async function walkDir(dir: string, contentDocsDir: string, pages: PageEntry[]): Promise<void> {
-  const entries = await readdir(dir, { withFileTypes: true });
+async function walkDirectory(directory: string, contentDocsDirectory: string, pages: PageEntry[]): Promise<void> {
+  const entries = await readdir(directory, { withFileTypes: true });
   for (const entry of entries) {
-    const fullPath = `${dir}/${entry.name}`;
+    const fullPath = `${directory}/${entry.name}`;
     if (entry.isDirectory()) {
-      await walkDir(fullPath, contentDocsDir, pages);
+      await walkDirectory(fullPath, contentDocsDirectory, pages);
     } else if (entry.name.endsWith('.md') || entry.name.endsWith('.mdx')) {
-      const page = await parsePage(fullPath, contentDocsDir);
+      const page = await parsePage(fullPath, contentDocsDirectory);
       if (page) {
         pages.push(page);
       }

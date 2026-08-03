@@ -68,7 +68,7 @@ export declare namespace DefaultFunctions {
   /** List constructor function. */
   const list: FunctionImpl;
   /** Object constructor function. */
-  const object: FunctionImpl;
+  const $object: FunctionImpl;
   /** Internal link constructor function. */
   const link: FunctionImpl;
   /** Embed and un-embed a link. */
@@ -84,14 +84,14 @@ export declare namespace DefaultFunctions {
   const durationformat: FunctionImpl;
   const localtime: FunctionImpl;
   /** Number constructor function. */
-  const number: FunctionImpl;
+  const $number: FunctionImpl;
   /** Format a number using a standard currency format. */
   const currencyformat: FunctionImpl;
   /**
    * Convert any value to a reasonable internal string representation. Most useful for dates, strings, numbers, and
    * so on.
    */
-  const string: FunctionImpl;
+  const $string: FunctionImpl;
   const round: FunctionImpl;
   const trunc: FunctionImpl;
   const floor: FunctionImpl;
@@ -132,7 +132,7 @@ export declare namespace DefaultFunctions {
   const average: FunctionImpl;
   const product: FunctionImpl;
   const join: FunctionImpl;
-  const any: FunctionImpl;
+  const $any: FunctionImpl;
   const all: FunctionImpl;
   const none: FunctionImpl;
   const filter: FunctionImpl;

@@ -39,8 +39,8 @@ import {
   cleanupEmptyFolders,
   copySafe,
   createFolderSafe,
-  createTempFile,
-  createTempFolder,
+  createTemporaryFile,
+  createTemporaryFolder,
   deleteEmptyFolder,
   deleteEmptyFolderHierarchy,
   EmptyFolderBehavior,
@@ -71,9 +71,9 @@ vi.mock('../obsidian/async-with-notice.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: GenericObject) => unknown) => {
+  t: vi.fn(($function: (messages: GenericObject) => unknown) => {
     try {
-      fn({ obsidianDevUtils: { vault: { processFile: 'mock' } } });
+      $function({ obsidianDevUtils: { vault: { processFile: 'mock' } } });
     } catch { /* Ignore */ }
     return 'mock-t';
   })
@@ -244,15 +244,15 @@ describe('getNoteFilesSorted', () => {
 describe('createFolderSafe', () => {
   it('should return false if folder already exists', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
-    const result = await createFolderSafe(app, 'existing-folder');
-    expect(result).toBe(false);
+    const wasFolderCreated = await createFolderSafe(app, 'existing-folder');
+    expect(wasFolderCreated).toBe(false);
   });
 
   it('should create folder and return true when it does not exist', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
-    const result = await createFolderSafe(app, 'new-folder');
-    expect(result).toBe(true);
+    const wasFolderCreated = await createFolderSafe(app, 'new-folder');
+    expect(wasFolderCreated).toBe(true);
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
   });
 
@@ -260,8 +260,8 @@ describe('createFolderSafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder').mockRejectedValue(new Error('Folder already exists'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(true);
-    const result = await createFolderSafe(app, 'race-condition-folder');
-    expect(result).toBe(true);
+    const wasFolderCreated = await createFolderSafe(app, 'race-condition-folder');
+    expect(wasFolderCreated).toBe(true);
   });
 
   it('should throw if createFolder fails and folder does not exist', async () => {
@@ -512,28 +512,28 @@ describe('isEmptyFolder', () => {
   it('should return true for an empty folder', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
-    const result = await isEmptyFolder(app, 'empty-folder');
-    expect(result).toBe(true);
+    const isEmpty = await isEmptyFolder(app, 'empty-folder');
+    expect(isEmpty).toBe(true);
   });
 
   it('should return false for a folder with files', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: ['full-folder/note.md'], folders: [] });
-    const result = await isEmptyFolder(app, 'full-folder');
-    expect(result).toBe(false);
+    const isEmpty = await isEmptyFolder(app, 'full-folder');
+    expect(isEmpty).toBe(false);
   });
 
   it('should return false for a folder with subfolders', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: ['full-folder/sub'] });
-    const result = await isEmptyFolder(app, 'full-folder');
-    expect(result).toBe(false);
+    const isEmpty = await isEmptyFolder(app, 'full-folder');
+    expect(isEmpty).toBe(false);
   });
 
   it('should return true for a path that is not a folder', async () => {
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue(null);
-    const result = await isEmptyFolder(app, 'nonexistent');
-    expect(result).toBe(true);
+    const isEmpty = await isEmptyFolder(app, 'nonexistent');
+    expect(isEmpty).toBe(true);
   });
 
   it('should work with TFolder instances', async () => {
@@ -541,8 +541,8 @@ describe('isEmptyFolder', () => {
     assertNonNullable(folder);
     vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue({ ctime: 0, mtime: 0, size: 0, type: 'folder' });
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
-    const result = await isEmptyFolder(app, folder);
-    expect(result).toBe(true);
+    const isEmpty = await isEmptyFolder(app, folder);
+    expect(isEmpty).toBe(true);
   });
 });
 
@@ -627,8 +627,8 @@ describe('getSafeRenamePath', () => {
     parentFolder.getParentPrefix = (): string => 'dir/';
     mockApp.vault.setVaultAbstractFile__('dir', mockParentFolder);
 
-    const mockDirFile = TFile.create__(mockApp.vault, 'dir/old.md');
-    mockApp.vault.setVaultAbstractFile__('dir/old.md', mockDirFile);
+    const mockDirectoryFile = TFile.create__(mockApp.vault, 'dir/old.md');
+    mockApp.vault.setVaultAbstractFile__('dir/old.md', mockDirectoryFile);
 
     const result = getSafeRenamePath({ app, newPath: 'dir/OLD.md', oldPathOrAbstractFile: 'dir/old.md' });
     expect(result).toBe('dir/OLD.md');
@@ -791,34 +791,34 @@ describe('invokeWithFileSystemLock', () => {
   });
 
   it('should call the function with the file content', async () => {
-    const fn = vi.fn();
-    await invokeWithFileSystemLock({ app, fn, pathOrFile: 'locked.md' });
-    expect(fn).toHaveBeenCalledWith('');
+    const $function = vi.fn();
+    await invokeWithFileSystemLock({ $function, app, pathOrFile: 'locked.md' });
+    expect($function).toHaveBeenCalledWith('');
   });
 
   it('should call vault.process with the file', async () => {
     vi.spyOn(app.vault, 'process');
-    await invokeWithFileSystemLock({ app, fn: vi.fn(), pathOrFile: 'locked.md' });
+    await invokeWithFileSystemLock({ $function: vi.fn(), app, pathOrFile: 'locked.md' });
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
   it('should work with TFile instances', async () => {
     const file = app.vault.getFileByPath('locked.md');
     assertNonNullable(file);
-    const fn = vi.fn();
-    await invokeWithFileSystemLock({ app, fn, pathOrFile: file });
-    expect(fn).toHaveBeenCalled();
+    const $function = vi.fn();
+    await invokeWithFileSystemLock({ $function, app, pathOrFile: file });
+    expect($function).toHaveBeenCalled();
   });
 
   it('should return the content unchanged after fn is called', async () => {
     vi.spyOn(app.vault, 'process');
-    await invokeWithFileSystemLock({ app, fn: vi.fn(), pathOrFile: 'locked.md' });
+    await invokeWithFileSystemLock({ $function: vi.fn(), app, pathOrFile: 'locked.md' });
     // The process function should return the same content
     const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
     if (call) {
-      const processFn = call[1];
-      expect(processFn('test content')).toBe('test content');
+      const processFunction = call[1];
+      expect(processFunction('test content')).toBe('test content');
     }
   });
 });
@@ -862,13 +862,13 @@ describe('createTempFile', () => {
     mockApp = App.createConfigured__({ files: { 'existing.md': '' } });
     app = mockApp.asOriginalType__();
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
-    const cleanup = await createTempFile(app, 'existing.md');
+    const cleanup = await createTemporaryFile(app, 'existing.md');
     await expect(cleanup()).resolves.toBeUndefined();
   });
 
   it('should create file and return cleanup function', async () => {
     vi.spyOn(app.vault, 'create');
-    const cleanup = await createTempFile(app, 'new.md');
+    const cleanup = await createTemporaryFile(app, 'new.md');
     expect(vi.mocked(app.vault.create)).toHaveBeenCalledWith('new.md', '');
     expect(typeof cleanup).toBe('function');
   });
@@ -876,14 +876,14 @@ describe('createTempFile', () => {
   it('should not throw when vault.create fails but file now exists', async () => {
     vi.spyOn(app.vault, 'create').mockRejectedValue(new Error('Already exists'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(true);
-    const cleanup = await createTempFile(app, 'race.md');
+    const cleanup = await createTemporaryFile(app, 'race.md');
     expect(typeof cleanup).toBe('function');
   });
 
   it('should throw when vault.create fails and file does not exist', async () => {
     vi.spyOn(app.vault, 'create').mockRejectedValue(new Error('Disk full'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(false);
-    await expect(createTempFile(app, 'fail.md')).rejects.toThrow('Disk full');
+    await expect(createTemporaryFile(app, 'fail.md')).rejects.toThrow('Disk full');
   });
 
   it('cleanup should trash non-deleted file', async () => {
@@ -892,7 +892,7 @@ describe('createTempFile', () => {
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     vi.spyOn(app.fileManager, 'trashFile');
 
-    const cleanup = await createTempFile(app, 'new.md');
+    const cleanup = await createTemporaryFile(app, 'new.md');
 
     // Set up the file in fileMap for cleanup to find it
     mockApp.vault.setVaultAbstractFile__('new.md', mockCreatedFile);
@@ -906,7 +906,7 @@ describe('createTempFile', () => {
     vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
     vi.spyOn(app.fileManager, 'trashFile');
 
-    const cleanup = await createTempFile(app, 'new.md');
+    const cleanup = await createTemporaryFile(app, 'new.md');
 
     // Put file in fileMap but mark as deleted
     mockApp.vault.setVaultAbstractFile__('new.md', mockCreatedFile);
@@ -928,7 +928,7 @@ describe('createTempFolder', () => {
     mockApp = App.createConfigured__({ files: { 'existing/': '' } });
     app = mockApp.asOriginalType__();
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
-    const cleanup = await createTempFolder(app, 'existing');
+    const cleanup = await createTemporaryFolder(app, 'existing');
     await expect(cleanup()).resolves.toBeUndefined();
   });
 
@@ -936,7 +936,7 @@ describe('createTempFolder', () => {
     vi.spyOn(app.vault, 'createFolder');
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
 
-    const cleanup = await createTempFolder(app, 'new-folder');
+    const cleanup = await createTemporaryFolder(app, 'new-folder');
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
     expect(typeof cleanup).toBe('function');
   });
@@ -945,7 +945,7 @@ describe('createTempFolder', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.fileManager, 'trashFile');
 
-    const cleanup = await createTempFolder(app, 'temp');
+    const cleanup = await createTemporaryFolder(app, 'temp');
 
     // Set up the folder in fileMap for cleanup to find it
     const mockFolder = TFolder.create__(mockApp.vault, 'temp');
@@ -959,7 +959,7 @@ describe('createTempFolder', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.fileManager, 'trashFile');
 
-    const cleanup = await createTempFolder(app, 'temp');
+    const cleanup = await createTemporaryFolder(app, 'temp');
 
     const mockFolder = TFolder.create__(mockApp.vault, 'temp');
     const folder = mockFolder.asOriginalType2__();
@@ -975,11 +975,11 @@ describe('processFile', () => {
     lockForPath: () => ({ [Symbol.dispose]: noop })
   });
 
-  function setupRetryToInvokeOperationFn(): void {
+  function setupRetryToInvokeOperationFunction(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      await operationFn(abortSignal);
+      await operationFunction(abortSignal);
     });
   }
 
@@ -996,16 +996,16 @@ describe('processFile', () => {
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
 
     expect(mockedRetryWithTimeoutNotice).toHaveBeenCalledOnce();
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
-    expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
+    const callArgument = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArgument?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
   it('should pass shouldShowTimeoutNotice from params', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent, shouldShowTimeoutNotice: false });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
-    expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
+    const callArgument = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArgument?.['shouldShowTimeoutNotice']).toBe(false);
   });
 
   it('should forward a supplied pluginNoticeComponent to retryWithTimeoutNotice', async () => {
@@ -1013,26 +1013,26 @@ describe('processFile', () => {
     const pluginNoticeComponent = strictProxy<PluginNoticeComponent>({});
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent, resourceLockComponent: defaultResourceLockComponent });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
-    expect(callArg?.['pluginNoticeComponent']).toBe(pluginNoticeComponent);
-    expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
+    const callArgument = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArgument?.['pluginNoticeComponent']).toBe(pluginNoticeComponent);
+    expect(callArgument?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
   it('should forward a null pluginNoticeComponent when none is supplied', async () => {
     mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
-    expect(callArg?.['pluginNoticeComponent']).toBeNull();
+    const callArgument = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArgument?.['pluginNoticeComponent']).toBeNull();
   });
 
   it('should write new content when content matches', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     // Vault.read returns 'old content', vault.process calls fn with '' by default
     // We need vault.process to call fn with the same content readSafe returns
-    vi.spyOn(app.vault, 'process').mockImplementation(async (_file, fn) => {
+    vi.spyOn(app.vault, 'process').mockImplementation(async (_file, $function) => {
       await noopAsync();
-      return fn('old content');
+      return $function('old content');
     });
 
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
@@ -1042,14 +1042,14 @@ describe('processFile', () => {
   it('should return false when content changed between read and write', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      operationResult = await operationFn(abortSignal);
+      operationResult = await operationFunction(abortSignal);
     });
     // Vault.read returns 'old content' but vault.process sees 'changed content'
-    vi.spyOn(app.vault, 'process').mockImplementation(async (_file, fn) => {
+    vi.spyOn(app.vault, 'process').mockImplementation(async (_file, $function) => {
       await noopAsync();
-      return fn('changed content');
+      return $function('changed content');
     });
 
     await processFile({ app, newContentProvider: 'new content', pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
@@ -1057,14 +1057,14 @@ describe('processFile', () => {
   });
 
   it('should throw when file is missing and shouldFailOnMissingFile is true', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
 
     await expect(processFile({ app, newContentProvider: 'content', pathOrFile: 'missing.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent, shouldFailOnMissingFile: true }))
       .rejects.toThrow('File \'missing.md\' not found');
   });
 
   it('should succeed when file is missing and shouldFailOnMissingFile is false', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     mockApp = App.createConfigured__(); // No files
     app = mockApp.asOriginalType__();
 
@@ -1075,9 +1075,9 @@ describe('processFile', () => {
   it('should return false when newContentProvider returns null', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      operationResult = await operationFn(abortSignal);
+      operationResult = await operationFunction(abortSignal);
     });
 
     await processFile({ app, newContentProvider: () => null, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
@@ -1085,7 +1085,7 @@ describe('processFile', () => {
   });
 
   it('should handle doesFileExist being false after readSafe succeeds', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
 
     // ReadSafe succeeds, but file disappears before the second invokeFileActionSafe
     vi.spyOn(app.vault, 'read').mockImplementation(async () => {

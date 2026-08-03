@@ -95,7 +95,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    * @returns The component.
    */
   public addOptions(options: Map<T, string>): this {
-    for (const [value, display] of options.entries()) {
+    for (const [value, display] of options) {
       this.addOption(value, display);
     }
     return this;
@@ -107,7 +107,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    * @returns The value of the component.
    */
   public getValue(): readonly T[] {
-    const indices = this.multipleDropdownComponent.getValue().map((str) => parseInt(str, 10));
+    const indices = this.multipleDropdownComponent.getValue().map(($string) => parseInt($string, 10));
     return indices.map((index) => this.values[index]).filter((value): value is T => value !== undefined);
   }
 
@@ -129,12 +129,12 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
   /**
    * Sets the disabled state of the component.
    *
-   * @param disabled - The disabled state to set.
+   * @param isDisabled - The disabled state to set.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.multipleDropdownComponent.setDisabled(disabled);
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.multipleDropdownComponent.setDisabled(isDisabled);
     return this;
   }
 
@@ -146,7 +146,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    */
   public setValue(value: readonly T[]): this {
     const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
-    this.multipleDropdownComponent.setValue(indices.map((index) => String(index)));
+    this.multipleDropdownComponent.setValue(indices.map(String));
     return this;
   }
 

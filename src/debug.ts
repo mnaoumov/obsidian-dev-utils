@@ -28,7 +28,7 @@ export interface PrintWithStackTraceParams {
   /**
    * The arguments to print.
    */
-  readonly args: unknown[];
+  readonly $arguments: unknown[];
 
   /**
    * The debugger instance.
@@ -53,7 +53,7 @@ interface LogWithCallerParams {
   /**
    * The arguments to print.
    */
-  readonly args: unknown[];
+  readonly $arguments: unknown[];
 
   /**
    * The number of frames to skip in the stack trace.
@@ -105,9 +105,9 @@ export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
   let debuggerEx = debuggersMap.get(key);
   if (!debuggerEx) {
     debuggerEx = getSharedDebugLibInstance()(namespace);
-    debuggerEx.log = (message: string, ...args: unknown[]): void => {
+    debuggerEx.log = (message: string, ...$arguments: unknown[]): void => {
       logWithCaller({
-        args,
+        $arguments,
         framesToSkip,
         message,
         namespace
@@ -137,17 +137,17 @@ export function getLibDebugger(namespace: string): Debugger {
  */
 export function printWithStackTrace(params: PrintWithStackTraceParams): void {
   const {
-    args,
+    $arguments,
     debuggerInstance,
     message,
     stackTrace
   } = params;
   if (!Library.shouldPrintStackTrace) {
-    debuggerInstance(message, ...args);
+    debuggerInstance(message, ...$arguments);
     return;
   }
 
-  debuggerInstance(message, ...args, '\n\n---\nContext stack trace:\n', makeStackTraceError(stackTrace));
+  debuggerInstance(message, ...$arguments, '\n\n---\nContext stack trace:\n', makeStackTraceError(stackTrace));
 }
 
 /**
@@ -174,12 +174,10 @@ function disableNamespaces(namespaces: string | string[]): void {
       continue;
     }
     const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-    if (set.has(namespace)) {
-      set.delete(namespace);
-    }
+    set.delete(namespace);
     set.add(negatedNamespace);
   }
-  setNamespaces(Array.from(set));
+  setNamespaces([...set]);
 }
 
 function enableNamespaces(namespaces: string | string[]): void {
@@ -187,13 +185,11 @@ function enableNamespaces(namespaces: string | string[]): void {
   for (const namespace of toArray(namespaces)) {
     if (!namespace.startsWith(NEGATED_NAMESPACE_PREFIX)) {
       const negatedNamespace = NEGATED_NAMESPACE_PREFIX + namespace;
-      if (set.has(negatedNamespace)) {
-        set.delete(negatedNamespace);
-      }
+      set.delete(negatedNamespace);
     }
     set.add(namespace);
   }
-  setNamespaces(Array.from(set));
+  setNamespaces([...set]);
 }
 
 function getNamespaces(): string[] {
@@ -206,7 +202,7 @@ function getSharedDebugLibInstance(): typeof debug {
 
 function logWithCaller(params: LogWithCallerParams): void {
   const {
-    args,
+    $arguments,
     framesToSkip,
     message,
     namespace
@@ -217,7 +213,7 @@ function logWithCaller(params: LogWithCallerParams): void {
 
   if (!Library.shouldPrintStackTrace) {
     // eslint-disable-next-line no-console -- Valid usage.
-    console.debug(message, ...args);
+    console.debug(message, ...$arguments);
     return;
   }
 
@@ -236,7 +232,7 @@ function logWithCaller(params: LogWithCallerParams): void {
   stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
 
   // eslint-disable-next-line no-console -- Valid usage.
-  console.debug(message, ...args, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
+  console.debug(message, ...$arguments, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
 }
 
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {
@@ -257,5 +253,5 @@ function setNamespaces(namespaces: string | string[]): void {
 }
 
 function toArray(namespaces: string | string[]): string[] {
-  return typeof namespaces === 'string' ? namespaces.split(NAMESPACE_SEPARATOR).filter(Boolean) : namespaces.flatMap(toArray);
+  return typeof namespaces === 'string' ? namespaces.split(NAMESPACE_SEPARATOR).filter(Boolean) : namespaces.flatMap((namespace) => toArray(namespace));
 }

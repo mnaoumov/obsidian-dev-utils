@@ -51,35 +51,35 @@ export const requireSuperCall: Rule.RuleModule = {
 
     return {
       'AssignmentExpression'(node: Rule.Node): void {
-        const current = methodStack[methodStack.length - 1];
+        const current = methodStack.at(-1);
         if (current?.kind !== 'set') {
           return;
         }
 
         const assignNode = node as TSESTree.AssignmentExpression;
-        if (checkIsSuperPropertyAccess(assignNode.left, current.methodName)) {
+        if (isSuperPropertyAccess(assignNode.left, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
       'CallExpression'(node: Rule.Node): void {
-        const current = methodStack[methodStack.length - 1];
+        const current = methodStack.at(-1);
         if (current?.kind !== 'method') {
           return;
         }
 
         const callNode = node as TSESTree.CallExpression;
-        if (checkIsSuperMethodCall(callNode, current.methodName)) {
+        if (isSuperMethodCall(callNode, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
       'MemberExpression'(node: Rule.Node): void {
-        const current = methodStack[methodStack.length - 1];
+        const current = methodStack.at(-1);
         if (current?.kind !== 'get') {
           return;
         }
 
         const memberNode = node as TSESTree.MemberExpression;
-        if (checkIsSuperPropertyAccess(memberNode, current.methodName)) {
+        if (isSuperPropertyAccess(memberNode, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
@@ -106,7 +106,7 @@ export const requireSuperCall: Rule.RuleModule = {
         });
       },
       'MethodDefinition:exit'(): void {
-        const info = methodStack[methodStack.length - 1];
+        const info = methodStack.at(-1);
         if (!info) {
           return;
         }
@@ -118,7 +118,7 @@ export const requireSuperCall: Rule.RuleModule = {
         }
 
         if (
-          checkIsParentMethodAbstract({
+          isParentMethodAbstract({
             context,
             methodName: info.methodName,
             methodNode: info.node
@@ -148,7 +148,7 @@ export const requireSuperCall: Rule.RuleModule = {
 };
 
 /**
- * Parameters for {@link checkIsParentMethodAbstract}.
+ * Parameters for {@link isParentMethodAbstract}.
  */
 interface CheckIsParentMethodAbstractParams {
   /**
@@ -170,14 +170,14 @@ interface CheckIsParentMethodAbstractParams {
 /**
  * Checks whether a declaration has the `abstract` modifier.
  *
- * @param decl - The TypeScript declaration to inspect.
+ * @param declaration - The TypeScript declaration to inspect.
  * @returns `true` if the declaration is abstract.
  */
-function checkIsAbstract(decl: Declaration): boolean {
-  assert(canHaveModifiers(decl), 'Expected method declaration to support modifiers');
+function isAbstract(declaration: Declaration): boolean {
+  assert(canHaveModifiers(declaration), 'Expected method declaration to support modifiers');
 
-  const modifiers = getModifiers(decl);
-  return modifiers?.some((mod) => mod.kind === SyntaxKind.AbstractKeyword) ?? false;
+  const modifiers = getModifiers(declaration);
+  return modifiers?.some(($module) => $module.kind === SyntaxKind.AbstractKeyword) ?? false;
 }
 
 /**
@@ -189,7 +189,7 @@ function checkIsAbstract(decl: Declaration): boolean {
  * @param params - The parameters for the check.
  * @returns `true` if the parent method is abstract.
  */
-function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams): boolean {
+function isParentMethodAbstract(params: CheckIsParentMethodAbstractParams): boolean {
   const { context, methodName, methodNode } = params;
   const services = context.sourceCode.parserServices as Partial<ParserServicesWithTypeInformation>;
 
@@ -198,8 +198,8 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
   }
 
   const checker = services.program.getTypeChecker();
-  const classDecl = methodNode.parent.parent;
-  const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDecl);
+  const classDeclaration = methodNode.parent.parent;
+  const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDeclaration);
   const classType = checker.getTypeAtLocation(tsClassNode);
   const baseTypes = classType.getBaseTypes();
 
@@ -208,20 +208,20 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
   }
 
   for (const baseType of baseTypes) {
-    const prop = baseType.getProperty(methodName);
+    const property = baseType.getProperty(methodName);
 
-    if (!prop) {
+    if (!property) {
       continue;
     }
 
-    const declarations = prop.getDeclarations();
+    const declarations = property.getDeclarations();
 
     if (!declarations) {
       continue;
     }
 
-    for (const decl of declarations) {
-      if (checkIsAbstract(decl)) {
+    for (const declaration of declarations) {
+      if (isAbstract(declaration)) {
         return true;
       }
     }
@@ -237,7 +237,7 @@ function checkIsParentMethodAbstract(params: CheckIsParentMethodAbstractParams):
  * @param methodName - The expected method name.
  * @returns `true` if the node is a matching super method call.
  */
-function checkIsSuperMethodCall(node: TSESTree.CallExpression, methodName: string): boolean {
+function isSuperMethodCall(node: TSESTree.CallExpression, methodName: string): boolean {
   const callee = node.callee;
   /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
   return callee.type === 'MemberExpression'
@@ -254,7 +254,7 @@ function checkIsSuperMethodCall(node: TSESTree.CallExpression, methodName: strin
  * @param propertyName - The expected property name.
  * @returns `true` if the node is a matching super property access.
  */
-function checkIsSuperPropertyAccess(node: TSESTree.Node, propertyName: string): boolean {
+function isSuperPropertyAccess(node: TSESTree.Node, propertyName: string): boolean {
   /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
   return node.type === 'MemberExpression'
     && node.object.type === 'Super'

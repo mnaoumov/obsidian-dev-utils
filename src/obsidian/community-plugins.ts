@@ -308,7 +308,7 @@ export async function getLatestReleaseVersion(repo: string): Promise<string> {
 export async function installCommunityPlugin(params: InstallCommunityPluginParams): Promise<void> {
   const { app } = params;
   const pluginId = await resolveCommunityPluginId(params);
-  if (app.plugins.manifests[pluginId]) {
+  if (Object.hasOwn(app.plugins.manifests, pluginId)) {
     return;
   }
 
@@ -414,7 +414,7 @@ export async function toggleInstallCommunityPlugin(params: ToggleInstallCommunit
 export async function uninstallCommunityPlugin(params: UninstallCommunityPluginParams): Promise<void> {
   const { app } = params;
   const pluginId = await resolveCommunityPluginId(params);
-  if (!app.plugins.manifests[pluginId]) {
+  if (!Object.hasOwn(app.plugins.manifests, pluginId)) {
     return;
   }
   await app.plugins.uninstallPlugin(pluginId);
@@ -442,15 +442,15 @@ async function getPluginManifest(repo: string, version: string): Promise<PluginM
   return response.json as PluginManifest;
 }
 
-async function resolveCommunityPluginId(ref: CommunityPluginRef): Promise<string> {
-  if ('pluginId' in ref) {
-    return ref.pluginId;
+async function resolveCommunityPluginId(reference: CommunityPluginRef): Promise<string> {
+  if ('pluginId' in reference) {
+    return reference.pluginId;
   }
 
   const entries = await getCommunityPluginEntries();
-  const entry = entries.find((candidate) => candidate.name === ref.pluginName);
+  const entry = entries.find((candidate) => candidate.name === reference.pluginName);
   if (!entry) {
-    throw new Error(`Plugin named '${ref.pluginName}' was not found in the Obsidian community plugins registry.`);
+    throw new Error(`Plugin named '${reference.pluginName}' was not found in the Obsidian community plugins registry.`);
   }
   return entry.id;
 }

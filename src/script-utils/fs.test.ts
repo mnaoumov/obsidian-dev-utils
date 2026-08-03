@@ -13,9 +13,9 @@ const { mockReaddir } = vi.hoisted(() => ({
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs/promises')>();
+  const $module = await importOriginal<typeof import('node:fs/promises')>();
   return {
-    ...mod,
+    ...$module,
     readdir: mockReaddir
   };
 });
@@ -27,7 +27,7 @@ beforeEach(() => {
 describe('readdirPosix', () => {
   describe('string result (default options)', () => {
     it('should convert paths to POSIX format', async () => {
-      mockReaddir.mockResolvedValue(['src\\utils\\file.ts', 'src\\index.ts']);
+      mockReaddir.mockResolvedValue([String.raw`src\utils\file.ts`, String.raw`src\index.ts`]);
       const result = await readdirPosix('/some/dir');
       expect(result).toEqual(['src/utils/file.ts', 'src/index.ts']);
     });
@@ -59,14 +59,14 @@ describe('readdirPosix', () => {
 
   describe('buffer result', () => {
     it('should convert buffers to POSIX format with "buffer" string option', async () => {
-      mockReaddir.mockResolvedValue([Buffer.from('src\\file.ts')]);
+      mockReaddir.mockResolvedValue([Buffer.from(String.raw`src\file.ts`)]);
       const result = await readdirPosix('/dir', 'buffer');
       expect(result).toHaveLength(1);
       expect(Buffer.isBuffer(result[0])).toBe(true);
     });
 
     it('should convert buffers to POSIX format with encoding: "buffer" option', async () => {
-      mockReaddir.mockResolvedValue([Buffer.from('src\\file.ts')]);
+      mockReaddir.mockResolvedValue([Buffer.from(String.raw`src\file.ts`)]);
       const result = await readdirPosix('/dir', { encoding: 'buffer' });
       expect(result).toHaveLength(1);
       expect(Buffer.isBuffer(result[0])).toBe(true);
@@ -76,8 +76,8 @@ describe('readdirPosix', () => {
   describe('dirent result', () => {
     it('should convert dirent name and parentPath to POSIX format', async () => {
       const mockDirents = [
-        { name: 'sub\\file.ts', parentPath: 'C:\\project\\src' },
-        { name: 'index.ts', parentPath: 'C:\\project' }
+        { name: String.raw`sub\file.ts`, parentPath: String.raw`C:\project\src` },
+        { name: 'index.ts', parentPath: String.raw`C:\project` }
       ];
       mockReaddir.mockResolvedValue(mockDirents);
       const result = await readdirPosix('/dir', { withFileTypes: true });

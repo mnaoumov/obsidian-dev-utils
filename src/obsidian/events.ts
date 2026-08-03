@@ -55,7 +55,7 @@ export interface SubscribeEventParams<Source extends Events, EventName extends E
   /**
    * The context passed as `this` to the callback.
    */
-  readonly thisArg?: unknown;
+  readonly thisArgument?: unknown;
 }
 
 /**
@@ -65,7 +65,7 @@ export interface SubscribeEventParams<Source extends Events, EventName extends E
  * @typeParam Source - The {@link Events} source type.
  * @typeParam EventName - The event name.
  */
-type EventCallbackOf<Source extends Events, EventName extends EventNameOf<Source>> = ExtractEventMap<Source>[EventName] extends infer Args extends unknown[] ? (...args: Args) => unknown
+type EventCallbackOf<Source extends Events, EventName extends EventNameOf<Source>> = ExtractEventMap<Source>[EventName] extends infer Arguments extends unknown[] ? (...$arguments: Arguments) => unknown
   : never;
 
 /**
@@ -128,5 +128,5 @@ export function subscribeEvent<Source extends Events, EventName extends EventNam
 ): EventRef {
   // A generic `name` cannot select one of `on`'s specific overloads, so the call resolves against the base
   // `on(name: string, callback, ctx?)` signature — the callback is cast to that signature's parameter type.
-  return params.events.on(params.name, castTo<GenericFunction<unknown[]>>(params.callback), params.thisArg);
+  return params.events.on(params.name, castTo<GenericFunction<unknown[]>>(params.callback), params.thisArgument);
 }

@@ -71,7 +71,7 @@ describe('NumberComponent', () => {
     comp.setPlaceholderValue(0);
   });
 
-  it('should return inputEl as validatorEl', () => {
+  it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
     expect(comp.validatorEl).toBe(comp.inputEl);
   });

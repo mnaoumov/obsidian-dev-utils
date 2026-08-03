@@ -142,8 +142,8 @@ beforeEach(() => {
 });
 
 function stubRequestAnimationFrame(): void {
-  vi.stubGlobal('window.requestAnimationFrame', (cb: () => void) => {
-    cb();
+  vi.stubGlobal('window.requestAnimationFrame', (callback: () => void) => {
+    callback();
     return 0;
   });
 }
@@ -226,8 +226,8 @@ describe('PluginSettingsTabBase', () => {
     const onChange = vi.fn();
     const setValue = vi.fn();
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
-      onChange: vi.fn((cb: GenericFunction) => {
-        onChange.mockImplementation(cb);
+      onChange: vi.fn((callback: GenericFunction) => {
+        onChange.mockImplementation(callback);
         return mockComponent;
       }),
       setValue
@@ -247,8 +247,8 @@ describe('PluginSettingsTabBase', () => {
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const setValue = vi.fn();
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
-      onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }),
       setValue
@@ -309,8 +309,8 @@ describe('PluginSettingsTabBase', () => {
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
-      onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }),
       setValue: vi.fn()
@@ -341,8 +341,8 @@ describe('PluginSettingsTabBase', () => {
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = createTextBasedMockComponent();
-    mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((cb: (value: string) => Promise<void>) => {
-      changeCallback = cb;
+    mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((callback: (value: string) => Promise<void>) => {
+      changeCallback = callback;
       return mockComponent;
     }));
     mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => true));
@@ -364,8 +364,8 @@ describe('PluginSettingsTabBase', () => {
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = castTo<ValueComponentWithChangeTracking<string>>({
-      onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }),
       setValue: vi.fn()
@@ -380,15 +380,15 @@ describe('PluginSettingsTabBase', () => {
     }
   });
 
-  it('should handle bind with validatorEl', () => {
+  it('should handle bind with validatorElement', () => {
     const plugin = createMockPlugin(app);
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.displayLegacy();
 
-    const parentEl = createDiv();
+    const parentElement = createDiv();
     const validatorEl = createEl('input');
-    parentEl.appendChild(validatorEl);
+    parentElement.append(validatorEl);
     validatorEl.isActiveElement = vi.fn(() => false);
 
     const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
@@ -407,15 +407,15 @@ describe('PluginSettingsTabBase', () => {
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     tab.displayLegacy();
 
-    const parentEl = createDiv();
+    const parentElement = createDiv();
     const validatorEl = createEl('input');
-    parentEl.appendChild(validatorEl);
+    parentElement.append(validatorEl);
     validatorEl.isActiveElement = vi.fn(() => false);
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
-      onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }),
       setValue: vi.fn(),
@@ -505,8 +505,8 @@ describe('PluginSettingsTabBase', () => {
 
     let changeCallback: ((value: string) => Promise<void>) | undefined;
     const mockComponent = createTextBasedMockComponent();
-    mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((cb: (value: string) => Promise<void>) => {
-      changeCallback = cb;
+    mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((callback: (value: string) => Promise<void>) => {
+      changeCallback = callback;
       return mockComponent;
     }));
     mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => false));
@@ -524,11 +524,11 @@ describe('PluginSettingsTabBase', () => {
     const pluginSettingsComponent = createMockSettingsComponent();
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
     const timeout = tab['saveSettingsDebounceTimeoutInMilliseconds'];
-    const EXPECTED_DEFAULT = 2_000;
+    const EXPECTED_DEFAULT = 2000;
     expect(timeout).toBe(EXPECTED_DEFAULT);
   });
 
-  it('should handle full bind with validatorEl and onChange triggering updateValidatorEl', async () => {
+  it('should handle full bind with validatorElement and onChange triggering updateValidatorEl', async () => {
     vi.useFakeTimers();
     stubRequestAnimationFrame();
     try {
@@ -537,15 +537,15 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
-        onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-          changeCallback = cb;
+        onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+          changeCallback = callback;
           return mockComponent;
         }),
         setValue: vi.fn(),
@@ -570,7 +570,7 @@ describe('PluginSettingsTabBase', () => {
     }
   });
 
-  it('should handle validatorEl focus, blur and click events', async () => {
+  it('should handle validatorElement focus, blur and click events', async () => {
     vi.useFakeTimers();
     stubRequestAnimationFrame();
     try {
@@ -579,9 +579,9 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
@@ -592,7 +592,7 @@ describe('PluginSettingsTabBase', () => {
 
       tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
-      // Trigger focus, blur, click events on validatorEl
+      // Trigger focus, blur, click events on validatorElement
       validatorEl.dispatchEvent(new Event('focus'));
       validatorEl.dispatchEvent(new Event('blur'));
       validatorEl.dispatchEvent(new Event('click'));
@@ -614,15 +614,15 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
-        onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-          changeCallback = cb;
+        onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+          changeCallback = callback;
           return mockComponent;
         }),
         setValue: vi.fn(),
@@ -657,8 +657,8 @@ describe('PluginSettingsTabBase', () => {
       const mockComponent = createTextBasedMockComponent();
 
       // Track onChange registrations
-      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((cb: (value: string) => void) => {
-        changeCallback = cb;
+      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((callback: (value: string) => void) => {
+        changeCallback = callback;
         return mockComponent;
       }));
 
@@ -702,8 +702,8 @@ describe('PluginSettingsTabBase', () => {
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = createTextBasedMockComponent();
-      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }));
 
@@ -739,8 +739,8 @@ describe('PluginSettingsTabBase', () => {
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = createTextBasedMockComponent();
-      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }));
       // During onChange: isEmpty=true at line 308 (triggers shouldRevertToDefaultValueOnBlur=true)
@@ -773,15 +773,15 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
-        onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-          changeCallback = cb;
+        onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+          changeCallback = callback;
           return mockComponent;
         }),
         setValue: vi.fn(),
@@ -803,7 +803,7 @@ describe('PluginSettingsTabBase', () => {
     }
   });
 
-  it('should handle updateValidatorEl when validatorEl is active (isActiveElement=true)', async () => {
+  it('should handle updateValidatorEl when validatorElement is active (isActiveElement=true)', async () => {
     vi.useFakeTimers();
     stubRequestAnimationFrame();
     try {
@@ -812,16 +812,16 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       // IsActiveElement returns true - should NOT trigger empty/revert logic
       validatorEl.isActiveElement = vi.fn(() => true);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
-        onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-          changeCallback = cb;
+        onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+          changeCallback = callback;
           return mockComponent;
         }),
         setValue: vi.fn(),
@@ -851,8 +851,8 @@ describe('PluginSettingsTabBase', () => {
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = createTextBasedMockComponent();
-      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((cb: (value: string) => Promise<void>) => {
-        changeCallback = cb;
+      mockComponent.onChange = castTo<typeof mockComponent.onChange>(vi.fn((callback: (value: string) => Promise<void>) => {
+        changeCallback = callback;
         return mockComponent;
       }));
       // During onChange: isEmpty=false at lines 308 and 323
@@ -890,15 +890,15 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
-        onChange: vi.fn((cb: (value: string) => Promise<void>) => {
-          changeCallback = cb;
+        onChange: vi.fn((callback: (value: string) => Promise<void>) => {
+          changeCallback = callback;
           return mockComponent;
         }),
         setValue: vi.fn(),
@@ -963,9 +963,9 @@ describe('PluginSettingsTabBase', () => {
       const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
       tab.displayLegacy();
 
-      const parentEl = createDiv();
+      const parentElement = createDiv();
       const validatorEl = createEl('input');
-      parentEl.appendChild(validatorEl);
+      parentElement.append(validatorEl);
       validatorEl.isActiveElement = vi.fn(() => false);
 
       const mockComponent = castTo<MockValueComponentWithValidator & ValueComponentWithChangeTracking<string>>({
@@ -1117,9 +1117,9 @@ describe('PluginSettingsTabBase declarative settings', () => {
     const countLiveListeners = trackValidationListeners(tab);
 
     const ROW_COUNT = 3;
-    for (let i = 0; i < ROW_COUNT; i++) {
+    for (let index = 0; index < ROW_COUNT; index++) {
       const definition = tab.settingEx({
-        name: `Name ${String(i)}`,
+        name: `Name ${String(index)}`,
         render: () => {
           tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
         }
@@ -1150,7 +1150,7 @@ describe('PluginSettingsTabBase render lifecycle', () => {
     const tab = new TestSettingsTab({ plugin, pluginSettingsComponent });
 
     const RENDER_CYCLE_COUNT = 3;
-    for (let i = 0; i < RENDER_CYCLE_COUNT; i++) {
+    for (let index = 0; index < RENDER_CYCLE_COUNT; index++) {
       tab.displayLegacy();
     }
 
@@ -1166,7 +1166,7 @@ describe('PluginSettingsTabBase render lifecycle', () => {
     const countLiveListeners = trackValidationListeners(tab);
 
     const RENDER_CYCLE_COUNT = 3;
-    for (let i = 0; i < RENDER_CYCLE_COUNT; i++) {
+    for (let index = 0; index < RENDER_CYCLE_COUNT; index++) {
       tab.displayLegacy();
       tab.bind({ propertyName: 'name', valueComponent: createMockValueComponent() });
     }

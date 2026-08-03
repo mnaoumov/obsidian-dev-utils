@@ -31,12 +31,12 @@ export enum RegExpMergeFlagsConflictStrategy {
 /**
  * Escapes special characters in a string to safely use it within a regular expression.
  *
- * @param str - The string to escape.
+ * @param $string - The string to escape.
  * @returns The escaped string with special characters prefixed with a backslash.
  */
-export function escapeRegExp(str: string): string {
+export function escapeRegExp($string: string): string {
   // NOTE: We can't use `replaceAll()` from `String.ts` here because it introduces a circular dependency.
-  return str.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return $string.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 /**
@@ -82,12 +82,12 @@ export function getOptionalNamedGroup(match: RegExpMatchArray, groupName: string
 /**
  * Checks if a string is a valid regular expression.
  *
- * @param str - The string to check.
+ * @param $string - The string to check.
  * @returns `true` if the string is a valid regular expression, `false` otherwise.
  */
-export function isValidRegExp(str: string): boolean {
+export function isValidRegExp($string: string): boolean {
   try {
-    new RegExp(str);
+    new RegExp($string);
     return true;
   } catch {
     return false;
@@ -166,31 +166,34 @@ class RegExpFlagMerger {
     /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
     switch (this.strategy) {
       /* v8 ignore stop */
-      case RegExpMergeFlagsConflictStrategy.Intersect:
+      case RegExpMergeFlagsConflictStrategy.Intersect: {
         shouldUseUFlag = countU === this.regExps.length;
         shouldUseVFlag = countV === this.regExps.length;
         break;
+      }
       case RegExpMergeFlagsConflictStrategy.Throw: {
-        const allU = countU === this.regExps.length;
-        const noneU = countU === 0;
-        const allV = countV === this.regExps.length;
-        const noneV = countV === 0;
+        const haveAllUFlag = countU === this.regExps.length;
+        const haveNoUFlag = countU === 0;
+        const haveAllVFlag = countV === this.regExps.length;
+        const haveNoVFlag = countV === 0;
 
-        if (!(allU || noneU) || !(allV || noneV)) {
+        if (!(haveAllUFlag || haveNoUFlag) || !(haveAllVFlag || haveNoVFlag)) {
           throw new Error('Conflicting \'u\'/\'v\' flags across patterns.');
         }
 
-        shouldUseUFlag = allU;
-        shouldUseVFlag = allV;
+        shouldUseUFlag = haveAllUFlag;
+        shouldUseVFlag = haveAllVFlag;
         break;
       }
-      case RegExpMergeFlagsConflictStrategy.Union:
+      case RegExpMergeFlagsConflictStrategy.Union: {
         shouldUseUFlag = countU > 0;
         shouldUseVFlag = countV > 0;
         break;
-      default:
+      }
+      default: {
         /* v8 ignore start -- Exhaustive switch guard. */
         assertNever(this.strategy);
+      }
         /* v8 ignore stop */
     }
 
@@ -212,20 +215,24 @@ class RegExpFlagMerger {
     /* v8 ignore start -- v8 counts the implicit default branch as uncovered even when all enum cases are handled. */
     switch (this.strategy) {
       /* v8 ignore stop */
-      case RegExpMergeFlagsConflictStrategy.Intersect:
+      case RegExpMergeFlagsConflictStrategy.Intersect: {
         return count === this.regExps.length;
-      case RegExpMergeFlagsConflictStrategy.Throw:
+      }
+      case RegExpMergeFlagsConflictStrategy.Throw: {
         break;
-      case RegExpMergeFlagsConflictStrategy.Union:
+      }
+      case RegExpMergeFlagsConflictStrategy.Union: {
         return count > 0;
-      default:
+      }
+      default: {
         /* v8 ignore start -- Exhaustive switch guard. */
         assertNever(this.strategy);
+      }
         /* v8 ignore stop */
     }
 
-    const allSame = count === 0 || count === this.regExps.length;
-    if (!allSame) {
+    const haveAllSameFlag = count === 0 || count === this.regExps.length;
+    if (!haveAllSameFlag) {
       throw new Error(`Conflicting flag '${flag}' across patterns.`);
     }
     return count === this.regExps.length;

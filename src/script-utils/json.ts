@@ -41,7 +41,7 @@ export interface EditJsonParams<T> extends EditJsonOptions {
    *
    * @param data - The parsed JSON data to edit.
    */
-  editFn(this: void, data: T): Promisable<void>;
+  editFunction(this: void, data: T): Promisable<void>;
 
   /**
    * The path to the JSON file.
@@ -65,7 +65,7 @@ export interface EditJsonSyncParams<T> extends EditJsonSyncOptions {
    *
    * @param data - The parsed JSON data to edit.
    */
-  editFn(this: void, data: T): void;
+  editFunction(this: void, data: T): void;
 
   /**
    * The path to the JSON file.
@@ -82,7 +82,7 @@ export interface EditJsonSyncParams<T> extends EditJsonSyncOptions {
  */
 export async function editJson<T>(params: EditJsonParams<T>): Promise<void> {
   const {
-    editFn,
+    editFunction,
     path,
     shouldSkipIfMissing
   } = params;
@@ -90,7 +90,7 @@ export async function editJson<T>(params: EditJsonParams<T>): Promise<void> {
     return;
   }
   const data = await readJson<T>(path);
-  await editFn(data);
+  await editFunction(data);
   await writeJson(path, data);
 }
 
@@ -102,7 +102,7 @@ export async function editJson<T>(params: EditJsonParams<T>): Promise<void> {
  */
 export function editJsonSync<T>(params: EditJsonSyncParams<T>): void {
   const {
-    editFn,
+    editFunction,
     path,
     shouldSkipIfMissing
   } = params;
@@ -110,7 +110,7 @@ export function editJsonSync<T>(params: EditJsonSyncParams<T>): void {
     return;
   }
   const data = readJsonSync<T>(path);
-  editFn(data);
+  editFunction(data);
   writeJsonSync(path, data);
 }
 

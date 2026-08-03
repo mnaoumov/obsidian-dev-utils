@@ -22,9 +22,9 @@ export function fixEsmPlugin(): Plugin {
       build.onEnd((result) => {
         for (const file of result.outputFiles ?? []) {
           const newText = replaceAll({
+            $string: file.text,
             replacer: '$1(__extractDefault($2), 1);',
-            searchValue: /(?<Caller>__toESM\d*)\((?<Module>.+), 1\);/g,
-            str: file.text
+            searchValue: /(?<Caller>__toESM\d*)\((?<Module>.+), 1\);/g
           });
           file.contents = new TextEncoder().encode(newText);
         }

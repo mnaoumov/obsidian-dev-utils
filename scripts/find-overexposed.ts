@@ -9,10 +9,10 @@ import {
   formatOverExposureFindings
 } from '../src/script-utils/linters/over-exposure.ts';
 
-const [, , projectFolderArg] = process.argv;
+const [, , projectFolderArgument] = process.argv;
 
 await wrapCliTask(() => {
-  const projectFolder = projectFolderArg ?? process.cwd();
+  const projectFolder = projectFolderArgument ?? process.cwd();
   process.stderr.write(`Analyzing ${projectFolder} for over-exposed declarations...\n`);
 
   let previousProgressLineLength = 0;

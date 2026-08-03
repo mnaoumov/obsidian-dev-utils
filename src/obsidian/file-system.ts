@@ -60,9 +60,9 @@ export enum FileSystemType {
 }
 
 /**
- * Parameters for {@link exists}.
+ * Parameters for {@link doesExist}.
  */
-export interface ExistsParams {
+export interface DoesExistParams {
   /**
    * The Obsidian App instance.
    */
@@ -418,7 +418,7 @@ export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension:
  * @param params - The parameters for the check.
  * @returns `true` if the path exists, `false` otherwise.
  */
-export function exists(params: ExistsParams): boolean {
+export function doesExist(params: DoesExistParams): boolean {
   const {
     app,
     isCaseInsensitive,
@@ -850,7 +850,7 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
   }
 
   return trimEnd({
-    str: file.path,
+    $string: file.path,
     suffix: `.${MARKDOWN_FILE_EXTENSION}`
   });
 }

@@ -53,8 +53,8 @@ export function fixTitle(params: FixTitleParams): Link {
     pathOrFile
   } = params;
   const path = getPath(dv.app, pathOrFile);
-  const ext = extname(path);
-  const title = isFolderNote ? basename(dirname(path)) : basename(path, ext);
+  const extension = extname(path);
+  const title = isFolderNote ? basename(dirname(path)) : basename(path, extension);
   return dv.fileLink(path, false, title);
 }
 

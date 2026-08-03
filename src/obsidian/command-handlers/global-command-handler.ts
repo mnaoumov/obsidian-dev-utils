@@ -56,12 +56,12 @@ export abstract class GlobalCommandHandler extends CommandHandler {
    */
   protected abstract execute(): Promisable<void>;
 
-  private checkCallback(checking: boolean): boolean {
+  private checkCallback(isChecking: boolean): boolean {
     if (!this.canExecute()) {
       return false;
     }
 
-    if (!checking) {
+    if (!isChecking) {
       invokeAsyncSafely(() => this.execute());
     }
 

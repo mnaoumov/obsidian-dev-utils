@@ -34,6 +34,7 @@ import type {
   ParseLinkReference
 } from './parse-link.ts';
 
+import { dispose } from '../disposable.ts';
 import { castTo } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { strictProxy } from '../strict-proxy.ts';
@@ -94,9 +95,9 @@ vi.mock('../obsidian/frontmatter.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: (messages: GenericObject) => unknown) => {
+  t: vi.fn(($function: (messages: GenericObject) => unknown) => {
     try {
-      return fn({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } });
+      return $function({ obsidianDevUtils: { metadataCache: { getBacklinksForFilePath: 'mock' } } });
     } catch {
       return 'mock-t';
     }
@@ -124,8 +125,8 @@ vi.mock('../obsidian/file-system.ts', () => ({
 }));
 
 vi.mock('../obsidian/frontmatter-link-cache-with-offsets.ts', () => ({
-  isFrontmatterLinkCacheWithOffsets: vi.fn((ref: unknown) => {
-    const r = ref as GenericObject;
+  isFrontmatterLinkCacheWithOffsets: vi.fn((reference: unknown) => {
+    const r = reference as GenericObject;
     return r['startOffset'] !== undefined && r['endOffset'] !== undefined && r['key'] !== undefined;
   }),
   toFrontmatterLinkCacheWithOffsets: vi.fn((link: GenericObject) => {
@@ -143,9 +144,9 @@ vi.mock('@obsidian-typings/obsidian-public-latest/implementations', async (impor
     CustomArrayDictImpl: class {
       public data = new Map<string, unknown[]>();
       public add(key: string, value: unknown): void {
-        const arr = this.data.get(key) ?? [];
-        arr.push(value);
-        this.data.set(key, arr);
+        const array = this.data.get(key) ?? [];
+        array.push(value);
+        this.data.set(key, array);
       }
 
       public get(key: string): null | unknown[] {
@@ -192,8 +193,8 @@ function createMockApp(): App {
       getBacklinksForFile: vi.fn(),
       getFileCache: vi.fn(),
       metadataCache: castTo(Object.create(null)),
-      onCleanCache: vi.fn((cb: () => void) => {
-        cb();
+      onCleanCache: vi.fn((callback: () => void) => {
+        callback();
       }),
       uniqueFileLookup: {
         add: vi.fn(),
@@ -370,11 +371,11 @@ describe('getLinks', () => {
   });
 
   it('should not deduplicate mixed types (reference + frontmatter)', () => {
-    const refLink = makeReferenceCache('[[note]]', 0);
+    const referenceLink = makeReferenceCache('[[note]]', 0);
     const fmLink = makeFrontmatterLink('note', 'aliases');
     const cache: CachedMetadata = {
       frontmatterLinks: [fmLink],
-      links: [refLink]
+      links: [referenceLink]
     };
     const result = getLinks({ cache });
     expect(result).toHaveLength(2);
@@ -507,8 +508,8 @@ describe('ensureMetadataCacheReady', () => {
   });
 
   it('should wait for async resolution of onCleanCache', async () => {
-    app.metadataCache.onCleanCache = vi.fn((cb: () => void) => {
-      window.setTimeout(cb, 0);
+    app.metadataCache.onCleanCache = vi.fn((callback: () => void) => {
+      window.setTimeout(callback, 0);
     });
     await ensureMetadataCacheReady(app);
     expect(app.metadataCache.onCleanCache).toHaveBeenCalledOnce();
@@ -524,9 +525,9 @@ describe('parseMetadata', () => {
     const result = await parseMetadata(app, 'test string');
     expect(app.metadataCache.computeMetadataAsync).toHaveBeenCalledOnce();
 
-    const callArg = vi.mocked(app.metadataCache.computeMetadataAsync).mock.calls[0]?.[0];
-    assertNonNullable(callArg);
-    const decoded = new TextDecoder().decode(callArg);
+    const callArgument = vi.mocked(app.metadataCache.computeMetadataAsync).mock.calls[0]?.[0];
+    assertNonNullable(callArgument);
+    const decoded = new TextDecoder().decode(callArgument);
     expect(decoded).toBe('test string');
     expect(result).toEqual({ ...mockCache, features: [CachedMetadataExFeature.Native] });
   });
@@ -630,7 +631,7 @@ describe('registerFileCacheForNonExistingFile', () => {
     const disposable = registerFileCacheForNonExistingFile({ app, cache, pathOrFile: castTo<PathOrFile>(file) });
     expect(app.metadataCache.metadataCache['folder/note.md']).toBe(cache);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(app.metadataCache.fileCache['folder/note.md']).toBeUndefined();
     expect(app.metadataCache.metadataCache['folder/note.md']).toBeUndefined();
@@ -706,7 +707,7 @@ describe('registerFiles', () => {
     const disposable = registerFiles(app, [file]);
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBe(file);
 
-    disposable[Symbol.dispose]();
+    dispose(disposable);
 
     expect(app.vault.getAbstractFileByPath('folder/note.md')).toBeNull();
   });
@@ -939,11 +940,11 @@ describe('getFrontmatterSafe', () => {
 });
 
 describe('getBacklinksForFileSafe', () => {
-  function setupRetryToInvokeOperationFn(): void {
+  function setupRetryToInvokeOperationFunction(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      await operationFn(abortSignal);
+      await operationFunction(abortSignal);
     });
   }
 
@@ -979,12 +980,12 @@ describe('getBacklinksForFileSafe', () => {
 
   it('should use safe overload when available', async () => {
     const mockResult = { get: vi.fn(), keys: vi.fn().mockReturnValue([]) };
-    const safeFn = vi.fn().mockResolvedValue(mockResult);
+    const safeFunction = vi.fn().mockResolvedValue(mockResult);
 
-    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFn;
+    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFunction;
 
     const result = await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
-    expect(safeFn).toHaveBeenCalledWith('test.md');
+    expect(safeFunction).toHaveBeenCalledWith('test.md');
     expect(result).toBe(mockResult);
   });
 
@@ -993,8 +994,8 @@ describe('getBacklinksForFileSafe', () => {
 
     await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
-    expect(callArg?.['shouldShowTimeoutNotice']).toBe(true);
+    const callArgument = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArgument?.['shouldShowTimeoutNotice']).toBe(true);
   });
 
   it('should pass shouldShowTimeoutNotice from params', async () => {
@@ -1002,12 +1003,12 @@ describe('getBacklinksForFileSafe', () => {
 
     await getBacklinksForFileSafe({ app, pathOrFile: 'test.md', shouldShowTimeoutNotice: false });
 
-    const callArg = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
-    expect(callArg?.['shouldShowTimeoutNotice']).toBe(false);
+    const callArgument = mockedRetryWithTimeoutNotice.mock.calls[0]?.[0] as GenericObject | undefined;
+    expect(callArgument?.['shouldShowTimeoutNotice']).toBe(false);
   });
 
   it('should return backlinks for empty backlinks dict', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     const backlinksDict = createBacklinksDict({});
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(backlinksDict);
@@ -1017,11 +1018,11 @@ describe('getBacklinksForFileSafe', () => {
   });
 
   it('should return false when getFileOrNull returns null for note', async () => {
-    setupRetryToInvokeOperationFn();
-    const refLink = makeReferenceCache('[[target]]', 10);
+    setupRetryToInvokeOperationFunction();
+    const referenceLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] })
+      createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(null);
 
@@ -1030,11 +1031,11 @@ describe('getBacklinksForFileSafe', () => {
   });
 
   it('should return false when readSafe returns null', async () => {
-    setupRetryToInvokeOperationFn();
-    const refLink = makeReferenceCache('[[target]]', 10);
+    setupRetryToInvokeOperationFunction();
+    const referenceLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] })
+      createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
     mockedReadSafe.mockResolvedValue(null);
@@ -1044,7 +1045,7 @@ describe('getBacklinksForFileSafe', () => {
   });
 
   it('should return false when backlinks.get returns null for note', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     const backlinksDict = {
       get: (): null => null,
       keys: (): string[] => ['source.md']
@@ -1060,12 +1061,12 @@ describe('getBacklinksForFileSafe', () => {
   });
 
   it('should succeed when reference cache link matches content', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     const content = '0123456789[[target]]more text';
-    const refLink = makeReferenceCache('[[target]]', 10);
+    const referenceLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] })
+      createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
     mockedReadSafe.mockResolvedValue(content);
@@ -1078,15 +1079,15 @@ describe('getBacklinksForFileSafe', () => {
   it('should return false when reference cache link does not match content', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      operationResult = await operationFn(abortSignal);
+      operationResult = await operationFunction(abortSignal);
     });
     const content = '0123456789XXMISMATCHX more text';
-    const refLink = makeReferenceCache('[[target]]', 10);
+    const referenceLink = makeReferenceCache('[[target]]', 10);
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
-      createBacklinksDict({ 'source.md': [refLink] })
+      createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
     mockedReadSafe.mockResolvedValue(content);
@@ -1097,7 +1098,7 @@ describe('getBacklinksForFileSafe', () => {
   });
 
   it('should succeed when frontmatter link matches property value', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
@@ -1114,9 +1115,9 @@ describe('getBacklinksForFileSafe', () => {
   it('should return false when frontmatter property value is not a string', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      operationResult = await operationFn(abortSignal);
+      operationResult = await operationFunction(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
@@ -1134,9 +1135,9 @@ describe('getBacklinksForFileSafe', () => {
   it('should return false when frontmatter link does not match property value', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFn = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
-      operationResult = await operationFn(abortSignal);
+      operationResult = await operationFunction(abortSignal);
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
@@ -1152,7 +1153,7 @@ describe('getBacklinksForFileSafe', () => {
   });
 
   it('should return true for links that are neither reference nor frontmatter', async () => {
-    setupRetryToInvokeOperationFn();
+    setupRetryToInvokeOperationFunction();
     const unknownLink = { link: 'something', original: 'something' };
 
     vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(

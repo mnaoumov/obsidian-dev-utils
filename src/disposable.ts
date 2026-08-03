@@ -279,6 +279,18 @@ export class AsyncCallbackDisposable extends AsyncDisposableBase {
 }
 
 /**
+ * Disposes a {@link Disposable}.
+ *
+ * Prefer this over calling `disposable[Symbol.dispose]()` at the call site: it reads better and keeps the
+ * well-known symbol referenced in a single place.
+ *
+ * @param disposable - the disposable to dispose
+ */
+export function dispose(disposable: Disposable): void {
+  disposable[Symbol.dispose]();
+}
+
+/**
  * Abstract base for a {@link DisposableEx}: it carries the re-dispose guard (via {@link MultipleDisposeBehavior})
  * and the {@link DisposableEx.dispose} alias; a subclass only implements {@link DisposableBase.performDispose}.
  */
@@ -401,12 +413,15 @@ export class CombineAsyncDisposable extends AsyncDisposableBase {
 
   private getOrderedChildren(): readonly AsyncDisposable[] {
     switch (this.disposeOrder) {
-      case DisposeOrder.Fifo:
+      case DisposeOrder.Fifo: {
         return this.children;
-      case DisposeOrder.Lifo:
+      }
+      case DisposeOrder.Lifo: {
         return [...this.children].reverse();
-      default:
+      }
+      default: {
         assertNever(this.disposeOrder);
+      }
     }
   }
 }
@@ -458,58 +473,76 @@ export class CombineDisposable extends DisposableBase {
 
   private getOrderedChildren(): readonly Disposable[] {
     switch (this.disposeOrder) {
-      case DisposeOrder.Fifo:
+      case DisposeOrder.Fifo: {
         return this.children;
-      case DisposeOrder.Lifo:
+      }
+      case DisposeOrder.Lifo: {
         return [...this.children].reverse();
-      default:
+      }
+      default: {
         assertNever(this.disposeOrder);
+      }
     }
   }
 }
 
 /**
+ * Disposes an {@link AsyncDisposable}.
+ *
+ * Prefer this over calling `asyncDisposable[Symbol.asyncDispose]()` at the call site: it reads better and
+ * keeps the well-known symbol referenced in a single place.
+ *
+ * @param asyncDisposable - the async disposable to dispose
+ * @returns A {@link Promise} that resolves once the disposal completes.
+ */
+export async function disposeAsync(asyncDisposable: AsyncDisposable): Promise<void> {
+  await asyncDisposable[Symbol.asyncDispose]();
+}
+
+/**
  * Type guard to check if an object implements the {@link AsyncDisposable} interface.
  *
- * @param obj - the object to check for the {@link AsyncDisposable} interface
+ * @param $unknown - the object to check for the {@link AsyncDisposable} interface
  * @returns Whether the object implements the {@link AsyncDisposable} interface
  */
-export function isAsyncDisposable(obj: unknown): obj is AsyncDisposable {
-  const asyncDisposable = obj as Partial<AsyncDisposable>;
+export function isAsyncDisposable($unknown: unknown): $unknown is AsyncDisposable {
+  const asyncDisposable = $unknown as Partial<AsyncDisposable>;
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- `Object.hasOwn` is own-property-only, and `[Symbol.asyncDispose]` is a prototype method on every class-based disposable here.
   return !!asyncDisposable[Symbol.asyncDispose];
 }
 
 /**
  * Type guard to check if an object implements the {@link AsyncDisposableEx} interface.
  *
- * @param obj - the object to check for the {@link AsyncDisposableEx} interface
+ * @param $unknown - the object to check for the {@link AsyncDisposableEx} interface
  * @returns Whether the object implements the {@link AsyncDisposableEx} interface
  */
-export function isAsyncDisposableEx(obj: unknown): obj is AsyncDisposableEx {
-  const asyncDisposableEx = obj as Partial<AsyncDisposableEx>;
-  return isAsyncDisposable(obj) && typeof asyncDisposableEx.asyncDispose === 'function';
+export function isAsyncDisposableEx($unknown: unknown): $unknown is AsyncDisposableEx {
+  const asyncDisposableEx = $unknown as Partial<AsyncDisposableEx>;
+  return isAsyncDisposable($unknown) && typeof asyncDisposableEx.asyncDispose === 'function';
 }
 
 /**
  * Type guard to check if an object implements the {@link Disposable} interface.
  *
- * @param obj - the object to check for the {@link Disposable} interface
+ * @param $unknown - the object to check for the {@link Disposable} interface
  * @returns Whether the object implements the {@link Disposable} interface
  */
-export function isDisposable(obj: unknown): obj is Disposable {
-  const disposable = obj as Partial<Disposable>;
+export function isDisposable($unknown: unknown): $unknown is Disposable {
+  const disposable = $unknown as Partial<Disposable>;
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- `Object.hasOwn` is own-property-only, and `[Symbol.dispose]` is a prototype method on every class-based disposable here.
   return !!disposable[Symbol.dispose];
 }
 
 /**
  * Type guard to check if an object implements the {@link DisposableEx} interface.
  *
- * @param obj - the object to check for the {@link DisposableEx} interface
+ * @param $unknown - the object to check for the {@link DisposableEx} interface
  * @returns Whether the object implements the {@link DisposableEx} interface
  */
-export function isDisposableEx(obj: unknown): obj is DisposableEx {
-  const disposableEx = obj as Partial<DisposableEx>;
-  return isDisposable(obj) && typeof disposableEx.dispose === 'function';
+export function isDisposableEx($unknown: unknown): $unknown is DisposableEx {
+  const disposableEx = $unknown as Partial<DisposableEx>;
+  return isDisposable($unknown) && typeof disposableEx.dispose === 'function';
 }
 
 /**
@@ -527,12 +560,12 @@ export function toAsyncDisposableEx(asyncDisposable: AsyncDisposable): AsyncDisp
   }
 
   return {
-    asyncDispose,
-    [Symbol.asyncDispose]: asyncDispose
+    asyncDispose: asyncDisposeAdapted,
+    [Symbol.asyncDispose]: asyncDisposeAdapted
   };
 
-  function asyncDispose(): Promise<void> {
-    return Promise.resolve(asyncDisposable[Symbol.asyncDispose]());
+  function asyncDisposeAdapted(): Promise<void> {
+    return disposeAsync(asyncDisposable);
   }
 }
 
@@ -551,12 +584,12 @@ export function toDisposableEx(disposable: Disposable): DisposableEx {
   }
 
   return {
-    dispose,
-    [Symbol.dispose]: dispose
+    dispose: disposeAdapted,
+    [Symbol.dispose]: disposeAdapted
   };
 
-  function dispose(): void {
-    disposable[Symbol.dispose]();
+  function disposeAdapted(): void {
+    dispose(disposable);
   }
 }
 
@@ -575,13 +608,17 @@ function shouldPerformDispose(isDisposed: boolean, multipleDisposeBehavior: Mult
   }
 
   switch (multipleDisposeBehavior) {
-    case MultipleDisposeBehavior.Ignore:
+    case MultipleDisposeBehavior.Ignore: {
       return false;
-    case MultipleDisposeBehavior.Invoke:
+    }
+    case MultipleDisposeBehavior.Invoke: {
       return true;
-    case MultipleDisposeBehavior.Throw:
+    }
+    case MultipleDisposeBehavior.Throw: {
       throw new Error('This disposable has already been disposed.');
-    default:
+    }
+    default: {
       assertNever(multipleDisposeBehavior);
+    }
   }
 }

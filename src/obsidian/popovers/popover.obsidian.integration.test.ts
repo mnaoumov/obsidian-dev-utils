@@ -41,12 +41,14 @@ const ANCHOR_TOP_IN_PIXELS = 160;
 describe('editFieldsInPopover', () => {
   it('should render an anchored popover and resolve the edited values', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: {
         anchorLeftInPixels: ANCHOR_LEFT_IN_PIXELS,
         anchorTopInPixels: ANCHOR_TOP_IN_PIXELS
       },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ anchorLeftInPixels, anchorTopInPixels, lib: { createAnchorFromElement, editFieldsInPopover, ensureNonNullable, waitUntil } }): Promise<EditFieldsResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30000;
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const EXPECTED_FIELD_COUNT = 2;
 
         const anchorEl = activeDocument.body.createDiv({ text: 'anchor' });
@@ -84,9 +86,9 @@ describe('editFieldsInPopover', () => {
           const inputEls = getInputEls();
           const inputValues = inputEls.map((inputEl) => inputEl.value);
           // The buttons row is a `Setting` too, so it contributes an empty name element to skip.
-          const fieldNames = Array.from(popoverEl.querySelectorAll('.setting-item-name'))
+          const fieldNames = [...popoverEl.querySelectorAll('.setting-item-name')]
             .map((nameEl) => nameEl.textContent)
-            .filter((name) => Boolean(name));
+            .filter(Boolean);
 
           setInputValue(inputEls[0], 'https://edited.example.com');
           setInputValue(inputEls[1], 'Edited');
@@ -112,7 +114,7 @@ describe('editFieldsInPopover', () => {
         }
 
         function getInputEls(): HTMLInputElement[] {
-          return Array.from(getPopoverEl()?.querySelectorAll<HTMLInputElement>('input') ?? []);
+          return [...getPopoverEl()?.querySelectorAll<HTMLInputElement>('input') ?? []];
         }
 
         function getPopoverEl(): HTMLElement | null {
@@ -124,9 +126,9 @@ describe('editFieldsInPopover', () => {
         }
 
         function setInputValue(inputEl: HTMLInputElement | undefined, value: string): void {
-          const el = ensureNonNullable(inputEl, 'The field is missing');
-          el.value = value;
-          el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+          const element = ensureNonNullable(inputEl, 'The field is missing');
+          element.value = value;
+          element.dispatchEvent(new InputEvent('input', { bubbles: true }));
         }
       }
     });
@@ -146,8 +148,9 @@ describe('editFieldsInPopover', () => {
 
   it('should dismiss with no value when a pointer gesture starts outside it', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ lib: { createAnchorFromPoint, editFieldsInPopover, waitUntil } }): Promise<DismissResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30000;
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const ANCHOR_X_IN_PIXELS = 40;
         const ANCHOR_Y_IN_PIXELS = 40;
 

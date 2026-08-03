@@ -8,14 +8,14 @@
 
 import relativeLinksRule from 'markdownlint-rule-relative-links';
 
-import type { MarkdownlintCli2ConfigurationSchema } from './markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
+import type { MarkdownlintCli2ConfigurationSchema as MarkdownlintCli2ConfigSchema } from './markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
 
 import { NODE_MODULES_IGNORE_GLOB } from './markdownlint-ignores.ts';
 
 /**
  * Default markdownlint-cli2 configuration for the Obsidian Dev Utils.
  */
-export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigurationSchema = {
+export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
   config: {
     'MD013': false,
     'MD024': {

@@ -75,7 +75,7 @@ export declare namespace Fields {
   function lambda(args: string[], value: Field): LambdaField;
   function func(func: Field, args: Field[]): FunctionField;
   function list(values: Field[]): ListField;
-  function object(values: Record<string, Field>): ObjectField;
+  function $object(values: Record<string, Field>): ObjectField;
   function negate(child: Field): NegatedField;
   function isCompareOp(op: BinaryOp): op is CompareOp;
   const NULL: LiteralField;

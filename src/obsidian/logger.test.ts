@@ -14,49 +14,49 @@ vi.mock('../debug.ts', () => ({
 }));
 
 vi.mock('../error.ts', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../error.ts')>();
+  const $module = await importOriginal<typeof import('../error.ts')>();
   return {
-    ...mod,
+    ...$module,
     getStackTrace: vi.fn(() => 'mock stack trace')
   };
 });
 
 describe('invokeAsyncAndLog', () => {
   it('should invoke the function and resolve', async () => {
-    const fn = vi.fn();
+    const $function = vi.fn();
     const controller = new AbortController();
-    await invokeAsyncAndLog({ abortSignal: controller.signal, fn, title: 'test' });
-    expect(fn).toHaveBeenCalledTimes(1);
-    expect(fn).toHaveBeenCalledWith(controller.signal);
+    await invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' });
+    expect($function).toHaveBeenCalledTimes(1);
+    expect($function).toHaveBeenCalledWith(controller.signal);
   });
 
   it('should throw immediately if already aborted', async () => {
-    const fn = vi.fn();
+    const $function = vi.fn();
     const controller = new AbortController();
     controller.abort('cancelled');
-    await expect(invokeAsyncAndLog({ abortSignal: controller.signal, fn, title: 'test' })).rejects.toThrow();
-    expect(fn).not.toHaveBeenCalled();
+    await expect(invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' })).rejects.toThrow();
+    expect($function).not.toHaveBeenCalled();
   });
 
   it('should rethrow errors from the function', async () => {
-    const fn = vi.fn().mockRejectedValue(new Error('task failed'));
+    const $function = vi.fn().mockRejectedValue(new Error('task failed'));
     const controller = new AbortController();
-    await expect(invokeAsyncAndLog({ abortSignal: controller.signal, fn, title: 'test' })).rejects.toThrow('task failed');
+    await expect(invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' })).rejects.toThrow('task failed');
   });
 
   it('should throw if aborted during execution', async () => {
     const controller = new AbortController();
-    const fn = vi.fn(async (): Promise<void> => {
+    const $function = vi.fn(async (): Promise<void> => {
       await noopAsync();
       controller.abort('mid-execution');
     });
-    await expect(invokeAsyncAndLog({ abortSignal: controller.signal, fn, title: 'test' })).rejects.toThrow();
+    await expect(invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' })).rejects.toThrow();
   });
 
   it('should use provided stack trace', async () => {
-    const fn = vi.fn();
+    const $function = vi.fn();
     const controller = new AbortController();
-    await invokeAsyncAndLog({ abortSignal: controller.signal, fn, stackTrace: 'custom stack', title: 'test' });
-    expect(fn).toHaveBeenCalledTimes(1);
+    await invokeAsyncAndLog({ $function, abortSignal: controller.signal, stackTrace: 'custom stack', title: 'test' });
+    expect($function).toHaveBeenCalledTimes(1);
   });
 });

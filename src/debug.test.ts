@@ -236,9 +236,9 @@ describe('Debug', () => {
       // eslint-disable-next-line no-console -- Valid usage.
       expect(vi.mocked(console.debug)).toHaveBeenCalled();
       // eslint-disable-next-line no-console -- Valid usage.
-      const callArgs = vi.mocked(console.debug).mock.calls[0];
-      assertNonNullable(callArgs);
-      expect(callArgs[0]).toContain('test message');
+      const callArguments = vi.mocked(console.debug).mock.calls[0];
+      assertNonNullable(callArguments);
+      expect(callArguments[0]).toContain('test message');
     });
 
     it('should not call console.debug when the namespace is disabled', () => {
@@ -284,7 +284,7 @@ describe('Debug', () => {
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace({
-        args: ['world'],
+        $arguments: ['world'],
         debuggerInstance: spy,
         message: 'hello %s',
         stackTrace: 'fake-stack'
@@ -297,7 +297,7 @@ describe('Debug', () => {
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace({
-        args: [],
+        $arguments: [],
         debuggerInstance: spy,
         message: 'msg',
         stackTrace: 'fake-stack'
@@ -312,7 +312,7 @@ describe('Debug', () => {
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace({
-        args: [],
+        $arguments: [],
         debuggerInstance: spy,
         message: 'msg',
         stackTrace: 'fake-stack'
@@ -363,8 +363,8 @@ describe('Debug', () => {
       debug.enable('my-plugin-for-msg');
       showInitialDebugMessage('my-plugin-for-msg');
       // eslint-disable-next-line no-console -- Valid usage.
-      const allArgs = vi.mocked(console.debug).mock.calls.flat().join(' ');
-      expect(allArgs).toContain('my-plugin-for-msg');
+      const allArguments = vi.mocked(console.debug).mock.calls.flat().join(' ');
+      expect(allArguments).toContain('my-plugin-for-msg');
     });
 
     it('should indicate enabled state when plugin namespace is enabled', () => {
@@ -372,8 +372,8 @@ describe('Debug', () => {
       debug.enable('enabled-plugin');
       showInitialDebugMessage('enabled-plugin');
       // eslint-disable-next-line no-console -- Valid usage.
-      const allArgs = vi.mocked(console.debug).mock.calls.flat().join(' ');
-      expect(allArgs).toContain('enabled');
+      const allArguments = vi.mocked(console.debug).mock.calls.flat().join(' ');
+      expect(allArguments).toContain('enabled');
     });
 
     it('should restore original namespaces after showing the message', () => {

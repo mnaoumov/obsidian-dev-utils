@@ -59,8 +59,8 @@ function showTextPopover(text = 'value', anchor = createAnchor()): Promise<null 
   });
 }
 
-function startPointerGestureOn(el: EventTarget): void {
-  el.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+function startPointerGestureOn(element: EventTarget): void {
+  element.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
 }
 
 describe('showPopover', () => {
@@ -68,13 +68,13 @@ describe('showPopover', () => {
     buttonInstances.length = 0;
     document.body.empty();
     mockImplementation({
+      $object: ButtonComponentOriginal.prototype,
       impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
-      method: 'constructor2__',
-      obj: ButtonComponentOriginal.prototype
+      method: 'constructor2__'
     });
   });
 

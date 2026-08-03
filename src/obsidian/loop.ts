@@ -39,7 +39,7 @@ export interface LoopBuildNoticeMessageParams<T> {
   /**
    * A string representing the current iteration.
    */
-  readonly iterationStr: string;
+  readonly iterationString: string;
 }
 
 /**
@@ -182,8 +182,8 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
       return;
     }
     iterationCount++;
-    const iterationStr = `# ${String(iterationCount)} / ${String(items.length)}`;
-    const message = fullOptions.buildNoticeMessage({ item, iterationStr });
+    const iterationString = `# ${String(iterationCount)} / ${String(items.length)}`;
+    const message = fullOptions.buildNoticeMessage({ item, iterationString });
     if (!fullOptions.shouldShowProgressBar) {
       notice?.setMessage(message);
     }
@@ -236,7 +236,7 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
     }
     const fragment = createFragment();
     fragment.createDiv({ text: fullOptions.progressBarTitle });
-    fragment.appendChild(progressBarEl);
+    fragment.append(progressBarEl);
     notice?.setMessage(fragment);
   }
 }

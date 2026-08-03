@@ -38,8 +38,8 @@ class OverlayValidatorComponent implements ValidatorComponent {
 
   private readonly _validatorEl: ValidatorElement;
 
-  public constructor(private readonly el: HTMLElement) {
-    const wrapper = ensureWrapped(el);
+  public constructor(private readonly element: HTMLElement) {
+    const wrapper = ensureWrapped(element);
 
     this._validatorEl = wrapper.createEl('input', {
       attr: {
@@ -49,26 +49,26 @@ class OverlayValidatorComponent implements ValidatorComponent {
     addPluginCssClasses(this._validatorEl, CssClass.OverlayValidator);
 
     this._validatorEl.addEventListener('focus', () => {
-      this.el.focus();
+      this.element.focus();
     });
 
     this._validatorEl.isActiveElement = this.isElementOrDescendantActive.bind(this);
 
-    let tabIndexEl = this.el.querySelector<HTMLElement>('[tabindex]');
+    let tabIndexEl = this.element.querySelector<HTMLElement>('[tabindex]');
     if (!tabIndexEl) {
-      if (this.el.getAttr('tabindex') === null) {
-        this.el.tabIndex = -1;
+      if (this.element.getAttr('tabindex') === null) {
+        this.element.tabIndex = -1;
       }
-      tabIndexEl = this.el;
+      tabIndexEl = this.element;
     }
 
-    this.el.addEventListener('focusin', () => {
+    this.element.addEventListener('focusin', () => {
       this.forceBlurValidatorEl();
     });
-    this.el.addEventListener('click', () => {
+    this.element.addEventListener('click', () => {
       tabIndexEl.focus();
     });
-    this.el.addEventListener('focusout', () => {
+    this.element.addEventListener('focusout', () => {
       window.setTimeout(() => {
         if (this.isElementOrDescendantActive()) {
           return;
@@ -84,7 +84,7 @@ class OverlayValidatorComponent implements ValidatorComponent {
   }
 
   private isElementOrDescendantActive(): boolean {
-    return this.el.contains(activeDocument.activeElement);
+    return this.element.contains(activeDocument.activeElement);
   }
 }
 
@@ -95,49 +95,49 @@ class ValidatorElementWrapper implements ValidatorComponent {
 /**
  * Gets a validator component related to the given object.
  *
- * @param obj - Any object.
+ * @param $unknown - Any object.
  * @returns The related validator component or `null` if no related validator component is found.
  */
-export function getValidatorComponent(obj: unknown): null | ValidatorComponent {
-  if (isValidatorComponent(obj)) {
-    return obj;
+export function getValidatorComponent($unknown: unknown): null | ValidatorComponent {
+  if (isValidatorComponent($unknown)) {
+    return $unknown;
   }
 
-  if (obj instanceof ColorComponent) {
-    return new ValidatorElementWrapper(obj.colorPickerEl);
+  if ($unknown instanceof ColorComponent) {
+    return new ValidatorElementWrapper($unknown.colorPickerEl);
   }
 
-  if (obj instanceof DropdownComponent) {
-    return new ValidatorElementWrapper(obj.selectEl);
+  if ($unknown instanceof DropdownComponent) {
+    return new ValidatorElementWrapper($unknown.selectEl);
   }
 
-  if (obj instanceof ProgressBarComponent) {
-    return new OverlayValidatorComponent(obj.progressBar);
+  if ($unknown instanceof ProgressBarComponent) {
+    return new OverlayValidatorComponent($unknown.progressBar);
   }
 
-  if (obj instanceof SearchComponent) {
-    return new ValidatorElementWrapper(obj.inputEl);
+  if ($unknown instanceof SearchComponent) {
+    return new ValidatorElementWrapper($unknown.inputEl);
   }
 
-  if (obj instanceof SliderComponent) {
-    return new ValidatorElementWrapper(obj.sliderEl);
+  if ($unknown instanceof SliderComponent) {
+    return new ValidatorElementWrapper($unknown.sliderEl);
   }
 
-  if (obj instanceof TextAreaComponent) {
-    return new ValidatorElementWrapper(obj.inputEl);
+  if ($unknown instanceof TextAreaComponent) {
+    return new ValidatorElementWrapper($unknown.inputEl);
   }
 
-  if (obj instanceof TextComponent) {
-    return new ValidatorElementWrapper(obj.inputEl);
+  if ($unknown instanceof TextComponent) {
+    return new ValidatorElementWrapper($unknown.inputEl);
   }
 
-  if (obj instanceof ToggleComponent) {
-    return new OverlayValidatorComponent(obj.toggleEl);
+  if ($unknown instanceof ToggleComponent) {
+    return new OverlayValidatorComponent($unknown.toggleEl);
   }
 
   return null;
 }
 
-function isValidatorComponent(obj: unknown): obj is ValidatorComponent {
-  return typeof obj === 'object' && obj !== null && 'validatorEl' in obj && !!(obj as Partial<ValidatorComponent>).validatorEl;
+function isValidatorComponent($unknown: unknown): $unknown is ValidatorComponent {
+  return typeof $unknown === 'object' && $unknown !== null && 'validatorEl' in $unknown && !!($unknown as Partial<ValidatorComponent>).validatorEl;
 }

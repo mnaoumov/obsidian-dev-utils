@@ -28,7 +28,7 @@ import type {
   CanvasTextNodeReference
 } from './reference.ts';
 import type {
-  ContentArgs,
+  ContentArguments,
   ProcessOptions,
   ProcessParams
 } from './vault.ts';
@@ -36,8 +36,8 @@ import type {
 import { getLibDebugger } from '../debug.ts';
 import { printError } from '../error.ts';
 import {
-  deepEqual,
   getNestedPropertyValue,
+  isDeepEqual,
   normalizeOptionalProperties,
   setNestedPropertyValue
 } from '../object-utils.ts';
@@ -60,7 +60,7 @@ import {
 } from './reference.ts';
 import { process } from './vault.ts';
 
-const ESCAPED_WIKILINK_DIVIDER = '\\|';
+const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
 const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 
 /**
@@ -75,7 +75,7 @@ export interface ApplyContentChangesParams {
   /**
    * A provider that returns an array of content changes to apply.
    */
-  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArguments>;
 
   /**
    * The content to which the changes should be applied.
@@ -110,7 +110,7 @@ export interface ApplyFileChangesParams extends ApplyFileChangesOptions {
   /**
    * A provider that returns an array of file changes to apply.
    */
-  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArguments>;
 
   /**
    * The path or file to which the changes should be applied.
@@ -152,7 +152,7 @@ interface ApplyCanvasChangesParams {
   /**
    * A provider that returns an array of file changes to apply.
    */
-  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArgs>;
+  readonly changesProvider: ValueProvider<FileChange[] | null, ContentArguments>;
 
   /**
    * The content to which the changes should be applied.
@@ -310,7 +310,7 @@ export async function applyContentChanges(params: ApplyContentChangesParams): Pr
 
   const { frontmatter, hasFrontmatterError } = parseFrontmatterSafely({ content, path });
 
-  if (!validateChanges({ changes, content, frontmatter, path })) {
+  if (!areChangesValid({ changes, content, frontmatter, path })) {
     return shouldRetryOnInvalidChanges ? null : content;
   }
 
@@ -519,7 +519,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
     }
   }
 
-  for (const [nodeIndex, canvasTextChangesForNode] of canvasTextChanges.entries()) {
+  for (const [nodeIndex, canvasTextChangesForNode] of canvasTextChanges) {
     const node = canvasData.nodes[nodeIndex];
     /* v8 ignore start -- Node existence is already verified in the first loop above. */
     if (!node) {
@@ -549,7 +549,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
       // Link uses an unescaped divider, so restore the escaping when the original reference had it,
       // Keeping both the table and the embed size intact across the rewrite.
       const newContent = change.reference.originalReference.original.includes(ESCAPED_WIKILINK_DIVIDER)
-        ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER)
+        ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER)
         : change.newContent;
       return referenceToFileChange(change.reference.originalReference, newContent);
     });
@@ -641,7 +641,7 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
     frontmatterChangesWithOffsetMap,
     path
   } = params;
-  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap.entries()) {
+  for (const [key, frontmatterChangesWithOffsets] of frontmatterChangesWithOffsetMap) {
     const propertyValue = getNestedPropertyValue(frontmatter, key);
     /* v8 ignore start -- Validation ensures the property is a string before reaching this point. */
     if (typeof propertyValue !== 'string') {
@@ -683,11 +683,82 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
     /* v8 ignore stop */
 
     setNestedPropertyValue({
-      obj: frontmatter,
+      $object: frontmatter,
       path: key,
       value: newPropertyValue
     });
   }
+}
+
+function areChangesValid(params: ValidateChangesParams): boolean {
+  const {
+    changes,
+    content,
+    frontmatter,
+    path
+  } = params;
+  const validateChangesDebugger = getLibDebugger('FileChange:validateChanges');
+  for (const change of changes) {
+    /* v8 ignore start -- All change types are handled; the false branch leads to other else-if checks. */
+    if (isContentChange(change)) {
+      /* v8 ignore stop */
+      const startOffset = change.reference.position.start.offset;
+      const endOffset = change.reference.position.end.offset;
+      const actualContent = content.slice(startOffset, endOffset);
+      if (actualContent !== change.oldContent) {
+        validateChangesDebugger('Content mismatch', {
+          actualContent,
+          endOffset,
+          expectedContent: change.oldContent,
+          path,
+          startOffset
+        });
+
+        return false;
+      }
+      /* v8 ignore start -- All change types are handled; no unknown change types in practice. */
+    } else if (isFrontmatterChangeWithOffsets(change)) {
+      /* v8 ignore stop */
+      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.key);
+      if (typeof propertyValue !== 'string') {
+        validateChangesDebugger('Property value is not a string', {
+          frontmatterKey: change.reference.key,
+          path,
+          propertyValue
+        });
+        return false;
+      }
+
+      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
+      if (actualContent !== change.oldContent) {
+        validateChangesDebugger('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.key,
+          path,
+          startOffset: change.reference.startOffset
+        });
+
+        return false;
+      }
+      /* v8 ignore start -- All change types are handled above; no unknown change types in practice. */
+    } else if (isFrontmatterChange(change)) {
+      /* v8 ignore stop */
+      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
+      if (actualContent !== change.oldContent) {
+        validateChangesDebugger('Content mismatch', {
+          actualContent,
+          expectedContent: change.oldContent,
+          frontmatterKey: change.reference.key,
+          path
+        });
+
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function buildFinalContent(params: BuildFinalContentParams): string {
@@ -758,77 +829,6 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
     if (index === 0) {
       return true;
     }
-    return !deepEqual(change, changes[index - 1]);
+    return !isDeepEqual(change, changes[index - 1]);
   });
-}
-
-function validateChanges(params: ValidateChangesParams): boolean {
-  const {
-    changes,
-    content,
-    frontmatter,
-    path
-  } = params;
-  const validateChangesDebugger = getLibDebugger('FileChange:validateChanges');
-  for (const change of changes) {
-    /* v8 ignore start -- All change types are handled; the false branch leads to other else-if checks. */
-    if (isContentChange(change)) {
-      /* v8 ignore stop */
-      const startOffset = change.reference.position.start.offset;
-      const endOffset = change.reference.position.end.offset;
-      const actualContent = content.slice(startOffset, endOffset);
-      if (actualContent !== change.oldContent) {
-        validateChangesDebugger('Content mismatch', {
-          actualContent,
-          endOffset,
-          expectedContent: change.oldContent,
-          path,
-          startOffset
-        });
-
-        return false;
-      }
-      /* v8 ignore start -- All change types are handled; no unknown change types in practice. */
-    } else if (isFrontmatterChangeWithOffsets(change)) {
-      /* v8 ignore stop */
-      const propertyValue = getNestedPropertyValue(frontmatter, change.reference.key);
-      if (typeof propertyValue !== 'string') {
-        validateChangesDebugger('Property value is not a string', {
-          frontmatterKey: change.reference.key,
-          path,
-          propertyValue
-        });
-        return false;
-      }
-
-      const actualContent = propertyValue.slice(change.reference.startOffset, change.reference.endOffset);
-      if (actualContent !== change.oldContent) {
-        validateChangesDebugger('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.reference.key,
-          path,
-          startOffset: change.reference.startOffset
-        });
-
-        return false;
-      }
-      /* v8 ignore start -- All change types are handled above; no unknown change types in practice. */
-    } else if (isFrontmatterChange(change)) {
-      /* v8 ignore stop */
-      const actualContent = getNestedPropertyValue(frontmatter, change.reference.key);
-      if (actualContent !== change.oldContent) {
-        validateChangesDebugger('Content mismatch', {
-          actualContent,
-          expectedContent: change.oldContent,
-          frontmatterKey: change.reference.key,
-          path
-        });
-
-        return false;
-      }
-    }
-  }
-
-  return true;
 }

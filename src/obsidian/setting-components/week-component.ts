@@ -60,11 +60,11 @@ export class WeekComponent extends TypedRangeTextComponent<IsoWeek> {
   /**
    * Converts a string to a Week.
    *
-   * @param str - The string to convert.
+   * @param $string - The string to convert.
    * @returns The week.
    */
-  public override valueFromString(str: string): IsoWeek {
-    const parsed = moment(str, DATE_FORMAT);
+  public override valueFromString($string: string): IsoWeek {
+    const parsed = moment($string, DATE_FORMAT);
 
     if (!parsed.isValid()) {
       throw new Error('Invalid week');

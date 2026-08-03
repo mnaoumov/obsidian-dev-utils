@@ -41,10 +41,10 @@ describe('createAnchorFromDocumentCenter', () => {
 
 describe('createAnchorFromElement', () => {
   it('should anchor at the bottom left of the element rect', () => {
-    const el = document.body.createDiv();
-    el.getBoundingClientRect = (): DOMRect => createRect(120, 40);
+    const element = document.body.createDiv();
+    element.getBoundingClientRect = (): DOMRect => createRect(120, 40);
 
-    const anchor = createAnchorFromElement(el);
+    const anchor = createAnchorFromElement(element);
 
     expect(anchor).toStrictEqual({
       bottom: 120,

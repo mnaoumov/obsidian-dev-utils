@@ -15,6 +15,7 @@ import {
 
 import type { ValueProvider } from '../../value-provider.ts';
 
+import { snapshot } from '../../array.ts';
 import { invokeAsyncSafely } from '../../async.ts';
 import { normalizeOptionalProperties } from '../../object-utils.ts';
 import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
@@ -294,7 +295,7 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   public override onunload(): void {
     // Cancel any delayed notice whose timer has not fired yet, so it never appears after unload.
-    for (const cancelPendingTimer of [...this.pendingTimerCancellations]) {
+    for (const cancelPendingTimer of snapshot(this.pendingTimerCancellations)) {
       cancelPendingTimer();
     }
     if (this.getPermanentNotice() !== this.notice) {
@@ -437,8 +438,8 @@ export class PluginNoticeComponent extends ComponentEx {
     addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
     closeButtonEl.addClasses([CssClass.ClickableIcon, CssClass.ModalHeaderButton]);
     setIcon(closeButtonEl, 'x');
-    closeButtonEl.addEventListener('click', (evt) => {
-      evt.stopPropagation();
+    closeButtonEl.addEventListener('click', ($event) => {
+      $event.stopPropagation();
       invokeAsyncSafely(async () => {
         let isCancelled = false;
         await onCloseClick?.({
@@ -471,7 +472,7 @@ export class PluginNoticeComponent extends ComponentEx {
     if (typeof content === 'string') {
       fragment.appendText(content);
     } else {
-      fragment.appendChild(content);
+      fragment.append(content);
     }
 
     if (abortController) {
@@ -486,7 +487,7 @@ export class PluginNoticeComponent extends ComponentEx {
       cancelButton.buttonEl.addEventListener('click', () => {
         abortController.abort();
       });
-      fragment.appendChild(cancelButton.buttonEl);
+      fragment.append(cancelButton.buttonEl);
     }
     return fragment;
   }
@@ -505,15 +506,15 @@ export class PluginNoticeComponent extends ComponentEx {
     const fragment = createFragment();
     const contentEl = fragment.createDiv();
     addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
-    contentEl.appendChild(this.buildPrefixedMessage(message));
-    contentEl.addEventListener('click', (evt) => {
+    contentEl.append(this.buildPrefixedMessage(message));
+    contentEl.addEventListener('click', ($event) => {
       // A hard-to-close notice must not dismiss on any stray click; only its close button may hide it.
       if (requiresExplicitClose) {
-        evt.stopPropagation();
+        $event.stopPropagation();
         return;
       }
-      if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
-        evt.stopPropagation();
+      if ($event.target instanceof Element && $event.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+        $event.stopPropagation();
       }
     });
 
@@ -538,7 +539,7 @@ export class PluginNoticeComponent extends ComponentEx {
     const fragment = createFragment();
     const nameEl = createSpan({ text: this.pluginName });
     addPluginCssClasses(nameEl, CssClass.PluginNoticeName);
-    fragment.appendChild(nameEl);
+    fragment.append(nameEl);
     if (!this._loaded) {
       fragment.appendText(' (unloaded)');
     }
@@ -546,7 +547,7 @@ export class PluginNoticeComponent extends ComponentEx {
     if (typeof message === 'string') {
       fragment.appendText(message);
     } else {
-      fragment.appendChild(message);
+      fragment.append(message);
     }
     return fragment;
   }
@@ -581,11 +582,11 @@ export class PluginNoticeComponent extends ComponentEx {
     // Letting a click reach an interactive child (a button, link, the close button, etc.) is what keeps
     // Its own handler working; the bubble-phase guard on the content wrapper then stops that click from
     // Bubbling up to Obsidian's dismiss handler, so the notice still stays open.
-    notice.containerEl.addEventListener('click', (evt) => {
-      if (evt.target instanceof Element && evt.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+    notice.containerEl.addEventListener('click', ($event) => {
+      if ($event.target instanceof Element && $event.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
         return;
       }
-      evt.stopPropagation();
+      $event.stopPropagation();
     }, { capture: true });
   }
 
@@ -690,8 +691,8 @@ export class PluginNoticeComponent extends ComponentEx {
     const patchComponent = new MonkeyAroundComponent();
     patchComponent.load();
     patchComponent.registerMethodPatch({
+      $object: notice,
       methodName: 'hide',
-      obj: notice,
       once: true,
       patchHandler: ({ fallback }) => {
         fallback();

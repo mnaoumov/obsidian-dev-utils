@@ -38,9 +38,9 @@ export const requireMethodTemplate: Rule.RuleModule = {
     return {
       'MethodDefinition'(node: Rule.Node): void {
         const methodNode = node as TSESTree.MethodDefinition;
-        const functionExpr = methodNode.value;
+        const functionExpression = methodNode.value;
 
-        const typeParams = functionExpr.typeParameters?.params;
+        const typeParams = functionExpression.typeParameters?.params;
         if (!typeParams || typeParams.length === 0) {
           return;
         }
@@ -53,19 +53,20 @@ export const requireMethodTemplate: Rule.RuleModule = {
           return;
         }
 
-        const parsedTags = parseTypeParamTags({
+        const parsedTags = parseTypeParameterTags({
           commentBody: jsdocComment.value,
           tagName: preferredTagName
         });
 
-        for (const typeParam of typeParams) {
-          const paramName = typeParam.name.name;
-          const matchingTag = parsedTags.find((tag) => tag.name === paramName);
+        for (const typeParameter of typeParams) {
+          const parameterName = typeParameter.name.name;
+          const matchingTag = parsedTags.find((tag) => tag.name === parameterName);
 
           if (!matchingTag) {
             context.report({
               data: {
-                paramName,
+                // eslint-disable-next-line unicorn/name-replacements -- `paramName` is the placeholder this rule's own message template reads.
+                paramName: parameterName,
                 tagName: preferredTagName
               },
               messageId: MESSAGE_ID_MISSING_TEMPLATE,
@@ -74,7 +75,8 @@ export const requireMethodTemplate: Rule.RuleModule = {
           } else if (!matchingTag.hasDescription) {
             context.report({
               data: {
-                paramName,
+                // eslint-disable-next-line unicorn/name-replacements -- `paramName` is the placeholder this rule's own message template reads.
+                paramName: parameterName,
                 tagName: preferredTagName
               },
               messageId: MESSAGE_ID_MISSING_TEMPLATE_DESCRIPTION,
@@ -106,7 +108,7 @@ interface ParsedTag {
 /**
  * Parameters for {@link parseTypeParamTags}.
  */
-interface ParseTypeParamTagsParams {
+interface ParseTypeParameterTagsParams {
   /**
    * The raw comment body (without the leading and trailing comment delimiters).
    */
@@ -125,8 +127,8 @@ interface ParseTypeParamTagsParams {
  * @returns The JSDoc block comment, or `undefined` if none found.
  */
 function findJsdocComment(comments: readonly Comment[]): Comment | undefined {
-  for (let i = comments.length - 1; i >= 0; i--) {
-    const comment = comments[i];
+  for (let index = comments.length - 1; index >= 0; index--) {
+    const comment = comments[index];
     if (comment?.type === 'Block' && comment.value.startsWith('*')) {
       return comment;
     }
@@ -141,10 +143,14 @@ function findJsdocComment(comments: readonly Comment[]): Comment | undefined {
  * @param params - The parameters for the parse.
  * @returns An array of parsed tag entries.
  */
-function parseTypeParamTags(params: ParseTypeParamTagsParams): ParsedTag[] {
+function parseTypeParameterTags(params: ParseTypeParameterTagsParams): ParsedTag[] {
   const { commentBody, tagName } = params;
   const tags: ParsedTag[] = [];
-  const tagPattern = new RegExp(`@(?:${tagName}|template|typeParam)\\s+(?<typeName>\\w+)(?<rest>.*)`, 'g');
+  /*
+   * The `$` character is a legal identifier character that `\w` excludes, so a tag like `@typeParam $Object`
+   * would fail to match at all and the type parameter would be reported as undocumented despite having a tag.
+   */
+  const tagPattern = new RegExp(String.raw`@(?:${tagName}|template|typeParam)\s+(?<typeName>[\w$]+)(?<rest>.*)`, 'g');
 
   let match;
   while ((match = tagPattern.exec(commentBody)) !== null) {

@@ -10,11 +10,12 @@ import {
   formatOverExposureFindings
 } from '../src/script-utils/linters/over-exposure.ts';
 
-const [, , ...args] = process.argv;
+const [, , ...$arguments] = process.argv;
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
-  args,
+  // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
+  args: $arguments,
   options: {
     force: { type: 'boolean' }
   }

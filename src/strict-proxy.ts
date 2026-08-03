@@ -52,17 +52,18 @@ const PASSTHROUGH_PROPS = new Set<string | symbol>([
  * optional properties without triggering the proxy's error on missing props.
  *
  * @typeParam T - The object type.
- * @param obj - The object to bypass.
+ * @param $object - The object to bypass.
  * @returns The unwrapped object.
  */
-export function bypassStrictProxy<T>(obj: T): T {
-  if (!isObjectLike(obj)) {
-    return obj;
+export function bypassStrictProxy<T>($object: T): T {
+  if (!isObjectLike($object)) {
+    return $object;
   }
-  if (!(STRICT_PROXY_TARGET_SYMBOL in obj)) {
-    return obj;
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- On a proxy, `Object.hasOwn` triggers the `getOwnPropertyDescriptor` trap rather than `has`.
+  if (!(STRICT_PROXY_TARGET_SYMBOL in $object)) {
+    return $object;
   }
-  return obj[STRICT_PROXY_TARGET_SYMBOL] as T;
+  return $object[STRICT_PROXY_TARGET_SYMBOL] as T;
 }
 
 /**
@@ -115,6 +116,7 @@ function wrapProxy<T>(value: unknown): T {
     return value as T;
   }
 
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- On a proxy, `Object.hasOwn` triggers the `getOwnPropertyDescriptor` trap rather than `has`.
   if (STRICT_PROXY_TARGET_SYMBOL in value) {
     return value as T;
   }
@@ -127,31 +129,32 @@ function wrapProxy<T>(value: unknown): T {
      * Intercepts property access on the proxied object, throwing on unmocked properties.
      *
      * @param target - The proxied target object.
-     * @param prop - The property being accessed.
+     * @param property - The property being accessed.
      * @param receiver - The proxy or an object that inherits from it.
      * @returns The property value.
      * @remarks Not refactored to parameter-object pattern, to keep the parity with the {@link ProxyHandler.get} trap.
      */
-    get(target, prop, receiver): unknown {
-      if (prop in target) {
-        if (proxiedChildren.has(prop)) {
-          return proxiedChildren.get(prop);
+    get(target, property, receiver): unknown {
+      // eslint-disable-next-line unicorn/no-computed-property-existence-check -- The `get` trap must see inherited members; `Object.hasOwn` would hide every prototype method.
+      if (property in target) {
+        if (proxiedChildren.has(property)) {
+          return proxiedChildren.get(property);
         }
 
-        const val: unknown = Reflect.get(target, prop, receiver);
-        if (isPlainObject(val)) {
-          const result = wrapProxy<unknown>(val);
-          proxiedChildren.set(prop, result);
+        const $value: unknown = Reflect.get(target, property, receiver);
+        if (isPlainObject($value)) {
+          const result = wrapProxy<unknown>($value);
+          proxiedChildren.set(property, result);
           return result;
         }
-        return val;
+        return $value;
       }
 
-      if (typeof prop === 'symbol' || PASSTHROUGH_PROPS.has(prop)) {
-        return Reflect.get(target, prop, receiver);
+      if (typeof property === 'symbol' || PASSTHROUGH_PROPS.has(property)) {
+        return Reflect.get(target, property, receiver);
       }
 
-      throw new Error(`Unmocked property "${prop}" was accessed on mock object`);
+      throw new Error(`Unmocked property "${property}" was accessed on mock object`);
     }
   }) as T;
 }

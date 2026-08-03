@@ -40,7 +40,7 @@ export interface RetryWithTimeoutNoticeParams {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<boolean>;
 
   /**
    * The name of the operation.
@@ -95,7 +95,7 @@ export interface RunWithTimeoutNoticeParams<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(abortSignal: AbortSignal): Promisable<Result>;
+  operationFunction(abortSignal: AbortSignal): Promisable<Result>;
 
   /**
    * The name of the operation.
@@ -153,25 +153,25 @@ export async function runWithTimeoutNotice<Result>(params: RunWithTimeoutNoticeP
   });
 }
 
-function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content?: ValueProvider<DocumentFragment | string>): void {
+function onTimeoutNotice(context: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content?: ValueProvider<DocumentFragment | string>): void {
   if (content !== undefined) {
-    showCustomContentNotice(ctx, pluginNoticeComponent, content);
+    showCustomContentNotice(context, pluginNoticeComponent, content);
     return;
   }
 
-  const startTime = Math.trunc(performance.now() - ctx.duration);
+  const startTime = Math.trunc(performance.now() - context.duration);
   let runningTimeEl: HTMLSpanElement;
   const SECOND_IN_MILLISECONDS = 1000;
   const cleanup = { intervalId: 0 };
 
   const notice = pluginNoticeComponent.showNotice(createFragment((f) => {
-    if (ctx.operationName) {
+    if (context.operationName) {
       f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.operation));
       f.appendText(': ');
-      f.appendText(ctx.operationName);
+      f.appendText(context.operationName);
       f.createEl('br');
     }
-    f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.timedOut, { duration: ctx.duration }));
+    f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.timedOut, { duration: context.duration }));
     f.createEl('br');
     f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.runningFor));
     f.appendText(' ');
@@ -185,7 +185,7 @@ function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNotic
       text: t(($) => $.obsidianDevUtils.buttons.cancel)
     });
     button.addEventListener('click', () => {
-      ctx.terminateOperation();
+      context.terminateOperation();
       window.clearInterval(cleanup.intervalId);
       notice.hide();
     });
@@ -194,23 +194,23 @@ function onTimeoutNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNotic
   updateRunningTime();
   cleanup.intervalId = window.setInterval(updateRunningTime, SECOND_IN_MILLISECONDS);
 
-  ctx.onOperationCompleted(() => {
+  context.onOperationCompleted(() => {
     window.clearInterval(cleanup.intervalId);
     notice.hide();
   });
 
   function updateRunningTime(): void {
-    const runningTimeInMilliseconds = Math.max(ctx.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
+    const runningTimeInMilliseconds = Math.max(context.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
     runningTimeEl.textContent = String(runningTimeInMilliseconds);
   }
 }
 
-function onTimeoutWithoutNotice(ctx: TimeoutContext): void {
-  const startTime = Math.trunc(performance.now() - ctx.duration);
+function onTimeoutWithoutNotice(context: TimeoutContext): void {
+  const startTime = Math.trunc(performance.now() - context.duration);
 
-  ctx.onOperationCompleted(() => {
+  context.onOperationCompleted(() => {
     getDebugger('AsyncWithNotice:onTimeoutWithoutNotice')('Operation completed after timeout', {
-      operationName: ctx.operationName,
+      operationName: context.operationName,
       totalDuration: Math.trunc(performance.now() - startTime)
     });
   });
@@ -230,21 +230,21 @@ function resolveOnTimeout(
   shouldShowTimeoutNotice: boolean | undefined,
   pluginNoticeComponent: null | PluginNoticeComponent,
   content?: ValueProvider<DocumentFragment | string>
-): (ctx: TimeoutContext) => void {
+): (context: TimeoutContext) => void {
   if (!(shouldShowTimeoutNotice ?? true) || pluginNoticeComponent === null) {
     return onTimeoutWithoutNotice;
   }
 
-  return (ctx): void => {
-    onTimeoutNotice(ctx, pluginNoticeComponent, content);
+  return (context): void => {
+    onTimeoutNotice(context, pluginNoticeComponent, content);
   };
 }
 
-function showCustomContentNotice(ctx: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content: ValueProvider<DocumentFragment | string>): void {
+function showCustomContentNotice(context: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content: ValueProvider<DocumentFragment | string>): void {
   let isOperationCompleted = false;
   let notice: Notice | null = null;
 
-  ctx.onOperationCompleted(() => {
+  context.onOperationCompleted(() => {
     isOperationCompleted = true;
     notice?.hide();
   });

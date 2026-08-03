@@ -20,19 +20,19 @@ import {
 } from './queue.ts';
 
 const mocks = vi.hoisted(() => ({
-  addErrorHandler: vi.fn(async (fn: () => Promise<void>) => {
-    await fn();
+  addErrorHandler: vi.fn(async ($function: () => Promise<void>) => {
+    await $function();
   }),
   getObsidianDevUtilsState: vi.fn(),
   invokeAsyncAndLog: vi.fn(async (params: InvokeAsyncAndLogParams) => {
-    await params.fn(params.abortSignal ?? new AbortController().signal);
+    await params.$function(params.abortSignal ?? new AbortController().signal);
   }),
-  invokeAsyncSafely: vi.fn((fn: () => Promise<unknown>) => {
-    fn().catch(() => undefined);
+  invokeAsyncSafely: vi.fn(($function: () => Promise<unknown>) => {
+    $function().catch(() => undefined);
   }),
   runWithTimeoutNotice: vi.fn(async (params: RunWithTimeoutNoticeParams<unknown>) => {
     const controller = new AbortController();
-    await params.operationFn(controller.signal);
+    await params.operationFunction(controller.signal);
   })
 }));
 
@@ -102,8 +102,8 @@ describe('addToQueue', () => {
   });
 
   it('should add an item to the queue via invokeAsyncSafely', () => {
-    const operationFn = vi.fn();
-    addToQueue({ operationFn, operationName: 'test-op' });
+    const operationFunction = vi.fn();
+    addToQueue({ operationFunction, operationName: 'test-op' });
     expect(mocks.invokeAsyncSafely).toHaveBeenCalledWith(expect.any(Function), 'mock-stack-trace');
   });
 });
@@ -118,8 +118,8 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should add an item to the queue and process it', async () => {
-    const operationFn = vi.fn();
-    await addToQueueAndWait({ operationFn, operationName: 'test-op' });
+    const operationFunction = vi.fn();
+    await addToQueueAndWait({ operationFunction, operationName: 'test-op' });
     expect(queue.items.length).toBe(0);
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
@@ -133,8 +133,8 @@ describe('addToQueueAndWait', () => {
       order.push(2);
     });
 
-    await addToQueueAndWait({ operationFn: op1, operationName: 'op1' });
-    await addToQueueAndWait({ operationFn: op2, operationName: 'op2' });
+    await addToQueueAndWait({ operationFunction: op1, operationName: 'op1' });
+    await addToQueueAndWait({ operationFunction: op2, operationName: 'op2' });
     expect(order).toEqual([1, 2]);
   });
 
@@ -143,21 +143,21 @@ describe('addToQueueAndWait', () => {
     controller.abort();
     await expect(addToQueueAndWait({
       abortSignal: controller.signal,
-      operationFn: vi.fn()
+      operationFunction: vi.fn()
     })).rejects.toThrow();
   });
 
   it('should use default timeout when not specified', async () => {
-    await addToQueueAndWait({ operationFn: vi.fn() });
+    await addToQueueAndWait({ operationFunction: vi.fn() });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
-        timeoutInMilliseconds: 60000
+        timeoutInMilliseconds: 60_000
       })
     );
   });
 
   it('should use custom timeout when specified', async () => {
-    await addToQueueAndWait({ operationFn: vi.fn(), timeoutInMilliseconds: 5000 });
+    await addToQueueAndWait({ operationFunction: vi.fn(), timeoutInMilliseconds: 5000 });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         timeoutInMilliseconds: 5000
@@ -166,7 +166,7 @@ describe('addToQueueAndWait', () => {
   });
 
   it('should use custom stack trace when provided', async () => {
-    await addToQueueAndWait({ operationFn: vi.fn(), stackTrace: 'custom-stack' });
+    await addToQueueAndWait({ operationFunction: vi.fn(), stackTrace: 'custom-stack' });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalledWith(
       expect.objectContaining({
         stackTrace: 'custom-stack'
@@ -177,7 +177,7 @@ describe('addToQueueAndWait', () => {
   it('should handle empty queue gracefully', async () => {
     // Queue with no items should just resolve
     queue.items = [];
-    await addToQueueAndWait({ operationFn: noop });
+    await addToQueueAndWait({ operationFunction: noop });
     expect(mocks.runWithTimeoutNotice).toHaveBeenCalled();
   });
 });

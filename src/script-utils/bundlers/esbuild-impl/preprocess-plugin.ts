@@ -9,6 +9,8 @@
 
 /* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. */
 
+/* eslint-disable unicorn/prefer-module -- The CommonJS surface is the subject here, not an oversight. This plugin emits the interop shims that let a bundle run under either module system, so it has to name `__filename` and `require` to detect and bridge them. `import.meta.filename` is precisely what is unavailable in the environment these branches exist to serve. */
+
 import type { Plugin } from 'esbuild';
 import type { pathToFileURL } from 'node:url';
 
@@ -59,9 +61,9 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
     : {
       [
         replaceAll({
+          $string: 'import(dot)meta(dot)url',
           replacer: '.',
-          searchValue: '(dot)',
-          str: 'import(dot)meta(dot)url'
+          searchValue: '(dot)'
         })
       ]: (): string => {
         if (typeof __filename === 'string') {
@@ -94,29 +96,29 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
       build.initialOptions.banner['js'] ??= '';
       build.initialOptions.banner['js'] += `\n(${String(isEsm ? initEsm : initCjs)})();\n`;
 
-      build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async (args) => {
-        let contents = await readFile(args.path, 'utf-8');
+      build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async ($arguments) => {
+        let contents = await readFile($arguments.path, 'utf-8');
 
         for (const [key, value] of Object.entries(replacements)) {
           const variable = `__${makeValidVariableName(key)}`;
           if (!contents.includes(key)) {
             continue;
           }
-          const valueStr = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
-          contents = `var ${variable} = globalThis['${key}'] ?? ${valueStr};\n${contents}`;
+          const valueString = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
+          contents = `var ${variable} = globalThis['${key}'] ?? ${valueString};\n${contents}`;
         }
 
         // HACK: The ${''} part is used to ensure Obsidian loads the plugin properly,
         // Otherwise, it stops loading after the first line of the sourceMappingURL comment.
 
         contents = replaceAll({
+          $string: contents,
           // eslint-disable-next-line no-template-curly-in-string -- It is intentional, the string looks like a template literal, but it is not.
           replacer: '`\n//#${\'\'} sourceMappingURL',
-          searchValue: /`\r?\n\/\/# sourceMappingURL/g,
-          str: contents
+          searchValue: /`\r?\n\/\/# sourceMappingURL/g
         });
 
         return {
@@ -165,16 +167,11 @@ function initCjs(): void {
     globalThisRecord[key] ??= newFuncs[key]?.();
   }
 
-  function name(obj: unknown): unknown {
-    return obj;
-  }
-
   function extractDefault(module: Partial<EsmModule> | undefined): unknown {
     return module && module.__esModule && 'default' in module ? module.default : module;
   }
 
-  const OBSIDIAN_BUILT_IN_MODULE_NAMES = [
-    'obsidian',
+  const OBSIDIAN_BUILT_IN_MODULE_NAMES = new Set([
     '@codemirror/autocomplete',
     '@codemirror/collab',
     '@codemirror/commands',
@@ -185,11 +182,12 @@ function initCjs(): void {
     '@codemirror/text',
     '@codemirror/view',
     '@lezer/common',
+    '@lezer/highlight',
     '@lezer/lr',
-    '@lezer/highlight'
-  ];
+    'obsidian'
+  ]);
 
-  const DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES = [
+  const DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES = new Set([
     '@codemirror/closebrackets',
     '@codemirror/comment',
     '@codemirror/fold',
@@ -202,10 +200,10 @@ function initCjs(): void {
     '@codemirror/rectangular-selection',
     '@codemirror/stream-parser',
     '@codemirror/tooltip'
-  ];
+  ]);
 
   function requirePatched(id: string): unknown {
-    if (OBSIDIAN_BUILT_IN_MODULE_NAMES.includes(id) || DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES.includes(id)) {
+    if (OBSIDIAN_BUILT_IN_MODULE_NAMES.has(id) || DEPRECATED_OBSIDIAN_BUILT_IN_MODULE_NAMES.has(id)) {
       return originalRequire?.(id);
     }
 
@@ -214,8 +212,8 @@ function initCjs(): void {
       if (id === 'process' || id === 'node:process') {
         // eslint-disable-next-line no-console -- Valid usage.
         console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
-        // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-        return globalThis.process;
+
+        return process;
       }
     } else {
       const module = originalRequire?.(id) as (Partial<EsmModule> | undefined);
@@ -249,3 +247,9 @@ function initEsm(): void {
 }
 
 /* v8 ignore stop */
+
+function name($unknown: unknown): unknown {
+  return $unknown;
+}
+
+/* eslint-enable unicorn/prefer-module -- Pairs with the file-level disable above. */

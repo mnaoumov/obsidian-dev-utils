@@ -14,26 +14,26 @@ import { normalizeOptionalProperties } from '../object-utils.ts';
 import { trimEnd } from '../string.ts';
 import { assertNonNullable } from '../type-guards.ts';
 import {
-  cmdEscapeCommandLine,
+  cmdEscapeCommandLine as commandEscapeCommandLine,
   toCommandLine,
   toPosixCommandLine
 } from './cli-utils.ts';
 
 /**
- * A command part: either a plain string or an {@link ExecArg} with batched arguments.
+ * A command part: either a plain string or an {@link ExecArgument} with batched arguments.
  */
-export type CommandPart = ExecArg | string;
+export type CommandPart = ExecArgument | string;
 
 /**
  * A command argument that contains a list of args to be batched.
  * If the expanded command exceeds the platform's max command length,
  * the batched args are split into sequential executions.
  */
-export interface ExecArg {
+export interface ExecArgument {
   /**
    * The arguments to batch.
    */
-  readonly batchedArgs: readonly string[];
+  readonly batchedArguments: readonly string[];
 }
 
 /**
@@ -162,7 +162,7 @@ interface ExecStringParams {
    * The original argument array (if available), used by the PowerShell
    * fallback path to quote arguments with PowerShell-native single quotes.
    */
-  readonly rawArgs?: string[];
+  readonly rawArguments?: string[];
 }
 /**
  * Appends a single `node` CLI option to a `NODE_OPTIONS` string, preserving any options already present.
@@ -247,8 +247,8 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
     if (batchResult) {
       return batchResult;
     }
-    const args = command.filter((part): part is string => typeof part === 'string');
-    const commandLine = buildCommandLine(args);
+    const $arguments = command.filter((part): part is string => typeof part === 'string');
+    const commandLine = buildCommandLine($arguments);
 
     const maxCommandLength = getMaxCommandLength();
     if (commandLine.length > maxCommandLength) {
@@ -262,7 +262,7 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
     return execString({
       command: commandLine,
       options,
-      rawArgs: args
+      rawArguments: $arguments
     });
   }
 
@@ -291,7 +291,7 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
   const {
     command,
     options = {},
-    rawArgs
+    rawArguments
   } = params;
   const {
     cwd = process.cwd(),
@@ -311,7 +311,7 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
       cwd,
       env,
       isInteractive,
-      rawArgs
+      rawArguments
     }));
 
     let stdout = '';
@@ -340,7 +340,7 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 
       childStdout.on('end', () => {
         stdout = trimEnd({
-          str: stdout,
+          $string: stdout,
           suffix: '\n'
         });
       });
@@ -354,7 +354,7 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 
       childStderr.on('end', () => {
         stderr = trimEnd({
-          str: stderr,
+          $string: stderr,
           suffix: '\n'
         });
       });
@@ -378,9 +378,9 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
       });
     });
 
-    child.on('error', (err) => {
+    child.on('error', (error) => {
       if (!ignoreExitCode) {
-        reject(err);
+        reject(error);
         return;
       }
 
@@ -465,7 +465,7 @@ interface SpawnViaShellParams {
   /**
    * The original argument array (if available).
    */
-  readonly rawArgs?: string[];
+  readonly rawArguments?: string[];
 }
 
 /**
@@ -480,11 +480,11 @@ interface SpawnViaShellParams {
  *
  * The platform branch here MUST stay in sync with the one in {@link spawnViaShell}.
  *
- * @param args - The argument array to quote and join.
+ * @param $arguments - The argument array to quote and join.
  * @returns The quoted command-line string for the current platform's shell.
  */
-function buildCommandLine(args: string[]): string {
-  return process.platform === 'win32' ? toCommandLine(args) : toPosixCommandLine(args);
+function buildCommandLine($arguments: string[]): string {
+  return process.platform === 'win32' ? toCommandLine($arguments) : toPosixCommandLine($arguments);
 }
 
 /**
@@ -522,12 +522,12 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
  */
 function getMaxCommandLength(): number {
   const WINDOWS_MAX_COMMAND_LENGTH = 8191;
-  const UNIX_MAX_COMMAND_LENGTH = 131072;
+  const UNIX_MAX_COMMAND_LENGTH = 131_072;
   return process.platform === 'win32' ? WINDOWS_MAX_COMMAND_LENGTH : UNIX_MAX_COMMAND_LENGTH;
 }
 
 /**
- * Handles a command array that may contain an {@link ExecArg}.
+ * Handles a command array that may contain an {@link ExecArgument}.
  * Returns a Promise if batching is needed, or `undefined` if the command
  * has no ExecArg and should be processed normally.
  *
@@ -536,22 +536,22 @@ function getMaxCommandLength(): number {
  * @returns A Promise if batching is handled, or `undefined`.
  */
 function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promise<ExecResult | string> | undefined {
-  const execArgs = parts.filter(isExecArg);
-  if (execArgs.length === 0) {
+  const execArguments = parts.filter(isExecArgument);
+  if (execArguments.length === 0) {
     return undefined;
   }
-  if (execArgs.length > 1) {
-    return Promise.reject(new Error('Only one ExecArg with batchedArgs is allowed per command'));
+  if (execArguments.length > 1) {
+    return Promise.reject(new Error('Only one ExecArg with batchedArguments is allowed per command'));
   }
 
-  const execArg = execArgs[0];
-  assertNonNullable(execArg);
+  const execArgument = execArguments[0];
+  assertNonNullable(execArgument);
   const staticParts = parts.filter((part): part is string => typeof part === 'string');
   const baseCommand = buildCommandLine(staticParts);
   const maxCommandLength = getMaxCommandLength();
 
   // Try expanding all args inline
-  const fullCommand = `${baseCommand} ${buildCommandLine([...execArg.batchedArgs])}`;
+  const fullCommand = `${baseCommand} ${buildCommandLine([...execArgument.batchedArguments])}`;
   if (fullCommand.length <= maxCommandLength) {
     return execString({
       command: fullCommand,
@@ -563,23 +563,23 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   const batches: string[][] = [];
   let currentBatch: string[] = [];
 
-  for (const arg of execArg.batchedArgs) {
-    const tentative = `${baseCommand} ${buildCommandLine([...currentBatch, arg])}`;
+  for (const argument of execArgument.batchedArguments) {
+    const tentative = `${baseCommand} ${buildCommandLine([...currentBatch, argument])}`;
     if (tentative.length > maxCommandLength) {
       if (currentBatch.length === 0) {
         return Promise.reject(
           new Error(
-            `Cannot split command into batches: a single argument (${String(arg.length)} chars) plus the base command (${String(baseCommand.length)} chars) exceeds the max command length (${String(maxCommandLength)}).`
+            `Cannot split command into batches: a single argument (${String(argument.length)} chars) plus the base command (${String(baseCommand.length)} chars) exceeds the max command length (${String(maxCommandLength)}).`
           )
         );
       }
       batches.push(currentBatch);
-      currentBatch = [arg];
+      currentBatch = [argument];
     } else {
-      currentBatch.push(arg);
+      currentBatch.push(argument);
     }
   }
-  /* v8 ignore start -- Always true after the loop; batchedArgs is non-empty at this point. */
+  /* v8 ignore start -- Always true after the loop; batchedArguments is non-empty at this point. */
   if (currentBatch.length > 0) {
     /* v8 ignore stop */
     batches.push(currentBatch);
@@ -593,13 +593,13 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
 }
 
 /**
- * Checks if a command part is an {@link ExecArg}.
+ * Checks if a command part is an {@link ExecArgument}.
  *
  * @param part - The command part to check.
  * @returns Whether the part is an ExecArg.
  */
-function isExecArg(part: CommandPart): part is ExecArg {
-  return typeof part === 'object' && 'batchedArgs' in part;
+function isExecArgument(part: CommandPart): part is ExecArgument {
+  return typeof part === 'object' && 'batchedArguments' in part;
 }
 
 /**
@@ -615,26 +615,26 @@ function isExecArg(part: CommandPart): part is ExecArg {
  * @returns The spawned child process.
  */
 function spawnViaShell(params: SpawnViaShellParams): ChildProcess {
-  const { command, cwd, env: extraEnv, isInteractive = false, rawArgs } = params;
+  const { command, cwd, env: extraEnv, isInteractive = false, rawArguments } = params;
   const env: NodeJS.ProcessEnv = {
     ...CHILD_ENV,
     ...extraEnv
   };
   const stdio: 'inherit' | 'pipe' = isInteractive ? 'inherit' : 'pipe';
   if (process.platform === 'win32' && command.includes('\n')) {
-    if (!rawArgs) {
+    if (!rawArguments) {
       throw new Error('Commands containing newlines cannot be executed through cmd.exe on Windows. Pass an argument array instead of a string.');
     }
-    const [program, ...args] = rawArgs;
+    const [program, ...$arguments] = rawArguments;
     assertNonNullable(program, 'Command array must not be empty');
-    return spawn(program, args, {
+    return spawn(program, $arguments, {
       cwd,
       env,
       stdio
     });
   }
 
-  const shellCommand = process.platform === 'win32' ? cmdEscapeCommandLine(command) : command;
+  const shellCommand = process.platform === 'win32' ? commandEscapeCommandLine(command) : command;
   return spawn(shellCommand, [], {
     cwd,
     env,

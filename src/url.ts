@@ -11,33 +11,33 @@ const FILE_SCHEME_REG_EXP = /^file:/i;
 /**
  * Determines whether a given string is a `file://` URL.
  *
- * @param str - The string to check.
+ * @param $string - The string to check.
  * @returns `true` if the string uses the `file:` scheme, otherwise `false`.
  */
-export function isFileUrl(str: string): boolean {
-  return FILE_SCHEME_REG_EXP.test(str);
+export function isFileUrl($string: string): boolean {
+  return FILE_SCHEME_REG_EXP.test($string);
 }
 
 /**
  * Determines whether a given string is a valid URL
  *
- * @param str - The string to validate as a URL.
+ * @param $string - The string to validate as a URL.
  * @returns `true` if the string is a valid URL, otherwise `false`.
  */
-export function isUrl(str: string): boolean {
-  if (/\s/.test(str)) {
+export function isUrl($string: string): boolean {
+  if (/\s/.test($string)) {
     return false;
   }
-  if (str.includes('://')) {
+  if ($string.includes('://')) {
     try {
-      new URL(str);
+      new URL($string);
       return true;
     } catch {
       return false;
     }
   }
 
-  return SCHEME_REG_EXP.test(str);
+  return SCHEME_REG_EXP.test($string);
 }
 
 /**

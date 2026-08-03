@@ -25,6 +25,7 @@ interface NormalizeResult {
 describe('file:// link normalization', () => {
   it('should normalize file:// links in both frontmatter and body', async () => {
     const { result } = await evalInObsidian<Record<string, never>, NormalizeResult>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { updateFileUrlLinksInContent } }) {
         const content = '---\nurl: file:///F:%5Cover%5Care.txt\n---\n\n[body](file:///F:%5Cover%5Cage.txt)\n';
         const normalized = await updateFileUrlLinksInContent({ app, content });
@@ -39,6 +40,7 @@ describe('file:// link normalization', () => {
 
   it('should normalize each file:// link within a multi-link frontmatter value', async () => {
     const { result } = await evalInObsidian<Record<string, never>, NormalizeResult>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { updateFileUrlLinksInContent } }) {
         const content = '---\nurls: "file:///F:%5Ca%5Cx.txt file:///F:%5Cb%5Cy.txt"\n---\n';
         const normalized = await updateFileUrlLinksInContent({ app, content });

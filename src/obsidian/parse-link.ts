@@ -33,7 +33,7 @@ import {
 /**
  * Regular expression for special link symbols.
  */
-// eslint-disable-next-line no-control-regex -- The regular expression is written to capture control characters.
+// eslint-disable-next-line no-control-regex, unicorn/prefer-unicode-code-point-escapes -- The regular expression is written to capture control characters, which are conventionally spelled as `\x` escapes; `\u{0}`-style escapes would obscure the `\x0E-\x1F` range without expressing anything the two-digit form cannot.
 const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
 /**
@@ -299,6 +299,11 @@ interface DecodeUrlSafelyParams {
  */
 interface ExtractAliasParams {
   /**
+   * A string to extract the alias from.
+   */
+  readonly $string: string;
+
+  /**
    * An end offset of the alias in the string.
    */
   readonly aliasEndOffset: number;
@@ -307,17 +312,17 @@ interface ExtractAliasParams {
    * A start offset of the alias in the string.
    */
   readonly aliasStartOffset: number;
-
-  /**
-   * A string to extract the alias from.
-   */
-  readonly str: string;
 }
 
 /**
  * Params for {@link extractTextLinks}.
  */
 interface ExtractTextLinksParams {
+  /**
+   * A string to extract the text links from.
+   */
+  readonly $string: string;
+
   /**
    * An end offset of the text part in the string.
    */
@@ -327,11 +332,6 @@ interface ExtractTextLinksParams {
    * A start offset of the text part in the string.
    */
   readonly startOffset: number;
-
-  /**
-   * A string to extract the text links from.
-   */
-  readonly str: string;
 
   /**
    * A list of parsed links to append the extracted text links to.
@@ -437,9 +437,9 @@ class FrontmatterLinksParser {
  */
 export function encodeUrl(url: string): string {
   return replaceAll({
+    $string: url,
     replacer: ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol),
-    searchValue: SPECIAL_LINK_SYMBOLS_REGEXP,
-    str: url
+    searchValue: SPECIAL_LINK_SYMBOLS_REGEXP
   });
 }
 
@@ -456,9 +456,9 @@ export function encodeUrl(url: string): string {
  */
 export function escapeAlias(alias: string): string {
   return replaceAll({
-    replacer: '\\$&',
-    searchValue: SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX,
-    str: alias
+    $string: alias,
+    replacer: String.raw`\$&`,
+    searchValue: SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX
   });
 }
 
@@ -497,21 +497,21 @@ export function parseFrontmatterLinks(frontmatter: unknown): ParseFrontmatterLin
 /**
  * Parses a link into its components.
  *
- * @param str - The link to parse.
+ * @param $string - The link to parse.
  * @returns The parsed link.
  */
-export function parseLink(str: string): null | ParseLinkResult {
-  const links = parseLinks(str);
-  return links[0]?.raw === str ? links[0] : null;
+export function parseLink($string: string): null | ParseLinkResult {
+  const links = parseLinks($string);
+  return links[0]?.raw === $string ? links[0] : null;
 }
 
 /**
  * Parses all links in a string.
  *
- * @param str - The string to parse the links in.
+ * @param $string - The string to parse the links in.
  * @returns The parsed links.
  */
-export function parseLinks(str: string): ParseLinkResult[] {
+export function parseLinks($string: string): ParseLinkResult[] {
   const embedSymbolOffsets = new Set<number>();
 
   const EMBED_LINK_PREFIX = '![';
@@ -519,26 +519,26 @@ export function parseLinks(str: string): ParseLinkResult[] {
   const DUMMY_CHARACTER = '@';
 
   const EMBED_INSIDE_LINK_REG_EXP = /\[(?<LinkAlias>!\[.*?\]\(.+?\))\]\((?<Link>.+?)\)/g;
-  const noInsideEmbedsLinksStr = replaceAll({
-    replacer: ({ capturedGroupArgs: [linkAlias = '', link = ''] }) => {
+  const noInsideEmbedsLinksString = replaceAll({
+    $string,
+    replacer: ({ capturedGroupArguments: [linkAlias = '', link = ''] }) => {
       const dummyAlias = DUMMY_CHARACTER.repeat(linkAlias.length);
       return `[${dummyAlias}](${link})`;
     },
-    searchValue: EMBED_INSIDE_LINK_REG_EXP,
-    str
+    searchValue: EMBED_INSIDE_LINK_REG_EXP
   });
 
-  const noEmbedStr = replaceAll({
-    replacer: (args) => {
-      embedSymbolOffsets.add(args.offset);
+  const noEmbedString = replaceAll({
+    $string: noInsideEmbedsLinksString,
+    replacer: ($arguments) => {
+      embedSymbolOffsets.add($arguments.offset);
       return NO_EMBED_LINK_PREFIX;
     },
-    searchValue: EMBED_LINK_PREFIX,
-    str: noInsideEmbedsLinksStr
+    searchValue: EMBED_LINK_PREFIX
   });
 
   const processor = remark().use(remarkParse).use(wikiLinkPlugin, { aliasDivider: WIKILINK_DIVIDER });
-  const root = processor.parse(noEmbedStr);
+  const root = processor.parse(noEmbedString);
 
   const links: ParseLinkResult[] = [];
   const textLinks: ParseLinkResult[] = [];
@@ -546,14 +546,17 @@ export function parseLinks(str: string): ParseLinkResult[] {
   visit(root, (node: Node) => {
     let link: ParseLinkResult;
     switch (node.type) {
-      case 'link':
-        link = parseLinkNode(node as Link, str);
+      case 'link': {
+        link = parseLinkNode(node as Link, $string);
         break;
-      case 'wikiLink':
-        link = parseWikilinkNode(node as WikiLinkNode, str);
+      }
+      case 'wikiLink': {
+        link = parseWikilinkNode(node as WikiLinkNode, $string);
         break;
-      default:
+      }
+      default: {
         return;
+      }
     }
 
     if (embedSymbolOffsets.has(link.startOffset - 1)) {
@@ -573,18 +576,18 @@ export function parseLinks(str: string): ParseLinkResult[] {
 
   for (const link of links) {
     extractTextLinks({
+      $string,
       endOffset: link.startOffset - 1,
       startOffset: textStartOffset,
-      str,
       textLinks
     });
     textStartOffset = link.endOffset + 1;
   }
 
   extractTextLinks({
-    endOffset: str.length - 1,
+    $string,
+    endOffset: $string.length - 1,
     startOffset: textStartOffset,
-    str,
     textLinks
   });
 
@@ -633,14 +636,14 @@ export function toParseLinkReference(params: ToParseLinkReferenceParams): ParseL
  */
 export function unescapeAlias(escapedAlias: string): string {
   return replaceAll({
-    replacer: ({ capturedGroupArgs: [backslashes = '', specialChar = ''] }) => {
+    $string: escapedAlias,
+    replacer: ({ capturedGroupArguments: [backslashes = '', specialChar = ''] }) => {
       const ESCAPED_BACKSLASH_LENGTH = 2;
       const backslashCount = backslashes.length;
       const keepCount = Math.floor(backslashCount / ESCAPED_BACKSLASH_LENGTH);
       return '\\'.repeat(keepCount) + specialChar;
     },
-    searchValue: /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g,
-    str: escapedAlias
+    searchValue: /(?<Backslashes>\\+)(?<SpecialCharacter>[!"#$%&'()*+,-./:;<=>?@[\\\]^_`{|}~])/g
   });
 }
 
@@ -661,21 +664,22 @@ function decodeUrlSafely(params: DecodeUrlSafelyParams): string {
 }
 
 function extractAlias(params: ExtractAliasParams): string | undefined {
-  const { aliasEndOffset, aliasStartOffset, str } = params;
+  const { $string, aliasEndOffset, aliasStartOffset } = params;
   return aliasStartOffset < aliasEndOffset
-    ? str.slice(aliasStartOffset, aliasEndOffset)
+    ? $string.slice(aliasStartOffset, aliasEndOffset)
     : undefined;
 }
 
 function extractTextLinks(params: ExtractTextLinksParams): void {
-  const { endOffset, startOffset, str, textLinks } = params;
+  const { $string, endOffset, startOffset, textLinks } = params;
   if (startOffset > endOffset) {
     return;
   }
 
-  const textPart = str.slice(startOffset, endOffset + 1);
+  const textPart = $string.slice(startOffset, endOffset + 1);
   replaceAll({
-    replacer: ({ capturedGroupArgs: [rawUrl = ''], offset }) => {
+    $string: textPart,
+    replacer: ({ capturedGroupArguments: [rawUrl = ''], offset }) => {
       if (!isUrl(rawUrl)) {
         return;
       }
@@ -700,14 +704,13 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
         url
       });
     },
-    searchValue: /(?<Url>\S+)/g,
-    str: textPart
+    searchValue: /(?<Url>\S+)/g
   });
 }
 
-function getRawLink(node: Node, str: string): string {
+function getRawLink(node: Node, $string: string): string {
   const pos = ensureNonNullable(node.position);
-  return str.slice(pos.start.offset, pos.end.offset);
+  return $string.slice(pos.start.offset, pos.end.offset);
 }
 
 function hasAngleBracketsInLink(params: HasAngleBracketsInLinkParams): boolean {
@@ -727,16 +730,17 @@ function offsetToLoc(content: string, offset: number): Loc {
   };
 }
 
-function parseLinkNode(node: Link, str: string): ParseLinkResult {
+function parseLinkNode(node: Link, $string: string): ParseLinkResult {
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
-  const raw = getRawLink(node, str);
+  const raw = getRawLink(node, $string);
+  // eslint-disable-next-line unicorn/better-dom-traversing -- `node` is an mdast node, not a DOM node. It has no `firstElementChild`; the rule matches the `.children[0]` shape without checking what it is on.
   const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
   const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
   const position = ensureNonNullable(node.position);
   const nodeEndOffset = ensureNonNullable(position.end.offset);
   const nodeStartOffset = ensureNonNullable(position.start.offset);
-  const rawUrl = str.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
+  const rawUrl = $string.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
   const hasAngleBrackets = hasAngleBracketsInLink({
     raw,
     rawUrl
@@ -748,9 +752,9 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
     url: node.url
   });
   const alias = extractAlias({
+    $string,
     aliasEndOffset: aliasNodeEndOffset,
-    aliasStartOffset: aliasNodeStartOffset,
-    str
+    aliasStartOffset: aliasNodeStartOffset
   });
   return normalizeOptionalProperties<ParseLinkResult>({
     alias,
@@ -769,16 +773,16 @@ function parseLinkNode(node: Link, str: string): ParseLinkResult {
   });
 }
 
-function parseWikilinkNode(node: WikiLinkNode, str: string): ParseLinkResult {
+function parseWikilinkNode(node: WikiLinkNode, $string: string): ParseLinkResult {
   const position = ensureNonNullable(node.position);
   return normalizeOptionalProperties<ParseLinkResult>({
-    alias: str.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
+    alias: $string.includes(WIKILINK_DIVIDER) ? node.data.alias : undefined,
     endOffset: ensureNonNullable(position.end.offset),
     isEmbed: false,
     isExternal: false,
     isFileUrl: false,
     isWikilink: true,
-    raw: getRawLink(node, str),
+    raw: getRawLink(node, $string),
     startOffset: ensureNonNullable(position.start.offset),
     url: node.value
   });

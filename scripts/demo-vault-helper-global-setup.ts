@@ -58,8 +58,14 @@ export async function invoke(app) {
 }
 `;
 
-let demoVaultPath: string | undefined;
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+interface ModuleState {
+  demoVaultPath: string | undefined;
+}
 
+const moduleState: ModuleState = {
+  demoVaultPath: undefined
+};
 const setupPair = createSetup({
   enableCommunityPlugins: [HELPER_PLUGIN_ID],
   installPlugin: false,
@@ -84,8 +90,8 @@ export async function teardown(): Promise<void> {
   try {
     await setupPair.teardown();
   } finally {
-    if (demoVaultPath) {
-      rmSync(demoVaultPath, { force: true, recursive: true });
+    if (moduleState.demoVaultPath) {
+      rmSync(moduleState.demoVaultPath, { force: true, recursive: true });
     }
   }
 }
@@ -99,16 +105,17 @@ export async function teardown(): Promise<void> {
  * @returns The populate map for the temp vault.
  */
 function buildDemoVaultPopulateForHelperTest(): PopulateFilesParams {
-  demoVaultPath = mkdtempSync(join(tmpdir(), 'demo-vault-helper-'));
-  writeFileSync(join(demoVaultPath, START_NOTE_PATH), '# Start\n');
+  moduleState.demoVaultPath = mkdtempSync(join(tmpdir(), 'demo-vault-helper-'));
+  writeFileSync(join(moduleState.demoVaultPath, START_NOTE_PATH), '# Start\n');
 
-  const modulesDir = join(demoVaultPath, MODULES_ROOT);
-  mkdirSync(modulesDir, { recursive: true });
-  writeFileSync(join(modulesDir, 'probe.ts'), PROBE_MODULE);
-  writeFileSync(join(modulesDir, 'startup.ts'), STARTUP_SCRIPT);
+  const modulesDirectory = join(moduleState.demoVaultPath, MODULES_ROOT);
+  mkdirSync(modulesDirectory, { recursive: true });
+  writeFileSync(join(modulesDirectory, 'probe.ts'), PROBE_MODULE);
+  writeFileSync(join(modulesDirectory, 'startup.ts'), STARTUP_SCRIPT);
 
   return buildDemoVaultPopulate({
-    demoVaultPath,
+    demoVaultPath: moduleState.demoVaultPath,
+    // eslint-disable-next-line unicorn/name-replacements -- `sourceDir` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
     injectPlugins: [{ pluginId: HELPER_PLUGIN_ID, sourceDir: DIST_HELPER_DIR }]
   });
 }

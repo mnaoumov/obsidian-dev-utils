@@ -24,7 +24,7 @@ import {
 import {
   escapeMdxAngleBrackets,
   escapeMdxProse,
-  getNamespaceDir,
+  getNamespaceDirectory,
   memberRouteSegment,
   memberSlug,
   overloadRouteSegment,
@@ -35,8 +35,14 @@ import {
 } from './api-doc-text-utils.ts';
 
 /** Loaded from typedoc-plugin-mdn-links data at runtime */
-let webApiTypes: Record<string, unknown> = {};
+/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+interface ModuleState {
+  webApiTypes: Record<string, unknown>;
+}
 
+const moduleState: ModuleState = {
+  webApiTypes: {}
+};
 /** Lowercased, collision-disambiguated ON-DISK segment per qualified type key (`${namespace}#${name}`). */
 const typeFileSegments = new Map<string, string>();
 /** Case-preserved URL/route segment per qualified type key (`${namespace}#${name}`). */
@@ -49,6 +55,11 @@ const typeRouteSegments = new Map<string, string>();
  * generated (an inherited member, an enum member, an options-interface member) — which would 404.
  */
 const generatedMemberPages = new Set<string>();
+
+/** Whether a member page will be generated for `routeSegment` on the given type. */
+export function doesMemberPageExist(namespace: string, typeName: string, routeSegment: string): boolean {
+  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
+}
 
 /**
  * Resolve a bare type name to a documented `TypeInfo`.
@@ -69,12 +80,14 @@ export function findType(allTypes: Map<string, TypeInfo>, name: string, currentN
   let found: TypeInfo | undefined;
   let matchCount = 0;
   for (const info of allTypes.values()) {
-    if (info.name === name) {
-      found = info;
-      matchCount++;
-      if (matchCount > 1) {
-        return undefined;
-      }
+    if (info.name !== name) {
+      continue;
+    }
+
+    found = info;
+    matchCount++;
+    if (matchCount > 1) {
+      return undefined;
     }
   }
   return matchCount === 1 ? found : undefined;
@@ -98,8 +111,8 @@ export function linkBaseType(typeName: string, allTypes: Map<string, TypeInfo>, 
 export function loadExternalTypeMaps(): void {
   try {
     const dataPath = join(process.cwd(), 'node_modules/typedoc-plugin-mdn-links/data/web-api.json');
-    webApiTypes = JSON.parse(readFileSync(dataPath, 'utf-8')) as Record<string, unknown>;
-    console.warn(`Loaded ${String(Object.keys(webApiTypes).length)} Web API type links`);
+    moduleState.webApiTypes = JSON.parse(readFileSync(dataPath, 'utf-8')) as Record<string, unknown>;
+    console.warn(`Loaded ${String(Object.keys(moduleState.webApiTypes).length)} Web API type links`);
   } catch {
     console.warn('typedoc-plugin-mdn-links data not found — Web API links will be unavailable.');
   }
@@ -108,10 +121,10 @@ export function loadExternalTypeMaps(): void {
 /** Convert inline markdown to HTML for use in component props with set:html */
 export function markdownToHtml(text: string): string {
   return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, (_match: string, linkText: string, url: string) => {
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, (_match: string, linkText: string, url: string) => {
       if (/^(?:https?:\/\/|\/|#|mailto:)/.test(url)) {
         return `<a href="${url}">${linkText}</a>`;
       }
@@ -119,42 +132,37 @@ export function markdownToHtml(text: string): string {
       // Real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
       return `<code>[${linkText}](${url})</code>`;
     })
-    .replace(/`(?<code>[^`]+)`/g, '<code>$<code></code>')
-    .replace(/\n/g, '<br/>');
+    .replaceAll(/`(?<code>[^`]+)`/g, '<code>$<code></code>')
+    .replaceAll('\n', '<br/>');
 }
 
 /** Build the href for a member, pointing to the parent type's page if inherited */
-export function memberHref(memberSlugStr: string, inheritedFrom: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
+export function memberHref(memberSlugString: string, inheritedFrom: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   if (!inheritedFrom) {
     // Own (non-inherited) member — `generateMemberPages` always emits its page on this same page.
-    return `./${memberSlugStr}/`;
+    return `./${memberSlugString}/`;
   }
   const parentInfo = findType(allTypes, inheritedFrom, currentNamespace);
-  if (!parentInfo || !memberPageExists(parentInfo.namespace, parentInfo.name, memberSlugStr)) {
+  if (!parentInfo || !doesMemberPageExist(parentInfo.namespace, parentInfo.name, memberSlugString)) {
     // The declaring parent has no generated page for this member (it inherited the member too, or is
     // Undocumented). Return no href so the caller renders plain text instead of a broken link.
     return '';
   }
-  const parentNsDir = getNamespaceDir(parentInfo.namespace);
-  return `${BASE_PATH}/api/${parentNsDir}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugStr}/`;
-}
-
-/** Whether a member page will be generated for `routeSegment` on the given type. */
-export function memberPageExists(namespace: string, typeName: string, routeSegment: string): boolean {
-  return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
+  const parentNsDirectory = getNamespaceDirectory(parentInfo.namespace);
+  return `${BASE_PATH}/api/${parentNsDirectory}/${toTypeRouteSegment(parentInfo.namespace, parentInfo.name)}/${memberSlugString}/`;
 }
 
 /**
- * Populate {@link memberPageExists}. Mirrors `generateMemberPages`'s own filtering exactly (one page
+ * Populate {@link doesMemberPageExist}. Mirrors `generateMemberPages`'s own filtering exactly (one page
  * per non-inherited property, one per non-inherited method overload key). Must run once before any
  * link is rendered.
  */
 export function registerMemberPages(types: Map<string, TypeInfo>): void {
   generatedMemberPages.clear();
   for (const info of types.values()) {
-    for (const prop of info.properties) {
-      if (!prop.inheritedFrom) {
-        generatedMemberPages.add(`${info.namespace}#${info.name}#${memberRouteSegment(prop.name)}`);
+    for (const property of info.properties) {
+      if (!property.inheritedFrom) {
+        generatedMemberPages.add(`${info.namespace}#${info.name}#${memberRouteSegment(property.name)}`);
       }
     }
     const overloadKeys = new Set<string>();
@@ -208,18 +216,6 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
       warnMemberSlugCollisions(info, namespace);
     }
   }
-
-  function disambiguate(base: string, used: Set<string>, keyOf: (segment: string) => string): string {
-    let segment = base;
-    const FIRST_DISAMBIGUATION_SUFFIX = 2;
-    let suffix = FIRST_DISAMBIGUATION_SUFFIX;
-    while (used.has(keyOf(segment))) {
-      segment = `${base}-${String(suffix)}`;
-      suffix++;
-    }
-    used.add(keyOf(segment));
-    return segment;
-  }
 }
 
 /**
@@ -243,31 +239,27 @@ export function renderMdxProse(text: string, allTypes: Map<string, TypeInfo>, se
   const out: string[] = [];
   for (const seg of segmentMarkdown(text)) {
     if (seg.type === 'code') {
-      out.push('');
-      out.push(`\`\`\`${seg.lang ?? 'ts'}`);
-      out.push(seg.text);
-      out.push('```');
-      out.push('');
+      out.push('', `\`\`\`${seg.lang ?? 'ts'}`, seg.text, '```', '');
     } else {
       out.push(escapeMdxProse(resolveLinks(seg.text, allTypes, selfNamespace)));
     }
   }
-  return out.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  return out.join('\n').replaceAll(/\n{3,}/g, '\n\n').trim();
 }
 
 /** Render a type string with clickable links for known types */
 export function renderTypeWithLinks(typeText: string, allTypes: Map<string, TypeInfo>, selfTypeName?: string, selfNamespace?: string): string {
   // Pre-pass: link Object.method patterns to MDN before word-by-word linking
   const MDN_OBJECT_BASE = 'https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object';
-  const withObjectMethods = typeText.replace(
+  const withObjectMethods = typeText.replaceAll(
     /\bObject\.(?<method>[a-zA-Z][a-zA-Z0-9]*)\b/g,
     (_fullMatch, method: string) => `[Object](${MDN_OBJECT_BASE}).[${method}](${MDN_OBJECT_BASE}/${method})`
   );
   // Main pass: link individual type names, skipping text already inside markdown links
-  return withObjectMethods.replace(
+  return withObjectMethods.replaceAll(
     /\[(?<linkText>[^\]]+)\]\([^)]+\)|\b(?<typeName>[a-zA-Z][a-zA-Z0-9]*)\b/g,
     (match, _linkText: string | undefined, _unused: unknown, ...rest: unknown[]) => {
-      const groups = rest[rest.length - 1] as Record<string, string | undefined>;
+      const groups = rest.at(-1) as Record<string, string | undefined>;
       if (groups['linkText']) {
         return match;
       }
@@ -325,10 +317,10 @@ export function renderTypeWithLinks(typeText: string, allTypes: Map<string, Type
 
 /** Resolve {@link Name} and {@link Name | display text} tags in description text */
 export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
-  return text.replace(/\{@link\s+(?<target>[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...args) => {
-    const groups = args[args.length - 1] as LinkMatchGroups;
+  return text.replaceAll(/\{@link\s+(?<target>[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...$arguments) => {
+    const groups = $arguments.at(-1) as LinkMatchGroups;
     const target = groups.target.trim();
-    const display = (groups.display?.trim() ?? target).replace(/\\(?=[<>{}])/g, '');
+    const display = (groups.display?.trim() ?? target).replaceAll(/\\(?=[<>{}])/g, '');
 
     // Handle Type.member references (e.g., PluginNoticeComponent.showNotice)
     const dotMatch = /^(?<typeName>[A-Za-z]\w*)\.(?<memberName>\w+)$/.exec(target);
@@ -336,9 +328,9 @@ export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, self
       const typeName = dotMatch.groups['typeName'] ?? '';
       const memberName = dotMatch.groups['memberName'] ?? '';
       const typeInfo = findType(allTypes, typeName, selfNamespace);
-      if (typeInfo && memberPageExists(typeInfo.namespace, typeInfo.name, memberRouteSegment(memberName))) {
-        const targetNsDir = getNamespaceDir(typeInfo.namespace);
-        return `[${display}](${BASE_PATH}/api/${targetNsDir}/${toTypeRouteSegment(typeInfo.namespace, typeInfo.name)}/${memberRouteSegment(memberName)}/)`;
+      if (typeInfo && doesMemberPageExist(typeInfo.namespace, typeInfo.name, memberRouteSegment(memberName))) {
+        const targetNsDirectory = getNamespaceDirectory(typeInfo.namespace);
+        return `[${display}](${BASE_PATH}/api/${targetNsDirectory}/${toTypeRouteSegment(typeInfo.namespace, typeInfo.name)}/${memberRouteSegment(memberName)}/)`;
       }
     }
 
@@ -369,10 +361,10 @@ export function resolveTsUtilityUrl(name: string): string | undefined {
 }
 
 export function resolveWebApiUrl(name: string): string | undefined {
-  if (!Object.hasOwn(webApiTypes, name)) {
+  if (!Object.hasOwn(moduleState.webApiTypes, name)) {
     return undefined;
   }
-  const entry = webApiTypes[name];
+  const entry = moduleState.webApiTypes[name];
   if (typeof entry === 'string') {
     return entry;
   }
@@ -395,7 +387,7 @@ export function toTypeRouteSegment(namespace: string, name: string): string {
 
 /** Absolute link to a type's overview page. */
 export function typeHref(info: TypeInfo): string {
-  return `${BASE_PATH}/api/${getNamespaceDir(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
+  return `${BASE_PATH}/api/${getNamespaceDirectory(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
 }
 
 /** Create an absolute link to a type page */
@@ -407,6 +399,18 @@ export function typeLink(typeName: string, allTypes: Map<string, TypeInfo>, curr
   }
   return `[${escapeMdxAngleBrackets(typeName)}](${typeHref(info)})`;
 }
+
+function disambiguate(base: string, used: Set<string>, keyOf: (segment: string) => string): string {
+    let segment = base;
+    const FIRST_DISAMBIGUATION_SUFFIX = 2;
+    let suffix = FIRST_DISAMBIGUATION_SUFFIX;
+    while (used.has(keyOf(segment))) {
+      segment = `${base}-${String(suffix)}`;
+      suffix++;
+    }
+    used.add(keyOf(segment));
+    return segment;
+  }
 
 /**
  * Warn when two distinct members of a type produce the same member slug (URL/file segment). The
@@ -424,8 +428,8 @@ function warnMemberSlugCollisions(info: TypeInfo, namespace: string): void {
     }
     seen.set(slug, normalized);
   }
-  for (const prop of info.properties) {
-    check(memberSlug(prop.name), prop.name);
+  for (const property of info.properties) {
+    check(memberSlug(property.name), property.name);
   }
   for (const method of info.methods) {
     check(overloadSlug(method.overloadKey), method.overloadKey);

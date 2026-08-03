@@ -29,6 +29,7 @@ describe('attachment-path', () => {
   describe('getAttachmentFolderPath', () => {
     it('should return the attachment folder path for a note', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         fn({ app, lib: { getAttachmentFolderPath } }) {
           return getAttachmentFolderPath({ app, notePathOrFile: 'test-note.md' });
         }
@@ -40,6 +41,7 @@ describe('attachment-path', () => {
 
     it('should match what Obsidian itself resolves for every attachment folder mode', async () => {
       const results = await evalInObsidian<Record<string, never>, AttachmentFolderModeResult[]>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { AttachmentPathContext, getAttachmentFilePath, getAttachmentFolderPath, hasOwnAttachmentFolder } }) {
           const ROOT_FOLDER = 't224-attachment-path';
           const NOTE_FOLDER = `${ROOT_FOLDER}/docs`;
@@ -105,6 +107,7 @@ describe('attachment-path', () => {
   describe('getAvailablePathForAttachments', () => {
     it('should return a valid path for a new attachment', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         fn({ app, lib: { getAvailablePathForAttachments } }) {
           return getAvailablePathForAttachments({
             app,
@@ -123,6 +126,7 @@ describe('attachment-path', () => {
 
     it('should generate unique paths when duplicates exist', async () => {
       const result = await evalInObsidian<Record<string, never>, string[]>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         fn({ app, lib: { getAvailablePathForAttachments } }) {
           function getPath(): Promise<string> {
             return getAvailablePathForAttachments({
@@ -147,13 +151,14 @@ describe('attachment-path', () => {
 
   describe('hasOwnAttachmentFolder', () => {
     it('should return a boolean indicating own attachment folder', async () => {
-      const result = await evalInObsidian<Record<string, never>, boolean>({
+      const hasOwnFolder = await evalInObsidian<Record<string, never>, boolean>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         fn({ app, lib: { hasOwnAttachmentFolder } }) {
           return hasOwnAttachmentFolder({ app, path: 'test-note.md' });
         }
       });
 
-      expect(typeof result).toBe('boolean');
+      expect(typeof hasOwnFolder).toBe('boolean');
     });
   });
 });

@@ -9,9 +9,9 @@ import {
   pathsValidator
 } from './path-settings.ts';
 
-const REPORTED_REG_EXP = '/^Inbox\\/[^\\/]*$/';
-const DANGLING_ESCAPE = '/^Inbox\\/';
-const UNBALANCED_CHARACTER_CLASS = '/^Inbox\\/[^\\/';
+const REPORTED_REG_EXP = String.raw`/^Inbox\/[^\/]*$/`;
+const DANGLING_ESCAPE = String.raw`/^Inbox\/`;
+const UNBALANCED_CHARACTER_CLASS = String.raw`/^Inbox\/[^\/`;
 const UNBALANCED_GROUP = '/(Inbox/';
 
 describe('PathSettings', () => {
@@ -85,7 +85,7 @@ describe('PathSettings', () => {
   describe('regex path patterns', () => {
     it('should support regex patterns delimited by slashes', () => {
       const ps = new PathSettings();
-      ps.excludePaths = ['/\\.git/'];
+      ps.excludePaths = [String.raw`/\.git/`];
       expect(ps.isPathIgnored('.git')).toBe(true);
       expect(ps.isPathIgnored('foo/.git/bar')).toBe(true);
       expect(ps.isPathIgnored('xgit')).toBe(false);
@@ -218,7 +218,7 @@ describe('pathsValidator', () => {
   });
 
   it('should accept valid regex patterns', () => {
-    expect(pathsValidator([REPORTED_REG_EXP, '/\\.git/', '/'])).toBeUndefined();
+    expect(pathsValidator([REPORTED_REG_EXP, String.raw`/\.git/`, '/'])).toBeUndefined();
   });
 
   it.each([DANGLING_ESCAPE, UNBALANCED_CHARACTER_CLASS, UNBALANCED_GROUP])('should reject un-parseable regex pattern %s', (path) => {

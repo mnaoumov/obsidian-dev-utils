@@ -52,8 +52,8 @@ const mocks = vi.hoisted(() => {
     public reconfigure = mockReconfigure;
   }
 
-  const mockReadOnlyOf = vi.fn((value: boolean): Extension => castTo<Extension>({ facet: 'readOnly', value }));
-  const mockChangeFilterOf = vi.fn((predicate: () => boolean): Extension => castTo<Extension>({ facet: 'changeFilter', predicate }));
+  const mockReadOnlyOf = vi.fn((isReadOnly: boolean): Extension => castTo<Extension>({ facet: 'readOnly', isReadOnly }));
+  const mockChangeFilterOf = vi.fn((shouldAllowChange: () => boolean): Extension => castTo<Extension>({ facet: 'changeFilter', shouldAllowChange }));
   const mockPrecHighest = vi.fn((extension: Extension): Extension => extension);
   const mockDomEventHandlers = vi.fn((handlers: DomEventHandlers): Extension => castTo<Extension>({ domEventHandlers: handlers }));
   const mockAppendConfigOf = vi.fn((extension: unknown): StateEffect<unknown> => castTo<StateEffect<unknown>>({ appendConfig: extension }));

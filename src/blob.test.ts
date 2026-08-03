@@ -26,22 +26,18 @@ class MockFileReader {
   public result: ArrayBuffer | null | string = null;
   private readonly listeners: Record<string, GenericVoidFunction[]> = {};
 
-  public addEventListener(event: string, fn: GenericVoidFunction): void {
+  public addEventListener(event: string, $function: GenericVoidFunction): void {
     this.listeners[event] ??= [];
-    this.listeners[event].push(fn);
+    this.listeners[event].push($function);
   }
 
   public readAsArrayBuffer(blob: Blob): void {
     const encoder = new TextEncoder();
     const blobParts = castTo<BlobWithParts>(blob)._parts;
-    if (blobParts && blobParts.length > 0) {
-      this.result = encoder.encode(blobParts.join('')).buffer;
-    } else {
-      this.result = new ArrayBuffer(0);
-    }
+    this.result = blobParts && blobParts.length > 0 ? encoder.encode(blobParts.join('')).buffer : new ArrayBuffer(0);
     queueMicrotask(() => {
-      for (const fn of this.listeners['loadend'] ?? []) {
-        fn();
+      for (const $function of this.listeners['loadend'] ?? []) {
+        $function();
       }
     });
   }
@@ -49,8 +45,8 @@ class MockFileReader {
   public readAsDataURL(_blob: Blob): void {
     this.result = 'data:text/plain;base64,aGVsbG8=';
     queueMicrotask(() => {
-      for (const fn of this.listeners['loadend'] ?? []) {
-        fn();
+      for (const $function of this.listeners['loadend'] ?? []) {
+        $function();
       }
     });
   }
@@ -66,15 +62,15 @@ class MockImage {
 
   public set src(_value: string) {
     queueMicrotask(() => {
-      this.onloadFn?.();
+      this.onloadFunction?.();
     });
   }
 
-  private onloadFn: (() => void) | null = null;
+  private onloadFunction: (() => void) | null = null;
 
-  public addEventListener(event: string, fn: () => void): void {
+  public addEventListener(event: string, $function: () => void): void {
     if (event === 'load') {
-      this.onloadFn = fn;
+      this.onloadFunction = $function;
     }
   }
 }
@@ -84,6 +80,7 @@ describe('dataUrlToArrayBuffer', () => {
     const dataUrl = 'data:text/plain;base64,aGVsbG8=';
     const buffer = dataUrlToArrayBuffer(dataUrl);
     const view = new Uint8Array(buffer);
+    // eslint-disable-next-line unicorn/prefer-code-point -- `view` holds bytes, so each element is one code unit by construction. This is the inverse of the `charCodeAt` loop in `blob.ts`, and `fromCodePoint` would reinterpret byte pairs as astral characters.
     const text = String.fromCharCode(...view);
     expect(text).toBe('hello');
   });

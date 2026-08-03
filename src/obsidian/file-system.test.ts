@@ -31,7 +31,7 @@ import {
   BASE_FILE_EXTENSION,
   CANVAS_FILE_EXTENSION,
   checkExtension,
-  exists,
+  doesExist,
   FileSystemType,
   getAbstractFile,
   getAbstractFileOrNull,
@@ -384,7 +384,7 @@ describe('isTreatedAsAttachment', () => {
   it('should ignore empty configured extensions', () => {
     app = App.createConfigured__({ files: { 'Docs/note.md': '' } }).asOriginalType__();
     const file = app.vault.getFileByPath('Docs/note.md');
-    expect(isTreatedAsAttachment({ attachmentExtensions: ['', '   ', '...'], pathOrFile: file })).toBe(false);
+    expect(isTreatedAsAttachment({ attachmentExtensions: ['', ' '.repeat(3), '...'], pathOrFile: file })).toBe(false);
   });
 
   it('should return false when no extensions are configured', () => {
@@ -661,34 +661,34 @@ describe('getPath', () => {
   });
 });
 
-describe('exists', () => {
+describe('doesExist', () => {
   it('should return true when the file exists', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
-    expect(exists({ app, path: 'note.md' })).toBe(true);
+    expect(doesExist({ app, path: 'note.md' })).toBe(true);
   });
 
   it('should return false when the file does not exist', () => {
-    expect(exists({ app, path: 'nonexistent.md' })).toBe(false);
+    expect(doesExist({ app, path: 'nonexistent.md' })).toBe(false);
   });
 
   it('should return true when checking for a file with File type', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
-    expect(exists({ app, path: 'note.md', type: FileSystemType.File })).toBe(true);
+    expect(doesExist({ app, path: 'note.md', type: FileSystemType.File })).toBe(true);
   });
 
   it('should return false when checking for a file with Folder type', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
-    expect(exists({ app, path: 'note.md', type: FileSystemType.Folder })).toBe(false);
+    expect(doesExist({ app, path: 'note.md', type: FileSystemType.Folder })).toBe(false);
   });
 
   it('should return true when checking for a folder with Folder type', () => {
     app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
-    expect(exists({ app, path: 'my-folder', type: FileSystemType.Folder })).toBe(true);
+    expect(doesExist({ app, path: 'my-folder', type: FileSystemType.Folder })).toBe(true);
   });
 
   it('should return false when checking for a folder with File type', () => {
     app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
-    expect(exists({ app, path: 'my-folder', type: FileSystemType.File })).toBe(false);
+    expect(doesExist({ app, path: 'my-folder', type: FileSystemType.File })).toBe(false);
   });
 });
 

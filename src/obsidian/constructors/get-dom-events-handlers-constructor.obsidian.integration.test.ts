@@ -33,15 +33,16 @@ const CORE_HANDLER_METHOD = 'onInternalLinkClick';
 describe('getDomEventsHandlersConstructor', () => {
   it('should extract the DomEventsHandlers constructor, not the container element constructor', async () => {
     const probe = await evalInObsidian<Record<string, never>, ConstructorProbe>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { getDomEventsHandlersConstructor } }) {
         const ctor = await getDomEventsHandlersConstructor(app);
-        const proto: object = ctor.prototype;
-        const prototypeMethodNames = Object.getOwnPropertyNames(proto)
+        const prototype: object = ctor.prototype;
+        const prototypeMethodNames = Object.getOwnPropertyNames(prototype)
           .filter((name) => {
             if (name === 'constructor') {
               return false;
             }
-            const descriptor = Object.getOwnPropertyDescriptor(proto, name);
+            const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
             return typeof descriptor?.value === 'function';
           });
         return {
@@ -51,7 +52,7 @@ describe('getDomEventsHandlersConstructor', () => {
            * HTMLDivElement) instead of the DomEventsHandlers constructor. Both are functions, so a
            * bare `typeof ctor === 'function'` check passed even while broken.
            */
-          isHtmlElementSubclass: proto instanceof HTMLElement,
+          isHtmlElementSubclass: prototype instanceof HTMLElement,
           prototypeMethodNames
         };
       }

@@ -27,7 +27,9 @@ const STYLES_CSS_PATH = join(import.meta.dirname, '../dist/styles.css');
 beforeAll(async () => {
   const cssContent = await readFile(STYLES_CSS_PATH, 'utf-8');
   await evalInObsidian({
+    // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
     args: { css: cssContent },
+    // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
     fn({ css }) {
       const STYLES_ID = 'obsidian-dev-utils-styles';
       activeDocument.head.querySelector(`#${STYLES_ID}`)?.remove();

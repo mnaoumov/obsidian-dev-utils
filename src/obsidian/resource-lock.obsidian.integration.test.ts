@@ -115,6 +115,7 @@ describe('resource-lock', () => {
   describe('lockResourceForPath', () => {
     it('should lock the current tab, auto-lock a future split and popout of the same note, and leave other notes editable', async () => {
       const result = await evalInObsidian<Record<string, never>, LockForPathResult>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { lockResourceForPath } }) {
           // This file shares its live Obsidian instance with the other integration suites.
           // Those suites leave their own leaves and popouts open.
@@ -132,7 +133,7 @@ describe('resource-lock', () => {
           await settle();
           const disposable = lockResourceForPath({ app, operationName: 'Integration test', pathOrFile: lockedFile, pluginId: 'integration-test' });
           await settle();
-          const isCurrentTabLocked = readLeafReadOnly(currentTabLeaf);
+          const isCurrentTabLocked = isLeafReadOnly(currentTabLeaf);
 
           // Open the SAME note in a split — a future editor.
           // Its first (synchronous) reconcile runs before the editor is ready.
@@ -141,26 +142,26 @@ describe('resource-lock', () => {
           await separateTabLeaf.openFile(lockedFile);
           await settle();
           await reconcile();
-          const isSeparateTabLocked = readLeafReadOnly(separateTabLeaf);
+          const isSeparateTabLocked = isLeafReadOnly(separateTabLeaf);
 
           // Open the same note a third time in a popout window — another future editor.
           const popoutLeaf = app.workspace.openPopoutLeaf();
           await popoutLeaf.openFile(lockedFile);
           await settle();
           await reconcile();
-          const isPopoutLocked = readLeafReadOnly(popoutLeaf);
+          const isPopoutLocked = isLeafReadOnly(popoutLeaf);
 
           // Open a different note, which must stay editable.
           const otherNoteLeaf = app.workspace.getLeaf('split');
           await otherNoteLeaf.openFile(otherFile);
           await settle();
           await reconcile();
-          const isOtherNoteLocked = readLeafReadOnly(otherNoteLeaf);
+          const isOtherNoteLocked = isLeafReadOnly(otherNoteLeaf);
 
           // Releasing the lock makes the note editable again.
           disposable[Symbol.dispose]();
           await settle();
-          const isCurrentTabLockedAfterUnlock = readLeafReadOnly(currentTabLeaf);
+          const isCurrentTabLockedAfterUnlock = isLeafReadOnly(currentTabLeaf);
 
           return {
             isCurrentTabLocked,
@@ -170,7 +171,7 @@ describe('resource-lock', () => {
             isSeparateTabLocked
           };
 
-          function readLeafReadOnly(leaf: unknown): boolean {
+          function isLeafReadOnly(leaf: unknown): boolean {
             const editor = (leaf as ReadableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');
@@ -206,6 +207,7 @@ describe('resource-lock', () => {
 
     it('should prevent the user from typing in a locked note while allowing it in an unlocked one', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { lockResourceForPath, typeIntoEditor } }): Promise<TypingResult> {
           // Start from a clean workspace so the reconcile sees only the views this test opens.
           app.workspace.detachLeavesOfType('markdown');
@@ -285,6 +287,7 @@ describe('resource-lock', () => {
 
     it('should reject a Shift+Enter keystroke in a locked note (which bypasses the read-only facet) and accept it after unlock', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { lockResourceForPath, pressKey, waitUntil } }): Promise<ShiftEnterResult> {
           // Start from a clean workspace so the reconcile sees only the view this test opens.
           app.workspace.detachLeavesOfType('markdown');
@@ -365,6 +368,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent subtree lock', () => {
     it('should make a note inside a subtree-locked folder read-only and editable again on unlock', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { ResourceLockComponent } }): Promise<SubtreeLockResult> {
           app.workspace.detachLeavesOfType('markdown');
           await settle();
@@ -384,18 +388,18 @@ describe('resource-lock', () => {
           const disposable = component.lockForPath({ mode: 'subtree', operationName: 'Integration test', pathOrFile: folderPath });
           await settle();
           await reconcile();
-          const isChildLockedUnderSubtree = readLeafReadOnly(leaf);
+          const isChildLockedUnderSubtree = isLeafReadOnly(leaf);
 
           disposable[Symbol.dispose]();
           await settle();
-          const isChildLockedAfterUnlock = readLeafReadOnly(leaf);
+          const isChildLockedAfterUnlock = isLeafReadOnly(leaf);
 
           return {
             isChildLockedAfterUnlock,
             isChildLockedUnderSubtree
           };
 
-          function readLeafReadOnly(readLeaf: unknown): boolean {
+          function isLeafReadOnly(readLeaf: unknown): boolean {
             const editor = (readLeaf as ReadableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');
@@ -426,6 +430,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent force unlock', () => {
     it('should abort the operation and make a locked note editable again via requestUnlockForPath', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { ResourceLockComponent } }): Promise<ForceUnlockResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
@@ -444,12 +449,12 @@ describe('resource-lock', () => {
           // Re-run the manager's reconcile against the now-settled editor so the read-only re-apply takes hold.
           app.workspace.trigger('layout-change');
           await sleep(SETTLE_DELAY_MILLISECONDS);
-          const isLockedBeforeUnlock = readLeafReadOnly(leaf);
+          const isLockedBeforeUnlock = isLeafReadOnly(leaf);
 
           // Force-unlock aborts the controller (cancel) AND removes the lock entry (release).
           component.requestUnlockForPath(lockedFile);
           await sleep(SETTLE_DELAY_MILLISECONDS);
-          const isLockedAfterUnlock = readLeafReadOnly(leaf);
+          const isLockedAfterUnlock = isLeafReadOnly(leaf);
           const wasAborted = abortController.signal.aborted;
 
           return {
@@ -458,7 +463,7 @@ describe('resource-lock', () => {
             wasAborted
           };
 
-          function readLeafReadOnly(readLeaf: unknown): boolean {
+          function isLeafReadOnly(readLeaf: unknown): boolean {
             const editor = (readLeaf as ReadableLeaf).view.editor;
             if (!editor) {
               throw new Error('no editor on leaf');
@@ -478,6 +483,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent mutation blocker', () => {
     it('should block real vault rename and file-manager trash of a locked file, then allow them after unlock', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { ResourceLockComponent, ResourceLockedError } }): Promise<MutationBlockerResult> {
           const path = 'resource-lock-blocker-target.md';
           const renamedPath = 'resource-lock-blocker-renamed.md';
@@ -542,6 +548,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent mutation bypass scope', () => {
     it('should let a mutation through inside a bypass scope and enforce it again after', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { ResourceLockComponent, ResourceLockedError } }): Promise<BypassScopeResult> {
           const path = 'resource-lock-bypass-target.md';
           if (await app.vault.adapter.exists(path)) {
@@ -593,6 +600,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent external-change detection', () => {
     it('should abort the owning operation when a locked file is changed outside the blocker (raw adapter)', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { ResourceLockComponent } }): Promise<ExternalChangeResult> {
           const path = 'resource-lock-detector-target.md';
           if (await app.vault.adapter.exists(path)) {
@@ -627,6 +635,7 @@ describe('resource-lock', () => {
   describe('unlock-active-note command', () => {
     it('should register the "Unlock active note" command (with a checkCallback) via the real registrar and remove it on dispose', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         fn({ app, lib: { AppActiveFileProvider, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, ResourceLockComponent, UnlockActiveNoteCommandHandler } }): UnlockCommandResult {
           const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
           const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
@@ -648,7 +657,7 @@ describe('resource-lock', () => {
           commandHandlerComponent.load();
 
           try {
-            const isRegisteredBefore = Boolean(app.commands.commands[commandId]);
+            const isRegisteredBefore = Object.hasOwn(app.commands.commands, commandId);
             const disposable = commandHandlerComponent.registerCommandHandlers([
               new UnlockActiveNoteCommandHandler({ app, resourceLockComponent })
             ]);
@@ -661,7 +670,7 @@ describe('resource-lock', () => {
 
             // Disposing removes the command — this is the real-Obsidian removeCommand path that a mock cannot cover.
             disposable[Symbol.dispose]();
-            const isRegisteredAfterDispose = Boolean(app.commands.commands[commandId]);
+            const isRegisteredAfterDispose = Object.hasOwn(app.commands.commands, commandId);
 
             return { canExecuteWhileNotLocked, hasCheckCallback, isRegisteredAfterDispose, isRegisteredBefore, isRegisteredWhileActive };
           } finally {

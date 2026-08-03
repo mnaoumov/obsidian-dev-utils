@@ -36,7 +36,7 @@ export abstract class CliTaskResult {
       }
     }
 
-    return CliTaskResult.Success();
+    return this.Success();
   }
 
   /**
@@ -168,11 +168,11 @@ class SuccessTaskResult extends CliTaskResult {
  * a specific shell (cmd.exe, PowerShell, sh) must apply shell-specific
  * escaping on top — see {@link cmdEscapeCommandLine}.
  *
- * @param args - The array of command-line arguments to convert.
+ * @param $arguments - The array of command-line arguments to convert.
  * @returns A string representing the command-line invocation.
  */
-export function toCommandLine(args: string[]): string {
-  return args.map((arg) => argvQuote(arg)).join(' ');
+export function toCommandLine($arguments: string[]): string {
+  return $arguments.map((argument) => argvQuote(argument)).join(' ');
 }
 
 /**
@@ -190,11 +190,11 @@ export function toCommandLine(args: string[]): string {
  * Windows, use {@link toCommandLine} plus {@link cmdEscapeCommandLine} instead —
  * the two conventions are not interchangeable.
  *
- * @param args - The array of command-line arguments to convert.
+ * @param $arguments - The array of command-line arguments to convert.
  * @returns A string representing the command-line invocation for a POSIX shell.
  */
-export function toPosixCommandLine(args: string[]): string {
-  return args.map((arg) => posixQuote(arg)).join(' ');
+export function toPosixCommandLine($arguments: string[]): string {
+  return $arguments.map((argument) => posixQuote(argument)).join(' ');
 }
 
 /**
@@ -212,41 +212,37 @@ const SINGLE_QUOTE_RE = /'/g;
  * The replacement for a literal single quote inside a single-quoted POSIX span:
  * close the span, add an escaped literal quote, reopen the span.
  */
-const POSIX_ESCAPED_SINGLE_QUOTE = '\'\\\'\'';
+const POSIX_ESCAPED_SINGLE_QUOTE = String.raw`'\''`;
 
 /**
  * Quotes a single argument so that `CommandLineToArgvW` will decode it
  * unchanged. Implements the ArgvQuote algorithm from
  * {@link https://learn.microsoft.com/archive/blogs/twistylittlepassagesallalike/everyone-quotes-command-line-arguments-the-wrong-way | Everyone quotes command line arguments the wrong way}.
  *
- * @param arg - The raw argument string.
+ * @param argument - The raw argument string.
  * @returns The quoted argument string.
  */
-function argvQuote(arg: string): string {
-  if (arg.length > 0 && !/[\s\t\n\v"]/.test(arg)) {
-    return arg;
+function argvQuote(argument: string): string {
+  if (argument.length > 0 && !/[\s\t\n\v"]/.test(argument)) {
+    return argument;
   }
 
   const BACKSLASH_ESCAPE_FACTOR = 2;
   let result = '"';
-  for (let i = 0; i < arg.length; i++) {
-    let numBackslashes = 0;
-    while (i < arg.length && arg[i] === '\\') {
-      i++;
-      numBackslashes++;
+  for (let index = 0; index < argument.length; index++) {
+    let numberBackslashes = 0;
+    while (index < argument.length && argument[index] === '\\') {
+      index++;
+      numberBackslashes++;
     }
 
-    if (i === arg.length) {
-      result += '\\'.repeat(numBackslashes * BACKSLASH_ESCAPE_FACTOR);
+    if (index === argument.length) {
+      result += '\\'.repeat(numberBackslashes * BACKSLASH_ESCAPE_FACTOR);
       break;
     }
 
-    const ch = arg.charAt(i);
-    if (ch === '"') {
-      result += `${'\\'.repeat(numBackslashes * BACKSLASH_ESCAPE_FACTOR + 1)}"`;
-    } else {
-      result += '\\'.repeat(numBackslashes) + ch;
-    }
+    const ch = argument.charAt(index);
+    result += ch === '"' ? `${'\\'.repeat(numberBackslashes * BACKSLASH_ESCAPE_FACTOR + 1)}"` : '\\'.repeat(numberBackslashes) + ch;
   }
 
   result += '"';
@@ -258,14 +254,14 @@ function argvQuote(arg: string): string {
  * An empty argument becomes `''`; an argument of only safe characters is
  * returned unchanged; anything else is single-quoted.
  *
- * @param arg - The raw argument string.
+ * @param argument - The raw argument string.
  * @returns The quoted argument string.
  */
-function posixQuote(arg: string): string {
-  if (POSIX_SAFE_ARG_RE.test(arg)) {
-    return arg;
+function posixQuote(argument: string): string {
+  if (POSIX_SAFE_ARG_RE.test(argument)) {
+    return argument;
   }
-  return `'${replaceAll({ replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE, str: arg })}'`;
+  return `'${replaceAll({ $string: argument, replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE })}'`;
 }
 
 /**
@@ -284,11 +280,12 @@ const CMD_META_RE = /[()%!^"<>&|]/g;
  * @param commandLine - The already-quoted command line string.
  * @returns The string with all cmd metacharacters `^`-escaped.
  */
+// eslint-disable-next-line unicorn/name-replacements -- `cmd` names Windows `cmd.exe`, not an abbreviation of `command`.
 export function cmdEscapeCommandLine(commandLine: string): string {
   return replaceAll({
+    $string: commandLine,
     replacer: '^$&',
-    searchValue: CMD_META_RE,
-    str: commandLine
+    searchValue: CMD_META_RE
   });
 }
 
@@ -301,10 +298,10 @@ export function cmdEscapeCommandLine(commandLine: string): string {
  * script has to opt in, and each `npm run` sub-step of a composite script (e.g. `build`) carries its own
  * switch.
  *
- * @param taskFn - The task function to execute, which may return a {@link CliTaskResult} or `void`.
+ * @param taskFunction - The task function to execute, which may return a {@link CliTaskResult} or `void`.
  * @returns A {@link Promise} that resolves when the task is completed and exits with the appropriate status.
  */
-export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<void> {
+export async function wrapCliTask(taskFunction: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<void> {
   const disabledScriptEnvVariableName = getDisabledScriptEnvVariableName();
   if (disabledScriptEnvVariableName !== null) {
     process.stdout.write(`Skipped (${disabledScriptEnvVariableName} is off).\n`);
@@ -313,7 +310,7 @@ export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskRe
   }
 
   enableLibraryDebuggers();
-  const result = await wrapResult(taskFn);
+  const result = await wrapResult(taskFunction);
   result.exit();
 }
 
@@ -321,12 +318,12 @@ export async function wrapCliTask(taskFn: () => Promisable<MaybeReturn<CliTaskRe
  * Safely executes a task function and returns a {@link CliTaskResult}. If the task function throws an error,
  * An error is caught, and a failure {@link CliTaskResult} is returned.
  *
- * @param taskFn - The task function to execute.
+ * @param taskFunction - The task function to execute.
  * @returns A {@link Promise} that resolves with a {@link CliTaskResult} representing the outcome of the task.
  */
-async function wrapResult(taskFn: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<CliTaskResult> {
+async function wrapResult(taskFunction: () => Promisable<MaybeReturn<CliTaskResult>>): Promise<CliTaskResult> {
   try {
-    return (await taskFn()) as CliTaskResult | undefined ?? CliTaskResult.Success();
+    return (await taskFunction()) as CliTaskResult | undefined ?? CliTaskResult.Success();
   } catch (error) {
     printError(new Error('An error occurred during task execution', { cause: error }));
     return CliTaskResult.Failure();

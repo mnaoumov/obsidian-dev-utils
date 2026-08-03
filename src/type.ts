@@ -80,7 +80,7 @@ type Duplicates<
   : Out;
 
 // Maps one `on(name, callback, …)` overload to a `{ [name]: [callbackArgs] }` entry; drops the wide `name: string` catch-all.
-type EntryOfOverload<TOverload> = TOverload extends (name: infer Name, callback: (...args: infer Args) => unknown, ...rest: never[]) => unknown ? Name extends string ? string extends Name ? never : Record<Name, Args>
+type EntryOfOverload<TOverload> = TOverload extends (name: infer Name, callback: (...$arguments: infer Arguments) => unknown, ...rest: never[]) => unknown ? Name extends string ? string extends Name ? never : Record<Name, Arguments>
   : never
   : never;
 
@@ -106,10 +106,10 @@ type OverloadUnion<TOverload extends GenericFunction> = Exclude<
   TOverload extends () => never ? never : () => never
 >;
 
-type OverloadUnionRecursive<TOverload, TPartialOverload = unknown> = TOverload extends (...args: infer Args) => infer Return ? TPartialOverload extends TOverload ? never
+type OverloadUnionRecursive<TOverload, TPartialOverload = unknown> = TOverload extends (...$arguments: infer Arguments) => infer Return ? TPartialOverload extends TOverload ? never
   :
-    | OverloadUnionRecursive<TPartialOverload & TOverload, TPartialOverload & ((...args: Args) => Return) & Pick<TOverload, keyof TOverload>>
-    | ((...args: Args) => Return)
+    | OverloadUnionRecursive<TPartialOverload & TOverload, TPartialOverload & ((...$arguments: Arguments) => Return) & Pick<TOverload, keyof TOverload>>
+    | ((...$arguments: Arguments) => Return)
   : never;
 /* eslint-enable perfectionist/sort-intersection-types, perfectionist/sort-union-types, @stylistic/operator-linebreak -- The OverloadUnion recursion relies on this exact operand order; reordering breaks termination (TS2589), and the line-break shape is left to dprint. */
 
@@ -187,12 +187,14 @@ export class TypeAsserter<Type> {
       assertAllKeys<const Keys extends readonly string[]>(
         keys: ExactMembers<StringKeys<object & Type>, Keys>
       ): readonly (keyof (object & Type))[] {
-        return Object.freeze(keys.slice() as (keyof (object & Type))[]);
+        // eslint-disable-next-line unicorn/prefer-spread -- `Type` may be a string, and spreading one splits surrogate pairs (`@typescript-eslint/no-misused-spread`).
+        return Object.freeze(Array.from(keys) as (keyof (object & Type))[]);
       },
       assertAllMembers<const Keys extends readonly LiteralKey[]>(
         keys: ExactMembers<LiteralKey & Type, Keys>
       ): readonly (LiteralKey & Type)[] {
-        return Object.freeze(keys.slice() as (LiteralKey & Type)[]);
+        // eslint-disable-next-line unicorn/prefer-spread -- `Type` may be a string, and spreading one splits surrogate pairs (`@typescript-eslint/no-misused-spread`).
+        return Object.freeze(Array.from(keys) as (LiteralKey & Type)[]);
       }
     });
     this.assertAllKeys = assertions.assertAllKeys;

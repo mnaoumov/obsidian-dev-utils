@@ -93,8 +93,8 @@ export function loadEnvFileIfExists(): void {
  */
 function toEnvVariableName(scriptName: string): string {
   return replaceAll({
+    $string: scriptName,
     replacer: '_',
-    searchValue: NON_ALPHANUMERIC_REG_EXP,
-    str: scriptName
+    searchValue: NON_ALPHANUMERIC_REG_EXP
   }).toUpperCase();
 }

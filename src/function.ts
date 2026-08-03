@@ -9,47 +9,47 @@ import type { Promisable } from 'type-fest';
 /**
  * Represents a generic async function.
  *
- * @typeParam Args - The arguments of the function.
+ * @typeParam Arguments - The arguments of the function.
  * @typeParam Return - The awaited return type of the function.
  */
-export type GenericAsyncFunction<Args extends unknown[] = never[], Return = unknown> = GenericFunction<Args, Promise<Return>>;
+export type GenericAsyncFunction<Arguments extends unknown[] = never[], Return = unknown> = GenericFunction<Arguments, Promise<Return>>;
 
 /**
  * Represents a generic async void function.
  *
- * @typeParam Args - The arguments of the function.
+ * @typeParam Arguments - The arguments of the function.
  */
-export type GenericAsyncVoidFunction<Args extends unknown[] = never[]> = GenericAsyncFunction<Args, void>;
+export type GenericAsyncVoidFunction<Arguments extends unknown[] = never[]> = GenericAsyncFunction<Arguments, void>;
 
 /**
  * Represents a generic function.
  *
- * @typeParam Args - The arguments of the function.
+ * @typeParam Arguments - The arguments of the function.
  * @typeParam Return - The return type of the function.
  */
-export type GenericFunction<Args extends unknown[] = never[], Return = unknown> = (...args: Args) => Return;
+export type GenericFunction<Arguments extends unknown[] = never[], Return = unknown> = (...$arguments: Arguments) => Return;
 
 /**
  * Represents a generic promisable function.
  *
- * @typeParam Args - The arguments of the function.
+ * @typeParam Arguments - The arguments of the function.
  * @typeParam Return - The awaited return type of the function.
  */
-export type GenericPromisableFunction<Args extends unknown[] = never[], Return = unknown> = GenericFunction<Args, Promisable<Return>>;
+export type GenericPromisableFunction<Arguments extends unknown[] = never[], Return = unknown> = GenericFunction<Arguments, Promisable<Return>>;
 
 /**
  * Represents a generic promisable void function.
  *
- * @typeParam Args - The arguments of the function.
+ * @typeParam Arguments - The arguments of the function.
  */
-export type GenericPromisableVoidFunction<Args extends unknown[] = never[]> = GenericPromisableFunction<Args, void>;
+export type GenericPromisableVoidFunction<Arguments extends unknown[] = never[]> = GenericPromisableFunction<Arguments, void>;
 
 /**
  * Represents a generic void function.
  *
- * @typeParam Args - The arguments of the function.
+ * @typeParam Arguments - The arguments of the function.
  */
-export type GenericVoidFunction<Args extends unknown[] = never[]> = GenericFunction<Args, void>;
+export type GenericVoidFunction<Arguments extends unknown[] = never[]> = GenericFunction<Arguments, void>;
 
 /**
  * Converts a function into a string that is a valid function expression.
@@ -58,23 +58,23 @@ export type GenericVoidFunction<Args extends unknown[] = never[]> = GenericFunct
  * returns `"fn() {}"`, which is not a valid expression.
  * This helper detects that form and prefixes it with `function `.
  *
- * @param fn - The function to convert.
+ * @param $function - The function to convert.
  * @returns A string that is a valid function expression.
  */
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type -- We need to use `Function` type.
-export function getFunctionExpressionString(fn: Function): string {
-  const fnString = fn.toString();
+export function getFunctionExpressionString($function: Function): string {
+  const functionString = $function.toString();
 
-  if (FUNCTION_EXPRESSION_RE.test(fnString)) {
-    return fnString;
+  if (FUNCTION_EXPRESSION_RE.test(functionString)) {
+    return functionString;
   }
 
-  const asyncMatch = ASYNC_KEYWORD_RE.exec(fnString);
+  const asyncMatch = ASYNC_KEYWORD_RE.exec(functionString);
   if (asyncMatch) {
-    return `async function ${fnString.slice(asyncMatch[0].length)}`;
+    return `async function ${functionString.slice(asyncMatch[0].length)}`;
   }
 
-  return `function ${fnString}`;
+  return `function ${functionString}`;
 }
 
 /**
@@ -102,13 +102,13 @@ export function noopAsync(): Promise<void> {
 /**
  * Makes an async function that calls the original async function with the provided arguments and omits the return value.
  *
- * @typeParam Args - Arguments to be passed to the function.
- * @param fn - Function to be called.
+ * @typeParam Arguments - Arguments to be passed to the function.
+ * @param $function - Function to be called.
  * @returns An async function that calls the original function with the provided arguments and omits the return value.
  */
-export function omitAsyncReturnType<Args extends unknown[]>(fn: GenericAsyncFunction<Args>): GenericAsyncVoidFunction<Args> {
-  return async (...args: Args) => {
-    await fn(...args);
+export function omitAsyncReturnType<Arguments extends unknown[]>($function: GenericAsyncFunction<Arguments>): GenericAsyncVoidFunction<Arguments> {
+  return async (...$arguments: Arguments) => {
+    await $function(...$arguments);
   };
 }
 
@@ -126,18 +126,18 @@ const FUNCTION_EXPRESSION_RE = /^(?:function\b|async\b\s*(?:function\b|\()|\()/;
  */
 const ASYNC_KEYWORD_RE = /^async\b\s*/;
 
-type ArgNamesOf<T extends GenericFunction> = MapToArgNames<Parameters<T>>;
+type ArgumentNamesOf<T extends GenericFunction> = MapToArgumentNames<Parameters<T>>;
 
 interface CreateFunctionArgumentlessParams {
   readonly functionBody: string;
 }
 
 interface CreateFunctionParams<TFunction extends GenericFunction> extends CreateFunctionArgumentlessParams {
-  readonly argNames: ArgNamesOf<TFunction>;
+  readonly argumentNames: ArgumentNamesOf<TFunction>;
 }
 
-type MapToArgNames<TArgs extends readonly unknown[]> = {
-  readonly [K in keyof TArgs]: string;
+type MapToArgumentNames<TArguments extends readonly unknown[]> = {
+  readonly [K in keyof TArguments]: string;
 };
 
 /**
@@ -146,14 +146,14 @@ type MapToArgNames<TArgs extends readonly unknown[]> = {
  * This is useful for creating a new instance of a function that has the same behavior but is not strictly equal to the original function.
  *
  * @typeParam TFunction - The type of the function to clone.
- * @param fn - The function to clone.
+ * @param $function - The function to clone.
  * @returns A new function that has the same behavior as the original function.
  */
-export function cloneFunction<TFunction extends GenericFunction>(fn: TFunction): TFunction {
-  return clonedFn as TFunction;
+export function cloneFunction<TFunction extends GenericFunction>($function: TFunction): TFunction {
+  return clonedFunction as TFunction;
 
-  function clonedFn(this: ThisParameterType<TFunction>, ...args: Parameters<TFunction>): ReturnType<TFunction> {
-    return fn.apply(this, args) as ReturnType<TFunction>;
+  function clonedFunction(this: ThisParameterType<TFunction>, ...$arguments: Parameters<TFunction>): ReturnType<TFunction> {
+    return $function.apply(this, $arguments) as ReturnType<TFunction>;
   }
 }
 /**
@@ -188,20 +188,20 @@ export function createFunction<TFunction extends GenericFunction>(params: Create
 export function createFunction<TFunction extends GenericFunction>(
   params: CreateFunctionArgumentlessParams & Partial<CreateFunctionParams<TFunction>>
 ): TFunction {
-  const argNames = params.argNames ?? [];
+  const argumentNames = params.argumentNames ?? [];
   // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval, obsidianmd/rule-custom-message -- Need function constructor
-  return new Function(...argNames, params.functionBody) as TFunction;
+  return new Function(...argumentNames, params.functionBody) as TFunction;
 }
 
 /**
  * Makes a function that calls the original function with the provided arguments and omits the return value.
  *
- * @typeParam Args - Arguments to be passed to the function.
- * @param fn - Function to be called.
+ * @typeParam Arguments - Arguments to be passed to the function.
+ * @param $function - Function to be called.
  * @returns A function that calls the original function with the provided arguments and omits the return value.
  */
-export function omitReturnType<Args extends unknown[]>(fn: GenericFunction<Args>): GenericVoidFunction<Args> {
-  return (...args: Args) => {
-    fn(...args);
+export function omitReturnType<Arguments extends unknown[]>($function: GenericFunction<Arguments>): GenericVoidFunction<Arguments> {
+  return (...$arguments: Arguments) => {
+    $function(...$arguments);
   };
 }

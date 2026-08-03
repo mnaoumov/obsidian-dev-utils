@@ -37,9 +37,9 @@ interface PathHolder {
 }
 
 vi.mock('../error.ts', () => ({
-  errorToString: vi.fn((e: unknown) => String(e)),
-  throwExpression: vi.fn((msg: unknown) => {
-    throw msg;
+  errorToString: vi.fn(String),
+  throwExpression: vi.fn((message: unknown) => {
+    throw message;
   })
 }));
 
@@ -55,7 +55,7 @@ vi.mock('../obsidian/resource-url.ts', () => ({
 }));
 
 vi.mock('../obsidian/i18n/i18n.ts', () => ({
-  t: vi.fn((fn: GenericAsyncFunction<unknown[]>, options?: unknown) => {
+  t: vi.fn(($function: GenericAsyncFunction<unknown[]>, options?: unknown) => {
     try {
       const translations = {
         obsidianDevUtils: {
@@ -66,15 +66,15 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
           }
         }
       };
-      return fn(translations, options);
+      return $function(translations, options);
     } catch {
       return 'mock-translation';
     }
   })
 }));
 
-interface ElOptions {
-  readonly attr?: Record<string, string>;
+interface ElementOptions {
+  readonly attribute?: Record<string, string>;
 }
 
 interface ParagraphOptions {
@@ -83,7 +83,7 @@ interface ParagraphOptions {
 
 function createMockDv(): DataviewInlineApi {
   const container = createDiv();
-  activeDocument.body.appendChild(container);
+  activeDocument.body.append(container);
 
   return strictProxy<DataviewInlineApi>({
     app: { metadataCache: {}, vault: { adapter: {} } },
@@ -93,16 +93,16 @@ function createMockDv(): DataviewInlineApi {
       (
         tag: string,
         _text: string,
-        options?: ElOptions
+        options?: ElementOptions
       ) => {
-        const el = createEl(tag as keyof HTMLElementTagNameMap);
-        if (options?.attr) {
-          for (const [k, v] of Object.entries(options.attr)) {
-            el.setAttribute(k, v);
+        const element = createEl(tag as keyof HTMLElementTagNameMap);
+        if (options?.attribute) {
+          for (const [k, v] of Object.entries(options.attribute)) {
+            element.setAttribute(k, v);
           }
         }
-        container.appendChild(el);
-        return el;
+        container.append(element);
+        return element;
       }
     )),
     list: vi.fn(async () => {
@@ -115,7 +115,7 @@ function createMockDv(): DataviewInlineApi {
         if (typeof text === 'string') {
           p.textContent = text;
         }
-        (options?.container ?? container).appendChild(p);
+        (options?.container ?? container).append(p);
         return p;
       }
     ),
@@ -208,15 +208,15 @@ describe('getRenderedContainer', () => {
 
   it('should handle async renderer', async () => {
     const dv = createMockDv();
-    let resolved = false;
+    let isResolved = false;
     async function renderer(): Promise<void> {
       await noopAsync();
-      resolved = true;
+      isResolved = true;
     }
 
     await getRenderedContainer(dv, renderer);
 
-    expect(resolved).toBe(true);
+    expect(isResolved).toBe(true);
   });
 });
 
@@ -372,7 +372,7 @@ describe('renderPaginatedList', () => {
 
   it('should render only first page items with default items per page', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 25 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 25 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, rows });
 
@@ -386,7 +386,7 @@ describe('renderPaginatedList', () => {
 
   it('should use custom itemsPerPageOptions', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 10 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 10 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [5, 15], rows });
 
@@ -399,7 +399,7 @@ describe('renderPaginatedList', () => {
 
   it('should create page navigation links', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 25 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 25 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, rows });
 
@@ -410,20 +410,20 @@ describe('renderPaginatedList', () => {
 
   it('should disable First and Prev links on first page', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 25 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 25 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, rows });
 
     const links = dv.container.querySelectorAll('.page-link');
     const firstLink = links[0];
-    const prevLink = links[1];
+    const previousLink = links[1];
     expect(firstLink?.classList.contains('disabled')).toBe(true);
-    expect(prevLink?.classList.contains('disabled')).toBe(true);
+    expect(previousLink?.classList.contains('disabled')).toBe(true);
   });
 
   it('should mark current page link as current', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 25 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 25 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, rows });
 
@@ -465,7 +465,7 @@ describe('renderPaginatedList', () => {
 
   it('should create select options matching itemsPerPageOptions', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 50 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 50 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({
       dv,
@@ -473,7 +473,7 @@ describe('renderPaginatedList', () => {
       rows
     });
 
-    const options = dv.container.querySelectorAll('select option');
+    const options = dv.container.querySelectorAll(':scope select option');
     expect(options).toHaveLength(3);
     expect(options[0]?.textContent).toBe('5');
     expect(options[1]?.textContent).toBe('10');
@@ -515,8 +515,8 @@ describe('renderPaginatedTable', () => {
 
   it('should slice rows to first page with default items per page', async () => {
     const dv = createMockDv();
-    const rows: string[][] = Array.from({ length: 25 }, (_, i) => [
-      `Person${String(i)}`
+    const rows: string[][] = Array.from({ length: 25 }, (_, index) => [
+      `Person${String(index)}`
     ]);
 
     await renderPaginatedTable({ dv, headers: ['Name'], rows });
@@ -528,8 +528,8 @@ describe('renderPaginatedTable', () => {
 
   it('should use custom itemsPerPageOptions', async () => {
     const dv = createMockDv();
-    const rows: string[][] = Array.from({ length: 20 }, (_, i) => [
-      `Person${String(i)}`
+    const rows: string[][] = Array.from({ length: 20 }, (_, index) => [
+      `Person${String(index)}`
     ]);
 
     await renderPaginatedTable({
@@ -552,17 +552,17 @@ describe('reloadCurrentFileCache', () => {
 
   it('should call DataviewAPI.index.reload', async () => {
     const dv = createMockDv();
-    const reloadFn = vi.fn(async () => {
+    const reloadFunction = vi.fn(async () => {
       await noopAsync();
       noop();
     });
     vi.stubGlobal('DataviewAPI', {
-      index: { reload: reloadFn }
+      index: { reload: reloadFunction }
     });
 
     await reloadCurrentFileCache(dv);
 
-    expect(reloadFn).toHaveBeenCalled();
+    expect(reloadFunction).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
@@ -577,12 +577,12 @@ describe('reloadCurrentFileCache', () => {
 
   it('should pass the file from dv.current().file.path to getFile', async () => {
     const dv = createMockDv();
-    const reloadFn = vi.fn(async () => {
+    const reloadFunction = vi.fn(async () => {
       await noopAsync();
       noop();
     });
     vi.stubGlobal('DataviewAPI', {
-      index: { reload: reloadFn }
+      index: { reload: reloadFunction }
     });
 
     await reloadCurrentFileCache(dv);
@@ -599,7 +599,7 @@ describe('renderPaginated page navigation', () => {
 
   it('should navigate to next page when Next link is clicked', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 25 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 25 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
@@ -631,21 +631,21 @@ describe('renderPaginated page navigation', () => {
   it('should show ellipsis when there are many pages and current page is far from start', async () => {
     const dv = createMockDv();
     // 100 items with 10 per page = 10 pages
-    const rows = Array.from({ length: 100 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 100 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
     // On page 1, there should be no leading ellipsis, but there might be a trailing one
-    const spans = dv.container.querySelectorAll('.pagination span');
-    const texts = Array.from(spans).map((s) => s.textContent);
+    const spans = dv.container.querySelectorAll(':scope .pagination span');
+    const texts = [...spans].map((s) => s.textContent);
     // For page 1 with 10 pages, there should be trailing "..." because page 1 < totalPages - 2
-    expect(texts.some((t) => t === '...')).toBe(true);
+    expect(texts.includes('...')).toBe(true);
   });
 
   it('should disable Last and Next links on the last page when single page', async () => {
     const dv = createMockDv();
     // 5 items with 10 per page = 1 page
-    const rows = Array.from({ length: 5 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 5 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
@@ -653,18 +653,18 @@ describe('renderPaginated page navigation', () => {
     // All nav links should be disabled on single page
     // First, Prev, "1" (current), Next, Last
     const firstLink = links[0];
-    const prevLink = links[1];
+    const previousLink = links[1];
     const nextLink = links[3];
     const lastLink = links[4];
     expect(firstLink?.classList.contains('disabled')).toBe(true);
-    expect(prevLink?.classList.contains('disabled')).toBe(true);
+    expect(previousLink?.classList.contains('disabled')).toBe(true);
     expect(nextLink?.classList.contains('disabled')).toBe(true);
     expect(lastLink?.classList.contains('disabled')).toBe(true);
   });
 
   it('should prevent default on disabled link click', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 5 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 5 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
@@ -717,7 +717,7 @@ describe('renderPaginated page navigation', () => {
 
   it('should re-render page 1 when items-per-page select changes', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 30 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 30 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10, 20], rows });
 
@@ -745,7 +745,7 @@ describe('renderPaginated page navigation', () => {
 
   it('should jump to page when Enter is pressed in jump-to-page input', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 30 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 30 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
@@ -773,7 +773,7 @@ describe('renderPaginated page navigation', () => {
 
   it('should not jump to page when a non-Enter key is pressed', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 30 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 30 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
@@ -795,7 +795,7 @@ describe('renderPaginated page navigation', () => {
   it('should show leading ellipsis when navigating to page 4 or beyond', async () => {
     const dv = createMockDv();
     // 100 items with 10 per page = 10 pages
-    const rows = Array.from({ length: 100 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 100 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
@@ -809,8 +809,8 @@ describe('renderPaginated page navigation', () => {
     await sleep(0);
 
     // On page 5, there should be a leading "..." since pageNumber (5) > MORE_PAGE_NUMBER (3)
-    const spans = dv.container.querySelectorAll('.pagination span');
-    const texts = Array.from(spans).map((s) => s.textContent);
+    const spans = dv.container.querySelectorAll(':scope .pagination span');
+    const texts = [...spans].map((s) => s.textContent);
     expect(texts.filter((t) => t === '...').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -825,7 +825,7 @@ describe('renderPaginated page navigation', () => {
 
   it('should not jump to an invalid page number', async () => {
     const dv = createMockDv();
-    const rows = Array.from({ length: 30 }, (_, i) => `item${String(i)}`);
+    const rows = Array.from({ length: 30 }, (_, index) => `item${String(index)}`);
 
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 

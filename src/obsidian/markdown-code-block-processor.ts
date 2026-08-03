@@ -15,7 +15,7 @@ import type {
 import type { ValueProvider } from '../value-provider.ts';
 import type { CodeBlockMarkdownInformation } from './code-block-markdown-information.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
-import type { ContentArgs } from './vault.ts';
+import type { ContentArguments } from './vault.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
 import { requestAnimationFrameAsync } from '../async.ts';
@@ -53,7 +53,7 @@ export interface GetCodeBlockMarkdownInfoParams {
   /**
    * A {@link MarkdownPostProcessorContext} object.
    */
-  readonly ctx: MarkdownPostProcessorContext;
+  readonly context: MarkdownPostProcessorContext;
 
   /**
    * A {@link HTMLElement} representing the code block.
@@ -124,7 +124,7 @@ export interface ReplaceCodeBlockParams extends GetCodeBlockMarkdownInfoParams {
   /**
    * Provides a new code block.
    */
-  readonly codeBlockProvider: ValueProvider<string, ContentArgs>;
+  readonly codeBlockProvider: ValueProvider<string, ContentArguments>;
 
   /**
    * The resource-lock component used to lock the note while it is being modified.
@@ -209,10 +209,10 @@ interface IsSuitableCodeBlockParams {
  * @returns The information about the code block in the Markdown section.
  */
 export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
-  const { app, ctx, el, source } = params;
+  const { app, context, el, source } = params;
 
-  const sourceFile = getFileOrNull({ app, pathOrFile: ctx.sourcePath });
-  assertNonNullable(sourceFile, `Source file ${ctx.sourcePath} not found.`);
+  const sourceFile = getFileOrNull({ app, pathOrFile: context.sourcePath });
+  assertNonNullable(sourceFile, `Source file ${context.sourcePath} not found.`);
 
   await requestAnimationFrameAsync();
   await saveNote(app, sourceFile);
@@ -220,8 +220,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
   await invokeWithFileSystemLock({
-    app,
-    fn(noteContent) {
+    $function(noteContent) {
       const noteContentLf = ensureLfEndings(noteContent);
 
       const approximateSectionInfo: MarkdownSectionInformation = {
@@ -231,16 +230,17 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       };
 
       approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
-      const sourceLf = ensureLfEndings(source);
 
       if (
         !hasSingleOccurrence({
-          searchValue: approximateSectionInfo.text,
-          str: noteContentLf
+          $string: noteContentLf,
+          searchValue: approximateSectionInfo.text
         })
       ) {
         return;
       }
+
+      const sourceLf = ensureLfEndings(source);
 
       const sectionOffset = noteContentLf.indexOf(approximateSectionInfo.text);
       const linesBeforeSectionCount = noteContentLf.slice(0, sectionOffset).split('\n').length - 1;
@@ -251,14 +251,13 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       const sourceLines = sourceLf.split('\n');
 
       const textLines = approximateSectionInfo.text.split('\n');
-      const textLineOffsets = new Map<number, number>();
-      textLineOffsets.set(linesBeforeSectionCount, sectionOffset);
+      const textLineOffsets = new Map<number, number>([[linesBeforeSectionCount, sectionOffset]]);
 
       let lastTextLineOffset = sectionOffset;
-      for (let i = 0; i < textLines.length; i++) {
-        const textLine = textLines[i] ?? '';
+      for (const [index, textLine_] of textLines.entries()) {
+        const textLine = textLine_;
         const lineOffset = lastTextLineOffset + textLine.length + 1;
-        textLineOffsets.set(linesBeforeSectionCount + i + 1, lineOffset);
+        textLineOffsets.set(linesBeforeSectionCount + index + 1, lineOffset);
         lastTextLineOffset = lineOffset;
       }
 
@@ -299,6 +298,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       markdownInfo.positionInNote.start.offset = lfOffsetMapper(markdownInfo.positionInNote.start.offset);
       markdownInfo.positionInNote.end.offset = lfOffsetMapper(markdownInfo.positionInNote.end.offset);
     },
+    app,
     pathOrFile: sourceFile
   });
 
@@ -312,7 +312,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
  */
 // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares InsertCodeBlockParams with insertBeforeCodeBlock.
 export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promise<void> {
-  const { app, ctx, lineOffset = 0, text } = params;
+  const { app, context, lineOffset = 0, text } = params;
 
   await process({
     app,
@@ -332,7 +332,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
         text
       }));
     },
-    pathOrFile: ctx.sourcePath,
+    pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
@@ -345,7 +345,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
  */
 // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares InsertCodeBlockParams with insertAfterCodeBlock.
 export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Promise<void> {
-  const { app, ctx, lineOffset = 0, text } = params;
+  const { app, context, lineOffset = 0, text } = params;
 
   await process({
     app,
@@ -367,7 +367,7 @@ export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Prom
         text
       }));
     },
-    pathOrFile: ctx.sourcePath,
+    pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
@@ -392,7 +392,7 @@ export async function removeCodeBlock(params: RemoveCodeBlockParams): Promise<vo
  * @param params - The parameters for the function.
  */
 export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<void> {
-  const { app, codeBlockProvider, ctx } = params;
+  const { app, codeBlockProvider, context } = params;
   params.abortSignal?.throwIfAborted();
 
   await process({
@@ -443,7 +443,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
 
       return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
     },
-    pathOrFile: ctx.sourcePath,
+    pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
@@ -463,7 +463,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   const linePrefix = getMandatoryNamedGroup(match, 'LinePrefix');
   const codeBlockStartDelimiter = getMandatoryNamedGroup(match, 'CodeBlockStartDelimiter');
   const codeBlockEndDelimiter = getMandatoryNamedGroup(match, 'CodeBlockEndDelimiter');
-  const codeBlockArgsStr = getOptionalNamedGroup(match, 'CodeBlockArgs') ?? '';
+  const codeBlockArgumentsString = getOptionalNamedGroup(match, 'CodeBlockArgs') ?? '';
   const language = getMandatoryNamedGroup(match, 'CodeBlockLanguage');
 
   const previousText = potentialCodeBlockText.slice(0, match.index);
@@ -473,7 +473,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   const endLine = startLine + sourceLinesCount + 1;
 
   return {
-    args: codeBlockArgsStr.split(/\s+/).filter(Boolean),
+    $arguments: codeBlockArgumentsString.split(/\s+/).filter(Boolean),
     endDelimiter: codeBlockEndDelimiter,
     language,
     linePrefix,
@@ -490,7 +490,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
         offset: textLineOffsets.get(startLine) ?? 0
       }
     },
-    rawArgsStr: codeBlockArgsStr,
+    rawArgumentsString: codeBlockArgumentsString,
     sectionInfo: {
       lineEnd: previousTextLinesCount + sourceLinesCount + 1,
       lineStart: previousTextLinesCount,
@@ -500,9 +500,9 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   };
 }
 
-function getLanguageFromElement(el: HTMLElement): string {
+function getLanguageFromElement(element: HTMLElement): string {
   const BLOCK_LANGUAGE_PREFIX = 'block-language-';
-  return Array.from(el.classList).find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
+  return [...element.classList].find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
 }
 
 function insertText(params: InsertTextParams): string {
@@ -510,7 +510,7 @@ function insertText(params: InsertTextParams): string {
   let { insertLineIndex } = params;
 
   const lines = content.split('\n');
-  const newLines = lines.slice();
+  const newLines = [...lines];
   const textLines = text.split('\n');
 
   if (insertLineIndex < 0) {

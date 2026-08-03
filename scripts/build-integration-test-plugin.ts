@@ -4,7 +4,7 @@ import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plu
 
 await wrapCliTask(async () => {
   await buildIntegrationTestPlugin({
-    outDir: ObsidianDevUtilsRepoPaths.DistIntegrationTestPlugin,
+    outDirectory: ObsidianDevUtilsRepoPaths.DistIntegrationTestPlugin,
     shouldGenerateSourceMap: false
   });
 });

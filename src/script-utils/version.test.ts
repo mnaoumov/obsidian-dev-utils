@@ -13,16 +13,16 @@ import type { ResolvePathFromRootSafeParams } from './root.ts';
 import {
   addGitTag,
   addUpdatedFilesToGit,
+  assertGitHubCliInstalled,
+  assertGitInstalled,
+  assertGitRepoClean,
   autolinkBareUrls,
-  checkGitHubCliInstalled,
-  checkGitInstalled,
-  checkGitRepoClean,
   copyUpdatedManifest,
   getNewVersion,
   getReleaseNotes,
   getVersionUpdateType,
   gitPush,
-  parseVersionArgs,
+  parseVersionArguments,
   publishGitHubRelease,
   updateChangelog,
   updateVersion,
@@ -86,17 +86,17 @@ vi.mock('../script-utils/root.ts', () => ({
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs')>();
+  const $module = await importOriginal<typeof import('node:fs')>();
   return {
-    ...mod,
+    ...$module,
     existsSync: mockExistsSync
   };
 });
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:fs/promises')>();
+  const $module = await importOriginal<typeof import('node:fs/promises')>();
   return {
-    ...mod,
+    ...$module,
     cp: mockCp,
     readFile: mockReadFile,
     rm: mockRm,
@@ -105,9 +105,9 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 });
 
 vi.mock('node:readline/promises', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:readline/promises')>();
+  const $module = await importOriginal<typeof import('node:readline/promises')>();
   return {
-    ...mod,
+    ...$module,
     createInterface: mockCreateInterface
   };
 });
@@ -324,44 +324,44 @@ describe('getNewVersion', () => {
   });
 });
 
-describe('checkGitInstalled', () => {
+describe('assertGitInstalled', () => {
   it('should not throw when git is installed', async () => {
     mockExecFromRoot.mockResolvedValue('git version 2.40.0');
-    await expect(checkGitInstalled()).resolves.toBeUndefined();
+    await expect(assertGitInstalled()).resolves.toBeUndefined();
   });
 
   it('should throw when git is not installed', async () => {
     mockExecFromRoot.mockRejectedValue(new Error('command not found'));
-    await expect(checkGitInstalled()).rejects.toThrow('Git is not installed');
+    await expect(assertGitInstalled()).rejects.toThrow('Git is not installed');
   });
 });
 
-describe('checkGitHubCliInstalled', () => {
+describe('assertGitHubCliInstalled', () => {
   it('should not throw when gh is installed', async () => {
     mockExecFromRoot.mockResolvedValue('gh version 2.30.0');
-    await expect(checkGitHubCliInstalled()).resolves.toBeUndefined();
+    await expect(assertGitHubCliInstalled()).resolves.toBeUndefined();
   });
 
   it('should throw when gh is not installed', async () => {
     mockExecFromRoot.mockRejectedValue(new Error('command not found'));
-    await expect(checkGitHubCliInstalled()).rejects.toThrow('GitHub CLI is not installed');
+    await expect(assertGitHubCliInstalled()).rejects.toThrow('GitHub CLI is not installed');
   });
 });
 
-describe('checkGitRepoClean', () => {
+describe('assertGitRepoClean', () => {
   it('should not throw when repo is clean', async () => {
     mockExecFromRoot.mockResolvedValue('');
-    await expect(checkGitRepoClean()).resolves.toBeUndefined();
+    await expect(assertGitRepoClean()).resolves.toBeUndefined();
   });
 
   it('should throw when repo has uncommitted changes', async () => {
     mockExecFromRoot.mockResolvedValue('M src/file.ts');
-    await expect(checkGitRepoClean()).rejects.toThrow('Git repository is not clean');
+    await expect(assertGitRepoClean()).rejects.toThrow('Git repository is not clean');
   });
 
   it('should throw when git status command fails', async () => {
     mockExecFromRoot.mockRejectedValue(new Error('not a git repo'));
-    await expect(checkGitRepoClean()).rejects.toThrow('Git repository is not clean');
+    await expect(assertGitRepoClean()).rejects.toThrow('Git repository is not clean');
   });
 });
 
@@ -385,15 +385,15 @@ describe('addUpdatedFilesToGit', () => {
   });
 
   it('should retry the commit after the user fixes the issue in an interactive terminal', async () => {
-    const originalIsTty = process.stdin.isTTY;
+    const isOriginallyTty = process.stdin.isTTY;
     setIsTty(true);
     try {
       const question = vi.fn().mockResolvedValue(undefined);
       mockCreateInterface.mockReturnValue({ question });
       let commitAttempts = 0;
-      mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-        const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-        if (cmdStr.startsWith('git commit')) {
+      mockExecFromRoot.mockImplementation((command: string | string[]) => {
+        const commandString = Array.isArray(command) ? command.join(' ') : command;
+        if (commandString.startsWith('git commit')) {
           commitAttempts++;
           if (commitAttempts === 1) {
             return Promise.reject(new Error('Unknown word in cspell'));
@@ -409,17 +409,17 @@ describe('addUpdatedFilesToGit', () => {
       const gitAddCalls = mockExecFromRoot.mock.calls.filter((call: unknown[]) => Array.isArray(call[0]) && (call[0] as string[]).join(' ') === 'git add --all');
       expect(gitAddCalls).toHaveLength(2);
     } finally {
-      setIsTty(originalIsTty);
+      setIsTty(isOriginallyTty);
     }
   });
 
   it('should re-throw the commit error without prompting in a non-interactive environment', async () => {
-    const originalIsTty = process.stdin.isTTY;
+    const isOriginallyTty = process.stdin.isTTY;
     setIsTty(false);
     try {
-      mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-        const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-        if (cmdStr.startsWith('git commit')) {
+      mockExecFromRoot.mockImplementation((command: string | string[]) => {
+        const commandString = Array.isArray(command) ? command.join(' ') : command;
+        if (commandString.startsWith('git commit')) {
           return Promise.reject(new Error('Unknown word in cspell'));
         }
         return Promise.resolve('');
@@ -428,7 +428,7 @@ describe('addUpdatedFilesToGit', () => {
       await expect(addUpdatedFilesToGit('1.0.0')).rejects.toThrow('Unknown word in cspell');
       expect(mockCreateInterface).not.toHaveBeenCalled();
     } finally {
-      setIsTty(originalIsTty);
+      setIsTty(isOriginallyTty);
     }
   });
 });
@@ -444,10 +444,10 @@ describe('updateVersionInFiles', () => {
   it('should update version in package.json', async () => {
     await updateVersionInFiles('2.0.0');
     expect(mockEditPackageJson).toHaveBeenCalledTimes(1);
-    const editFn = mockEditPackageJson.mock.calls[0]?.[0] as (pkg: Record<string, string>) => void;
-    const pkg: Record<string, string> = { version: '1.0.0' };
-    editFn(pkg);
-    expect(pkg['version']).toBe('2.0.0');
+    const editFunction = mockEditPackageJson.mock.calls[0]?.[0] as ($package: Record<string, string>) => void;
+    const $package: Record<string, string> = { version: '1.0.0' };
+    editFunction($package);
+    expect($package['version']).toBe('2.0.0');
   });
 
   it('should update version in package-lock.json with shouldSkipIfMissing', async () => {
@@ -462,18 +462,18 @@ describe('updateVersionInFiles', () => {
 
   it('should update version and packages default entry in lock file', async () => {
     await updateVersionInFiles('3.0.0');
-    const updateFn = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: GenericObject) => void;
+    const updateFunction = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: GenericObject) => void;
     const lockJson: GenericObject = { packages: { '': { version: '1.0.0' } }, version: '1.0.0' };
-    updateFn(lockJson);
+    updateFunction(lockJson);
     expect(lockJson['version']).toBe('3.0.0');
     expect((lockJson['packages'] as Record<string, Record<string, string>>)['']?.['version']).toBe('3.0.0');
   });
 
   it('should handle lock file without packages entry', async () => {
     await updateVersionInFiles('3.0.0');
-    const updateFn = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: GenericObject) => void;
+    const updateFunction = mockEditPackageLockJson.mock.calls[0]?.[0] as (lock: GenericObject) => void;
     const lockJson: GenericObject = { version: '1.0.0' };
-    updateFn(lockJson);
+    updateFunction(lockJson);
     expect(lockJson['version']).toBe('3.0.0');
   });
 });
@@ -523,15 +523,15 @@ describe('getReleaseNotes', () => {
 describe('publishGitHubRelease', () => {
   function setupReleaseNotesMocks(): void {
     mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
-    mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-      const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-      if (cmdStr.startsWith('git tag')) {
+    mockExecFromRoot.mockImplementation((command: string | string[]) => {
+      const commandString = Array.isArray(command) ? command.join(' ') : command;
+      if (commandString.startsWith('git tag')) {
         return Promise.resolve('1.0.0');
       }
-      if (cmdStr.startsWith('gh repo view')) {
+      if (commandString.startsWith('gh repo view')) {
         return Promise.resolve('https://github.com/user/repo');
       }
-      if (cmdStr.includes('npm pack')) {
+      if (commandString.includes('npm pack')) {
         return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.0.tgz' }], null, 2));
       }
       return Promise.resolve('');
@@ -561,9 +561,9 @@ describe('publishGitHubRelease', () => {
 
   it('should throw when npm pack output does not contain expected JSON', async () => {
     mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
-    mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-      const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-      if (cmdStr.includes('npm pack')) {
+    mockExecFromRoot.mockImplementation((command: string | string[]) => {
+      const commandString = Array.isArray(command) ? command.join(' ') : command;
+      if (commandString.includes('npm pack')) {
         return Promise.resolve('some unexpected output without json');
       }
       return Promise.resolve('');
@@ -767,7 +767,7 @@ describe('updateChangelog', () => {
 
 describe('parseVersionArgs', () => {
   it('should parse the version update type with no flags', () => {
-    const { options, versionUpdateType } = parseVersionArgs(['patch']);
+    const { options, versionUpdateType } = parseVersionArguments(['patch']);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
       shouldArchiveDemoVault: true,
@@ -780,7 +780,7 @@ describe('parseVersionArgs', () => {
   });
 
   it('should parse all flags', () => {
-    const { options, versionUpdateType } = parseVersionArgs([
+    const { options, versionUpdateType } = parseVersionArguments([
       'patch',
       '--no-build',
       '--no-changelog-editing',
@@ -801,13 +801,13 @@ describe('parseVersionArgs', () => {
   });
 
   it('should disable demo-vault archiving with --no-demo-vault', () => {
-    const { options } = parseVersionArgs(['patch', '--no-demo-vault']);
+    const { options } = parseVersionArguments(['patch', '--no-demo-vault']);
     expect(options.shouldArchiveDemoVault).toBe(false);
     expect(options.shouldBuild).toBe(true);
   });
 
   it('should return undefined version update type when no positional is provided', () => {
-    const { versionUpdateType } = parseVersionArgs(['--no-release']);
+    const { versionUpdateType } = parseVersionArguments(['--no-release']);
     expect(versionUpdateType).toBeUndefined();
   });
 });
@@ -820,15 +820,15 @@ describe('updateVersion', () => {
     mockCreateInterface.mockReturnValue({
       question: vi.fn().mockResolvedValue(undefined)
     });
-    mockExecFromRoot.mockImplementation((cmd: string | string[]) => {
-      const cmdStr = Array.isArray(cmd) ? cmd.join(' ') : cmd;
-      if (cmdStr.startsWith('git tag')) {
+    mockExecFromRoot.mockImplementation((command: string | string[]) => {
+      const commandString = Array.isArray(command) ? command.join(' ') : command;
+      if (commandString.startsWith('git tag')) {
         return Promise.resolve('1.0.1');
       }
-      if (cmdStr.startsWith('gh repo view')) {
+      if (commandString.startsWith('gh repo view')) {
         return Promise.resolve('https://github.com/user/repo');
       }
-      if (cmdStr.includes('npm pack')) {
+      if (commandString.includes('npm pack')) {
         return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2));
       }
       return Promise.resolve('');
@@ -926,7 +926,7 @@ describe('updateVersion', () => {
     expect(mockCp).toHaveBeenCalled();
     expect(mockEditJson).toHaveBeenCalledTimes(1);
 
-    const betaManifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFn;
+    const betaManifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
     const betaManifest: Record<string, string> = { version: '1.0.0' };
     await betaManifestCallback(betaManifest);
     expect(betaManifest['version']).toBe('1.0.1-beta.0');
@@ -960,13 +960,13 @@ describe('updateVersion', () => {
       await updateVersion('patch');
       expect(mockEditJson).toHaveBeenCalledTimes(2);
 
-      const manifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFn;
+      const manifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
       const manifest: Record<string, string> = { minAppVersion: '1.0.0', version: '1.0.0' };
       await manifestCallback(manifest);
       expect(manifest['minAppVersion']).toBe('1.7.0');
       expect(manifest['version']).toBe('1.0.1');
 
-      const versionsCallback = (mockEditJson.mock.calls[1]?.[0] as EditJsonParams<Record<string, string>>).editFn;
+      const versionsCallback = (mockEditJson.mock.calls[1]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
       const versions: Record<string, string> = {};
       await versionsCallback(versions);
       expect(versions['1.0.1']).toBe('1.7.0');

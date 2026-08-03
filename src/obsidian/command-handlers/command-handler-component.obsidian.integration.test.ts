@@ -28,11 +28,12 @@ interface MenuTeardownResult {
 describe('CommandHandlerComponent menu-event teardown', () => {
   it('should unregister a command handler\'s file-menu contribution when the returned disposable is disposed', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn(
         { app, lib: { AppActiveFileProvider, CommandHandler, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, waitUntil }, obsidianModule }
       ): Promise<MenuTeardownResult> {
         const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30000;
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
         const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
         if (!harnessPlugin) {

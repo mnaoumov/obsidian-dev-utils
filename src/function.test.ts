@@ -58,59 +58,59 @@ describe('Function', () => {
     });
 
     it('should prefix with "function " for a shorthand method', () => {
-      const obj = {
+      const $object = {
         method(this: void): void {
           noop();
         }
       };
-      expect(getFunctionExpressionString(obj.method)).toMatch(/^function method\(\)/);
+      expect(getFunctionExpressionString($object.method)).toMatch(/^function method\(\)/);
     });
 
     it('should prefix with "async function " for an async shorthand method', () => {
-      const obj = {
+      const $object = {
         async method(this: void): Promise<void> {
           await noopAsync();
         }
       };
-      expect(getFunctionExpressionString(obj.method)).toMatch(/^async function method\(\)/);
+      expect(getFunctionExpressionString($object.method)).toMatch(/^async function method\(\)/);
     });
 
     it('should prefix with "function " for a shorthand method named like "async1"', () => {
-      const obj = {
+      const $object = {
         async1(this: void): void {
           noop();
         }
       };
-      expect(getFunctionExpressionString(obj.async1)).toMatch(/^function async1\(\)/);
+      expect(getFunctionExpressionString($object.async1)).toMatch(/^function async1\(\)/);
     });
 
     it('should prefix with "function " for a shorthand method named like "function1"', () => {
-      const obj = {
+      const $object = {
         function1(this: void): void {
           noop();
         }
       };
-      expect(getFunctionExpressionString(obj.function1)).toMatch(/^function function1\(\)/);
+      expect(getFunctionExpressionString($object.function1)).toMatch(/^function function1\(\)/);
     });
 
     it('should prefix with "function " for a generator shorthand method', () => {
-      const obj = {
+      const $object = {
         *gen(this: void): Generator<number, void> {
           yield 1;
         }
       };
-      const result = getFunctionExpressionString(obj.gen);
+      const result = getFunctionExpressionString($object.gen);
       expect(result).toMatch(/^function \*gen\(\)/);
     });
 
     it('should prefix with "async function " for an async generator shorthand method', () => {
-      const obj = {
+      const $object = {
         async *gen(this: void): AsyncGenerator<number, void> {
           await noopAsync();
           yield 1;
         }
       };
-      const result = getFunctionExpressionString(obj.gen);
+      const result = getFunctionExpressionString($object.gen);
       expect(result).toMatch(/^async function \*gen\(\)/);
     });
   });
@@ -133,34 +133,34 @@ describe('Function', () => {
     });
 
     it('should forward the `this` context to the original function', () => {
-      const obj = {
+      const $object = {
         getValue(this: ValueHolder): number {
           return this.value;
         },
         value: 10
       };
-      obj.getValue = cloneFunction(obj.getValue);
-      expect(obj.getValue()).toBe(10);
+      $object.getValue = cloneFunction($object.getValue);
+      expect($object.getValue()).toBe(10);
     });
   });
 
   describe('createFunction', () => {
     it('should create an argumentless function from the function body', () => {
-      const fn = createFunction<() => number>({ functionBody: 'return 42;' });
-      expect(fn()).toBe(42);
+      const $function = createFunction<() => number>({ functionBody: 'return 42;' });
+      expect($function()).toBe(42);
     });
 
     it('should create a function with named arguments', () => {
-      const fn = createFunction<(a: number, b: number) => number>({
-        argNames: ['a', 'b'],
+      const $function = createFunction<(a: number, b: number) => number>({
+        argumentNames: ['a', 'b'],
         functionBody: 'return a + b;'
       });
-      expect(fn(2, 3)).toBe(5);
+      expect($function(2, 3)).toBe(5);
     });
 
     it('should default to no arguments when argNames is omitted', () => {
-      const fn = createFunction<() => string>({ functionBody: 'return "no args";' });
-      expect(fn()).toBe('no args');
+      const $function = createFunction<() => string>({ functionBody: 'return "no args";' });
+      expect($function()).toBe('no args');
     });
   });
 
@@ -179,26 +179,26 @@ describe('Function', () => {
 
   describe('omitReturnType', () => {
     it('should call the wrapped function with correct arguments', () => {
-      const fn = vi.fn((_a: number, _b: string) => 42);
-      const wrapped = omitReturnType(fn);
+      const $function = vi.fn((_a: number, _b: string) => 42);
+      const wrapped = omitReturnType($function);
       wrapped(1, 'hello');
-      expect(fn).toHaveBeenCalledWith(1, 'hello');
+      expect($function).toHaveBeenCalledWith(1, 'hello');
     });
 
     it('should return undefined regardless of original return value', () => {
-      function fn(): number {
+      function $function(): number {
         return 42;
       }
-      const wrapped = omitReturnType(fn);
+      const wrapped = omitReturnType($function);
       // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- Need to test `void` as `undefined`.
       expect(wrapped()).toBeUndefined();
     });
 
     it('should propagate thrown errors', () => {
-      function fn(): never {
+      function $function(): never {
         throw new Error('test');
       }
-      const wrapped = omitReturnType(fn);
+      const wrapped = omitReturnType($function);
       expect(() => {
         wrapped();
       }).toThrow('test');
@@ -207,30 +207,30 @@ describe('Function', () => {
 
   describe('omitAsyncReturnType', () => {
     it('should call the wrapped async function with correct arguments', async () => {
-      const fn = vi.fn(async (_a: number) => {
+      const $function = vi.fn(async (_a: number) => {
         await noopAsync();
         return 'result';
       });
-      const wrapped = omitAsyncReturnType(fn);
+      const wrapped = omitAsyncReturnType($function);
       await wrapped(5);
-      expect(fn).toHaveBeenCalledWith(5);
+      expect($function).toHaveBeenCalledWith(5);
     });
 
     it('should return a resolved promise with undefined', async () => {
-      async function fn(): Promise<number> {
+      async function $function(): Promise<number> {
         await noopAsync();
         return 42;
       }
-      const wrapped = omitAsyncReturnType(fn);
+      const wrapped = omitAsyncReturnType($function);
       await expect(wrapped()).resolves.toBeUndefined();
     });
 
     it('should propagate rejected promises', async () => {
-      async function fn(): Promise<never> {
+      async function $function(): Promise<never> {
         await noopAsync();
         throw new Error('async error');
       }
-      const wrapped = omitAsyncReturnType(fn);
+      const wrapped = omitAsyncReturnType($function);
       await expect(wrapped()).rejects.toThrow('async error');
     });
   });

@@ -43,10 +43,10 @@ describe('PluginMarkdownPostProcessorRegistrar', () => {
     registrar.registerMarkdownPostProcessor({ postProcessor });
 
     const wrapped = registerMarkdownPostProcessor.mock.calls[0]?.[0];
-    const el = createDiv();
-    const ctx = strictProxy<MarkdownPostProcessorContextOriginal>({ docId: 'doc-1' });
-    await wrapped?.(el, ctx);
+    const element = createDiv();
+    const context = strictProxy<MarkdownPostProcessorContextOriginal>({ docId: 'doc-1' });
+    await wrapped?.(element, context);
 
-    expect(postProcessor).toHaveBeenCalledWith(el, ctx);
+    expect(postProcessor).toHaveBeenCalledWith(element, context);
   });
 });

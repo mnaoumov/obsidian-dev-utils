@@ -27,14 +27,14 @@ vi.mock('node:fs', async (importOriginal) => ({
 }));
 
 vi.mock('node:process', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('node:process')>();
+  const $module = await importOriginal<typeof import('node:process')>();
   return {
-    ...mod,
+    ...$module,
     default: {
-      ...mod,
+      ...$module,
       exit: mockExit,
       stdout: {
-        ...mod.stdout,
+        ...$module.stdout,
         write: mockStdoutWrite
       }
     }
@@ -46,16 +46,16 @@ describe('toCommandLine', () => {
     [['simple'], 'simple'],
     [['arg1', 'arg2'], 'arg1 arg2'],
     [['hello world'], '"hello world"'],
-    [['say "hi"'], '"say \\"hi\\""'],
+    [['say "hi"'], String.raw`"say \"hi\""`],
     [['line1\nline2'], '"line1\nline2"'],
     [['no-special'], 'no-special'],
     [[''], '""'],
     [['a', 'b c', 'd'], 'a "b c" d'],
     [['path\\'], 'path\\'],
-    [['path with\\spaces\\'], '"path with\\spaces\\\\"'],
-    [['she said, "you had me at hello"'], '"she said, \\"you had me at hello\\""']
-  ])('should convert %j to %j', (args: string[], expected: string) => {
-    expect(toCommandLine(args)).toBe(expected);
+    [['path with\\spaces\\'], String.raw`"path with\spaces\\"`],
+    [['she said, "you had me at hello"'], String.raw`"she said, \"you had me at hello\""`]
+  ])('should convert %j to %j', ($arguments: string[], expected: string) => {
+    expect(toCommandLine($arguments)).toBe(expected);
   });
 });
 
@@ -348,11 +348,11 @@ describe('wrapCliTask', () => {
     it('should skip the task and exit 0 when the script switch is off', async () => {
       vi.stubEnv('npm_lifecycle_event', 'lint:md');
       vi.stubEnv('LINT_MD', '0');
-      const taskFn = vi.fn(() => CliTaskResult.Failure());
+      const taskFunction = vi.fn(() => CliTaskResult.Failure());
 
-      await wrapCliTask(taskFn);
+      await wrapCliTask(taskFunction);
 
-      expect(taskFn).not.toHaveBeenCalled();
+      expect(taskFunction).not.toHaveBeenCalled();
       expect(mockStdoutWrite).toHaveBeenCalledWith('Skipped (LINT_MD is off).\n');
       expect(mockExit).toHaveBeenCalledWith(0);
     });
@@ -360,21 +360,21 @@ describe('wrapCliTask', () => {
     it('should run the task when the script switch is on', async () => {
       vi.stubEnv('npm_lifecycle_event', 'lint:md');
       vi.stubEnv('LINT_MD', '1');
-      const taskFn = vi.fn(() => CliTaskResult.Success());
+      const taskFunction = vi.fn(() => CliTaskResult.Success());
 
-      await wrapCliTask(taskFn);
+      await wrapCliTask(taskFunction);
 
-      expect(taskFn).toHaveBeenCalledOnce();
+      expect(taskFunction).toHaveBeenCalledOnce();
       expect(mockStdoutWrite).not.toHaveBeenCalled();
     });
 
     it('should run the task when the script was not started through npm', async () => {
       vi.stubEnv('npm_lifecycle_event', undefined);
-      const taskFn = vi.fn(() => CliTaskResult.Success());
+      const taskFunction = vi.fn(() => CliTaskResult.Success());
 
-      await wrapCliTask(taskFn);
+      await wrapCliTask(taskFunction);
 
-      expect(taskFn).toHaveBeenCalledOnce();
+      expect(taskFunction).toHaveBeenCalledOnce();
     });
   });
 });

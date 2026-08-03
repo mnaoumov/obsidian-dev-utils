@@ -25,7 +25,7 @@ describe('DateTransformer', () => {
 
     it.each([
       { description: 'a string', value: '2024-01-01' },
-      { description: 'a number', value: 1234567890 },
+      { description: 'a number', value: 1_234_567_890 },
       { description: 'null', value: null },
       { description: 'undefined', value: undefined },
       { description: 'a plain object', value: {} }

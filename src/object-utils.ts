@@ -134,7 +134,7 @@ interface EqualityComparerEntry<T> {
 }
 
 interface JSONSerializable {
-  toJSON(...args: unknown[]): unknown;
+  toJSON(...$arguments: unknown[]): unknown;
 }
 
 interface ModuleWithDefaultExport<T> {
@@ -155,11 +155,11 @@ const KEY_SEPARATOR = '.';
 const PLACEHOLDER_KEY_PREFIX = 'toJson:';
 const equalityComparerEntries = createEqualityComparerEntries(
   [
-    { constructor: ArrayBuffer, equalityComparer: deepEqualArrayBuffer },
-    { constructor: Date, equalityComparer: deepEqualDate },
-    { constructor: RegExp, equalityComparer: deepEqualRegExp },
-    { constructor: Map, equalityComparer: deepEqualMap },
-    { constructor: Set, equalityComparer: deepEqualSet }
+    { constructor: ArrayBuffer, equalityComparer: isDeepEqualArrayBuffer },
+    { constructor: Date, equalityComparer: isDeepEqualDate },
+    { constructor: RegExp, equalityComparer: isDeepEqualRegExp },
+    { constructor: Map, equalityComparer: isDeepEqualMap },
+    { constructor: Set, equalityComparer: isDeepEqualSet }
   ] as const
 );
 
@@ -170,7 +170,7 @@ export interface SetNestedPropertyValueParams {
   /**
    * The object to set the nested property value in.
    */
-  readonly obj: GenericObject;
+  readonly $object: GenericObject;
 
   /**
    * The path to the nested property.
@@ -373,17 +373,17 @@ class ToJsonConverter {
       value
     });
     let json = ensureNonNullable(JSON.stringify(plainObject, null, this.fullOptions.space));
-    const placeholderRegExp = new RegExp(`"\\[\\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\\d*)\\]\\]"`, 'g');
+    const placeholderRegExp = new RegExp(String.raw`"\[\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"`, 'g');
     json = replaceAll({
-      replacer: ({ capturedGroupArgs: [key = '', indexStr = ''] }) =>
+      $string: json,
+      replacer: ({ capturedGroupArguments: [key = '', indexString = ''] }) =>
         applySubstitutions({
           functionTexts: this.functionTexts,
-          index: indexStr ? parseInt(indexStr, 10) : 0,
+          index: indexString ? parseInt(indexString, 10) : 0,
           key: key as TokenSubstitutionKey,
           substitutions: this.fullOptions.tokenSubstitutions
         }),
-      searchValue: placeholderRegExp,
-      str: json
+      searchValue: placeholderRegExp
     });
     return json;
   }
@@ -547,11 +547,11 @@ class ToJsonConverter {
           key,
           value: newValue
         });
-      } catch (e) {
+      } catch (error) {
         if (this.fullOptions.shouldCatchToJSONErrors) {
           return makePlaceholder(TokenSubstitutionKey.ToJSONFailed);
         }
-        throw e;
+        throw error;
       }
     }
     return undefined;
@@ -620,94 +620,47 @@ export function castTo<T>(value: unknown): T {
  * Clones an object, including non-enumerable properties.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to clone.
+ * @param $object - The object to clone.
  * @returns A new object with the same properties as the original object, including non-enumerable properties.
  */
-export function cloneWithNonEnumerableProperties<T extends object>(obj: T): T {
-  return Object.create(getPrototypeOf(obj), Object.getOwnPropertyDescriptors(obj)) as T;
-}
-
-/**
- * Compares two values to determine if they are deeply equal.
- *
- * @param a - The first value to compare.
- * @param b - The second value to compare.
- * @returns `true` if the values are deeply equal, otherwise `false`.
- */
-export function deepEqual(a: unknown, b: unknown): boolean {
-  if (a === b) {
-    return true;
-  }
-
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
-    return false;
-  }
-
-  const aConstructor = a.constructor;
-  const bConstructor = b.constructor;
-
-  if (aConstructor !== bConstructor) {
-    return false;
-  }
-
-  if (aConstructor !== Object) {
-    const result = deepEqualTyped(a, b);
-    if (result !== undefined) {
-      return result;
-    }
-  }
-
-  const keysA = getAllKeys(a);
-  const keysB = getAllKeys(b);
-
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-
-  const aRecord = ensureGenericObject(a);
-  const bRecord = ensureGenericObject(b);
-
-  for (const key of keysA) {
-    if (!keysB.includes(key) || !deepEqual(aRecord[key], bRecord[key])) {
-      return false;
-    }
-  }
-
-  return true;
+export function cloneWithNonEnumerableProperties<T extends object>($object: T): T {
+  return Object.create(getPrototypeOf($object), Object.getOwnPropertyDescriptors($object)) as T;
 }
 
 /**
  * Deletes multiple properties from an object.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to delete the properties from.
+ * @param $object - The object to delete the properties from.
  * @param propertyNames - The names of the properties to delete.
  * @returns `true` if any of the properties were present, otherwise `false`.
  */
-export function deleteProperties<T extends object>(obj: T, propertyNames: (keyof T)[]): boolean {
-  let ans = false;
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was deleted.
+export function deleteProperties<T extends object>($object: T, propertyNames: (keyof T)[]): boolean {
+  let hasDeletedAny = false;
 
   for (const propertyName of propertyNames) {
-    ans = deleteProperty(obj, propertyName) || ans;
+    hasDeletedAny = deleteProperty($object, propertyName) || hasDeletedAny;
   }
 
-  return ans;
+  return hasDeletedAny;
 }
 
 /**
  * Deletes a property from an object.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to delete the property from.
+ * @param $object - The object to delete the property from.
  * @param propertyName - The name of the property to delete.
  * @returns `true` if the property was present, otherwise `false`.
  */
-export function deleteProperty<T extends object>(obj: T, propertyName: keyof T): boolean {
-  if (!Object.hasOwn(obj, propertyName)) {
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether the property was deleted.
+export function deleteProperty<T extends object>($object: T, propertyName: keyof T): boolean {
+  if (!Object.hasOwn($object, propertyName)) {
     return false;
   }
   // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
-  delete obj[propertyName];
+  delete $object[propertyName];
   return true;
 }
 
@@ -736,11 +689,11 @@ export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T
  * Gets all entries of an object.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to get the entries of.
+ * @param $object - The object to get the entries of.
  * @returns An array of all entries of the object.
  */
-export function getAllEntries<T extends object>(obj: T): [StringKeys<T>, T[StringKeys<T>]][] {
-  return getAllKeys(obj).map((key) => [key, obj[key]]);
+export function getAllEntries<T extends object>($object: T): [StringKeys<T>, T[StringKeys<T>]][] {
+  return getAllKeys($object).map((key) => [key, $object[key]]);
 }
 
 /**
@@ -748,12 +701,12 @@ export function getAllEntries<T extends object>(obj: T): [StringKeys<T>, T[Strin
  * Includes fields and properties.
  *
  * @typeParam T - The type of the object.
- * @param obj - The object to get the keys of.
+ * @param $object - The object to get the keys of.
  * @returns An array of all keys of the object.
  */
-export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
+export function getAllKeys<T extends object>($object: T): StringKeys<T>[] {
   const keys: StringKeys<T>[] = [];
-  let current: null | object = obj;
+  let current: null | object = $object;
   while (current) {
     const descriptors = Object.getOwnPropertyDescriptors(current);
     for (const [key, descriptor] of Object.entries(descriptors)) {
@@ -787,12 +740,12 @@ export function getAllKeys<T extends object>(obj: T): StringKeys<T>[] {
 /**
  * Gets the value of a nested property from an object.
  *
- * @param obj - The object to get the nested property value from.
+ * @param $object - The object to get the nested property value from.
  * @param path - The path to the nested property.
  * @returns The value of the nested property.
  */
-export function getNestedPropertyValue(obj: GenericObject, path: string): unknown {
-  let node: GenericObject | undefined = obj;
+export function getNestedPropertyValue($object: GenericObject, path: string): unknown {
+  let node: GenericObject | undefined = $object;
   const keys = path.split(KEY_SEPARATOR);
   for (const key of keys) {
     if (node === undefined) {
@@ -816,6 +769,55 @@ export function getPrototypeOf<T>(instance: T): T {
     return instance;
   }
   return Object.getPrototypeOf(instance) as T;
+}
+
+/**
+ * Compares two values to determine if they are deeply equal.
+ *
+ * @param a - The first value to compare.
+ * @param b - The second value to compare.
+ * @returns `true` if the values are deeply equal, otherwise `false`.
+ */
+export function isDeepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) {
+    return true;
+  }
+
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
+    return false;
+  }
+
+  const aConstructor = a.constructor;
+  const bConstructor = b.constructor;
+
+  if (aConstructor !== bConstructor) {
+    return false;
+  }
+
+  if (aConstructor !== Object) {
+    const result = deepEqualTyped(a, b);
+    if (result !== undefined) {
+      return result;
+    }
+  }
+
+  const keysA = getAllKeys(a);
+  const keysB = getAllKeys(b);
+
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+
+  const aRecord = ensureGenericObject(a);
+  const bRecord = ensureGenericObject(b);
+
+  for (const key of keysA) {
+    if (!keysB.includes(key) || !isDeepEqual(aRecord[key], bRecord[key])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 /**
  * Retrieves the name of a property of a given type `T`.
@@ -844,49 +846,49 @@ export function nameof<T extends object>(name: StringKeys<T>): StringKeys<T> {
  * ```
  *
  * @typeParam T - The target type with optional properties to normalize.
- * @param obj - The object to normalize, allowing explicit `undefined` for optional properties.
+ * @param $object - The object to normalize, allowing explicit `undefined` for optional properties.
  * @returns The normalized object, compatible with `exactOptionalPropertyTypes`.
  */
-export function normalizeOptionalProperties<T>(obj: UndefinedOnPartialDeep<T>): T {
-  return obj as T;
+export function normalizeOptionalProperties<T>($object: UndefinedOnPartialDeep<T>): T {
+  return $object as T;
 }
 /**
  * Removes all `undefined` properties from an object when there are no mandatory keys with `undefined` values.
  *
  * @typeParam Type - The type of the object.
- * @param args - The arguments to the function.
+ * @param $arguments - The arguments to the function.
  * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object>(
-  ...args: RemoveUndefinedOverload<Type>
+  ...$arguments: RemoveUndefinedOverload<Type>
 ): Type;
 /**
  * Removes all `undefined` properties from an object when there are mandatory keys with `undefined` values.
  *
  * @typeParam Type - The type of the object.
  * @typeParam KeysToKeep - The keys to keep.
- * @param args - The arguments to the function.
+ * @param $arguments - The arguments to the function.
  * @returns The object with all `undefined` properties removed.
  */
 export function removeUndefinedProperties<Type extends object, const KeysToKeep extends readonly string[]>(
-  ...args: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
+  ...$arguments: RemoveUndefinedWithKeysOverload<Type, KeysToKeep>
 ): Type;
 /**
  * Removes all `undefined` properties from an object.
  *
  * @typeParam Type - The type of the object.
- * @param obj - The object to remove `undefined` properties from.
+ * @param $object - The object to remove `undefined` properties from.
  * @param keysToKeep - The keys to keep.
  * @returns The object with all `undefined` properties removed.
  */
-export function removeUndefinedProperties<Type extends object>(obj: Type, keysToKeep?: readonly string[]): Type {
-  for (const [key, value] of Object.entries(obj) as [StringKeys<Type>, unknown][]) {
+export function removeUndefinedProperties<Type extends object>($object: Type, keysToKeep?: readonly string[]): Type {
+  for (const [key, value] of Object.entries($object) as [StringKeys<Type>, unknown][]) {
     if (value === undefined && !keysToKeep?.includes(key)) {
       // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- We have no other way to delete the property.
-      delete obj[key];
+      delete $object[key];
     }
   }
-  return obj;
+  return $object;
 }
 
 /**
@@ -896,12 +898,12 @@ export function removeUndefinedProperties<Type extends object>(obj: Type, keysTo
  */
 export function setNestedPropertyValue(params: SetNestedPropertyValueParams): void {
   const {
-    obj,
+    $object,
     path,
     value
   } = params;
   const error = new Error(`Property path ${path} not found`);
-  let node: GenericObject | undefined = obj;
+  let node: GenericObject | undefined = $object;
   const keys = path.split(KEY_SEPARATOR);
   for (const key of keys.slice(0, -1)) {
     if (node === undefined) {
@@ -931,21 +933,28 @@ export function toJson(value: unknown, options: Partial<ToJsonOptions> = {}): st
 
 function applySubstitutions(params: ApplySubstitutionsParams): MaybeReturn<string> {
   switch (params.key) {
-    case TokenSubstitutionKey.CircularReference:
+    case TokenSubstitutionKey.CircularReference: {
       return params.substitutions.circularReference;
-    case TokenSubstitutionKey.Function:
+    }
+    case TokenSubstitutionKey.Function: {
       return ensureNonNullable(params.functionTexts[params.index], `Function with index ${String(params.index)} not found`);
-    case TokenSubstitutionKey.MaxDepthLimitReached:
+    }
+    case TokenSubstitutionKey.MaxDepthLimitReached: {
       return params.substitutions.maxDepthLimitReached;
-    case TokenSubstitutionKey.MaxDepthLimitReachedArray:
+    }
+    case TokenSubstitutionKey.MaxDepthLimitReachedArray: {
       return `Array(${String(params.index)})`;
-    case TokenSubstitutionKey.ToJSONFailed:
+    }
+    case TokenSubstitutionKey.ToJSONFailed: {
       return params.substitutions.toJSONFailed;
-    case TokenSubstitutionKey.Undefined:
+    }
+    case TokenSubstitutionKey.Undefined: {
       return 'undefined';
+    }
     /* v8 ignore start -- Exhaustive switch guard; default branch is unreachable. */
-    default:
+    default: {
       assertNever(params.key);
+    }
       /* v8 ignore stop */
   }
 }
@@ -974,7 +983,7 @@ function assignWithNonEnumerablePropertiesImpl(target: object, ...sources: objec
 
   const sourcePrototypes = sources
     .map((source) => getPrototypeOf<object | undefined>(source))
-    .filter((proto): proto is object => !!proto);
+    .filter((prototype): prototype is object => !!prototype);
 
   if (sourcePrototypes.length > 0) {
     const targetPrototype = assignWithNonEnumerablePropertiesImpl({}, getPrototypeOf(target), ...sourcePrototypes);
@@ -994,62 +1003,6 @@ function createEqualityComparerEntries<const T extends readonly EqualityComparer
   return entries;
 }
 
-function deepEqualArrayBuffer(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-
-  const viewA = new Uint8Array(a);
-  const viewB = new Uint8Array(b);
-  return deepEqual(viewA, viewB);
-}
-
-function deepEqualDate(a: Date, b: Date): boolean {
-  return a.getTime() === b.getTime();
-}
-
-function deepEqualMap(a: Map<unknown, unknown>, b: Map<unknown, unknown>): boolean {
-  if (a.size !== b.size) {
-    return false;
-  }
-
-  for (const [key, value] of a.entries()) {
-    if (!b.has(key) || !deepEqual(value, b.get(key))) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function deepEqualRegExp(a: RegExp, b: RegExp): boolean {
-  return a.source === b.source && a.flags === b.flags;
-}
-
-function deepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
-  if (a.size !== b.size) {
-    return false;
-  }
-
-  for (const valueA of a) {
-    if (b.has(valueA)) {
-      continue;
-    }
-    let found = false;
-    for (const valueB of b) {
-      if (deepEqual(valueA, valueB)) {
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
   for (const entry of equalityComparerEntries) {
     const result = tryEntryEquality({
@@ -1062,6 +1015,62 @@ function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {
     }
   }
   return undefined;
+}
+
+function isDeepEqualArrayBuffer(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) {
+    return false;
+  }
+
+  const viewA = new Uint8Array(a);
+  const viewB = new Uint8Array(b);
+  return isDeepEqual(viewA, viewB);
+}
+
+function isDeepEqualDate(a: Date, b: Date): boolean {
+  return a.getTime() === b.getTime();
+}
+
+function isDeepEqualMap(a: Map<unknown, unknown>, b: Map<unknown, unknown>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const [key, value] of a) {
+    if (!b.has(key) || !isDeepEqual(value, b.get(key))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function isDeepEqualRegExp(a: RegExp, b: RegExp): boolean {
+  return a.source === b.source && a.flags === b.flags;
+}
+
+function isDeepEqualSet(a: Set<unknown>, b: Set<unknown>): boolean {
+  if (a.size !== b.size) {
+    return false;
+  }
+
+  for (const valueA of a) {
+    if (b.has(valueA)) {
+      continue;
+    }
+    let hasMatch = false;
+    for (const valueB of b) {
+      if (isDeepEqual(valueA, valueB)) {
+        hasMatch = true;
+        break;
+      }
+    }
+    if (!hasMatch) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function makeObjectTokenSubstitution(key: TokenSubstitutionKey): string {

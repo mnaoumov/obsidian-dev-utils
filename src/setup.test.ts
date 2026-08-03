@@ -32,14 +32,14 @@ import {
 import { strictProxy } from './strict-proxy.ts';
 import { assertNonNullable } from './type-guards.ts';
 
-type CapturedHook = HookFn | undefined;
+type CapturedHook = HookFunction | undefined;
 
 interface CapturedSetupHooks {
-  afterEachCallback(): ReturnType<HookFn>;
-  beforeEachCallback(): ReturnType<HookFn>;
+  afterEachCallback(): ReturnType<HookFunction>;
+  beforeEachCallback(): ReturnType<HookFunction>;
 }
 
-type HookFn = Parameters<HookRegistrar>[0];
+type HookFunction = Parameters<HookRegistrar>[0];
 
 describe('setup', () => {
   afterEach(() => {
@@ -65,11 +65,11 @@ describe('setup', () => {
     let beforeEachCallback: CapturedHook;
     let afterEachCallback: CapturedHook;
 
-    const beforeEachRegistrar = vi.fn<HookRegistrar>((fn) => {
-      beforeEachCallback = fn;
+    const beforeEachRegistrar = vi.fn<HookRegistrar>(($function) => {
+      beforeEachCallback = $function;
     });
-    const afterEachRegistrar = vi.fn<HookRegistrar>((fn) => {
-      afterEachCallback = fn;
+    const afterEachRegistrar = vi.fn<HookRegistrar>(($function) => {
+      afterEachCallback = $function;
     });
 
     setup({
@@ -102,8 +102,8 @@ describe('setup', () => {
 
     setup({
       afterEach: noop,
-      beforeEach: (fn) => {
-        beforeEachCallback = fn;
+      beforeEach: ($function) => {
+        beforeEachCallback = $function;
       }
     });
     assertNonNullable(beforeEachCallback);
@@ -142,8 +142,8 @@ describe('setup', () => {
     let thrown: unknown;
     try {
       await afterEachCallback();
-    } catch (e) {
-      thrown = e;
+    } catch (error_) {
+      thrown = error_;
     }
 
     expect(thrown).toBeInstanceOf(AggregateError);
@@ -164,8 +164,8 @@ describe('setup', () => {
     let thrown: unknown;
     try {
       await afterEachCallback();
-    } catch (e) {
-      thrown = e;
+    } catch (error) {
+      thrown = error;
     }
 
     expect(thrown).toBeInstanceOf(AggregateError);
@@ -236,11 +236,11 @@ function captureSetupHooks(): CapturedSetupHooks {
   let afterEachCallback: CapturedHook;
 
   setup({
-    afterEach: (fn) => {
-      afterEachCallback = fn;
+    afterEach: ($function) => {
+      afterEachCallback = $function;
     },
-    beforeEach: (fn) => {
-      beforeEachCallback = fn;
+    beforeEach: ($function) => {
+      beforeEachCallback = $function;
     }
   });
 

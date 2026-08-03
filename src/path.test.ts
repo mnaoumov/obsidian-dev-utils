@@ -21,11 +21,11 @@ import {
 
 describe('toPosixPath', () => {
   it('should replace backslashes with forward slashes', () => {
-    expect(toPosixPath('foo\\bar\\baz')).toBe('foo/bar/baz');
+    expect(toPosixPath(String.raw`foo\bar\baz`)).toBe('foo/bar/baz');
   });
 
   it('should handle mixed separators', () => {
-    expect(toPosixPath('foo/bar\\baz')).toBe('foo/bar/baz');
+    expect(toPosixPath(String.raw`foo/bar\baz`)).toBe('foo/bar/baz');
   });
 
   it('should leave already-posix paths unchanged', () => {
@@ -37,13 +37,13 @@ describe('toPosixPath', () => {
   });
 
   it('should handle Windows-style absolute path', () => {
-    expect(toPosixPath('C:\\Users\\test\\file.txt')).toBe('C:/Users/test/file.txt');
+    expect(toPosixPath(String.raw`C:\Users\test\file.txt`)).toBe('C:/Users/test/file.txt');
   });
 });
 
 describe('toPosixBuffer', () => {
   it('should convert buffer with backslashes to posix-style', () => {
-    const input = Buffer.from('foo\\bar\\baz');
+    const input = Buffer.from(String.raw`foo\bar\baz`);
     const result = toPosixBuffer(input);
     expect(result.toString()).toBe('foo/bar/baz');
   });
@@ -55,7 +55,7 @@ describe('toPosixBuffer', () => {
   });
 
   it('should return a Buffer instance', () => {
-    const input = Buffer.from('test\\path');
+    const input = Buffer.from(String.raw`test\path`);
     const result = toPosixBuffer(input);
     expect(Buffer.isBuffer(result)).toBe(true);
   });
@@ -97,10 +97,10 @@ describe('makeFileName', () => {
   it.each([
     ['document', 'txt', 'document.txt'],
     ['image', 'png', 'image.png']
-  ])('should append extension: makeFileName(%s, %s) -> %s', (name: string, ext: string, expected: string) => {
+  ])('should append extension: makeFileName(%s, %s) -> %s', (name: string, extension: string, expected: string) => {
     expect(makeFileName({
       fileBaseName: name,
-      fileExtension: ext
+      fileExtension: extension
     })).toBe(expected);
   });
 
@@ -191,8 +191,8 @@ describe('re-exported path-browserify functions', () => {
     it.each([
       ['/foo/bar/baz.txt', undefined, 'baz.txt'],
       ['/foo/bar/baz.txt', '.txt', 'baz']
-    ])('should return the last portion of path %s with ext %s -> %s', (path: string, ext: string | undefined, expected: string) => {
-      expect(basename(path, ext)).toBe(expected);
+    ])('should return the last portion of path %s with ext %s -> %s', (path: string, extension: string | undefined, expected: string) => {
+      expect(basename(path, extension)).toBe(expected);
     });
   });
 

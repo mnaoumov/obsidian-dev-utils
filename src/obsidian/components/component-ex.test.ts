@@ -12,6 +12,7 @@ import {
   vi
 } from 'vitest';
 
+import { dispose } from '../../disposable.ts';
 import {
   ErrorWrapper,
   SilentError
@@ -42,10 +43,10 @@ class SyncComponentEx extends ComponentEx {
 
 // eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
 class TestComponentEx extends ComponentEx {
-  public asyncLoadFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public asyncLoadFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   public override async onloadAsync(): Promise<void> {
-    await this.asyncLoadFn();
+    await this.asyncLoadFunction();
   }
 }
 
@@ -69,7 +70,7 @@ describe('ComponentEx', () => {
     it('should chain onloadAsync when overridden', async () => {
       const component = new TestComponentEx();
       await component.loadWithPromises();
-      expect(component.asyncLoadFn).toHaveBeenCalledOnce();
+      expect(component.asyncLoadFunction).toHaveBeenCalledOnce();
     });
 
     it('should load children sequentially', async () => {
@@ -81,8 +82,8 @@ describe('ComponentEx', () => {
 
       await parent.loadWithPromises();
 
-      expect(child1.asyncLoadFn).toHaveBeenCalledOnce();
-      expect(child2.asyncLoadFn).toHaveBeenCalledOnce();
+      expect(child1.asyncLoadFunction).toHaveBeenCalledOnce();
+      expect(child2.asyncLoadFunction).toHaveBeenCalledOnce();
       expect(child1._loaded).toBe(true);
       expect(child2._loaded).toBe(true);
     });
@@ -115,11 +116,11 @@ describe('ComponentEx', () => {
     it('should reject with an AggregateError holding the onloadAsync failure', async () => {
       const error = new Error('load failed');
       const component = new TestComponentEx();
-      component.asyncLoadFn.mockRejectedValue(error);
+      component.asyncLoadFunction.mockRejectedValue(error);
 
       const promise = component.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error_: unknown) => error_);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toEqual([error]);
@@ -129,14 +130,14 @@ describe('ComponentEx', () => {
     it('should keep a child load failure grouped in its own AggregateError', async () => {
       const childError = new Error('child failed');
       const parent = new TestComponentEx();
-      parent.asyncLoadFn.mockResolvedValue(undefined);
+      parent.asyncLoadFunction.mockResolvedValue(undefined);
       const child = new TestComponentEx();
-      child.asyncLoadFn.mockRejectedValue(childError);
+      child.asyncLoadFunction.mockRejectedValue(childError);
       parent.addChild(child);
 
       const promise = parent.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toHaveLength(1);
@@ -151,15 +152,15 @@ describe('ComponentEx', () => {
     it('should keep each child failure grouped in its own AggregateError', async () => {
       const parent = new ComponentEx();
       const child1 = new TestComponentEx();
-      child1.asyncLoadFn.mockRejectedValue(new Error('error 1'));
+      child1.asyncLoadFunction.mockRejectedValue(new Error('error 1'));
       const child2 = new TestComponentEx();
-      child2.asyncLoadFn.mockRejectedValue(new Error('error 2'));
+      child2.asyncLoadFunction.mockRejectedValue(new Error('error 2'));
       parent.addChild(child1);
       parent.addChild(child2);
 
       const promise = parent.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toHaveLength(2);
@@ -174,11 +175,11 @@ describe('ComponentEx', () => {
 
     it('should wrap a non-Error throwable via ErrorWrapper', async () => {
       const component = new TestComponentEx();
-      component.asyncLoadFn.mockRejectedValue('string failure');
+      component.asyncLoadFunction.mockRejectedValue('string failure');
 
       const promise = component.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         const [firstError] = rejection.errors;
@@ -205,7 +206,7 @@ describe('ComponentEx', () => {
 
       const promise = parent.loadWithPromises();
       assertNonNullable(promise);
-      const rejection = await promise.catch((thrown: unknown) => thrown);
+      const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
       if (rejection instanceof AggregateError) {
         expect(rejection.errors).toHaveLength(1);
@@ -246,7 +247,7 @@ describe('ComponentEx', () => {
 
       // LoadPromise is extended — need to wait for it
       await vi.waitFor(() => {
-        expect(child.asyncLoadFn).toHaveBeenCalledOnce();
+        expect(child.asyncLoadFunction).toHaveBeenCalledOnce();
       });
     });
 
@@ -276,7 +277,7 @@ describe('ComponentEx', () => {
       parent.addChild(child);
 
       await parent.loadWithPromises();
-      expect(child.asyncLoadFn).toHaveBeenCalledOnce();
+      expect(child.asyncLoadFunction).toHaveBeenCalledOnce();
     });
 
     it('should throw a SilentError and add nothing when the parent is already unloaded', () => {
@@ -393,7 +394,7 @@ describe('ComponentEx', () => {
       await parent.loadWithPromises();
 
       // Child should not have been loaded
-      expect(child.asyncLoadFn).not.toHaveBeenCalled();
+      expect(child.asyncLoadFunction).not.toHaveBeenCalled();
     });
 
     it('should skip loading child removed during async chain', async () => {
@@ -401,7 +402,7 @@ describe('ComponentEx', () => {
       const child1 = new TestComponentEx();
       const child2 = new TestComponentEx();
 
-      child1.asyncLoadFn.mockImplementation(async () => {
+      child1.asyncLoadFunction.mockImplementation(async () => {
         await noopAsync();
         // Remove child2 while child1 is loading
         parent.removeChild(child2);
@@ -412,8 +413,8 @@ describe('ComponentEx', () => {
 
       await parent.loadWithPromises();
 
-      expect(child1.asyncLoadFn).toHaveBeenCalledOnce();
-      expect(child2.asyncLoadFn).not.toHaveBeenCalled();
+      expect(child1.asyncLoadFunction).toHaveBeenCalledOnce();
+      expect(child2.asyncLoadFunction).not.toHaveBeenCalled();
     });
   });
 
@@ -423,7 +424,7 @@ describe('ComponentEx', () => {
       component.load();
       expect(component._loaded).toBe(true);
 
-      component[Symbol.dispose]();
+      dispose(component);
       expect(component._loaded).toBe(false);
     });
   });
@@ -433,6 +434,7 @@ describe('ComponentEx', () => {
       const parent = new ComponentEx();
       const child = new Component();
       const thenable: PromiseLike<void> = {
+        // eslint-disable-next-line unicorn/no-thenable -- A hand-built thenable is the subject of this test, not an accident.
         async then(resolve) {
           await resolve?.();
         }
@@ -451,13 +453,13 @@ describe('ComponentEx', () => {
       const parent = new ComponentEx();
 
       const child1 = new TestComponentEx();
-      child1.asyncLoadFn.mockImplementation(async () => {
+      child1.asyncLoadFunction.mockImplementation(async () => {
         await noopAsync();
         order.push(1);
       });
 
       const child2 = new TestComponentEx();
-      child2.asyncLoadFn.mockImplementation(async () => {
+      child2.asyncLoadFunction.mockImplementation(async () => {
         await noopAsync();
         order.push(2);
       });
@@ -474,16 +476,16 @@ describe('ComponentEx', () => {
     it('should return the same disposable and dispose it on unload', () => {
       const component = new SyncComponentEx();
       component.load();
-      const dispose = vi.fn();
-      const disposable: Disposable = { [Symbol.dispose]: dispose };
+      const disposeMock = vi.fn();
+      const disposable: Disposable = { [Symbol.dispose]: disposeMock };
 
       const returned = component.registerDisposable(disposable);
 
       expect(returned).toBe(disposable);
-      expect(dispose).not.toHaveBeenCalled();
+      expect(disposeMock).not.toHaveBeenCalled();
 
       component.unload();
-      expect(dispose).toHaveBeenCalledTimes(1);
+      expect(disposeMock).toHaveBeenCalledTimes(1);
     });
   });
 });

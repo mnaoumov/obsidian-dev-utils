@@ -37,7 +37,7 @@ export function getAllContainers(app: App): WorkspaceContainer[] {
   app.workspace.iterateAllLeaves((leaf) => {
     containers.add(leaf.getContainer());
   });
-  return Array.from(containers);
+  return [...containers];
 }
 
 /**

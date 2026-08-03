@@ -75,10 +75,10 @@ function assertNoCaseInsensitiveExportCollisions(exportNamesByModule: Map<string
   );
 }
 
-async function collectLeafFiles(dir: string): Promise<string[]> {
+async function collectLeafFiles(directory: string): Promise<string[]> {
   const out: string[] = [];
-  for (const dirent of await readdirPosix(dir, { withFileTypes: true })) {
-    const full = join(dir, dirent.name);
+  for (const dirent of await readdirPosix(directory, { withFileTypes: true })) {
+    const full = join(directory, dirent.name);
     if (dirent.isDirectory()) {
       if (SKIP_DIRS.has(dirent.name)) {
         continue;

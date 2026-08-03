@@ -173,18 +173,24 @@ export function pressKey(params: PressKeyParams): void {
   // Map Obsidian's `Modifier` names to Electron's lowercase `sendInputEvent` modifier names.
   const electronModifiers = modifiers.map((modifier): ElectronModifier => {
     switch (modifier) {
-      case 'Alt':
+      case 'Alt': {
         return 'alt';
-      case 'Ctrl':
+      }
+      case 'Ctrl': {
         return 'control';
-      case 'Meta':
+      }
+      case 'Meta': {
         return 'meta';
-      case 'Mod':
+      }
+      case 'Mod': {
         return isMacOS ? 'meta' : 'control';
-      case 'Shift':
+      }
+      case 'Shift': {
         return 'shift';
-      default:
+      }
+      default: {
         return assertNever(modifier);
+      }
     }
   });
 

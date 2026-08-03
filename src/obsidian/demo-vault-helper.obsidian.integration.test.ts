@@ -13,9 +13,9 @@ const CST_PLUGIN_ID = 'fix-require-modules';
 const START_NOTE_PATH = '00 Start.md';
 const MODULES_ROOT = '_assets/CodeScriptToolkit';
 
-const TEST_TIMEOUT_IN_MILLISECONDS = 150000;
+const TEST_TIMEOUT_IN_MILLISECONDS = 150_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 2000;
-const POLL_TIMEOUT_IN_MILLISECONDS = 120000;
+const POLL_TIMEOUT_IN_MILLISECONDS = 120_000;
 
 // The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `cstEnabled` are the
 // Acceptance signal; the rest are asserted on success and reported on a flake (the CST store install is
@@ -54,12 +54,13 @@ describe('demo-vault-helper bootstrap', () => {
     // Timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         args: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
-          const cstInstalled = Boolean(app.plugins.manifests[cstPluginId]);
+          const isCstInstalled = Object.hasOwn(app.plugins.manifests, cstPluginId);
           let noticeText = '';
-          for (const noticeEl of Array.from(document.querySelectorAll('.notice'))) {
+          for (const noticeEl of document.querySelectorAll('.notice')) {
             if (noticeEl.textContent.includes('Demo Vault Helper')) {
               noticeText = noticeEl.textContent;
             }
@@ -67,10 +68,10 @@ describe('demo-vault-helper bootstrap', () => {
           return {
             activeFilePath: app.workspace.getActiveFile()?.path ?? null,
             cstEnabled: app.plugins.enabledPlugins.has(cstPluginId),
-            cstInstalled,
-            dataJson: cstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
+            cstInstalled: isCstInstalled,
+            dataJson: isCstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
             helperEnabled: app.plugins.enabledPlugins.has(helperPluginId),
-            helperInstalled: Boolean(app.plugins.manifests[helperPluginId]),
+            helperInstalled: Object.hasOwn(app.plugins.manifests, helperPluginId),
             noticeText,
             probeValue: Reflect.get(window, '__demoVaultHelperProbeValue') ?? null,
             startupRan: Reflect.get(window, '__demoVaultHelperStartupRan') === true

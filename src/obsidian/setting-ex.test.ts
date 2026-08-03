@@ -22,13 +22,14 @@ const mocks = vi.hoisted(() => {
       noop();
     }
 
-    public setDisabled(disabled: boolean): this {
-      this.disabled = disabled;
+    public setDisabled(isDisabled: boolean): this {
+      this.disabled = isDisabled;
       return this;
     }
 
-    public then(cb: (component: MockComponentClass) => unknown): this {
-      cb(this);
+    // eslint-disable-next-line unicorn/no-thenable -- This double stands in for Obsidian's `Setting`, whose `then(callback)` is a real chaining method on its public API and has nothing to do with promises.
+    public then(callback: (component: MockComponentClass) => unknown): this {
+      callback(this);
       return this;
     }
   }
@@ -108,153 +109,153 @@ describe('SettingEx', () => {
 
   describe('addComponentClass', () => {
     it('should create component and add it', () => {
-      const cb = vi.fn();
-      const result = settingEx.addComponentClass(mocks.MockComponent, cb);
+      const callback = vi.fn();
+      const result = settingEx.addComponentClass(mocks.MockComponent, callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalledWith(expect.any(mocks.MockComponent));
+      expect(callback).toHaveBeenCalledWith(expect.any(mocks.MockComponent));
       expect(settingEx.components).toHaveLength(1);
     });
   });
 
   describe('addXxx methods', () => {
     it('should add checkbox component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addCheckbox(cb);
+      const callback = vi.fn();
+      const result = settingEx.addCheckbox(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add code highlighter component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addCodeHighlighter(cb);
+      const callback = vi.fn();
+      const result = settingEx.addCodeHighlighter(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add date component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addDate(cb);
+      const callback = vi.fn();
+      const result = settingEx.addDate(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add date time component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addDateTime(cb);
+      const callback = vi.fn();
+      const result = settingEx.addDateTime(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add email component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addEmail(cb);
+      const callback = vi.fn();
+      const result = settingEx.addEmail(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add file component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addFile(cb);
+      const callback = vi.fn();
+      const result = settingEx.addFile(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add month component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addMonth(cb);
+      const callback = vi.fn();
+      const result = settingEx.addMonth(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add multiple dropdown component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addMultipleDropdown(cb);
+      const callback = vi.fn();
+      const result = settingEx.addMultipleDropdown(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add multiple email component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addMultipleEmail(cb);
+      const callback = vi.fn();
+      const result = settingEx.addMultipleEmail(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add multiple file component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addMultipleFile(cb);
+      const callback = vi.fn();
+      const result = settingEx.addMultipleFile(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add multiple text component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addMultipleText(cb);
+      const callback = vi.fn();
+      const result = settingEx.addMultipleText(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add number component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addNumber(cb);
+      const callback = vi.fn();
+      const result = settingEx.addNumber(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add password component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addPassword(cb);
+      const callback = vi.fn();
+      const result = settingEx.addPassword(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add telephone component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addTelephone(cb);
+      const callback = vi.fn();
+      const result = settingEx.addTelephone(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add time component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addTime(cb);
+      const callback = vi.fn();
+      const result = settingEx.addTime(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add tri state checkbox component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addTriStateCheckbox(cb);
+      const callback = vi.fn();
+      const result = settingEx.addTriStateCheckbox(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add typed dropdown component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addTypedDropdown(cb);
+      const callback = vi.fn();
+      const result = settingEx.addTypedDropdown(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add typed multiple dropdown component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addTypedMultipleDropdown(cb);
+      const callback = vi.fn();
+      const result = settingEx.addTypedMultipleDropdown(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add url component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addUrl(cb);
+      const callback = vi.fn();
+      const result = settingEx.addUrl(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
 
     it('should add week component', () => {
-      const cb = vi.fn();
-      const result = settingEx.addWeek(cb);
+      const callback = vi.fn();
+      const result = settingEx.addWeek(callback);
       expect(result).toBe(settingEx);
-      expect(cb).toHaveBeenCalled();
+      expect(callback).toHaveBeenCalled();
     });
   });
 });
@@ -268,9 +269,9 @@ describe('adoptSettingEx', () => {
     // Obsidian keeps rendering the very object it created, so adoption must not replace it.
     expect(adopted).toBe(setting);
     expect(adopted).toBeInstanceOf(SettingEx);
-    const cb = vi.fn();
-    adopted.addNumber(cb);
-    expect(cb).toHaveBeenCalled();
+    const callback = vi.fn();
+    adopted.addNumber(callback);
+    expect(callback).toHaveBeenCalled();
   });
 
   it('should leave an already adopted setting untouched', () => {

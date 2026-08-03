@@ -377,7 +377,7 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
   }
   let backlinks: CustomArrayDict<Reference> = new CustomArrayDictImpl<Reference>();
   await retryWithTimeoutNotice({
-    async operationFn(abortSignal) {
+    async operationFunction(abortSignal) {
       abortSignal.throwIfAborted();
       const file = getFile({ app, pathOrFile });
       await ensureMetadataCacheReady(app);
@@ -461,7 +461,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, options: Ge
       const fileCacheEntry = app.metadataCache.fileCache[file.path];
       const isUpToDate = fileCacheEntry?.mtime === file.stat.mtime
         && fileCacheEntry.size === file.stat.size
-        && app.metadataCache.metadataCache[fileCacheEntry.hash];
+        && Object.hasOwn(app.metadataCache.metadataCache, fileCacheEntry.hash);
       if (!isUpToDate) {
         await app.metadataCache.computeFileMetadataAsync(file);
         await ensureMetadataCacheReady(app);
@@ -612,15 +612,15 @@ export function isCachedMetadataEx(cache: CachedMetadata): cache is CachedMetada
  * Parses the metadata for a given string.
  *
  * @param app - The Obsidian app instance.
- * @param str - The string to parse the metadata for.
+ * @param $string - The string to parse the metadata for.
  * @param options - The parse options controlling which additional links to parse.
  * @returns The parsed metadata.
  */
-export async function parseMetadata(app: App, str: string, options: ParseMetadataOptions = {}): Promise<CachedMetadataEx> {
+export async function parseMetadata(app: App, $string: string, options: ParseMetadataOptions = {}): Promise<CachedMetadataEx> {
   const encoder = new TextEncoder();
-  const buffer = encoder.encode(str).buffer;
+  const buffer = encoder.encode($string).buffer;
   const cache = await app.metadataCache.computeMetadataAsync(buffer) ?? {};
-  return toParsedCachedMetadataEx({ cache, content: str, options });
+  return toParsedCachedMetadataEx({ cache, content: $string, options });
 }
 
 /**

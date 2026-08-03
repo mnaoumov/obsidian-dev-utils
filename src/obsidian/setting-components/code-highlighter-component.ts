@@ -19,6 +19,7 @@ import type { TextBasedComponent } from './text-based-component.ts';
 import type { ValidatorComponent } from './validator-component.ts';
 import type { ValueComponentWithChangeTracking } from './value-component-with-change-tracking.ts';
 
+import { snapshot } from '../../array.ts';
 import {
   convertAsyncToSync,
   invokeAsyncSafely
@@ -148,12 +149,12 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
   /**
    * Sets the disabled state of the component.
    *
-   * @param disabled - The disabled state to set.
+   * @param isDisabled - The disabled state to set.
    * @returns The component.
    */
-  public override setDisabled(disabled: boolean): this {
-    super.setDisabled(disabled);
-    this.textAreaComponent.setDisabled(disabled);
+  public override setDisabled(isDisabled: boolean): this {
+    super.setDisabled(isDisabled);
+    this.textAreaComponent.setDisabled(isDisabled);
     return this;
   }
 
@@ -165,13 +166,13 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
    */
   public setLanguage(language: string): this {
     const LANGUAGE_CLASS_PREFIX = 'language-';
-    for (const el of [this.preEl, this.codeEl]) {
-      for (const cls of Array.from(el.classList)) {
+    for (const element of [this.preEl, this.codeEl]) {
+      for (const cls of snapshot(element.classList)) {
         if (cls.startsWith(LANGUAGE_CLASS_PREFIX)) {
-          el.classList.remove(cls);
+          element.classList.remove(cls);
         }
       }
-      el.classList.add(`${LANGUAGE_CLASS_PREFIX}${language}`);
+      element.classList.add(`${LANGUAGE_CLASS_PREFIX}${language}`);
     }
     return this;
   }
@@ -248,19 +249,19 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     });
   }
 
-  private handleKeyDown(evt: KeyboardEvent): void {
-    if (evt.key !== 'Tab') {
+  private handleKeyDown($event: KeyboardEvent): void {
+    if ($event.key !== 'Tab') {
       return;
     }
 
-    evt.preventDefault();
+    $event.preventDefault();
 
-    if (evt.ctrlKey || evt.metaKey) {
-      const focusables = Array.from(activeDocument.querySelectorAll<HTMLElement>(
+    if ($event.ctrlKey || $event.metaKey) {
+      const focusables = [...activeDocument.querySelectorAll<HTMLElement>(
         ':is(a, button, input, select, textarea, [tabindex]):not([tabindex="-1"]):not(:disabled):not([type="hidden"])'
-      ));
+      )];
       const index = focusables.indexOf(this.inputEl);
-      const deltaIndex = evt.shiftKey ? -1 : 1;
+      const deltaIndex = $event.shiftKey ? -1 : 1;
       const nextControl = focusables[(index + deltaIndex + focusables.length) % focusables.length];
       nextControl?.focus();
       return;
@@ -274,7 +275,7 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
     const tabs = ' '.repeat(this.tabSize);
     let newBeforeSelection = beforeSelection;
 
-    if (evt.shiftKey) {
+    if ($event.shiftKey) {
       if (beforeSelection.endsWith(tabs)) {
         newBeforeSelection = beforeSelection.slice(0, -this.tabSize);
       }

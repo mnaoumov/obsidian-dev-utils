@@ -71,6 +71,21 @@ class Foo {
 }
       `,
       name: 'generic method with only line comments (no block JSDoc)'
+    },
+    {
+      code: `
+class Foo {
+  /**
+   * Does something.
+   *
+   * @template $Object - The type.
+   */
+  public bar<$Object>(name: $Object): $Object {
+    return name;
+  }
+}
+      `,
+      name: 'type parameter name containing `$`'
     }
   ]
 });
