@@ -18,17 +18,17 @@ import { getStackTrace } from '../error.ts';
  */
 export interface InvokeAsyncAndLogParams {
   /**
-   * The abort signal to control the execution of the function.
-   */
-  readonly abortSignal?: AbortSignal;
-
-  /**
    * The function to invoke.
    *
    * @param abortSignal - The abort signal to control the execution of the function.
    * @returns A {@link Promisable} that resolves when the function is complete.
    */
-  fn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  $function(this: void, abortSignal: AbortSignal): Promisable<void>;
+
+  /**
+   * The abort signal to control the execution of the function.
+   */
+  readonly abortSignal?: AbortSignal;
 
   /**
    * Optional stack trace.
@@ -48,8 +48,8 @@ export interface InvokeAsyncAndLogParams {
  */
 export async function invokeAsyncAndLog(params: InvokeAsyncAndLogParams): Promise<void> {
   const {
+    $function,
     abortSignal = abortSignalNever(),
-    fn,
     title
   } = params;
   abortSignal.throwIfAborted();
@@ -57,8 +57,8 @@ export async function invokeAsyncAndLog(params: InvokeAsyncAndLogParams): Promis
   const timestampStart = performance.now();
   const stackTrace = params.stackTrace ?? getStackTrace(1);
   printWithStackTrace({
-    args: [{
-      fn,
+    $arguments: [{
+      $function,
       timestampStart
     }],
     debuggerInstance: invokeAsyncAndLogDebugger,
@@ -66,15 +66,15 @@ export async function invokeAsyncAndLog(params: InvokeAsyncAndLogParams): Promis
     stackTrace
   });
   try {
-    await fn(abortSignal);
+    await $function(abortSignal);
     const timestampEnd = performance.now();
     const duration = Math.trunc(timestampEnd - timestampStart);
     if (abortSignal.aborted) {
       printWithStackTrace({
-        args: [{
+        $arguments: [{
+          $function,
           abortReason: abortSignal.reason as unknown,
           duration,
-          fn,
           timestampEnd,
           timestampStart
         }],
@@ -85,9 +85,9 @@ export async function invokeAsyncAndLog(params: InvokeAsyncAndLogParams): Promis
       abortSignal.throwIfAborted();
     }
     printWithStackTrace({
-      args: [{
+      $arguments: [{
+        $function,
         duration,
-        fn,
         timestampEnd,
         timestampStart
       }],
@@ -98,10 +98,10 @@ export async function invokeAsyncAndLog(params: InvokeAsyncAndLogParams): Promis
   } catch (error) {
     const timestampEnd = performance.now();
     printWithStackTrace({
-      args: [{
+      $arguments: [{
+        $function,
         duration: Math.trunc(timestampEnd - timestampStart),
         error,
-        fn,
         timestampEnd,
         timestampStart
       }],

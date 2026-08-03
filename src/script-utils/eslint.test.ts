@@ -62,7 +62,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', { batchedArgs: ['.'] }])
+      expect.arrayContaining(['npx', 'eslint', { batchedArguments: ['.'] }])
     );
     expect(mockCp).not.toHaveBeenCalled();
   });
@@ -71,7 +71,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', '--fix', { batchedArgs: ['.'] }])
+      expect.arrayContaining(['npx', 'eslint', '--fix', { batchedArguments: ['.'] }])
     );
   });
 

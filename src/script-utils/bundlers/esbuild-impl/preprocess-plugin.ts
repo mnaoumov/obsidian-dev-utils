@@ -59,9 +59,9 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
     : {
       [
         replaceAll({
+          $string: 'import(dot)meta(dot)url',
           replacer: '.',
-          searchValue: '(dot)',
-          str: 'import(dot)meta(dot)url'
+          searchValue: '(dot)'
         })
       ]: (): string => {
         if (typeof __filename === 'string') {
@@ -113,10 +113,10 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
         // Otherwise, it stops loading after the first line of the sourceMappingURL comment.
 
         contents = replaceAll({
+          $string: contents,
           // eslint-disable-next-line no-template-curly-in-string -- It is intentional, the string looks like a template literal, but it is not.
           replacer: '`\n//#${\'\'} sourceMappingURL',
-          searchValue: /`\r?\n\/\/# sourceMappingURL/g,
-          str: contents
+          searchValue: /`\r?\n\/\/# sourceMappingURL/g
         });
 
         return {

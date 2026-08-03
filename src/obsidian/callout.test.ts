@@ -271,7 +271,7 @@ describe('renderCallout', () => {
     expect(mocks.addToQueue).toHaveBeenCalledTimes(1);
     expect(mocks.addToQueue).toHaveBeenCalledWith(
       expect.objectContaining({
-        operationFn: expect.any(Function) as unknown,
+        operationFunction: expect.any(Function) as unknown,
         operationName: 'mock-translation'
       })
     );
@@ -325,7 +325,7 @@ describe('renderCallout', () => {
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
-      await params.operationFn(abortController.signal);
+      await params.operationFunction(abortController.signal);
     });
 
     renderCallout({ contentProvider: 'Hello World', dv: castTo<DataviewInlineApi>(dv) });
@@ -357,7 +357,7 @@ describe('renderCallout', () => {
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (params: AddToQueueParams) => {
       const abortController = new AbortController();
-      await params.operationFn(abortController.signal);
+      await params.operationFunction(abortController.signal);
     });
 
     renderCallout({ contentProvider: contentFunction, dv: castTo<DataviewInlineApi>(dv) });
@@ -385,7 +385,7 @@ describe('renderCallout', () => {
     // eslint-disable-next-line obsidian-dev-utils/no-async-callback-to-unsafe-return -- Mocking async function.
     mocks.addToQueue.mockImplementationOnce(async (options: AddToQueueParams) => {
       const abortController = new AbortController();
-      await options.operationFn(abortController.signal);
+      await options.operationFunction(abortController.signal);
     });
 
     // Use a function that returns undefined so resolveValue returns undefined,

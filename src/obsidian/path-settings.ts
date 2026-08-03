@@ -164,7 +164,7 @@ function makeRegExp(paths: string[], defaultRegExp: RegExp): null | RegExp {
     }
 
     path = trimEnd({
-      str: path,
+      $string: path,
       suffix: '/'
     });
     return `^${escapeRegExp(path)}(/|$)`;

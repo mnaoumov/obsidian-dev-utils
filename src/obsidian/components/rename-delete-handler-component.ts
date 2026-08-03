@@ -215,7 +215,7 @@ interface FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams {
 interface MetadataDeletedHandlerConstructorParams {
   readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   readonly file: TAbstractFile;
-  readonly prevCache: CachedMetadata | null;
+  readonly previousCache: CachedMetadata | null;
   readonly settingsManager: SettingsManager;
 }
 
@@ -396,11 +396,11 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.fileManager,
       methodName: 'runAsyncLinkUpdate',
-      obj: this.fileManager,
       patchHandler: ({
         fallback,
-        originalArgs: [linkUpdatesHandler],
+        originalArguments: [linkUpdatesHandler],
         originalMethod,
         originalMethodBound
       }) => {
@@ -508,13 +508,13 @@ class HandledRenames {
 class MetadataDeletedHandler {
   private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   private readonly file: TAbstractFile;
-  private readonly prevCache: CachedMetadata | null;
+  private readonly previousCache: CachedMetadata | null;
   private readonly settingsManager: SettingsManager;
 
   public constructor(params: MetadataDeletedHandlerConstructorParams) {
     this.deletedMetadataCacheMap = params.deletedMetadataCacheMap;
     this.file = params.file;
-    this.prevCache = params.prevCache;
+    this.previousCache = params.previousCache;
     this.settingsManager = params.settingsManager;
   }
 
@@ -530,8 +530,8 @@ class MetadataDeletedHandler {
       return;
     }
 
-    if (isMarkdownFile(this.file) && this.prevCache) {
-      this.deletedMetadataCacheMap.set(this.file.path, this.prevCache);
+    if (isMarkdownFile(this.file) && this.previousCache) {
+      this.deletedMetadataCacheMap.set(this.file.path, this.previousCache);
     }
   }
 }
@@ -727,7 +727,7 @@ class RenameHandler {
       const orphanKeys = [...this.handledRenames.keys()];
       addToQueue({
         abortSignal: this.abortSignal,
-        operationFn: () => {
+        operationFunction: () => {
           for (const orphanKey of orphanKeys) {
             this.handledRenames.delete(orphanKey.oldPath, orphanKey.newPath);
           }
@@ -1138,7 +1138,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       return;
     }
     addToQueue({
-      operationFn: (abortSignal) =>
+      operationFunction: (abortSignal) =>
         new DeleteHandler({
           abortSignal,
           app: this.app,
@@ -1157,7 +1157,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     new MetadataDeletedHandler({
       deletedMetadataCacheMap: this.deletedMetadataCacheMap,
       file,
-      prevCache: previousCache,
+      previousCache,
       settingsManager: this.settingsManager
     }).handle();
   }
@@ -1216,7 +1216,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     const oldPathBacklinksMap = getBacklinksForFileOrPath(this.app, oldPath).data;
     addToQueue({
       abortSignal: this.abortSignalComponent.abortSignal,
-      operationFn: (abortSignal) =>
+      operationFunction: (abortSignal) =>
         new RenameHandler({
           abortSignal,
           app: this.app,

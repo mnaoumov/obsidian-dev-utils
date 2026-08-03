@@ -147,8 +147,8 @@ class PeekLockComponent extends MonkeyAroundComponent {
     // Block opening any OTHER modal while a modal is minimized (the command palette, a re-fired
     // Command, another plugin modal, …).
     this.registerMethodPatch<Modal, 'open'>({
+      $object: Modal.prototype,
       methodName: 'open',
-      obj: Modal.prototype,
       patchHandler: ({ fallback, originalThis }): void => {
         blockOrFallback(originalThis, fallback);
       }
@@ -160,8 +160,8 @@ class PeekLockComponent extends MonkeyAroundComponent {
     // Therefore blocks the render but leaves an empty settings window behind — the reported bad UX.
     // Guarding the settings modal's own `open()` blocks it *before* the window is created.
     this.registerMethodPatch<App['setting'], 'open'>({
+      $object: this.app.setting,
       methodName: 'open',
-      obj: this.app.setting,
       patchHandler: ({ fallback, originalThis }): void => {
         blockOrFallback(originalThis, fallback);
       }
@@ -373,8 +373,8 @@ export class MinimizableModal<TModal extends Modal> {
 
   private patchOnClose(modal: Modal): void {
     this.closePatchComponent.registerMethodPatch<Modal, 'onClose'>({
+      $object: modal,
       methodName: 'onClose',
-      obj: modal,
       patchHandler: ({ fallback }): void => {
         fallback();
         this.handleClose();

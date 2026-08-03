@@ -34,7 +34,7 @@ export interface BuildIntegrationTestPluginParams {
    * Project-root-relative folder to write `main.js` and `manifest.json` into. Recreated from scratch on
    * every build.
    */
-  readonly outDir: string;
+  readonly outDirectory: string;
 
   /**
    * Whether to embed an inline source map. On for this repo's own `dist/dev` build, where it makes an
@@ -52,7 +52,7 @@ export interface BuildIntegrationTestPluginParams {
  * @param params - The parameters for building the plugin.
  */
 export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPluginParams): Promise<void> {
-  const outDirectoryPath = join(PROJECT_ROOT, params.outDir);
+  const outDirectoryPath = join(PROJECT_ROOT, params.outDirectory);
 
   if (existsSync(outDirectoryPath)) {
     await rm(outDirectoryPath, { recursive: true });

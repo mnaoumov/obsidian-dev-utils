@@ -370,8 +370,8 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
   const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
   const relativePath = attachmentFolderPath.startsWith('./')
     ? trimStart({
-      prefix: './',
-      str: attachmentFolderPath
+      $string: attachmentFolderPath,
+      prefix: './'
     })
     : null;
 
@@ -522,14 +522,14 @@ export async function isAtProperAttachmentPath(params: IsAtProperAttachmentPathP
  */
 function normalizeSlashes(path: string): string {
   path = replaceAll({
+    $string: path,
     replacer: '/',
-    searchValue: /(?:[\\/])+/g,
-    str: path
+    searchValue: /(?:[\\/])+/g
   });
   path = replaceAll({
+    $string: path,
     replacer: '',
-    searchValue: /^\/+|\/+$/g,
-    str: path
+    searchValue: /^\/+|\/+$/g
   });
   return path || '/';
 }

@@ -34,7 +34,7 @@ interface NameJson {
 }
 
 interface ValueJson {
-  val: number;
+  value: number;
 }
 
 const {
@@ -125,7 +125,7 @@ describe('editJson', () => {
   it('should read, edit, and write back JSON', async () => {
     mockReadFile.mockResolvedValue('{"count":0}');
     await editJson<CountJson>({
-      editFn: (data) => {
+      editFunction: (data) => {
         data.count = 5;
       },
       path: '/file.json'
@@ -139,7 +139,7 @@ describe('editJson', () => {
 
   it('should skip if shouldSkipIfMissing is true and file does not exist', async () => {
     mockExistsSync.mockReturnValue(false);
-    await editJson({ editFn: vi.fn(), path: '/missing.json', shouldSkipIfMissing: true });
+    await editJson({ editFunction: vi.fn(), path: '/missing.json', shouldSkipIfMissing: true });
     expect(mockReadFile).not.toHaveBeenCalled();
     expect(mockWriteFile).not.toHaveBeenCalled();
   });
@@ -147,21 +147,21 @@ describe('editJson', () => {
   it('should not skip if shouldSkipIfMissing is true and file exists', async () => {
     mockExistsSync.mockReturnValue(true);
     mockReadFile.mockResolvedValue('{}');
-    await editJson({ editFn: vi.fn(), path: '/exists.json', shouldSkipIfMissing: true });
+    await editJson({ editFunction: vi.fn(), path: '/exists.json', shouldSkipIfMissing: true });
     expect(mockReadFile).toHaveBeenCalled();
     expect(mockWriteFile).toHaveBeenCalled();
   });
 
   it('should not check existence when shouldSkipIfMissing is not set', async () => {
     mockReadFile.mockResolvedValue('{}');
-    await editJson({ editFn: vi.fn(), path: '/file.json' });
+    await editJson({ editFunction: vi.fn(), path: '/file.json' });
     expect(mockExistsSync).not.toHaveBeenCalled();
   });
 
   it('should support async edit functions', async () => {
     mockReadFile.mockResolvedValue('{"items":[]}');
     await editJson<ItemsJson>({
-      editFn: async (data) => {
+      editFunction: async (data) => {
         await noopAsync();
         data.items.push('new');
       },
@@ -175,10 +175,10 @@ describe('editJson', () => {
 
 describe('editJsonSync', () => {
   it('should read, edit, and write back JSON synchronously', () => {
-    mockReadFileSync.mockReturnValue('{"val":1}');
+    mockReadFileSync.mockReturnValue('{"value":1}');
     editJsonSync<ValueJson>({
-      editFn: (data) => {
-        data.val = 99;
+      editFunction: (data) => {
+        data.value = 99;
       },
       path: '/file.json'
     });
@@ -186,12 +186,12 @@ describe('editJsonSync', () => {
     expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
     const written = mockWriteFileSync.mock.calls[0]?.[1];
     assertNonNullable(written);
-    expect(JSON.parse(written)).toEqual({ val: 99 });
+    expect(JSON.parse(written)).toEqual({ value: 99 });
   });
 
   it('should skip if shouldSkipIfMissing is true and file does not exist', () => {
     mockExistsSync.mockReturnValue(false);
-    editJsonSync({ editFn: vi.fn(), path: '/missing.json', shouldSkipIfMissing: true });
+    editJsonSync({ editFunction: vi.fn(), path: '/missing.json', shouldSkipIfMissing: true });
     expect(mockReadFileSync).not.toHaveBeenCalled();
     expect(mockWriteFileSync).not.toHaveBeenCalled();
   });
@@ -199,7 +199,7 @@ describe('editJsonSync', () => {
   it('should not skip if shouldSkipIfMissing is true and file exists', () => {
     mockExistsSync.mockReturnValue(true);
     mockReadFileSync.mockReturnValue('{}');
-    editJsonSync({ editFn: vi.fn(), path: '/exists.json', shouldSkipIfMissing: true });
+    editJsonSync({ editFunction: vi.fn(), path: '/exists.json', shouldSkipIfMissing: true });
     expect(mockReadFileSync).toHaveBeenCalled();
     expect(mockWriteFileSync).toHaveBeenCalled();
   });

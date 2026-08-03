@@ -683,7 +683,7 @@ async function applyFrontmatterChangesWithOffsets(params: ApplyFrontmatterChange
     /* v8 ignore stop */
 
     setNestedPropertyValue({
-      obj: frontmatter,
+      $object: frontmatter,
       path: key,
       value: newPropertyValue
     });

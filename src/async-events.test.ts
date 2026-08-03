@@ -445,12 +445,12 @@ describe('AsyncEvents', () => {
     it('should have thisArg matching the provided context', () => {
       const callback = vi.fn();
       const reference = events.on('my-event', callback, 'myThis');
-      expect(reference.thisArg).toBe('myThis');
+      expect(reference.thisArgument).toBe('myThis');
     });
 
     it('should have undefined thisArg when not provided', () => {
       const reference = events.on('test', vi.fn());
-      expect(reference.thisArg).toBeUndefined();
+      expect(reference.thisArgument).toBeUndefined();
     });
   });
 });

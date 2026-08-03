@@ -691,8 +691,8 @@ export class PluginNoticeComponent extends ComponentEx {
     const patchComponent = new MonkeyAroundComponent();
     patchComponent.load();
     patchComponent.registerMethodPatch({
+      $object: notice,
       methodName: 'hide',
-      obj: notice,
       once: true,
       patchHandler: ({ fallback }) => {
         fallback();

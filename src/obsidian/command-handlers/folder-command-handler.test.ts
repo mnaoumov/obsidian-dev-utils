@@ -54,16 +54,16 @@ interface MutableParent {
 }
 
 class TestFolderHandler extends FolderCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   protected override canExecuteFolder(folder: TFolderOriginal): boolean {
     super.canExecuteFolder(folder);
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async executeFolder(_folder: TFolderOriginal): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 
   protected override shouldAddToFolderMenu(params: FolderCommandHandlerShouldAddToFolderMenuParams): boolean {

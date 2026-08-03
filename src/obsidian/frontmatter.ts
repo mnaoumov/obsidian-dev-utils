@@ -105,9 +105,9 @@ export function setFrontmatter(content: string, newFrontmatter: object): string 
 
   return frontmatterInfo.exists
     ? insertAt({
+      $string: content,
       endIndex: frontmatterInfo.to,
       startIndex: frontmatterInfo.from,
-      str: content,
       substring: newFrontmatterString
     })
     : `---\n${newFrontmatterString}---\n${content}`;

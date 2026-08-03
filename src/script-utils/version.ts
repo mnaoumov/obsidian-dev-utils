@@ -384,9 +384,9 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
   const content = await readFile(changelogPath, 'utf-8');
   const newVersionEscaped = replaceAll({
+    $string: newVersion,
     replacer: String.raw`\.`,
-    searchValue: '.',
-    str: newVersion
+    searchValue: '.'
   });
   const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
   /* v8 ignore start -- v8 tracks optional chaining and ternary as separate branches; both paths are tested. */
@@ -559,9 +559,9 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
   }
 
   const lastTag = replaceAll({
+    $string: previousChangelogLines[0] ?? '',
     replacer: '',
-    searchValue: '## ',
-    str: previousChangelogLines[0] ?? ''
+    searchValue: '## '
   });
   const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
   const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
@@ -763,7 +763,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
       { force: true }
     );
     await editJson<Manifest>({
-      editFn: (manifest) => {
+      editFunction: (manifest) => {
         manifest.version = newVersion;
       },
       path: ObsidianPluginRepoPaths.ManifestBetaJson
@@ -772,7 +772,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
     const latestObsidianVersion = await getLatestObsidianVersion();
 
     await editJson<Manifest>({
-      editFn: (manifest) => {
+      editFunction: (manifest) => {
         manifest.minAppVersion = latestObsidianVersion;
         manifest.version = newVersion;
       },
@@ -780,7 +780,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
     });
 
     await editJson<Record<string, string>>({
-      editFn: (versions) => {
+      editFunction: (versions) => {
         versions[newVersion] = latestObsidianVersion;
       },
       path: ObsidianPluginRepoPaths.VersionsJson

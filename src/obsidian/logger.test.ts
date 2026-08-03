@@ -25,7 +25,7 @@ describe('invokeAsyncAndLog', () => {
   it('should invoke the function and resolve', async () => {
     const $function = vi.fn();
     const controller = new AbortController();
-    await invokeAsyncAndLog({ abortSignal: controller.signal, fn: $function, title: 'test' });
+    await invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' });
     expect($function).toHaveBeenCalledTimes(1);
     expect($function).toHaveBeenCalledWith(controller.signal);
   });
@@ -34,14 +34,14 @@ describe('invokeAsyncAndLog', () => {
     const $function = vi.fn();
     const controller = new AbortController();
     controller.abort('cancelled');
-    await expect(invokeAsyncAndLog({ abortSignal: controller.signal, fn: $function, title: 'test' })).rejects.toThrow();
+    await expect(invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' })).rejects.toThrow();
     expect($function).not.toHaveBeenCalled();
   });
 
   it('should rethrow errors from the function', async () => {
     const $function = vi.fn().mockRejectedValue(new Error('task failed'));
     const controller = new AbortController();
-    await expect(invokeAsyncAndLog({ abortSignal: controller.signal, fn: $function, title: 'test' })).rejects.toThrow('task failed');
+    await expect(invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' })).rejects.toThrow('task failed');
   });
 
   it('should throw if aborted during execution', async () => {
@@ -50,13 +50,13 @@ describe('invokeAsyncAndLog', () => {
       await noopAsync();
       controller.abort('mid-execution');
     });
-    await expect(invokeAsyncAndLog({ abortSignal: controller.signal, fn: $function, title: 'test' })).rejects.toThrow();
+    await expect(invokeAsyncAndLog({ $function, abortSignal: controller.signal, title: 'test' })).rejects.toThrow();
   });
 
   it('should use provided stack trace', async () => {
     const $function = vi.fn();
     const controller = new AbortController();
-    await invokeAsyncAndLog({ abortSignal: controller.signal, fn: $function, stackTrace: 'custom stack', title: 'test' });
+    await invokeAsyncAndLog({ $function, abortSignal: controller.signal, stackTrace: 'custom stack', title: 'test' });
     expect($function).toHaveBeenCalledTimes(1);
   });
 });

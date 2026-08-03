@@ -133,7 +133,7 @@ interface CreateFunctionArgumentlessParams {
 }
 
 interface CreateFunctionParams<TFunction extends GenericFunction> extends CreateFunctionArgumentlessParams {
-  readonly argNames: ArgumentNamesOf<TFunction>;
+  readonly argumentNames: ArgumentNamesOf<TFunction>;
 }
 
 type MapToArgumentNames<TArguments extends readonly unknown[]> = {
@@ -188,7 +188,7 @@ export function createFunction<TFunction extends GenericFunction>(params: Create
 export function createFunction<TFunction extends GenericFunction>(
   params: CreateFunctionArgumentlessParams & Partial<CreateFunctionParams<TFunction>>
 ): TFunction {
-  const argumentNames = params.argNames ?? [];
+  const argumentNames = params.argumentNames ?? [];
   // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval, obsidianmd/rule-custom-message -- Need function constructor
   return new Function(...argumentNames, params.functionBody) as TFunction;
 }

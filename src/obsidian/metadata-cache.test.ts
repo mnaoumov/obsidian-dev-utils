@@ -942,7 +942,7 @@ describe('getFrontmatterSafe', () => {
 describe('getBacklinksForFileSafe', () => {
   function setupRetryToInvokeOperationFunction(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFunction(abortSignal);
     });
@@ -1079,7 +1079,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should return false when reference cache link does not match content', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFunction(abortSignal);
     });
@@ -1115,7 +1115,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should return false when frontmatter property value is not a string', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFunction(abortSignal);
     });
@@ -1135,7 +1135,7 @@ describe('getBacklinksForFileSafe', () => {
   it('should return false when frontmatter link does not match property value', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFunction(abortSignal);
     });

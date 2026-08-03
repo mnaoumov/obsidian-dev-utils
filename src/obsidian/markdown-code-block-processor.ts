@@ -53,7 +53,7 @@ export interface GetCodeBlockMarkdownInfoParams {
   /**
    * A {@link MarkdownPostProcessorContext} object.
    */
-  readonly ctx: MarkdownPostProcessorContext;
+  readonly context: MarkdownPostProcessorContext;
 
   /**
    * A {@link HTMLElement} representing the code block.
@@ -209,10 +209,10 @@ interface IsSuitableCodeBlockParams {
  * @returns The information about the code block in the Markdown section.
  */
 export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
-  const { app, ctx, el, source } = params;
+  const { app, context, el, source } = params;
 
-  const sourceFile = getFileOrNull({ app, pathOrFile: ctx.sourcePath });
-  assertNonNullable(sourceFile, `Source file ${ctx.sourcePath} not found.`);
+  const sourceFile = getFileOrNull({ app, pathOrFile: context.sourcePath });
+  assertNonNullable(sourceFile, `Source file ${context.sourcePath} not found.`);
 
   await requestAnimationFrameAsync();
   await saveNote(app, sourceFile);
@@ -220,8 +220,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
   let markdownInfo: CodeBlockMarkdownInformation | null = null;
 
   await invokeWithFileSystemLock({
-    app,
-    fn(noteContent) {
+    $function(noteContent) {
       const noteContentLf = ensureLfEndings(noteContent);
 
       const approximateSectionInfo: MarkdownSectionInformation = {
@@ -235,8 +234,8 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
 
       if (
         !hasSingleOccurrence({
-          searchValue: approximateSectionInfo.text,
-          str: noteContentLf
+          $string: noteContentLf,
+          searchValue: approximateSectionInfo.text
         })
       ) {
         return;
@@ -298,6 +297,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       markdownInfo.positionInNote.start.offset = lfOffsetMapper(markdownInfo.positionInNote.start.offset);
       markdownInfo.positionInNote.end.offset = lfOffsetMapper(markdownInfo.positionInNote.end.offset);
     },
+    app,
     pathOrFile: sourceFile
   });
 
@@ -311,7 +311,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
  */
 // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares InsertCodeBlockParams with insertBeforeCodeBlock.
 export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promise<void> {
-  const { app, ctx, lineOffset = 0, text } = params;
+  const { app, context, lineOffset = 0, text } = params;
 
   await process({
     app,
@@ -331,7 +331,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
         text
       }));
     },
-    pathOrFile: ctx.sourcePath,
+    pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
@@ -344,7 +344,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
  */
 // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Intentionally shares InsertCodeBlockParams with insertAfterCodeBlock.
 export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Promise<void> {
-  const { app, ctx, lineOffset = 0, text } = params;
+  const { app, context, lineOffset = 0, text } = params;
 
   await process({
     app,
@@ -366,7 +366,7 @@ export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Prom
         text
       }));
     },
-    pathOrFile: ctx.sourcePath,
+    pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
@@ -391,7 +391,7 @@ export async function removeCodeBlock(params: RemoveCodeBlockParams): Promise<vo
  * @param params - The parameters for the function.
  */
 export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<void> {
-  const { app, codeBlockProvider, ctx } = params;
+  const { app, codeBlockProvider, context } = params;
   params.abortSignal?.throwIfAborted();
 
   await process({
@@ -442,7 +442,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
 
       return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
     },
-    pathOrFile: ctx.sourcePath,
+    pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,
     resourceLockComponent: params.resourceLockComponent
   });
@@ -472,7 +472,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   const endLine = startLine + sourceLinesCount + 1;
 
   return {
-    args: codeBlockArgumentsString.split(/\s+/).filter(Boolean),
+    $arguments: codeBlockArgumentsString.split(/\s+/).filter(Boolean),
     endDelimiter: codeBlockEndDelimiter,
     language,
     linePrefix,
@@ -489,7 +489,7 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
         offset: textLineOffsets.get(startLine) ?? 0
       }
     },
-    rawArgsStr: codeBlockArgumentsString,
+    rawArgumentsString: codeBlockArgumentsString,
     sectionInfo: {
       lineEnd: previousTextLinesCount + sourceLinesCount + 1,
       lineStart: previousTextLinesCount,

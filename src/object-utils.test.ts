@@ -230,7 +230,7 @@ describe('ObjectUtils', () => {
     it('should set a top-level property', () => {
       const $object: GenericObject = { a: 1 };
       setNestedPropertyValue({
-        obj: $object,
+        $object,
         path: 'a',
         value: 2
       });
@@ -240,7 +240,7 @@ describe('ObjectUtils', () => {
     it('should set a nested property', () => {
       const $object = { a: { b: { c: 1 } } };
       setNestedPropertyValue({
-        obj: ensureGenericObject($object),
+        $object: ensureGenericObject($object),
         path: 'a.b.c',
         value: 42
       });
@@ -251,7 +251,7 @@ describe('ObjectUtils', () => {
       const $object: GenericObject = { a: 1 };
       expect(() => {
         setNestedPropertyValue({
-          obj: $object,
+          $object,
           path: 'x.y.z',
           value: 42
         });
@@ -262,7 +262,7 @@ describe('ObjectUtils', () => {
       const $object: GenericObject = { a: undefined };
       expect(() => {
         setNestedPropertyValue({
-          obj: $object,
+          $object,
           path: 'a.b',
           value: 42
         });
@@ -366,10 +366,10 @@ describe('ObjectUtils', () => {
   describe('nameof', () => {
     it('should return the property name', () => {
       interface TestObject {
-        myProp: string;
+        myProperty: string;
         other: number;
       }
-      expect(nameof<TestObject>('myProp')).toBe('myProp');
+      expect(nameof<TestObject>('myProperty')).toBe('myProperty');
     });
   });
 

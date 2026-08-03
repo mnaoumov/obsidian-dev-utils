@@ -73,22 +73,22 @@ describe('prompt', () => {
     buttonInstances.length = 0;
     textInstances.length = 0;
     mockImplementation({
+      $object: ButtonComponentOriginal.prototype,
       impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
         originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
-      method: 'constructor2__',
-      obj: ButtonComponentOriginal.prototype
+      method: 'constructor2__'
     });
     mockImplementation({
+      $object: TextComponentOriginal.prototype,
       impl: function impl(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
         originalImplementation.call(this, containerEl);
         textInstances.push(this);
         return this;
       },
-      method: 'constructor4__',
-      obj: TextComponentOriginal.prototype
+      method: 'constructor4__'
     });
   });
 

@@ -22,7 +22,7 @@ import { MenuEventRegistrarComponent } from './menu-event-registrar-component.ts
 
 interface Mocks {
   app: AppOriginal;
-  eventRef: EventReferenceOriginal;
+  eventReference: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   registeredEvents: string[];
 }
@@ -44,7 +44,7 @@ function createMocks(): Mocks {
 
   return {
     app,
-    eventRef: eventReference,
+    eventReference,
     offref,
     registeredEvents
   };
@@ -54,7 +54,7 @@ describe('MenuEventRegistrarComponent', () => {
   it('should register editor-menu event and return a disposable that offrefs it', () => {
     const {
       app,
-      eventRef,
+      eventReference,
       offref,
       registeredEvents
     } = createMocks();
@@ -66,13 +66,13 @@ describe('MenuEventRegistrarComponent', () => {
     expect(registeredEvents).toContain('editor-menu');
     expect(offref).not.toHaveBeenCalled();
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 
   it('should register file-menu event and return a disposable that offrefs it', () => {
     const {
       app,
-      eventRef,
+      eventReference,
       offref,
       registeredEvents
     } = createMocks();
@@ -83,13 +83,13 @@ describe('MenuEventRegistrarComponent', () => {
 
     expect(registeredEvents).toContain('file-menu');
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 
   it('should register files-menu event and return a disposable that offrefs it', () => {
     const {
       app,
-      eventRef,
+      eventReference,
       offref,
       registeredEvents
     } = createMocks();
@@ -100,7 +100,7 @@ describe('MenuEventRegistrarComponent', () => {
 
     expect(registeredEvents).toContain('files-menu');
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 
   it('should offref every registered menu event on component unload', () => {

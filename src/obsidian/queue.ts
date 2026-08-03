@@ -38,7 +38,7 @@ export interface AddToQueueAndWaitParams {
   /**
    * The function to add.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
 
   /**
    * Optional name of the operation.
@@ -79,7 +79,7 @@ export interface AddToQueueParams {
   /**
    * The function to add.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
 
   /**
    * Optional name of the operation.
@@ -115,7 +115,7 @@ interface Queue {
 
 interface QueueItem {
   abortSignal: AbortSignal;
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
   operationName: string;
   shouldShowTimeoutNotice: boolean;
   stackTrace: string;
@@ -148,7 +148,7 @@ export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promis
   const queue = getQueue().value;
   queue.items.push({
     abortSignal,
-    operationFn: params.operationFn,
+    operationFunction: params.operationFunction,
     operationName,
     shouldShowTimeoutNotice: params.shouldShowTimeoutNotice ?? true,
     stackTrace,
@@ -163,7 +163,7 @@ export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promis
  */
 export async function flushQueue(): Promise<void> {
   await addToQueueAndWait({
-    operationFn: noop,
+    operationFunction: noop,
     operationName: t(($) => $.obsidianDevUtils.queue.flushQueue)
   });
 }
@@ -183,11 +183,11 @@ async function processNextQueueItem(): Promise<void> {
 
   await addErrorHandler(() =>
     runWithTimeoutNotice({
-      context: { queuedFn: item.operationFn },
-      async operationFn(abortSignal: AbortSignal): Promise<void> {
+      context: { queuedFn: item.operationFunction },
+      async operationFunction(abortSignal: AbortSignal): Promise<void> {
         await invokeAsyncAndLog({
+          $function: item.operationFunction,
           abortSignal: abortSignalAny(abortSignal, item.abortSignal),
-          fn: item.operationFn,
           stackTrace: item.stackTrace,
           title: item.operationName || processNextQueueItem.name
         });

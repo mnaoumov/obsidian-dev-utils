@@ -86,7 +86,7 @@ export const noUnusedParamsMembers: Rule.RuleModule = {
             collectPatternMembers(info.binding.pattern, usage);
           } else {
             collectReferenceMembers({
-              paramName: info.binding.name,
+              parameterName: info.binding.name,
               scope: context.sourceCode.getScope(node),
               usage
             });
@@ -151,7 +151,7 @@ interface CollectReferenceMembersParams {
   /**
    * The name of the parameter whose references are inspected.
    */
-  readonly paramName: string;
+  readonly parameterName: string;
 
   /**
    * The scope in which the parameter is bound.
@@ -216,8 +216,8 @@ function collectPatternMembers(pattern: Rule.Node, usage: InterfaceUsage): void 
 }
 
 function collectReferenceMembers(params: CollectReferenceMembersParams): void {
-  const { paramName, scope, usage } = params;
-  const variable = ensureNonNullable(scope.set.get(paramName));
+  const { parameterName, scope, usage } = params;
+  const variable = ensureNonNullable(scope.set.get(parameterName));
   for (const reference of variable.references) {
     classifyReference(reference.identifier, usage);
   }

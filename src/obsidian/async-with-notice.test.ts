@@ -52,8 +52,8 @@ vi.mock('../async.ts', () => ({
     if (typeof options['_captureOnTimeout'] === 'function') {
       (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
-    if (typeof options['operationFn'] === 'function') {
-      await (options['operationFn'] as (signal: AbortSignal) => Promise<unknown>)(new AbortController().signal);
+    if (typeof options['operationFunction'] === 'function') {
+      await (options['operationFunction'] as (signal: AbortSignal) => Promise<unknown>)(new AbortController().signal);
     }
   }),
   runWithTimeout: vi.fn(async (options: GenericObject) => {
@@ -61,8 +61,8 @@ vi.mock('../async.ts', () => ({
     if (typeof options['_captureOnTimeout'] === 'function') {
       (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
-    if (typeof options['operationFn'] === 'function') {
-      return (options['operationFn'] as (signal: AbortSignal) => unknown)(new AbortController().signal);
+    if (typeof options['operationFunction'] === 'function') {
+      return (options['operationFunction'] as (signal: AbortSignal) => unknown)(new AbortController().signal);
     }
     // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
     return undefined;
@@ -152,24 +152,24 @@ describe('AsyncWithNotice', () => {
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         operationName: 'testOp',
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
       expect(retryWithTimeout).toHaveBeenCalledTimes(1);
     });
 
-    it('should forward operationFn to retryWithTimeout', async () => {
+    it('should forward operationFunction to retryWithTimeout', async () => {
       const operationFunction = vi.fn(async () => {
         await noopAsync();
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
       const callArguments = ensureNonNullable(vi.mocked(retryWithTimeout).mock.calls[0])[0];
-      expect(callArguments.operationFn).toBe(operationFunction);
+      expect(callArguments.operationFunction).toBe(operationFunction);
     });
 
     it('should forward operationName to retryWithTimeout', async () => {
@@ -178,7 +178,7 @@ describe('AsyncWithNotice', () => {
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         operationName: 'myOperation',
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({})
       });
@@ -193,7 +193,7 @@ describe('AsyncWithNotice', () => {
       });
       const retryOptions = { retryDelayInMilliseconds: 200, timeoutInMilliseconds: 3000 };
       await retryWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         retryOptions
       });
@@ -207,7 +207,7 @@ describe('AsyncWithNotice', () => {
         return true;
       });
       await retryWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         stackTrace: 'custom-stack'
       });
@@ -223,7 +223,7 @@ describe('AsyncWithNotice', () => {
       });
 
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -242,7 +242,7 @@ describe('AsyncWithNotice', () => {
       });
 
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -262,7 +262,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutWithFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -275,7 +275,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutWithUndefined = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -295,7 +295,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutTrue = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -308,7 +308,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -328,7 +328,7 @@ describe('AsyncWithNotice', () => {
         capturedWithoutComponent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -341,7 +341,7 @@ describe('AsyncWithNotice', () => {
         capturedSilent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await retryWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -362,7 +362,7 @@ describe('AsyncWithNotice', () => {
         return 42;
       });
       await runWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
@@ -371,7 +371,7 @@ describe('AsyncWithNotice', () => {
 
     it('should return the result from the operation', async () => {
       const result = await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'test-result';
         },
@@ -381,32 +381,32 @@ describe('AsyncWithNotice', () => {
       expect(result).toBe('test-result');
     });
 
-    it('should return the result for synchronous operationFn', async () => {
+    it('should return the result for synchronous operationFunction', async () => {
       const result = await runWithTimeoutNotice({
-        operationFn: () => 123,
+        operationFunction: () => 123,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       expect(result).toBe(123);
     });
 
-    it('should forward operationFn to runWithTimeout', async () => {
+    it('should forward operationFunction to runWithTimeout', async () => {
       const operationFunction = vi.fn(async () => {
         await noopAsync();
         return 'value';
       });
       await runWithTimeoutNotice({
-        operationFn: operationFunction,
+        operationFunction,
         pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
         timeoutInMilliseconds: 5000
       });
       const callArguments = ensureNonNullable(vi.mocked(runWithTimeout).mock.calls[0])[0];
-      expect(callArguments.operationFn).toBe(operationFunction);
+      expect(callArguments.operationFunction).toBe(operationFunction);
     });
 
     it('should forward operationName to runWithTimeout', async () => {
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -420,7 +420,7 @@ describe('AsyncWithNotice', () => {
 
     it('should forward timeoutInMilliseconds to runWithTimeout', async () => {
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -433,7 +433,7 @@ describe('AsyncWithNotice', () => {
 
     it('should forward stackTrace to runWithTimeout', async () => {
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -449,7 +449,7 @@ describe('AsyncWithNotice', () => {
       const context = { some: 'data' };
       await runWithTimeoutNotice({
         context,
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -467,7 +467,7 @@ describe('AsyncWithNotice', () => {
           resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         runWithTimeoutNotice({
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return 'value';
           },
@@ -499,7 +499,7 @@ describe('AsyncWithNotice', () => {
       });
 
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -520,7 +520,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutTrue = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -534,7 +534,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -555,7 +555,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutWithFalse = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -569,7 +569,7 @@ describe('AsyncWithNotice', () => {
         capturedOnTimeoutWithUndefined = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -590,7 +590,7 @@ describe('AsyncWithNotice', () => {
         capturedWithoutComponent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -604,7 +604,7 @@ describe('AsyncWithNotice', () => {
         capturedSilent = options.onTimeout as (context: TimeoutContext) => void;
       });
       await runWithTimeoutNotice({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 'value';
         },
@@ -627,7 +627,7 @@ describe('AsyncWithNotice', () => {
           resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         retryWithTimeoutNotice({
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return true;
           },
@@ -827,7 +827,7 @@ describe('AsyncWithNotice', () => {
           resolve(options.onTimeout as (context: TimeoutContext) => void);
         });
         retryWithTimeoutNotice({
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return true;
           },
@@ -931,7 +931,7 @@ describe('AsyncWithNotice', () => {
         });
         runWithTimeoutNotice({
           content,
-          operationFn: async () => {
+          operationFunction: async () => {
             await noopAsync();
             return 'value';
           },

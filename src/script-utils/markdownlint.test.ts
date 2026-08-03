@@ -79,10 +79,10 @@ describe('lint', () => {
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledTimes(2);
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', { batchedArgs: ['.'] }])
+      expect.arrayContaining(['npx', 'markdownlint-cli2', { batchedArguments: ['.'] }])
     );
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md'] }])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md'] }])
     );
   });
 
@@ -90,7 +90,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', { batchedArgs: ['.'] }])
+      expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', { batchedArguments: ['.'] }])
     );
   });
 
@@ -125,7 +125,7 @@ describe('lint', () => {
     await lint();
     expect(mockGetNonIgnoredFiles).toHaveBeenCalledWith({ patterns: ['*.md'] });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md', 'docs/guide.md'] }])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md', 'docs/guide.md'] }])
     );
   });
 
@@ -142,7 +142,7 @@ describe('lint', () => {
     ]);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md', 'docs/guide.md'] }])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md', 'docs/guide.md'] }])
     );
   });
 
@@ -151,7 +151,7 @@ describe('lint', () => {
     mockGetNonIgnoredFiles.mockResolvedValue(['docs/node_modules-migration.md']);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['docs/node_modules-migration.md'] }])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['docs/node_modules-migration.md'] }])
     );
   });
 
@@ -168,7 +168,7 @@ describe('lint', () => {
     await lint();
     expect(mockGlob).toHaveBeenCalledOnce();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md'] }])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md'] }])
     );
   });
 
@@ -182,7 +182,7 @@ describe('lint', () => {
     })());
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArgs: ['README.md', 'CHANGELOG.md', 'docs/guide.md'] }])
+      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md', 'CHANGELOG.md', 'docs/guide.md'] }])
     );
   });
 });

@@ -32,28 +32,28 @@ interface MockContext {
 }
 
 class TestEditorHandler extends EditorCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-  public shouldAddToCommandPaletteFn = vi.fn(() => true);
-  public shouldAddToEditorMenuFn = vi.fn(() => false);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public shouldAddToCommandPaletteFunction = vi.fn(() => true);
+  public shouldAddToEditorMenuFunction = vi.fn(() => false);
 
   protected override canExecuteEditor(editor: EditorOriginal, context: MarkdownFileInfoOriginal): boolean {
     super.canExecuteEditor(editor, context);
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async executeEditor(_editor: EditorOriginal, _context: MarkdownFileInfoOriginal): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 
   protected override shouldAddToCommandPalette(): boolean {
     super.shouldAddToCommandPalette();
-    return this.shouldAddToCommandPaletteFn();
+    return this.shouldAddToCommandPaletteFunction();
   }
 
   protected override shouldAddToEditorMenu(editor: EditorOriginal, context: MarkdownFileInfoOriginal): boolean {
     super.shouldAddToEditorMenu(editor, context);
-    return this.shouldAddToEditorMenuFn();
+    return this.shouldAddToEditorMenuFunction();
   }
 }
 
@@ -108,12 +108,12 @@ describe('EditorCommandHandler', () => {
 
     const result = command.editorCheckCallback?.(true, createMockEditor(), createMockMarkdownFileInfo());
     expect(result).toBe(true);
-    expect(handler.executeFn).not.toHaveBeenCalled();
+    expect(handler.executeFunction).not.toHaveBeenCalled();
   });
 
   it('should return false when shouldAddToCommandPalette returns false', () => {
     const handler = new TestEditorHandler(createParams());
-    handler.shouldAddToCommandPaletteFn.mockReturnValue(false);
+    handler.shouldAddToCommandPaletteFunction.mockReturnValue(false);
     const command = handler.buildCommand();
 
     const result = command.editorCheckCallback?.(true, createMockEditor(), createMockMarkdownFileInfo());
@@ -122,12 +122,12 @@ describe('EditorCommandHandler', () => {
 
   it('should return false when canExecuteEditor returns false', () => {
     const handler = new TestEditorHandler(createParams());
-    handler.canExecuteFn.mockReturnValue(false);
+    handler.canExecuteFunction.mockReturnValue(false);
     const command = handler.buildCommand();
 
     const result = command.editorCheckCallback?.(false, createMockEditor(), createMockMarkdownFileInfo());
     expect(result).toBe(false);
-    expect(handler.executeFn).not.toHaveBeenCalled();
+    expect(handler.executeFunction).not.toHaveBeenCalled();
   });
 
   it('should call executeEditor when checking=false and canExecute returns true', () => {
@@ -136,7 +136,7 @@ describe('EditorCommandHandler', () => {
 
     const result = command.editorCheckCallback?.(false, createMockEditor(), createMockMarkdownFileInfo());
     expect(result).toBe(true);
-    expect(handler.executeFn).toHaveBeenCalledOnce();
+    expect(handler.executeFunction).toHaveBeenCalledOnce();
   });
 
   it('should register editor-menu event handler on registration', async () => {
@@ -161,7 +161,7 @@ describe('EditorCommandHandler', () => {
 
   it('should add menu item when shouldAddToEditorMenu returns true', async () => {
     const handler = new TestEditorHandler(createParams());
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 
@@ -174,8 +174,8 @@ describe('EditorCommandHandler', () => {
 
   it('should not add menu item when canExecuteEditor returns false', async () => {
     const handler = new TestEditorHandler(createParams());
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
-    handler.canExecuteFn.mockReturnValue(false);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
+    handler.canExecuteFunction.mockReturnValue(false);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 
@@ -192,7 +192,7 @@ describe('EditorCommandHandler', () => {
       editorMenuSubmenuIcon: 'folder',
       shouldAddCommandToSubmenu: true
     }));
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 
@@ -209,7 +209,7 @@ describe('EditorCommandHandler', () => {
 
   it('should use pluginName as default section', async () => {
     const handler = new TestEditorHandler(createParams());
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 
@@ -234,7 +234,7 @@ describe('EditorCommandHandler', () => {
     const handler = new TestEditorHandler(createParams({
       shouldAddCommandToSubmenu: true
     }));
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 
@@ -251,7 +251,7 @@ describe('EditorCommandHandler', () => {
 
   it('should execute via menu item onClick callback', async () => {
     const handler = new TestEditorHandler(createParams());
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 
@@ -272,15 +272,15 @@ describe('EditorCommandHandler', () => {
     Object.assign(menu, { addItem });
     editorMenuHandlers[0]?.(menu, createMockEditor(), createMockMarkdownFileInfo());
 
-    expect(handler.executeFn).toHaveBeenCalledOnce();
+    expect(handler.executeFunction).toHaveBeenCalledOnce();
   });
 
   it('should use default canExecuteEditor returning true', () => {
     class DefaultEditorHandler extends EditorCommandHandler {
-      public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
       protected override async executeEditor(_editor: EditorOriginal, _context: MarkdownFileInfoOriginal): Promise<void> {
-        await this.executeFn();
+        await this.executeFunction();
       }
     }
 
@@ -326,7 +326,7 @@ describe('EditorCommandHandler', () => {
     const handler = new TestEditorHandler(createParams({
       editorMenuItemName: 'Custom Item'
     }));
-    handler.shouldAddToEditorMenuFn.mockReturnValue(true);
+    handler.shouldAddToEditorMenuFunction.mockReturnValue(true);
     const { context, editorMenuHandlers } = createMockContext();
     await handler.onRegistered(context);
 

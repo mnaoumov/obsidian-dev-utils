@@ -23,7 +23,7 @@ import type { RenameDeleteHandlerSettings } from './rename-delete-handler-compon
  * Result of the attachment-move decoupling test.
  */
 interface AttachmentMoveResult {
-  readonly hasDstAttachment: boolean;
+  readonly hasDestinationAttachment: boolean;
   readonly hasSrcAttachment: boolean;
 }
 
@@ -146,7 +146,7 @@ describe('rename-delete-handler', () => {
             });
 
             return {
-              hasDstAttachment: app.vault.getAbstractFileByPath(DST_ATTACHMENT) !== null,
+              hasDestinationAttachment: app.vault.getAbstractFileByPath(DST_ATTACHMENT) !== null,
               hasSrcAttachment: app.vault.getAbstractFileByPath(SRC_ATTACHMENT) !== null
             };
           } finally {
@@ -163,7 +163,7 @@ describe('rename-delete-handler', () => {
         }
       });
 
-      expect(result.hasDstAttachment).toBe(true);
+      expect(result.hasDestinationAttachment).toBe(true);
       expect(result.hasSrcAttachment).toBe(false);
     });
   });
@@ -234,7 +234,7 @@ describe('rename-delete-handler', () => {
             await flushQueue();
 
             return {
-              hasDstAttachment: app.vault.getAbstractFileByPath(DST_ATTACHMENT) !== null,
+              hasDestinationAttachment: app.vault.getAbstractFileByPath(DST_ATTACHMENT) !== null,
               hasSrcAttachment: app.vault.getAbstractFileByPath(SRC_ATTACHMENT) !== null
             };
           } finally {
@@ -253,7 +253,7 @@ describe('rename-delete-handler', () => {
       });
 
       // The foreign transaction owns its own link/attachment consistency, so the handler must stay out of the way: it does NOT move the attachment.
-      expect(result.hasDstAttachment).toBe(false);
+      expect(result.hasDestinationAttachment).toBe(false);
       expect(result.hasSrcAttachment).toBe(true);
     });
   });

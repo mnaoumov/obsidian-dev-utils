@@ -926,7 +926,7 @@ describe('updateVersion', () => {
     expect(mockCp).toHaveBeenCalled();
     expect(mockEditJson).toHaveBeenCalledTimes(1);
 
-    const betaManifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFn;
+    const betaManifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
     const betaManifest: Record<string, string> = { version: '1.0.0' };
     await betaManifestCallback(betaManifest);
     expect(betaManifest['version']).toBe('1.0.1-beta.0');
@@ -960,13 +960,13 @@ describe('updateVersion', () => {
       await updateVersion('patch');
       expect(mockEditJson).toHaveBeenCalledTimes(2);
 
-      const manifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFn;
+      const manifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
       const manifest: Record<string, string> = { minAppVersion: '1.0.0', version: '1.0.0' };
       await manifestCallback(manifest);
       expect(manifest['minAppVersion']).toBe('1.7.0');
       expect(manifest['version']).toBe('1.0.1');
 
-      const versionsCallback = (mockEditJson.mock.calls[1]?.[0] as EditJsonParams<Record<string, string>>).editFn;
+      const versionsCallback = (mockEditJson.mock.calls[1]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
       const versions: Record<string, string> = {};
       await versionsCallback(versions);
       expect(versions['1.0.1']).toBe('1.7.0');

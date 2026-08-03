@@ -25,7 +25,7 @@ import {
 } from './events.ts';
 
 interface Mocks {
-  eventRef: EventReferenceOriginal;
+  eventReference: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
   source: TestEventSource;
@@ -44,7 +44,7 @@ function createMocks(): Mocks {
   const on = vi.fn(() => eventReference);
   const source = strictProxy<TestEventSource>({ on });
   return {
-    eventRef: eventReference,
+    eventReference,
     offref,
     on,
     source
@@ -54,7 +54,7 @@ function createMocks(): Mocks {
 describe('subscribeEvent', () => {
   it('should register the handler via events.on and return the EventRef', () => {
     const {
-      eventRef,
+      eventReference,
       on,
       source
     } = createMocks();
@@ -67,14 +67,14 @@ describe('subscribeEvent', () => {
     });
 
     expect(on).toHaveBeenCalledWith('my-event', expect.any(Function), undefined);
-    expect(result).toBe(eventRef);
+    expect(result).toBe(eventReference);
   });
 });
 
 describe('subscribeDisposableEvent', () => {
   it('should return a DisposableEx that offrefs the EventRef on dispose', () => {
     const {
-      eventRef,
+      eventReference,
       offref,
       source
     } = createMocks();
@@ -88,34 +88,34 @@ describe('subscribeDisposableEvent', () => {
 
     expect(offref).not.toHaveBeenCalled();
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 });
 
 describe('EventRefDisposable', () => {
   it('should offref the EventRef once on dispose (idempotent)', () => {
     const {
-      eventRef,
+      eventReference,
       offref
     } = createMocks();
-    const disposable = new EventReferenceDisposable(eventRef);
+    const disposable = new EventReferenceDisposable(eventReference);
 
     disposable.dispose();
     disposable.dispose();
 
     expect(offref).toHaveBeenCalledTimes(1);
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 
   it('should offref the EventRef via Symbol.dispose', () => {
     const {
-      eventRef,
+      eventReference,
       offref
     } = createMocks();
-    const disposable = new EventReferenceDisposable(eventRef);
+    const disposable = new EventReferenceDisposable(eventReference);
 
     dispose(disposable);
 
-    expect(offref).toHaveBeenCalledWith(eventRef);
+    expect(offref).toHaveBeenCalledWith(eventReference);
   });
 });

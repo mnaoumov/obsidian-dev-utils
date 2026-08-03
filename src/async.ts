@@ -301,7 +301,7 @@ export interface InvokeAsyncSafelyAfterDelayParams {
    *
    * @param abortSignal - The abort signal to listen to.
    */
-  asyncFn(this: void, abortSignal: AbortSignal): Promisable<void>;
+  asyncFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
 
   /**
    * The delay in milliseconds.
@@ -368,7 +368,7 @@ export function invokeAsyncSafely(asyncFunction: () => Promisable<unknown>, stac
  */
 export function invokeAsyncSafelyAfterDelay(params: InvokeAsyncSafelyAfterDelayParams): void {
   const {
-    asyncFn,
+    asyncFunction,
     delayInMilliseconds = 0
   } = params;
   const abortSignal = params.abortSignal ?? abortSignalNever();
@@ -376,7 +376,7 @@ export function invokeAsyncSafelyAfterDelay(params: InvokeAsyncSafelyAfterDelayP
   const stackTrace = params.stackTrace ?? getStackTrace(1);
   invokeAsyncSafely(async () => {
     await sleep({ abortSignal, milliseconds: delayInMilliseconds, shouldThrowOnAbort: true });
-    await asyncFn(abortSignal);
+    await asyncFunction(abortSignal);
   }, stackTrace);
 }
 
@@ -464,7 +464,7 @@ export interface RetryWithTimeoutParams {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<boolean>;
 
   /**
    * The name of the operation.
@@ -508,7 +508,7 @@ export interface RunWithTimeoutParams<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<Result>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<Result>;
 
   /**
    * The name of the operation.
@@ -730,9 +730,9 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
   fullOptions.abortSignal?.throwIfAborted();
 
   await runWithTimeout(normalizeOptionalProperties<RunWithTimeoutParams<void>>({
-    context: { operationName: params.operationName ?? '', retryFn: params.operationFn },
+    context: { operationName: params.operationName ?? '', retryFn: params.operationFunction },
     onTimeout: params.onTimeout,
-    async operationFn(abortSignal: AbortSignal): Promise<void> {
+    async operationFunction(abortSignal: AbortSignal): Promise<void> {
       const combinedAbortSignal = abortSignalAny(fullOptions.abortSignal, abortSignal);
       combinedAbortSignal.throwIfAborted();
       let attempt = 0;
@@ -740,7 +740,7 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
         attempt++;
         let isSuccess: boolean;
         try {
-          isSuccess = await params.operationFn(combinedAbortSignal);
+          isSuccess = await params.operationFunction(combinedAbortSignal);
         } catch (error) {
           // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed inside `fn()`. ESLint mistakenly does not recognize it.
           if (combinedAbortSignal.aborted || !fullOptions.shouldRetryOnError || terminateRetryErrors.has(error as Error)) {
@@ -755,8 +755,8 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
         }
         if (isSuccess) {
           printWithStackTrace({
-            args: [{
-              operationFn: params.operationFn,
+            $arguments: [{
+              operationFunction: params.operationFunction,
               operationName: params.operationName ?? ''
             }],
             debuggerInstance: retryWithTimeoutDebugger,
@@ -767,8 +767,8 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
         }
 
         printWithStackTrace({
-          args: [{
-            operationFn: params.operationFn,
+          $arguments: [{
+            operationFunction: params.operationFunction,
             operationName: params.operationName ?? ''
           }],
           debuggerInstance: retryWithTimeoutDebugger,
@@ -824,12 +824,12 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
 
   async function run(): Promise<void> {
     try {
-      result = await params.operationFn(runAbortController.signal);
+      result = await params.operationFunction(runAbortController.signal);
       const duration = Math.trunc(performance.now() - startTime);
       printWithStackTrace({
-        args: [{
+        $arguments: [{
           context: params.context,
-          operationFn: params.operationFn,
+          operationFunction: params.operationFunction,
           operationName: params.operationName ?? ''
         }],
         debuggerInstance: runWithTimeoutDebugger,
@@ -853,9 +853,9 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
     }
     const duration = Math.trunc(performance.now() - startTime);
     printWithStackTrace({
-      args: [{
+      $arguments: [{
         context: params.context,
-        operationFn: params.operationFn,
+        operationFunction: params.operationFunction,
         operationName: params.operationName ?? ''
       }],
       debuggerInstance: runWithTimeoutDebugger,

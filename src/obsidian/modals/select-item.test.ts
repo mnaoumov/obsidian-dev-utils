@@ -46,7 +46,7 @@ describe('selectItem', () => {
     const result = await selectItem({
       app,
       items: ['a', 'b', 'c'],
-      itemTextFunc: (item: string) => item
+      itemTextFunction: (item: string) => item
     });
     // Modal opens, onOpen is called, then immediately closes (onClose resolves null)
     expect(result).toBeNull();
@@ -56,7 +56,7 @@ describe('selectItem', () => {
     const result = await selectItem({
       app,
       items: [1, 2, 3],
-      itemTextFunc: (item: number) => String(item),
+      itemTextFunction: (item: number) => String(item),
       placeholder: 'Select a number'
     });
     expect(result).toBeNull();
@@ -67,7 +67,7 @@ describe('selectItem', () => {
       app,
       cssClasses: ['custom-select'],
       items: ['x'],
-      itemTextFunc: (item: string) => item
+      itemTextFunction: (item: string) => item
     });
     expect(result).toBeNull();
   });
@@ -83,7 +83,7 @@ describe('selectItem', () => {
     const promise = selectItem({
       app,
       items: ['a', 'b', 'c'],
-      itemTextFunc: (item: string) => item.toUpperCase()
+      itemTextFunction: (item: string) => item.toUpperCase()
     });
 
     const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
@@ -109,7 +109,7 @@ describe('selectItem', () => {
     const promise = selectItem({
       app,
       items,
-      itemTextFunc: (item: string) => item
+      itemTextFunction: (item: string) => item
     });
 
     const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;

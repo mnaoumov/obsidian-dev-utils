@@ -44,7 +44,7 @@ interface GenerateOptions {
   readonly fonts: Font[];
   readonly logoDataUri: null | string;
   readonly manifest: CacheManifest;
-  readonly outputDir: string;
+  readonly outputDirectory: string;
 }
 
 async function collectPages(contentDocsDirectory: string): Promise<PageEntry[]> {
@@ -54,7 +54,7 @@ async function collectPages(contentDocsDirectory: string): Promise<PageEntry[]> 
 }
 
 async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
-  const { changedPages, fonts, logoDataUri, manifest, outputDir } = options;
+  const { changedPages, fonts, logoDataUri, manifest, outputDirectory } = options;
   let completed = 0;
   const total = changedPages.length;
 
@@ -67,7 +67,7 @@ async function generateImagesWithPool(options: GenerateOptions): Promise<void> {
       if (!page) {
         continue;
       }
-      const outputPath = `${outputDir}/${page.slug}.png`;
+      const outputPath = `${outputDirectory}/${page.slug}.png`;
       await mkdir(dirname(outputPath), { recursive: true });
       const png = await renderOgImage(page.params, fonts, logoDataUri);
       await writeFile(outputPath, png);

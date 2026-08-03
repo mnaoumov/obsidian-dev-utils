@@ -30,9 +30,9 @@ export function changeExtensionPlugin(extension: string): Plugin {
           }
 
           const newPath = replaceAll({
+            $string: file.path,
             replacer: extension,
-            searchValue: /\.js$/g,
-            str: file.path
+            searchValue: /\.js$/g
           });
 
           const newText = rewriteImportPathExtensions(file.text, extension);
@@ -58,21 +58,21 @@ export function changeExtensionPlugin(extension: string): Plugin {
  */
 export function rewriteImportPathExtensions(text: string, extension: string): string {
   let newText = replaceAll({
-    replacer: ({ capturedGroupArgs: [importPath = ''] }) => `require('${rewriteTsExtension(importPath, extension)}')`,
-    searchValue: /require\(["'](?<ImportPath>.+?)["']\)/g,
-    str: text
+    $string: text,
+    replacer: ({ capturedGroupArguments: [importPath = ''] }) => `require('${rewriteTsExtension(importPath, extension)}')`,
+    searchValue: /require\(["'](?<ImportPath>.+?)["']\)/g
   });
 
   newText = replaceAll({
-    replacer: ({ capturedGroupArgs: [importPath = ''] }) => `from "${rewriteTsExtension(importPath, extension)}"`,
-    searchValue: /from "(?<ImportPath>.+?)"/g,
-    str: newText
+    $string: newText,
+    replacer: ({ capturedGroupArguments: [importPath = ''] }) => `from "${rewriteTsExtension(importPath, extension)}"`,
+    searchValue: /from "(?<ImportPath>.+?)"/g
   });
 
   newText = replaceAll({
-    replacer: ({ capturedGroupArgs: [importPath = ''] }) => `import("${rewriteTsExtension(importPath, extension)}")`,
-    searchValue: /import\(["'](?<ImportPath>.+?)["']\)/g,
-    str: newText
+    $string: newText,
+    replacer: ({ capturedGroupArguments: [importPath = ''] }) => `import("${rewriteTsExtension(importPath, extension)}")`,
+    searchValue: /import\(["'](?<ImportPath>.+?)["']\)/g
   });
 
   return newText;
@@ -87,8 +87,8 @@ export function rewriteImportPathExtensions(text: string, extension: string): st
  */
 function rewriteTsExtension(importPath: string, extension: string): string {
   return replaceAll({
+    $string: importPath,
     replacer: extension,
-    searchValue: /\.ts$/g,
-    str: importPath
+    searchValue: /\.ts$/g
   });
 }

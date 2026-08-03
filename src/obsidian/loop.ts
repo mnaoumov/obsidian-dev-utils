@@ -39,7 +39,7 @@ export interface LoopBuildNoticeMessageParams<T> {
   /**
    * A string representing the current iteration.
    */
-  readonly iterationStr: string;
+  readonly iterationString: string;
 }
 
 /**
@@ -183,7 +183,7 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
     }
     iterationCount++;
     const iterationString = `# ${String(iterationCount)} / ${String(items.length)}`;
-    const message = fullOptions.buildNoticeMessage({ item, iterationStr: iterationString });
+    const message = fullOptions.buildNoticeMessage({ item, iterationString });
     if (!fullOptions.shouldShowProgressBar) {
       notice?.setMessage(message);
     }

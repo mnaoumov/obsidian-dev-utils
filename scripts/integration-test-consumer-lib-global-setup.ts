@@ -40,7 +40,7 @@ const setupPair = createSetup({
  */
 export async function setup(project: TestProject): Promise<void> {
   await buildIntegrationTestPlugin({
-    outDir: ObsidianDevUtilsRepoPaths.DistIntegrationTestPlugin,
+    outDirectory: ObsidianDevUtilsRepoPaths.DistIntegrationTestPlugin,
     shouldGenerateSourceMap: false
   });
   await setupPair.setup(project);

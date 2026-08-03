@@ -48,14 +48,14 @@ export type MethodKeys<$Object extends object> = MethodKeysMap<$Object>[Function
  */
 export interface MonkeyAroundComponentRegisterFunctionPatchParams<$Object extends object, FunctionName extends FunctionKeys<$Object>> {
   /**
+   * The object to patch.
+   */
+  readonly $object: $Object;
+
+  /**
    * The function name to patch.
    */
   readonly functionName: FunctionName;
-
-  /**
-   * The object to patch.
-   */
-  readonly obj: $Object;
 
   /**
    * When `true`, the patch uninstalls itself the first time the patched function is invoked (by
@@ -84,14 +84,14 @@ export interface MonkeyAroundComponentRegisterFunctionPatchParams<$Object extend
  */
 export interface MonkeyAroundComponentRegisterMethodPatchParams<$Object extends object, MethodName extends MethodKeys<$Object>> {
   /**
+   * The object to patch.
+   */
+  readonly $object: $Object;
+
+  /**
    * The method name to patch.
    */
   readonly methodName: MethodName;
-
-  /**
-   * The object to patch.
-   */
-  readonly obj: $Object;
 
   /**
    * When `true`, the patch uninstalls itself the first time the patched method is invoked, restoring
@@ -140,7 +140,7 @@ export interface PatchHandlerParams<$Object extends object, MethodName extends M
   /**
    * The original arguments of the intercepted call, as a tuple.
    */
-  readonly originalArgs: Parameters<ExtractFunction<$Object, MethodName>>;
+  readonly originalArguments: Parameters<ExtractFunction<$Object, MethodName>>;
 
   /**
    * The original (unpatched) method. Call via `originalFn.call(originalThis, ...originalArgs)`.
@@ -243,7 +243,7 @@ export class MonkeyAroundComponent extends ComponentEx {
       return Object.assign(oncePatchedValue, patchedValue) as $Object[FunctionName];
     };
 
-    this.registerPatch(params.obj, factories);
+    this.registerPatch(params.$object, factories);
   }
 
   /**
@@ -259,15 +259,15 @@ export class MonkeyAroundComponent extends ComponentEx {
     this.ensureLoaded();
 
     if (params.patchToken) {
-      const originalMethod = params.obj[params.methodName] as GenericFunction;
+      const originalMethod = params.$object[params.methodName] as GenericFunction;
       getMonkeyAroundPatches().set(originalMethod, params.patchToken);
     }
 
     type $Function = ExtractFunction<$Object, MethodName>;
 
     this.registerFunctionPatch({
+      $object: params.$object,
       functionName: params.methodName,
-      obj: params.obj,
       once: params.once ?? false,
       patchHandler: (originalMethodRaw) => {
         const originalMethod = originalMethodRaw as $Function;
@@ -284,7 +284,7 @@ export class MonkeyAroundComponent extends ComponentEx {
             fallback() {
               return originalMethod.call(originalThis, ...originalArguments);
             },
-            originalArgs: originalArguments,
+            originalArguments,
             originalMethod,
             originalMethodBound: originalMethod.bind(originalThis),
             originalThis

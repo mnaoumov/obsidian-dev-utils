@@ -412,7 +412,7 @@ describe('isLoaded', () => {
   describe('HTMLImageElement', () => {
     it('should return true when complete is true and naturalWidth > 0', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           complete: true,
           naturalWidth: 100
         },
@@ -423,7 +423,7 @@ describe('isLoaded', () => {
 
     it('should return false when complete is false', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           complete: false,
           naturalWidth: 100
         },
@@ -434,7 +434,7 @@ describe('isLoaded', () => {
 
     it('should return false when naturalWidth is 0', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           complete: true,
           naturalWidth: 0
         },
@@ -447,7 +447,7 @@ describe('isLoaded', () => {
   describe('HTMLIFrameElement', () => {
     it('should return true when contentDocument exists', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           contentDocument: {}
         },
         tag: 'iframe'
@@ -457,7 +457,7 @@ describe('isLoaded', () => {
 
     it('should return false when contentDocument is null', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           contentDocument: null
         },
         tag: 'iframe'
@@ -469,7 +469,7 @@ describe('isLoaded', () => {
   describe('HTMLEmbedElement', () => {
     it('should return true when getSVGDocument returns truthy', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           getSVGDocument: vi.fn(() => ({}))
         },
         tag: 'embed'
@@ -479,7 +479,7 @@ describe('isLoaded', () => {
 
     it('should return false when getSVGDocument returns null', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           getSVGDocument: vi.fn(() => null)
         },
         tag: 'embed'
@@ -491,7 +491,7 @@ describe('isLoaded', () => {
   describe('HTMLLinkElement', () => {
     it('should return true for stylesheet link with sheet set', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           rel: 'stylesheet',
           sheet: {}
         },
@@ -502,7 +502,7 @@ describe('isLoaded', () => {
 
     it('should return false for stylesheet link with sheet null', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           rel: 'stylesheet',
           sheet: null
         },
@@ -513,7 +513,7 @@ describe('isLoaded', () => {
 
     it('should return true for non-stylesheet link', () => {
       const element = buildElement({
-        attrs: {
+        attributes: {
           rel: 'icon',
           sheet: null
         },
@@ -525,17 +525,17 @@ describe('isLoaded', () => {
 
   describe('HTMLObjectElement', () => {
     it('should return true when contentDocument exists', () => {
-      const element = buildElement({ attrs: { contentDocument: {}, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
+      const element = buildElement({ attributes: { contentDocument: {}, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
       expect(isLoaded(element)).toBe(true);
     });
 
     it('should return true when getSVGDocument returns truthy', () => {
-      const element = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => ({})) }, tag: 'object' });
+      const element = buildElement({ attributes: { contentDocument: null, getSVGDocument: vi.fn(() => ({})) }, tag: 'object' });
       expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when both contentDocument and getSVGDocument are falsy', () => {
-      const element = buildElement({ attrs: { contentDocument: null, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
+      const element = buildElement({ attributes: { contentDocument: null, getSVGDocument: vi.fn(() => null) }, tag: 'object' });
       expect(isLoaded(element)).toBe(false);
     });
   });
@@ -549,29 +549,29 @@ describe('isLoaded', () => {
 
   describe('HTMLStyleElement', () => {
     it('should return true when sheet is set', () => {
-      const element = buildElement({ attrs: { sheet: {} }, tag: 'style' });
+      const element = buildElement({ attributes: { sheet: {} }, tag: 'style' });
       expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when sheet is null', () => {
-      const element = buildElement({ attrs: { sheet: null }, tag: 'style' });
+      const element = buildElement({ attributes: { sheet: null }, tag: 'style' });
       expect(isLoaded(element)).toBe(false);
     });
   });
 
   describe('HTMLTrackElement', () => {
     it('should return true when readyState is 2 (loaded)', () => {
-      const element = buildElement({ attrs: { readyState: 2 }, tag: 'track' });
+      const element = buildElement({ attributes: { readyState: 2 }, tag: 'track' });
       expect(isLoaded(element)).toBe(true);
     });
 
     it('should return false when readyState is not 2', () => {
-      const element = buildElement({ attrs: { readyState: 0 }, tag: 'track' });
+      const element = buildElement({ attributes: { readyState: 0 }, tag: 'track' });
       expect(isLoaded(element)).toBe(false);
     });
 
     it('should return false when readyState is 1', () => {
-      const element = buildElement({ attrs: { readyState: 1 }, tag: 'track' });
+      const element = buildElement({ attributes: { readyState: 1 }, tag: 'track' });
       expect(isLoaded(element)).toBe(false);
     });
   });
@@ -589,7 +589,7 @@ describe('isLoaded', () => {
     });
 
     it('should return false when a loadable child is not loaded', () => {
-      const img = buildElement({ attrs: { complete: false, naturalWidth: 0 }, tag: 'img' });
+      const img = buildElement({ attributes: { complete: false, naturalWidth: 0 }, tag: 'img' });
       const element = buildElement();
       element.append(img);
       expect(isLoaded(element)).toBe(false);
@@ -603,14 +603,14 @@ describe('isElementVisibleInOffsetParent', () => {
   });
 
   it('should return false when offsetParent is null', () => {
-    const element = buildElement({ attrs: { offsetParent: null }, tag: 'div' });
+    const element = buildElement({ attributes: { offsetParent: null }, tag: 'div' });
     expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
 
   it('should return true when element is fully within offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 200, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
-    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    const element = buildElement({ attributes: { offsetParent: parent }, tag: 'div' });
     element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(element)).toBe(true);
   });
@@ -626,7 +626,7 @@ describe('isElementVisibleInOffsetParent', () => {
   it('should return false when element extends below offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 200, toJSON: vi.fn(), top: 0, width: 200, x: 0, y: 0 }));
-    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    const element = buildElement({ attributes: { offsetParent: parent }, tag: 'div' });
     element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 150, height: 140, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
@@ -634,7 +634,7 @@ describe('isElementVisibleInOffsetParent', () => {
   it('should return false when element extends left of offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 150, left: 50, right: 200, toJSON: vi.fn(), top: 0, width: 150, x: 50, y: 0 }));
-    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    const element = buildElement({ attributes: { offsetParent: parent }, tag: 'div' });
     element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 100, toJSON: vi.fn(), top: 10, width: 90, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
@@ -642,7 +642,7 @@ describe('isElementVisibleInOffsetParent', () => {
   it('should return false when element extends right of offset parent', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 200, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    const element = buildElement({ attributes: { offsetParent: parent }, tag: 'div' });
     element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 90, left: 10, right: 150, toJSON: vi.fn(), top: 10, width: 140, x: 10, y: 10 }));
     expect(isElementVisibleInOffsetParent(element)).toBe(false);
   });
@@ -650,7 +650,7 @@ describe('isElementVisibleInOffsetParent', () => {
   it('should return true when element exactly matches offset parent bounds', () => {
     const parent = buildElement();
     parent.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
-    const element = buildElement({ attrs: { offsetParent: parent }, tag: 'div' });
+    const element = buildElement({ attributes: { offsetParent: parent }, tag: 'div' });
     element.getBoundingClientRect = vi.fn((): DOMRect => ({ bottom: 100, height: 100, left: 0, right: 100, toJSON: vi.fn(), top: 0, width: 100, x: 0, y: 0 }));
     expect(isElementVisibleInOffsetParent(element)).toBe(true);
   });
@@ -849,7 +849,7 @@ describe('ensureLoaded', () => {
 
   it('should wait for load event on an unloaded image', async () => {
     const element = buildElement({
-      attrs: {
+      attributes: {
         complete: false,
         naturalWidth: 0
       },
@@ -864,7 +864,7 @@ describe('ensureLoaded', () => {
 
   it('should wait for error event on an unloaded image', async () => {
     const element = buildElement({
-      attrs: {
+      attributes: {
         complete: false,
         naturalWidth: 0
       },
@@ -886,7 +886,7 @@ describe('ensureLoaded', () => {
 
   it('should recursively wait for unloaded children inside a generic element', async () => {
     const img = buildElement({
-      attrs: {
+      attributes: {
         complete: false,
         naturalWidth: 0
       },
@@ -903,7 +903,7 @@ describe('ensureLoaded', () => {
 
   it('should wait for load on an unloaded iframe', async () => {
     const element = buildElement({
-      attrs: {
+      attributes: {
         contentDocument: null
       },
       tag: 'iframe'
@@ -917,7 +917,7 @@ describe('ensureLoaded', () => {
 
   it('should wait for load on an unloaded style element', async () => {
     const element = buildElement({
-      attrs: {
+      attributes: {
         sheet: null
       },
       tag: 'style'
@@ -964,13 +964,13 @@ describe('waitUntilConnected', () => {
 });
 
 interface BuildElementParams {
-  readonly attrs?: GenericObject;
+  readonly attributes?: GenericObject;
   readonly parent?: HTMLElement | undefined;
   readonly tag?: keyof HTMLElementTagNameMap;
 }
 
 function buildElement(params: BuildElementParams = {}): HTMLElement {
-  const { attrs: attributes = {}, parent, tag = 'div' } = params;
+  const { attributes = {}, parent, tag = 'div' } = params;
   const element = createEl(tag);
   const record = ensureGenericObject(element);
   for (const [key, value] of Object.entries(attributes)) {

@@ -22,11 +22,11 @@ describe('mockImplementation', () => {
     };
 
     const spy = mockImplementation({
+      $object,
       impl(this: Target, originalImplementation, x): number {
         return originalImplementation.call(this, x) + 1;
       },
-      method: 'requiredMethod',
-      obj: $object
+      method: 'requiredMethod'
     });
 
     expect($object.requiredMethod(3)).toBe(4);
@@ -47,11 +47,11 @@ describe('mockImplementation', () => {
     // `method: 'optionalMethod'` must type-check. Before the `NonNullable<T[K]>` fix this raised TS2322
     // (`Fn | undefined` does not extend `GenericFunction`), which dropped the optional method key.
     const spy = mockImplementation({
+      $object,
       impl(this: Target, originalImplementation, x): number {
         return originalImplementation.call(this, x) + 1;
       },
-      method: 'optionalMethod',
-      obj: $object
+      method: 'optionalMethod'
     });
 
     expect($object.optionalMethod?.(3)).toBe(7);

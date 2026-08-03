@@ -261,7 +261,7 @@ function posixQuote(argument: string): string {
   if (POSIX_SAFE_ARG_RE.test(argument)) {
     return argument;
   }
-  return `'${replaceAll({ replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE, str: argument })}'`;
+  return `'${replaceAll({ $string: argument, replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE })}'`;
 }
 
 /**
@@ -283,9 +283,9 @@ const CMD_META_RE = /[()%!^"<>&|]/g;
 // eslint-disable-next-line unicorn/name-replacements -- `cmd` names Windows `cmd.exe`, not an abbreviation of `command`.
 export function cmdEscapeCommandLine(commandLine: string): string {
   return replaceAll({
+    $string: commandLine,
     replacer: '^$&',
-    searchValue: CMD_META_RE,
-    str: commandLine
+    searchValue: CMD_META_RE
   });
 }
 

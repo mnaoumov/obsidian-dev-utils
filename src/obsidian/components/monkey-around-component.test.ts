@@ -156,8 +156,8 @@ describe('MonkeyAroundComponent', () => {
 
       expect(() => {
         component.registerMethodPatch<TestObject, 'greet'>({
+          $object,
           methodName: 'greet',
-          obj: $object,
           patchHandler: ({ fallback }) => {
             return fallback();
           }
@@ -171,8 +171,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => {
           return `method-patched: ${fallback()}`;
         }
@@ -187,8 +187,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => {
           return `method-patched: ${fallback()}`;
         }
@@ -212,8 +212,8 @@ describe('MonkeyAroundComponent', () => {
       component.load();
 
       component.registerMethodPatch<Greeter, 'greet'>({
+        $object: greeter,
         methodName: 'greet',
-        obj: greeter,
         patchHandler: ({ fallback }) => {
           return `patched(${fallback()})`;
         }
@@ -227,13 +227,13 @@ describe('MonkeyAroundComponent', () => {
       component.load();
       const $object = createTestObject();
 
-      function handler({ originalArgs: [name], originalMethod, originalThis }: PatchHandlerParams<TestObject, 'greet'>): string {
+      function handler({ originalArguments: [name], originalMethod, originalThis }: PatchHandlerParams<TestObject, 'greet'>): string {
         return `typed: ${originalMethod.call(originalThis, name)}`;
       }
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: handler
       });
 
@@ -246,8 +246,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => {
           const original = fallback();
           return `wrapped(${original})`;
@@ -270,8 +270,8 @@ describe('MonkeyAroundComponent', () => {
       component.load();
 
       component.registerMethodPatch<Greeter, 'greet'>({
+        $object: greeter,
         methodName: 'greet',
-        obj: greeter,
         patchHandler: ({ originalMethodBound }) => {
           return `bound(${originalMethodBound('test')})`;
         }
@@ -287,8 +287,8 @@ describe('MonkeyAroundComponent', () => {
       const token = Symbol('test-patch');
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => {
           return `patched: ${fallback()}`;
         },
@@ -306,8 +306,8 @@ describe('MonkeyAroundComponent', () => {
       const component = parent.addChild(new MonkeyAroundComponent());
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => {
           return `child: ${fallback()}`;
         }
@@ -324,8 +324,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => `inner: ${fallback()}`,
 
         postPatchHandler: ({ patchedMethod }) => (name: string): string => `wrapped[${patchedMethod(name)}]`
@@ -342,8 +342,8 @@ describe('MonkeyAroundComponent', () => {
       let observedParams: PostPatchHandlerParams<TestObject, 'greet'> | undefined;
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => `inner: ${fallback()}`,
         postPatchHandler: (params) => {
           observedParams = params;
@@ -380,8 +380,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createWithDebouncer(saved);
 
       component.registerFunctionPatch<WithDebouncer, 'save'>({
+        $object,
         functionName: 'save',
-        obj: $object,
         patchHandler: (originalValue) => {
           expectTypeOf(originalValue).toEqualTypeOf<Debouncer<[string], void>>();
           return debounce(
@@ -406,8 +406,8 @@ describe('MonkeyAroundComponent', () => {
 
       expect(() => {
         component.registerFunctionPatch<TestObject, 'greet'>({
+          $object,
           functionName: 'greet',
-          obj: $object,
           patchHandler: (originalGreet) => originalGreet
         });
       }).toThrow('Component is not loaded');
@@ -419,8 +419,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerFunctionPatch<TestObject, 'greet'>({
+        $object,
         functionName: 'greet',
-        obj: $object,
         patchHandler: (originalGreet) => (name: string): string => `member: ${originalGreet(name)}`
       });
 
@@ -435,8 +435,8 @@ describe('MonkeyAroundComponent', () => {
       let received: TestObject['greet'] | undefined;
 
       component.registerFunctionPatch<TestObject, 'greet'>({
+        $object,
         functionName: 'greet',
-        obj: $object,
         patchHandler: (originalValue) => {
           received = originalValue;
           return (name: string): string => originalValue(name);
@@ -452,8 +452,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerFunctionPatch<TestObject, 'greet'>({
+        $object,
         functionName: 'greet',
-        obj: $object,
         patchHandler: (originalGreet) => (name: string): string => `member: ${originalGreet(name)}`
       });
 
@@ -471,8 +471,8 @@ describe('MonkeyAroundComponent', () => {
       let callCount = 0;
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         once: true,
         patchHandler: ({ fallback }) => {
           callCount++;
@@ -492,8 +492,8 @@ describe('MonkeyAroundComponent', () => {
       let callCount = 0;
 
       component.registerFunctionPatch<TestObject, 'greet'>({
+        $object,
         functionName: 'greet',
-        obj: $object,
         once: true,
         patchHandler: (originalGreet) => (name: string): string => {
           callCount++;
@@ -513,8 +513,8 @@ describe('MonkeyAroundComponent', () => {
       const unloadSpy = vi.spyOn(component, 'unload');
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         once: true,
         patchHandler: ({ fallback }) => fallback()
       });
@@ -530,8 +530,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerFunctionPatch<TestObject, 'greet'>({
+        $object,
         functionName: 'greet',
-        obj: $object,
         once: true,
         patchHandler: (originalGreet) => {
           function patched(name: string): string {
@@ -561,8 +561,8 @@ describe('MonkeyAroundComponent', () => {
       let wasTokenDetected = false;
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback, originalMethod }) => {
           wasTokenDetected = hasPatchToken(originalMethod, token);
           return fallback();
@@ -583,8 +583,8 @@ describe('MonkeyAroundComponent', () => {
       let wasTokenDetected = false;
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback, originalMethod }) => {
           wasTokenDetected = hasPatchToken(originalMethod, token2);
           return fallback();
@@ -605,15 +605,15 @@ describe('MonkeyAroundComponent', () => {
       let wasSecondPatchDetectedFirst = false;
 
       component1.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => fallback(),
         patchToken: Symbol.for('my-patch')
       });
 
       component2.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback, originalMethod }) => {
           wasSecondPatchDetectedFirst = hasPatchToken(originalMethod, Symbol.for('my-patch'));
           return fallback();
@@ -633,8 +633,8 @@ describe('MonkeyAroundComponent', () => {
       const token = Symbol('test-patch');
 
       component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => fallback(),
         patchToken: token
       });
@@ -676,9 +676,9 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch({
+        $object,
         methodName: 'greet',
-        obj: $object,
-        patchHandler: ({ originalArgs: [name] }) => {
+        patchHandler: ({ originalArguments: [name] }) => {
           expectTypeOf(name).toEqualTypeOf<string>();
           return name;
         }
@@ -691,9 +691,9 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch({
+        $object,
         methodName: 'sum',
-        obj: $object,
-        patchHandler: ({ fallback, originalArgs: [a, b] }) => {
+        patchHandler: ({ fallback, originalArguments: [a, b] }) => {
           expectTypeOf(a).toEqualTypeOf<number>();
           expectTypeOf(b).toEqualTypeOf<number>();
           return fallback();
@@ -707,8 +707,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ originalMethod }) => {
           expectTypeOf(originalMethod).toEqualTypeOf<(name: string) => string>();
           return '';
@@ -722,8 +722,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ originalMethodBound }) => {
           expectTypeOf(originalMethodBound).toEqualTypeOf<(name: string) => string>();
           return '';
@@ -737,8 +737,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ fallback }) => {
           expectTypeOf(fallback).toEqualTypeOf<() => string>();
           return fallback();
@@ -752,8 +752,8 @@ describe('MonkeyAroundComponent', () => {
       const $object = createTestObject();
 
       component.registerMethodPatch({
+        $object,
         methodName: 'greet',
-        obj: $object,
         patchHandler: ({ originalThis }) => {
           expectTypeOf(originalThis).toEqualTypeOf<TestObject>();
           return '';

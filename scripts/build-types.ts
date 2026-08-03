@@ -70,14 +70,14 @@ await wrapCliTask(async () => {
     const isLibraryFile = name === LIBRARY_FILE_NAME && folder === '.';
 
     let ctsContent = replaceAll({
+      $string: content,
       replacer: 'from \'$<ImportPath>.cjs\';',
-      searchValue: STATIC_IMPORT_REG_EXP,
-      str: content
+      searchValue: STATIC_IMPORT_REG_EXP
     });
     ctsContent = replaceAll({
+      $string: ctsContent,
       replacer: 'import($<Quote>$<ImportPath>.cjs$<Quote>)',
-      searchValue: DYNAMIC_IMPORT_REG_EXP,
-      str: ctsContent
+      searchValue: DYNAMIC_IMPORT_REG_EXP
     });
 
     // A `.d.cts` file is a CommonJS module. Type-only imports of a bare specifier resolving to an
@@ -85,25 +85,25 @@ await wrapCliTask(async () => {
     // Passing `'import'` is valid for CommonJS targets too, so every bare specifier receives it.
     // The ESM `.d.mts` needs no such attribute, so this transform runs on CommonJS content only.
     ctsContent = replaceAll({
+      $string: ctsContent,
       replacer: 'import type $<Clause> from \'$<Specifier>\' with { \'resolution-mode\': \'import\' };',
-      searchValue: BARE_TYPE_IMPORT_REG_EXP,
-      str: ctsContent
+      searchValue: BARE_TYPE_IMPORT_REG_EXP
     });
     ctsContent = replaceAll({
+      $string: ctsContent,
       replacer: 'import("$<Specifier>", { with: { \'resolution-mode\': \'import\' } })',
-      searchValue: BARE_INLINE_IMPORT_TYPE_REG_EXP,
-      str: ctsContent
+      searchValue: BARE_INLINE_IMPORT_TYPE_REG_EXP
     });
 
     let mtsContent = replaceAll({
+      $string: content,
       replacer: 'from \'$<ImportPath>.mjs\';',
-      searchValue: STATIC_IMPORT_REG_EXP,
-      str: content
+      searchValue: STATIC_IMPORT_REG_EXP
     });
     mtsContent = replaceAll({
+      $string: mtsContent,
       replacer: 'import($<Quote>$<ImportPath>.mjs$<Quote>)',
-      searchValue: DYNAMIC_IMPORT_REG_EXP,
-      str: mtsContent
+      searchValue: DYNAMIC_IMPORT_REG_EXP
     });
 
     if (isLibraryFile) {

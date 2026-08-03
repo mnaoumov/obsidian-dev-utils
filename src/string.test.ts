@@ -36,28 +36,28 @@ describe('EMPTY', () => {
 describe('ensureEndsWith', () => {
   it('should add the suffix if not already present', () => {
     expect(ensureEndsWith({
-      str: 'hello',
+      $string: 'hello',
       suffix: '/'
     })).toBe('hello/');
   });
 
   it('should not add the suffix if already present', () => {
     expect(ensureEndsWith({
-      str: 'hello/',
+      $string: 'hello/',
       suffix: '/'
     })).toBe('hello/');
   });
 
   it('should handle empty string input', () => {
     expect(ensureEndsWith({
-      str: '',
+      $string: '',
       suffix: '.txt'
     })).toBe('.txt');
   });
 
   it('should handle empty suffix', () => {
     expect(ensureEndsWith({
-      str: 'hello',
+      $string: 'hello',
       suffix: ''
     })).toBe('hello');
   });
@@ -66,29 +66,29 @@ describe('ensureEndsWith', () => {
 describe('ensureStartsWith', () => {
   it('should add the prefix if not already present', () => {
     expect(ensureStartsWith({
-      prefix: '/',
-      str: 'world'
+      $string: 'world',
+      prefix: '/'
     })).toBe('/world');
   });
 
   it('should not add the prefix if already present', () => {
     expect(ensureStartsWith({
-      prefix: '/',
-      str: '/world'
+      $string: '/world',
+      prefix: '/'
     })).toBe('/world');
   });
 
   it('should handle empty string input', () => {
     expect(ensureStartsWith({
-      prefix: 'pre',
-      str: ''
+      $string: '',
+      prefix: 'pre'
     })).toBe('pre');
   });
 
   it('should handle empty prefix', () => {
     expect(ensureStartsWith({
-      prefix: '',
-      str: 'hello'
+      $string: 'hello',
+      prefix: ''
     })).toBe('hello');
   });
 });
@@ -122,14 +122,14 @@ describe('ensureLfEndings', () => {
 describe('trimEnd', () => {
   it('should remove the suffix if present', () => {
     expect(trimEnd({
-      str: 'hello.txt',
+      $string: 'hello.txt',
       suffix: '.txt'
     })).toBe('hello');
   });
 
   it('should return the string unchanged if suffix is not present', () => {
     expect(trimEnd({
-      str: 'hello',
+      $string: 'hello',
       suffix: '.txt'
     })).toBe('hello');
   });
@@ -137,8 +137,8 @@ describe('trimEnd', () => {
   it('should throw when validate is true and suffix is not present', () => {
     expect(() =>
       trimEnd({
+        $string: 'hello',
         shouldValidate: true,
-        str: 'hello',
         suffix: '.txt'
       })
     ).toThrow('String hello does not end with suffix .txt');
@@ -146,8 +146,8 @@ describe('trimEnd', () => {
 
   it('should not throw when validate is true and suffix is present', () => {
     expect(trimEnd({
+      $string: 'hello.txt',
       shouldValidate: true,
-      str: 'hello.txt',
       suffix: '.txt'
     })).toBe('hello');
   });
@@ -155,14 +155,14 @@ describe('trimEnd', () => {
   it('should handle empty suffix', () => {
     // Str.endsWith('') is true, so str.slice(0, -0) = str.slice(0, 0) = ''
     expect(trimEnd({
-      str: 'hello',
+      $string: 'hello',
       suffix: ''
     })).toBe('');
   });
 
   it('should handle empty string', () => {
     expect(trimEnd({
-      str: '',
+      $string: '',
       suffix: 'suffix'
     })).toBe('');
   });
@@ -171,47 +171,47 @@ describe('trimEnd', () => {
 describe('trimStart', () => {
   it('should remove the prefix if present', () => {
     expect(trimStart({
-      prefix: '/path',
-      str: '/path/to/file'
+      $string: '/path/to/file',
+      prefix: '/path'
     })).toBe('/to/file');
   });
 
   it('should return the string unchanged if prefix is not present', () => {
     expect(trimStart({
-      prefix: 'xyz',
-      str: 'hello'
+      $string: 'hello',
+      prefix: 'xyz'
     })).toBe('hello');
   });
 
   it('should throw when validate is true and prefix is not present', () => {
     expect(() =>
       trimStart({
+        $string: 'hello',
         prefix: 'xyz',
-        shouldValidate: true,
-        str: 'hello'
+        shouldValidate: true
       })
     ).toThrow('String hello does not start with prefix xyz');
   });
 
   it('should not throw when validate is true and prefix is present', () => {
     expect(trimStart({
+      $string: '/path',
       prefix: '/',
-      shouldValidate: true,
-      str: '/path'
+      shouldValidate: true
     })).toBe('path');
   });
 
   it('should handle empty prefix', () => {
     expect(trimStart({
-      prefix: '',
-      str: 'hello'
+      $string: 'hello',
+      prefix: ''
     })).toBe('hello');
   });
 
   it('should handle empty string', () => {
     expect(trimStart({
-      prefix: 'prefix',
-      str: ''
+      $string: '',
+      prefix: 'prefix'
     })).toBe('');
   });
 });
@@ -219,44 +219,44 @@ describe('trimStart', () => {
 describe('hasSingleOccurrence', () => {
   it('should return true for exactly one occurrence', () => {
     expect(hasSingleOccurrence({
-      searchValue: 'world',
-      str: 'hello world'
+      $string: 'hello world',
+      searchValue: 'world'
     })).toBe(true);
   });
 
   it('should return false for zero occurrences', () => {
     expect(hasSingleOccurrence({
-      searchValue: 'xyz',
-      str: 'hello world'
+      $string: 'hello world',
+      searchValue: 'xyz'
     })).toBe(false);
   });
 
   it('should return false for multiple occurrences', () => {
     expect(hasSingleOccurrence({
-      searchValue: 'hello',
-      str: 'hello hello'
+      $string: 'hello hello',
+      searchValue: 'hello'
     })).toBe(false);
   });
 
   it('should handle empty search value', () => {
     // Empty string is found at every position, so indexOf(0) !== lastIndexOf(end)
     expect(hasSingleOccurrence({
-      searchValue: '',
-      str: 'test'
+      $string: 'test',
+      searchValue: ''
     })).toBe(false);
   });
 
   it('should handle empty string', () => {
     expect(hasSingleOccurrence({
-      searchValue: 'a',
-      str: ''
+      $string: '',
+      searchValue: 'a'
     })).toBe(false);
   });
 
   it('should handle single character match', () => {
     expect(hasSingleOccurrence({
-      searchValue: 'a',
-      str: 'a'
+      $string: 'a',
+      searchValue: 'a'
     })).toBe(true);
   });
 });
@@ -334,50 +334,50 @@ describe('unindent', () => {
 describe('insertAt', () => {
   it('should insert a substring at the specified position', () => {
     expect(insertAt({
+      $string: 'hello world',
       startIndex: 5,
-      str: 'hello world',
       substring: ' beautiful'
     })).toBe('hello beautiful world');
   });
 
   it('should insert at the beginning', () => {
     expect(insertAt({
+      $string: 'world',
       startIndex: 0,
-      str: 'world',
       substring: 'hello '
     })).toBe('hello world');
   });
 
   it('should insert at the end', () => {
     expect(insertAt({
+      $string: 'hello',
       startIndex: 5,
-      str: 'hello',
       substring: ' world'
     })).toBe('hello world');
   });
 
   it('should replace a range when endIndex is provided', () => {
     expect(insertAt({
+      $string: 'hello world',
       endIndex: 11,
       startIndex: 6,
-      str: 'hello world',
       substring: 'universe'
     })).toBe('hello universe');
   });
 
   it('should handle replacing with a different length string', () => {
     expect(insertAt({
+      $string: 'abcdef',
       endIndex: 4,
       startIndex: 2,
-      str: 'abcdef',
       substring: 'XY'
     })).toBe('abXYef');
   });
 
   it('should handle empty substring insertion', () => {
     expect(insertAt({
+      $string: 'hello',
       startIndex: 3,
-      str: 'hello',
       substring: ''
     })).toBe('hello');
   });
@@ -544,33 +544,33 @@ describe('replace', () => {
 describe('replaceAll', () => {
   it('should replace all occurrences of a string with another string', () => {
     expect(replaceAll({
+      $string: 'aaa',
       replacer: 'b',
-      searchValue: 'a',
-      str: 'aaa'
+      searchValue: 'a'
     })).toBe('bbb');
   });
 
   it('should replace all occurrences using a regex', () => {
     expect(replaceAll({
+      $string: 'hello123world456',
       replacer: 'NUM',
-      searchValue: /\d+/g,
-      str: 'hello123world456'
+      searchValue: /\d+/g
     })).toBe('helloNUMworldNUM');
   });
 
   it('should add global flag to regex if missing', () => {
     expect(replaceAll({
+      $string: 'aaa',
       replacer: 'b',
-      searchValue: /a/,
-      str: 'aaa'
+      searchValue: /a/
     })).toBe('bbb');
   });
 
   it('should support function replacer', () => {
     const result = replaceAll({
+      $string: 'hello world',
       replacer: ({ substring }) => substring.toUpperCase(),
-      searchValue: /\w+/g,
-      str: 'hello world'
+      searchValue: /\w+/g
     });
     expect(result).toBe('HELLO WORLD');
   });
@@ -578,56 +578,56 @@ describe('replaceAll', () => {
   it('should pass offset and source in function replacer args', () => {
     const offsets: number[] = [];
     replaceAll({
+      $string: 'abab',
       replacer: ({ offset }) => {
         offsets.push(offset);
         return 'x';
       },
-      searchValue: 'ab',
-      str: 'abab'
+      searchValue: 'ab'
     });
     expect(offsets).toEqual([0, 2]);
   });
 
   it('should handle regex with capture groups', () => {
     const result = replaceAll({
-      replacer: ({ capturedGroupArgs: [year = '', month = '', day = ''] }) => {
+      $string: '2024-01-15',
+      replacer: ({ capturedGroupArguments: [year = '', month = '', day = ''] }) => {
         return `${day}/${month}/${year}`;
       },
-      searchValue: /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g,
-      str: '2024-01-15'
+      searchValue: /(?<Year>\d{4})-(?<Month>\d{2})-(?<Day>\d{2})/g
     });
     expect(result).toBe('15/01/2024');
   });
 
   it('should return the string unchanged when replacer is undefined', () => {
     expect(replaceAll({
+      $string: 'hello',
       replacer: castTo<string>(undefined),
-      searchValue: 'x',
-      str: 'hello'
+      searchValue: 'x'
     })).toBe('hello');
   });
 
   it('should handle no matches', () => {
     expect(replaceAll({
+      $string: 'hello',
       replacer: 'abc',
-      searchValue: 'xyz',
-      str: 'hello'
+      searchValue: 'xyz'
     })).toBe('hello');
   });
 
   it('should handle empty string', () => {
     expect(replaceAll({
+      $string: '',
       replacer: 'b',
-      searchValue: 'a',
-      str: ''
+      searchValue: 'a'
     })).toBe('');
   });
 
   it('should return original substring when function replacer returns undefined', () => {
     const result = replaceAll({
+      $string: 'abc',
       replacer: () => castTo<string>(undefined),
-      searchValue: /./g,
-      str: 'abc'
+      searchValue: /./g
     });
     expect(result).toBe('abc');
   });
@@ -636,33 +636,33 @@ describe('replaceAll', () => {
 describe('replaceAllAsync', () => {
   it('should replace all occurrences asynchronously with a string replacer', async () => {
     const result = await replaceAllAsync({
+      $string: 'aaa',
       replacer: 'b',
-      searchValue: 'a',
-      str: 'aaa'
+      searchValue: 'a'
     });
     expect(result).toBe('bbb');
   });
 
   it('should replace all occurrences asynchronously with a function replacer', async () => {
     const result = await replaceAllAsync({
+      $string: 'hello world',
       replacer: async ({ substring }) => {
         await noopAsync();
         return substring.toUpperCase();
       },
-      searchValue: /\w+/g,
-      str: 'hello world'
+      searchValue: /\w+/g
     });
     expect(result).toBe('HELLO WORLD');
   });
 
   it('should handle no matches', async () => {
     const result = await replaceAllAsync({
+      $string: 'hello',
       replacer: async () => {
         await noopAsync();
         return 'abc';
       },
-      searchValue: 'xyz',
-      str: 'hello'
+      searchValue: 'xyz'
     });
     expect(result).toBe('hello');
   });
@@ -673,25 +673,26 @@ describe('replaceAllAsync', () => {
 
     await expect(
       replaceAllAsync({
+        $string: 'hello',
         abortSignal: controller.signal,
         replacer: 'H',
-        searchValue: 'h',
-        str: 'hello'
+        searchValue: 'h'
       })
     ).rejects.toThrow();
   });
 
   it('should handle empty string', async () => {
     const result = await replaceAllAsync({
+      $string: '',
       replacer: 'b',
-      searchValue: 'a',
-      str: ''
+      searchValue: 'a'
     });
     expect(result).toBe('');
   });
 
   it('should handle undefined replacer', async () => {
     const result = await replaceAllAsync({
+      $string: 'foobar',
       replacer: ({ substring }) => {
         if (substring === 'foo') {
           return;
@@ -699,8 +700,7 @@ describe('replaceAllAsync', () => {
 
         return 'baz';
       },
-      searchValue: /foo|bar/g,
-      str: 'foobar'
+      searchValue: /foo|bar/g
     });
     expect(result).toBe('foobaz');
   });
@@ -786,12 +786,12 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
     const missingIndices: number[] = [];
     // Regex with optional groups: one matches, one does not
     replaceAll({
+      $string: 'test',
       replacer: ({ missingGroupIndices, substring }) => {
         missingIndices.push(...missingGroupIndices);
         return substring;
       },
-      searchValue: /(?:(?<Group1>x)|(?<Group2>t))/g,
-      str: 'test'
+      searchValue: /(?:(?<Group1>x)|(?<Group2>t))/g
     });
     expect(missingIndices).toEqual([0, 0]);
   });
@@ -799,12 +799,12 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
   it('should pass named groups when regex has named capture groups', () => {
     const capturedGroups: (Record<string, string | undefined> | undefined)[] = [];
     replaceAll({
+      $string: '2024-01-15',
       replacer: (common) => {
         capturedGroups.push(common.groups);
         return common.substring;
       },
-      searchValue: /(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/g,
-      str: '2024-01-15'
+      searchValue: /(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})/g
     });
     expect(capturedGroups).toEqual([{ day: '15', month: '01', year: '2024' }]);
   });
@@ -812,12 +812,12 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
   it('should set groups to undefined when regex has no named groups', () => {
     const capturedGroups: (Record<string, string | undefined> | undefined)[] = [];
     replaceAll({
+      $string: 'abc',
       replacer: (common) => {
         capturedGroups.push(common.groups);
         return common.substring;
       },
-      searchValue: /(?:.)/g,
-      str: 'abc'
+      searchValue: /(?:.)/g
     });
     expect(capturedGroups).toEqual([undefined, undefined, undefined]);
   });
@@ -825,12 +825,12 @@ describe('replaceAll - missingGroupIndices and named groups', () => {
   it('should have empty missingGroupIndices when all groups match', () => {
     const missingIndices: number[][] = [];
     replaceAll({
+      $string: 'ab',
       replacer: (common) => {
         missingIndices.push([...common.missingGroupIndices]);
         return common.substring;
       },
-      searchValue: /(?<Group1>a)(?<Group2>b)/g,
-      str: 'ab'
+      searchValue: /(?<Group1>a)(?<Group2>b)/g
     });
     expect(missingIndices).toEqual([[]]);
   });

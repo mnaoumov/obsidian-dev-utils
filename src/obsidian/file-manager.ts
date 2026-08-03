@@ -104,7 +104,7 @@ export interface ProcessFrontmatterParams<CustomFrontmatter = unknown> extends P
    * @param abortSignal - The abort signal to listen to.
    * @returns A value that may be `null` to abort the process.
    */
-  frontmatterFn(this: void, frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal): Promisable<MaybeReturn<null>>;
+  frontmatterFunction(this: void, frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal): Promisable<MaybeReturn<null>>;
 
   /**
    * The path or TFile object representing the note.
@@ -141,7 +141,7 @@ export async function addAlias(params: AddAliasParams): Promise<void> {
 
   await processFrontmatter({
     app,
-    frontmatterFn: (frontmatter) => {
+    frontmatterFunction: (frontmatter) => {
       frontmatter.aliases ??= [];
 
       if (!frontmatter.aliases.includes(alias)) {
@@ -177,7 +177,7 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
 
   await processFrontmatter({
     app,
-    frontmatterFn: (frontmatter) => {
+    frontmatterFunction: (frontmatter) => {
       if (!frontmatter.aliases) {
         return;
       }
@@ -204,7 +204,7 @@ export async function deleteAlias(params: DeleteAliasParams): Promise<void> {
 export async function processFrontmatter<CustomFrontmatter = unknown>(params: ProcessFrontmatterParams<CustomFrontmatter>): Promise<void> {
   const {
     app,
-    frontmatterFn,
+    frontmatterFunction,
     pathOrFile,
     ...options
   } = params;
@@ -219,7 +219,7 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(params: Pr
 
       const oldFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
       const newFrontmatter = parseFrontmatter<CustomFrontmatter>(content);
-      const result = await frontmatterFn(newFrontmatter, abortSignal);
+      const result = await frontmatterFunction(newFrontmatter, abortSignal);
       abortSignal.throwIfAborted();
 
       if (result === null) {

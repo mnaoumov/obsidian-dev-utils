@@ -161,15 +161,15 @@ describe('exec', () => {
 
   it('should reject when more than one ExecArg is provided', async () => {
     await expect(
-      exec(['cmd', { batchedArgs: ['a'] }, { batchedArgs: ['b'] }])
-    ).rejects.toThrow('Only one ExecArg with batchedArgs is allowed');
+      exec(['cmd', { batchedArguments: ['a'] }, { batchedArguments: ['b'] }])
+    ).rejects.toThrow('Only one ExecArg with batchedArguments is allowed');
   });
 
   it('should expand ExecArg inline when total length is within limit', async () => {
     const child = createMockChild();
     mockSpawn.mockReturnValue(child);
 
-    const promise = exec(['echo', { batchedArgs: ['a', 'b', 'c'] }], { isQuiet: true });
+    const promise = exec(['echo', { batchedArguments: ['a', 'b', 'c'] }], { isQuiet: true });
 
     child.stdout.push(Buffer.from('a b c'));
     child.stdout.end();
@@ -193,7 +193,7 @@ describe('exec', () => {
       const child = createMockChild();
       mockSpawn.mockReturnValue(child);
 
-      const promise = exec(['echo', { batchedArgs: ['foo bar/baz.md', 'plain.md'] }], { isQuiet: true });
+      const promise = exec(['echo', { batchedArguments: ['foo bar/baz.md', 'plain.md'] }], { isQuiet: true });
 
       child.stdout.end('ok');
       child.stderr.end('');
@@ -216,7 +216,7 @@ describe('exec', () => {
       const child = createMockChild();
       mockSpawn.mockReturnValue(child);
 
-      const promise = exec(['echo', { batchedArgs: ['foo$x.md', 'a;b.md', 'c*.md', 'd\'e.md'] }], { isQuiet: true });
+      const promise = exec(['echo', { batchedArguments: ['foo$x.md', 'a;b.md', 'c*.md', 'd\'e.md'] }], { isQuiet: true });
 
       child.stdout.end('ok');
       child.stderr.end('');
@@ -260,7 +260,7 @@ describe('exec', () => {
       const child = createMockChild();
       mockSpawn.mockReturnValue(child);
 
-      const promise = exec(['echo', { batchedArgs: ['a&b.md', '(c).md'] }], { isQuiet: true });
+      const promise = exec(['echo', { batchedArguments: ['a&b.md', '(c).md'] }], { isQuiet: true });
 
       child.stdout.end('ok');
       child.stderr.end('');
@@ -296,7 +296,7 @@ describe('exec', () => {
         return child;
       });
 
-      const result = await exec(['echo', { batchedArgs: [longArgument, longArgument, longArgument] }], { isQuiet: true });
+      const result = await exec(['echo', { batchedArguments: [longArgument, longArgument, longArgument] }], { isQuiet: true });
 
       expect(mockSpawn).toHaveBeenCalledTimes(2);
       expect(result).toContain('out');
@@ -326,7 +326,7 @@ describe('exec', () => {
         return child;
       });
 
-      const result = await exec(['echo', { batchedArgs: [longArgument, longArgument, longArgument] }], { isQuiet: true, shouldIncludeDetails: true });
+      const result = await exec(['echo', { batchedArguments: [longArgument, longArgument, longArgument] }], { isQuiet: true, shouldIncludeDetails: true });
 
       expect(result).toEqual({
         exitCode: 0,
@@ -345,7 +345,7 @@ describe('exec', () => {
     try {
       const hugeArgument = 'x'.repeat(8192);
       await expect(
-        exec(['echo', { batchedArgs: [hugeArgument] }])
+        exec(['echo', { batchedArguments: [hugeArgument] }])
       ).rejects.toThrow('Cannot split');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });

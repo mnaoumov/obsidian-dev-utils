@@ -62,15 +62,15 @@ class MockImage {
 
   public set src(_value: string) {
     queueMicrotask(() => {
-      this.onloadFn?.();
+      this.onloadFunction?.();
     });
   }
 
-  private onloadFn: (() => void) | null = null;
+  private onloadFunction: (() => void) | null = null;
 
   public addEventListener(event: string, $function: () => void): void {
     if (event === 'load') {
-      this.onloadFn = $function;
+      this.onloadFunction = $function;
     }
   }
 }

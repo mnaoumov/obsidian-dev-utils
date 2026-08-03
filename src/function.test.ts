@@ -152,7 +152,7 @@ describe('Function', () => {
 
     it('should create a function with named arguments', () => {
       const $function = createFunction<(a: number, b: number) => number>({
-        argNames: ['a', 'b'],
+        argumentNames: ['a', 'b'],
         functionBody: 'return a + b;'
       });
       expect($function(2, 3)).toBe(5);

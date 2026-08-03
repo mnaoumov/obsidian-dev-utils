@@ -792,13 +792,13 @@ describe('invokeWithFileSystemLock', () => {
 
   it('should call the function with the file content', async () => {
     const $function = vi.fn();
-    await invokeWithFileSystemLock({ app, fn: $function, pathOrFile: 'locked.md' });
+    await invokeWithFileSystemLock({ $function, app, pathOrFile: 'locked.md' });
     expect($function).toHaveBeenCalledWith('');
   });
 
   it('should call vault.process with the file', async () => {
     vi.spyOn(app.vault, 'process');
-    await invokeWithFileSystemLock({ app, fn: vi.fn(), pathOrFile: 'locked.md' });
+    await invokeWithFileSystemLock({ $function: vi.fn(), app, pathOrFile: 'locked.md' });
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
@@ -806,13 +806,13 @@ describe('invokeWithFileSystemLock', () => {
     const file = app.vault.getFileByPath('locked.md');
     assertNonNullable(file);
     const $function = vi.fn();
-    await invokeWithFileSystemLock({ app, fn: $function, pathOrFile: file });
+    await invokeWithFileSystemLock({ $function, app, pathOrFile: file });
     expect($function).toHaveBeenCalled();
   });
 
   it('should return the content unchanged after fn is called', async () => {
     vi.spyOn(app.vault, 'process');
-    await invokeWithFileSystemLock({ app, fn: vi.fn(), pathOrFile: 'locked.md' });
+    await invokeWithFileSystemLock({ $function: vi.fn(), app, pathOrFile: 'locked.md' });
     // The process function should return the same content
     const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
@@ -977,7 +977,7 @@ describe('processFile', () => {
 
   function setupRetryToInvokeOperationFunction(): void {
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       await operationFunction(abortSignal);
     });
@@ -1042,7 +1042,7 @@ describe('processFile', () => {
   it('should return false when content changed between read and write', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFunction(abortSignal);
     });
@@ -1075,7 +1075,7 @@ describe('processFile', () => {
   it('should return false when newContentProvider returns null', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
-      const operationFunction = params.operationFn;
+      const operationFunction = params.operationFunction;
       const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
       operationResult = await operationFunction(abortSignal);
     });

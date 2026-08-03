@@ -41,22 +41,22 @@ interface MockContext {
 }
 
 class TestAbstractFileHandler extends AbstractFileCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
-  public shouldAddToMenuFn = vi.fn(() => false);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public shouldAddToMenuFunction = vi.fn(() => false);
 
   protected override canExecuteAbstractFile(abstractFile: TAbstractFileOriginal): boolean {
     super.canExecuteAbstractFile(abstractFile);
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async executeAbstractFile(_abstractFile: TAbstractFileOriginal): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 
   protected override shouldAddToAbstractFileMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams): boolean {
     super.shouldAddToAbstractFileMenu(params);
-    return this.shouldAddToMenuFn();
+    return this.shouldAddToMenuFunction();
   }
 }
 
@@ -125,7 +125,7 @@ describe('AbstractFileCommandHandler', () => {
     it('should return false when canExecuteAbstractFile returns false', async () => {
       const file = createMockFile();
       const handler = new TestAbstractFileHandler(createParams());
-      handler.canExecuteFn.mockReturnValue(false);
+      handler.canExecuteFunction.mockReturnValue(false);
       const { context } = createMockContext(file);
       await handler.onRegistered(context);
 
@@ -141,7 +141,7 @@ describe('AbstractFileCommandHandler', () => {
 
       const command = handler.buildCommand();
       command.checkCallback?.(false);
-      expect(handler.executeFn).toHaveBeenCalledOnce();
+      expect(handler.executeFunction).toHaveBeenCalledOnce();
     });
   });
 
@@ -169,7 +169,7 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should add menu item when shouldAddToAbstractFileMenu and canExecuteAbstractFile return true', async () => {
       const handler = new TestAbstractFileHandler(createParams());
-      handler.shouldAddToMenuFn.mockReturnValue(true);
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
       await handler.onRegistered(context);
 
@@ -182,8 +182,8 @@ describe('AbstractFileCommandHandler', () => {
 
     it('should not add menu item when canExecuteAbstractFile returns false', async () => {
       const handler = new TestAbstractFileHandler(createParams());
-      handler.shouldAddToMenuFn.mockReturnValue(true);
-      handler.canExecuteFn.mockReturnValue(false);
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
+      handler.canExecuteFunction.mockReturnValue(false);
       const { context, fileMenuHandlers } = createMockContext();
       await handler.onRegistered(context);
 
@@ -276,7 +276,7 @@ describe('AbstractFileCommandHandler', () => {
         fileMenuSubmenuIcon: 'folder',
         shouldAddCommandToSubmenu: true
       }));
-      handler.shouldAddToMenuFn.mockReturnValue(true);
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
       await handler.onRegistered(context);
 
@@ -298,7 +298,7 @@ describe('AbstractFileCommandHandler', () => {
         fileMenuItemName: 'Custom Name',
         fileMenuSection: 'custom-section'
       }));
-      handler.shouldAddToMenuFn.mockReturnValue(true);
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
       await handler.onRegistered(context);
 
@@ -320,12 +320,12 @@ describe('AbstractFileCommandHandler', () => {
       expect(setTitle).toHaveBeenCalledWith('Custom Name');
       expect(setIcon).toHaveBeenCalledWith('file-icon');
       expect(setSection).toHaveBeenCalledWith('custom-section');
-      expect(handler.executeFn).toHaveBeenCalledOnce();
+      expect(handler.executeFunction).toHaveBeenCalledOnce();
     });
 
     it('should use command name when fileMenuItemName is not provided', async () => {
       const handler = new TestAbstractFileHandler(createParams());
-      handler.shouldAddToMenuFn.mockReturnValue(true);
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
       await handler.onRegistered(context);
 
@@ -666,7 +666,7 @@ describe('AbstractFileCommandHandler', () => {
       const handler = new TestAbstractFileHandler(createParams({
         shouldAddCommandToSubmenu: true
       }));
-      handler.shouldAddToMenuFn.mockReturnValue(true);
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
       const { context, fileMenuHandlers } = createMockContext();
       await handler.onRegistered(context);
 

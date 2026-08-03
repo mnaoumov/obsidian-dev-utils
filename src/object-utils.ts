@@ -170,7 +170,7 @@ export interface SetNestedPropertyValueParams {
   /**
    * The object to set the nested property value in.
    */
-  readonly obj: GenericObject;
+  readonly $object: GenericObject;
 
   /**
    * The path to the nested property.
@@ -375,15 +375,15 @@ class ToJsonConverter {
     let json = ensureNonNullable(JSON.stringify(plainObject, null, this.fullOptions.space));
     const placeholderRegExp = new RegExp(String.raw`"\[\[${escapeRegExp(PLACEHOLDER_KEY_PREFIX)}(?<Key>[A-Za-z]+)(?<Index>\d*)\]\]"`, 'g');
     json = replaceAll({
-      replacer: ({ capturedGroupArgs: [key = '', indexString = ''] }) =>
+      $string: json,
+      replacer: ({ capturedGroupArguments: [key = '', indexString = ''] }) =>
         applySubstitutions({
           functionTexts: this.functionTexts,
           index: indexString ? parseInt(indexString, 10) : 0,
           key: key as TokenSubstitutionKey,
           substitutions: this.fullOptions.tokenSubstitutions
         }),
-      searchValue: placeholderRegExp,
-      str: json
+      searchValue: placeholderRegExp
     });
     return json;
   }
@@ -898,12 +898,12 @@ export function removeUndefinedProperties<Type extends object>($object: Type, ke
  */
 export function setNestedPropertyValue(params: SetNestedPropertyValueParams): void {
   const {
-    obj,
+    $object,
     path,
     value
   } = params;
   const error = new Error(`Property path ${path} not found`);
-  let node: GenericObject | undefined = obj;
+  let node: GenericObject | undefined = $object;
   const keys = path.split(KEY_SEPARATOR);
   for (const key of keys.slice(0, -1)) {
     if (node === undefined) {

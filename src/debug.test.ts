@@ -284,7 +284,7 @@ describe('Debug', () => {
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace({
-        args: ['world'],
+        $arguments: ['world'],
         debuggerInstance: spy,
         message: 'hello %s',
         stackTrace: 'fake-stack'
@@ -297,7 +297,7 @@ describe('Debug', () => {
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace({
-        args: [],
+        $arguments: [],
         debuggerInstance: spy,
         message: 'msg',
         stackTrace: 'fake-stack'
@@ -312,7 +312,7 @@ describe('Debug', () => {
       const spy = castTo<Debugger>(vi.fn());
       spy.enabled = true;
       printWithStackTrace({
-        args: [],
+        $arguments: [],
         debuggerInstance: spy,
         message: 'msg',
         stackTrace: 'fake-stack'

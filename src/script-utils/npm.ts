@@ -94,7 +94,7 @@ export async function editNpmShrinkWrapJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn: editFunction, path: getNpmShrinkWrapJsonPath(cwd), shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFunction, path: getNpmShrinkWrapJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -112,7 +112,7 @@ export async function editPackageJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn: editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -129,7 +129,7 @@ export function editPackageJsonSync(
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageJson>>({ editFn: editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
+  editJsonSync<PackageJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageJson>>({ editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -147,7 +147,7 @@ export async function editPackageLockJson(
     cwd,
     shouldSkipIfMissing
   } = options;
-  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFn: editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**
@@ -164,7 +164,7 @@ export function editPackageLockJsonSync(
     cwd,
     shouldSkipIfMissing
   } = options;
-  editJsonSync<PackageLockJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageLockJson>>({ editFn: editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
+  editJsonSync<PackageLockJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageLockJson>>({ editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
 }
 
 /**

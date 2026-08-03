@@ -15,7 +15,7 @@ interface Nested {
 }
 
 interface TestObject {
-  fn(): string;
+  $function(): string;
   name: string;
   nested: Nested;
 }
@@ -28,7 +28,7 @@ describe('strictProxy', () => {
 
   it('should throw on unmocked property access', () => {
     const proxy = strictProxy<TestObject>({ name: 'test' });
-    expect(() => proxy.fn()).toThrow('Unmocked property "fn" was accessed on mock object');
+    expect(() => proxy.$function()).toThrow('Unmocked property "$function" was accessed on mock object');
   });
 
   it('should recursively proxy nested plain objects', () => {
@@ -113,8 +113,8 @@ describe('strictProxy', () => {
   });
 
   it('should call provided functions correctly', () => {
-    const proxy = strictProxy<TestObject>({ fn: () => 'result' });
-    expect(proxy.fn()).toBe('result');
+    const proxy = strictProxy<TestObject>({ $function: () => 'result' });
+    expect(proxy.$function()).toBe('result');
   });
 });
 
@@ -143,9 +143,9 @@ describe('bypassStrictProxy', () => {
 
   it('should allow accessing missing properties on unwrapped object', () => {
     const proxy = strictProxy<TestObject>({ name: 'test' });
-    expect(() => proxy.fn).toThrow();
+    expect(() => proxy.$function).toThrow();
 
     const unwrapped = bypassStrictProxy(proxy);
-    expect((unwrapped as Partial<TestObject>).fn).toBeUndefined();
+    expect((unwrapped as Partial<TestObject>).$function).toBeUndefined();
   });
 });

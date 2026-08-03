@@ -28,11 +28,11 @@ class MarkdownPreviewRendererRegisterDomEventsPatchComponent extends MonkeyAroun
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: MarkdownPreviewRenderer,
       methodName: 'registerDomEvents',
-      obj: MarkdownPreviewRenderer,
       patchHandler: ({
         fallback,
-        originalArgs: [, handlers]
+        originalArguments: [, handlers]
       }) => {
         this.domEventsHandlersConstructor = handlers.constructor as DomEventsHandlersConstructor;
         fallback();
@@ -68,7 +68,7 @@ export async function getDomEventsHandlersConstructor(app: App): Promise<DomEven
     });
     try {
       await retryWithTimeout({
-        operationFn: () => patch.domEventsHandlersConstructor !== null,
+        operationFunction: () => patch.domEventsHandlersConstructor !== null,
         operationName: 'getDomEventsHandlersConstructor'
       });
     } finally {

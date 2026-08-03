@@ -43,7 +43,7 @@ export interface AsyncEventRef {
   /**
    * A context passed as `this` to the `callback`.
    */
-  thisArg: unknown;
+  thisArgument: unknown;
 }
 
 /**
@@ -257,7 +257,7 @@ export interface SubscribeAsyncDisposableEventParams<Source extends GenericAsync
   /**
    * The context passed as `this` to the callback.
    */
-  readonly thisArg?: unknown;
+  readonly thisArgument?: unknown;
 }
 
 // The callback type for a given event on an async event source, with its argument tuple inferred from the source's event map.
@@ -324,7 +324,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
   /**
    * The registry mapping each event name to its list of registered listener references.
    */
-  protected readonly eventRefsMap = new Map<string, AsyncEventRef[]>();
+  protected readonly eventReferencesMap = new Map<string, AsyncEventRef[]>();
 
   /**
    * Remove an event listener.
@@ -344,14 +344,14 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
     name: EventName,
     callback: (...$arguments: Arguments) => Promisable<void>
   ): void {
-    const eventReferences = this.eventRefsMap.get(name);
+    const eventReferences = this.eventReferencesMap.get(name);
     if (!eventReferences) {
       return;
     }
 
     filterInPlace(eventReferences, (eventReference) => eventReference.callback !== callback);
     if (eventReferences.length === 0) {
-      this.eventRefsMap.delete(name);
+      this.eventReferencesMap.delete(name);
     }
   }
 
@@ -366,14 +366,14 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   public offref(eventReference: AsyncEventRef): void {
-    const eventReferences = this.eventRefsMap.get(eventReference.name);
+    const eventReferences = this.eventReferencesMap.get(eventReference.name);
     if (!eventReferences) {
       return;
     }
 
     filterInPlace(eventReferences, (storedEventReference) => storedEventReference !== eventReference);
     if (eventReferences.length === 0) {
-      this.eventRefsMap.delete(eventReference.name);
+      this.eventReferencesMap.delete(eventReference.name);
     }
   }
 
@@ -403,17 +403,17 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
     callback: (...$arguments: Arguments) => Promisable<void>,
     thisArgument?: unknown
   ): AsyncEventRef {
-    let eventReferences = this.eventRefsMap.get(name);
+    let eventReferences = this.eventReferencesMap.get(name);
     if (!eventReferences) {
       eventReferences = [];
-      this.eventRefsMap.set(name, eventReferences);
+      this.eventReferencesMap.set(name, eventReferences);
     }
 
     const eventReference: AsyncEventRef = {
       asyncEventSource: this,
       callback: callback as GenericCallback,
       name,
-      thisArg: thisArgument
+      thisArgument
     };
     eventReferences.push(eventReference);
     return eventReference;
@@ -466,7 +466,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * ```
    */
   protected trigger<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): void {
-    const eventReferences = this.eventRefsMap.get(name) ?? [];
+    const eventReferences = this.eventReferencesMap.get(name) ?? [];
     for (const eventReference of snapshot(eventReferences)) {
       this.tryTrigger(eventReference, $arguments);
     }
@@ -481,7 +481,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
    * @returns A {@link Promise} that resolves when all listeners have completed.
    */
   protected async triggerAsync<EventName extends StringKeys<EventMap>>(name: EventName, ...$arguments: CallbackArgs<EventMap, EventName>): Promise<void> {
-    const eventReferences = this.eventRefsMap.get(name) ?? [];
+    const eventReferences = this.eventReferencesMap.get(name) ?? [];
     for (const eventReference of snapshot(eventReferences)) {
       await this.tryTriggerAsync(eventReference, $arguments);
     }
@@ -502,7 +502,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   protected tryTrigger<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): void {
     try {
-      const result = eventReference.callback.call(eventReference.thisArg, ...$arguments);
+      const result = eventReference.callback.call(eventReference.thisArgument, ...$arguments);
       if (result instanceof Promise) {
         result.catch(throwDelayed);
       }
@@ -522,7 +522,7 @@ export abstract class AsyncEventsBase<EventMap extends EventMapConstraint<EventM
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
   protected async tryTriggerAsync<Arguments extends unknown[]>(eventReference: AsyncEventRef, $arguments: Arguments): Promise<void> {
     try {
-      await eventReference.callback.call(eventReference.thisArg, ...$arguments);
+      await eventReference.callback.call(eventReference.thisArgument, ...$arguments);
     } catch (error) {
       throwDelayed(error);
     }
@@ -751,7 +751,7 @@ export function subscribeAsyncDisposableEvent<Source extends GenericAsyncEventSo
   // `Source` is constrained only to the on-less `GenericAsyncEventSource` (so a typed source is accepted whatever
   // Its event map's variance); every source is an `AsyncEventSource`, so it is narrowed to reach `on`, whose type
   // Parameters then infer from the (already-typed) name and callback.
-  return new AsyncEventRefDisposable(asAsyncEventSource(params.asyncEventSource).on(params.name, params.callback, params.thisArg));
+  return new AsyncEventRefDisposable(asAsyncEventSource(params.asyncEventSource).on(params.name, params.callback, params.thisArgument));
 }
 
 // Narrows a source to {@link AsyncEventSource} to reach `on`. A local equivalent of `castTo`: importing `castTo`

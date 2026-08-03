@@ -40,7 +40,7 @@ export interface RetryWithTimeoutNoticeParams {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  operationFunction(this: void, abortSignal: AbortSignal): Promisable<boolean>;
 
   /**
    * The name of the operation.
@@ -95,7 +95,7 @@ export interface RunWithTimeoutNoticeParams<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFn(abortSignal: AbortSignal): Promisable<Result>;
+  operationFunction(abortSignal: AbortSignal): Promisable<Result>;
 
   /**
    * The name of the operation.

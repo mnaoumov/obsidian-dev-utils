@@ -377,7 +377,7 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
   }
   let backlinks: CustomArrayDict<Reference> = new CustomArrayDictImpl<Reference>();
   await retryWithTimeoutNotice({
-    async operationFn(abortSignal) {
+    async operationFunction(abortSignal) {
       abortSignal.throwIfAborted();
       const file = getFile({ app, pathOrFile });
       await ensureMetadataCacheReady(app);

@@ -743,7 +743,7 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
              * to rename.
              *
              * When renaming the rest, note that `tsc` alone is NOT a sufficient gate: object-literal keys in
-             * loosely typed positions (`expect.arrayContaining([{ batchedArgs: ... }])`) are not contextually
+             * loosely typed positions (`expect.arrayContaining([{ batchedArguments: ... }])`) are not contextually
              * typed, so a rename leaves them behind and breaks the suite where the type checker sees nothing.
              * Rename in small batches with the full test run in the loop.
              *

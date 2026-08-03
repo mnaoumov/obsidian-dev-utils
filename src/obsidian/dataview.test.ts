@@ -74,7 +74,7 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
 }));
 
 interface ElementOptions {
-  readonly attr?: Record<string, string>;
+  readonly attribute?: Record<string, string>;
 }
 
 interface ParagraphOptions {
@@ -96,8 +96,8 @@ function createMockDv(): DataviewInlineApi {
         options?: ElementOptions
       ) => {
         const element = createEl(tag as keyof HTMLElementTagNameMap);
-        if (options?.attr) {
-          for (const [k, v] of Object.entries(options.attr)) {
+        if (options?.attribute) {
+          for (const [k, v] of Object.entries(options.attribute)) {
             element.setAttribute(k, v);
           }
         }

@@ -184,11 +184,11 @@ class EmbedByExtensionMdPatchComponent extends MonkeyAroundComponent {
 
   public override onload(): void {
     this.registerMethodPatch({
+      $object: this.embedByExtension,
       methodName: 'md',
-      obj: this.embedByExtension,
       patchHandler: ({
         fallback,
-        originalArgs: [context]
+        originalArguments: [context]
       }) => {
         context.displayMode = false;
         return fallback();

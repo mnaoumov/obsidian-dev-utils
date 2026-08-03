@@ -16,16 +16,16 @@ import type { CommandHandlerConstructorParams } from './command-handler.ts';
 import { GlobalCommandHandler } from './global-command-handler.ts';
 
 class TestGlobalHandler extends GlobalCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   protected override canExecute(): boolean {
     super.canExecute();
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async execute(): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 }
 
@@ -55,17 +55,17 @@ describe('GlobalCommandHandler', () => {
 
     const result = command.checkCallback?.(true);
     expect(result).toBe(true);
-    expect(handler.executeFn).not.toHaveBeenCalled();
+    expect(handler.executeFunction).not.toHaveBeenCalled();
   });
 
   it('should return false from checkCallback when canExecute returns false', () => {
     const handler = new TestGlobalHandler(createParams());
-    handler.canExecuteFn.mockReturnValue(false);
+    handler.canExecuteFunction.mockReturnValue(false);
     const command = handler.buildCommand();
 
     const result = command.checkCallback?.(false);
     expect(result).toBe(false);
-    expect(handler.executeFn).not.toHaveBeenCalled();
+    expect(handler.executeFunction).not.toHaveBeenCalled();
   });
 
   it('should call execute when checking=false and canExecute returns true', () => {
@@ -74,15 +74,15 @@ describe('GlobalCommandHandler', () => {
 
     const result = command.checkCallback?.(false);
     expect(result).toBe(true);
-    expect(handler.executeFn).toHaveBeenCalledOnce();
+    expect(handler.executeFunction).toHaveBeenCalledOnce();
   });
 
   it('should use default canExecute returning true', () => {
     class DefaultCanExecuteHandler extends GlobalCommandHandler {
-      public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
       protected override async execute(): Promise<void> {
-        await this.executeFn();
+        await this.executeFunction();
       }
     }
 

@@ -49,16 +49,16 @@ interface MockContext {
 }
 
 class TestFileHandler extends FileCommandHandler {
-  public canExecuteFn = vi.fn(() => true);
-  public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+  public canExecuteFunction = vi.fn(() => true);
+  public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
   protected override canExecuteFile(file: TFileOriginal): boolean {
     super.canExecuteFile(file);
-    return this.canExecuteFn();
+    return this.canExecuteFunction();
   }
 
   protected override async executeFile(_file: TFileOriginal): Promise<void> {
-    await this.executeFn();
+    await this.executeFunction();
   }
 
   protected override shouldAddToFileMenu(params: FileCommandHandlerShouldAddToFileMenuParams): boolean {
@@ -149,10 +149,10 @@ describe('FileCommandHandler', () => {
   describe('default methods', () => {
     it('should use default canExecuteFile returning true', async () => {
       class DefaultFileHandler extends FileCommandHandler {
-        public executeFn = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+        public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
         protected override async executeFile(_file: TFileOriginal): Promise<void> {
-          await this.executeFn();
+          await this.executeFunction();
         }
       }
 

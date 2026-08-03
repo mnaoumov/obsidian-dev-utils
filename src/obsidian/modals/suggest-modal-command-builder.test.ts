@@ -24,7 +24,7 @@ import { strictProxy } from '../../strict-proxy.ts';
 import { SuggestModalCommandBuilder } from './suggest-modal-command-builder.ts';
 
 interface RegisterCall {
-  func: KeymapEventListener;
+  $function: KeymapEventListener;
   key: string;
   modifiers: Modifier[];
 }
@@ -33,7 +33,7 @@ function captureRegisterCalls(scope: Scope): RegisterCall[] {
   const calls: RegisterCall[] = [];
   const originalRegister = scope.register.bind(scope);
   vi.spyOn(scope, 'register').mockImplementation((modifiers, key, $function) => {
-    calls.push({ func: $function, key: key ?? '', modifiers: modifiers ?? [] });
+    calls.push({ $function, key: key ?? '', modifiers: modifiers ?? [] });
     return originalRegister(modifiers, key, $function);
   });
   return calls;
@@ -199,7 +199,7 @@ describe('SuggestModalCommandBuilder', () => {
       // Trigger the keyboard handler - it should not toggle
       const handler = registerCalls.find((c) => c.key === '1');
       expect(handler).toBeDefined();
-      handler?.func(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
+      handler?.$function(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
       // OnChange should NOT have been called since checkbox is disabled
       expect(onChange).not.toHaveBeenCalled();
     });
@@ -221,7 +221,7 @@ describe('SuggestModalCommandBuilder', () => {
 
       const handler = registerCalls.find((c) => c.key === '1');
       expect(handler).toBeDefined();
-      handler?.func(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
+      handler?.$function(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
       expect(onChange).toHaveBeenCalledWith(true);
     });
 
@@ -304,7 +304,7 @@ describe('SuggestModalCommandBuilder', () => {
       expect(handler).toBeDefined();
       // This executes the handler code even though `selectEl.trigger('change')` won't call
       // DropdownComponent's internal callback
-      handler?.func(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
+      handler?.$function(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
       expect(handler).toBeDefined();
     });
 
@@ -326,7 +326,7 @@ describe('SuggestModalCommandBuilder', () => {
       const handler = registerCalls.find((c) => c.key === '5');
       expect(handler).toBeDefined();
       // This should return early due to disabled check
-      handler?.func(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
+      handler?.$function(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
       // The handler returned early, select index was not changed
       const selectEl = modal.instructionsEl.querySelector('select');
       expect(selectEl?.selectedIndex).toBe(0);

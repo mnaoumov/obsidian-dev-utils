@@ -660,7 +660,7 @@ describe('Async', () => {
   describe('runWithTimeout', () => {
     it('should return the result when operation completes within timeout', async () => {
       const result = await runWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return 42;
         },
@@ -669,9 +669,9 @@ describe('Async', () => {
       expect(result).toBe(42);
     });
 
-    it('should return the result for synchronous operationFn', async () => {
+    it('should return the result for synchronous operationFunction', async () => {
       const result = await runWithTimeout({
-        operationFn: () => 'sync result',
+        operationFunction: () => 'sync result',
         timeoutInMilliseconds: 5000
       });
       expect(result).toBe('sync result');
@@ -679,7 +679,7 @@ describe('Async', () => {
 
     it('should throw when operation times out with default onTimeout', async () => {
       await expect(runWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await new Promise((resolve) => {
             window.setTimeout(resolve, 10_000);
           });
@@ -689,9 +689,9 @@ describe('Async', () => {
       })).rejects.toThrow('Run with timeout failed');
     });
 
-    it('should throw when operationFn throws an error', async () => {
+    it('should throw when operationFunction throws an error', async () => {
       await expect(runWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           throw new Error('operation failed');
         },
@@ -699,12 +699,12 @@ describe('Async', () => {
       })).rejects.toThrow('Run with timeout failed');
     });
 
-    it('should reject even when operationFn resolves after being terminated by the timeout', async () => {
+    it('should reject even when operationFunction resolves after being terminated by the timeout', async () => {
       // OperationFn watches the abort signal and resolves (does NOT throw) once aborted, mirroring how
       // RetryWithTimeout's loop exits on abort. The timeout terminated the run, so runWithTimeout must
       // Reject rather than return the value produced after the deadline.
       await expect(runWithTimeout({
-        async operationFn(abortSignal) {
+        async operationFunction(abortSignal) {
           await new Promise<void>((resolve) => {
             abortSignal.addEventListener('abort', () => {
               resolve();
@@ -723,7 +723,7 @@ describe('Async', () => {
 
       await expect(runWithTimeout({
         onTimeout,
-        operationFn: async () => {
+        operationFunction: async () => {
           await new Promise((resolve) => {
             window.setTimeout(resolve, 10_000);
           });
@@ -741,7 +741,7 @@ describe('Async', () => {
       try {
         await runWithTimeout({
           onTimeout,
-          operationFn: async () => {
+          operationFunction: async () => {
             await new Promise((resolve) => {
               window.setTimeout(resolve, 10_000);
             });
@@ -764,7 +764,7 @@ describe('Async', () => {
       try {
         await runWithTimeout({
           onTimeout,
-          operationFn: async () => {
+          operationFunction: async () => {
             await new Promise((resolve) => {
               window.setTimeout(resolve, 10_000);
             });
@@ -793,7 +793,7 @@ describe('Async', () => {
             capturedContext = context;
             context.terminateOperation();
           },
-          operationFn: async () => {
+          operationFunction: async () => {
             await new Promise((resolve) => {
               window.setTimeout(resolve, 10_000);
             });
@@ -817,7 +817,7 @@ describe('Async', () => {
             capturedContext = context;
             context.terminateOperation();
           },
-          operationFn: async () => {
+          operationFunction: async () => {
             await new Promise((resolve) => {
               window.setTimeout(resolve, 10_000);
             });
@@ -840,7 +840,7 @@ describe('Async', () => {
             // Do not terminate - let the operation finish on its own
           });
         },
-        async operationFn() {
+        async operationFunction() {
           await new Promise((resolve) => {
             window.setTimeout(resolve, 100);
           });
@@ -861,7 +861,7 @@ describe('Async', () => {
             wasCompletedCallbackCalled = true;
           });
         },
-        async operationFn() {
+        async operationFunction() {
           await new Promise((resolve) => {
             window.setTimeout(resolve, 100);
           });
@@ -873,11 +873,11 @@ describe('Async', () => {
       expect(wasCompletedCallbackCalled).toBe(true);
     });
 
-    it('should pass abortSignal to operationFn', async () => {
+    it('should pass abortSignal to operationFunction', async () => {
       let receivedSignal: AbortSignal | null = null;
 
       await runWithTimeout({
-        operationFn(abortSignal) {
+        operationFunction(abortSignal) {
           receivedSignal = abortSignal;
           return 'done';
         },
@@ -892,7 +892,7 @@ describe('Async', () => {
 
       try {
         await runWithTimeout({
-          operationFn: async (abortSignal) => {
+          operationFunction: async (abortSignal) => {
             receivedSignal = abortSignal;
             await new Promise((resolve) => {
               window.setTimeout(resolve, 10_000);
@@ -911,21 +911,21 @@ describe('Async', () => {
   });
 
   describe('retryWithTimeout', () => {
-    it('should resolve when operationFn returns true on first attempt', async () => {
+    it('should resolve when operationFunction returns true on first attempt', async () => {
       const $function = vi.fn(async () => {
         await noopAsync();
         return true;
       });
 
       await retryWithTimeout({
-        operationFn: $function,
+        operationFunction: $function,
         retryOptions: { timeoutInMilliseconds: 5000 }
       });
 
       expect($function).toHaveBeenCalledTimes(1);
     });
 
-    it('should retry until operationFn returns true', async () => {
+    it('should retry until operationFunction returns true', async () => {
       let attempt = 0;
       const $function = vi.fn(async () => {
         await noopAsync();
@@ -934,7 +934,7 @@ describe('Async', () => {
       });
 
       await retryWithTimeout({
-        operationFn: $function,
+        operationFunction: $function,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 5000
@@ -951,7 +951,7 @@ describe('Async', () => {
       });
 
       await expect(retryWithTimeout({
-        operationFn: $function,
+        operationFunction: $function,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
@@ -959,14 +959,14 @@ describe('Async', () => {
       })).rejects.toThrow();
     });
 
-    it('should have called operationFn at least once before timeout', async () => {
+    it('should have called operationFunction at least once before timeout', async () => {
       const $function = vi.fn(async () => {
         await noopAsync();
         return false;
       });
 
       await expect(retryWithTimeout({
-        operationFn: $function,
+        operationFunction: $function,
         retryOptions: {
           retryDelayInMilliseconds: 10,
           timeoutInMilliseconds: 80
@@ -981,7 +981,7 @@ describe('Async', () => {
       controller.abort(new Error('already aborted'));
 
       await expect(retryWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return true;
         },
@@ -992,11 +992,11 @@ describe('Async', () => {
       })).rejects.toThrow();
     });
 
-    it('should pass an AbortSignal instance to operationFn', async () => {
+    it('should pass an AbortSignal instance to operationFunction', async () => {
       let receivedSignal: AbortSignal | null = null;
 
       await retryWithTimeout({
-        operationFn: async (abortSignal) => {
+        operationFunction: async (abortSignal) => {
           await noopAsync();
           receivedSignal = abortSignal;
           return true;
@@ -1009,7 +1009,7 @@ describe('Async', () => {
 
     it('should throw on error when shouldRetryOnError is false (default)', async () => {
       await expect(retryWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           throw new Error('fn error');
         },
@@ -1023,7 +1023,7 @@ describe('Async', () => {
       let attempt = 0;
 
       await retryWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           attempt++;
           if (attempt < 3) {
@@ -1045,7 +1045,7 @@ describe('Async', () => {
       let attempt = 0;
 
       await expect(retryWithTimeout({
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           attempt++;
           const error = new Error('terminate me');
@@ -1069,7 +1069,7 @@ describe('Async', () => {
       });
 
       await retryWithTimeout({
-        operationFn: $function
+        operationFunction: $function
       });
 
       expect($function).toHaveBeenCalledTimes(1);
@@ -1082,7 +1082,7 @@ describe('Async', () => {
 
       await expect(retryWithTimeout({
         onTimeout,
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return false;
         },
@@ -1100,7 +1100,7 @@ describe('Async', () => {
 
       await expect(retryWithTimeout({
         onTimeout,
-        operationFn: async () => {
+        operationFunction: async () => {
           await noopAsync();
           return false;
         },
@@ -1343,7 +1343,7 @@ describe('Async', () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay({ asyncFn: $function, delayInMilliseconds: 50 });
+      invokeAsyncSafelyAfterDelay({ asyncFunction: $function, delayInMilliseconds: 50 });
 
       expect($function).not.toHaveBeenCalled();
     });
@@ -1353,7 +1353,7 @@ describe('Async', () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay({ asyncFn: $function, delayInMilliseconds: 50 });
+      invokeAsyncSafelyAfterDelay({ asyncFunction: $function, delayInMilliseconds: 50 });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 150);
@@ -1369,7 +1369,7 @@ describe('Async', () => {
       expect(() => {
         invokeAsyncSafelyAfterDelay({
           abortSignal: controller.signal,
-          asyncFn: async () => {
+          asyncFunction: async () => {
             // Should not reach
           },
           delayInMilliseconds: 0
@@ -1381,7 +1381,7 @@ describe('Async', () => {
       let receivedSignal: AbortSignal | null = null;
 
       invokeAsyncSafelyAfterDelay({
-        asyncFn: async (abortSignal) => {
+        asyncFunction: async (abortSignal) => {
           await noopAsync();
           receivedSignal = abortSignal;
         },
@@ -1399,7 +1399,7 @@ describe('Async', () => {
       let receivedSignal: AbortSignal | null = null;
 
       invokeAsyncSafelyAfterDelay({
-        asyncFn: async (abortSignal) => {
+        asyncFunction: async (abortSignal) => {
           await noopAsync();
           receivedSignal = abortSignal;
         },
@@ -1418,7 +1418,7 @@ describe('Async', () => {
         // Success
       });
 
-      invokeAsyncSafelyAfterDelay({ asyncFn: $function });
+      invokeAsyncSafelyAfterDelay({ asyncFunction: $function });
 
       await new Promise((resolve) => {
         window.setTimeout(resolve, 100);

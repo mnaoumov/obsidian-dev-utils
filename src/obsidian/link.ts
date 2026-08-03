@@ -1359,9 +1359,9 @@ export function shouldResetAlias(params: ShouldResetAliasParams): boolean {
   }
 
   const cleanDisplayText = replaceAll({
+    $string: normalizePath(ensureNonNullable(displayText.split(' > ', 1)[0])),
     replacer: '',
-    searchValue: /^\.\//g,
-    str: normalizePath(ensureNonNullable(displayText.split(' > ', 1)[0]))
+    searchValue: /^\.\//g
   }).toLowerCase();
 
   for (const alias of aliasesToReset) {
@@ -1690,7 +1690,7 @@ function generateLinkText(params: GenerateLinkTextParams): string {
 
   linkText = config.isWikilink
     ? trimEnd({
-      str: linkText,
+      $string: linkText,
       suffix: `.${MARKDOWN_FILE_EXTENSION}`
     })
     : linkText;

@@ -850,7 +850,7 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
   }
 
   return trimEnd({
-    str: file.path,
+    $string: file.path,
     suffix: `.${MARKDOWN_FILE_EXTENSION}`
   });
 }

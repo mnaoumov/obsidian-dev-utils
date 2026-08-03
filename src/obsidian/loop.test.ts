@@ -52,11 +52,11 @@ vi.mock('../debug.ts', () => ({
 vi.mock('../error.ts', () => ({
   ASYNC_WRAPPER_ERROR_MESSAGE: 'async wrapper error',
   CustomStackTraceError: class CustomStackTraceError extends Error {
-    public stackTraceStr: string;
+    public stackTraceString: string;
 
     public constructor(params: CustomStackTraceErrorConstructorParams) {
       super(params.message, { cause: params.cause });
-      this.stackTraceStr = params.stackTrace;
+      this.stackTraceString = params.stackTrace;
       this.name = 'CustomStackTraceError';
     }
   },
@@ -149,8 +149,8 @@ describe('loop', () => {
     });
 
     expect(buildNoticeMessage).toHaveBeenCalledTimes(2);
-    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'x', iterationStr: '# 1 / 2' });
-    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'y', iterationStr: '# 2 / 2' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'x', iterationString: '# 1 / 2' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'y', iterationString: '# 2 / 2' });
   });
 
   it('should stop processing when abortSignal is already aborted', async () => {
@@ -311,6 +311,8 @@ describe('loop', () => {
 
     let capturedProgressEl: HTMLProgressElement | null = null;
     const createElementSpy = mockImplementation({
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+      $object: globalThis,
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
         const element = originalImplementation(tag);
         if (tag === 'progress') {
@@ -318,9 +320,7 @@ describe('loop', () => {
         }
         return element;
       },
-      method: 'createEl',
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      obj: globalThis
+      method: 'createEl'
     });
 
     await loop({
@@ -344,7 +344,7 @@ describe('loop', () => {
     const items = [1, 2, 3];
 
     await loop({
-      buildNoticeMessage: vi.fn((params: LoopBuildNoticeMessageParams<number>) => `Processing ${params.iterationStr}`),
+      buildNoticeMessage: vi.fn((params: LoopBuildNoticeMessageParams<number>) => `Processing ${params.iterationString}`),
       items,
       pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
       processItem,
@@ -449,6 +449,8 @@ describe('loop', () => {
   it('should increment progress bar value for each processed item', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
     const createElementSpy = mockImplementation({
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+      $object: globalThis,
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
         const element = originalImplementation(tag);
         if (tag === 'progress') {
@@ -456,9 +458,7 @@ describe('loop', () => {
         }
         return element;
       },
-      method: 'createEl',
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      obj: globalThis
+      method: 'createEl'
     });
 
     const values: number[] = [];
@@ -489,6 +489,8 @@ describe('loop', () => {
   it('should still increment progress bar value even when processItem throws', async () => {
     let capturedProgressEl: HTMLProgressElement | null = null;
     const createElementSpy = mockImplementation({
+      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+      $object: globalThis,
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
         const element = originalImplementation(tag);
         if (tag === 'progress') {
@@ -496,9 +498,7 @@ describe('loop', () => {
         }
         return element;
       },
-      method: 'createEl',
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      obj: globalThis
+      method: 'createEl'
     });
 
     vi.spyOn(console, 'error').mockImplementation(() => {
@@ -535,7 +535,7 @@ describe('loop', () => {
 
     expect(processItem).toHaveBeenCalledTimes(1);
     expect(processItem).toHaveBeenCalledWith('only');
-    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'only', iterationStr: '# 1 / 1' });
+    expect(buildNoticeMessage).toHaveBeenCalledWith({ item: 'only', iterationString: '# 1 / 1' });
   });
 
   it('should call requestAnimationFrameAsync when UI update threshold is exceeded', async () => {

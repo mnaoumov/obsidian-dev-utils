@@ -193,16 +193,16 @@ export interface GetSafeRenamePathParams {
  */
 export interface InvokeWithFileSystemLockParams {
   /**
-   * The application instance.
-   */
-  readonly app: App;
-
-  /**
    * The function to execute.
    *
    * @param content - The content of the file.
    */
-  fn(this: void, content: string): void;
+  $function(this: void, content: string): void;
+
+  /**
+   * The application instance.
+   */
+  readonly app: App;
 
   /**
    * The path or file to execute the function with the file system lock of.
@@ -712,13 +712,13 @@ export function getSafeRenamePath(params: GetSafeRenamePathParams): string {
  */
 export async function invokeWithFileSystemLock(params: InvokeWithFileSystemLockParams): Promise<void> {
   const {
+    $function,
     app,
-    fn,
     pathOrFile
   } = params;
   const file = getFile({ app, pathOrFile });
   await app.vault.process(file, (content) => {
-    fn(content);
+    $function(content);
     return content;
   });
 }
@@ -835,7 +835,7 @@ export async function process(params: ProcessParams): Promise<void> {
   using _lock = resourceLockComponent?.lockForPath({ operationName: 'Process note', pathOrFile });
 
   await retryWithTimeoutNotice({
-    async operationFn(abortSignal) {
+    async operationFunction(abortSignal) {
       abortSignal.throwIfAborted();
 
       const oldContent = await readSafe(app, pathOrFile);

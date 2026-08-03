@@ -86,7 +86,7 @@ export async function lint(options?: LintOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branches are only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
   /* v8 ignore stop */
-  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArgs: targets }]);
+  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArguments: targets }]);
 
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const rootFolder = getRootFolder() ?? process.cwd();
@@ -107,7 +107,7 @@ export async function lint(options?: LintOptions): Promise<void> {
     String.raw`https://www\.npmjs\.com/package/`,
     '--url-rewrite-replace',
     'https://registry.npmjs.org/',
-    { batchedArgs: mdFiles }
+    { batchedArguments: mdFiles }
   ]);
 }
 
