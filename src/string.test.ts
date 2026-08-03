@@ -407,16 +407,16 @@ describe('makeValidVariableName', () => {
 
 describe('normalizeString', () => {
   it('should replace non-breaking spaces with regular spaces', () => {
-    expect(normalizeString('hello\u00A0world')).toBe('hello world');
+    expect(normalizeString('hello\u{A0}world')).toBe('hello world');
   });
 
   it('should replace narrow non-breaking spaces', () => {
-    expect(normalizeString('hello\u202Fworld')).toBe('hello world');
+    expect(normalizeString('hello\u{202F}world')).toBe('hello world');
   });
 
   it('should return NFC-normalized string', () => {
     // E + combining acute accent should become a single character
-    const input = 'e\u0301';
+    const input = 'e\u{301}';
     const result = normalizeString(input);
     expect(result).toBe(input.normalize('NFC'));
   });

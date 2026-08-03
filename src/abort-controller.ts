@@ -46,11 +46,7 @@ export function abortSignalAny(...maybeAbortSignals: (AbortSignal | undefined)[]
     }
   }
 
-  const abortHandlerDisposables: Disposable[] = [];
-
-  for (const abortSignal of abortSignals) {
-    abortHandlerDisposables.push(onAbort(abortSignal, handleAbort));
-  }
+  const abortHandlerDisposables: Disposable[] = Array.from(abortSignals, (abortSignal) => onAbort(abortSignal, handleAbort));
 
   const combinedAbortHandlerDisposable = new CombineDisposable({ disposables: abortHandlerDisposables });
 

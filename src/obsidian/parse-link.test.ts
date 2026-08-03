@@ -535,10 +535,10 @@ describe('parseLinks', () => {
 
 describe('encodeUrl (additional edge cases)', () => {
   it.each([
-    { description: 'vertical tab', expected: 'path%0Bfile.md', input: 'path\x0Bfile.md' },
-    { description: 'backspace', expected: 'path%08file.md', input: 'path\x08file.md' },
-    { description: 'form feed', expected: 'path%0Cfile.md', input: 'path\x0Cfile.md' },
-    { description: 'null character', expected: 'path%00file.md', input: 'path\x00file.md' },
+    { description: 'vertical tab', expected: 'path%0Bfile.md', input: 'path\u{B}file.md' },
+    { description: 'backspace', expected: 'path%08file.md', input: 'path\u{8}file.md' },
+    { description: 'form feed', expected: 'path%0Cfile.md', input: 'path\u{C}file.md' },
+    { description: 'null character', expected: 'path%00file.md', input: 'path\u{0}file.md' },
     { description: 'mixed safe and unsafe', expected: 'path/to%20the%5Cfile.md', input: String.raw`path/to the\file.md` }
   ])('should encode $description correctly', ({ expected, input }) => {
     expect(encodeUrl(input)).toBe(expected);

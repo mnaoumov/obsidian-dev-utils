@@ -24,7 +24,7 @@ const OG_HASH_LENGTH = 16;
 const FONT_VARIANT_COUNT = 2;
 const FONT_WEIGHT_REGULAR = 400;
 const FONT_WEIGHT_BOLD = 700;
-const PNG_SIGNATURE = Buffer.from('\x89PNG\r\n\x1A\n', 'binary');
+const PNG_SIGNATURE = Buffer.from('\u{89}PNG\r\n\u{1A}\n', 'binary');
 
 const temporaryDirectories: string[] = [];
 

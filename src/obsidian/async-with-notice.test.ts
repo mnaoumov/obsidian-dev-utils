@@ -121,8 +121,8 @@ function createMockPluginNoticeComponent(): PluginNoticeComponent {
  */
 function setupCreateFragmentGlobal(): CreateFragmentGlobalResult {
   let lastFragment: DocumentFragment | null = null;
-  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  const originalCreateFragment = globalThis.createFragment;
+
+  const originalCreateFragment = createFragment;
 
   // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   globalThis.createFragment = vi.fn((callback?: (f: DocumentFragment) => void): DocumentFragment => {
@@ -722,10 +722,9 @@ describe('AsyncWithNotice', () => {
       assertNonNullable(callback);
       callback();
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      expect(vi.mocked(globalThis.clearInterval)).toHaveBeenCalled();
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      vi.mocked(globalThis.clearInterval).mockRestore();
+      expect(vi.mocked(clearInterval)).toHaveBeenCalled();
+
+      vi.mocked(clearInterval).mockRestore();
       cleanup();
     });
 
@@ -739,10 +738,9 @@ describe('AsyncWithNotice', () => {
 
       onTimeout(context);
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      expect(vi.mocked(globalThis.setInterval)).toHaveBeenCalledWith(expect.any(Function), 1000);
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      vi.mocked(globalThis.setInterval).mockRestore();
+      expect(vi.mocked(setInterval)).toHaveBeenCalledWith(expect.any(Function), 1000);
+
+      vi.mocked(setInterval).mockRestore();
       cleanup();
     });
 
@@ -761,11 +759,9 @@ describe('AsyncWithNotice', () => {
       expect(button).not.toBeNull();
       button?.click();
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      expect(vi.mocked(globalThis.clearInterval)).toHaveBeenCalled();
+      expect(vi.mocked(clearInterval)).toHaveBeenCalled();
 
-      // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-      vi.mocked(globalThis.clearInterval).mockRestore();
+      vi.mocked(clearInterval).mockRestore();
       cleanup();
     });
 

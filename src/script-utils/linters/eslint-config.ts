@@ -715,6 +715,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/consistent-class-member-order': 'off',
         /*
+         * Every report is `new Error().stack`, which captures a stack trace and never surfaces its message,
+         * or `new AggregateError(errors)`, whose message is optional precisely because the collected errors
+         * carry the detail. The rule cannot tell either from an error that is actually thrown at a user.
+         */
+        'unicorn/error-message': 'off',
+        /*
          * The default style for `node:path` is a default import, but this codebase imports its members by name
          * throughout, consistently with every other `node:` module it uses. Configure the rule to enforce the
          * style actually in use rather than annotate 17 sites that are not going to change.
@@ -797,6 +803,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         'unicorn/no-array-reverse': 'off',
         'unicorn/no-array-sort': 'off',
         /*
+         * `continue` inside a nested loop is ordinary, readable control flow here. The rule's remedy is to
+         * extract every such loop into its own function, which spreads one coherent traversal across two
+         * declarations without making anything clearer.
+         */
+        'unicorn/no-break-in-nested-loop': 'off',
+        /*
          * Assigning onto the global object is how this library installs and restores test doubles, and how a
          * few Obsidian-runtime globals are reached at all. The rule cannot separate that from an accidental
          * global write, and it has no fixer.
@@ -821,6 +833,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         'unicorn/no-this-outside-of-class': 'off',
         // Same call as its object counterpart above: the destructuring depth flagged here is deliberate and reads well.
         'unicorn/no-unreadable-array-destructuring': 'off',
+        /*
+         * The reports are all `for (const file of await readdirPosix(...))`, which reads exactly as intended.
+         * Hoisting the awaited call into a variable named after the loop's own iterable adds a line and a name
+         * without adding information.
+         */
+        'unicorn/no-unreadable-for-of-expression': 'off',
         /*
          * The nested destructuring this flags is deliberate here and reads well: pulling a member out of a
          * params bag in one step states where the value comes from, which a second intermediate binding only
@@ -853,6 +871,13 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/prefer-await': 'off',
         /*
+         * Obsidian's `Component` has its own `removeChild(component)` for the component lifecycle, unrelated
+         * to `Node#removeChild`. The rule matches on the method name alone, so every report here is a
+         * component being unloaded, and following the advice calls a `remove()` that does not exist -- which
+         * is what `tsc` said when the fixer was let loose on them.
+         */
+        'unicorn/prefer-dom-node-remove': 'off',
+        /*
          * Directly contradicts `obsidianmd/no-global-this`: this rule rewrites `window.x` to `globalThis.x`, and
          * that one forbids `globalThis` outright. With both enabled, `--fix` applies one and then the other
          * reverts it, which ESLint reports as `ESLintCircularFixesWarning` across 29 files. Obsidian's own
@@ -871,6 +896,13 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * config level rather than annotated at each call site.
          */
         'unicorn/prefer-url-can-parse': 'off',
+        /*
+         * Every array reported here holds strings, where the default sort is already well defined and correct.
+         * Adding the comparator the rule asks for would mean choosing between code-unit and locale ordering,
+         * so following it would CHANGE the sort rather than document it. The rule earns its place on numeric
+         * arrays; it does not have any here.
+         */
+        'unicorn/require-array-sort-compare': 'off',
         // The codebase already spells encodings the way the Encoding Standard does (`utf-8`), which is also what `TextDecoder` reports. Keep the rule enforcing consistency, just in the direction already in use.
         'unicorn/text-encoding-identifier-case': [
           'error',

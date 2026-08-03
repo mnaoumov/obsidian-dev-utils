@@ -210,8 +210,8 @@ function initCjs(): void {
       if (id === 'process' || id === 'node:process') {
         // eslint-disable-next-line no-console -- Valid usage.
         console.debug(`The most likely you can safely ignore this error. Module not found: ${id}. Fake process object is returned instead.`);
-        // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-        return globalThis.process;
+
+        return process;
       }
     } else {
       const module = originalRequire?.(id) as (Partial<EsmModule> | undefined);
