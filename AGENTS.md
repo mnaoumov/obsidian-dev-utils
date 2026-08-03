@@ -348,6 +348,33 @@ export function myFunction(param: Type): ReturnType {
   instances: a handler carries per-registration state, which is exactly why the API is a factory.
 - (cannot be forced by ESLint — an API-integration convention)
 
+### L10. Never hold a phantom file registration across an `await` during a rename
+
+- `registerFiles` (`obsidian/metadata-cache.ts`) makes a **non-existing** path resolve again, by putting a
+  phantom `TFile` into `vault.fileMap` + `metadataCache.uniqueFileLookup`. That is exactly what
+  Obsidian's own post-rename link update consults, so a live phantom is not inert — it changes core's
+  answer.
+- `FileManager.runAsyncLinkUpdate()` snapshots each reference's resolved paths, `await`s the handler
+  (which performs the rename), then in its `finally` sets `inProgressUpdates = null` and **immediately**
+  calls `updateAllLinks()`, which rewrites a link only when `getLinkpathDest()` now returns an empty or
+  different path set. That per-link decision is **synchronous** — nothing else can interleave once it
+  starts. So a registration confined to a synchronous span is invisible to it; one held across an
+  `await` is not, and while it is live the old path still resolves, core concludes "unchanged", and
+  **nothing rewrites the link** — a silent data-consistency bug, not an error.
+- Two ways to stay safe, in order of preference: (a) keep the registration inside a purely synchronous
+  span (this is why `getBacklinksForFileOrPath` registers and reads without awaiting); (b) when the
+  work in between is unavoidably async — a consumer-supplied attachment-path callback, a backlink
+  fetch — `await waitForPendingLinkUpdates(app)` (`obsidian/file-manager.ts`) **first**. Observing
+  `inProgressUpdates === null` proves core has already decided, precisely because of the ordering above.
+- `RenameHandler.handle()` awaits it unconditionally for this reason. The invariant is one sentence:
+  *never touch the vault index while Obsidian is mid-decision.*
+- A unit test cannot see this — it is a microtask race against real Obsidian. Cover it with an
+  `*.obsidian.integration.test.ts` asserting the link was rewritten, and confirm the test is **red
+  before the fix**; a race that happens to pass proves nothing. See
+  [#47](https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/47).
+- (cannot be forced by ESLint — a custom rule could flag an `await` inside the scope of a
+  `using … = registerFiles(…)`, which would catch the common shape but not the cross-operation case)
+
 ## Testing
 
 ### Goals
