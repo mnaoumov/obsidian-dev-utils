@@ -16,8 +16,6 @@ import {
   it
 } from 'vitest';
 
-import { dispose } from '../../disposable.ts';
-
 describe('PluginNoticeComponent styling', () => {
   it('should render the plugin name with the accent color and bold weight, distinct from the body', async () => {
     const result = await evalInObsidian({
@@ -322,7 +320,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
             updatedText
           };
         } finally {
-          dispose(handle);
+          handle[Symbol.dispose]();
         }
       }
     });

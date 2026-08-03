@@ -24,8 +24,6 @@ import {
   it
 } from 'vitest';
 
-import { dispose } from '../disposable.ts';
-
 interface BypassResult {
   readonly wasModifyAllowedUnderLock: boolean;
   readonly wasRolledBackUnderLock: boolean;
@@ -216,7 +214,7 @@ describe('VaultTransaction', () => {
             wasRolledBackUnderLock
           };
         } finally {
-          dispose(lock);
+          lock[Symbol.dispose]();
           if (await app.vault.adapter.exists(folderPath)) {
             await app.vault.adapter.rmdir(folderPath, true);
           }
