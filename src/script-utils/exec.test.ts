@@ -1,3 +1,5 @@
+/* eslint-disable unicorn/prefer-single-call -- The pushes here are `Readable.prototype.push`, not `Array.prototype.push`. Its second parameter is the encoding, so merging `push(chunk)` and `push(null)` into `push(chunk, null)` pushes the chunk with a null encoding and never signals end-of-stream. */
+
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import {

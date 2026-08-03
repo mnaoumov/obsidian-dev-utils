@@ -251,11 +251,7 @@ export function renderMdxProse(text: string, allTypes: Map<string, TypeInfo>, se
   const out: string[] = [];
   for (const seg of segmentMarkdown(text)) {
     if (seg.type === 'code') {
-      out.push('');
-      out.push(`\`\`\`${seg.lang ?? 'ts'}`);
-      out.push(seg.text);
-      out.push('```');
-      out.push('');
+      out.push('', `\`\`\`${seg.lang ?? 'ts'}`, seg.text, '```', '');
     } else {
       out.push(escapeMdxProse(resolveLinks(seg.text, allTypes, selfNamespace)));
     }
