@@ -509,6 +509,7 @@ export async function disposeAsync(asyncDisposable: AsyncDisposable): Promise<vo
  */
 export function isAsyncDisposable($unknown: unknown): $unknown is AsyncDisposable {
   const asyncDisposable = $unknown as Partial<AsyncDisposable>;
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- `Object.hasOwn` is own-property-only, and `[Symbol.asyncDispose]` is a prototype method on every class-based disposable here.
   return !!asyncDisposable[Symbol.asyncDispose];
 }
 
@@ -531,6 +532,7 @@ export function isAsyncDisposableEx($unknown: unknown): $unknown is AsyncDisposa
  */
 export function isDisposable($unknown: unknown): $unknown is Disposable {
   const disposable = $unknown as Partial<Disposable>;
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- `Object.hasOwn` is own-property-only, and `[Symbol.dispose]` is a prototype method on every class-based disposable here.
   return !!disposable[Symbol.dispose];
 }
 

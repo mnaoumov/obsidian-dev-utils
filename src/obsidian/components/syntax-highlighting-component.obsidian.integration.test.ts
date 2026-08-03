@@ -62,11 +62,11 @@ describe('SyntaxHighlightingComponent', () => {
             editorMode: 'text/typescript',
             language: LANGUAGE
           });
-          const hasModeWhileRegistered = LANGUAGE in window.CodeMirror.modes;
+          const hasModeWhileRegistered = Object.hasOwn(window.CodeMirror.modes, LANGUAGE);
           const isHighlightedWhileRegistered = await checkIsHighlightedAsync(true);
 
           component.unload();
-          const hasModeAfterUnload = LANGUAGE in window.CodeMirror.modes;
+          const hasModeAfterUnload = Object.hasOwn(window.CodeMirror.modes, LANGUAGE);
           const isHighlightedAfterUnload = await checkIsHighlightedAsync(false);
           const textAfterUnload = readCodeLineEl()?.textContent ?? '';
 

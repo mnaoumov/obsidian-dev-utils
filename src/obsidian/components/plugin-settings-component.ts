@@ -292,6 +292,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     const validationResult = await this.validate(settings);
     const defaults = this.defaultSettings as PluginSettings;
     for (const propertyName of this.propertyNames) {
+      // eslint-disable-next-line unicorn/no-computed-property-existence-check -- This tests whether a validation message is non-empty, not whether the key exists.
       if (validationResult[propertyName]) {
         settings[propertyName] = defaults[propertyName];
       }

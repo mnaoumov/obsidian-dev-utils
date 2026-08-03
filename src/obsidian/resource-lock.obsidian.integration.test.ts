@@ -659,7 +659,7 @@ describe('resource-lock', () => {
           commandHandlerComponent.load();
 
           try {
-            const isRegisteredBefore = Boolean(app.commands.commands[commandId]);
+            const isRegisteredBefore = Object.hasOwn(app.commands.commands, commandId);
             const disposable = commandHandlerComponent.registerCommandHandlers([
               new UnlockActiveNoteCommandHandler({ app, resourceLockComponent })
             ]);
@@ -672,7 +672,7 @@ describe('resource-lock', () => {
 
             // Disposing removes the command — this is the real-Obsidian removeCommand path that a mock cannot cover.
             dispose(disposable);
-            const isRegisteredAfterDispose = Boolean(app.commands.commands[commandId]);
+            const isRegisteredAfterDispose = Object.hasOwn(app.commands.commands, commandId);
 
             return { canExecuteWhileNotLocked, hasCheckCallback, isRegisteredAfterDispose, isRegisteredBefore, isRegisteredWhileActive };
           } finally {

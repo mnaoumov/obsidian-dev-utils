@@ -461,7 +461,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, options: Ge
       const fileCacheEntry = app.metadataCache.fileCache[file.path];
       const isUpToDate = fileCacheEntry?.mtime === file.stat.mtime
         && fileCacheEntry.size === file.stat.size
-        && Boolean(app.metadataCache.metadataCache[fileCacheEntry.hash]);
+        && Object.hasOwn(app.metadataCache.metadataCache, fileCacheEntry.hash);
       if (!isUpToDate) {
         await app.metadataCache.computeFileMetadataAsync(file);
         await ensureMetadataCacheReady(app);

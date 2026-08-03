@@ -58,7 +58,7 @@ describe('demo-vault-helper bootstrap', () => {
         args: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
-          const isCstInstalled = Boolean(app.plugins.manifests[cstPluginId]);
+          const isCstInstalled = Object.hasOwn(app.plugins.manifests, cstPluginId);
           let noticeText = '';
           for (const noticeEl of document.querySelectorAll('.notice')) {
             if (noticeEl.textContent.includes('Demo Vault Helper')) {
@@ -71,7 +71,7 @@ describe('demo-vault-helper bootstrap', () => {
             cstInstalled: isCstInstalled,
             dataJson: isCstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
             helperEnabled: app.plugins.enabledPlugins.has(helperPluginId),
-            helperInstalled: Boolean(app.plugins.manifests[helperPluginId]),
+            helperInstalled: Object.hasOwn(app.plugins.manifests, helperPluginId),
             noticeText,
             probeValue: Reflect.get(window, '__demoVaultHelperProbeValue') ?? null,
             startupRan: Reflect.get(window, '__demoVaultHelperStartupRan') === true

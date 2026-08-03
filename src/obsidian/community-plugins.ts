@@ -308,7 +308,7 @@ export async function getLatestReleaseVersion(repo: string): Promise<string> {
 export async function installCommunityPlugin(params: InstallCommunityPluginParams): Promise<void> {
   const { app } = params;
   const pluginId = await resolveCommunityPluginId(params);
-  if (app.plugins.manifests[pluginId]) {
+  if (Object.hasOwn(app.plugins.manifests, pluginId)) {
     return;
   }
 
@@ -414,7 +414,7 @@ export async function toggleInstallCommunityPlugin(params: ToggleInstallCommunit
 export async function uninstallCommunityPlugin(params: UninstallCommunityPluginParams): Promise<void> {
   const { app } = params;
   const pluginId = await resolveCommunityPluginId(params);
-  if (!app.plugins.manifests[pluginId]) {
+  if (!Object.hasOwn(app.plugins.manifests, pluginId)) {
     return;
   }
   await app.plugins.uninstallPlugin(pluginId);

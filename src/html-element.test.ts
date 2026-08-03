@@ -492,6 +492,7 @@ describe('isLoaded', () => {
     it('should return true for stylesheet link with sheet set', () => {
       const element = buildElement({
         attributes: {
+          // eslint-disable-next-line unicorn/name-replacements -- `rel` is the HTML attribute name.
           rel: 'stylesheet',
           sheet: {}
         },
@@ -503,6 +504,7 @@ describe('isLoaded', () => {
     it('should return false for stylesheet link with sheet null', () => {
       const element = buildElement({
         attributes: {
+          // eslint-disable-next-line unicorn/name-replacements -- `rel` is the HTML attribute name.
           rel: 'stylesheet',
           sheet: null
         },
@@ -514,6 +516,7 @@ describe('isLoaded', () => {
     it('should return true for non-stylesheet link', () => {
       const element = buildElement({
         attributes: {
+          // eslint-disable-next-line unicorn/name-replacements -- `rel` is the HTML attribute name.
           rel: 'icon',
           sheet: null
         },

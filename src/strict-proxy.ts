@@ -59,6 +59,7 @@ export function bypassStrictProxy<T>($object: T): T {
   if (!isObjectLike($object)) {
     return $object;
   }
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- On a proxy, `Object.hasOwn` triggers the `getOwnPropertyDescriptor` trap rather than `has`.
   if (!(STRICT_PROXY_TARGET_SYMBOL in $object)) {
     return $object;
   }
@@ -115,6 +116,7 @@ function wrapProxy<T>(value: unknown): T {
     return value as T;
   }
 
+  // eslint-disable-next-line unicorn/no-computed-property-existence-check -- On a proxy, `Object.hasOwn` triggers the `getOwnPropertyDescriptor` trap rather than `has`.
   if (STRICT_PROXY_TARGET_SYMBOL in value) {
     return value as T;
   }
@@ -133,6 +135,7 @@ function wrapProxy<T>(value: unknown): T {
      * @remarks Not refactored to parameter-object pattern, to keep the parity with the {@link ProxyHandler.get} trap.
      */
     get(target, property, receiver): unknown {
+      // eslint-disable-next-line unicorn/no-computed-property-existence-check -- The `get` trap must see inherited members; `Object.hasOwn` would hide every prototype method.
       if (property in target) {
         if (proxiedChildren.has(property)) {
           return proxiedChildren.get(property);

@@ -207,7 +207,7 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
       const COMMUNITY_PLUGINS_REGISTRY_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json';
       const { requestUrl } = obsidianModule;
 
-      if (!app.plugins.manifests[HOT_RELOAD_PLUGIN_ID]) {
+      if (!Object.hasOwn(app.plugins.manifests, HOT_RELOAD_PLUGIN_ID)) {
         const registryEntries = (await requestUrl(COMMUNITY_PLUGINS_REGISTRY_URL)).json as CommunityPluginRegistryEntry[];
         const entry = registryEntries.find((candidate) => candidate.id === HOT_RELOAD_PLUGIN_ID);
         if (!entry) {

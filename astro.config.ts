@@ -48,9 +48,12 @@ export default defineConfig({
   markdown: {
     remarkPlugins: [remarkRelativeLinks(BASE)]
   },
+  // eslint-disable-next-line unicorn/name-replacements -- `outDir` is an Astro config key.
   outDir: './docs/dist',
+  // eslint-disable-next-line unicorn/name-replacements -- `publicDir` is an Astro config key.
   publicDir: './docs/public',
   site: 'https://mnaoumov.dev',
+  // eslint-disable-next-line unicorn/name-replacements -- `srcDir` is an Astro config key.
   srcDir: './docs/src',
   trailingSlash: 'always'
 });

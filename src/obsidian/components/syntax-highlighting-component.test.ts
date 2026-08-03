@@ -141,7 +141,7 @@ describe('SyntaxHighlightingComponent', () => {
       });
       component.unload();
 
-      expect(TEST_LANGUAGE in mocks.prism.languages).toBe(false);
+      expect(Object.hasOwn(mocks.prism.languages, TEST_LANGUAGE)).toBe(false);
     });
 
     it('should restore the previously registered language when unloaded', async () => {
@@ -238,8 +238,8 @@ describe('SyntaxHighlightingComponent', () => {
       });
       component.unload();
 
-      expect(TEST_LANGUAGE in mocks.modes).toBe(false);
-      expect(TEST_LANGUAGE in mocks.prism.languages).toBe(false);
+      expect(Object.hasOwn(mocks.modes, TEST_LANGUAGE)).toBe(false);
+      expect(Object.hasOwn(mocks.prism.languages, TEST_LANGUAGE)).toBe(false);
     });
 
     it('should restore the previously defined editor mode when unloaded', async () => {
@@ -265,7 +265,7 @@ describe('SyntaxHighlightingComponent', () => {
         editorMode: EDITOR_MODE,
         language: TEST_LANGUAGE
       })).rejects.toThrow('Component is not loaded');
-      expect(TEST_LANGUAGE in mocks.modes).toBe(false);
+      expect(Object.hasOwn(mocks.modes, TEST_LANGUAGE)).toBe(false);
     });
   });
 });

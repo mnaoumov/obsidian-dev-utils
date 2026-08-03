@@ -581,6 +581,7 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
             jsx: true
           },
           projectService: true,
+          // eslint-disable-next-line unicorn/name-replacements -- `tsconfigRootDir` is a `typescript-eslint` parser option.
           tsconfigRootDir: getRootFolder() ?? ''
         }
       },
@@ -760,6 +761,15 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
             checkProperties: true,
             replacements: {
               dev: false,
+              /*
+               * Every `dir` here is a filesystem directory, never a direction, so the rule is narrowed to the
+               * one expansion rather than left offering a choice it cannot make.
+               */
+              // eslint-disable-next-line unicorn/name-replacements -- This is the rule's own replacement key, which has to be spelled the way the rule reads it.
+              dir: {
+                direction: false,
+                directory: true
+              },
               dist: false,
               doc: false,
               docs: false,
@@ -786,6 +796,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/no-array-reverse': 'off',
         'unicorn/no-array-sort': 'off',
+        /*
+         * Assigning onto the global object is how this library installs and restores test doubles, and how a
+         * few Obsidian-runtime globals are reached at all. The rule cannot separate that from an accidental
+         * global write, and it has no fixer.
+         */
+        'unicorn/no-global-object-property-assignment': 'off',
         // `null` is load-bearing here: an optional collaborator is modelled as a required `null | X` field rather than an optional `X`, so `null` and `undefined` are not interchangeable.
         'unicorn/no-null': 'off',
         /*
@@ -796,6 +812,15 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * deliberately assert `this` binding.
          */
         'unicorn/no-this-outside-of-class': 'off',
+        // Same call as its object counterpart above: the destructuring depth flagged here is deliberate and reads well.
+        'unicorn/no-unreadable-array-destructuring': 'off',
+        /*
+         * The nested destructuring this flags is deliberate here and reads well: pulling a member out of a
+         * params bag in one step states where the value comes from, which a second intermediate binding only
+         * obscures. The rule takes no options, so there is no way to keep the depth limit it is really after
+         * while allowing the shape in use.
+         */
+        'unicorn/no-unreadable-object-destructuring': 'off',
         /*
          * `checkArguments` strips `undefined` arguments, which shifts the remaining positional arguments into
          * the wrong slots; `checkArrowFunctionBody` removes `return undefined;` from arrow bodies whose other
@@ -869,6 +894,13 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
        */
       files: context.testFiles,
       rules: {
+        /*
+         * A test binding is named after the thing it captures, not after what it does: `createElementSpy`
+         * holds the spy on `createElement`, and `createProgramOptions` holds the options `createProgram` was
+         * called with. The verb belongs to the name being referenced, so the rule reads it as a function name
+         * that is not a function. Left on for production code, where the complaint is the right one.
+         */
+        'unicorn/no-non-function-verb-prefix': 'off',
         'unicorn/no-top-level-assignment-in-function': 'off'
       }
     }

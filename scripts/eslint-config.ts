@@ -61,6 +61,7 @@ function getAstroConfigTypeCheckingConfigs(): Linter.Config[] {
       parserOptions: {
         project: './tsconfig.astro.json',
         projectService: false,
+        // eslint-disable-next-line unicorn/name-replacements -- `tsconfigRootDir` is a `typescript-eslint` parser option.
         tsconfigRootDir: getRootFolder() ?? ''
       }
     }
