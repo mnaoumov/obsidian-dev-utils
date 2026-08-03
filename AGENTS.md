@@ -185,7 +185,7 @@ export function myFunction(param: Type): ReturnType {
 - Custom ESLint rule `obsidian-dev-utils/no-unused-params-members` flags `*Params`/`*Options` interface members never read by the receiving function; spreading, rest-destructuring, forwarding, returning, or storing the whole object counts as using all members.
 - The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by
   `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts` driven by `rule-tester-helper.ts`:
-  `kebab-case-file-name`, `no-async-callback-to-unsafe-return`, `no-unused-params-members`,
+  `no-async-callback-to-unsafe-return`, `no-unused-params-members`,
   `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`,
   `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`,
   `require-super-call`.
@@ -193,8 +193,19 @@ export function myFunction(param: Type): ReturnType {
   (`getUnicornConfigs()` in `src/script-utils/linters/eslint-config.ts`), adopted repo-wide in
   `7808eeb1`. It is a curated adoption, not a blanket one: a long explicit off-list turns off the rules
   that fight this codebase, and `unicorn/name-replacements` carries custom replacements because unicorn
-  substitutes at the word level inside compound names. Note `kebab-case-file-name` stays the in-house
-  rule — `unicorn/filename-case` was not swapped in for it.
+  substitutes at the word level inside compound names.
+- **File-name casing is `unicorn/filename-case`'s job — do not re-add an in-house rule for it.** The
+  migration above initially kept `obsidian-dev-utils/kebab-case-file-name` alongside it, so every bad
+  name was reported twice; it was deleted once measured. `unicorn/filename-case` arrives enabled with
+  the `recommended` preset (nothing here turns it off) and defaults to `case: 'kebabCase'`, and it
+  already does everything the in-house rule did: `multipleFileExtensions` (default on) makes it judge
+  only the part before the FIRST dot, so `foo.obsidian.integration.test.ts` reduces to `foo` exactly
+  as before. It additionally checks DIRECTORY names, which the in-house rule never did. The only
+  divergence is that unicorn exempts a name starting with `$` (`filename.startsWith('$')`) — no such
+  file exists here. The in-house rule's other claimed edge, stripping a leading dot so
+  `.markdownlint-cli2.mjs` is judged as `markdownlint-cli2`, never actually ran: root dotfiles are not
+  in `EslintConfigContext.allFiles()` (test + script + source files plus three named root configs), so
+  no rule sees them.
 
 ## Rules
 
