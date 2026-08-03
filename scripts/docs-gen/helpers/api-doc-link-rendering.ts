@@ -80,7 +80,7 @@ export function findType(allTypes: Map<string, TypeInfo>, name: string, currentN
   let found: TypeInfo | undefined;
   let matchCount = 0;
   for (const info of allTypes.values()) {
-    if (!(info.name === name)) {
+    if (info.name !== name) {
       continue;
     }
 

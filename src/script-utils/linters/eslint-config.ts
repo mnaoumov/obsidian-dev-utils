@@ -803,6 +803,13 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/no-global-object-property-assignment': 'off',
         // `null` is load-bearing here: an optional collaborator is modelled as a required `null | X` field rather than an optional `X`, so `null` and `undefined` are not interchangeable.
+        /*
+         * The rule's list of standard `Symbol` properties predates explicit resource management, so it reports
+         * `Symbol.dispose` and `Symbol.asyncDispose` as non-standard. Both are part of the language that this
+         * library is built on -- 114 files here use `using` declarations, and the disposable types are a
+         * public part of its surface -- so all 59 reports are the rule being out of date rather than a finding.
+         */
+        'unicorn/no-nonstandard-builtin-properties': 'off',
         'unicorn/no-null': 'off',
         /*
          * TypeScript's explicit `this` parameter (`function get(this: Holder) { return this.value; }`) makes

@@ -290,7 +290,7 @@ export function getExamples(node: JSDocableNode): string[] {
   const examples: string[] = [];
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
-      if (!(tag.getTagName() === 'example')) {
+      if (tag.getTagName() !== 'example') {
         continue;
       }
 
@@ -309,7 +309,7 @@ export function getParameterDescriptions(node: JSDocableNode): Map<string, strin
   const docs = node.getJsDocs();
   for (const doc of docs) {
     for (const tag of doc.getTags()) {
-      if (!(tag.getTagName() === 'param')) {
+      if (tag.getTagName() !== 'param') {
         continue;
       }
 

@@ -517,7 +517,7 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     jumpToPageInput.addEventListener(
       'keydown',
       convertAsyncToSync(async (event: KeyboardEvent): Promise<void> => {
-        if (!(event.key === 'Enter')) {
+        if (event.key !== 'Enter') {
           return;
         }
 

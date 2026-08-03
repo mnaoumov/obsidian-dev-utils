@@ -1675,7 +1675,7 @@ describe('app-dependent functions', () => {
     it('should edit external links via editLinks', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -1804,7 +1804,7 @@ describe('app-dependent functions', () => {
     it('should invoke changesProvider when applyFileChanges calls it', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -1839,7 +1839,7 @@ describe('app-dependent functions', () => {
     it('should return null from changesProvider when content differs from cachedRead', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -1883,7 +1883,7 @@ describe('app-dependent functions', () => {
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -1928,7 +1928,7 @@ describe('app-dependent functions', () => {
       // Wire up applyFileChanges to invoke changesProvider
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -2106,7 +2106,7 @@ describe('app-dependent functions', () => {
     it('should skip links when shouldUpdateEmbedOnlyLinks does not match', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -2140,7 +2140,7 @@ describe('app-dependent functions', () => {
     it('should invoke convertLink for matching links', async () => {
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -2219,7 +2219,7 @@ describe('app-dependent functions', () => {
 
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 
@@ -2267,7 +2267,7 @@ describe('app-dependent functions', () => {
 
       vi.mocked(applyFileChanges).mockImplementation(
         async ({ changesProvider }) => {
-          if (!(typeof changesProvider === 'function')) {
+          if (typeof changesProvider !== 'function') {
             return;
           }
 

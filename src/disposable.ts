@@ -287,7 +287,6 @@ export class AsyncCallbackDisposable extends AsyncDisposableBase {
  * @param disposable - the disposable to dispose
  */
 export function dispose(disposable: Disposable): void {
-  // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.dispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. Routing every disposal through this function keeps the exception to one site.
   disposable[Symbol.dispose]();
 }
 
@@ -497,7 +496,6 @@ export class CombineDisposable extends DisposableBase {
  * @returns A {@link Promise} that resolves once the disposal completes.
  */
 export async function disposeAsync(asyncDisposable: AsyncDisposable): Promise<void> {
-  // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.asyncDispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. Routing every disposal through this function keeps the exception to one site.
   await asyncDisposable[Symbol.asyncDispose]();
 }
 
@@ -563,7 +561,6 @@ export function toAsyncDisposableEx(asyncDisposable: AsyncDisposable): AsyncDisp
 
   return {
     asyncDispose: asyncDisposeAdapted,
-    // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.asyncDispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. This module implements the protocol, so it necessarily names the symbol.
     [Symbol.asyncDispose]: asyncDisposeAdapted
   };
 
@@ -588,7 +585,6 @@ export function toDisposableEx(disposable: Disposable): DisposableEx {
 
   return {
     dispose: disposeAdapted,
-    // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.dispose` is standard as of Explicit Resource Management; the rule's table of builtin properties has not caught up. This module implements the protocol, so it necessarily names the symbol.
     [Symbol.dispose]: disposeAdapted
   };
 

@@ -80,7 +80,7 @@ export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
       const typeParameterMap = buildTypeParameterMap(baseInfo, typeArguments);
 
       for (const property of baseInfo.properties) {
-        if (info.properties.every((p) => !(p.name === property.name))) {
+        if (info.properties.every((p) => p.name !== property.name)) {
           info.properties.push(substituteMemberTypes({ ...property, inheritedFrom: baseInfo.name }, typeParameterMap));
         }
       }

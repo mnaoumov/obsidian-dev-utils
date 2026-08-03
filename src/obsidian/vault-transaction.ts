@@ -249,7 +249,6 @@ export class VaultTransaction {
   /**
    * Rolls back the transaction on disposal unless it was already committed or rolled back.
    */
-  // eslint-disable-next-line unicorn/no-nonstandard-builtin-properties -- `Symbol.dispose` is standard as of Explicit Resource Management; the rule has not caught up. This class implements the protocol, so it must name the symbol.
   public async [Symbol.asyncDispose](): Promise<void> {
     if (this.state === 'open') {
       await this.rollback();
