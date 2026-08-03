@@ -288,4 +288,8 @@ export function writePackageLockJsonSync(packageLockJson: PackageLockJson, cwd?:
   writeJsonSync(getPackageLockJsonPath(cwd), packageLockJson);
 }
 
-export { type PackageJson } from 'type-fest';
+// TypeScript's declaration emit adds `with { 'resolution-mode': 'import' }` to import declarations only.
+// A re-export-from would thus resolve ESM-only `type-fest` under `require` in the `.d.cts` build (TS1479).
+// Re-exporting the binding imported above keeps that resolution mode attached.
+// eslint-disable-next-line unicorn/prefer-export-from -- `export…from` re-introduces TS1479, see above.
+export type { PackageJson };

@@ -183,6 +183,18 @@ export function myFunction(param: Type): ReturnType {
 
 - Use `assertNonNullable()` from `src/type-guards.ts` in tests instead of `!`
 - Custom ESLint rule `obsidian-dev-utils/no-unused-params-members` flags `*Params`/`*Options` interface members never read by the receiving function; spreading, rest-destructuring, forwarding, returning, or storing the whole object counts as using all members.
+- The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by
+  `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts` driven by `rule-tester-helper.ts`:
+  `kebab-case-file-name`, `no-async-callback-to-unsafe-return`, `no-unused-params-members`,
+  `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`,
+  `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`,
+  `require-super-call`.
+- The shared config extends **`eslint-plugin-unicorn`'s `recommended`** preset
+  (`getUnicornConfigs()` in `src/script-utils/linters/eslint-config.ts`), adopted repo-wide in
+  `7808eeb1`. It is a curated adoption, not a blanket one: a long explicit off-list turns off the rules
+  that fight this codebase, and `unicorn/name-replacements` carries custom replacements because unicorn
+  substitutes at the word level inside compound names. Note `kebab-case-file-name` stays the in-house
+  rule — `unicorn/filename-case` was not swapped in for it.
 
 ## Rules
 
@@ -285,6 +297,23 @@ export function myFunction(param: Type): ReturnType {
   This is exactly how the leak in the ad-hoc `registerCommandHandlers` was found and fixed.
 - (cannot be forced by ESLint — a runtime-behavior gotcha; a custom rule could flag reading `command.id`
   after an `addCommand` call, but not reliably)
+
+### L8. Re-export a type from an ESM-only package through its `import type`, never `export … from`
+
+- `build:validate-declarations` type-checks the emitted `dist/lib/cjs/**/*.d.cts` under CJS resolution.
+  There, any reference to an **ESM-only** dependency (`type-fest`, and anything else without a CJS entry)
+  fails with **TS1479** unless the module specifier carries `with { 'resolution-mode': 'import' }`.
+- TypeScript's declaration emit adds that attribute **only to import declarations**. It does NOT add it to
+  a re-export, so `export type { PackageJson } from 'type-fest';` compiles fine in `src/` and then fails
+  the `.d.cts` validation — a break invisible to `lint`, `test`, and `build:compile:typescript`.
+- Re-export the binding already imported at the top of the file instead
+  (`import type { PackageJson } from 'type-fest';` … `export type { PackageJson };`). The resolution mode
+  stays attached to the import, and both the `.d.cts` and `.d.mts` emit the bare `export type { … };`.
+- `unicorn/prefer-export-from` actively pushes back toward the broken form, so the re-export needs an
+  `// eslint-disable-next-line unicorn/prefer-export-from -- …` naming this reason. See
+  `src/script-utils/npm.ts` for the reference case.
+- (cannot be forced by ESLint — the opposing rule is the one ESLint has; `build:validate-declarations` is
+  the check that catches it)
 
 ## Testing
 
