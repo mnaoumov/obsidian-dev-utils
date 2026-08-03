@@ -253,5 +253,5 @@ function setNamespaces(namespaces: string | string[]): void {
 }
 
 function toArray(namespaces: string | string[]): string[] {
-  return typeof namespaces === 'string' ? namespaces.split(NAMESPACE_SEPARATOR).filter(Boolean) : namespaces.flatMap(toArray);
+  return typeof namespaces === 'string' ? namespaces.split(NAMESPACE_SEPARATOR).filter(Boolean) : namespaces.flatMap((namespace) => toArray(namespace));
 }

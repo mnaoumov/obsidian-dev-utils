@@ -37,7 +37,7 @@ interface PathHolder {
 }
 
 vi.mock('../error.ts', () => ({
-  errorToString: vi.fn((error: unknown) => String(error)),
+  errorToString: vi.fn(String),
   throwExpression: vi.fn((message: unknown) => {
     throw message;
   })

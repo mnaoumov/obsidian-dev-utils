@@ -142,6 +142,7 @@ export abstract class TypedTextComponent<T> extends ValueComponent<T> implements
    * @param value - The value to convert.
    * @returns The string.
    */
+  // eslint-disable-next-line unicorn/prefer-native-coercion-functions -- This is an overridable method on the component's public surface, and subclasses replace it to control how their value is rendered. Turning it into a `valueToString = String` field would change the class shape and take `override` with it.
   public valueToString(value: T): string {
     return String(value);
   }

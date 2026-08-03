@@ -33,6 +33,7 @@ interface SpawnCallOptions {
 }
 
 function createMockChild(): MockChild {
+  // eslint-disable-next-line unicorn/prefer-event-target -- This stands in for a Node `ChildProcess`, which IS an `EventEmitter`. The code under test calls `.on(...)` and reads emitter semantics, so an `EventTarget` would not be a substitute.
   const child = new EventEmitter() as MockChild;
   child.stdin = new PassThrough();
   child.stdout = new PassThrough();

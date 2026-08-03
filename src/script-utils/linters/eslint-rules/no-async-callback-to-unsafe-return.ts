@@ -105,6 +105,7 @@ function containsPromiseReference(checker: TypeChecker, node: TypeNode): boolean
     /* v8 ignore stop */
     const declaration = $symbol?.declarations?.[0];
     if (declaration && isTypeAliasDeclaration(declaration)) {
+      // eslint-disable-next-line unicorn/no-useless-recursion -- This function recurses in two places: here, following a type alias, and above, fanning out over the members of a union. Only this one is a tail call, so turning it into a loop would leave the function half recursive and half iterative over the same tree.
       return containsPromiseReference(checker, declaration.type);
     }
   }

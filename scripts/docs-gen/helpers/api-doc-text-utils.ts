@@ -134,7 +134,7 @@ export function getDisplayName(name: string, info: TypeInfo): string {
  * variables with a value `import`.
  */
 export function getImportStatement(info: TypeInfo): string | undefined {
-  const isTypeOnly = info.kind === 'interface' || info.kind === 'type' || info.kind === 'enum';
+  const isTypeOnly = ['enum', 'interface', 'type'].includes(info.kind);
   const importKeyword = isTypeOnly ? 'import type' : 'import';
   return `${importKeyword} { ${info.name} } from 'obsidian-dev-utils/${info.namespace}';`;
 }

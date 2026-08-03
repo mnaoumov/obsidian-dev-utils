@@ -739,6 +739,19 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
             }
           }
         ],
+        /*
+         * The rule counts constructor calls and counts through array and object literals, so its default of 3
+         * reports ordinary composition: `Promise.reject(new Error('boom'))` inside an assertion, a test fixture
+         * built as `createTypeInfo({ methods: [createMemberInfo({ ... })] })`, `this.addChild(new C(this.app))`
+         * inside a params bag. Raising the limit by one clears every report here while still catching the
+         * genuinely unreadable nesting the rule is for.
+         */
+        'unicorn/max-nested-calls': [
+          'error',
+          {
+            max: 4
+          }
+        ],
         'unicorn/name-replacements': [
           'error',
           {
@@ -895,6 +908,14 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/prefer-await': 'off',
         /*
+         * All three reports read HTML out (`const html = el.innerHTML`), never write it, and for a read
+         * `getHTML()` returns the same string. What it adds is shadow-root serialization options that nothing
+         * here asks for, in exchange for a much newer platform floor than `innerHTML` -- a bad trade for a
+         * library that has to run on whatever Chromium the installed Obsidian ships. The rule's other half,
+         * rewriting writes to the sanitizing `setHTML()`, would be worth having; it just never fires here.
+         */
+        'unicorn/prefer-dom-node-html-methods': 'off',
+        /*
          * Obsidian's `Component` has its own `removeChild(component)` for the component lifecycle, unrelated
          * to `Node#removeChild`. The rule matches on the method name alone, so every report here is a
          * component being unloaded, and following the advice calls a `remove()` that does not exist -- which
@@ -908,6 +929,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          * guidance wins in an Obsidian library, so this is the rule that gives way.
          */
         'unicorn/prefer-global-this': 'off',
+        /*
+         * Iterator helpers (`Iterator#some` and friends) are ES2025, so this belongs with `no-array-reverse` and
+         * `no-array-sort` above: the same ES2022 floor rules it out, and the same note applies -- revisit them
+         * together if that floor moves.
+         */
+        'unicorn/prefer-iterator-helpers': 'off',
         // `Iterator#toArray` is ES2025. See the ES2022 floor note above.
         'unicorn/prefer-iterator-to-array': 'off',
         /*
@@ -923,6 +950,15 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         'unicorn/prefer-promise-with-resolvers': 'off',
         // `Set#union` and friends are ES2025. See the ES2022 floor note above.
         'unicorn/prefer-set-methods': 'off',
+        /*
+         * The rule ranks operands by syntactic shape, not cost, so every report here swaps one property read
+         * ahead of another and buys nothing. Its own message concedes it cannot check the part that matters --
+         * "after verifying short-circuit behavior" -- and one report sits directly under a comment recording
+         * that the operands change inside a `rename` event handler, which is where order stops being free.
+         * The current orders also carry intent: a null guard before the use it guards, and the condition being
+         * reported before the state it contradicts.
+         */
+        'unicorn/prefer-simple-condition-first': 'off',
         /*
          * `URL.canParse` requires Node 18.17, well above the Node 16.16.0 floor that shipped source targets
          * (see `minimumNodeVersion` below). The rule can therefore never be satisfied here, so it is off at the

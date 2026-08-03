@@ -156,7 +156,7 @@ describe('VaultTransaction', () => {
         try {
           await vaultTransaction.trash(folderPath);
           const goneFlags = await Promise.all(childPaths.map(async (path) => !await adapter.exists(path)));
-          const areChildrenGoneAfterTrash = goneFlags.every((isGone) => isGone);
+          const areChildrenGoneAfterTrash = goneFlags.every(Boolean);
 
           await vaultTransaction.rollback();
           const restoredChildContents: string[] = [];

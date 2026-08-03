@@ -549,7 +549,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
       // Link uses an unescaped divider, so restore the escaping when the original reference had it,
       // Keeping both the table and the embed size intact across the rewrite.
       const newContent = change.reference.originalReference.original.includes(ESCAPED_WIKILINK_DIVIDER)
-        ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER)
+        ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER)
         : change.newContent;
       return referenceToFileChange(change.reference.originalReference, newContent);
     });

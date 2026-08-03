@@ -19,6 +19,7 @@ describe('warnings-as-errors', () => {
   describe('throwOnWarning', () => {
     it('should rethrow the warning as an error, attaching the original as cause', () => {
       const warning = new Error('boom');
+      // eslint-disable-next-line unicorn/no-error-property-assignment -- Setting `name` is how this fixture becomes the warning under test: the code being exercised dispatches on exactly that property.
       warning.name = 'ExperimentalWarning';
 
       let thrown: unknown;

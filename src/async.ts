@@ -183,6 +183,7 @@ export async function asyncFlatMap<T, U>(array: T[], callback: (value: T, index:
  * @returns A {@link Promise} that resolves with an array of the results of the callback function.
  */
 export async function asyncMap<T, U>(array: T[], callback: (value: T, index: number, array: T[]) => Promisable<U>): Promise<U[]> {
+  // eslint-disable-next-line unicorn/no-array-callback-reference -- Passing `callback` straight through is the contract: it is declared as `(value, index, array)` so that it receives exactly what `Array#map` supplies. Wrapping it to take only the value would quietly stop forwarding the other two.
   return await promiseAllSequentially(array.map(callback));
 }
 

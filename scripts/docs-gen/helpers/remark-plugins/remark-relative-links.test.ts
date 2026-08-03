@@ -55,6 +55,7 @@ describe('remarkRelativeLinks', () => {
 });
 
 function getFirstLinkUrl(tree: Root): string {
+  // eslint-disable-next-line unicorn/better-dom-traversing -- `tree` is an mdast `Root`, not a DOM node. It has no `firstElementChild`; the rule matches the `.children[0]` shape without checking what it is on.
   const node = tree.children[0];
   if (node?.type !== 'link') {
     throw new Error('Expected the first node to be a link.');

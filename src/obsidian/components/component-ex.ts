@@ -302,7 +302,7 @@ export class ComponentEx extends Component implements Disposable {
       return null;
     }
 
-    return Promise.resolve(loadPromisable).then(noop, (error: unknown) => {
+    return Promise.resolve(loadPromisable).then(noop).catch((error: unknown) => {
       this.captureError(error);
     });
   }

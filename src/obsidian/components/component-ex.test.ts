@@ -434,6 +434,7 @@ describe('ComponentEx', () => {
       const parent = new ComponentEx();
       const child = new Component();
       const thenable: PromiseLike<void> = {
+        // eslint-disable-next-line unicorn/no-thenable -- A hand-built thenable is the subject of this test, not an accident.
         async then(resolve) {
           await resolve?.();
         }

@@ -160,7 +160,7 @@ export async function ensureLoaded(element: Element): Promise<void> {
     return;
   }
 
-  await Promise.all(getLoadableElements(element).map(ensureLoaded));
+  await Promise.all(getLoadableElements(element).map((loadableElement) => ensureLoaded(loadableElement)));
 }
 
 /**
@@ -269,7 +269,7 @@ export function isLoaded(element: Element): boolean {
     return element.readyState === READY_STATE_LOADED;
   }
 
-  return getLoadableElements(element).every(isLoaded);
+  return getLoadableElements(element).every((loadableElement) => isLoaded(loadableElement));
 }
 
 /**

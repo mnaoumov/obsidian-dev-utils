@@ -734,6 +734,7 @@ function parseLinkNode(node: Link, $string: string): ParseLinkResult {
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
   const raw = getRawLink(node, $string);
+  // eslint-disable-next-line unicorn/better-dom-traversing -- `node` is an mdast node, not a DOM node. It has no `firstElementChild`; the rule matches the `.children[0]` shape without checking what it is on.
   const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
   const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
   const position = ensureNonNullable(node.position);

@@ -146,7 +146,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    */
   public setValue(value: readonly T[]): this {
     const indices = value.map((v) => this.values.indexOf(v)).filter((index) => index !== -1);
-    this.multipleDropdownComponent.setValue(indices.map((index) => String(index)));
+    this.multipleDropdownComponent.setValue(indices.map(String));
     return this;
   }
 

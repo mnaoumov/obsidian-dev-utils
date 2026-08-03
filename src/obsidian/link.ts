@@ -1809,7 +1809,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
       }
     } else {
       if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
-        fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, ESCAPED_WIKILINK_DIVIDER);
+        fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER);
       }
 
       changes.push(fileChange);

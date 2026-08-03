@@ -56,6 +56,7 @@ describe('selectItem', () => {
     const result = await selectItem({
       app,
       items: [1, 2, 3],
+      // eslint-disable-next-line unicorn/prefer-native-coercion-functions -- Passing `String` itself widens the inferred item type to `any`, because its signature takes `value?: any`. The typed arrow is what keeps `selectItem`'s generic bound to `number` here.
       itemTextFunction: (item: number) => String(item),
       placeholder: 'Select a number'
     });

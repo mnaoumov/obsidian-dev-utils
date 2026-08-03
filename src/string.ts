@@ -485,6 +485,7 @@ export function replaceAll<CapturedGroupArguments extends string[]>(params: Repl
   }
 
   if (typeof replacer === 'string') {
+    // eslint-disable-next-line unicorn/no-unsafe-string-replacement -- The pass-through is load-bearing: callers rely on `$&` and friends being expanded. `escapeAlias` passes `\$&` to prefix each matched character with a backslash, and `cli-utils` passes `^$&`. Inserting the string literally would break both.
     return $string.replaceAll(searchValue, replacer);
   }
 

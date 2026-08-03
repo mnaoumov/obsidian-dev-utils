@@ -87,7 +87,7 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
   // The abort reason mirrors the native one -- a `DOMException` named `TimeoutError` -- matching
   // `AbortSignal.timeout` for `reason.name` checks.
   const abortController = new AbortController();
-  // eslint-disable-next-line obsidianmd/no-global-this -- Intentional: `globalThis.setTimeout` (not `window`) so this timeout primitive also works in a Node environment where `window` is undefined; the specific window is irrelevant for a plain timer.
+  // eslint-disable-next-line obsidianmd/no-global-this, unicorn/no-unnecessary-global-this -- Intentional: `globalThis.setTimeout` (not `window`) so this timeout primitive also works in a Node environment where `window` is undefined; the specific window is irrelevant for a plain timer. The explicit `globalThis` is also what keeps the sibling `obsidianmd/prefer-window-timers` rule from rewriting it back to `window`.
   globalThis.setTimeout(() => {
     // eslint-disable-next-line n/no-unsupported-features/node-builtins -- `DOMException` is a DOM global always present in the Obsidian/Electron (Chromium) runtime this code targets, and is also a Node global from Node 17 onward.
     abortController.abort(new DOMException(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`, 'TimeoutError'));

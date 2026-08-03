@@ -85,7 +85,8 @@ Helpers: doFoo(), doBar(), and gen().
 `;
 
 function createFixtureRoot(prefix: string): string {
-  const root = toPosixPath(mkdtempSync(join(toPosixPath(tmpdir()), prefix)));
+  const temporaryDirectory = toPosixPath(tmpdir());
+  const root = toPosixPath(mkdtempSync(join(temporaryDirectory, prefix)));
   populateFixture(root);
   return root;
 }

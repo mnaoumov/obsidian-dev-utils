@@ -1588,6 +1588,7 @@ describe('Async', () => {
 
     it('should wrap a non-Promise thenable into a native Promise', async () => {
       const thenable: PromiseLike<number> = {
+        // eslint-disable-next-line unicorn/no-thenable -- A hand-built thenable is the subject of this test, not an accident.
         then(onFulfilled) {
           return normalizePromisable(Promise.resolve(onFulfilled?.(7)));
         }
@@ -1776,6 +1777,7 @@ describe('Async', () => {
     it('should wrap a non-Promise thenable produced by the function when there is no chain promise', async () => {
       let wasResolved = false;
       const thenable: PromiseLike<void> = {
+        // eslint-disable-next-line unicorn/no-thenable -- A hand-built thenable is the subject of this test, not an accident.
         then(onFulfilled) {
           wasResolved = true;
           return Promise.resolve(onFulfilled?.());

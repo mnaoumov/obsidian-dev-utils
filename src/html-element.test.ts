@@ -40,6 +40,7 @@ describe('toPx', () => {
     [0, '0px'],
     [42, '42px'],
     [-5, '-5px'],
+    // eslint-disable-next-line unicorn/prefer-math-constants -- 3.14 is not pi here, it is an arbitrary decimal chosen to check that fractions survive the `px` conversion. `Math.PI` would make the expected string `'3.141592653589793px'`.
     [3.14, '3.14px'],
     [100, '100px'],
     [-0.5, '-0.5px']
@@ -120,7 +121,7 @@ describe('createElAsync', () => {
 
   it('should set and remove attributes (null removes)', async () => {
     const element = await createElAsync('p', { attr: { 'data-drop': null, 'data-keep': 'value' } });
-    expect(element.getAttribute('data-keep')).toBe('value');
+    expect(element.dataset['keep']).toBe('value');
     expect(Object.hasOwn(element.dataset, 'drop')).toBe(false);
   });
 

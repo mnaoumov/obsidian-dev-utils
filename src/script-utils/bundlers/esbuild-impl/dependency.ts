@@ -98,7 +98,7 @@ export async function getDependenciesToBundle(): Promise<string[]> {
  */
 export async function getDependenciesToSkip(): Promise<Set<string>> {
   const packageJson = await readPackageJson(getFolderName(import.meta.url));
-  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(packageJson.dependencies ?? {}).filter(canSkipFromBundling)]);
+  const dependenciesToSkip = new Set<string>([...builtinModules, ...Object.keys(packageJson.dependencies ?? {}).filter((dependency) => canSkipFromBundling(dependency))]);
   return dependenciesToSkip;
 }
 

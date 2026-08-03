@@ -93,59 +93,6 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
         }
       }
     };
-
-    function getExpectedPrefix(node: Rule.Node): string | undefined {
-      const methodPrefix = getMethodExpectedPrefix(node);
-      if (methodPrefix !== undefined) {
-        return methodPrefix;
-      }
-
-      return getFunctionExpectedPrefix(node);
-    }
-
-    function getMethodExpectedPrefix(node: Rule.Node): string | undefined {
-      const methodDefinition = node.parent;
-      if (methodDefinition?.type !== 'MethodDefinition') {
-        return undefined;
-      }
-
-      /* v8 ignore start -- Defensive guard: ESLint AST MethodDefinition always has a named key. */
-      if (
-        !('key' in methodDefinition) || !methodDefinition.key || typeof methodDefinition.key !== 'object' || !('name' in methodDefinition.key) || typeof methodDefinition.key.name !== 'string'
-      ) {
-        return undefined;
-      }
-      /* v8 ignore stop */
-
-      const methodName = methodDefinition.key.name;
-      const className = getClassName(methodDefinition);
-      if (!className) {
-        return undefined;
-      }
-
-      if (methodName === 'constructor') {
-        return `${className}Constructor`;
-      }
-
-      return className + toPascalCase(methodName);
-    }
-
-    function getFunctionExpectedPrefix(node: Rule.Node): string | undefined {
-      // Named function declaration: function fooBar(params: FooBarParams)
-      if ('id' in node && node.id && typeof node.id === 'object' && 'name' in node.id && typeof node.id.name === 'string') {
-        return toPascalCase(node.id.name);
-      }
-
-      // Arrow function assigned to a variable: const fooBar = (params: FooBarParams) => ...
-      if (
-        node.parent?.type === 'VariableDeclarator' && 'id' in node.parent && node.parent.id && typeof node.parent.id === 'object' && 'name' in node.parent.id
-        && typeof node.parent.id.name === 'string'
-      ) {
-        return toPascalCase(node.parent.id.name);
-      }
-
-      return undefined;
-    }
   },
   meta: {
     docs: {
@@ -159,8 +106,6 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
   }
 };
 
-/* eslint-enable @typescript-eslint/no-unnecessary-condition -- Re-enable after AST traversal code. */
-
 function getClassName(methodDefinition: Rule.Node): string | undefined {
   const classBody = methodDefinition.parent;
   const classNode = classBody?.parent;
@@ -171,6 +116,59 @@ function getClassName(methodDefinition: Rule.Node): string | undefined {
     return undefined;
   }
   return classNode.id.name;
+}
+
+function getExpectedPrefix(node: Rule.Node): string | undefined {
+  const methodPrefix = getMethodExpectedPrefix(node);
+  if (methodPrefix !== undefined) {
+    return methodPrefix;
+  }
+
+  return getFunctionExpectedPrefix(node);
+}
+
+function getFunctionExpectedPrefix(node: Rule.Node): string | undefined {
+  // Named function declaration: function fooBar(params: FooBarParams)
+  if ('id' in node && node.id && typeof node.id === 'object' && 'name' in node.id && typeof node.id.name === 'string') {
+    return toPascalCase(node.id.name);
+  }
+
+  // Arrow function assigned to a variable: const fooBar = (params: FooBarParams) => ...
+  if (
+    node.parent?.type === 'VariableDeclarator' && 'id' in node.parent && node.parent.id && typeof node.parent.id === 'object' && 'name' in node.parent.id
+    && typeof node.parent.id.name === 'string'
+  ) {
+    return toPascalCase(node.parent.id.name);
+  }
+
+  return undefined;
+}
+
+function getMethodExpectedPrefix(node: Rule.Node): string | undefined {
+  const methodDefinition = node.parent;
+  if (methodDefinition?.type !== 'MethodDefinition') {
+    return undefined;
+  }
+
+  /* v8 ignore start -- Defensive guard: ESLint AST MethodDefinition always has a named key. */
+  if (
+    !('key' in methodDefinition) || !methodDefinition.key || typeof methodDefinition.key !== 'object' || !('name' in methodDefinition.key) || typeof methodDefinition.key.name !== 'string'
+  ) {
+    return undefined;
+  }
+  /* v8 ignore stop */
+
+  const methodName = methodDefinition.key.name;
+  const className = getClassName(methodDefinition);
+  if (!className) {
+    return undefined;
+  }
+
+  if (methodName === 'constructor') {
+    return `${className}Constructor`;
+  }
+
+  return className + toPascalCase(methodName);
 }
 
 function getTypeAnnotationInfo(parameter: Rule.Node): TypeAnnotationInfo | undefined {
@@ -214,7 +212,6 @@ function isInExportedScope(node: Rule.Node): boolean {
   if (methodDefinition?.type === 'MethodDefinition') {
     // Check if the class itself is exported
     const classBody = methodDefinition.parent;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- The ESLint AST types declare `parent` as always present, but the Program root has none, so the guard is real.
     const classNode = classBody?.parent;
     /* v8 ignore start -- Defensive guard: ESLint AST always has parent chain for class methods. */
     if (!classNode) {
@@ -228,14 +225,12 @@ function isInExportedScope(node: Rule.Node): boolean {
   // Top-level function: check if exported
   if (node.type === 'FunctionDeclaration') {
     const parentNode = node.parent;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- The ESLint AST types declare `parent` as always present, but the Program root has none, so the guard is real.
     return parentNode?.type === 'ExportNamedDeclaration' || parentNode?.type === 'ExportDefaultDeclaration';
   }
 
   // Arrow function in variable: check if the variable declaration is exported
   if (node.parent?.type === 'VariableDeclarator') {
     const variableDeclaration = node.parent.parent;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- The ESLint AST types declare `parent` as always present, but the Program root has none, so the guard is real.
     if (variableDeclaration?.parent?.type === 'ExportNamedDeclaration') {
       return true;
     }
@@ -256,3 +251,5 @@ function isOptionalParameter(parameter: Rule.Node): boolean {
 function toPascalCase(name: string): string {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
+
+/* eslint-enable @typescript-eslint/no-unnecessary-condition -- Re-enable after AST traversal code, which is now the whole file: the prefix helpers moved to module scope and walk the same optional-parent chain. */

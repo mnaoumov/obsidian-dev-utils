@@ -36,7 +36,7 @@ export abstract class CliTaskResult {
       }
     }
 
-    return CliTaskResult.Success();
+    return this.Success();
   }
 
   /**

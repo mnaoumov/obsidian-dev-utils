@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
       return this;
     }
 
+    // eslint-disable-next-line unicorn/no-thenable -- This double stands in for Obsidian's `Setting`, whose `then(callback)` is a real chaining method on its public API and has nothing to do with promises.
     public then(callback: (component: MockComponentClass) => unknown): this {
       callback(this);
       return this;

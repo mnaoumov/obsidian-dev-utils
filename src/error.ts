@@ -16,6 +16,7 @@ interface ErrorAsyncEventMap {
 }
 
 const errorAsyncEvents = new AsyncEvents<ErrorAsyncEventMap>();
+// eslint-disable-next-line unicorn/no-top-level-side-effects -- Installing the default handler on import is what this module is for. Deferring it behind a call would mean every consumer had to remember to make that call before the first async error, which is precisely the moment the handler needs to already exist.
 errorAsyncEvents.on('asyncError', handleAsyncError);
 
 interface ModuleState {

@@ -88,7 +88,7 @@ describe('editFieldsInPopover', () => {
           // The buttons row is a `Setting` too, so it contributes an empty name element to skip.
           const fieldNames = [...popoverEl.querySelectorAll('.setting-item-name')]
             .map((nameEl) => nameEl.textContent)
-            .filter((name) => Boolean(name));
+            .filter(Boolean);
 
           setInputValue(inputEls[0], 'https://edited.example.com');
           setInputValue(inputEls[1], 'Edited');

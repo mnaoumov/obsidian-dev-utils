@@ -104,7 +104,7 @@ export async function collectBrokenExternalLinks(
   concurrency: number
 ): Promise<BrokenLink[]> {
   const entries = [...targets];
-  const results = Array.from({ length: entries.length }).fill(null);
+  const results: (BrokenLink | null)[] = Array.from({ length: entries.length }, () => null);
   let nextIndex = 0;
 
   async function runWorker(): Promise<void> {

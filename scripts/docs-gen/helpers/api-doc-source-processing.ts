@@ -251,7 +251,7 @@ function isEntryFile(name: string): boolean {
   if (!name.endsWith('.ts') || name.endsWith('.d.ts')) {
     return false;
   }
-  if (name === 'index.ts' || name === '__merged.ts' || name === 'setup.ts') {
+  if (['__merged.ts', 'index.ts', 'setup.ts'].includes(name)) {
     return false;
   }
   if (name.endsWith('-setup.ts')) {

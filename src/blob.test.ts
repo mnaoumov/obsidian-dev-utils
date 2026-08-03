@@ -80,6 +80,7 @@ describe('dataUrlToArrayBuffer', () => {
     const dataUrl = 'data:text/plain;base64,aGVsbG8=';
     const buffer = dataUrlToArrayBuffer(dataUrl);
     const view = new Uint8Array(buffer);
+    // eslint-disable-next-line unicorn/prefer-code-point -- `view` holds bytes, so each element is one code unit by construction. This is the inverse of the `charCodeAt` loop in `blob.ts`, and `fromCodePoint` would reinterpret byte pairs as astral characters.
     const text = String.fromCharCode(...view);
     expect(text).toBe('hello');
   });
