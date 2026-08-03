@@ -619,7 +619,8 @@ class RenameHandler {
           if (attachmentOldPath === this.oldPath) {
             continue;
           }
-          const attachmentOldPathBacklinksMap = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath })).data;
+          const attachmentOldPathBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: attachmentOldPath });
+          const attachmentOldPathBacklinksMap = attachmentOldPathBacklinks.data;
           this.abortSignal.throwIfAborted();
           renameMap.initBacklinksMap({
             combinedBacklinksMap,
@@ -802,7 +803,8 @@ class RenameHandler {
     let oldPathBacklinksMapRefreshed: Map<string, Reference[]>;
     {
       using _registration = registerFiles(this.app, [fakeOldFile]);
-      oldPathBacklinksMapRefreshed = (await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile })).data;
+      const fakeOldFileBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: fakeOldFile });
+      oldPathBacklinksMapRefreshed = fakeOldFileBacklinks.data;
     }
 
     for (const link of oldPathLinksRefreshed) {

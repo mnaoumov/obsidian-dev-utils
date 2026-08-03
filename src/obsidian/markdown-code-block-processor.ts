@@ -230,7 +230,6 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       };
 
       approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
-      const sourceLf = ensureLfEndings(source);
 
       if (
         !hasSingleOccurrence({
@@ -240,6 +239,8 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
       ) {
         return;
       }
+
+      const sourceLf = ensureLfEndings(source);
 
       const sectionOffset = noteContentLf.indexOf(approximateSectionInfo.text);
       const linesBeforeSectionCount = noteContentLf.slice(0, sectionOffset).split('\n').length - 1;

@@ -208,15 +208,18 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
       const { requestUrl } = obsidianModule;
 
       if (!Object.hasOwn(app.plugins.manifests, HOT_RELOAD_PLUGIN_ID)) {
-        const registryEntries = (await requestUrl(COMMUNITY_PLUGINS_REGISTRY_URL)).json as CommunityPluginRegistryEntry[];
+        const registryResponse = await requestUrl(COMMUNITY_PLUGINS_REGISTRY_URL);
+        const registryEntries = registryResponse.json as CommunityPluginRegistryEntry[];
         const entry = registryEntries.find((candidate) => candidate.id === HOT_RELOAD_PLUGIN_ID);
         if (!entry) {
           throw new Error(`Plugin '${HOT_RELOAD_PLUGIN_ID}' was not found in the Obsidian community plugins registry.`);
         }
 
-        const latestRelease = (await requestUrl(`https://api.github.com/repos/${entry.repo}/releases/latest`)).json as GitHubRelease;
+        const latestReleaseResponse = await requestUrl(`https://api.github.com/repos/${entry.repo}/releases/latest`);
+        const latestRelease = latestReleaseResponse.json as GitHubRelease;
         const version = latestRelease.tag_name;
-        const manifest = (await requestUrl(`https://github.com/${entry.repo}/releases/download/${version}/manifest.json`)).json as PluginManifest;
+        const manifestResponse = await requestUrl(`https://github.com/${entry.repo}/releases/download/${version}/manifest.json`);
+        const manifest = manifestResponse.json as PluginManifest;
         await app.plugins.installPlugin(entry.repo, version, manifest);
       }
 

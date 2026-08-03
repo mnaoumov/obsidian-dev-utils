@@ -473,7 +473,7 @@ describe('renderPaginatedList', () => {
       rows
     });
 
-    const options = dv.container.querySelectorAll('select option');
+    const options = dv.container.querySelectorAll(':scope select option');
     expect(options).toHaveLength(3);
     expect(options[0]?.textContent).toBe('5');
     expect(options[1]?.textContent).toBe('10');
@@ -636,7 +636,7 @@ describe('renderPaginated page navigation', () => {
     await renderPaginatedList({ dv, itemsPerPageOptions: [10], rows });
 
     // On page 1, there should be no leading ellipsis, but there might be a trailing one
-    const spans = dv.container.querySelectorAll('.pagination span');
+    const spans = dv.container.querySelectorAll(':scope .pagination span');
     const texts = [...spans].map((s) => s.textContent);
     // For page 1 with 10 pages, there should be trailing "..." because page 1 < totalPages - 2
     expect(texts.includes('...')).toBe(true);
@@ -809,7 +809,7 @@ describe('renderPaginated page navigation', () => {
     await sleep(0);
 
     // On page 5, there should be a leading "..." since pageNumber (5) > MORE_PAGE_NUMBER (3)
-    const spans = dv.container.querySelectorAll('.pagination span');
+    const spans = dv.container.querySelectorAll(':scope .pagination span');
     const texts = [...spans].map((s) => s.textContent);
     expect(texts.filter((t) => t === '...').length).toBeGreaterThanOrEqual(1);
   });

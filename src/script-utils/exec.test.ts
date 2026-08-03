@@ -499,7 +499,9 @@ describe('exec', () => {
     const child = createMockChild();
     mockSpawn.mockReturnValue(child);
     const chunks: Buffer[] = [];
-    child.stdin.on('data', (chunk: Buffer) => chunks.push(chunk));
+    child.stdin.on('data', (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
 
     const promise = exec('cat', { isQuiet: true, stdin: 'input data' });
 

@@ -808,7 +808,6 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
   const nonTestReferences = references.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
 
   const neededForSrc = computeNeededExposure({ context, declaringClass, references: nonTestReferences });
-  const neededWithTests = computeNeededExposure({ context, declaringClass, references });
 
   if (neededForSrc === 'public') {
     return;
@@ -818,6 +817,7 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
     return;
   }
 
+  const neededWithTests = computeNeededExposure({ context, declaringClass, references });
   const finding = buildFinding({
     currentExposure,
     flags: {

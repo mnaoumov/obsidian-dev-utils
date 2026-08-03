@@ -50,6 +50,7 @@ describe('Array', () => {
     });
 
     it('should skip sparse array holes and keep defined elements', () => {
+      // eslint-disable-next-line unicorn/no-new-array -- These tests are about sparse holes, which only `new Array(n)` produces. The rule's `Array.from({ length: n })` builds a dense array of `undefined`, so the hole handling under test would no longer be exercised.
       const array = new Array<number>(5);
       array[1] = 10;
       array[3] = 30;
@@ -58,6 +59,7 @@ describe('Array', () => {
     });
 
     it('should adjust length after filtering sparse array holes', () => {
+      // eslint-disable-next-line unicorn/no-new-array -- These tests are about sparse holes, which only `new Array(n)` produces. The rule's `Array.from({ length: n })` builds a dense array of `undefined`, so the hole handling under test would no longer be exercised.
       const array = new Array<number>(5);
       array[1] = 10;
       array[3] = 30;

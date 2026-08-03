@@ -125,7 +125,7 @@ async function readPages(outputRootPath: string, allFiles: Set<string>): Promise
       continue;
     }
 
-    const html = await readFile(resolve(outputRootPath, relativePath), 'utf8');
+    const html = await readFile(resolve(outputRootPath, relativePath), 'utf-8');
     pages.push({ html, relativePath });
   }
 

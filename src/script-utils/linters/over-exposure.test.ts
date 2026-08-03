@@ -514,7 +514,9 @@ describe('analyzeOverExposure', () => {
     const progressEvents: OverExposureProgress[] = [];
     analyzeOverExposure({
       languageService,
-      onProgress: (progress) => progressEvents.push(progress),
+      onProgress: (progress) => {
+        progressEvents.push(progress);
+      },
       srcFolder: SRC_FOLDER
     });
 

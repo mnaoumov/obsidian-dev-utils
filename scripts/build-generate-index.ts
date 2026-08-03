@@ -18,8 +18,8 @@ await wrapCliTask(async () => {
 
 async function generateIndex(folder: string): Promise<boolean> {
   const dirents = await readdirPosix(folder, { withFileTypes: true });
-  const lines = (await asyncMap(dirents, (dirent) => handleDirent(folder, dirent)))
-    .filter((line) => line !== undefined);
+  const maybeLines = await asyncMap(dirents, (dirent) => handleDirent(folder, dirent));
+  const lines = maybeLines.filter((line) => line !== undefined);
 
   if (lines.length === 0) {
     return false;

@@ -498,9 +498,9 @@ async function renderPaginated<T>(params: RenderPaginatedParams<T>): Promise<voi
     paginationRow2Div.createSpan({ text: ` ${t(($) => $.obsidianDevUtils.dataview.itemsPerPage)} ` });
 
     const itemsPerPageSelect = paginationRow2Div.createEl('select');
-    itemsPerPageOptions.forEach((option: number): void => {
+    for (const option of itemsPerPageOptions) {
       itemsPerPageSelect.createEl('option', { text: String(option), value: String(option) });
-    });
+    }
     itemsPerPageSelect.value = String(itemsPerPage);
     itemsPerPageSelect.addEventListener(
       'change',

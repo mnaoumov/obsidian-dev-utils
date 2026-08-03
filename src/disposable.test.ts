@@ -264,8 +264,16 @@ describe('CombineDisposable', () => {
     const order: string[] = [];
     const combined = new CombineDisposable({
       disposables: [
-        { [Symbol.dispose]: (): number => order.push('a') },
-        { [Symbol.dispose]: (): number => order.push('b') }
+        {
+          [Symbol.dispose](): void {
+            order.push('a');
+          }
+        },
+        {
+          [Symbol.dispose](): void {
+            order.push('b');
+          }
+        }
       ]
     });
     dispose(combined);
@@ -276,8 +284,16 @@ describe('CombineDisposable', () => {
     const order: string[] = [];
     const combined = new CombineDisposable({
       disposables: [
-        { [Symbol.dispose]: (): number => order.push('a') },
-        { [Symbol.dispose]: (): number => order.push('b') }
+        {
+          [Symbol.dispose](): void {
+            order.push('a');
+          }
+        },
+        {
+          [Symbol.dispose](): void {
+            order.push('b');
+          }
+        }
       ],
       disposeOrder: DisposeOrder.Fifo
     });

@@ -789,7 +789,8 @@ export async function listSafe(app: App, pathOrFolder: PathOrFolder): Promise<Li
   const path = getPath(app, pathOrFolder);
   const EMPTY = { files: [], folders: [] };
 
-  if ((await app.vault.adapter.stat(path))?.type !== 'folder') {
+  const pathStats = await app.vault.adapter.stat(path);
+  if (pathStats?.type !== 'folder') {
     return EMPTY;
   }
 

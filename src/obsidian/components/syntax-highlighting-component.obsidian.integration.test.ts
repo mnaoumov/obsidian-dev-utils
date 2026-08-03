@@ -111,7 +111,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         function readCodeLineEl(): Element | null {
-          const lineEls = [...leaf.view.containerEl.querySelectorAll('.cm-content .cm-line')];
+          const lineEls = [...leaf.view.containerEl.querySelectorAll(':scope .cm-content .cm-line')];
           return lineEls.find((lineEl) => lineEl.textContent.includes(CODE)) ?? null;
         }
 
@@ -205,7 +205,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         function readCodeEl(): Element | null {
-          const codeEls = [...leaf.view.containerEl.querySelectorAll('.markdown-preview-view pre > code')];
+          const codeEls = [...leaf.view.containerEl.querySelectorAll(':scope .markdown-preview-view pre > code')];
           return codeEls.find((codeEl) => codeEl.textContent.includes(CODE)) ?? null;
         }
 

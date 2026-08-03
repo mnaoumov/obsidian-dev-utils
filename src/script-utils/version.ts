@@ -393,7 +393,8 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
   let releaseNotes = match?.[1] ? `${match[1]}\n\n` : '';
   /* v8 ignore stop */
 
-  const tags = (await execFromRoot('git tag --sort=-creatordate', { isQuiet: true })).split(/\r?\n/);
+  const tagOutput = await execFromRoot('git tag --sort=-creatordate', { isQuiet: true });
+  const tags = tagOutput.split(/\r?\n/);
   const previousVersion = tags[1];
 
   const repoUrl = await execFromRoot('gh repo view --json url -q .url', { isQuiet: true });
@@ -647,7 +648,11 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
     throw new Error('No version update type provided');
   }
 
-  const isObsidianPlugin = existsSync(resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ManifestJson })) && (await readPackageJson()).name !== 'obsidian-dev-utils';
+  let isObsidianPlugin = false;
+  if (existsSync(resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ManifestJson }))) {
+    const packageJson = await readPackageJson();
+    isObsidianPlugin = packageJson.name !== 'obsidian-dev-utils';
+  }
 
   validate(versionUpdateType);
   await assertGitInstalled();

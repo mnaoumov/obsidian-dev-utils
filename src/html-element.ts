@@ -444,6 +444,7 @@ function isInstanceOf<T extends Node>(node: Node, ctor: abstract new (...$argume
 
 function setElementAttributes(element: Element, attribute: NonNullable<DomElementInfo['attr']>): void {
   for (const [name, value] of Object.entries(attribute)) {
+    // eslint-disable-next-line unicorn/prefer-toggle-attribute -- `toggleAttribute` only ever sets the empty string, so it cannot carry `String(value)`. The rule matches the remove/set shape without seeing that the value is what this branch exists to write.
     if (value === null) {
       element.removeAttribute(name);
     } else {

@@ -33,7 +33,7 @@ import {
 /**
  * Regular expression for special link symbols.
  */
-// eslint-disable-next-line no-control-regex -- The regular expression is written to capture control characters.
+// eslint-disable-next-line no-control-regex, unicorn/prefer-unicode-code-point-escapes -- The regular expression is written to capture control characters, which are conventionally spelled as `\x` escapes; `\u{0}`-style escapes would obscure the `\x0E-\x1F` range without expressing anything the two-digit form cannot.
 const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
 /**

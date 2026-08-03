@@ -278,7 +278,7 @@ export class MonkeyAroundComponent extends ComponentEx {
         return finalPatchedMethod as $Object[MethodName];
 
         function patchedMethod(this: $Object, ...originalArguments: Parameters<$Function>): ReturnType<$Function> {
-          // eslint-disable-next-line consistent-this, @typescript-eslint/no-this-alias -- We need to use the `this` context.
+          // eslint-disable-next-line consistent-this, @typescript-eslint/no-this-alias, unicorn/no-this-assignment -- We need to use the `this` context.
           const originalThis = this;
           return params.patchHandler({
             fallback() {

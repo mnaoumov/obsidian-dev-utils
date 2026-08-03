@@ -174,14 +174,22 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
 
     const lines: string[] = [];
     const propertyTitle = `${name}.${property.name}`;
-    lines.push('---');
-    lines.push(`title: "${escapeYaml(propertyTitle)}"`);
-    lines.push(`slug: "api/${nsDirectory}/${typeRouteDirectory}/${memberRouteSegment(property.name)}"`);
-    lines.push(`signature: "${escapeYaml(truncateSignature(`${property.signature}: ${property.type}`))}"`, 'editUrl: false', 'sidebar:');
-    lines.push(`  label: "${escapeYaml(propertyTitle)}"`, '---', '', componentImport, '');
-
-    // Breadcrumb
-    lines.push(`[${name}](${BASE_PATH}/api/${nsDirectory}/${typeRouteDirectory}/) › ${property.name}`, '');
+    lines.push(
+      '---',
+      `title: "${escapeYaml(propertyTitle)}"`,
+      `slug: "api/${nsDirectory}/${typeRouteDirectory}/${memberRouteSegment(property.name)}"`,
+      `signature: "${escapeYaml(truncateSignature(`${property.signature}: ${property.type}`))}"`,
+      'editUrl: false',
+      'sidebar:',
+      `  label: "${escapeYaml(propertyTitle)}"`,
+      '---',
+      '',
+      componentImport,
+      '',
+      // Breadcrumb
+      `[${name}](${BASE_PATH}/api/${nsDirectory}/${typeRouteDirectory}/) › ${property.name}`,
+      ''
+    );
 
     const staticAttribute = property.isStatic ? ' isStatic={true}' : '';
     const typeAttribute = ` type="${escapeJsxAttribute(markdownToHtml(renderTypeWithLinks(property.type, allTypes, name, info.namespace)))}"`;
@@ -214,17 +222,26 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
     const displayName = `${name}.${overloadKey} method`;
     const firstOverload = overloads[0];
 
-    const lines: string[] = ['---'];
-    lines.push(`title: "${escapeYaml(displayName)}"`);
-    lines.push(`slug: "api/${nsDirectory}/${typeRouteDirectory}/${overloadRouteSegment(overloadKey)}"`);
+    const lines: string[] = [
+      '---',
+      `title: "${escapeYaml(displayName)}"`,
+      `slug: "api/${nsDirectory}/${typeRouteDirectory}/${overloadRouteSegment(overloadKey)}"`
+    ];
     if (firstOverload) {
       lines.push(`signature: "${escapeYaml(truncateSignature(`${firstOverload.signature}: ${firstOverload.returnType}`))}"`);
     }
-    lines.push('editUrl: false', 'sidebar:');
-    lines.push(`  label: "${escapeYaml(`${name}.${overloadKey}`)}"`, '---', '', componentImport, '');
-
-    // Breadcrumb
-    lines.push(`[${name}](${BASE_PATH}/api/${nsDirectory}/${typeRouteDirectory}/) › ${overloadKey}`, '');
+    lines.push(
+      'editUrl: false',
+      'sidebar:',
+      `  label: "${escapeYaml(`${name}.${overloadKey}`)}"`,
+      '---',
+      '',
+      componentImport,
+      '',
+      // Breadcrumb
+      `[${name}](${BASE_PATH}/api/${nsDirectory}/${typeRouteDirectory}/) › ${overloadKey}`,
+      ''
+    );
 
     for (const overload of overloads) {
       renderMethodOverloadMdx(lines, overload, name, info.namespace, allTypes);
@@ -274,8 +291,7 @@ export async function generateNamespaceIndexPages(
   }
 
   // Root API index page listing every module.
-  const rootLines: string[] = ['---', 'title: "API reference"', 'slug: "api"', 'editUrl: false', 'sidebar:', '  label: "Overview"', '---', '', 'The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).', ''];
-  rootLines.push('## Modules', '');
+  const rootLines: string[] = ['---', 'title: "API reference"', 'slug: "api"', 'editUrl: false', 'sidebar:', '  label: "Overview"', '---', '', 'The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).', '', '## Modules', ''];
   const sortedNamespaces = [...namespaces.keys()].sort((a, b) => a.localeCompare(b));
   for (const namespace of sortedNamespaces) {
     rootLines.push(`- [${namespace}](${BASE_PATH}/api/${getNamespaceDirectory(namespace)}/)`);
@@ -332,8 +348,7 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
 
   // Examples
   for (const example of info.examples) {
-    lines.push('**Example:**', '');
-    lines.push(renderExampleMdx(example, allTypes, info.namespace), '');
+    lines.push('**Example:**', '', renderExampleMdx(example, allTypes, info.namespace), '');
   }
 
   // Functions render like method detail pages — signature, params, returns
@@ -454,8 +469,7 @@ export function renderFunctionPage(lines: string[], info: TypeInfo, allTypes: Ma
   lines.push(`**Returns:** ${escapeMdxAngleBrackets(renderTypeWithLinks($function.returnType, allTypes, info.name, info.namespace))}${returnDesc}`, '');
 
   for (const example of $function.examples) {
-    lines.push('**Example:**', '');
-    lines.push(renderExampleMdx(example, allTypes, info.namespace), '');
+    lines.push('**Example:**', '', renderExampleMdx(example, allTypes, info.namespace), '');
   }
 }
 
@@ -543,16 +557,31 @@ export function renderTypeAliasPage(lines: string[], info: TypeInfo, allTypes: M
   lines.push(`<TypeSignature kind="type" name="${info.name}"${typeParamsAttribute} />`, '');
 
   const rhs = info.typeAliasText ?? 'unknown';
-  lines.push('**Signature:**', '', '```ts');
-  lines.push(`type ${getDisplayName(info.name, info)} = ${rhs}`, '```', '');
-  lines.push(`**Type:** ${escapeMdxBraces(escapeMdxAngleBrackets(renderTypeWithLinks(rhs, allTypes, info.name, info.namespace)))}`, '');
+  lines.push(
+    '**Signature:**',
+    '',
+    '```ts',
+    `type ${getDisplayName(info.name, info)} = ${rhs}`,
+    '```',
+    '',
+    `**Type:** ${escapeMdxBraces(escapeMdxAngleBrackets(renderTypeWithLinks(rhs, allTypes, info.name, info.namespace)))}`,
+    ''
+  );
 }
 
 export function renderVariablePage(lines: string[], name: string, info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
   const keyword = info.variableKeyword ?? 'let';
   const variableType = info.variableType ?? 'unknown';
-  lines.push('**Signature:**', '', '```ts', `${keyword} ${name}: ${variableType}`, '```', '');
-  lines.push(`**Type:** ${escapeMdxBraces(escapeMdxAngleBrackets(renderTypeWithLinks(variableType, allTypes, name, info.namespace)))}`, '');
+  lines.push(
+    '**Signature:**',
+    '',
+    '```ts',
+    `${keyword} ${name}: ${variableType}`,
+    '```',
+    '',
+    `**Type:** ${escapeMdxBraces(escapeMdxAngleBrackets(renderTypeWithLinks(variableType, allTypes, name, info.namespace)))}`,
+    ''
+  );
 }
 
 export function sidebarTreeToEntries(node: SidebarTreeNode, label: string): SidebarEntry {

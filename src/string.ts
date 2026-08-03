@@ -445,6 +445,7 @@ export function normalizeString($string: string): string {
   return replaceAll({
     $string,
     replacer: ' ',
+    // eslint-disable-next-line unicorn/prefer-unicode-code-point-escapes -- These are the conventional spellings for U+00A0 and U+202F. The code-point form is only unambiguous with the `u` flag, so taking the fix would also change how the pattern is parsed.
     searchValue: /\u00A0|\u202F/g
   }).normalize('NFC');
 }

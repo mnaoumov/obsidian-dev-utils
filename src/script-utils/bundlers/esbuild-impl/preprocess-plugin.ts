@@ -9,6 +9,8 @@
 
 /* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. */
 
+/* eslint-disable unicorn/prefer-module -- The CommonJS surface is the subject here, not an oversight. This plugin emits the interop shims that let a bundle run under either module system, so it has to name `__filename` and `require` to detect and bridge them. `import.meta.filename` is precisely what is unavailable in the environment these branches exist to serve. */
+
 import type { Plugin } from 'esbuild';
 import type { pathToFileURL } from 'node:url';
 
@@ -102,10 +104,10 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
           if (!contents.includes(key)) {
             continue;
           }
-          const valueString = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
           if (contents.includes(`var ${variable}`)) {
             continue;
           }
+          const valueString = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });
           contents = `var ${variable} = globalThis['${key}'] ?? ${valueString};\n${contents}`;
         }
 
@@ -249,3 +251,5 @@ function initEsm(): void {
 function name($unknown: unknown): unknown {
   return $unknown;
 }
+
+/* eslint-enable unicorn/prefer-module -- Pairs with the file-level disable above. */

@@ -169,7 +169,8 @@ export async function asyncFilterInPlace<T>(array: T[], predicate: (value: T, in
  * @returns A {@link Promise} that resolves with a flattened array of the results of the callback function.
  */
 export async function asyncFlatMap<T, U>(array: T[], callback: (value: T, index: number, array: T[]) => Promisable<U[]>): Promise<U[]> {
-  return (await asyncMap(array, callback)).flat();
+  const nestedResults = await asyncMap(array, callback);
+  return nestedResults.flat();
 }
 
 /**
@@ -198,7 +199,7 @@ export function convertAsyncToSync<Arguments extends unknown[]>(asyncFunction: G
   return (...$arguments: Arguments): void => {
     assertNonNullable(stackTrace);
     const innerStackTrace = getStackTrace(1);
-    stackTrace = `${stackTrace}\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
+    stackTrace += `\n    at --- convertAsyncToSync --- (0)\n${innerStackTrace}`;
     invokeAsyncSafely(() => asyncFunction(...$arguments), stackTrace);
   };
 }

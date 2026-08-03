@@ -820,6 +820,19 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/no-break-in-nested-loop': 'off',
         /*
+         * The rule cannot see through a hoisted function declaration, so it treats a binding that a nested
+         * function already read as unused before the exit. In `runWithTimeout` that is `let isCompleted`, which
+         * `run()` and `innerTimeout()` both touch while the `Promise.race` above the exit is still running --
+         * moving the declaration past the exit, as the rule asks, would leave those reads in the temporal dead
+         * zone. Its own fixer declines all 15 sites for the same reason it cannot prove them safe, so following
+         * the rule is entirely manual. What is left after that is placement style: the remaining reports are
+         * named constants and derived paths deliberately grouped at the top of a function, and pushing each one
+         * below the first guard splits a cohesive block to no benefit. The three sites where deferring skipped
+         * real work (a second `computeNeededExposure` walk, a `toJson` serialization, an `ensureLfEndings` pass)
+         * were applied by hand instead.
+         */
+        'unicorn/no-declarations-before-early-exit': 'off',
+        /*
          * Assigning onto the global object is how this library installs and restores test doubles, and how a
          * few Obsidian-runtime globals are reached at all. The rule cannot separate that from an accidental
          * global write, and it has no fixer.
@@ -897,6 +910,15 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         'unicorn/prefer-global-this': 'off',
         // `Iterator#toArray` is ES2025. See the ES2022 floor note above.
         'unicorn/prefer-iterator-to-array': 'off',
+        /*
+         * The suggested replacement is `Math.trunc(Number(x))`, which is longer than `parseInt(x, 10)` and no
+         * clearer, and it is not the same function: `parseInt` stops at the first character that cannot be part
+         * of the number, so `'12abc'` parses to 12 where `Number` yields `NaN`. Two of the reports read user
+         * input through that difference -- the page-jump box in the Dataview helper, and
+         * `NumberComponent.valueFromString`, whose lenient parse is part of a published component's behavior.
+         * The rest parse machine-generated strings, where the two agree but the shorter spelling still wins.
+         */
+        'unicorn/prefer-number-coercion': 'off',
         // `Promise.withResolvers` is ES2024. See the ES2022 floor note above.
         'unicorn/prefer-promise-with-resolvers': 'off',
         // `Set#union` and friends are ES2025. See the ES2022 floor note above.

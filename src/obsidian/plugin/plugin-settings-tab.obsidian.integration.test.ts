@@ -371,9 +371,9 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         const result2: GroupResult = {
           boundInputValue: tab.containerEl.querySelector<HTMLInputElement>('input[type="number"]')?.value ?? null,
-          headings: [...tab.containerEl.querySelectorAll('.setting-item-heading .setting-item-name')].map((element) => element.textContent),
+          headings: [...tab.containerEl.querySelectorAll(':scope .setting-item-heading .setting-item-name')].map((element) => element.textContent),
           isSettingEx,
-          rowNames: [...tab.containerEl.querySelectorAll('.setting-item:not(.setting-item-heading) .setting-item-name')].map((element) => element.textContent)
+          rowNames: [...tab.containerEl.querySelectorAll(':scope .setting-item:not(.setting-item-heading) .setting-item-name')].map((element) => element.textContent)
         };
 
         app.setting.close();
