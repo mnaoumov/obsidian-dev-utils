@@ -133,7 +133,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         app.setting.openTab(tab);
         await settle();
 
-        const rowElementBefore = findRowElement();
+        const rowElementBefore = findRowEl();
         const isRowDisabledBefore = rowElementBefore.hasClass('is-disabled');
         const isComponentDisabledBefore = dependentComponent?.disabled ?? false;
 
@@ -143,7 +143,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         tab.refreshDomState();
         await settle();
 
-        const rowElementAfter = findRowElement();
+        const rowElementAfter = findRowEl();
         const result2: DependentDisabledResult = {
           isComponentDisabledAfter: dependentComponent?.disabled ?? false,
           isComponentDisabledBefore,
@@ -157,13 +157,13 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         return result2;
 
-        function findRowElement(): HTMLElement {
-          const rowElement = [...tab.containerEl.querySelectorAll<HTMLElement>('.setting-item')]
+        function findRowEl(): HTMLElement {
+          const rowEl = [...tab.containerEl.querySelectorAll<HTMLElement>('.setting-item')]
             .find((element) => element.querySelector('.setting-item-name')?.textContent === 'Dependent');
-          if (!rowElement) {
+          if (!rowEl) {
             throw new Error('the dependent row was not rendered');
           }
-          return rowElement;
+          return rowEl;
         }
 
         async function settle(): Promise<void> {

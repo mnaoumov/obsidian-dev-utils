@@ -159,7 +159,7 @@ export interface SuggestModalCommandBuilderBuildOptions {
 }
 
 interface InstructionEx extends Instruction {
-  init?(purposeElement: HTMLSpanElement, scope: Scope): void;
+  init?(purposeEl: HTMLSpanElement, scope: Scope): void;
   registerScope?(scope: Scope): void;
 }
 
@@ -180,8 +180,8 @@ export class SuggestModalCommandBuilder {
   public addCheckbox(command: CheckboxCommand): this {
     this.instructions.push({
       command: this.buildCommand(command),
-      init: (purposeElement, scope) => {
-        const checkboxEl = purposeElement.createEl('input', { type: 'checkbox' });
+      init: (purposeEl, scope) => {
+        const checkboxEl = purposeEl.createEl('input', { type: 'checkbox' });
         command.onInit(checkboxEl);
         checkboxEl.addEventListener('change', () => {
           command.onChange(checkboxEl.checked);
@@ -210,9 +210,9 @@ export class SuggestModalCommandBuilder {
   public addDropDown(command: DropDownCommand): this {
     this.instructions.push({
       command: this.buildCommand(command),
-      init: (purposeElement, scope) => {
-        purposeElement.appendText(' ');
-        const dropdownComponent = new DropdownComponent(purposeElement);
+      init: (purposeEl, scope) => {
+        purposeEl.appendText(' ');
+        const dropdownComponent = new DropdownComponent(purposeEl);
         command.onInit(dropdownComponent);
         dropdownComponent.onChange((value) => {
           command.onChange(value);
@@ -224,9 +224,9 @@ export class SuggestModalCommandBuilder {
           if (dropdownComponent.disabled) {
             return;
           }
-          const selectElement = dropdownComponent.selectEl;
-          selectElement.selectedIndex = (selectElement.selectedIndex + 1) % selectElement.options.length;
-          selectElement.trigger('change');
+          const selectEl = dropdownComponent.selectEl;
+          selectEl.selectedIndex = (selectEl.selectedIndex + 1) % selectEl.options.length;
+          selectEl.trigger('change');
         });
       },
       purpose: command.purpose
@@ -278,10 +278,10 @@ export class SuggestModalCommandBuilder {
 
     modal.setInstructions(this.instructions);
     const purposeEls = [...modal.instructionsEl.findAll('.prompt-instruction > span:nth-child(2)')] as HTMLSpanElement[];
-    for (const [index, purposeElement] of purposeEls.entries()) {
+    for (const [index, purposeEl] of purposeEls.entries()) {
       /* v8 ignore stop */
 
-      this.instructions[index]?.init?.(purposeElement, modal.scope);
+      this.instructions[index]?.init?.(purposeEl, modal.scope);
     }
   }
 

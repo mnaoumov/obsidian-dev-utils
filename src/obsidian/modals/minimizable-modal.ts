@@ -286,28 +286,28 @@ export class MinimizableModal<TModal extends Modal> {
   }
 
   private createMinimizeButton(): HTMLElement {
-    const buttonElement = this.modal.modalEl.createEl('button', { cls: CssClass.MinimizeButton });
-    setIcon(buttonElement, MINIMIZE_ICON_ID);
-    buttonElement.addEventListener('click', () => {
+    const buttonEl = this.modal.modalEl.createEl('button', { cls: CssClass.MinimizeButton });
+    setIcon(buttonEl, MINIMIZE_ICON_ID);
+    buttonEl.addEventListener('click', () => {
       this.minimize();
     });
-    return buttonElement;
+    return buttonEl;
   }
 
   private createMinimizedBar(): HTMLElement {
-    const barElement = this.modal.containerEl.ownerDocument.body.createDiv();
-    addPluginCssClasses(barElement, [CssClass.MinimizedModalBar]);
-    barElement.createSpan({
+    const barEl = this.modal.containerEl.ownerDocument.body.createDiv();
+    addPluginCssClasses(barEl, [CssClass.MinimizedModalBar]);
+    barEl.createSpan({
       cls: CssClass.MinimizedModalBarTitle,
       text: this.modal.titleEl.textContent
     });
-    const restoreButtonElement = barElement.createEl('button', { cls: CssClass.RestoreButton });
-    setIcon(restoreButtonElement, RESTORE_ICON_ID);
+    const restoreButtonEl = barEl.createEl('button', { cls: CssClass.RestoreButton });
+    setIcon(restoreButtonEl, RESTORE_ICON_ID);
     if (this.shouldShowCancelButton) {
-      const cancelButtonElement = barElement.createEl('button', { cls: CssClass.CancelButton });
-      setIcon(cancelButtonElement, CANCEL_ICON_ID);
-      setTooltip(cancelButtonElement, 'Cancel');
-      cancelButtonElement.addEventListener('click', ($event) => {
+      const cancelButtonEl = barEl.createEl('button', { cls: CssClass.CancelButton });
+      setIcon(cancelButtonEl, CANCEL_ICON_ID);
+      setTooltip(cancelButtonEl, 'Cancel');
+      cancelButtonEl.addEventListener('click', ($event) => {
         // The whole bar restores on click; stop propagation so Cancel closes the modal instead of
         // Restoring it. Closing runs the wrapped modal's onClose (peek lock lifted, bar removed), so
         // The consumer's onClose decides what "cancel" means (e.g. releasing a held lock).
@@ -318,15 +318,15 @@ export class MinimizableModal<TModal extends Modal> {
     // The whole bar restores on click, not just the restore button — a larger, easier click target.
     // `restore()` guards against a double invocation, so the restore button's own click bubbling up
     // Here is a no-op. The restore button stays purely as a visual affordance for the click target.
-    barElement.addEventListener('click', () => {
+    barEl.addEventListener('click', () => {
       this.restore();
     });
     // Drop the one-shot attention flash once it finishes so the bar returns to its gentle idle pulse.
     // The idle pulse is an infinite animation, which never fires `animationend`.
-    barElement.addEventListener('animationend', () => {
-      barElement.removeClass(CssClass.MinimizedModalBarAttention);
+    barEl.addEventListener('animationend', () => {
+      barEl.removeClass(CssClass.MinimizedModalBarAttention);
     });
-    return barElement;
+    return barEl;
   }
 
   private disablePeekLock(): void {
@@ -341,11 +341,11 @@ export class MinimizableModal<TModal extends Modal> {
     this.peekLockComponent = null;
   }
 
-  private enablePeekLock(barElement: HTMLElement): void {
+  private enablePeekLock(barEl: HTMLElement): void {
     this.peekLockEntry = {
-      barEl: barElement,
+      barEl,
       flash: (): void => {
-        this.flashBar(barElement);
+        this.flashBar(barEl);
       },
       innerModal: this.modal
     };
@@ -358,11 +358,11 @@ export class MinimizableModal<TModal extends Modal> {
     this.peekLockComponent.load();
   }
 
-  private flashBar(barElement: HTMLElement): void {
-    barElement.removeClass(CssClass.MinimizedModalBarAttention);
+  private flashBar(barEl: HTMLElement): void {
+    barEl.removeClass(CssClass.MinimizedModalBarAttention);
     // Force a reflow so re-adding the class restarts the one-shot flash on rapid repeated blocks.
-    barElement.getBoundingClientRect();
-    barElement.addClass(CssClass.MinimizedModalBarAttention);
+    barEl.getBoundingClientRect();
+    barEl.addClass(CssClass.MinimizedModalBarAttention);
   }
 
   private handleClose(): void {

@@ -74,9 +74,9 @@ function getCancelButton(): HTMLElement | null {
 }
 
 function getMinimizeButton(modal: Modal): HTMLElement {
-  const buttonElement = modal.modalEl.querySelector<HTMLElement>(`.${CssClass.MinimizeButton}`);
-  assertNonNullable(buttonElement);
-  return buttonElement;
+  const buttonEl = modal.modalEl.querySelector<HTMLElement>(`.${CssClass.MinimizeButton}`);
+  assertNonNullable(buttonEl);
+  return buttonEl;
 }
 
 describe('MinimizableModal', () => {
@@ -186,9 +186,9 @@ describe('MinimizableModal', () => {
 
       const bar = getBar();
       assertNonNullable(bar);
-      const restoreButtonElement = bar.querySelector<HTMLElement>(`.${CssClass.RestoreButton}`);
-      assertNonNullable(restoreButtonElement);
-      restoreButtonElement.click();
+      const restoreButtonEl = bar.querySelector<HTMLElement>(`.${CssClass.RestoreButton}`);
+      assertNonNullable(restoreButtonEl);
+      restoreButtonEl.click();
 
       expect(minimizable.isMinimized).toBe(false);
       expect(getBar()).toBeNull();
@@ -214,9 +214,9 @@ describe('MinimizableModal', () => {
 
       const bar = getBar();
       assertNonNullable(bar);
-      const titleElement = bar.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBarTitle}`);
-      assertNonNullable(titleElement);
-      titleElement.click();
+      const titleEl = bar.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBarTitle}`);
+      assertNonNullable(titleEl);
+      titleEl.click();
 
       expect(minimizable.isMinimized).toBe(false);
       expect(getBar()).toBeNull();
@@ -236,9 +236,9 @@ describe('MinimizableModal', () => {
       const minimizable = new MinimizableModal(modal);
       minimizable.minimize();
 
-      const cancelButtonElement = getCancelButton();
-      assertNonNullable(cancelButtonElement);
-      cancelButtonElement.click();
+      const cancelButtonEl = getCancelButton();
+      assertNonNullable(cancelButtonEl);
+      cancelButtonEl.click();
 
       expect(modal.wasClosed).toBe(true);
       expect(minimizable.isMinimized).toBe(false);

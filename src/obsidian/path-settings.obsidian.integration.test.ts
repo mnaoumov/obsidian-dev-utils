@@ -121,19 +121,19 @@ describe('PathSettings', () => {
         const initialNoticeCount = getNoticeCount();
 
         try {
-          const textAreaElement = ensureNonNullable(tab.containerEl.querySelector<HTMLTextAreaElement>('textarea'), 'The multiple text component is missing');
+          const textAreaEl = ensureNonNullable(tab.containerEl.querySelector<HTMLTextAreaElement>('textarea'), 'The multiple text component is missing');
 
           for (let length = 1; length <= reportedRegExp.length; length++) {
-            await type(textAreaElement, reportedRegExp.slice(0, length));
+            await type(textAreaEl, reportedRegExp.slice(0, length));
           }
 
           await waitUntilOrGiveUp(() => savedData !== null);
 
-          const validationMessageForCompletedRegExp = textAreaElement.validationMessage;
+          const validationMessageForCompletedRegExp = textAreaEl.validationMessage;
           const isInboxNoteIgnored = settingsComponent.settings.isPathIgnored('Inbox/note.md');
 
-          await type(textAreaElement, invalidRegExp);
-          await waitUntilOrGiveUp(() => textAreaElement.validationMessage !== '');
+          await type(textAreaEl, invalidRegExp);
+          await waitUntilOrGiveUp(() => textAreaEl.validationMessage !== '');
 
           return {
             asyncErrors,
@@ -142,7 +142,7 @@ describe('PathSettings', () => {
             noticeCount: getNoticeCount(),
             savedExcludePaths: (savedData as null | Record<string, unknown>)?.['excludePaths'],
             validationMessageForCompletedRegExp,
-            validationMessageForInvalidRegExp: textAreaElement.validationMessage
+            validationMessageForInvalidRegExp: textAreaEl.validationMessage
           };
         } finally {
           dispose(registration);
@@ -154,9 +154,9 @@ describe('PathSettings', () => {
           return activeDocument.body.querySelectorAll('.notice').length;
         }
 
-        async function type(textAreaElement: HTMLTextAreaElement, value: string): Promise<void> {
-          textAreaElement.value = value;
-          textAreaElement.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        async function type(textAreaEl: HTMLTextAreaElement, value: string): Promise<void> {
+          textAreaEl.value = value;
+          textAreaEl.dispatchEvent(new InputEvent('input', { bubbles: true }));
           await sleep(KEYSTROKE_SETTLE_TIMEOUT_IN_MILLISECONDS);
         }
 

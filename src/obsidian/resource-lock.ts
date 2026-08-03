@@ -613,16 +613,16 @@ class ResourceLockManager {
   }
 
   private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
-    const actionIconElement = view.addAction(LOCK_ICON_ID, tooltip, noop);
-    this.registerUnlockMenu(app, actionIconElement, () => path);
+    const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
+    this.registerUnlockMenu(app, actionIconEl, () => path);
 
-    let tabIconElement: HTMLElement | null = null;
-    const tabStatusContainerElement = view.leaf.tabHeaderStatusContainerEl;
-    if (tabStatusContainerElement) {
-      tabIconElement = tabStatusContainerElement.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
-      setIcon(tabIconElement, LOCK_ICON_ID);
-      setTooltip(tabIconElement, tooltip);
-      this.registerUnlockMenu(app, tabIconElement, () => path);
+    let tabIconEl: HTMLElement | null = null;
+    const tabStatusContainerEl = view.leaf.tabHeaderStatusContainerEl;
+    if (tabStatusContainerEl) {
+      tabIconEl = tabStatusContainerEl.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
+      setIcon(tabIconEl, LOCK_ICON_ID);
+      setTooltip(tabIconEl, tooltip);
+      this.registerUnlockMenu(app, tabIconEl, () => path);
     }
 
     // A locked view is read-only but still editable-focusable, so a keystroke fires `beforeinput`.
@@ -635,11 +635,11 @@ class ResourceLockManager {
     view.contentEl.addEventListener('beforeinput', onTypeAttempt);
 
     return {
-      actionIconEl: actionIconElement,
+      actionIconEl,
       disposeTypeListener: (): void => {
         view.contentEl.removeEventListener('beforeinput', onTypeAttempt);
       },
-      tabIconEl: tabIconElement
+      tabIconEl
     };
   }
 
@@ -970,11 +970,11 @@ class ResourceLockManager {
     }
 
     if (!this.statusBarItemEl) {
-      const statusBarElement = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
-      if (!statusBarElement) {
+      const statusBarEl = activeView.containerEl.ownerDocument.body.querySelector<HTMLElement>(STATUS_BAR_CSS_SELECTOR);
+      if (!statusBarEl) {
         return;
       }
-      this.statusBarItemEl = statusBarElement.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
+      this.statusBarItemEl = statusBarEl.createDiv({ cls: [STATUS_BAR_ITEM_CSS_CLASS, LOCK_INDICATOR_CSS_CLASS] });
       setIcon(this.statusBarItemEl, LOCK_ICON_ID);
       // The single status-bar item is reused across active-note switches.
       // It must resolve the currently active note's owner lock at click time rather than capturing one path.

@@ -45,7 +45,7 @@ export class TypedDropdownComponent<T> extends ValueComponent<null | T> implemen
    *
    * @returns The validator element.
    */
-  public get validatorElement(): ValidatorElement {
+  public get validatorEl(): ValidatorElement {
     return this.selectEl;
   }
 

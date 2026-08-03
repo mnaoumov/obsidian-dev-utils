@@ -104,10 +104,10 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Something happened');
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const nameElement = fragment.querySelector('span');
-    expect(nameElement?.textContent).toBe('My Plugin');
-    expect(nameElement?.classList.contains(CssClass.LibraryName)).toBe(true);
-    expect(nameElement?.classList.contains(CssClass.PluginNoticeName)).toBe(true);
+    const nameEl = fragment.querySelector('span');
+    expect(nameEl?.textContent).toBe('My Plugin');
+    expect(nameEl?.classList.contains(CssClass.LibraryName)).toBe(true);
+    expect(nameEl?.classList.contains(CssClass.PluginNoticeName)).toBe(true);
   });
 
   it('should wrap the notice content in a container carrying the plugin-notice-content class', () => {
@@ -116,10 +116,10 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('Something happened');
 
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
-    const contentElement = fragment.firstElementChild;
-    expect(contentElement?.classList.contains(CssClass.PluginNoticeContent)).toBe(true);
+    const contentEl = fragment.firstElementChild;
+    expect(contentEl?.classList.contains(CssClass.PluginNoticeContent)).toBe(true);
     // The whole message lives inside that single wrapper.
-    expect(contentElement?.textContent).toBe('My Plugin\nSomething happened');
+    expect(contentEl?.textContent).toBe('My Plugin\nSomething happened');
   });
 
   it('should keep the notice open when an interactive element inside it is clicked', () => {
@@ -137,8 +137,8 @@ describe('PluginNoticeComponent', () => {
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
-    const linkElement = ensureNonNullable(noticeElementStub.querySelector('a'));
-    linkElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const linkEl = ensureNonNullable(noticeElementStub.querySelector('a'));
+    linkEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).not.toHaveBeenCalled();
   });
@@ -155,8 +155,8 @@ describe('PluginNoticeComponent', () => {
     noticeElementStub.addEventListener('click', dismissListener);
 
     // The plugin-name prefix is non-interactive, so its click must still reach the dismiss handler.
-    const nameElement = ensureNonNullable(noticeElementStub.querySelector('span'));
-    nameElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const nameEl = ensureNonNullable(noticeElementStub.querySelector('span'));
+    nameEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).toHaveBeenCalledTimes(1);
   });
@@ -172,8 +172,8 @@ describe('PluginNoticeComponent', () => {
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
-    const contentElement = ensureNonNullable(noticeElementStub.querySelector(`.${CssClass.PluginNoticeContent}`));
-    const textNode = ensureNonNullable([...contentElement.childNodes].find((node) => node.nodeType === Node.TEXT_NODE));
+    const contentEl = ensureNonNullable(noticeElementStub.querySelector(`.${CssClass.PluginNoticeContent}`));
+    const textNode = ensureNonNullable([...contentEl.childNodes].find((node) => node.nodeType === Node.TEXT_NODE));
     textNode.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).toHaveBeenCalledTimes(1);
@@ -376,8 +376,8 @@ describe('PluginNoticeComponent', () => {
     noticeElementStub.addEventListener('click', dismissListener);
 
     // Even a non-interactive element (the plugin-name prefix) must not dismiss it.
-    const nameElement = ensureNonNullable(noticeElementStub.querySelector('span'));
-    nameElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    const nameEl = ensureNonNullable(noticeElementStub.querySelector('span'));
+    nameEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(dismissListener).not.toHaveBeenCalled();
   });
@@ -717,10 +717,10 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     const dismissListener = vi.fn();
     noticeElementStub.addEventListener('click', dismissListener);
 
-    const buttonElement = ensureNonNullable(noticeElementStub.querySelector('button'));
-    expect(buttonElement.textContent).toBe('Cancel');
+    const buttonEl = ensureNonNullable(noticeElementStub.querySelector('button'));
+    expect(buttonEl.textContent).toBe('Cancel');
 
-    buttonElement.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    buttonEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
     expect(abortController.signal.aborted).toBe(true);
     expect(dismissListener).not.toHaveBeenCalled();

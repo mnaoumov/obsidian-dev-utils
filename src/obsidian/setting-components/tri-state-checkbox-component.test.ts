@@ -63,7 +63,7 @@ describe('TriStateCheckboxComponent', () => {
 
   it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorElement).toBe(comp.inputEl);
+    expect(comp.validatorEl).toBe(comp.inputEl);
   });
 
   it('should call change callback on change event', () => {

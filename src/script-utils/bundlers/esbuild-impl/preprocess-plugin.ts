@@ -165,8 +165,8 @@ function initCjs(): void {
     globalThisRecord[key] ??= newFuncs[key]?.();
   }
 
-  function name($object: unknown): unknown {
-    return $object;
+  function name($unknown: unknown): unknown {
+    return $unknown;
   }
 
   function extractDefault(module: Partial<EsmModule> | undefined): unknown {

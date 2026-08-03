@@ -40,16 +40,16 @@ function createAnchor(bottom = 100, left = 100): PopoverAnchor {
   };
 }
 
-function getPopoverElement(): HTMLElement | null {
+function getPopoverEl(): HTMLElement | null {
   return document.body.querySelector<HTMLElement>('.popover');
 }
 
 function pressKey(key: string): void {
-  requirePopoverElement().dispatchEvent(new KeyboardEvent('keydown', { key }));
+  requirePopoverEl().dispatchEvent(new KeyboardEvent('keydown', { key }));
 }
 
-function requirePopoverElement(): HTMLElement {
-  return ensureNonNullable(getPopoverElement(), 'The popover is not open');
+function requirePopoverEl(): HTMLElement {
+  return ensureNonNullable(getPopoverEl(), 'The popover is not open');
 }
 
 function showTextPopover(text = 'value', anchor = createAnchor()): Promise<null | string> {
@@ -109,17 +109,17 @@ describe('showPopover', () => {
   it('should stay open when any other key is pressed', async () => {
     const resultPromise = showTextPopover();
     pressKey('a');
-    expect(getPopoverElement()).not.toBeNull();
+    expect(getPopoverEl()).not.toBeNull();
 
     clickCancel();
     await expect(resultPromise).resolves.toBeNull();
   });
 
   it('should resolve null when a pointer gesture starts outside the popover', async () => {
-    const outsideElement = document.body.createDiv();
+    const outsideEl = document.body.createDiv();
     const resultPromise = showTextPopover();
 
-    startPointerGestureOn(outsideElement);
+    startPointerGestureOn(outsideEl);
 
     await expect(resultPromise).resolves.toBeNull();
   });
@@ -127,8 +127,8 @@ describe('showPopover', () => {
   it('should stay open when a pointer gesture starts inside the popover', async () => {
     const resultPromise = showTextPopover();
 
-    startPointerGestureOn(requirePopoverElement());
-    expect(getPopoverElement()).not.toBeNull();
+    startPointerGestureOn(requirePopoverEl());
+    expect(getPopoverEl()).not.toBeNull();
 
     clickCancel();
     await expect(resultPromise).resolves.toBeNull();
@@ -149,16 +149,16 @@ describe('showPopover', () => {
   });
 
   it('should remove the popover and stop listening for outside gestures once closed', async () => {
-    const outsideElement = document.body.createDiv();
+    const outsideEl = document.body.createDiv();
     const resultPromise = showTextPopover();
 
     clickOk();
     await resultPromise;
 
-    expect(getPopoverElement()).toBeNull();
+    expect(getPopoverEl()).toBeNull();
     // A gesture after the close must not reach the removed handler, which would throw on the settled promise.
     expect(() => {
-      startPointerGestureOn(outsideElement);
+      startPointerGestureOn(outsideEl);
     }).not.toThrow();
   });
 
@@ -194,7 +194,7 @@ describe('showPopover', () => {
 
   it('should place the popover just below the anchor', async () => {
     const resultPromise = showTextPopover('value', createAnchor(200, 120));
-    const popoverEl = requirePopoverElement();
+    const popoverEl = requirePopoverEl();
 
     expect(popoverEl.style.left).toBe('120px');
     expect(popoverEl.style.top).toBe('204px');
@@ -205,7 +205,7 @@ describe('showPopover', () => {
 
   it('should clamp a popover anchored past the far edges back into the window', async () => {
     const resultPromise = showTextPopover('value', createAnchor(5000, 5000));
-    const popoverEl = requirePopoverElement();
+    const popoverEl = requirePopoverEl();
 
     expect(popoverEl.style.left).toBe(`${String(window.innerWidth - 8)}px`);
     expect(popoverEl.style.top).toBe(`${String(window.innerHeight - 8)}px`);
@@ -216,7 +216,7 @@ describe('showPopover', () => {
 
   it('should clamp a popover anchored past the near edges back into the window', async () => {
     const resultPromise = showTextPopover('value', createAnchor(-500, -500));
-    const popoverEl = requirePopoverElement();
+    const popoverEl = requirePopoverEl();
 
     expect(popoverEl.style.left).toBe('8px');
     expect(popoverEl.style.top).toBe('8px');
@@ -231,7 +231,7 @@ describe('showPopover', () => {
       build: () => (): string => 'value',
       cssClasses: ['my-popover']
     });
-    const popoverEl = requirePopoverElement();
+    const popoverEl = requirePopoverEl();
 
     expect(popoverEl.classList.contains('menu')).toBe(true);
     expect(popoverEl.classList.contains('obsidian-dev-utils')).toBe(true);
@@ -243,7 +243,7 @@ describe('showPopover', () => {
 
   it('should use the default button texts', async () => {
     const resultPromise = showTextPopover();
-    const popoverEl = requirePopoverElement();
+    const popoverEl = requirePopoverEl();
 
     expect(popoverEl.querySelector('.ok-button')?.textContent).toBe('OK');
     expect(popoverEl.querySelector('.cancel-button')?.textContent).toBe('Cancel');
@@ -259,7 +259,7 @@ describe('showPopover', () => {
       cancelButtonText: 'Dismiss',
       okButtonText: 'Apply'
     });
-    const popoverEl = requirePopoverElement();
+    const popoverEl = requirePopoverEl();
 
     expect(popoverEl.querySelector('.ok-button')?.textContent).toBe('Apply');
     expect(popoverEl.querySelector('.cancel-button')?.textContent).toBe('Dismiss');
@@ -272,16 +272,16 @@ describe('showPopover', () => {
     const resultPromise = showPopover<string>({
       anchor: createAnchor(),
       build({ contentEl }) {
-        const inputElement = contentEl.createEl('input');
-        inputElement.value = 'preset';
-        return (): string => inputElement.value;
+        const inputEl = contentEl.createEl('input');
+        inputEl.value = 'preset';
+        return (): string => inputEl.value;
       }
     });
 
-    const inputElement = ensureNonNullable(requirePopoverElement().querySelector('input'));
-    expect(document.activeElement).toBe(inputElement);
-    expect(inputElement.selectionStart).toBe(0);
-    expect(inputElement.selectionEnd).toBe('preset'.length);
+    const inputEl = ensureNonNullable(requirePopoverEl().querySelector('input'));
+    expect(document.activeElement).toBe(inputEl);
+    expect(inputEl.selectionStart).toBe(0);
+    expect(inputEl.selectionEnd).toBe('preset'.length);
 
     clickCancel();
     await resultPromise;
@@ -290,7 +290,7 @@ describe('showPopover', () => {
   it('should not fail when the built content has no input to focus', async () => {
     const resultPromise = showTextPopover();
 
-    expect(requirePopoverElement().querySelector('input')).toBeNull();
+    expect(requirePopoverEl().querySelector('input')).toBeNull();
 
     clickCancel();
     await expect(resultPromise).resolves.toBeNull();

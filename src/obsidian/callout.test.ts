@@ -78,7 +78,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../object-utils.ts', async (importOriginal) => ({
   ...await importOriginal<typeof import('../object-utils.ts')>(),
-  normalizeOptionalProperties: vi.fn(($object: unknown) => $object)
+  normalizeOptionalProperties: vi.fn(($unknown: unknown) => $unknown)
 }));
 
 vi.mock('../value-provider.ts', () => ({
@@ -247,8 +247,8 @@ describe('renderCallout', () => {
     // The observed element should be the .content div
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedElement = firstObserveCall[0] as HTMLElement;
-    expect(observedElement.className).toBe('content');
+    const observedEl = firstObserveCall[0] as HTMLElement;
+    expect(observedEl.className).toBe('content');
   });
 
   it('should call addToQueue when IntersectionObserver fires with isIntersecting', async () => {
@@ -259,15 +259,15 @@ describe('renderCallout', () => {
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedElement = firstObserveCall[0] as HTMLElement;
+    const observedEl = firstObserveCall[0] as HTMLElement;
 
     // Simulate intersection
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
-    expect(mockUnobserve).toHaveBeenCalledWith(observedElement);
+    expect(mockUnobserve).toHaveBeenCalledWith(observedEl);
     expect(mocks.addToQueue).toHaveBeenCalledTimes(1);
     expect(mocks.addToQueue).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -285,10 +285,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedElement = firstObserveCall[0] as HTMLElement;
+    const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: observedElement })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: false, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -305,10 +305,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall);
-    const observedElement = firstObserveCall[0] as HTMLElement;
+    const observedEl = firstObserveCall[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -332,10 +332,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall1 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall1);
-    const observedElement = firstObserveCall1[0] as HTMLElement;
+    const observedEl = firstObserveCall1[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -364,10 +364,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall2 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall2);
-    const observedElement = firstObserveCall2[0] as HTMLElement;
+    const observedEl = firstObserveCall2[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 
@@ -394,10 +394,10 @@ describe('renderCallout', () => {
 
     const firstObserveCall3 = mockObserve.mock.calls[0];
     assertNonNullable(firstObserveCall3);
-    const observedElement = firstObserveCall3[0] as HTMLElement;
+    const observedEl = firstObserveCall3[0] as HTMLElement;
 
     intersectionCallback(
-      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedElement })],
+      [strictProxy<IntersectionObserverEntry>({ isIntersecting: true, target: observedEl })],
       strictProxy<IntersectionObserver>({})
     );
 

@@ -59,9 +59,9 @@ describe('demo-vault-helper bootstrap', () => {
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
           const isCstInstalled = Boolean(app.plugins.manifests[cstPluginId]);
           let noticeText = '';
-          for (const noticeElement of document.querySelectorAll('.notice')) {
-            if (noticeElement.textContent.includes('Demo Vault Helper')) {
-              noticeText = noticeElement.textContent;
+          for (const noticeEl of document.querySelectorAll('.notice')) {
+            if (noticeEl.textContent.includes('Demo Vault Helper')) {
+              noticeText = noticeEl.textContent;
             }
           }
           return {

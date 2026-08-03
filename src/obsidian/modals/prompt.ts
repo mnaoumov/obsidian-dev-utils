@@ -104,30 +104,30 @@ class PromptModal extends ModalBase<null | string> {
   public override onOpen(): void {
     this.titleEl.setText(this.title);
     const textComponent = new TextComponent(this.contentEl);
-    const inputElement = textComponent.inputEl;
+    const inputEl = textComponent.inputEl;
 
     const validate = async (): Promise<void> => {
-      const errorMessage = await this.valueValidator(inputElement.value) as string | undefined;
-      inputElement.setCustomValidity(errorMessage ?? '');
-      inputElement.reportValidity();
+      const errorMessage = await this.valueValidator(inputEl.value) as string | undefined;
+      inputEl.setCustomValidity(errorMessage ?? '');
+      inputEl.reportValidity();
     };
 
     textComponent.setValue(this.value);
     textComponent.inputEl.select();
     textComponent.setPlaceholder(this.placeholder);
-    inputElement.addClass(CssClass.TextBox);
+    inputEl.addClass(CssClass.TextBox);
     textComponent.onChange((newValue) => {
       this.value = newValue;
     });
-    inputElement.addEventListener('keydown', (event: KeyboardEvent) => {
+    inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key === 'Enter') {
         this.handleOk(event, textComponent);
       } else if (event.key === 'Escape') {
         this.close();
       }
     });
-    inputElement.addEventListener('input', convertAsyncToSync(validate));
-    inputElement.addEventListener('focus', convertAsyncToSync(validate));
+    inputEl.addEventListener('input', convertAsyncToSync(validate));
+    inputEl.addEventListener('focus', convertAsyncToSync(validate));
     invokeAsyncSafely(validate);
     const okButton = new ButtonComponent(this.contentEl);
     okButton.setButtonText(this.okButtonText);

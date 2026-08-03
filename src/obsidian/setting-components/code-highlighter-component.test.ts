@@ -54,7 +54,7 @@ describe('CodeHighlighterComponent', () => {
 
   it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorElement).toBe(comp.inputEl);
+    expect(comp.validatorEl).toBe(comp.inputEl);
   });
 
   it('should set and get value', () => {
@@ -181,13 +181,13 @@ describe('CodeHighlighterComponent', () => {
     const comp = new CodeHighlighterComponent(container);
     comp.setLanguage('javascript');
     // Add a non-language class via DOM to trigger the false branch of startsWith check
-    const preElement = container.querySelector('pre');
-    assertNonNullable(preElement);
-    preElement.classList.add('custom-class');
+    const preEl = container.querySelector('pre');
+    assertNonNullable(preEl);
+    preEl.classList.add('custom-class');
     comp.setLanguage('typescript');
     // Custom-class should remain, language-javascript should be replaced by language-typescript
-    expect(preElement.classList.contains('custom-class')).toBe(true);
-    expect(preElement.classList.contains('language-typescript')).toBe(true);
-    expect(preElement.classList.contains('language-javascript')).toBe(false);
+    expect(preEl.classList.contains('custom-class')).toBe(true);
+    expect(preEl.classList.contains('language-typescript')).toBe(true);
+    expect(preEl.classList.contains('language-javascript')).toBe(false);
   });
 });

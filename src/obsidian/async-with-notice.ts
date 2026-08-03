@@ -160,7 +160,7 @@ function onTimeoutNotice(context: TimeoutContext, pluginNoticeComponent: PluginN
   }
 
   const startTime = Math.trunc(performance.now() - context.duration);
-  let runningTimeElement: HTMLSpanElement;
+  let runningTimeEl: HTMLSpanElement;
   const SECOND_IN_MILLISECONDS = 1000;
   const cleanup = { intervalId: 0 };
 
@@ -175,7 +175,7 @@ function onTimeoutNotice(context: TimeoutContext, pluginNoticeComponent: PluginN
     f.createEl('br');
     f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.runningFor));
     f.appendText(' ');
-    runningTimeElement = f.createSpan();
+    runningTimeEl = f.createSpan();
     f.appendText(' ');
     f.appendText(t(($) => $.obsidianDevUtils.asyncWithNotice.milliseconds));
     f.createEl('br');
@@ -201,7 +201,7 @@ function onTimeoutNotice(context: TimeoutContext, pluginNoticeComponent: PluginN
 
   function updateRunningTime(): void {
     const runningTimeInMilliseconds = Math.max(context.duration, Math.round((performance.now() - startTime) / SECOND_IN_MILLISECONDS) * SECOND_IN_MILLISECONDS);
-    runningTimeElement.textContent = String(runningTimeInMilliseconds);
+    runningTimeEl.textContent = String(runningTimeInMilliseconds);
   }
 }
 

@@ -430,15 +430,15 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   private appendCloseButton(params: PluginNoticeComponentAppendCloseButtonParams): void {
     const { contentEl, getNotice, onCloseClick } = params;
-    const closeButtonElement = contentEl.createEl('button', {
+    const closeButtonEl = contentEl.createEl('button', {
       attr: { 'aria-label': t(($) => $.obsidianDevUtils.notices.closeAriaLabel) }
     });
     // Reuse Obsidian's modal close-button classes so this button matches the native modal close button
     // (look and hover); the stylesheet only positions it in the notice corner.
-    addPluginCssClasses(closeButtonElement, CssClass.PluginNoticeCloseButton);
-    closeButtonElement.addClasses([CssClass.ClickableIcon, CssClass.ModalHeaderButton]);
-    setIcon(closeButtonElement, 'x');
-    closeButtonElement.addEventListener('click', ($event) => {
+    addPluginCssClasses(closeButtonEl, CssClass.PluginNoticeCloseButton);
+    closeButtonEl.addClasses([CssClass.ClickableIcon, CssClass.ModalHeaderButton]);
+    setIcon(closeButtonEl, 'x');
+    closeButtonEl.addEventListener('click', ($event) => {
       $event.stopPropagation();
       invokeAsyncSafely(async () => {
         let isCancelled = false;
@@ -504,10 +504,10 @@ export class PluginNoticeComponent extends ComponentEx {
   private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): DocumentFragment {
     const { getNotice, message, onCloseClick, requiresExplicitClose = false, shouldShowCloseButton = true } = params;
     const fragment = createFragment();
-    const contentElement = fragment.createDiv();
-    addPluginCssClasses(contentElement, CssClass.PluginNoticeContent);
-    contentElement.append(this.buildPrefixedMessage(message));
-    contentElement.addEventListener('click', ($event) => {
+    const contentEl = fragment.createDiv();
+    addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
+    contentEl.append(this.buildPrefixedMessage(message));
+    contentEl.addEventListener('click', ($event) => {
       // A hard-to-close notice must not dismiss on any stray click; only its close button may hide it.
       if (requiresExplicitClose) {
         $event.stopPropagation();
@@ -520,7 +520,7 @@ export class PluginNoticeComponent extends ComponentEx {
 
     if (requiresExplicitClose && shouldShowCloseButton) {
       this.appendCloseButton(normalizeOptionalProperties<PluginNoticeComponentAppendCloseButtonParams>({
-        contentEl: contentElement,
+        contentEl,
         getNotice: ensureNonNullable(getNotice),
         onCloseClick
       }));
@@ -537,9 +537,9 @@ export class PluginNoticeComponent extends ComponentEx {
    */
   private buildPrefixedMessage(message: DocumentFragment | string): DocumentFragment {
     const fragment = createFragment();
-    const nameElement = createSpan({ text: this.pluginName });
-    addPluginCssClasses(nameElement, CssClass.PluginNoticeName);
-    fragment.append(nameElement);
+    const nameEl = createSpan({ text: this.pluginName });
+    addPluginCssClasses(nameEl, CssClass.PluginNoticeName);
+    fragment.append(nameEl);
     if (!this._loaded) {
       fragment.appendText(' (unloaded)');
     }

@@ -50,7 +50,7 @@ vi.mock('../async.ts', () => ({
   invokeAsyncSafely: asyncMock.invokeAsyncSafely,
   retryWithTimeout: vi.fn(async (options: GenericObject) => {
     if (typeof options['_captureOnTimeout'] === 'function') {
-      (options['_captureOnTimeout'] as ($function: unknown) => void)(options['onTimeout']);
+      (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
     if (typeof options['operationFn'] === 'function') {
       await (options['operationFn'] as (signal: AbortSignal) => Promise<unknown>)(new AbortController().signal);
@@ -59,7 +59,7 @@ vi.mock('../async.ts', () => ({
   runWithTimeout: vi.fn(async (options: GenericObject) => {
     await noopAsync();
     if (typeof options['_captureOnTimeout'] === 'function') {
-      (options['_captureOnTimeout'] as ($function: unknown) => void)(options['onTimeout']);
+      (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
     if (typeof options['operationFn'] === 'function') {
       return (options['operationFn'] as (signal: AbortSignal) => unknown)(new AbortController().signal);

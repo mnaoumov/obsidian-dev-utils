@@ -44,7 +44,7 @@ export class TypedMultipleDropdownComponent<T> extends ValueComponent<readonly T
    *
    * @returns The validator element.
    */
-  public get validatorElement(): ValidatorElement {
+  public get validatorEl(): ValidatorElement {
     return this.selectEl;
   }
 

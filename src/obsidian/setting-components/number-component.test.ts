@@ -73,7 +73,7 @@ describe('NumberComponent', () => {
 
   it('should return inputEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorElement).toBe(comp.inputEl);
+    expect(comp.validatorEl).toBe(comp.inputEl);
   });
 
   it('should set disabled state', () => {

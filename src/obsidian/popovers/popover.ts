@@ -198,13 +198,13 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
  * @param popoverEl - The popover to focus within.
  */
 function focusFirstInput(popoverEl: HTMLElement): void {
-  const inputElement = popoverEl.querySelector('input');
-  if (!inputElement) {
+  const inputEl = popoverEl.querySelector('input');
+  if (!inputEl) {
     return;
   }
 
-  inputElement.focus();
-  inputElement.select();
+  inputEl.focus();
+  inputEl.select();
 }
 
 /**

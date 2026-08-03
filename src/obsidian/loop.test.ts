@@ -309,12 +309,12 @@ describe('loop', () => {
   it('should set progress bar max to items length', async () => {
     const items = ['a', 'b', 'c', 'd', 'e'];
 
-    let capturedProgressElement: HTMLProgressElement | null = null;
+    let capturedProgressEl: HTMLProgressElement | null = null;
     const createElementSpy = mockImplementation({
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
         const element = originalImplementation(tag);
         if (tag === 'progress') {
-          capturedProgressElement = element as HTMLProgressElement;
+          capturedProgressEl = element as HTMLProgressElement;
         }
         return element;
       },
@@ -331,10 +331,10 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    assertNonNullable(capturedProgressElement);
-    const progressElement: HTMLProgressElement = capturedProgressElement;
-    expect(progressElement.max).toBe(5);
-    expect(progressElement.value).toBe(5);
+    assertNonNullable(capturedProgressEl);
+    const progressEl: HTMLProgressElement = capturedProgressEl;
+    expect(progressEl.max).toBe(5);
+    expect(progressEl.value).toBe(5);
 
     createElementSpy.mockRestore();
   });
@@ -447,12 +447,12 @@ describe('loop', () => {
   });
 
   it('should increment progress bar value for each processed item', async () => {
-    let capturedProgressElement: HTMLProgressElement | null = null;
+    let capturedProgressEl: HTMLProgressElement | null = null;
     const createElementSpy = mockImplementation({
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
         const element = originalImplementation(tag);
         if (tag === 'progress') {
-          capturedProgressElement = element as HTMLProgressElement;
+          capturedProgressEl = element as HTMLProgressElement;
         }
         return element;
       },
@@ -463,8 +463,8 @@ describe('loop', () => {
 
     const values: number[] = [];
     const processItem = vi.fn(() => {
-      if (capturedProgressElement) {
-        values.push(capturedProgressElement.value);
+      if (capturedProgressEl) {
+        values.push(capturedProgressEl.value);
       }
     });
 
@@ -480,19 +480,19 @@ describe('loop', () => {
     // After each iteration, value is incremented. The values captured during processItem
     // Are 0, 1, 2 because value++ happens after processItem returns.
     expect(values).toEqual([0, 1, 2]);
-    assertNonNullable(capturedProgressElement);
-    expect((capturedProgressElement as HTMLProgressElement).value).toBe(3);
+    assertNonNullable(capturedProgressEl);
+    expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
 
     createElementSpy.mockRestore();
   });
 
   it('should still increment progress bar value even when processItem throws', async () => {
-    let capturedProgressElement: HTMLProgressElement | null = null;
+    let capturedProgressEl: HTMLProgressElement | null = null;
     const createElementSpy = mockImplementation({
       impl: (originalImplementation, tag: keyof HTMLElementTagNameMap): HTMLElement => {
         const element = originalImplementation(tag);
         if (tag === 'progress') {
-          capturedProgressElement = element as HTMLProgressElement;
+          capturedProgressEl = element as HTMLProgressElement;
         }
         return element;
       },
@@ -514,8 +514,8 @@ describe('loop', () => {
       shouldShowNotice: false
     });
 
-    assertNonNullable(capturedProgressElement);
-    expect((capturedProgressElement as HTMLProgressElement).value).toBe(2);
+    assertNonNullable(capturedProgressEl);
+    expect((capturedProgressEl as HTMLProgressElement).value).toBe(2);
 
     vi.mocked(console.error).mockRestore();
     createElementSpy.mockRestore();

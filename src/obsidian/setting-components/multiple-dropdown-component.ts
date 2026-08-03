@@ -44,7 +44,7 @@ export class MultipleDropdownComponent extends ValueComponent<readonly string[]>
    *
    * @returns The validator element.
    */
-  public get validatorElement(): ValidatorElement {
+  public get validatorEl(): ValidatorElement {
     return this.selectEl;
   }
 

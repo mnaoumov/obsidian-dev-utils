@@ -512,7 +512,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
     const optionsExtension: Required<BindOptionsExtended<PluginSettings, UIValue, PropertyName>> = { ...DEFAULT_OPTIONS, ...options };
 
-    const validatorElement = getValidatorComponent(valueComponent)?.validatorElement;
+    const validatorEl = getValidatorComponent(valueComponent)?.validatorEl;
 
     const textBasedComponent = getTextBasedComponentValue(valueComponent);
 
@@ -523,17 +523,17 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     textBasedComponent?.setPlaceholderValue(defaultComponentValue);
 
     let validationMessage: string;
-    let tooltipElement: HTMLElement | null = null;
-    let tooltipContentElement: HTMLElement | null = null;
-    if (validatorElement) {
-      const wrapper = ensureWrapped(validatorElement);
-      tooltipElement = wrapper.createDiv();
-      addPluginCssClasses(tooltipElement, [CssClass.Tooltip, CssClass.TooltipValidator]);
-      tooltipContentElement = tooltipElement.createSpan();
-      const tooltipArrowElement = tooltipElement.createDiv();
-      addPluginCssClasses(tooltipArrowElement, CssClass.TooltipArrow);
-      tooltipElement.hide();
-      wrapper.append(tooltipElement);
+    let tooltipEl: HTMLElement | null = null;
+    let tooltipContentEl: HTMLElement | null = null;
+    if (validatorEl) {
+      const wrapper = ensureWrapped(validatorEl);
+      tooltipEl = wrapper.createDiv();
+      addPluginCssClasses(tooltipEl, [CssClass.Tooltip, CssClass.TooltipValidator]);
+      tooltipContentEl = tooltipEl.createSpan();
+      const tooltipArrowEl = tooltipEl.createDiv();
+      addPluginCssClasses(tooltipArrowEl, CssClass.TooltipArrow);
+      tooltipEl.hide();
+      wrapper.append(tooltipEl);
     }
 
     registerAsyncEvent(
@@ -561,7 +561,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
     const UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS = 100;
     const updateValidatorElementDebounced = debounce(() => {
       window.requestAnimationFrame(() => {
-        updateValidatorElement();
+        updateValidatorEl();
       });
     }, UPDATE_VALIDATOR_EL_TIMEOUT_IN_MILLISECONDS);
 
@@ -603,13 +603,13 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
       this.saveSettingsDebounced();
     }));
 
-    validatorElement?.addEventListener('focus', () => {
+    validatorEl?.addEventListener('focus', () => {
       updateValidatorElementDebounced();
     });
-    validatorElement?.addEventListener('blur', () => {
+    validatorEl?.addEventListener('blur', () => {
       updateValidatorElementDebounced();
     });
-    validatorElement?.addEventListener('click', () => {
+    validatorEl?.addEventListener('click', () => {
       window.requestAnimationFrame(() => {
         updateValidatorElementDebounced();
       });
@@ -621,8 +621,8 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
 
     return valueComponent;
 
-    function updateValidatorElement(): void {
-      if (!validatorElement?.isActiveElement()) {
+    function updateValidatorEl(): void {
+      if (!validatorEl?.isActiveElement()) {
         if (shouldEmptyOnBlur) {
           shouldEmptyOnBlur = false;
 
@@ -640,24 +640,24 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
         }
       }
 
-      if (!validatorElement) {
+      if (!validatorEl) {
         return;
       }
 
-      assertNonNullable(tooltipContentElement);
+      assertNonNullable(tooltipContentEl);
 
       if (validationMessage === '') {
-        validatorElement.setCustomValidity('');
-        validatorElement.checkValidity();
-        validationMessage = validatorElement.validationMessage;
+        validatorEl.setCustomValidity('');
+        validatorEl.checkValidity();
+        validationMessage = validatorEl.validationMessage;
       }
 
-      validatorElement.setCustomValidity(validationMessage);
+      validatorEl.setCustomValidity(validationMessage);
       if (optionsExtension.shouldShowValidationMessage) {
-        tooltipContentElement.textContent = validationMessage;
-        tooltipElement?.toggle(!!validationMessage);
+        tooltipContentEl.textContent = validationMessage;
+        tooltipEl?.toggle(!!validationMessage);
       } else if (validationMessage) {
-        setTooltip(validatorElement, validationMessage);
+        setTooltip(validatorEl, validationMessage);
       }
     }
   }

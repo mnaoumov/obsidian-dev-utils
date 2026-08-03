@@ -328,18 +328,18 @@ export async function renderExternalLink(params: RenderExternalLinkParams): Prom
     url
   } = params;
   const displayText = params.displayText ?? url;
-  const wrapperElement = createSpan();
+  const wrapperEl = createSpan();
   await fullRender({
     app,
-    el: wrapperElement,
+    el: wrapperEl,
     markdown: `[${displayText}](${url})`
   });
-  const aElement = wrapperElement.find('a') as HTMLAnchorElement;
+  const aEl = wrapperEl.find('a') as HTMLAnchorElement;
   await registerLinkHandlers({
     app,
-    el: aElement
+    el: aEl
   });
-  return aElement;
+  return aEl;
 }
 
 /**
@@ -357,26 +357,26 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
   const path = getPath(app, pathOrAbstractFile);
   const displayText = params.displayText ?? path;
   if (isFolder(abstractFile)) {
-    return createEl('a', { text: displayText }, (aElement) => {
-      aElement.addEventListener('click', ($event) => {
+    return createEl('a', { text: displayText }, (aEl) => {
+      aEl.addEventListener('click', ($event) => {
         $event.preventDefault();
         app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
       });
     });
   }
 
-  const wrapperElement = createSpan();
+  const wrapperEl = createSpan();
   await fullRender({
     app,
-    el: wrapperElement,
+    el: wrapperEl,
     markdown: `[[${path}|${displayText}]]`
   });
-  const aElement = wrapperElement.find('a') as HTMLAnchorElement;
+  const aEl = wrapperEl.find('a') as HTMLAnchorElement;
   await registerLinkHandlers({
     app,
-    el: aElement
+    el: aEl
   });
-  return aElement;
+  return aEl;
 }
 
 /* v8 ignore stop */

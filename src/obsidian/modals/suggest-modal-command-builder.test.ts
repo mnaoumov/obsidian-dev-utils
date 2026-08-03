@@ -40,15 +40,15 @@ function captureRegisterCalls(scope: Scope): RegisterCall[] {
 }
 
 function createMockModal(): SuggestModal<unknown> {
-  const instructionsElement = createDiv();
+  const instructionsEl = createDiv();
   const scope = new Scope();
   return strictProxy<SuggestModal<unknown>>({
-    instructionsEl: instructionsElement,
+    instructionsEl,
     scope,
     setInstructions: vi.fn((instructions: Instruction[]) => {
-      instructionsElement.empty();
+      instructionsEl.empty();
       for (const instruction of instructions) {
-        const promptInstruction = instructionsElement.createDiv('prompt-instruction');
+        const promptInstruction = instructionsEl.createDiv('prompt-instruction');
         promptInstruction.createSpan({ text: instruction.command });
         promptInstruction.createSpan({ text: instruction.purpose });
       }
@@ -328,8 +328,8 @@ describe('SuggestModalCommandBuilder', () => {
       // This should return early due to disabled check
       handler?.func(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
       // The handler returned early, select index was not changed
-      const selectElement = modal.instructionsEl.querySelector('select');
-      expect(selectElement?.selectedIndex).toBe(0);
+      const selectEl = modal.instructionsEl.querySelector('select');
+      expect(selectEl?.selectedIndex).toBe(0);
     });
 
     it('should return this for chaining', () => {

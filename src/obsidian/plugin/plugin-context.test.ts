@@ -170,11 +170,11 @@ describe('initPluginContext', () => {
 
   it('should remove old styles and inject new ones when version is newer', () => {
     mocks.compareVersions.mockReturnValue(1);
-    const oldStyleElement = strictProxy<Element>({ remove: vi.fn() });
-    vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleElement);
+    const oldStyleEl = strictProxy<Element>({ remove: vi.fn() });
+    vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl);
     const createElementSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
-    expect(oldStyleElement.remove).toHaveBeenCalled();
+    expect(oldStyleEl.remove).toHaveBeenCalled();
     expect(createElementSpy).toHaveBeenCalledWith('style', {
       attr: { id: 'obsidian-dev-utils-styles' },
       text: '.test { color: red; }'

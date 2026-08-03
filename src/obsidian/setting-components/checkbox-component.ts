@@ -37,7 +37,7 @@ export class CheckboxComponent extends ValueComponent<boolean> implements Valida
    *
    * @returns The validator element.
    */
-  public get validatorElement(): ValidatorElement {
+  public get validatorEl(): ValidatorElement {
     return this.inputEl;
   }
 

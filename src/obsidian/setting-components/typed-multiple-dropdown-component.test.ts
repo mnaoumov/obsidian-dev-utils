@@ -34,7 +34,7 @@ describe('TypedMultipleDropdownComponent', () => {
 
   it('should return selectEl as validatorElement', () => {
     const comp = createComponent();
-    expect(comp.validatorElement).toBe(comp.selectEl);
+    expect(comp.validatorEl).toBe(comp.selectEl);
   });
 
   it('should add options and get values', () => {

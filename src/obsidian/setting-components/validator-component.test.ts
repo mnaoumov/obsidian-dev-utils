@@ -39,8 +39,8 @@ describe('getValidatorComponent', () => {
   });
 
   it('should return the object itself if it already implements ValidatorComponent', () => {
-    const validatorElement = createEl('input');
-    const $object = { validatorElement };
+    const validatorEl = createEl('input');
+    const $object = { validatorEl };
     const result = getValidatorComponent($object);
     expect(result).toBe($object);
   });
@@ -48,12 +48,12 @@ describe('getValidatorComponent', () => {
   it('should wrap ColorComponent with ValidatorElementWrapper', () => {
     const container = createDiv();
     const comp = new ColorComponent(container);
-    const colorPickerElement = createEl('input', { type: 'color' });
-    comp.colorPickerEl = colorPickerElement;
+    const colorPickerEl = createEl('input', { type: 'color' });
+    comp.colorPickerEl = colorPickerEl;
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
-    expect(result.validatorElement).toBe(colorPickerElement);
+    expect(result.validatorEl).toBe(colorPickerEl);
   });
 
   it('should wrap DropdownComponent with ValidatorElementWrapper', () => {
@@ -62,7 +62,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
-    expect(result.validatorElement).toBe(comp.selectEl);
+    expect(result.validatorEl).toBe(comp.selectEl);
   });
 
   it('should wrap SearchComponent with ValidatorElementWrapper', () => {
@@ -72,7 +72,7 @@ describe('getValidatorComponent', () => {
     expect(result).not.toBeNull();
     assertNonNullable(result);
 
-    expect(result.validatorElement).toBe(comp.inputEl);
+    expect(result.validatorEl).toBe(comp.inputEl);
   });
 
   it('should wrap SliderComponent with ValidatorElementWrapper', () => {
@@ -81,7 +81,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
-    expect(result.validatorElement).toBe(comp.sliderEl);
+    expect(result.validatorEl).toBe(comp.sliderEl);
   });
 
   it('should wrap TextAreaComponent with ValidatorElementWrapper', () => {
@@ -91,7 +91,7 @@ describe('getValidatorComponent', () => {
     expect(result).not.toBeNull();
     assertNonNullable(result);
 
-    expect(result.validatorElement).toBe(comp.inputEl);
+    expect(result.validatorEl).toBe(comp.inputEl);
   });
 
   it('should wrap TextComponent with ValidatorElementWrapper', () => {
@@ -101,7 +101,7 @@ describe('getValidatorComponent', () => {
     expect(result).not.toBeNull();
     assertNonNullable(result);
 
-    expect(result.validatorElement).toBe(comp.inputEl);
+    expect(result.validatorEl).toBe(comp.inputEl);
   });
 
   it('should create OverlayValidatorComponent for ProgressBarComponent', () => {
@@ -118,7 +118,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
-    expect(result.validatorElement).toBeInstanceOf(HTMLInputElement);
+    expect(result.validatorEl).toBeInstanceOf(HTMLInputElement);
   });
 
   it('should create OverlayValidatorComponent for ToggleComponent', () => {
@@ -131,7 +131,7 @@ describe('getValidatorComponent', () => {
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();
     assertNonNullable(result);
-    expect(result.validatorElement).toBeInstanceOf(HTMLInputElement);
+    expect(result.validatorEl).toBeInstanceOf(HTMLInputElement);
   });
 
   it('should handle focus on overlay validator element', () => {
@@ -143,8 +143,8 @@ describe('getValidatorComponent', () => {
 
     const result = getValidatorComponent(comp);
     assertNonNullable(result);
-    const validatorElement = result.validatorElement;
-    validatorElement.dispatchEvent(new Event('focus'));
+    const validatorEl = result.validatorEl;
+    validatorEl.dispatchEvent(new Event('focus'));
   });
 
   it('should handle focusin on overlay element', () => {
@@ -205,9 +205,9 @@ describe('getValidatorComponent', () => {
   it('should use element with tabindex if present', () => {
     const parent = createDiv();
     const element = createDiv();
-    const tabElement = createEl('button');
-    tabElement.setAttribute('tabindex', '0');
-    element.append(tabElement);
+    const tabEl = createEl('button');
+    tabEl.setAttribute('tabindex', '0');
+    element.append(tabEl);
     parent.append(element);
     const comp = new ProgressBarComponent(parent);
     // Override progressBar to be our element with a child that has tabindex

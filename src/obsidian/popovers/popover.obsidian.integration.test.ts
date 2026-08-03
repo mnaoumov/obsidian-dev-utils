@@ -49,8 +49,8 @@ describe('editFieldsInPopover', () => {
         const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const EXPECTED_FIELD_COUNT = 2;
 
-        const anchorElement = activeDocument.body.createDiv({ text: 'anchor' });
-        anchorElement.setCssProps({
+        const anchorEl = activeDocument.body.createDiv({ text: 'anchor' });
+        anchorEl.setCssProps({
           height: '20px',
           left: `${String(anchorLeftInPixels)}px`,
           position: 'absolute',
@@ -60,7 +60,7 @@ describe('editFieldsInPopover', () => {
 
         try {
           const resultPromise = editFieldsInPopover({
-            anchor: createAnchorFromElement(anchorElement),
+            anchor: createAnchorFromElement(anchorEl),
             fields: [
               { defaultValue: 'https://example.com', key: 'url', name: 'URL' },
               { defaultValue: 'Example', key: 'alias', name: 'Alias' }
@@ -73,8 +73,8 @@ describe('editFieldsInPopover', () => {
             timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
           });
 
-          const popoverEl = requirePopoverElement();
-          const anchorRect = anchorElement.getBoundingClientRect();
+          const popoverEl = requirePopoverEl();
+          const anchorRect = anchorEl.getBoundingClientRect();
           const popoverRect = popoverEl.getBoundingClientRect();
           /*
            * Everything measured off the popover must be read BEFORE it is confirmed: confirming removes
@@ -82,10 +82,10 @@ describe('editFieldsInPopover', () => {
            */
           const position = activeWindow.getComputedStyle(popoverEl).position;
           const inputEls = getInputEls();
-          const inputValues = inputEls.map((inputElement) => inputElement.value);
+          const inputValues = inputEls.map((inputEl) => inputEl.value);
           // The buttons row is a `Setting` too, so it contributes an empty name element to skip.
           const fieldNames = [...popoverEl.querySelectorAll('.setting-item-name')]
-            .map((nameElement) => nameElement.textContent)
+            .map((nameEl) => nameEl.textContent)
             .filter((name) => Boolean(name));
 
           setInputValue(inputEls[0], 'https://edited.example.com');
@@ -103,28 +103,28 @@ describe('editFieldsInPopover', () => {
               && popoverRect.top >= 0
               && popoverRect.right <= activeWindow.innerWidth
               && popoverRect.bottom <= activeWindow.innerHeight,
-            isRemoved: !getPopoverElement(),
+            isRemoved: !getPopoverEl(),
             position,
             resolved
           };
         } finally {
-          anchorElement.remove();
+          anchorEl.remove();
         }
 
         function getInputEls(): HTMLInputElement[] {
-          return [...getPopoverElement()?.querySelectorAll<HTMLInputElement>('input') ?? []];
+          return [...getPopoverEl()?.querySelectorAll<HTMLInputElement>('input') ?? []];
         }
 
-        function getPopoverElement(): HTMLElement | null {
+        function getPopoverEl(): HTMLElement | null {
           return activeDocument.body.querySelector<HTMLElement>('.obsidian-dev-utils.popover');
         }
 
-        function requirePopoverElement(): HTMLElement {
-          return ensureNonNullable(getPopoverElement(), 'The popover is not open');
+        function requirePopoverEl(): HTMLElement {
+          return ensureNonNullable(getPopoverEl(), 'The popover is not open');
         }
 
-        function setInputValue(inputElement: HTMLInputElement | undefined, value: string): void {
-          const element = ensureNonNullable(inputElement, 'The field is missing');
+        function setInputValue(inputEl: HTMLInputElement | undefined, value: string): void {
+          const element = ensureNonNullable(inputEl, 'The field is missing');
           element.value = value;
           element.dispatchEvent(new InputEvent('input', { bubbles: true }));
         }
@@ -158,7 +158,7 @@ describe('editFieldsInPopover', () => {
 
         await waitUntil({
           message: 'the popover renders',
-          predicate: () => Boolean(getPopoverElement()),
+          predicate: () => Boolean(getPopoverEl()),
           timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
         });
 
@@ -166,11 +166,11 @@ describe('editFieldsInPopover', () => {
 
         const resolved = await resultPromise;
         return {
-          isRemoved: !getPopoverElement(),
+          isRemoved: !getPopoverEl(),
           resolved
         };
 
-        function getPopoverElement(): HTMLElement | null {
+        function getPopoverEl(): HTMLElement | null {
           return activeDocument.body.querySelector<HTMLElement>('.obsidian-dev-utils.popover');
         }
       }
