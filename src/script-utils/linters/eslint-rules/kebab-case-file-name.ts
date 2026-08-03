@@ -19,6 +19,8 @@
  */
 import type { Rule } from 'eslint';
 
+import { ensureNonNullable } from '../../../type-guards.ts';
+
 /** Message ID reported when a file name is not kebab-case. */
 export const MESSAGE_ID = 'kebabCaseFileName';
 
@@ -79,7 +81,10 @@ export const kebabCaseFileName: Rule.RuleModule = {
  */
 function getFileNameStem(filename: string): string {
   const segments = filename.split(PATH_SEPARATOR_REG_EXP);
-  const baseName = segments.at(-1) ?? '';
+  // `String.split` always yields at least one element, so both reads below exist for ANY input,
+  // Including `''`. They are asserted rather than defaulted so no unreachable fallback branch is
+  // Introduced — the empty name is already handled by the caller's `stem === ''` guard.
+  const baseName = ensureNonNullable(segments.at(-1));
   const nameWithoutLeadingDot = baseName.startsWith('.') ? baseName.slice(1) : baseName;
-  return nameWithoutLeadingDot.split('.', 1)[0] ?? '';
+  return ensureNonNullable(nameWithoutLeadingDot.split('.', 1)[0]);
 }

@@ -7,7 +7,7 @@
  * We cannot use `.` instead of `(dot)` in the above description because the file itself is preprocessed with the same rule.
  */
 
-/* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. */
+/* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. Covers `name` at the bottom too: it exists only to be captured by the serialized `initCjs` banner, so it runs inside the emitted bundle and never in this process. */
 
 /* eslint-disable unicorn/prefer-module -- The CommonJS surface is the subject here, not an oversight. This plugin emits the interop shims that let a bundle run under either module system, so it has to name `__filename` and `require` to detect and bridge them. `import.meta.filename` is precisely what is unavailable in the environment these branches exist to serve. */
 
@@ -246,10 +246,10 @@ function initEsm(): void {
   globalThis.process = browserProcess as NodeJS.Process;
 }
 
-/* v8 ignore stop */
-
 function name($unknown: unknown): unknown {
   return $unknown;
 }
+
+/* v8 ignore stop */
 
 /* eslint-enable unicorn/prefer-module -- Pairs with the file-level disable above. */
