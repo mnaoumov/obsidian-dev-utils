@@ -13,7 +13,7 @@ import {
   vi
 } from 'vitest';
 
-import type { GetAvailablePathForAttachmentsExtendedFnParams as GetAvailablePathForAttachmentsExtendedFunctionParams } from './attachment-path.ts';
+import type { GetAvailablePathForAttachmentsExtendedFunctionParams } from './attachment-path.ts';
 
 import { castTo } from '../object-utils.ts';
 import {

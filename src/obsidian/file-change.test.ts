@@ -17,7 +17,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { FileChange } from './file-change.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 import type {
-  ContentArgs as ContentArguments,
+  ContentArguments,
   ProcessParams
 } from './vault.ts';
 

@@ -69,7 +69,7 @@ export interface AddUpdatedFilesToGitOptions {
 /**
  * The result of parsing the command-line arguments for a version update.
  */
-export interface ParsedVersionArgs {
+export interface ParsedVersionArguments {
   /**
    * The {@link UpdateVersionOptions} parsed from the flags.
    */
@@ -455,11 +455,12 @@ export async function gitPush(): Promise<void> {
  * - `--no-release` — run all local steps but skip the push and the GitHub release.
  *
  * @param $arguments - The command-line arguments to parse (typically `process.argv.slice(2)`).
- * @returns The {@link ParsedVersionArgs} containing the version update type and the options.
+ * @returns The {@link ParsedVersionArguments} containing the version update type and the options.
  */
-export function parseVersionArguments($arguments: string[]): ParsedVersionArgs {
+export function parseVersionArguments($arguments: string[]): ParsedVersionArguments {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
+    // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
     args: $arguments,
     options: {
       'no-build': { type: 'boolean' },

@@ -65,6 +65,7 @@ export const requireMethodTemplate: Rule.RuleModule = {
           if (!matchingTag) {
             context.report({
               data: {
+                // eslint-disable-next-line unicorn/name-replacements -- `paramName` is the placeholder this rule's own message template reads.
                 paramName: parameterName,
                 tagName: preferredTagName
               },
@@ -74,6 +75,7 @@ export const requireMethodTemplate: Rule.RuleModule = {
           } else if (!matchingTag.hasDescription) {
             context.report({
               data: {
+                // eslint-disable-next-line unicorn/name-replacements -- `paramName` is the placeholder this rule's own message template reads.
                 paramName: parameterName,
                 tagName: preferredTagName
               },

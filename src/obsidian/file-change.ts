@@ -28,7 +28,7 @@ import type {
   CanvasTextNodeReference
 } from './reference.ts';
 import type {
-  ContentArgs as ContentArguments,
+  ContentArguments,
   ProcessOptions,
   ProcessParams
 } from './vault.ts';

@@ -14,6 +14,7 @@ const [, , ...$arguments] = process.argv;
 
 const { positionals, values } = parseArgs({
   allowPositionals: true,
+  // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
   args: $arguments,
   options: {
     force: { type: 'boolean' }

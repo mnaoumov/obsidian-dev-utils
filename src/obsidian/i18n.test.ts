@@ -23,10 +23,10 @@ import { DEFAULT_NS } from './i18n/i18n.ts';
 const HEAVY_IMPORT_TIMEOUT = 30_000;
 
 const {
-  mockAddResourceBundleFn,
+  mockAddResourceBundleFunction,
   mockI18nextInstance,
-  mockInitFn,
-  mockTLibFn
+  mockInitFunction,
+  mockTLibFunction
 } = vi.hoisted(() => {
   const mockAddResourceBundleFunction2 = vi.fn();
   // Mirrors i18next: `init()` flips `isInitialized`, which the real code reads as the single source of truth.
@@ -45,18 +45,18 @@ const {
     return 'mock-translated';
   });
   return {
-    mockAddResourceBundleFn: mockAddResourceBundleFunction2,
+    mockAddResourceBundleFunction: mockAddResourceBundleFunction2,
     mockI18nextInstance: mockI18nextInstance2,
-    mockInitFn: mockInitFunction2,
-    mockTLibFn: mockTLibFunction2
+    mockInitFunction: mockInitFunction2,
+    mockTLibFunction: mockTLibFunction2
   };
 });
 
 vi.mock('i18next', () => ({
   default: mockI18nextInstance,
   i18next: mockI18nextInstance,
-  init: mockInitFn,
-  t: mockTLibFn
+  init: mockInitFunction,
+  t: mockTLibFunction
 }));
 
 vi.mock('obsidian', async () => {
@@ -118,7 +118,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       expect(callArguments[0]).toContain('I18N was not initialized, initializing default obsidian-dev-utils translations');
       // The real invokeAsyncSafely runs the fire-and-forget initI18N synchronously up to its first
       // Await, so the observable effect of auto-initialization is that init() was called once.
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
+      expect(mockInitFunction).toHaveBeenCalledTimes(1);
 
       // eslint-disable-next-line no-console -- Valid usage.
       vi.mocked(console.debug).mockRestore();
@@ -142,7 +142,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       expect(vi.mocked(console.debug)).not.toHaveBeenCalled();
       expect(vi.mocked(console.warn)).not.toHaveBeenCalled();
       // Auto-initialization still happens - it is only the diagnostic that stays silent.
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
+      expect(mockInitFunction).toHaveBeenCalledTimes(1);
 
       // eslint-disable-next-line no-console -- Valid usage.
       vi.mocked(console.debug).mockRestore();
@@ -162,8 +162,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
       await initI18N(translationsMap, false);
 
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArguments = (mockInitFn.mock.calls[0] as unknown[])[0] as object;
+      expect(mockInitFunction).toHaveBeenCalledTimes(1);
+      const callArguments = (mockInitFunction.mock.calls[0] as unknown[])[0] as object;
       expect(callArguments).toMatchObject({
         fallbackLng: 'en',
         initAsync: false,
@@ -180,8 +180,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
       await initI18N(translationsMap, false);
 
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArguments = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
+      expect(mockInitFunction).toHaveBeenCalledTimes(1);
+      const callArguments = ensureGenericObject((mockInitFunction.mock.calls[0] as unknown[])[0]);
       expect(callArguments['resources']).toEqual({
         en: { translation: { greeting: 'Hello' } },
         fr: { translation: { greeting: 'Bonjour' } }
@@ -193,7 +193,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
       await initI18N({ en: { test: 'value' } }, false);
 
-      expect(mockAddResourceBundleFn).toHaveBeenCalledWith(
+      expect(mockAddResourceBundleFunction).toHaveBeenCalledWith(
         'en',
         'translation',
         { obsidianDevUtils: { test: 'english-value' } },
@@ -206,10 +206,10 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       const { initI18N } = await reloadI18N();
 
       await initI18N({ en: { test: 'value' } }, false);
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
+      expect(mockInitFunction).toHaveBeenCalledTimes(1);
 
       await initI18N({ en: { test: 'other-value' } }, false);
-      expect(mockInitFn).toHaveBeenCalledTimes(2);
+      expect(mockInitFunction).toHaveBeenCalledTimes(2);
     });
 
     it('should default isAsync to true', async () => {
@@ -217,8 +217,8 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
 
       await initI18N({ en: { test: 'value' } });
 
-      expect(mockInitFn).toHaveBeenCalledTimes(1);
-      const callArguments = ensureGenericObject((mockInitFn.mock.calls[0] as unknown[])[0]);
+      expect(mockInitFunction).toHaveBeenCalledTimes(1);
+      const callArguments = ensureGenericObject((mockInitFunction.mock.calls[0] as unknown[])[0]);
       expect(callArguments['initAsync']).toBe(true);
     });
   });
@@ -232,26 +232,26 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
     it('should call tLib with selector when no options provided', async () => {
       const { initI18N, t: freshT } = await reloadI18N();
       await initI18N({ en: { test: 'hello' } }, false);
-      mockTLibFn.mockClear();
+      mockTLibFunction.mockClear();
 
       const selector = castTo<Parameters<typeof freshT>[0]>(($: GenericObject): unknown => $['test']);
       freshT(selector);
 
-      expect(mockTLibFn).toHaveBeenCalledTimes(1);
-      expect(mockTLibFn).toHaveBeenCalledWith(selector);
+      expect(mockTLibFunction).toHaveBeenCalledTimes(1);
+      expect(mockTLibFunction).toHaveBeenCalledWith(selector);
     });
 
     it('should call tLib with selector and options when options provided', async () => {
       const { initI18N, t: freshT } = await reloadI18N();
       await initI18N({ en: { test: 'hello' } }, false);
-      mockTLibFn.mockClear();
+      mockTLibFunction.mockClear();
 
       const selector = castTo<Parameters<typeof freshT>[0]>(($: GenericObject): unknown => $['test']);
       const options = { ns: ['translation' as const] };
       freshT(selector, castTo<Parameters<typeof freshT>[1]>(options));
 
-      expect(mockTLibFn).toHaveBeenCalledTimes(1);
-      expect(mockTLibFn).toHaveBeenCalledWith(selector, options);
+      expect(mockTLibFunction).toHaveBeenCalledTimes(1);
+      expect(mockTLibFunction).toHaveBeenCalledWith(selector, options);
     });
 
     it('should return the translated value from tLib', async () => {

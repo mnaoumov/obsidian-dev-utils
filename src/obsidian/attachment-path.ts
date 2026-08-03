@@ -61,7 +61,7 @@ export enum AttachmentPathContext {
 /**
  * Options for the get available path for attachments extended function.
  */
-export interface GetAvailablePathForAttachmentsExtendedFnParams {
+export interface GetAvailablePathForAttachmentsExtendedFunctionParams {
   /**
    * A base name of the attachment.
    */
@@ -128,14 +128,14 @@ export interface GetAvailablePathForAttachmentsExtendedFnParams {
 /**
  * {@link Vault.getAvailablePathForAttachments} extended wrapper.
  */
-export interface GetAvailablePathForAttachmentsFnExtended extends GetAvailablePathForAttachmentsFunction {
+export interface GetAvailablePathForAttachmentsFunctionExtended extends GetAvailablePathForAttachmentsFunction {
   /**
    * Get available path for attachments with additional params.
    *
    * @param params - Parameters for the get available path for attachments.
    * @returns A {@link Promise} that resolves to the available path for attachments.
    */
-  extended(params: GetAvailablePathForAttachmentsExtendedFnParams): Promise<string>;
+  extended(params: GetAvailablePathForAttachmentsExtendedFunctionParams): Promise<string>;
 }
 
 type GetAvailablePathForAttachmentsFunction = Vault['getAvailablePathForAttachments'];
@@ -303,7 +303,7 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
   const attachmentFile = getFileOrNull({ app, pathOrFile: attachmentPath });
 
-  const extendedFunction = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFnExtended>).extended;
+  const extendedFunction = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFunctionExtended>).extended;
   if (extendedFunction) {
     return extendedFunction({
       attachmentFileBaseName,
@@ -421,7 +421,7 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
  * would get: they differ only when the folder depends on the note's NAME. Every built-in
  * `attachmentFolderPath` mode — the vault root, a fixed folder, the note's own folder (`./`), a subfolder of
  * the note's folder (`./sub`) — is shared by every note in that folder, so it answers `false`; `true` arises
- * from a {@link GetAvailablePathForAttachmentsFnExtended.extended} override that derives the folder from the
+ * from a {@link GetAvailablePathForAttachmentsFunctionExtended.extended} override that derives the folder from the
  * note's name (what an attachment-location plugin produces).
  *
  * This is the distinction a caller needs before sweeping an attachment folder wholesale: only a

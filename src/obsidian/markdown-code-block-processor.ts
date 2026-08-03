@@ -15,7 +15,7 @@ import type {
 import type { ValueProvider } from '../value-provider.ts';
 import type { CodeBlockMarkdownInformation } from './code-block-markdown-information.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
-import type { ContentArgs as ContentArguments } from './vault.ts';
+import type { ContentArguments } from './vault.ts';
 
 import { abortSignalAny } from '../abort-controller.ts';
 import { requestAnimationFrameAsync } from '../async.ts';

@@ -392,7 +392,7 @@ describe('PluginSettingsComponentBase', () => {
   });
 
   it('should ignore unknown properties in raw record', async () => {
-    const component = createComponent(new MockDataHandler({ count: 1, name: 'test', unknownProp: 'ignored' }));
+    const component = createComponent(new MockDataHandler({ count: 1, name: 'test', unknownProperty: 'ignored' }));
     await component.loadWithPromises();
     expect(component.settings.count).toBe(1);
   });

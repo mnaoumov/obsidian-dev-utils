@@ -183,7 +183,7 @@ async function processNextQueueItem(): Promise<void> {
 
   await addErrorHandler(() =>
     runWithTimeoutNotice({
-      context: { queuedFn: item.operationFunction },
+      context: { queuedFunction: item.operationFunction },
       async operationFunction(abortSignal: AbortSignal): Promise<void> {
         await invokeAsyncAndLog({
           $function: item.operationFunction,

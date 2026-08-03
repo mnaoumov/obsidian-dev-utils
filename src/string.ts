@@ -31,14 +31,14 @@ export const EMPTY = '';
  *
  * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export type AsyncReplacer<CapturedGroupArguments extends string[]> = ValueProvider<StringReplacement, ReplaceArgs<CapturedGroupArguments>>;
+export type AsyncReplacer<CapturedGroupArguments extends string[]> = ValueProvider<StringReplacement, ReplaceArguments<CapturedGroupArguments>>;
 
 /**
  * Common arguments for the `replaceAll`/`replaceAllAsync` functions.
  *
  * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export interface ReplaceArgs<CapturedGroupArguments extends string[]> {
+export interface ReplaceArguments<CapturedGroupArguments extends string[]> {
   /**
    * Captured group arguments.
    */
@@ -75,7 +75,7 @@ export interface ReplaceArgs<CapturedGroupArguments extends string[]> {
  *
  * @typeParam CapturedGroupArguments - The types of the captured group arguments.
  */
-export type Replacer<CapturedGroupArguments extends string[]> = (($arguments: ReplaceArgs<CapturedGroupArguments>) => StringReplacement) | StringReplacement;
+export type Replacer<CapturedGroupArguments extends string[]> = (($arguments: ReplaceArguments<CapturedGroupArguments>) => StringReplacement) | StringReplacement;
 
 type StringReplacement = MaybeReturn<string>;
 
@@ -492,7 +492,7 @@ export function replaceAll<CapturedGroupArguments extends string[]>(params: Repl
     const hasGroupsArgument = typeof $arguments.at(-1) === 'object';
     const sourceIndex = hasGroupsArgument ? $arguments.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : $arguments.length - 1;
 
-    const replaceArguments: ReplaceArgs<CapturedGroupArguments> = {
+    const replaceArguments: ReplaceArguments<CapturedGroupArguments> = {
       // eslint-disable-next-line no-restricted-syntax -- Can't avoid.
       capturedGroupArguments: [] as unknown[] as CapturedGroupArguments,
       groups: hasGroupsArgument ? $arguments.at(-1) as Record<string, string | undefined> : undefined,

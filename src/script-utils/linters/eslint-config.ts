@@ -603,12 +603,15 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
         '@typescript-eslint/no-unused-vars': [
           'error',
           {
+            // eslint-disable-next-line unicorn/name-replacements -- `args` is an ESLint rule option name.
             args: 'all',
+            // eslint-disable-next-line unicorn/name-replacements -- `argsIgnorePattern` is a `typescript-eslint` rule option name.
             argsIgnorePattern: '^_',
             caughtErrors: 'all',
             caughtErrorsIgnorePattern: '^_',
             destructuredArrayIgnorePattern: '^_',
             ignoreRestSiblings: true,
+            // eslint-disable-next-line unicorn/name-replacements -- `varsIgnorePattern` is a `typescript-eslint` rule option name.
             varsIgnorePattern: '^_'
           }
         ],
@@ -766,6 +769,13 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
              */
             checkProperties: true,
             replacements: {
+              /*
+               * `attr` / `attrs` are Obsidian's own: `createEl('a', { attr: { ... } })` takes them by those
+               * names on `DomElementInfo`, so ours have to match to be passed through. `props` is the
+               * universal component vocabulary, exempt for the same reason `params` is.
+               */
+              attr: false,
+              attrs: false,
               dev: false,
               /*
                * Every `dir` here is a filesystem directory, never a direction, so the rule is narrowed to the
@@ -783,6 +793,7 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
               env: false,
               lib: false,
               params: false,
+              props: false,
               ref: false,
               refs: false,
               src: false,

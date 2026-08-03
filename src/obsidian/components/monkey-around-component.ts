@@ -105,7 +105,7 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<$Object extends 
   /**
    * The patch handler function.
    */
-  readonly patchHandler: PatchHandlerFn<$Object, MethodName>;
+  readonly patchHandler: PatchHandlerFunction<$Object, MethodName>;
 
   /**
    * An optional token to identify the patch.
@@ -115,7 +115,7 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<$Object extends 
   /**
    * An optional post-patch handler function that runs after the patch is applied.
    */
-  readonly postPatchHandler?: PostPatchHandlerFn<$Object, MethodName>;
+  readonly postPatchHandler?: PostPatchHandlerFunction<$Object, MethodName>;
 }
 
 /**
@@ -124,12 +124,12 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<$Object extends 
  * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export type PatchHandlerFn<$Object extends object, MethodName extends MethodKeys<$Object>> = (
+export type PatchHandlerFunction<$Object extends object, MethodName extends MethodKeys<$Object>> = (
   params: PatchHandlerParams<$Object, MethodName>
 ) => ReturnType<ExtractFunction<$Object, MethodName>>;
 
 /**
- * Parameters passed to a {@link PatchHandlerFn} callback.
+ * Parameters passed to a {@link PatchHandlerFunction} callback.
  *
  * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
@@ -164,12 +164,12 @@ export interface PatchHandlerParams<$Object extends object, MethodName extends M
  * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.
  */
-export type PostPatchHandlerFn<$Object extends object, MethodName extends MethodKeys<$Object>> = (
+export type PostPatchHandlerFunction<$Object extends object, MethodName extends MethodKeys<$Object>> = (
   params: PostPatchHandlerParams<$Object, MethodName>
 ) => MaybeReturn<ExtractFunction<$Object, MethodName>>;
 
 /**
- * Parameters passed to a {@link PostPatchHandlerFn} callback.
+ * Parameters passed to a {@link PostPatchHandlerFunction} callback.
  *
  * @typeParam $Object - The object being patched.
  * @typeParam MethodName - The method name being patched.

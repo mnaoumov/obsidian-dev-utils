@@ -10,6 +10,7 @@ import { validateDeclarations } from '../src/script-utils/validate-declarations.
 const [, , ...$arguments] = process.argv;
 
 const { values } = parseArgs({
+  // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
   args: $arguments,
   options: {
     verbose: { type: 'boolean' }

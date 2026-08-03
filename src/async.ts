@@ -730,7 +730,7 @@ export async function retryWithTimeout(params: RetryWithTimeoutParams): Promise<
   fullOptions.abortSignal?.throwIfAborted();
 
   await runWithTimeout(normalizeOptionalProperties<RunWithTimeoutParams<void>>({
-    context: { operationName: params.operationName ?? '', retryFn: params.operationFunction },
+    context: { operationName: params.operationName ?? '', retryFunction: params.operationFunction },
     onTimeout: params.onTimeout,
     async operationFunction(abortSignal: AbortSignal): Promise<void> {
       const combinedAbortSignal = abortSignalAny(fullOptions.abortSignal, abortSignal);

@@ -191,7 +191,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should skip function values', () => {
-      const $object = { a: 1, fn: noop };
+      const $object = { $function: noop, a: 1 };
       expect(getAllKeys($object)).toEqual(['a']);
     });
 
@@ -505,7 +505,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should exclude functions by default', () => {
-      const $object = { a: 1, fn: noop };
+      const $object = { $function: noop, a: 1 };
       const json = toJson($object);
       const parsed = JSON.parse(json);
       expect(parsed).toEqual({ a: 1 });
@@ -515,7 +515,7 @@ describe('ObjectUtils', () => {
       function myFunction(): void {
         noop();
       }
-      const $object = { a: 1, fn: myFunction };
+      const $object = { $function: myFunction, a: 1 };
       const json = toJson($object, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('myFunc');
     });
@@ -524,7 +524,7 @@ describe('ObjectUtils', () => {
       function myFunction(): number {
         return 42;
       }
-      const $object = { fn: myFunction };
+      const $object = { $function: myFunction };
       const json = toJson($object, { functionHandlingMode: FunctionHandlingMode.Full });
       expect(json).toContain('return 42');
     });
@@ -588,7 +588,7 @@ describe('ObjectUtils', () => {
       function namedFunction(): void {
         noop();
       }
-      const $object = { fn: namedFunction };
+      const $object = { $function: namedFunction };
       const json = toJson($object, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('function namedFunction()');
     });
@@ -608,7 +608,7 @@ describe('ObjectUtils', () => {
         noop();
       }
       Object.defineProperty($function, 'name', { value: '' });
-      const $object = { fn: $function };
+      const $object = { $function };
       const json = toJson($object, { functionHandlingMode: FunctionHandlingMode.NameOnly });
       expect(json).toContain('anonymous');
     });
@@ -672,14 +672,14 @@ describe('ObjectUtils', () => {
   describe('getAllKeys advanced', () => {
     it('should include properties with both getter and setter', () => {
       const $object = {
-        get prop(): number {
+        get property(): number {
           return 1;
         },
-        set prop(_v: number) {
+        set property(_v: number) {
           noop();
         }
       };
-      expect(getAllKeys($object)).toContain('prop');
+      expect(getAllKeys($object)).toContain('property');
     });
 
     it('should exclude getter-only properties', () => {

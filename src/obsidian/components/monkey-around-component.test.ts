@@ -16,9 +16,9 @@ import type { MaybeReturn } from '../../type.ts';
 import type {
   FunctionKeys,
   MethodKeys,
-  PatchHandlerFn as PatchHandlerFunction,
+  PatchHandlerFunction,
   PatchHandlerParams,
-  PostPatchHandlerFn as PostPatchHandlerFunction,
+  PostPatchHandlerFunction,
   PostPatchHandlerParams
 } from './monkey-around-component.ts';
 

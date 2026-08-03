@@ -104,7 +104,7 @@ export interface CleanupEmptyFoldersParams {
 /**
  * Arguments for {@link process}.
  */
-export interface ContentArgs {
+export interface ContentArguments {
   readonly content: string;
 }
 
@@ -296,7 +296,7 @@ export interface ProcessParams extends ProcessOptions {
    * It can be a string or a function that takes the old content as an argument and returns the new content.
    * If function is provided, it should return `null` if the process should be retried.
    */
-  readonly newContentProvider: ValueProvider<null | string, ContentArgs>;
+  readonly newContentProvider: ValueProvider<null | string, ContentArguments>;
 
   /**
    * The path or file to be processed. It can be a string representing the path or a file object.

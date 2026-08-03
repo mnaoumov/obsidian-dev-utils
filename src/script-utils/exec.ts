@@ -20,16 +20,16 @@ import {
 } from './cli-utils.ts';
 
 /**
- * A command part: either a plain string or an {@link ExecArg} with batched arguments.
+ * A command part: either a plain string or an {@link ExecArgument} with batched arguments.
  */
-export type CommandPart = ExecArg | string;
+export type CommandPart = ExecArgument | string;
 
 /**
  * A command argument that contains a list of args to be batched.
  * If the expanded command exceeds the platform's max command length,
  * the batched args are split into sequential executions.
  */
-export interface ExecArg {
+export interface ExecArgument {
   /**
    * The arguments to batch.
    */
@@ -527,7 +527,7 @@ function getMaxCommandLength(): number {
 }
 
 /**
- * Handles a command array that may contain an {@link ExecArg}.
+ * Handles a command array that may contain an {@link ExecArgument}.
  * Returns a Promise if batching is needed, or `undefined` if the command
  * has no ExecArg and should be processed normally.
  *
@@ -593,12 +593,12 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
 }
 
 /**
- * Checks if a command part is an {@link ExecArg}.
+ * Checks if a command part is an {@link ExecArgument}.
  *
  * @param part - The command part to check.
  * @returns Whether the part is an ExecArg.
  */
-function isExecArgument(part: CommandPart): part is ExecArg {
+function isExecArgument(part: CommandPart): part is ExecArgument {
   return typeof part === 'object' && 'batchedArguments' in part;
 }
 
