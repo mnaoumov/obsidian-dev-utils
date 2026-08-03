@@ -32,7 +32,9 @@ describe('markdown-code-block-processor', () => {
       \`\`\`
     `}\n`;
     const result = await evalInObsidian<ReadNoteContentArguments, string>({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: { content },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, content: noteContent }) {
         const file = await app.vault.create('code-block-test.md', noteContent);
         try {

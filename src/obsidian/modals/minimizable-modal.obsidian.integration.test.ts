@@ -63,6 +63,7 @@ describe('MinimizableModal', () => {
   describe('minimize', () => {
     it('should block the keyboard while minimized and allow typing again after restore', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { MinimizableModal, typeIntoEditor }, obsidianModule }): Promise<TypingWhileMinimizedResult> {
           // This file shares its live Obsidian instance with the other integration suites.
           // Start from a clean workspace so only the view this test opens is around.
@@ -137,6 +138,7 @@ describe('MinimizableModal', () => {
 
     it('should block opening another modal while minimized and allow it again after restore', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<ModalOpenBlockedResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
@@ -181,6 +183,7 @@ describe('MinimizableModal', () => {
 
     it('should block opening the settings popout while minimized so no empty settings window appears', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<SettingsPopoutBlockedResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
@@ -242,6 +245,7 @@ describe('MinimizableModal', () => {
   describe('restore', () => {
     it('should restore when the minimized bar body or its title is clicked, not only the restore button', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<RestoreByClickResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const TITLE_SELECTOR = '.minimized-modal-bar .minimized-modal-bar-title';
@@ -294,6 +298,7 @@ describe('MinimizableModal', () => {
   describe('cancel', () => {
     it('should close the modal (not merely restore it) when the bar cancel button is clicked', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { MinimizableModal }, obsidianModule }): Promise<CancelByClickResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const CANCEL_SELECTOR = '.minimized-modal-bar .cancel-button';
@@ -335,6 +340,7 @@ describe('MinimizableModal', () => {
   describe('hover', () => {
     it('should keep the minimized bar opaque on hover so editor content behind it never bleeds through', async () => {
       const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { hoverElement, MinimizableModal, unhoverElement }, obsidianModule }): Promise<HoverOpacityResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const SETTLE_DELAY_MILLISECONDS = 300;

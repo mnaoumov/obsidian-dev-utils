@@ -30,6 +30,7 @@ describe('editor', () => {
   describe('toggleEditorReadOnly', () => {
     it('should make the editor read-only when toggled on and editable again when toggled off', async () => {
       const result = await evalInObsidian<Record<string, never>, ToggleReadOnlyResult>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         async fn({ app, lib: { toggleEditorReadOnly } }) {
           const file = await app.vault.create('editor-toggle-read-only-integration.md', 'hello world');
           await app.workspace.getLeaf().openFile(file);

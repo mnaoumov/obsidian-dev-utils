@@ -44,11 +44,13 @@ const INVALID_REG_EXP = String.raw`/^Inbox\/`;
 describe('PathSettings', () => {
   it('should keep a real settings tab working while an un-parseable regex is typed', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: {
         harnessPluginId: HARNESS_PLUGIN_ID,
         invalidRegExp: INVALID_REG_EXP,
         reportedRegExp: REPORTED_REG_EXP
       },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({
         app,
         harnessPluginId,

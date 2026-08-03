@@ -187,6 +187,7 @@ export class ObsidianPluginVitestConfigContext {
     include: [UNIT_TEST_FILES],
     name: 'unit-tests',
     server: {
+      // eslint-disable-next-line unicorn/name-replacements -- `deps` is declared by `vitest`; renaming it here would not match the API.
       deps: {
         inline: ['@obsidian-typings', 'obsidian-dev-utils']
       }

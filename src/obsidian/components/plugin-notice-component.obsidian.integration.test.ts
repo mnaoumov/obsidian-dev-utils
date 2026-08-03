@@ -21,6 +21,7 @@ import { dispose } from '../../disposable.ts';
 describe('PluginNoticeComponent styling', () => {
   it('should render the plugin name with the accent color and bold weight, distinct from the body', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       fn({ app, lib: { PluginNoticeComponent } }) {
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         const notice = component.showNotice('Body text');
@@ -79,6 +80,7 @@ describe('PluginNoticeComponent styling', () => {
 describe('PluginNoticeComponent hard-to-close notice', () => {
   it('should not dismiss on stray clicks and close directly via the close button', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
@@ -191,6 +193,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
 
   it('should run an interactive button handler in the message without dismissing the notice', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { PluginNoticeComponent, waitUntil } }) {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
@@ -262,6 +265,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
 describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   it('shows a cancellable notice after the delay whose interactive click does not dismiss it', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { PluginNoticeComponent } }) {
         const DELAY_IN_MILLISECONDS = 50;
         const SETTLE_IN_MILLISECONDS = 250;

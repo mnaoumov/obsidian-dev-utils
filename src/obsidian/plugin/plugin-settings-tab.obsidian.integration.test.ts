@@ -61,6 +61,7 @@ interface LegacyFallbackResult {
 describe('PluginSettingsTabBase declarative rendering', () => {
   it('should re-evaluate a dependent disabled predicate on refreshDomState without re-rendering the row', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib }): Promise<DependentDisabledResult> {
         const {
           castTo,
@@ -185,6 +186,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
   it('should add and remove rows on refresh', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib }): Promise<AddRemoveRowsResult> {
         const {
           castTo,
@@ -296,6 +298,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
   it('should render settingGroupEx groups and adopt the row into a SettingEx', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib }): Promise<GroupResult> {
         const {
           castTo,
@@ -393,6 +396,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
   it('should fall back to displayLegacy when the tab provides no definitions', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib }): Promise<LegacyFallbackResult> {
         const {
           castTo,

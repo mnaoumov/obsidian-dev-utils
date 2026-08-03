@@ -54,6 +54,7 @@ describe('demo-vault-helper bootstrap', () => {
     // Timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
         args: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {

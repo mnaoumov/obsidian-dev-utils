@@ -33,6 +33,7 @@ const CORE_HANDLER_METHOD = 'onInternalLinkClick';
 describe('getDomEventsHandlersConstructor', () => {
   it('should extract the DomEventsHandlers constructor, not the container element constructor', async () => {
     const probe = await evalInObsidian<Record<string, never>, ConstructorProbe>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { getDomEventsHandlersConstructor } }) {
         const ctor = await getDomEventsHandlersConstructor(app);
         const prototype: object = ctor.prototype;

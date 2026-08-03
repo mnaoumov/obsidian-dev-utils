@@ -41,10 +41,12 @@ const ANCHOR_TOP_IN_PIXELS = 160;
 describe('editFieldsInPopover', () => {
   it('should render an anchored popover and resolve the edited values', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       args: {
         anchorLeftInPixels: ANCHOR_LEFT_IN_PIXELS,
         anchorTopInPixels: ANCHOR_TOP_IN_PIXELS
       },
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ anchorLeftInPixels, anchorTopInPixels, lib: { createAnchorFromElement, editFieldsInPopover, ensureNonNullable, waitUntil } }): Promise<EditFieldsResult> {
         const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const EXPECTED_FIELD_COUNT = 2;
@@ -146,6 +148,7 @@ describe('editFieldsInPopover', () => {
 
   it('should dismiss with no value when a pointer gesture starts outside it', async () => {
     const result = await evalInObsidian({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ lib: { createAnchorFromPoint, editFieldsInPopover, waitUntil } }): Promise<DismissResult> {
         const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const ANCHOR_X_IN_PIXELS = 40;

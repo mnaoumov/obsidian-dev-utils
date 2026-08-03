@@ -27,6 +27,7 @@ interface BacklinksResult {
 describe('backlinks via metadata cache', () => {
   it('should find backlinks to a target note', async () => {
     const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { ensureMetadataCacheReady, getBacklinksForFileSafe } }) {
         await app.vault.create('backlink-target.md', '# Target\n\nThis is the target note.\n');
         await app.vault.create('backlink-linker-a.md', '# Linker A\n\nLinks to [[backlink-target]].\n');
@@ -59,6 +60,7 @@ describe('backlinks via metadata cache', () => {
 
   it('should return empty backlinks for a note with no incoming links', async () => {
     const result = await evalInObsidian<Record<string, never>, BacklinksResult>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { ensureMetadataCacheReady, getBacklinksForFileSafe } }) {
         await app.vault.create('backlink-isolated.md', '# Isolated\n\nNo one links here.\n');
 
@@ -86,6 +88,7 @@ describe('backlinks via metadata cache', () => {
 
   it('should detect links in the metadata cache', async () => {
     const result = await evalInObsidian<Record<string, never>, string[]>({
+      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn({ app, lib: { ensureMetadataCacheReady, getLinks } }) {
         await app.vault.create('backlink-multi-linker.md', '# Multi\n\nLinks to [[alpha]] and [[beta]].\n');
 

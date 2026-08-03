@@ -40,6 +40,7 @@ interface TestEventSource extends EventsOriginal {
 function createMocks(): Mocks {
   const offref = vi.fn();
   const events = strictProxy<EventsOriginal>({ offref });
+  // eslint-disable-next-line unicorn/name-replacements -- `e` is declared by `@obsidian-typings/obsidian-public-1.13.4`; renaming it here would not match the API.
   const eventReference = strictProxy<EventReferenceOriginal>({ e: events });
   const on = vi.fn(() => eventReference);
   const source = strictProxy<TestEventSource>({ on });

@@ -115,6 +115,7 @@ function buildDemoVaultPopulateForHelperTest(): PopulateFilesParams {
 
   return buildDemoVaultPopulate({
     demoVaultPath: moduleState.demoVaultPath,
+    // eslint-disable-next-line unicorn/name-replacements -- `sourceDir` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
     injectPlugins: [{ pluginId: HELPER_PLUGIN_ID, sourceDir: DIST_HELPER_DIR }]
   });
 }

@@ -129,6 +129,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
         read: adapterRead,
         write: adapterWrite
       }),
+      // eslint-disable-next-line unicorn/name-replacements -- `configDir` is declared by `obsidian`; renaming it here would not match the API.
       configDir: `${EMPTY}.obsidian`
     })
   });
