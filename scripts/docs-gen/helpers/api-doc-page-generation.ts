@@ -310,8 +310,8 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
   // Component imports — compute relative path from generated page to components
   const componentPath = getComponentImportPath(nsDirectory, typeFileSlug);
   lines.push(
-    `import { TypeSignature, ImportStatement, ConstructorBlock, PropertyTable, MethodTable } from "${componentPath}";`
-  , '');
+    `import { TypeSignature, ImportStatement, ConstructorBlock, PropertyTable, MethodTable } from "${componentPath}";`,
+    '');
 
   // Description
   if (info.description) {
@@ -479,8 +479,8 @@ export function renderMethodOverloadMdx(lines: string[], overload: MemberInfo, t
   const paramsAttribute = params.length > 0 ? ` parameters={${JSON.stringify(params)}}` : '';
 
   lines.push(
-    `<MemberDetail${staticAttribute} signature="${escapeJsxAttribute(sig)}"${descAttribute}${remarksAttribute}${sinceAttribute}${returnTypeAttribute}${returnDescAttribute}${paramsAttribute}${examplesAttribute} />`
-  , '');
+    `<MemberDetail${staticAttribute} signature="${escapeJsxAttribute(sig)}"${descAttribute}${remarksAttribute}${sinceAttribute}${returnTypeAttribute}${returnDescAttribute}${paramsAttribute}${examplesAttribute} />`,
+    '');
 }
 
 export function renderMethodTableMdx(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {

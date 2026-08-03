@@ -655,3 +655,5 @@ describe('buildChildEnv', () => {
     expect('NODE_OPTIONS' in env).toBe(false);
   });
 });
+
+/* eslint-enable unicorn/prefer-single-call -- The stream-push exemption above applies to the whole file. */
