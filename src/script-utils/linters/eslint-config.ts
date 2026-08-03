@@ -746,6 +746,12 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
              * loosely typed positions (`expect.arrayContaining([{ batchedArgs: ... }])`) are not contextually
              * typed, so a rename leaves them behind and breaks the suite where the type checker sees nothing.
              * Rename in small batches with the full test run in the loop.
+             *
+             * The disabled replacements below are established vocabulary rather than abbreviations to be
+             * expanded. `el` is exempt because Obsidian names every element member that way -- `containerEl`,
+             * `contentEl`, `inputEl`, `selectEl` -- so expanding ours to `*Element` would leave our components
+             * reading inconsistently beside the Obsidian ones they sit next to. Disabling the replacement also
+             * covers compound names, which is 72 sites that would otherwise each need an inline disable.
              */
             checkProperties: true,
             replacements: {
@@ -753,6 +759,7 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
               dist: false,
               doc: false,
               docs: false,
+              el: false,
               env: false,
               lib: false,
               params: false,

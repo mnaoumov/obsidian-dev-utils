@@ -114,8 +114,8 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
 
   const doc = anchor.doc;
   const win = getDocumentWindow(doc);
-  const popoverElement = doc.body.createDiv({ cls: 'menu' });
-  addPluginCssClasses(popoverElement, [CssClass.Popover, ...cssClasses ?? []]);
+  const popoverEl = doc.body.createDiv({ cls: 'menu' });
+  addPluginCssClasses(popoverEl, [CssClass.Popover, ...cssClasses ?? []]);
 
   return await new Promise<null | Value>((resolve) => {
     const state = { isClosed: false };
@@ -126,7 +126,7 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
       }
       state.isClosed = true;
       doc.removeEventListener('pointerdown', handlePointerDown, true);
-      popoverElement.remove();
+      popoverEl.remove();
       resolve(result);
     }
 
@@ -146,7 +146,7 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
      * @param $event - The pointer event.
      */
     function handlePointerDown($event: PointerEvent): void {
-      if ($event.composedPath().includes(popoverElement)) {
+      if ($event.composedPath().includes(popoverEl)) {
         return;
       }
       close(null);
@@ -155,10 +155,10 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
     const getValue = build({
       cancel: handleCancel,
       confirm: handleOk,
-      contentEl: popoverElement
+      contentEl: popoverEl
     });
 
-    popoverElement.addEventListener('keydown', ($event: KeyboardEvent) => {
+    popoverEl.addEventListener('keydown', ($event: KeyboardEvent) => {
       if ($event.key === 'Enter') {
         $event.preventDefault();
         handleOk();
@@ -171,7 +171,7 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
       }
     });
 
-    const buttonsSetting = new Setting(popoverElement);
+    const buttonsSetting = new Setting(popoverEl);
     buttonsSetting.addButton((button) => {
       button
         .setButtonText(okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok))
@@ -187,18 +187,18 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
     });
 
     doc.addEventListener('pointerdown', handlePointerDown, { capture: true });
-    positionAtAnchor(popoverElement, anchor, win);
-    focusFirstInput(popoverElement);
+    positionAtAnchor(popoverEl, anchor, win);
+    focusFirstInput(popoverEl);
   });
 }
 
 /**
  * Focuses and selects the popover's first text input, so the user can type straight away.
  *
- * @param popoverElement - The popover to focus within.
+ * @param popoverEl - The popover to focus within.
  */
-function focusFirstInput(popoverElement: HTMLElement): void {
-  const inputElement = popoverElement.querySelector('input');
+function focusFirstInput(popoverEl: HTMLElement): void {
+  const inputElement = popoverEl.querySelector('input');
   if (!inputElement) {
     return;
   }
@@ -212,17 +212,17 @@ function focusFirstInput(popoverElement: HTMLElement): void {
  * overflow — an anchor near the right or bottom edge is exactly where an unclamped popover would
  * render off-screen.
  *
- * @param popoverElement - The popover to position.
+ * @param popoverEl - The popover to position.
  * @param anchor - Where the popover belongs.
  * @param win - The window the anchor lives in (a pop-out window has its own).
  */
-function positionAtAnchor(popoverElement: HTMLElement, anchor: PopoverAnchor, win: Window): void {
-  const maxLeft = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerWidth - popoverElement.offsetWidth - VIEWPORT_MARGIN_IN_PIXELS);
-  const maxTop = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerHeight - popoverElement.offsetHeight - VIEWPORT_MARGIN_IN_PIXELS);
+function positionAtAnchor(popoverEl: HTMLElement, anchor: PopoverAnchor, win: Window): void {
+  const maxLeft = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerWidth - popoverEl.offsetWidth - VIEWPORT_MARGIN_IN_PIXELS);
+  const maxTop = Math.max(VIEWPORT_MARGIN_IN_PIXELS, win.innerHeight - popoverEl.offsetHeight - VIEWPORT_MARGIN_IN_PIXELS);
 
   const left = Math.min(Math.max(anchor.left, VIEWPORT_MARGIN_IN_PIXELS), maxLeft);
   const top = Math.min(Math.max(anchor.bottom + ANCHOR_GAP_IN_PIXELS, VIEWPORT_MARGIN_IN_PIXELS), maxTop);
 
-  popoverElement.style.left = `${String(Math.round(left + win.scrollX))}px`;
-  popoverElement.style.top = `${String(Math.round(top + win.scrollY))}px`;
+  popoverEl.style.left = `${String(Math.round(left + win.scrollX))}px`;
+  popoverEl.style.top = `${String(Math.round(top + win.scrollY))}px`;
 }

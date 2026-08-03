@@ -15,10 +15,10 @@ export class SettingGroupEx extends SettingGroup {
   /**
    * Creates a new setting group.
    *
-   * @param containerElement - The container element.
+   * @param containerEl - The container element.
    */
-  public constructor(containerElement: HTMLElement) {
-    super(containerElement);
+  public constructor(containerEl: HTMLElement) {
+    super(containerEl);
   }
 
   /**

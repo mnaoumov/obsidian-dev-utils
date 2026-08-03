@@ -59,12 +59,12 @@ export class MultipleTextComponent extends ValueComponent<readonly string[]> imp
   /**
    * Creates a new multiple text component.
    *
-   * @param containerElement - The container element of the component.
+   * @param containerEl - The container element of the component.
    */
-  public constructor(containerElement: HTMLElement) {
+  public constructor(containerEl: HTMLElement) {
     super();
-    this.textAreaComponent = new TextAreaComponent(containerElement);
-    addPluginCssClasses(containerElement, CssClass.MultipleTextComponent);
+    this.textAreaComponent = new TextAreaComponent(containerEl);
+    addPluginCssClasses(containerEl, CssClass.MultipleTextComponent);
   }
 
   /**

@@ -52,8 +52,8 @@ describe('confirm', () => {
     vi.clearAllMocks();
     buttonInstances.length = 0;
     mockImplementation({
-      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerElement: HTMLElement): ButtonComponentOriginal {
-        originalImplementation.call(this, containerElement);
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
+        originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },

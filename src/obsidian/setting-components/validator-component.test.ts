@@ -49,7 +49,6 @@ describe('getValidatorComponent', () => {
     const container = createDiv();
     const comp = new ColorComponent(container);
     const colorPickerElement = createEl('input', { type: 'color' });
-    // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
     comp.colorPickerEl = colorPickerElement;
     const result = getValidatorComponent(comp);
     expect(result).not.toBeNull();

@@ -129,12 +129,12 @@ export async function editFieldsInPopover<Key extends string>(params: EditFields
  * Adds a single labelled text field to the popover.
  *
  * @typeParam Key - The key the field's value is returned under.
- * @param containerElement - The element to add the field to.
+ * @param containerEl - The element to add the field to.
  * @param field - The field to add.
  * @returns The field's text component.
  */
-function addField<Key extends string>(containerElement: HTMLElement, field: PopoverField<Key>): TextComponent {
-  const setting = new Setting(containerElement).setName(field.name);
+function addField<Key extends string>(containerEl: HTMLElement, field: PopoverField<Key>): TextComponent {
+  const setting = new Setting(containerEl).setName(field.name);
   const textComponent = new TextComponent(setting.controlEl);
   textComponent.setValue(field.defaultValue ?? '');
   textComponent.setPlaceholder(field.placeholder ?? '');

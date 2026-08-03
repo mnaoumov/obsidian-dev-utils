@@ -54,8 +54,8 @@ describe('editFieldsInPopover', () => {
     textInstances.length = 0;
     document.body.empty();
     mockImplementation({
-      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerElement: HTMLElement): ButtonComponentOriginal {
-        originalImplementation.call(this, containerElement);
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
+        originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
@@ -63,8 +63,8 @@ describe('editFieldsInPopover', () => {
       obj: ButtonComponentOriginal.prototype
     });
     mockImplementation({
-      impl: function impl(this: TextComponentOriginal, originalImplementation, containerElement: HTMLElement): TextComponentOriginal {
-        originalImplementation.call(this, containerElement);
+      impl: function impl(this: TextComponentOriginal, originalImplementation, containerEl: HTMLElement): TextComponentOriginal {
+        originalImplementation.call(this, containerEl);
         textInstances.push(this);
         return this;
       },
@@ -140,11 +140,11 @@ describe('editFieldsInPopover', () => {
       ]
     });
 
-    const popoverElement = ensureNonNullable(document.body.querySelector('.popover'));
-    const inputEls = [...popoverElement.querySelectorAll('input')];
+    const popoverEl = ensureNonNullable(document.body.querySelector('.popover'));
+    const inputEls = [...popoverEl.querySelectorAll('input')];
 
-    expect(popoverElement.textContent).toContain('URL');
-    expect(popoverElement.textContent).toContain('Alias');
+    expect(popoverEl.textContent).toContain('URL');
+    expect(popoverEl.textContent).toContain('Alias');
     expect(inputEls).toHaveLength(2);
     expect(inputEls[0]?.placeholder).toBe('https://...');
     expect(inputEls[1]?.placeholder).toBe('');
@@ -163,11 +163,11 @@ describe('editFieldsInPopover', () => {
       okButtonText: 'Apply'
     });
 
-    const popoverElement = ensureNonNullable(document.body.querySelector('.popover'));
+    const popoverEl = ensureNonNullable(document.body.querySelector('.popover'));
 
-    expect(popoverElement.classList.contains('link-editor')).toBe(true);
-    expect(popoverElement.querySelector('.ok-button')?.textContent).toBe('Apply');
-    expect(popoverElement.querySelector('.cancel-button')?.textContent).toBe('Dismiss');
+    expect(popoverEl.classList.contains('link-editor')).toBe(true);
+    expect(popoverEl.querySelector('.ok-button')?.textContent).toBe('Apply');
+    expect(popoverEl.querySelector('.cancel-button')?.textContent).toBe('Dismiss');
 
     clickCancel();
     await resultPromise;

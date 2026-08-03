@@ -78,13 +78,13 @@ export class CodeHighlighterComponent extends ValueComponent<string> implements 
   /**
    * Creates a new multiple text component.
    *
-   * @param containerElement - The container element of the component.
+   * @param containerEl - The container element of the component.
    */
-  public constructor(containerElement: HTMLElement) {
+  public constructor(containerEl: HTMLElement) {
     super();
-    addPluginCssClasses(containerElement, CssClass.CodeHighlighterComponent);
+    addPluginCssClasses(containerEl, CssClass.CodeHighlighterComponent);
 
-    const wrapper = containerElement.createDiv();
+    const wrapper = containerEl.createDiv();
     addPluginCssClasses(wrapper, CssClass.SettingComponentWrapper);
 
     this.textAreaComponent = new TextAreaComponent(wrapper);

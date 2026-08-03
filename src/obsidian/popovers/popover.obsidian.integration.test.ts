@@ -73,30 +73,30 @@ describe('editFieldsInPopover', () => {
             timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
           });
 
-          const popoverElement = requirePopoverElement();
+          const popoverEl = requirePopoverElement();
           const anchorRect = anchorElement.getBoundingClientRect();
-          const popoverRect = popoverElement.getBoundingClientRect();
+          const popoverRect = popoverEl.getBoundingClientRect();
           /*
            * Everything measured off the popover must be read BEFORE it is confirmed: confirming removes
            * it from the document, and `getComputedStyle` of a detached element reports empty strings.
            */
-          const position = activeWindow.getComputedStyle(popoverElement).position;
+          const position = activeWindow.getComputedStyle(popoverEl).position;
           const inputEls = getInputEls();
           const inputValues = inputEls.map((inputElement) => inputElement.value);
           // The buttons row is a `Setting` too, so it contributes an empty name element to skip.
-          const fieldNames = [...popoverElement.querySelectorAll('.setting-item-name')]
+          const fieldNames = [...popoverEl.querySelectorAll('.setting-item-name')]
             .map((nameElement) => nameElement.textContent)
             .filter((name) => Boolean(name));
 
           setInputValue(inputEls[0], 'https://edited.example.com');
           setInputValue(inputEls[1], 'Edited');
-          popoverElement.querySelector<HTMLButtonElement>('.ok-button')?.click();
+          popoverEl.querySelector<HTMLButtonElement>('.ok-button')?.click();
 
           const resolved = await resultPromise;
 
           return {
             fieldNames,
-            hasMenuClass: popoverElement.classList.contains('menu'),
+            hasMenuClass: popoverEl.classList.contains('menu'),
             inputValues,
             isBelowAnchor: popoverRect.top >= anchorRect.bottom,
             isInsideViewport: popoverRect.left >= 0

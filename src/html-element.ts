@@ -73,7 +73,6 @@ export async function createDivAsync(
  * @returns A {@link Promise} that resolves to the element.
  * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#createEl} (or createSvg, correspondingly).
  */
-// eslint-disable-next-line unicorn/name-replacements -- Deliberately mirrors Obsidian's own `createEl`, as the doc comment above states.
 export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   o?: DomElementInfo | string,

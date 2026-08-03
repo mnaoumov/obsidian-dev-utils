@@ -26,11 +26,11 @@ export class UrlComponent extends TypedTextComponent<string> implements TextBase
   /**
    * Creates a new Url component.
    *
-   * @param containerElement - The container element of the component.
+   * @param containerEl - The container element of the component.
    */
-  public constructor(containerElement: HTMLElement) {
+  public constructor(containerEl: HTMLElement) {
     super({
-      containerEl: containerElement,
+      containerEl,
       cssClass: CssClass.UrlComponent,
       type: 'url'
     });

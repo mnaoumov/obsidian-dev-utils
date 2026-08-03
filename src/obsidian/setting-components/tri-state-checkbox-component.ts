@@ -46,12 +46,12 @@ export class TriStateCheckboxComponent extends ValueComponent<boolean | null> im
   /**
    * Creates a new tri-state checkbox component.
    *
-   * @param containerElement - The container element.
+   * @param containerEl - The container element.
    */
-  public constructor(containerElement: HTMLElement) {
+  public constructor(containerEl: HTMLElement) {
     super();
-    addPluginCssClasses(containerElement, CssClass.TriStateCheckboxComponent);
-    this.inputEl = containerElement.createEl('input', { type: 'checkbox' });
+    addPluginCssClasses(containerEl, CssClass.TriStateCheckboxComponent);
+    this.inputEl = containerEl.createEl('input', { type: 'checkbox' });
     this.inputEl.addEventListener('change', this.onChanged.bind(this));
   }
 

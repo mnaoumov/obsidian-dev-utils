@@ -155,9 +155,9 @@ describe('SuggestModalCommandBuilder', () => {
       const modal = createMockModal();
       builder.build(modal);
       // Find the checkbox in the modal's instructionsEl
-      const checkboxElement = modal.instructionsEl.querySelector('input[type="checkbox"]');
-      expect(checkboxElement).toBeTruthy();
-      const checkbox = checkboxElement as HTMLInputElement;
+      const checkboxEl = modal.instructionsEl.querySelector('input[type="checkbox"]');
+      expect(checkboxEl).toBeTruthy();
+      const checkbox = checkboxEl as HTMLInputElement;
       checkbox.checked = true;
       checkbox.dispatchEvent(new Event('change'));
       expect(onChange).toHaveBeenCalledWith(true);

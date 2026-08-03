@@ -68,8 +68,8 @@ describe('showPopover', () => {
     buttonInstances.length = 0;
     document.body.empty();
     mockImplementation({
-      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerElement: HTMLElement): ButtonComponentOriginal {
-        originalImplementation.call(this, containerElement);
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
+        originalImplementation.call(this, containerEl);
         buttonInstances.push(this);
         return this;
       },
@@ -194,10 +194,10 @@ describe('showPopover', () => {
 
   it('should place the popover just below the anchor', async () => {
     const resultPromise = showTextPopover('value', createAnchor(200, 120));
-    const popoverElement = requirePopoverElement();
+    const popoverEl = requirePopoverElement();
 
-    expect(popoverElement.style.left).toBe('120px');
-    expect(popoverElement.style.top).toBe('204px');
+    expect(popoverEl.style.left).toBe('120px');
+    expect(popoverEl.style.top).toBe('204px');
 
     clickCancel();
     await resultPromise;
@@ -205,10 +205,10 @@ describe('showPopover', () => {
 
   it('should clamp a popover anchored past the far edges back into the window', async () => {
     const resultPromise = showTextPopover('value', createAnchor(5000, 5000));
-    const popoverElement = requirePopoverElement();
+    const popoverEl = requirePopoverElement();
 
-    expect(popoverElement.style.left).toBe(`${String(window.innerWidth - 8)}px`);
-    expect(popoverElement.style.top).toBe(`${String(window.innerHeight - 8)}px`);
+    expect(popoverEl.style.left).toBe(`${String(window.innerWidth - 8)}px`);
+    expect(popoverEl.style.top).toBe(`${String(window.innerHeight - 8)}px`);
 
     clickCancel();
     await resultPromise;
@@ -216,10 +216,10 @@ describe('showPopover', () => {
 
   it('should clamp a popover anchored past the near edges back into the window', async () => {
     const resultPromise = showTextPopover('value', createAnchor(-500, -500));
-    const popoverElement = requirePopoverElement();
+    const popoverEl = requirePopoverElement();
 
-    expect(popoverElement.style.left).toBe('8px');
-    expect(popoverElement.style.top).toBe('8px');
+    expect(popoverEl.style.left).toBe('8px');
+    expect(popoverEl.style.top).toBe('8px');
 
     clickCancel();
     await resultPromise;
@@ -231,11 +231,11 @@ describe('showPopover', () => {
       build: () => (): string => 'value',
       cssClasses: ['my-popover']
     });
-    const popoverElement = requirePopoverElement();
+    const popoverEl = requirePopoverElement();
 
-    expect(popoverElement.classList.contains('menu')).toBe(true);
-    expect(popoverElement.classList.contains('obsidian-dev-utils')).toBe(true);
-    expect(popoverElement.classList.contains('my-popover')).toBe(true);
+    expect(popoverEl.classList.contains('menu')).toBe(true);
+    expect(popoverEl.classList.contains('obsidian-dev-utils')).toBe(true);
+    expect(popoverEl.classList.contains('my-popover')).toBe(true);
 
     clickCancel();
     await resultPromise;
@@ -243,10 +243,10 @@ describe('showPopover', () => {
 
   it('should use the default button texts', async () => {
     const resultPromise = showTextPopover();
-    const popoverElement = requirePopoverElement();
+    const popoverEl = requirePopoverElement();
 
-    expect(popoverElement.querySelector('.ok-button')?.textContent).toBe('OK');
-    expect(popoverElement.querySelector('.cancel-button')?.textContent).toBe('Cancel');
+    expect(popoverEl.querySelector('.ok-button')?.textContent).toBe('OK');
+    expect(popoverEl.querySelector('.cancel-button')?.textContent).toBe('Cancel');
 
     clickCancel();
     await resultPromise;
@@ -259,10 +259,10 @@ describe('showPopover', () => {
       cancelButtonText: 'Dismiss',
       okButtonText: 'Apply'
     });
-    const popoverElement = requirePopoverElement();
+    const popoverEl = requirePopoverElement();
 
-    expect(popoverElement.querySelector('.ok-button')?.textContent).toBe('Apply');
-    expect(popoverElement.querySelector('.cancel-button')?.textContent).toBe('Dismiss');
+    expect(popoverEl.querySelector('.ok-button')?.textContent).toBe('Apply');
+    expect(popoverEl.querySelector('.cancel-button')?.textContent).toBe('Dismiss');
 
     clickCancel();
     await resultPromise;

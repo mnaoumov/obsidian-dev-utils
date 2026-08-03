@@ -66,9 +66,9 @@ export interface CheckboxCommand {
   /**
    * Called once with the created checkbox element, to initialize its state.
    *
-   * @param checkboxElement - The created checkbox element.
+   * @param checkboxEl - The created checkbox element.
    */
-  onInit(checkboxElement: HTMLInputElement): void;
+  onInit(checkboxEl: HTMLInputElement): void;
 
   /**
    * The human-readable description shown next to the checkbox in the instruction bar.
@@ -181,18 +181,18 @@ export class SuggestModalCommandBuilder {
     this.instructions.push({
       command: this.buildCommand(command),
       init: (purposeElement, scope) => {
-        const checkboxElement = purposeElement.createEl('input', { type: 'checkbox' });
-        command.onInit(checkboxElement);
-        checkboxElement.addEventListener('change', () => {
-          command.onChange(checkboxElement.checked);
+        const checkboxEl = purposeElement.createEl('input', { type: 'checkbox' });
+        command.onInit(checkboxEl);
+        checkboxEl.addEventListener('change', () => {
+          command.onChange(checkboxEl.checked);
         });
 
         scope.register(command.modifiers ?? [], command.key, () => {
-          if (checkboxElement.disabled) {
+          if (checkboxEl.disabled) {
             return;
           }
-          checkboxElement.checked = !checkboxElement.checked;
-          checkboxElement.trigger('change');
+          checkboxEl.checked = !checkboxEl.checked;
+          checkboxEl.trigger('change');
         });
       },
       purpose: command.purpose

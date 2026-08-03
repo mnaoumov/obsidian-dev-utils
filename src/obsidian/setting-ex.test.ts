@@ -18,7 +18,7 @@ import {
 const mocks = vi.hoisted(() => {
   class MockComponentClass {
     public disabled = false;
-    public constructor(_containerElement: HTMLElement) {
+    public constructor(_containerEl: HTMLElement) {
       noop();
     }
 
