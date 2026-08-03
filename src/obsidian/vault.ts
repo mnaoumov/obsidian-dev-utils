@@ -883,6 +883,7 @@ export async function process(params: ProcessParams): Promise<void> {
 
       return isSuccess;
 
+      // eslint-disable-next-line unicorn/consistent-function-scoping -- Closes over `fullOptions` and `path` from the enclosing scope, so it cannot be hoisted.
       function shouldTreatMissingFileAsSuccess(): boolean {
         if (fullOptions.shouldFailOnMissingFile) {
           throw new Error(`File '${path}' not found`);

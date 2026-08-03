@@ -165,10 +165,6 @@ function initCjs(): void {
     globalThisRecord[key] ??= newFuncs[key]?.();
   }
 
-  function name($unknown: unknown): unknown {
-    return $unknown;
-  }
-
   function extractDefault(module: Partial<EsmModule> | undefined): unknown {
     return module && module.__esModule && 'default' in module ? module.default : module;
   }
@@ -249,3 +245,7 @@ function initEsm(): void {
 }
 
 /* v8 ignore stop */
+
+function name($unknown: unknown): unknown {
+  return $unknown;
+}

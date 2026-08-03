@@ -122,60 +122,60 @@ await wrapCliTask(async () => {
     await writeFile(ctsPath, ctsContent);
     await writeFile(mtsPath, mtsContent);
   }
-
-  async function collectAllLibs(): Promise<string[]> {
-    const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
-    const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
-    const libs = new Set((tsconfig.compilerOptions?.lib ?? []).map((lib) => lib.toLowerCase()));
-
-    for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-      const sourceFilePath = join(ObsidianDevUtilsRepoPaths.Src, file);
-      if (!file.endsWith('.ts')) {
-        continue;
-      }
-
-      const sourceContent = readFileSync(sourceFilePath, 'utf-8');
-      for (const match of sourceContent.matchAll(REFERENCE_LIB_REG_EXP)) {
-        libs.add((match.groups?.['Lib'] ?? '').toLowerCase());
-      }
-    }
-
-    return [...libs].sort();
-  }
-
-  async function collectAllTypes(): Promise<string[]> {
-    const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
-    const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
-    return (tsconfig.compilerOptions?.types ?? [])
-      .filter((type) => DECLARATION_REFERENCE_TYPES.has(type))
-      .sort();
-  }
-
-  function buildAllReferenceLibDirectives(libs: string[]): string {
-    return `${
-      libs
-        .map((lib) => `/// <reference lib="${lib}" />`)
-        .join('\n')
-    }\n`;
-  }
-
-  function buildAllReferenceTypesDirectives(types: string[]): string {
-    if (types.length === 0) {
-      return '';
-    }
-    return `${
-      types
-        .map((type) => `/// <reference types="${type}" />`)
-        .join('\n')
-    }\n`;
-  }
-
-  function buildReferencePathDirective(declarationFilePath: string, moduleDirectory: string, extension: string): string {
-    const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDirectory, LIBRARY_FILE_NAME + extension);
-    let relativePath = relative(dirname(declarationFilePath), libraryFilePath).replaceAll('\\', '/');
-    if (!relativePath.startsWith('.')) {
-      relativePath = `./${relativePath}`;
-    }
-    return `/// <reference path="${relativePath}" />\n`;
-  }
 });
+
+function buildAllReferenceLibDirectives(libs: string[]): string {
+  return `${
+    libs
+      .map((lib) => `/// <reference lib="${lib}" />`)
+      .join('\n')
+  }\n`;
+}
+
+function buildAllReferenceTypesDirectives(types: string[]): string {
+  if (types.length === 0) {
+    return '';
+  }
+  return `${
+    types
+      .map((type) => `/// <reference types="${type}" />`)
+      .join('\n')
+  }\n`;
+}
+
+function buildReferencePathDirective(declarationFilePath: string, moduleDirectory: string, extension: string): string {
+  const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDirectory, LIBRARY_FILE_NAME + extension);
+  let relativePath = relative(dirname(declarationFilePath), libraryFilePath).replaceAll('\\', '/');
+  if (!relativePath.startsWith('.')) {
+    relativePath = `./${relativePath}`;
+  }
+  return `/// <reference path="${relativePath}" />\n`;
+}
+
+async function collectAllLibs(): Promise<string[]> {
+  const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
+  const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
+  const libs = new Set((tsconfig.compilerOptions?.lib ?? []).map((lib) => lib.toLowerCase()));
+
+  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
+    const sourceFilePath = join(ObsidianDevUtilsRepoPaths.Src, file);
+    if (!file.endsWith('.ts')) {
+      continue;
+    }
+
+    const sourceContent = readFileSync(sourceFilePath, 'utf-8');
+    for (const match of sourceContent.matchAll(REFERENCE_LIB_REG_EXP)) {
+      libs.add((match.groups?.['Lib'] ?? '').toLowerCase());
+    }
+  }
+
+  return [...libs].sort();
+}
+
+async function collectAllTypes(): Promise<string[]> {
+  const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
+  const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
+  return (tsconfig.compilerOptions?.types ?? [])
+    .filter((type) => DECLARATION_REFERENCE_TYPES.has(type))
+    .sort();
+}

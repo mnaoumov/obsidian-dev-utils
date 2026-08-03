@@ -902,6 +902,14 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
       files: context.testFiles,
       rules: {
         /*
+         * Two shapes here cannot follow the advice. A helper defined inside an `evalInObsidian` callback
+         * cannot be hoisted at all: the callback is serialized with `toString()` and runs inside Obsidian, so
+         * anything left behind in the module scope is simply not there. And a per-suite factory
+         * (`createComponent`, `createMockPlugin`) is deliberately local, keeping each suite's fixture next to
+         * the assertions that read it. Production code keeps the check.
+         */
+        'unicorn/consistent-function-scoping': 'off',
+        /*
          * A test binding is named after the thing it captures, not after what it does: `createElementSpy`
          * holds the spy on `createElement`, and `createProgramOptions` holds the options `createProgram` was
          * called with. The verb belongs to the name being referenced, so the rule reads it as a function name

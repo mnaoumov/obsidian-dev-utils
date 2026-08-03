@@ -29,17 +29,6 @@ export const readonlyParamsOptionsResultMembers: Rule.RuleModule = {
         reportNonReadonly(context, node);
       }
     };
-
-    function reportNonReadonly($context: Rule.RuleContext, node: Rule.Node): void {
-      const propertyNode = node as Partial<PropertySignatureNode>;
-      $context.report({
-        fix(fixer) {
-          return fixer.insertTextBefore(ensureNonNullable(propertyNode.key), 'readonly ');
-        },
-        messageId: MESSAGE_ID,
-        node
-      });
-    }
   },
   meta: {
     docs: {
@@ -53,3 +42,14 @@ export const readonlyParamsOptionsResultMembers: Rule.RuleModule = {
     type: 'suggestion'
   }
 };
+
+function reportNonReadonly($context: Rule.RuleContext, node: Rule.Node): void {
+  const propertyNode = node as Partial<PropertySignatureNode>;
+  $context.report({
+    fix(fixer) {
+      return fixer.insertTextBefore(ensureNonNullable(propertyNode.key), 'readonly ');
+    },
+    messageId: MESSAGE_ID,
+    node
+  });
+}

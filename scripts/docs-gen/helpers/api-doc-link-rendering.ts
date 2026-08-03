@@ -216,18 +216,6 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
       warnMemberSlugCollisions(info, namespace);
     }
   }
-
-  function disambiguate(base: string, used: Set<string>, keyOf: (segment: string) => string): string {
-    let segment = base;
-    const FIRST_DISAMBIGUATION_SUFFIX = 2;
-    let suffix = FIRST_DISAMBIGUATION_SUFFIX;
-    while (used.has(keyOf(segment))) {
-      segment = `${base}-${String(suffix)}`;
-      suffix++;
-    }
-    used.add(keyOf(segment));
-    return segment;
-  }
 }
 
 /**
@@ -411,6 +399,18 @@ export function typeLink(typeName: string, allTypes: Map<string, TypeInfo>, curr
   }
   return `[${escapeMdxAngleBrackets(typeName)}](${typeHref(info)})`;
 }
+
+function disambiguate(base: string, used: Set<string>, keyOf: (segment: string) => string): string {
+    let segment = base;
+    const FIRST_DISAMBIGUATION_SUFFIX = 2;
+    let suffix = FIRST_DISAMBIGUATION_SUFFIX;
+    while (used.has(keyOf(segment))) {
+      segment = `${base}-${String(suffix)}`;
+      suffix++;
+    }
+    used.add(keyOf(segment));
+    return segment;
+  }
 
 /**
  * Warn when two distinct members of a type produce the same member slug (URL/file segment). The

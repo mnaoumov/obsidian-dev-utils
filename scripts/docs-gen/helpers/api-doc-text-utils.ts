@@ -77,10 +77,6 @@ export function escapeMdxProse(text: string): string {
   }
   result += escapeMdxProseChars(text.slice(lastIndex));
   return result;
-
-  function escapeMdxProseChars(chunk: string): string {
-    return chunk.replaceAll(/[<{}]/g, (char) => `\\${char}`);
-  }
 }
 
 /**
@@ -290,3 +286,7 @@ export function stripMarkdown(text: string): string {
     .trim()
     .slice(0, OG_DESCRIPTION_MAX_LENGTH);
 }
+
+function escapeMdxProseChars(chunk: string): string {
+    return chunk.replaceAll(/[<{}]/g, (char) => `\\${char}`);
+  }

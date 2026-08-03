@@ -879,10 +879,6 @@ export async function runWithTimeout<Result>(params: RunWithTimeoutParams<Result
     onTimeout(timeoutContext);
     await waitForAbort(timeoutAbortController.signal);
   }
-
-  function defaultOnTimeout(context: TimeoutContext): void {
-    context.terminateOperation();
-  }
 }
 
 /**
@@ -961,4 +957,8 @@ export async function toArray<T>(iter: AsyncIterableIterator<T>): Promise<T[]> {
     array.push(item);
   }
   return array;
+}
+
+function defaultOnTimeout(context: TimeoutContext): void {
+  context.terminateOperation();
 }
