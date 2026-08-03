@@ -417,7 +417,7 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
   private async wrapLinkUpdatesHandler(linkUpdates: LinkUpdate[], linkUpdatesHandler: LinkUpdatesHandler): Promise<void> {
     let isRenameCalled = false;
     let isForeignLockedRenameCalled = false;
-    const eventReference = this.app.vault.on('rename', (file, oldPath) => {
+    const eventRef = this.app.vault.on('rename', (file, oldPath) => {
       isRenameCalled = true;
       /*
        * A rename performed inside a foreign plugin's in-flight locked transaction (which locks the
@@ -434,7 +434,7 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
     try {
       await linkUpdatesHandler(linkUpdates);
     } finally {
-      this.app.vault.offref(eventReference);
+      this.app.vault.offref(eventRef);
     }
     const settings = this.settingsManager.getSettings();
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- It might changed in `rename` event handler. ESLint mistakenly does not recognize it.

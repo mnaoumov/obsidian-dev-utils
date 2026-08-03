@@ -16,7 +16,7 @@ import { dispose } from './disposable.ts';
 import { noopAsync } from './function.ts';
 import {
   createDivAsync,
-  createElAsync as createElementAsync,
+  createElAsync,
   createFragmentAsync,
   createSpanAsync,
   createSvgAsync,
@@ -91,65 +91,65 @@ describe('createDivAsync', () => {
 
 describe('createElAsync', () => {
   it('should return the created element', async () => {
-    const result = await createElementAsync('p');
+    const result = await createElAsync('p');
     expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
 
   it('should create an element of the requested tag and apply a class string', async () => {
-    const element = await createElementAsync('p', 'my-class');
+    const element = await createElAsync('p', 'my-class');
     expect(element.tagName).toBe('P');
     expect(element.className).toBe('my-class');
   });
 
   it('should apply an array of classes', async () => {
-    const element = await createElementAsync('p', { cls: ['class-a', 'class-b'] });
+    const element = await createElAsync('p', { cls: ['class-a', 'class-b'] });
     expect(element.className).toBe('class-a class-b');
   });
 
   it('should apply text content', async () => {
-    const element = await createElementAsync('p', { text: 'hello' });
+    const element = await createElAsync('p', { text: 'hello' });
     expect(element.textContent).toBe('hello');
   });
 
   it('should apply a DocumentFragment as text content', async () => {
     const fragment = createFragment();
     fragment.append(createSpan());
-    const element = await createElementAsync('p', { text: fragment });
+    const element = await createElAsync('p', { text: fragment });
     expect(element.querySelector('span')).not.toBeNull();
   });
 
   it('should set and remove attributes (null removes)', async () => {
-    const element = await createElementAsync('p', { attr: { 'data-drop': null, 'data-keep': 'value' } });
+    const element = await createElAsync('p', { attr: { 'data-drop': null, 'data-keep': 'value' } });
     expect(element.getAttribute('data-keep')).toBe('value');
     expect(Object.hasOwn(element.dataset, 'drop')).toBe(false);
   });
 
   it('should apply the title', async () => {
-    const element = await createElementAsync('p', { title: 'my-title' });
+    const element = await createElAsync('p', { title: 'my-title' });
     expect(element.title).toBe('my-title');
   });
 
   it('should append to the parent', async () => {
     const parent = createDiv();
-    const element = await createElementAsync('p', { parent });
+    const element = await createElAsync('p', { parent });
     expect(parent.lastElementChild).toBe(element);
   });
 
   it('should prepend to the parent', async () => {
     const parent = createDiv();
     parent.append(createSpan());
-    const element = await createElementAsync('p', { parent, prepend: true });
+    const element = await createElAsync('p', { parent, prepend: true });
     expect(parent.firstElementChild).toBe(element);
   });
 
   it('should work without a callback', async () => {
-    const result = await createElementAsync('p');
+    const result = await createElAsync('p');
     expect(result).toBeInstanceOf(HTMLParagraphElement);
   });
 
   it('should call the sync callback with the element', async () => {
     const callback = vi.fn();
-    await createElementAsync('p', undefined, callback);
+    await createElAsync('p', undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
   });
 
@@ -157,7 +157,7 @@ describe('createElAsync', () => {
     const callback = vi.fn(async () => {
       await noopAsync();
     });
-    await createElementAsync('p', undefined, callback);
+    await createElAsync('p', undefined, callback);
     expect(callback).toHaveBeenCalledWith(expect.any(HTMLParagraphElement));
   });
 
@@ -167,7 +167,7 @@ describe('createElAsync', () => {
       await noopAsync();
       wasCallbackCompleted = true;
     }
-    await createElementAsync('p', undefined, callback);
+    await createElAsync('p', undefined, callback);
     expect(wasCallbackCompleted).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import {
   vi
 } from 'vitest';
 
-import type { AsyncEventRef as AsyncEventReference } from './async-events.ts';
+import type { AsyncEventRef } from './async-events.ts';
 
 import {
   AsyncEvents,
@@ -475,12 +475,12 @@ class MixedIn extends mixinAsyncEvents<TestEventMap>()(Base) {
     await this.triggerAsync(castTo<TestEventName>(name), ...castTo<TestEventMap[TestEventName]>($arguments));
   }
 
-  public doTryTrigger(eventReference: AsyncEventReference, $arguments: unknown[]): void {
-    this.tryTrigger(eventReference, $arguments);
+  public doTryTrigger(eventRef: AsyncEventRef, $arguments: unknown[]): void {
+    this.tryTrigger(eventRef, $arguments);
   }
 
-  public async doTryTriggerAsync(eventReference: AsyncEventReference, $arguments: unknown[]): Promise<void> {
-    await this.tryTriggerAsync(eventReference, $arguments);
+  public async doTryTriggerAsync(eventRef: AsyncEventRef, $arguments: unknown[]): Promise<void> {
+    await this.tryTriggerAsync(eventRef, $arguments);
   }
 }
 

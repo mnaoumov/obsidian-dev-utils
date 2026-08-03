@@ -7,7 +7,7 @@
 import type { Promisable } from 'type-fest';
 
 import type {
-  AsyncEventRef as AsyncEventReference,
+  AsyncEventRef,
   AsyncEventSource
 } from '../../async-events.ts';
 import type { StringKeys } from '../../type.ts';
@@ -61,10 +61,10 @@ export class PluginEventSourceImpl implements PluginEventSource {
   /**
    * Remove an event listener by reference.
    *
-   * @param eventReference - The reference to remove.
+   * @param eventRef - The reference to remove.
    */
-  public offref(eventReference: AsyncEventReference): void {
-    this.plugin.offref(eventReference);
+  public offref(eventRef: AsyncEventRef): void {
+    this.plugin.offref(eventRef);
   }
 
   /**
@@ -92,7 +92,7 @@ export class PluginEventSourceImpl implements PluginEventSource {
     name: EventName,
     callback: (...$arguments: Arguments) => Promisable<void>,
     thisArgument?: unknown
-  ): AsyncEventReference {
+  ): AsyncEventRef {
     return this.plugin.on(name, callback, thisArgument);
   }
 
@@ -121,7 +121,7 @@ export class PluginEventSourceImpl implements PluginEventSource {
     name: EventName,
     callback: (...$arguments: Arguments) => Promisable<void>,
     thisArgument?: unknown
-  ): AsyncEventReference {
+  ): AsyncEventRef {
     return this.plugin.once(name, callback, thisArgument);
   }
 }

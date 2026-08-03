@@ -6,7 +6,7 @@ import {
   vi
 } from 'vitest';
 
-import type { AsyncEventRef as AsyncEventReference } from '../../async-events.ts';
+import type { AsyncEventRef } from '../../async-events.ts';
 import type { DataHandler } from '../data-handler.ts';
 import type { PluginEventSource } from '../plugin/plugin-event-source.ts';
 
@@ -56,7 +56,7 @@ function createComponent(dataHandler: MockDataHandler): PluginSettingsComponentB
 function createMockPluginEventSource(): PluginEventSource {
   const source: PluginEventSource = strictProxy<PluginEventSource>({
     offref: noop,
-    on(name: string, callback: () => void, thisArgument?: unknown): AsyncEventReference {
+    on(name: string, callback: () => void, thisArgument?: unknown): AsyncEventRef {
       return { asyncEventSource: source, callback, name, thisArgument };
     }
   });

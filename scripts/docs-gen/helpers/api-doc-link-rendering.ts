@@ -101,8 +101,8 @@ export function findType(allTypes: Map<string, TypeInfo>, name: string, currentN
  * to avoid MDX parsing issues with `{`, `}`, `|` etc.
  */
 export function linkBaseType(typeName: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
-  const isSimpleTypeReference = /^[a-zA-Z][a-zA-Z0-9]*(?:<.*>)?$/.test(typeName.trim());
-  if (isSimpleTypeReference) {
+  const isSimpleTypeRef = /^[a-zA-Z][a-zA-Z0-9]*(?:<.*>)?$/.test(typeName.trim());
+  if (isSimpleTypeRef) {
     return escapeMdxAngleBrackets(renderTypeWithLinks(typeName, allTypes, undefined, currentNamespace));
   }
   return typeLink(typeName, allTypes, currentNamespace);

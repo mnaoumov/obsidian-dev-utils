@@ -15,7 +15,7 @@ import type {
 } from 'type-fest';
 
 import type {
-  AsyncEventRef as AsyncEventReference,
+  AsyncEventRef,
   AsyncEventSource
 } from '../../async-events.ts';
 import type { Transformer } from '../../transformers/transformer.ts';
@@ -376,10 +376,10 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   /**
    * Remove an event listener by reference.
    *
-   * @param eventReference - The reference to the event listener.
+   * @param eventRef - The reference to the event listener.
    */
-  public offref(eventReference: AsyncEventReference): void {
-    this.asyncEvents.offref(eventReference);
+  public offref(eventRef: AsyncEventRef): void {
+    this.asyncEvents.offref(eventRef);
   }
 
   /**
@@ -399,7 +399,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
     Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArgument?: unknown): AsyncEventReference {
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArgument?: unknown): AsyncEventRef {
     return this.asyncEvents.on(name, callback, thisArgument);
   }
 
@@ -422,7 +422,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- We need to use the dummy parameter to get type inference.
     Arguments extends EventName extends keyof PluginSettingsComponentBaseEventMap<PluginSettings> ? PluginSettingsComponentBaseEventMap<PluginSettings>[EventName]
       : unknown[]
-  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArgument?: unknown): AsyncEventReference {
+  >(name: EventName, callback: (...$arguments: Arguments) => Promisable<void>, thisArgument?: unknown): AsyncEventRef {
     return this.asyncEvents.once(name, callback, thisArgument);
   }
 

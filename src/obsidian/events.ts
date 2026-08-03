@@ -83,9 +83,9 @@ export class EventRefDisposable extends DisposableBase {
   /**
    * Creates a disposable wrapping an existing {@link EventRef}.
    *
-   * @param eventReference - The event reference to unregister on dispose.
+   * @param eventRef - The event reference to unregister on dispose.
    */
-  public constructor(private readonly eventReference: EventRef) {
+  public constructor(private readonly eventRef: EventRef) {
     super();
   }
 
@@ -93,7 +93,7 @@ export class EventRefDisposable extends DisposableBase {
    * Unregisters the event via the source stored on the ref (`eventRef.e.offref`).
    */
   protected override performDispose(): void {
-    this.eventReference.e.offref(this.eventReference);
+    this.eventRef.e.offref(this.eventRef);
   }
 }
 

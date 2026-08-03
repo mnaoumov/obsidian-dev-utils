@@ -239,11 +239,11 @@ export function printError(error: unknown, console?: Console): void {
  * @returns A {@link Disposable} that unregisters the handler when disposed, for use with `using`.
  */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): Disposable {
-  const eventReference = errorAsyncEvents.on('asyncError', handler);
+  const eventRef = errorAsyncEvents.on('asyncError', handler);
   moduleState.asyncErrorHandlerCount++;
   return new CallbackDisposable({
     callback: (): void => {
-      errorAsyncEvents.offref(eventReference);
+      errorAsyncEvents.offref(eventRef);
       moduleState.asyncErrorHandlerCount--;
     },
     multipleDisposeBehavior: MultipleDisposeBehavior.Ignore

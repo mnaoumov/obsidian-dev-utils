@@ -25,7 +25,7 @@ import {
 } from './events.ts';
 
 interface Mocks {
-  eventReference: EventReferenceOriginal;
+  eventRef: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   on: ReturnType<typeof vi.fn>;
   source: TestEventSource;
@@ -41,11 +41,11 @@ function createMocks(): Mocks {
   const offref = vi.fn();
   const events = strictProxy<EventsOriginal>({ offref });
   // eslint-disable-next-line unicorn/name-replacements -- `e` is declared by `@obsidian-typings/obsidian-public-1.13.4`; renaming it here would not match the API.
-  const eventReference = strictProxy<EventReferenceOriginal>({ e: events });
-  const on = vi.fn(() => eventReference);
+  const eventRef = strictProxy<EventReferenceOriginal>({ e: events });
+  const on = vi.fn(() => eventRef);
   const source = strictProxy<TestEventSource>({ on });
   return {
-    eventReference,
+    eventRef,
     offref,
     on,
     source
@@ -55,7 +55,7 @@ function createMocks(): Mocks {
 describe('subscribeEvent', () => {
   it('should register the handler via events.on and return the EventRef', () => {
     const {
-      eventReference,
+      eventRef,
       on,
       source
     } = createMocks();
@@ -68,14 +68,14 @@ describe('subscribeEvent', () => {
     });
 
     expect(on).toHaveBeenCalledWith('my-event', expect.any(Function), undefined);
-    expect(result).toBe(eventReference);
+    expect(result).toBe(eventRef);
   });
 });
 
 describe('subscribeDisposableEvent', () => {
   it('should return a DisposableEx that offrefs the EventRef on dispose', () => {
     const {
-      eventReference,
+      eventRef,
       offref,
       source
     } = createMocks();
@@ -89,34 +89,34 @@ describe('subscribeDisposableEvent', () => {
 
     expect(offref).not.toHaveBeenCalled();
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventReference);
+    expect(offref).toHaveBeenCalledWith(eventRef);
   });
 });
 
 describe('EventRefDisposable', () => {
   it('should offref the EventRef once on dispose (idempotent)', () => {
     const {
-      eventReference,
+      eventRef,
       offref
     } = createMocks();
-    const disposable = new EventReferenceDisposable(eventReference);
+    const disposable = new EventReferenceDisposable(eventRef);
 
     disposable.dispose();
     disposable.dispose();
 
     expect(offref).toHaveBeenCalledTimes(1);
-    expect(offref).toHaveBeenCalledWith(eventReference);
+    expect(offref).toHaveBeenCalledWith(eventRef);
   });
 
   it('should offref the EventRef via Symbol.dispose', () => {
     const {
-      eventReference,
+      eventRef,
       offref
     } = createMocks();
-    const disposable = new EventReferenceDisposable(eventReference);
+    const disposable = new EventReferenceDisposable(eventRef);
 
     dispose(disposable);
 
-    expect(offref).toHaveBeenCalledWith(eventReference);
+    expect(offref).toHaveBeenCalledWith(eventRef);
   });
 });

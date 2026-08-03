@@ -1255,9 +1255,9 @@ function isDisabled(): boolean {
 function trackValidationListeners(tab: PluginSettingsTabBase<TestSettings>): () => number {
   // `validationMessageChanged` is the tab's only event, so every registration on the tab and every
   // Cancellation on the source those registrations are released through belongs to it.
-  const probeReference = tab.on('validationMessageChanged', noop);
-  const { asyncEventSource } = probeReference;
-  tab.offref(probeReference);
+  const probeRef = tab.on('validationMessageChanged', noop);
+  const { asyncEventSource } = probeRef;
+  tab.offref(probeRef);
 
   const onSpy = vi.spyOn(tab, 'on');
   const offrefSpy = vi.spyOn(asyncEventSource, 'offref');

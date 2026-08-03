@@ -146,8 +146,8 @@ describe('AllWindowsEventComponent', () => {
     });
 
     it('should hand the window-open subscription to registerEvent so it is cleaned up on unload', () => {
-      const eventReference = strictProxy<EventRef>({});
-      const onWindowOpen = vi.fn().mockReturnValue(eventReference) as Workspace['on'];
+      const eventRef = strictProxy<EventRef>({});
+      const onWindowOpen = vi.fn().mockReturnValue(eventRef) as Workspace['on'];
       const app = createMockApp({ onWindowOpen });
       const component = createLoadedComponent(app);
       const registerEventSpy = vi.spyOn(component, 'registerEvent');
@@ -156,7 +156,7 @@ describe('AllWindowsEventComponent', () => {
       component.registerAllWindowsHandler(handler);
       vi.runAllTimers();
 
-      expect(registerEventSpy).toHaveBeenCalledWith(eventReference);
+      expect(registerEventSpy).toHaveBeenCalledWith(eventRef);
     });
 
     it('should register window-open event on the component', () => {

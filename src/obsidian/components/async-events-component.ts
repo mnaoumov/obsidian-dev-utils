@@ -6,16 +6,16 @@
 
 import { Component } from 'obsidian';
 
-import type { AsyncEventRef as AsyncEventReference } from '../../async-events.ts';
+import type { AsyncEventRef } from '../../async-events.ts';
 
 /**
  * Registers an async event.
  *
  * @param component - The component.
- * @param eventReference - The event reference.
+ * @param eventRef - The event reference.
  */
-export function registerAsyncEvent(component: Component, eventReference: AsyncEventReference): void {
+export function registerAsyncEvent(component: Component, eventRef: AsyncEventRef): void {
   component.register(() => {
-    eventReference.asyncEventSource.offref(eventReference);
+    eventRef.asyncEventSource.offref(eventRef);
   });
 }

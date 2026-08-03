@@ -12,7 +12,7 @@ import {
   vi
 } from 'vitest';
 
-import type { AsyncEventRef as AsyncEventReference } from '../../async-events.ts';
+import type { AsyncEventRef } from '../../async-events.ts';
 import type { PluginBase } from './plugin.ts';
 
 import { strictProxy } from '../../strict-proxy.ts';
@@ -42,54 +42,54 @@ describe('PluginEventSourceImpl', () => {
   });
 
   it('should delegate offref() to plugin', () => {
-    const eventReference = strictProxy<AsyncEventReference>({});
-    eventSource.offref(eventReference);
-    expect(mockOffref).toHaveBeenCalledWith(eventReference);
+    const eventRef = strictProxy<AsyncEventRef>({});
+    eventSource.offref(eventRef);
+    expect(mockOffref).toHaveBeenCalledWith(eventRef);
   });
 
   it('should delegate on() to plugin', () => {
     const callback = vi.fn();
-    const expectedReference = strictProxy<AsyncEventReference>({});
-    mockOn.mockReturnValue(expectedReference);
+    const expectedRef = strictProxy<AsyncEventRef>({});
+    mockOn.mockReturnValue(expectedRef);
 
     const result = eventSource.on('externalSettingsChange', callback);
 
     expect(mockOn).toHaveBeenCalledWith('externalSettingsChange', callback, undefined);
-    expect(result).toBe(expectedReference);
+    expect(result).toBe(expectedRef);
   });
 
   it('should delegate on() with thisArg to plugin', () => {
     const callback = vi.fn();
     const thisArgument = { context: true };
-    const expectedReference = strictProxy<AsyncEventReference>({});
-    mockOn.mockReturnValue(expectedReference);
+    const expectedRef = strictProxy<AsyncEventRef>({});
+    mockOn.mockReturnValue(expectedRef);
 
     const result = eventSource.on('externalSettingsChange', callback, thisArgument);
 
     expect(mockOn).toHaveBeenCalledWith('externalSettingsChange', callback, thisArgument);
-    expect(result).toBe(expectedReference);
+    expect(result).toBe(expectedRef);
   });
 
   it('should delegate once() to plugin', () => {
     const callback = vi.fn();
-    const expectedReference = strictProxy<AsyncEventReference>({});
-    mockOnce.mockReturnValue(expectedReference);
+    const expectedRef = strictProxy<AsyncEventRef>({});
+    mockOnce.mockReturnValue(expectedRef);
 
     const result = eventSource.once('externalSettingsChange', callback);
 
     expect(mockOnce).toHaveBeenCalledWith('externalSettingsChange', callback, undefined);
-    expect(result).toBe(expectedReference);
+    expect(result).toBe(expectedRef);
   });
 
   it('should delegate once() with thisArg to plugin', () => {
     const callback = vi.fn();
     const thisArgument = { context: true };
-    const expectedReference = strictProxy<AsyncEventReference>({});
-    mockOnce.mockReturnValue(expectedReference);
+    const expectedRef = strictProxy<AsyncEventRef>({});
+    mockOnce.mockReturnValue(expectedRef);
 
     const result = eventSource.once('externalSettingsChange', callback, thisArgument);
 
     expect(mockOnce).toHaveBeenCalledWith('externalSettingsChange', callback, thisArgument);
-    expect(result).toBe(expectedReference);
+    expect(result).toBe(expectedRef);
   });
 });

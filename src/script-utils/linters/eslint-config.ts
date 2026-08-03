@@ -752,6 +752,10 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
              * `contentEl`, `inputEl`, `selectEl` -- so expanding ours to `*Element` would leave our components
              * reading inconsistently beside the Obsidian ones they sit next to. Disabling the replacement also
              * covers compound names, which is 72 sites that would otherwise each need an inline disable.
+             *
+             * `ref` is exempt for the same reason: `AsyncEventRef` is the async counterpart of Obsidian's
+             * `EventRef`, handed to the same `offref` / `registerEvent` shapes, so the two names have to match
+             * to read as a pair.
              */
             checkProperties: true,
             replacements: {
@@ -763,6 +767,8 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
               env: false,
               lib: false,
               params: false,
+              ref: false,
+              refs: false,
               src: false,
               util: false,
               utils: false

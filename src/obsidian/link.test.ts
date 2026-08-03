@@ -1864,7 +1864,7 @@ describe('app-dependent functions', () => {
 
   describe('editBacklinks', () => {
     it('should process backlinks and invoke linkConverter for matching links', async () => {
-      const backlinkReference = {
+      const backlinkRef = {
         displayText: 'target',
         link: 'target',
         original: '[[target]]',
@@ -1873,7 +1873,7 @@ describe('app-dependent functions', () => {
       vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
         get: (key: string) => {
           if (key === 'note.md') {
-            return [backlinkReference];
+            return [backlinkRef];
           }
           return null;
         },
@@ -1896,7 +1896,7 @@ describe('app-dependent functions', () => {
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
-        links: [backlinkReference],
+        links: [backlinkRef],
         sections: undefined
       }));
 
@@ -1914,7 +1914,7 @@ describe('app-dependent functions', () => {
     });
 
     it('should skip links not in backlinks set', async () => {
-      const backlinkReference = {
+      const backlinkRef = {
         displayText: 'target',
         link: 'target',
         original: '[[target]]',
@@ -1940,7 +1940,7 @@ describe('app-dependent functions', () => {
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
-        links: [backlinkReference],
+        links: [backlinkRef],
         sections: undefined
       }));
 
@@ -1959,14 +1959,14 @@ describe('app-dependent functions', () => {
     });
 
     it('should report progress once per backlink file with a running count and total', async () => {
-      const backlinkReference = {
+      const backlinkRef = {
         displayText: 'target',
         link: 'target',
         original: '[[target]]',
         position: { end: { col: 19, line: 1, offset: 19 }, start: { col: 7, line: 1, offset: 7 } }
       };
       vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
-        get: () => [backlinkReference],
+        get: () => [backlinkRef],
         keys: () => ['note-a.md', 'note-b.md', 'note-c.md']
       }));
 

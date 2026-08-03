@@ -22,7 +22,7 @@ import { MenuEventRegistrarComponent } from './menu-event-registrar-component.ts
 
 interface Mocks {
   app: AppOriginal;
-  eventReference: EventReferenceOriginal;
+  eventRef: EventReferenceOriginal;
   offref: ReturnType<typeof vi.fn>;
   registeredEvents: string[];
 }
@@ -32,20 +32,20 @@ function createMocks(): Mocks {
   const offref = vi.fn();
   const events = strictProxy<EventsOriginal>({ offref });
   // eslint-disable-next-line unicorn/name-replacements -- `e` is declared by `@obsidian-typings/obsidian-public-1.13.4`; renaming it here would not match the API.
-  const eventReference = strictProxy<EventReferenceOriginal>({ e: events });
+  const eventRef = strictProxy<EventReferenceOriginal>({ e: events });
 
   const app = strictProxy<AppOriginal>({
     workspace: {
       on: vi.fn((event: string) => {
         registeredEvents.push(event);
-        return eventReference;
+        return eventRef;
       })
     }
   });
 
   return {
     app,
-    eventReference,
+    eventRef,
     offref,
     registeredEvents
   };
@@ -55,7 +55,7 @@ describe('MenuEventRegistrarComponent', () => {
   it('should register editor-menu event and return a disposable that offrefs it', () => {
     const {
       app,
-      eventReference,
+      eventRef,
       offref,
       registeredEvents
     } = createMocks();
@@ -67,13 +67,13 @@ describe('MenuEventRegistrarComponent', () => {
     expect(registeredEvents).toContain('editor-menu');
     expect(offref).not.toHaveBeenCalled();
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventReference);
+    expect(offref).toHaveBeenCalledWith(eventRef);
   });
 
   it('should register file-menu event and return a disposable that offrefs it', () => {
     const {
       app,
-      eventReference,
+      eventRef,
       offref,
       registeredEvents
     } = createMocks();
@@ -84,13 +84,13 @@ describe('MenuEventRegistrarComponent', () => {
 
     expect(registeredEvents).toContain('file-menu');
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventReference);
+    expect(offref).toHaveBeenCalledWith(eventRef);
   });
 
   it('should register files-menu event and return a disposable that offrefs it', () => {
     const {
       app,
-      eventReference,
+      eventRef,
       offref,
       registeredEvents
     } = createMocks();
@@ -101,7 +101,7 @@ describe('MenuEventRegistrarComponent', () => {
 
     expect(registeredEvents).toContain('files-menu');
     disposable.dispose();
-    expect(offref).toHaveBeenCalledWith(eventReference);
+    expect(offref).toHaveBeenCalledWith(eventRef);
   });
 
   it('should offref every registered menu event on component unload', () => {

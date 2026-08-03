@@ -25,7 +25,7 @@ import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
  * Selects a community plugin either by its id ({@link CommunityPluginByIdRef}) or by its display name
  * ({@link CommunityPluginByNameRef}).
  */
-export type CommunityPluginRef = CommunityPluginByIdReference | CommunityPluginByNameReference;
+export type CommunityPluginRef = CommunityPluginByIdRef | CommunityPluginByNameRef;
 
 /**
  * A single result of {@link searchCommunityPlugins}.
@@ -93,7 +93,7 @@ export type UninstallCommunityPluginParams = CommunityPluginOperationContext & C
 /**
  * Selects a community plugin by its id.
  */
-interface CommunityPluginByIdReference {
+interface CommunityPluginByIdRef {
   /**
    * The plugin id.
    */
@@ -103,7 +103,7 @@ interface CommunityPluginByIdReference {
 /**
  * Selects a community plugin by its display name (as listed in Obsidian's community registry).
  */
-interface CommunityPluginByNameReference {
+interface CommunityPluginByNameRef {
   /**
    * The plugin display name.
    */
