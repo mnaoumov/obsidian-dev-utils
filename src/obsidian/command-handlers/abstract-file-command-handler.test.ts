@@ -290,6 +290,69 @@ describe('AbstractFileCommandHandler', () => {
         title: 'my-section'
       });
     });
+
+    it('should not set section submenu when the registration context forces it off', async () => {
+      const handler = new TestAbstractFileHandler(createParams({
+        fileMenuSection: 'my-section',
+        shouldAddCommandToSubmenu: true
+      }));
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
+      const { context, fileMenuHandlers } = createMockContext();
+      // A surface that wraps everything in a parent entry of its own, e.g. Notebook Navigator's menus.
+      await handler.onRegistered({
+        ...context,
+        shouldAddCommandToSubmenu: false
+      });
+
+      const setSectionSubmenu = vi.fn();
+      const addItem = vi.fn();
+      const menu = strictProxy<MenuOriginal>({ addItem, setSectionSubmenu });
+      fileMenuHandlers[0]?.(menu, createMockFile(), 'file-explorer-context-menu');
+
+      expect(setSectionSubmenu).not.toHaveBeenCalled();
+      expect(addItem).toHaveBeenCalledOnce();
+    });
+
+    it('should set section submenu when the registration context forces it on', async () => {
+      const handler = new TestAbstractFileHandler(createParams({ fileMenuSection: 'my-section' }));
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
+      const { context, fileMenuHandlers } = createMockContext();
+      await handler.onRegistered({
+        ...context,
+        shouldAddCommandToSubmenu: true
+      });
+
+      const setSectionSubmenu = vi.fn();
+      const addItem = vi.fn();
+      const menu = strictProxy<MenuOriginal>({ addItem, setSectionSubmenu });
+      fileMenuHandlers[0]?.(menu, createMockFile(), 'file-explorer-context-menu');
+
+      expect(setSectionSubmenu).toHaveBeenCalledWith('my-section', {
+        icon: '',
+        title: 'my-section'
+      });
+    });
+
+    it('should not set section submenu for a multi-file menu when the registration context forces it off', async () => {
+      const handler = new TestAbstractFileHandler(createParams({
+        filesMenuSection: 'my-section',
+        shouldAddCommandToSubmenu: true
+      }));
+      handler.shouldAddToMenuFunction.mockReturnValue(true);
+      const { context, filesMenuHandlers } = createMockContext();
+      await handler.onRegistered({
+        ...context,
+        shouldAddCommandToSubmenu: false
+      });
+
+      const setSectionSubmenu = vi.fn();
+      const addItem = vi.fn();
+      const menu = strictProxy<MenuOriginal>({ addItem, setSectionSubmenu });
+      filesMenuHandlers[0]?.(menu, [createMockFile()], 'file-explorer-context-menu');
+
+      expect(setSectionSubmenu).not.toHaveBeenCalled();
+      expect(addItem).toHaveBeenCalledOnce();
+    });
   });
 
   describe('file menu item details', () => {

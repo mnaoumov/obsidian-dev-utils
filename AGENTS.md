@@ -315,6 +315,28 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — the opposing rule is the one ESLint has; `build:validate-declarations` is
   the check that catches it)
 
+### L9. Another plugin's API: hand-declared narrow types + a runtime guard, never a build-time dependency
+
+- A plugin whose surface this library integrates with (today: Notebook Navigator, see
+  `src/obsidian/notebook-navigator.ts`) is reached through `app.plugins.getPlugin(<id>)` and typed by
+  **interfaces declared here**, narrowed to the members actually called. Do NOT add the other plugin as
+  a dependency — most ship a `.d.ts` for download rather than an npm package, and depending on one
+  turns an optional integration into a build requirement. This mirrors the vendored
+  `src/obsidian/@types/dataview/**`, minus the vendored tree when the used slice is small.
+- The value arrives as `unknown`, so narrow it with a **runtime type-guard predicate**, never an `as`
+  cast (R1 G43). A version that predates the API, renames it, or breaks it then reads as "not there"
+  and the integration stays dormant, instead of throwing while the user's context menu is opening.
+- Bind at **layout-ready**, not `onload`: plugin load order is not ours to choose, and the other
+  plugin's API only exists once it is up.
+- **Menu surfaces plug in as additional `MenuEventRegistrar`s.** `CommandHandlerComponent` takes
+  `additionalMenuEventRegistrars` and calls the `CommandHandlerFactory` once per surface, so a plugin
+  declares its handlers ONCE. The extra passes add no commands (the palette already has them) and
+  carry `CommandHandlerRegistrationContext.shouldAddCommandToSubmenu: false`, because such a bridge
+  wraps everything in its own plugin-titled parent entry — a handler's own section submenu would make
+  `Menu.sort()` nest a second, identical entry inside the first. Each surface needs its OWN handler
+  instances: a handler carries per-registration state, which is exactly why the API is a factory.
+- (cannot be forced by ESLint — an API-integration convention)
+
 ## Testing
 
 ### Goals

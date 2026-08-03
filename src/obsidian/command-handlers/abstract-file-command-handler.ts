@@ -235,6 +235,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   private readonly _filesMenuSection?: string | undefined;
   private readonly _filesMenuSubmenuIcon?: IconName | undefined;
 
+  private _registrationShouldAddCommandToSubmenu?: boolean | undefined;
   private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
 
   /**
@@ -261,6 +262,7 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await super.onRegistered(context);
     this._activeFileProvider = context.activeFileProvider;
+    this._registrationShouldAddCommandToSubmenu = context.shouldAddCommandToSubmenu;
     context.menuEventRegistrar.registerFileMenuEventHandler((menu, abstractFile, source, leaf) => {
       this.handleAbstractFileMenu({
         abstractFile,
@@ -364,10 +366,14 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
   /**
    * Gets whether to add the command to a submenu.
    *
+   * The registration context wins over the constructor value: a menu surface that already wraps every
+   * contributed item in a plugin-titled parent entry forces this off, because a section submenu
+   * declared here would make `Menu.sort()` nest a second plugin-titled entry inside the first.
+   *
    * @returns Whether to add to a submenu.
    */
   protected shouldAddCommandToSubmenu(): boolean | undefined {
-    return this._shouldAddCommandToSubmenu;
+    return this._registrationShouldAddCommandToSubmenu ?? this._shouldAddCommandToSubmenu;
   }
 
   /**

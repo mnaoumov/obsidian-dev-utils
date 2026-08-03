@@ -26,8 +26,21 @@ import {
 } from '../../disposable.ts';
 import { ComponentEx } from '../components/component-ex.ts';
 
+/**
+ * Builds a fresh set of {@link CommandHandler}s.
+ *
+ * A factory rather than a ready-made array because {@link CommandHandlerComponent} registers the same
+ * handlers against several menu surfaces, and a handler carries per-registration state (its
+ * active-file provider, its plugin name, and whatever a subclass records in
+ * {@link CommandHandler.onRegistered}) — so every surface needs its own instances.
+ *
+ * @returns The command handlers to register.
+ */
+export type CommandHandlerFactory = () => CommandHandler[];
+
 interface CommandHandlerComponentConstructorParams {
   readonly activeFileProvider: ActiveFileProvider;
+  readonly additionalMenuEventRegistrars?: readonly MenuEventRegistrar[] | undefined;
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly pluginName: string;
@@ -84,12 +97,21 @@ class CommandMenuEventScope extends DisposableBase implements MenuEventRegistrar
  * needed while the component is alive); dispose the returned {@link DisposableEx} to unregister exactly
  * those handlers — including any menu events they registered — or let the component unload to remove every
  * command still registered through it.
+ *
+ * The same handlers are fed to every menu surface the component knows about: Obsidian's own workspace
+ * events, plus each additional {@link MenuEventRegistrar} bridging another plugin's menus.
  */
 export class CommandHandlerComponent extends ComponentEx {
   /**
    * Provider for accessing the currently active file.
    */
   protected readonly activeFileProvider: ActiveFileProvider;
+
+  /**
+   * Registrars for menu surfaces that build their own plugin-titled parent entry, and therefore take
+   * the handlers with their section submenu forced off.
+   */
+  protected readonly additionalMenuEventRegistrars: readonly MenuEventRegistrar[];
 
   /**
    * Registrar used to add and remove commands with Obsidian.
@@ -115,23 +137,28 @@ export class CommandHandlerComponent extends ComponentEx {
     super();
     this.activeFileProvider = params.activeFileProvider;
     this.menuEventRegistrar = params.menuEventRegistrar;
+    this.additionalMenuEventRegistrars = params.additionalMenuEventRegistrars ?? [];
     this.commandRegistrar = params.commandRegistrar;
     this.pluginName = params.pluginName;
   }
 
   /**
-   * Registers the given command handlers with Obsidian and provides each its own runtime registration
-   * context. Each handler's command is added immediately; the returned {@link DisposableEx} removes the
-   * commands registered by this call — and any menu events those handlers registered via their context's
-   * {@link MenuEventRegistrar} — when disposed. Any command still registered when the component unloads is
-   * removed automatically.
+   * Builds the command handlers and registers them with Obsidian, giving each its own runtime
+   * registration context. Each handler's command is added immediately; the returned
+   * {@link DisposableEx} removes the commands registered by this call — and any menu events those
+   * handlers registered via their context's {@link MenuEventRegistrar} — when disposed. Any command
+   * still registered when the component unloads is removed automatically.
    *
-   * @param commandHandlers - The command handlers to register.
-   * @returns A {@link DisposableEx} that unregisters the handlers (commands + menu events) passed to this call.
+   * The factory is invoked once more for every additional menu surface, so a plugin declares its
+   * handlers ONCE and all surfaces are fed. Those extra passes add no commands — the palette already
+   * has every command from the first pass.
+   *
+   * @param commandHandlerFactory - Builds a fresh set of command handlers, once per menu surface.
+   * @returns A {@link DisposableEx} that unregisters the handlers (commands + menu events) registered by this call.
    */
-  public registerCommandHandlers(commandHandlers: CommandHandler[]): DisposableEx {
+  public registerCommandHandlers(commandHandlerFactory: CommandHandlerFactory): DisposableEx {
     const disposables: Disposable[] = [];
-    for (const commandHandler of commandHandlers) {
+    for (const commandHandler of commandHandlerFactory()) {
       const command = commandHandler.buildCommand();
       // Capture the id before registering. `Plugin.addCommand` mutates `command.id` (prefixing it with
       // `this.manifest.id`), while `Plugin.removeCommand` re-prefixes — so removal needs the original id.
@@ -141,12 +168,7 @@ export class CommandHandlerComponent extends ComponentEx {
 
       // Each command gets its own registration context with a per-command menu-event scope, so disposing one
       // Command tears down its own menu events without affecting the others.
-      const menuEventScope = new CommandMenuEventScope(this.menuEventRegistrar);
-      const context: CommandHandlerRegistrationContext = {
-        activeFileProvider: this.activeFileProvider,
-        menuEventRegistrar: menuEventScope,
-        pluginName: this.pluginName
-      };
+      const menuEventScope = this.registerMenuEventHandlers(commandHandler, this.menuEventRegistrar);
 
       const disposable = new CallbackDisposable({
         callback: (): void => {
@@ -156,9 +178,42 @@ export class CommandHandlerComponent extends ComponentEx {
       });
       // Tie removal to the component's unload, so a command never outlives the component.
       disposables.push(this.registerDisposable(disposable));
-      invokeAsyncSafely(() => commandHandler.onRegistered(context));
+    }
+
+    // Every additional surface gets its OWN handler instances — a handler carries per-registration
+    // State, so one instance cannot serve two surfaces — and takes them with the section submenu
+    // Forced off, because such a surface wraps everything in a plugin-titled parent entry of its own.
+    for (const additionalMenuEventRegistrar of this.additionalMenuEventRegistrars) {
+      for (const commandHandler of commandHandlerFactory()) {
+        disposables.push(this.registerDisposable(this.registerMenuEventHandlers(commandHandler, additionalMenuEventRegistrar, false)));
+      }
     }
 
     return new CombineDisposable({ disposables });
+  }
+
+  /**
+   * Hands a command handler its registration context, scoped so that disposing the returned scope
+   * unregisters exactly the menu events that handler registered.
+   *
+   * @param commandHandler - The command handler to register.
+   * @param menuEventRegistrar - The menu surface the handler registers its menu events with.
+   * @param shouldAddCommandToSubmenu - Overrides the handler's own value, or `undefined` to leave it alone.
+   * @returns The handler's menu-event scope.
+   */
+  private registerMenuEventHandlers(
+    commandHandler: CommandHandler,
+    menuEventRegistrar: MenuEventRegistrar,
+    shouldAddCommandToSubmenu?: boolean
+  ): CommandMenuEventScope {
+    const menuEventScope = new CommandMenuEventScope(menuEventRegistrar);
+    const context: CommandHandlerRegistrationContext = {
+      activeFileProvider: this.activeFileProvider,
+      menuEventRegistrar: menuEventScope,
+      pluginName: this.pluginName,
+      shouldAddCommandToSubmenu
+    };
+    invokeAsyncSafely(() => commandHandler.onRegistered(context));
+    return menuEventScope;
   }
 }

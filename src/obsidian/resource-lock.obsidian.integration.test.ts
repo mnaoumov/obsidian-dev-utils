@@ -658,7 +658,7 @@ describe('resource-lock', () => {
 
           try {
             const isRegisteredBefore = Object.hasOwn(app.commands.commands, commandId);
-            const disposable = commandHandlerComponent.registerCommandHandlers([
+            const disposable = commandHandlerComponent.registerCommandHandlers(() => [
               new UnlockActiveNoteCommandHandler({ app, resourceLockComponent })
             ]);
 
