@@ -12,14 +12,14 @@ import { generate } from '../src/script-utils/code-generator.ts';
 import { readdirPosix } from '../src/script-utils/fs.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 
-await wrapCliTask(async () => {
-  await generateIndex(ObsidianDevUtilsRepoPaths.Src);
-});
-
 enum GenerateIndexResult {
   Skipped = 'skipped',
   Success = 'success'
 }
+
+await wrapCliTask(async () => {
+  await generateIndex(ObsidianDevUtilsRepoPaths.Src);
+});
 
 async function generateIndex(folder: string): Promise<GenerateIndexResult> {
   const dirents = await readdirPosix(folder, { withFileTypes: true });
