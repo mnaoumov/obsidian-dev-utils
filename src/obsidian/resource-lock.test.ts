@@ -4,6 +4,7 @@ import type {
   App as AppOriginal,
   MarkdownView as MarkdownViewOriginal,
   TFile as TFileOriginal,
+  TFolder as TFolderOriginal,
   View as ViewOriginal,
   WorkspaceLeaf as WorkspaceLeafOriginal
 } from 'obsidian';
@@ -83,6 +84,10 @@ interface MockPlugins {
 
 interface MockWorkspaceActiveView {
   getActiveViewOfType(): unknown;
+}
+
+interface MutableViewFile {
+  file: null | TFileOriginal;
 }
 
 let app: AppOriginal;
@@ -1631,5 +1636,235 @@ describe('external-change detection', () => {
     expect(() => {
       app.vault.trigger('delete', fileAt('target.md'));
     }).not.toThrow();
+  });
+});
+
+describe('rename re-keying', () => {
+  beforeEach(() => {
+    mockApp = App.createConfigured__({
+      files: {
+        'folder/a.md': 'a',
+        'folder/sub/b.md': 'b',
+        'moved.md': 'moved',
+        'outside.md': 'outside'
+      }
+    });
+    app = mockApp.asOriginalType__();
+    castTo<MockWorkspaceActiveView>(app.workspace).getActiveViewOfType = vi.fn(() => null);
+    castTo<MockAppPlugins>(app).plugins = { manifests: {} };
+    vi.spyOn(app.workspace, 'getLeavesOfType').mockReturnValue([]);
+  });
+
+  function fileAt(path: string): TFileOriginal {
+    const file = app.vault.getFileByPath(path);
+    assertNonNullable(file);
+    return file;
+  }
+
+  function folderAt(path: string): TFolderOriginal {
+    const folder = app.vault.getFolderByPath(path);
+    assertNonNullable(folder);
+    return folder;
+  }
+
+  it('should keep covering the subtree after the locked folder is renamed', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+
+    await app.vault.rename(folderAt('folder'), 'renamed');
+
+    expect(component.isLockedForPath('renamed')).toBe(true);
+    expect(component.isLockedByAncestorForPath('renamed/a.md')).toBe(true);
+    expect(component.isLockedByAncestorForPath('renamed/sub/b.md')).toBe(true);
+    // The vanished path stops resolving — the lock moved, it was not copied.
+    expect(component.isLockedForPath('folder')).toBe(false);
+    expect(component.isLockedByAncestorForPath('folder/a.md')).toBe(false);
+  });
+
+  it('should follow a renamed file for a file lock', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'outside.md' });
+
+    await app.vault.rename(fileAt('outside.md'), 'elsewhere.md');
+
+    expect(component.isLockedForPath('elsewhere.md')).toBe(true);
+    expect(component.isLockedForPath('outside.md')).toBe(false);
+  });
+
+  it('should re-key a lock on a descendant when its ancestor folder is renamed', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'folder/sub/b.md' });
+
+    await app.vault.rename(folderAt('folder'), 'renamed');
+
+    expect(component.isLockedForPath('renamed/sub/b.md')).toBe(true);
+    expect(component.isLockedForPath('folder/sub/b.md')).toBe(false);
+  });
+
+  it('should still release the lock through its Disposable after a rename', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const disposable = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+
+    await app.vault.rename(folderAt('folder'), 'renamed');
+    // The `Disposable` captured the pre-rename path, so this is where a re-keyed lock leaks if release is path-keyed.
+    expect(component.isLockedForPath('renamed')).toBe(true);
+    dispose(disposable);
+
+    expect(component.isLockedForPath('renamed')).toBe(false);
+    expect(component.isLockedByAncestorForPath('renamed/a.md')).toBe(false);
+  });
+
+  it('should still release the lock on abort after a rename', async () => {
+    const abortController = new AbortController();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    component.lockForPath({ abortController, mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder', shouldReleaseOnAbort: true });
+
+    await app.vault.rename(folderAt('folder'), 'renamed');
+    expect(component.isLockedForPath('renamed')).toBe(true);
+    abortController.abort();
+
+    expect(component.isLockedForPath('renamed')).toBe(false);
+  });
+
+  it('should move the owner bypass scope with the renamed folder', async () => {
+    const abortController = new AbortController();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ abortController, mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder', shouldBlockMutations: true });
+    using _bypass = component.bypassBlockedMutations(['folder']);
+
+    // The owner renames the folder it locked — the rename itself passes the blocker via the bypass.
+    await app.vault.rename(folderAt('folder'), 'renamed');
+
+    // The moved subtree is still the owner's own, so its further mutations are neither blocked nor read as an intruder.
+    expect(component.isMutationBlockedByAncestorForPath('renamed/a.md')).toBe(true);
+    expect(abortController.signal.aborted).toBe(false);
+    await expect(app.vault.modify(fileAt('renamed/a.md'), 'new a')).resolves.toBeUndefined();
+  });
+
+  it('should keep blocking a moved subtree for everyone outside the bypass scope', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder', shouldBlockMutations: true });
+    const bypass = component.bypassBlockedMutations(['folder']);
+    await app.vault.rename(folderAt('folder'), 'renamed');
+    dispose(bypass);
+
+    const file = fileAt('renamed/a.md');
+    expect(() => app.vault.modify(file, 'new a')).toThrow(ResourceLockedError);
+  });
+
+  it('should abort and follow an external rename of a mutation-blocked path', () => {
+    const abortController = new AbortController();
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ abortController, operationName: 'Test operation', pathOrFile: 'outside.md', shouldBlockMutations: true });
+
+    // An intruder moved the locked file without going through the patched vault API.
+    app.vault.trigger('rename', fileAt('moved.md'), 'outside.md');
+
+    expect(abortController.signal.aborted).toBe(true);
+    expect(component.isLockedForPath('moved.md')).toBe(true);
+  });
+
+  it('should merge the entries when a rename lands on an already-locked path', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    const folderLock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    const destinationLock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'renamed' });
+
+    await app.vault.rename(folderAt('folder'), 'renamed');
+
+    // Both entry lists now sit at `renamed`: the moved subtree lock covers descendants, the destination's own lock does not.
+    expect(component.isLockedByAncestorForPath('renamed/a.md')).toBe(true);
+    dispose(folderLock);
+    expect(component.isLockedByAncestorForPath('renamed/a.md')).toBe(false);
+    // The destination's own lock survived the merge, so the path itself stays locked.
+    expect(component.isLockedForPath('renamed')).toBe(true);
+    dispose(destinationLock);
+    expect(component.isLockedForPath('renamed')).toBe(false);
+  });
+
+  it('should leave every lock alone for an unrelated rename', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+
+    await app.vault.rename(fileAt('outside.md'), 'elsewhere.md');
+
+    expect(component.isLockedForPath('folder')).toBe(true);
+    expect(component.isLockedForPath('elsewhere.md')).toBe(false);
+  });
+
+  it('should re-lock a view that the rename moved into a subtree-locked folder', async () => {
+    const view = createMarkdownView('outside.md');
+    stubLeaves(leafOf(view));
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    expect(vi.mocked(toggleEditorReadOnly)).not.toHaveBeenCalledWith(view.editor, true);
+
+    await app.vault.rename(fileAt('outside.md'), 'folder/outside.md');
+
+    expect(vi.mocked(toggleEditorReadOnly)).toHaveBeenCalledWith(view.editor, true);
+  });
+
+  it('should resolve the moved owner path from the lock indicator after a rename', async () => {
+    vi.mocked(confirm).mockResolvedValue(true);
+    const view = createMarkdownView('folder/a.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const getMenu = captureMenuOnShow();
+
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    component.lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    await app.vault.rename(folderAt('folder'), 'renamed');
+    expect(component.isLockedForPath('renamed')).toBe(true);
+
+    dispatchContextMenu(iconEl);
+    const menu = getMenu();
+    assertNonNullable(menu);
+    const item = menu.items__[0];
+    assertNonNullable(item);
+    item.onClick__?.(new MouseEvent('click'));
+    await flushAsync();
+
+    // The indicator resolves the owner lock at click time, so it unlocks the folder at its NEW path.
+    expect(component.isLockedForPath('renamed')).toBe(false);
+  });
+
+  it('should leave a bypass scope alone when the rename does not touch its paths', async () => {
+    const component = new ResourceLockComponent(app, 'test-plugin');
+    using _lock = component.lockForPath({ operationName: 'Test operation', pathOrFile: 'outside.md', shouldBlockMutations: true });
+    using _bypass = component.bypassBlockedMutations(['outside.md']);
+
+    // An unrelated folder moves; the bypass still covers the path it was opened for.
+    await app.vault.rename(folderAt('folder'), 'renamed');
+
+    await expect(app.vault.modify(fileAt('outside.md'), 'new content')).resolves.toBeUndefined();
+  });
+
+  it('should not open an indicator unlock menu when the view lost its file', () => {
+    const view = createMarkdownView('folder/a.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
+
+    using _lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    castTo<MutableViewFile>(view).file = null;
+    dispatchContextMenu(iconEl);
+
+    expect(showSpy).not.toHaveBeenCalled();
+  });
+
+  it('should not open an indicator unlock menu when nothing covers the note at click time', () => {
+    const view = createMarkdownView('folder/a.md');
+    const iconEl = createDiv();
+    vi.spyOn(view, 'addAction').mockReturnValue(iconEl);
+    stubLeaves(leafOf(view));
+    const showSpy = vi.spyOn(Menu.prototype, 'showAtMouseEvent');
+
+    const lock = new ResourceLockComponent(app, 'test-plugin').lockForPath({ mode: 'subtree', operationName: 'Test operation', pathOrFile: 'folder' });
+    // The lock is released before the right-click, so the indicator resolves no owner.
+    dispose(lock);
+    dispatchContextMenu(iconEl);
+
+    expect(showSpy).not.toHaveBeenCalled();
   });
 });
