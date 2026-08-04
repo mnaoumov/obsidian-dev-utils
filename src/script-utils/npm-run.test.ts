@@ -8,7 +8,8 @@ import {
 
 import {
   npmRun,
-  npmRunOptional
+  npmRunOptional,
+  NpmRunOptionalResult
 } from './npm-run.ts';
 
 const {
@@ -53,21 +54,21 @@ describe('npmRun', () => {
 });
 
 describe('npmRunOptional', () => {
-  it('should run npm script when command exists in package.json', async () => {
+  it('should run npm script and report success when command exists in package.json', async () => {
     mockReadPackageJson.mockResolvedValue({ scripts: { test: 'vitest' } });
-    await npmRunOptional('test');
+    expect(await npmRunOptional('test')).toBe(NpmRunOptionalResult.Success);
     expect(mockExecFromRoot).toHaveBeenCalledWith(['npm', 'run', 'test']);
   });
 
-  it('should skip when command does not exist in package.json', async () => {
+  it('should report skipped when command does not exist in package.json', async () => {
     mockReadPackageJson.mockResolvedValue({ scripts: { test: 'vitest' } });
-    await npmRunOptional('unknown');
+    expect(await npmRunOptional('unknown')).toBe(NpmRunOptionalResult.Skipped);
     expect(mockExecFromRoot).not.toHaveBeenCalled();
   });
 
-  it('should handle missing scripts section in package.json', async () => {
+  it('should report skipped when scripts section is missing in package.json', async () => {
     mockReadPackageJson.mockResolvedValue({});
-    await npmRunOptional('build');
+    expect(await npmRunOptional('build')).toBe(NpmRunOptionalResult.Skipped);
     expect(mockExecFromRoot).not.toHaveBeenCalled();
   });
 });

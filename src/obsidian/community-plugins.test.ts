@@ -280,12 +280,12 @@ describe('configureCommunityPlugin', () => {
     expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ modulesRoot: 'x' }, null, 2)}\n`);
   });
 
-  it('should return true when it changes data.json', async () => {
+  it('should report success when it changes data.json', async () => {
     const { app } = createApp();
-    expect(await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } })).toBe(true);
+    expect(await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } })).toBe(ConfigureCommunityPluginResult.Success);
   });
 
-  it('should return false and not write when the settings are already present', async () => {
+  it('should report skipped and not write when the settings are already present', async () => {
     const { adapterWrite, app } = createApp({ existingPluginData: { modulesRoot: 'root-x' } });
     const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
     expect(result).toBe(ConfigureCommunityPluginResult.Skipped);

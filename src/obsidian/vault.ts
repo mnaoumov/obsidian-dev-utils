@@ -438,7 +438,8 @@ export async function copySafe(params: CopySafeParams): Promise<string> {
  *
  * @param app - The application instance.
  * @param path - The path of the folder to create.
- * @returns A {@link Promise} that resolves to a boolean indicating whether the folder was created.
+ * @returns A {@link Promise} that resolves to {@link CreateFolderSafeResult.Created} if the folder was
+ * created, or {@link CreateFolderSafeResult.NotCreated} if it already existed.
  * @throws If an error occurs while creating the folder and it still doesn't exist.
  */
 export async function createFolderSafe(app: App, path: string): Promise<CreateFolderSafeResult> {

@@ -43,7 +43,8 @@ export async function npmRun(command: string): Promise<void> {
  * If the command is not defined, it is silently skipped.
  *
  * @param command - The command to run.
- * @returns if the command was found and run, {@link NpmRunOptionalResult.Skipped} otherwise.
+ * @returns A {@link Promise} that resolves to {@link NpmRunOptionalResult.Success} if the command was
+ * found and run, or {@link NpmRunOptionalResult.Skipped} otherwise.
  */
 export async function npmRunOptional(command: string): Promise<NpmRunOptionalResult> {
   const packageJson = await readPackageJson();

@@ -214,12 +214,13 @@ export enum ConfigureCommunityPluginResult {
  * Writes settings into a community plugin's `data.json`, shallow-merging them over any existing settings
  * (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load already
  * configured, with no reload. A no-op write is skipped: when the merge changes nothing, the file is left
- * untouched and `false` is returned, so a caller can avoid reloading an already-correctly-configured
- * plugin.
+ * untouched and {@link ConfigureCommunityPluginResult.Skipped} is returned, so a caller can avoid
+ * reloading an already-correctly-configured plugin.
  *
  * @param params - The {@link ConfigureCommunityPluginParams}.
- * @returns A {@link Promise} that resolves to `true` if the `data.json` content changed (and was
- * written), or `false` if the settings were already present (nothing written).
+ * @returns A {@link Promise} that resolves to {@link ConfigureCommunityPluginResult.Success} if the
+ * `data.json` content changed (and was written), or {@link ConfigureCommunityPluginResult.Skipped} if the
+ * settings were already present (nothing written).
  * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
  */
 export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<ConfigureCommunityPluginResult> {

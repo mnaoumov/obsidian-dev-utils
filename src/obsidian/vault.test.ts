@@ -243,13 +243,13 @@ describe('getNoteFilesSorted', () => {
 });
 
 describe('createFolderSafe', () => {
-  it('should return false if folder already exists', async () => {
+  it('should report not-created if folder already exists', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(true);
     const result = await createFolderSafe(app, 'existing-folder');
     expect(result).toBe(CreateFolderSafeResult.NotCreated);
   });
 
-  it('should create folder and return true when it does not exist', async () => {
+  it('should create folder and report created when it does not exist', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder');
     const result = await createFolderSafe(app, 'new-folder');
@@ -257,7 +257,7 @@ describe('createFolderSafe', () => {
     expect(vi.mocked(app.vault.createFolder)).toHaveBeenCalledWith('new-folder');
   });
 
-  it('should return true if createFolder fails but folder now exists', async () => {
+  it('should report created if createFolder fails but folder now exists', async () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'createFolder').mockRejectedValue(new Error('Folder already exists'));
     vi.spyOn(app.vault, 'exists').mockResolvedValue(true);

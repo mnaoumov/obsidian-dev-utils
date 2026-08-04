@@ -51,7 +51,8 @@ interface DeleteIfNotUsedParams {
  * Deletes an abstract file safely from the vault, but only if it is not referenced by other notes.
  *
  * @param params - The parameters for the function.
- * @returns A {@link Promise} that resolves to a boolean indicating whether the removal was successful.
+ * @returns A {@link Promise} that resolves to {@link DeleteIfNotUsedResult.Deleted} if the abstract file
+ * was deleted, or {@link DeleteIfNotUsedResult.NotDeleted} if it was kept.
  */
 export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<DeleteIfNotUsedResult> {
   const file = getAbstractFileOrNull({ app: params.app, pathOrFile: params.pathOrFile });

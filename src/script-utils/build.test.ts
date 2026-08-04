@@ -20,6 +20,7 @@ import {
   buildCompileTypeScript,
   buildTemplates
 } from './build.ts';
+import { NpmRunOptionalResult } from './npm-run.ts';
 
 const {
   mockCheckProjectTypes,
@@ -71,9 +72,13 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   };
 });
 
-vi.mock('../script-utils/npm-run.ts', () => ({
-  npmRunOptional: mockNpmRunOptional
-}));
+vi.mock('../script-utils/npm-run.ts', async (importOriginal) => {
+  const $module = await importOriginal<typeof import('./npm-run.ts')>();
+  return {
+    ...$module,
+    npmRunOptional: mockNpmRunOptional
+  };
+});
 
 vi.mock('../script-utils/json.ts', () => ({
   readJson: mockReadJson
@@ -90,7 +95,7 @@ vi.mock('../debug.ts', () => ({
 beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
-  mockNpmRunOptional.mockResolvedValue(true);
+  mockNpmRunOptional.mockResolvedValue(NpmRunOptionalResult.Success);
   mockRm.mockResolvedValue(undefined);
   mockCp.mockResolvedValue(undefined);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
@@ -114,8 +119,8 @@ describe('buildCompile', () => {
     expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:typescript');
   });
 
-  it('should fall back to internal implementations when npmRunOptional returns false', async () => {
-    mockNpmRunOptional.mockResolvedValue(false);
+  it('should fall back to internal implementations when npmRunOptional skips', async () => {
+    mockNpmRunOptional.mockResolvedValue(NpmRunOptionalResult.Skipped);
     mockReadJson.mockResolvedValue({ include: ['src/**/*.ts'] });
     mockGlob.mockReturnValue((async function* generateTsFiles(): AsyncGenerator<string, void> {
       await noopAsync();

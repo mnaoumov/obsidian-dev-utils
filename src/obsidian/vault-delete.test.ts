@@ -78,7 +78,7 @@ beforeEach(() => {
 });
 
 describe('deleteIfNotUsed', () => {
-  it('should return false when file does not exist', async () => {
+  it('should report not-deleted when file does not exist', async () => {
     mocks.getAbstractFileOrNull.mockReturnValue(null);
     const result = await deleteIfNotUsed({
       app,
