@@ -9,6 +9,10 @@
  * is open, that a view opened AFTER the lock (a future editor) is auto-locked, that editors for other
  * notes stay editable, and that unlocking restores editability.
  *
+ * They also replay a folder swap under real `subtree` locks: the transaction renames the very folders
+ * it locked, so only real vault rename events — in real order — can show that the registry re-keys and
+ * that every later rename of the transaction stays covered.
+ *
  * An Obsidian {@link Editor} instance is reused as its leaf navigates between notes and goes stale
  * after a re-layout, so this test NEVER holds an `Editor` reference across another open: it keeps
  * only the (stable) {@link WorkspaceLeaf} handles and re-reads `leaf.view.editor` fresh at read time.
@@ -37,6 +41,12 @@ interface BypassScopeResult {
 
 interface ExternalChangeResult {
   readonly wasAbortedOnExternalDelete: boolean;
+}
+
+interface FolderSwapResult {
+  readonly finalPaths: readonly string[];
+  readonly isCoveredAfterRelease: boolean;
+  readonly steps: readonly SwapStep[];
 }
 
 interface ForceUnlockResult {
@@ -87,6 +97,14 @@ interface ShiftEnterResult {
 interface SubtreeLockResult {
   readonly isChildLockedAfterUnlock: boolean;
   readonly isChildLockedUnderSubtree: boolean;
+}
+
+interface SwapStep {
+  readonly actualNewPath: string;
+  readonly error: string;
+  readonly newPath: string;
+  readonly oldPath: string;
+  readonly wasCoveredByLock: boolean;
 }
 
 interface TypableLeaf {
@@ -424,6 +442,108 @@ describe('resource-lock', () => {
       // A note inside a subtree-locked folder is read-only, and editable again once the folder unlocks.
       expect(result.isChildLockedUnderSubtree).toBe(true);
       expect(result.isChildLockedAfterUnlock).toBe(false);
+    });
+  });
+
+  describe('ResourceLockComponent rename re-keying', () => {
+    it('should keep covering every rename of a folder swap that renames the locked folders themselves', async () => {
+      const result = await evalInObsidian({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
+        async fn({ app, lib: { isResourceLockedForPathByAncestor, ResourceLockComponent, waitUntil } }): Promise<FolderSwapResult> {
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const root = 'resource-lock-swap';
+          const temporaryFolderPath = 'resource-lock-swap-temp';
+
+          for (const staleFolderPath of [root, temporaryFolderPath]) {
+            const staleFolder = app.vault.getFolderByPath(staleFolderPath);
+            if (staleFolder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(staleFolder, true);
+            }
+          }
+
+          // The reporter's tree: the folder being swapped is a child of the folder it is swapped with.
+          await app.vault.createFolder(root);
+          await app.vault.createFolder(`${root}/A`);
+          await app.vault.createFolder(`${root}/A/B`);
+          await app.vault.createFolder(temporaryFolderPath);
+          await app.vault.create(`${root}/A/Overview.md`, 'target note');
+          await app.vault.create(`${root}/A/B/Overview.md`, 'source note');
+
+          const component = new ResourceLockComponent(app, 'integration-rename-rekey');
+          const lockedPaths = [`${root}/A`, `${root}/A/B`];
+          const lockDisposables = lockedPaths.map((path) => component.lockForPath({ mode: 'subtree', operationName: 'Swap folders', pathOrFile: path, shouldBlockMutations: true }));
+          // The transaction's own mutations are sanctioned for its whole run, exactly as `VaultTransaction` opens it.
+          const bypass = component.bypassBlockedMutations(lockedPaths);
+
+          const steps: SwapStep[] = [];
+          let isCoveredAfterRelease: boolean;
+          try {
+            // Advanced Note Composer's `swapFolder`, verbatim: both folders trade names first, then their files trade places through a staging folder.
+            await renameStep(`${root}/A/B`, `${root}/A/A`);
+            await renameStep(`${root}/A`, `${root}/B`);
+            await renameStep(`${root}/B/A/Overview.md`, `${temporaryFolderPath}/Overview.md`);
+            await renameStep(`${root}/B/Overview.md`, `${root}/B/A/Overview.md`);
+            await renameStep(`${temporaryFolderPath}/Overview.md`, `${root}/B/Overview.md`);
+          } finally {
+            bypass[Symbol.dispose]();
+            for (const lockDisposable of lockDisposables) {
+              lockDisposable[Symbol.dispose]();
+            }
+            // The locks were taken on paths that no longer exist, so this is also where a path-keyed release would leak them.
+            isCoveredAfterRelease = isResourceLockedForPathByAncestor(app, `${root}/B/Overview.md`);
+          }
+
+          const finalPaths = app.vault.getFiles()
+            .map((file) => file.path)
+            .filter((path) => path.startsWith(`${root}/`))
+            .sort();
+
+          const temporaryFolder = app.vault.getFolderByPath(temporaryFolderPath);
+          if (temporaryFolder) {
+            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+            await app.vault.delete(temporaryFolder, true);
+          }
+          const rootFolder = app.vault.getFolderByPath(root);
+          if (rootFolder) {
+            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+            await app.vault.delete(rootFolder, true);
+          }
+
+          return { finalPaths, isCoveredAfterRelease, steps };
+
+          async function renameStep(oldPath: string, newPath: string): Promise<void> {
+            // Sampled BEFORE the rename, which is when a bystander (the rename/delete handler) asks the same question.
+            const wasCoveredByLock = isResourceLockedForPathByAncestor(app, oldPath) || isResourceLockedForPathByAncestor(app, newPath);
+            const file = app.vault.getAbstractFileByPath(oldPath);
+            let error = '';
+            if (file) {
+              try {
+                await app.fileManager.renameFile(file, newPath);
+                await waitUntil({
+                  message: `${oldPath} to land on ${newPath}`,
+                  predicate: () => app.vault.getAbstractFileByPath(newPath) !== null,
+                  timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+                });
+              } catch (renameError) {
+                error = renameError instanceof Error ? renameError.message : String(renameError);
+              }
+            }
+            steps.push({ actualNewPath: file?.path ?? '', error, newPath, oldPath, wasCoveredByLock });
+          }
+        }
+      });
+
+      // Every rename of the transaction stays covered — including the three that follow the folder renames,
+      // Which is exactly where a path-keyed registry loses the lock and a bystander joins in.
+      expect(result.steps.filter((step) => !step.wasCoveredByLock)).toStrictEqual([]);
+      // The owner's own mutations keep passing the blocker: its bypass scope moved with the renamed folders.
+      expect(result.steps.filter((step) => step.error !== '')).toStrictEqual([]);
+      // Each file landed on the path it was asked for, so the swap completed.
+      expect(result.steps.filter((step) => step.actualNewPath !== step.newPath)).toStrictEqual([]);
+      expect(result.finalPaths).toStrictEqual(['resource-lock-swap/B/A/Overview.md', 'resource-lock-swap/B/Overview.md']);
+      // Releasing the locks still works after they were re-keyed.
+      expect(result.isCoveredAfterRelease).toBe(false);
     });
   });
 

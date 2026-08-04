@@ -375,6 +375,34 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a custom rule could flag an `await` inside the scope of a
   `using … = registerFiles(…)`, which would catch the common shape but not the cross-operation case)
 
+### L11. A path-keyed registry must be re-keyed on rename — and so must everything derived from it
+
+- A vault path is a **name, not an identity**: a rename changes it while the resource stays the same.
+  Any long-lived structure keyed by path (today: `ResourceLockManager.lockEntriesByPath`) must move its
+  entry — and every **descendant** entry, since a folder rename changes a whole prefix — when the path
+  is renamed, or it silently stops describing anything. Subscribe to `vault.on('rename')` and re-key
+  **before** the handler's other work, so the rest of it sees where things actually are.
+- Re-keying the map is the easy half; what breaks is everything that **captured a path**. When
+  `ResourceLockManager` was fixed, three separate captures had to move with it, and each was its own
+  bug: a sibling registry of path strings (`bypassPathSets` — leaving it behind inverts the defect, so
+  the owner's own mutations start reading as intruders), a captured path inside the release closure
+  (release silently no-ops → the lock leaks forever, which is worse than the original symptom), and a
+  captured path inside a UI element's click handler (`assertNonNullable` throws when the user clicks).
+  So the checklist is: **grep for every place that path was stored or closed over**, and either re-key
+  it too or make it resolve at use time. Prefer resolve-at-use-time — a mutable `path` on the entry, a
+  `() => resolve(view.file?.path)` getter — over another thing to remember to re-key.
+- Make the re-key **idempotent** (a path that no longer matches is left alone). Obsidian's event order
+  for a folder rename vs its descendants' is not a contract, and a consumer's own
+  `vault.on('rename')` may run before or after ours. Anything order-dependent works in the test and
+  fails in the field. Reconcile **unconditionally** after a rename, not only when a key moved:
+  coverage also changes when a resource is renamed *into* or *out of* a subtree-scoped entry.
+- A unit test with the mock vault covers the branches, but only an `*.obsidian.integration.test.ts`
+  replaying the real sequence proves the event ordering — and it must be **red before the fix**. See
+  the folder-swap case in `resource-lock.obsidian.integration.test.ts`, and
+  [#49](https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/49).
+- (cannot be forced by ESLint — a design invariant; a custom rule could flag a `Map`/`Set` field whose
+  name ends in `ByPath` in a class with no `vault.on('rename')` subscription, but not the captures)
+
 ## Testing
 
 ### Goals

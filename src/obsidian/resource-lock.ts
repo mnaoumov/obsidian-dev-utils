@@ -18,6 +18,11 @@
  *    covers is treated as an intruder (Sync / raw filesystem / another plugin) and aborts the owning
  *    operation's {@link AbortController}.
  *
+ * A lock **follows its resource across a rename**: when a locked path (or an ancestor folder of it) is
+ * renamed, the lock registry and every active bypass scope are re-keyed onto the new path, so a
+ * multi-step operation that renames a folder it locked keeps its coverage for the rest of the
+ * transaction.
+ *
  * The acquirers return a {@link Disposable}, so the preferred call style is a `using` declaration that
  * releases automatically at scope exit (including on throw):
  *
@@ -195,6 +200,12 @@ interface LockEntry {
   readonly mode: ResourceLockMode;
   readonly onUnlockRequested: (() => void) | null;
   readonly operationName: string;
+  /**
+   * The path the entry is currently registered under. Deliberately mutable: a rename re-keys the
+   * registry, and release must find the entry at its CURRENT path — a release that captured the path
+   * at lock time would silently no-op after the resource moved, leaking the lock forever.
+   */
+  path: string;
   readonly pluginId: string;
   readonly shouldReleaseOnAbort: boolean;
 }
@@ -225,6 +236,7 @@ interface ResourceLockEventsComponentConstructorParams {
   onChange(this: void): void;
   onExternalMutation(this: void, path: string): void;
   onFileMenu(this: void, menu: Menu, file: TAbstractFile): void;
+  onRename(this: void, oldPath: string, newPath: string): void;
 }
 
 interface ResourceLockMutationBlockerComponentConstructorParams {
@@ -241,6 +253,7 @@ class ResourceLockEventsComponent extends ComponentEx {
   private readonly onChange: () => void;
   private readonly onExternalMutation: (path: string) => void;
   private readonly onFileMenu: (menu: Menu, file: TAbstractFile) => void;
+  private readonly onRename: (oldPath: string, newPath: string) => void;
 
   public constructor(params: ResourceLockEventsComponentConstructorParams) {
     super();
@@ -248,6 +261,7 @@ class ResourceLockEventsComponent extends ComponentEx {
     this.onChange = params.onChange;
     this.onExternalMutation = params.onExternalMutation;
     this.onFileMenu = params.onFileMenu;
+    this.onRename = params.onRename;
   }
 
   public override onload(): void {
@@ -266,6 +280,9 @@ class ResourceLockEventsComponent extends ComponentEx {
       this.onExternalMutation(file.path);
     }));
     this.registerEvent(this.app.vault.on('rename', (file, oldPath): void => {
+      // Re-key FIRST, so the checks below run against where the locks actually are now.
+      // Intruder detection is unaffected: the old path stops resolving, but the new one is covered instead.
+      this.onRename(oldPath, file.path);
       this.onExternalMutation(oldPath);
       this.onExternalMutation(file.path);
     }));
@@ -417,7 +434,9 @@ class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
  */
 class ResourceLockManager {
   private readonly beeper = new Beeper();
-  private readonly bypassPathSets = new Set<ReadonlySet<string>>();
+  // The inner sets are mutable so a rename can re-key the paths of an in-flight bypass scope in place;
+  // The scope's `Disposable` deletes by set identity, so mutating the contents cannot orphan it.
+  private readonly bypassPathSets = new Set<Set<string>>();
   private eventsComponent: null | ResourceLockEventsComponent = null;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
   private readonly lockEntriesByPath = new Map<string, LockEntry[]>();
@@ -425,7 +444,7 @@ class ResourceLockManager {
   private statusBarItemEl: HTMLElement | null = null;
 
   public bypass(app: App, pathsOrFiles: readonly PathOrFile[]): Disposable {
-    const bypassedPaths: ReadonlySet<string> = new Set(pathsOrFiles.map((pathOrFile) => getPath(app, pathOrFile)));
+    const bypassedPaths = new Set(pathsOrFiles.map((pathOrFile) => getPath(app, pathOrFile)));
     this.bypassPathSets.add(bypassedPaths);
     return new CallbackDisposable({
       callback: (): void => {
@@ -502,6 +521,7 @@ class ResourceLockManager {
       mode: params.mode ?? 'file',
       onUnlockRequested: params.onUnlockRequested ?? null,
       operationName: params.operationName,
+      path,
       pluginId: params.pluginId,
       shouldReleaseOnAbort: params.shouldReleaseOnAbort ?? false
     };
@@ -515,12 +535,12 @@ class ResourceLockManager {
     if (entry.blocksMutations) {
       this.ensureBlockerInstalled(app);
     }
-    this.wireReleaseOnAbort(app, path, entry);
+    this.wireReleaseOnAbort(app, entry);
     this.reconcile(app);
 
     return new CallbackDisposable({
       callback: (): void => {
-        this.removeEntry(app, path, entry);
+        this.removeEntry(app, entry);
       },
       multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
     });
@@ -612,9 +632,14 @@ class ResourceLockManager {
     });
   }
 
-  private createIndicators(app: App, view: MarkdownView, path: string, tooltip: string): LockIndicators {
+  private createIndicators(app: App, view: MarkdownView, tooltip: string): LockIndicators {
+    // The indicators outlive a rename of the note (or of an enclosing locked folder), so they resolve
+    // The owner lock at CLICK time from the view's current file, exactly as the status-bar item does.
+    // A captured owner path would go stale the moment the lock is re-keyed.
+    const getOwnerPath = (): string | undefined => this.resolveViewOwnerPath(app, view);
+
     const actionIconEl = view.addAction(LOCK_ICON_ID, tooltip, noop);
-    this.registerUnlockMenu(app, actionIconEl, () => path);
+    this.registerUnlockMenu(app, actionIconEl, getOwnerPath);
 
     let tabIconEl: HTMLElement | null = null;
     const tabStatusContainerEl = view.leaf.tabHeaderStatusContainerEl;
@@ -622,7 +647,7 @@ class ResourceLockManager {
       tabIconEl = tabStatusContainerEl.createSpan({ cls: LOCK_INDICATOR_CSS_CLASS });
       setIcon(tabIconEl, LOCK_ICON_ID);
       setTooltip(tabIconEl, tooltip);
-      this.registerUnlockMenu(app, tabIconEl, () => path);
+      this.registerUnlockMenu(app, tabIconEl, getOwnerPath);
     }
 
     // A locked view is read-only but still editable-focusable, so a keystroke fires `beforeinput`.
@@ -667,6 +692,9 @@ class ResourceLockManager {
       },
       onFileMenu: (menu, file): void => {
         this.handleFileMenu(app, menu, file);
+      },
+      onRename: (oldPath, newPath): void => {
+        this.handleRename(app, oldPath, newPath);
       }
     });
     this.eventsComponent.load();
@@ -725,6 +753,65 @@ class ResourceLockManager {
       return;
     }
     this.addUnlockMenuItem(app, menu, ownerPath);
+  }
+
+  /**
+   * Re-keys the registry onto a renamed path, so a lock follows the resource it was taken on. Moves
+   * the entries of the renamed path AND of every descendant key (a folder rename changes a whole path
+   * prefix), and rebases every active {@link ResourceLockManager.bypass} scope the same way — without
+   * that second half an operation that renames a folder it locked would have its OWN later mutations
+   * read as intruders.
+   *
+   * Idempotent: a path that no longer matches is left alone, so it does not matter whether Obsidian
+   * emits the folder's rename event before or after its descendants'.
+   *
+   * @param app - The Obsidian app instance.
+   * @param oldPath - The path the resource was renamed from.
+   * @param newPath - The path the resource was renamed to.
+   */
+  private handleRename(app: App, oldPath: string, newPath: string): void {
+    // Collect first, apply after: writing back while iterating would re-visit the just-moved keys.
+    const movedEntriesByPath = new Map<string, LockEntry[]>();
+    for (const [lockedPath, entries] of this.lockEntriesByPath) {
+      const rebasedPath = rebasePath(lockedPath, oldPath, newPath);
+      if (rebasedPath === null) {
+        continue;
+      }
+      for (const entry of entries) {
+        entry.path = rebasedPath;
+      }
+      movedEntriesByPath.set(rebasedPath, entries);
+      this.lockEntriesByPath.delete(lockedPath);
+    }
+
+    for (const [rebasedPath, entries] of movedEntriesByPath) {
+      const existingEntries = this.lockEntriesByPath.get(rebasedPath);
+      if (existingEntries) {
+        // A swap renames one locked path onto another, so the two entry lists MERGE — neither holder loses its lock.
+        existingEntries.push(...entries);
+      } else {
+        this.lockEntriesByPath.set(rebasedPath, entries);
+      }
+    }
+
+    for (const bypassedPaths of this.bypassPathSets) {
+      // Same collect-then-apply shape: the set may not be mutated while it is being iterated.
+      const rebasedBypassedPaths = new Map<string, string>();
+      for (const bypassedPath of bypassedPaths) {
+        const rebasedPath = rebasePath(bypassedPath, oldPath, newPath);
+        if (rebasedPath !== null) {
+          rebasedBypassedPaths.set(bypassedPath, rebasedPath);
+        }
+      }
+      for (const [bypassedPath, rebasedPath] of rebasedBypassedPaths) {
+        bypassedPaths.delete(bypassedPath);
+        bypassedPaths.add(rebasedPath);
+      }
+    }
+
+    // Reconcile unconditionally: a rename changes coverage even when no key moved — a note renamed INTO
+    // A `subtree`-locked folder becomes covered, one renamed OUT of it stops being covered.
+    this.reconcile(app);
   }
 
   private hasBlockingLock(): boolean {
@@ -827,7 +914,7 @@ class ResourceLockManager {
         if (indicators) {
           this.updateIndicatorTooltips(indicators, tooltip);
         } else {
-          this.indicatorsByView.set(view, this.createIndicators(app, view, ownerPath, tooltip));
+          this.indicatorsByView.set(view, this.createIndicators(app, view, tooltip));
         }
       }
     }
@@ -884,8 +971,10 @@ class ResourceLockManager {
     });
   }
 
-  private removeEntry(app: App, path: string, entry: LockEntry): void {
-    const entries = this.lockEntriesByPath.get(path);
+  private removeEntry(app: App, entry: LockEntry): void {
+    // Read the entry's CURRENT path, not one captured when the lock was taken: a rename may have
+    // Re-keyed it since, and looking it up under the old path would silently leak the lock.
+    const entries = this.lockEntriesByPath.get(entry.path);
     if (!entries) {
       return;
     }
@@ -895,7 +984,7 @@ class ResourceLockManager {
     }
     entries.splice(index, 1);
     if (entries.length === 0) {
-      this.lockEntriesByPath.delete(path);
+      this.lockEntriesByPath.delete(entry.path);
     }
     this.reconcileAndCleanup(app);
   }
@@ -921,6 +1010,20 @@ class ResourceLockManager {
       }
     }
     return bestOwnerPath;
+  }
+
+  /**
+   * Resolves the lock covering the note a view currently shows — its own path when directly locked,
+   * otherwise the enclosing `subtree`-locked folder. Read at click time by the view's lock indicators,
+   * so it reflects renames of the note and of the locked folder alike.
+   *
+   * @param app - The Obsidian app instance.
+   * @param view - The view whose current file to resolve an owner lock for.
+   * @returns The covering locked path, or `undefined` when the view has no file or nothing covers it.
+   */
+  private resolveViewOwnerPath(app: App, view: MarkdownView): string | undefined {
+    const path = view.file?.path;
+    return path === undefined ? undefined : this.resolveLockOwnerPath(app, path) ?? undefined;
   }
 
   /**
@@ -994,17 +1097,16 @@ class ResourceLockManager {
    * set, so transactional locks keep releasing via their own cleanup.
    *
    * @param app - The Obsidian app instance.
-   * @param path - The exact path the entry is registered under.
    * @param entry - The lock entry whose controller to observe.
    */
-  private wireReleaseOnAbort(app: App, path: string, entry: LockEntry): void {
+  private wireReleaseOnAbort(app: App, entry: LockEntry): void {
     const { onUnlockRequested, shouldReleaseOnAbort } = entry;
     if (!entry.abortController || (!shouldReleaseOnAbort && !onUnlockRequested)) {
       return;
     }
     entry.abortController.signal.addEventListener('abort', () => {
       if (shouldReleaseOnAbort) {
-        this.removeEntry(app, path, entry);
+        this.removeEntry(app, entry);
       }
       onUnlockRequested?.();
     }, { once: true });
@@ -1265,4 +1367,25 @@ export function unlockResourceForPath(app: App, pathOrFile: PathOrFile, pluginId
 
 function getManager(): ResourceLockManager {
   return getObsidianDevUtilsState<ResourceLockManager>(RESOURCE_LOCK_STATE_KEY, new ResourceLockManager()).value;
+}
+
+/**
+ * Maps a stored path through a rename: the renamed path itself becomes the new path, and a descendant
+ * of it keeps its suffix under the new path. Spelled out rather than reusing {@link isChildOrSelf}
+ * because the rebased suffix has to be computed from the same prefix the test matched, and a rename
+ * source is never the vault root (the one case those helpers treat specially).
+ *
+ * @param path - The stored path to map.
+ * @param oldPath - The path the resource was renamed from.
+ * @param newPath - The path the resource was renamed to.
+ * @returns The rebased path, or `null` when the rename does not affect it.
+ */
+function rebasePath(path: string, oldPath: string, newPath: string): null | string {
+  if (path === oldPath) {
+    return newPath;
+  }
+  if (path.startsWith(`${oldPath}/`)) {
+    return newPath + path.slice(oldPath.length);
+  }
+  return null;
 }
