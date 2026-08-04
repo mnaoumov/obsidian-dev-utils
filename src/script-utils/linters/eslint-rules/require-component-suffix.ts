@@ -23,19 +23,29 @@ import type {
 import type { Rule } from 'eslint';
 import type { Type } from 'typescript';
 
-/** Message ID reported when a class extends `Component` but its name does not end with `Component`. */
+/**
+Message ID reported when a class extends `Component` but its name does not end with `Component`.
+ */
 export const MESSAGE_ID_MISSING_SUFFIX = 'requireComponentSuffix';
 
-/** Message ID reported when an abstract class extends `Component` but its name does not end with `ComponentBase`. */
+/**
+Message ID reported when an abstract class extends `Component` but its name does not end with `ComponentBase`.
+ */
 export const MESSAGE_ID_ABSTRACT_NEEDS_BASE = 'abstractNeedsComponentBase';
 
-/** Message ID reported when a class name ends with `ComponentBase` but the class is not abstract. */
+/**
+Message ID reported when a class name ends with `ComponentBase` but the class is not abstract.
+ */
 export const MESSAGE_ID_BASE_NOT_ABSTRACT = 'componentBaseNotAbstract';
 
-/** Ancestor class names that opt a subtree out of the suffix requirement. */
+/**
+Ancestor class names that opt a subtree out of the suffix requirement.
+ */
 const EXCLUDED_ANCESTORS = new Set(['HoverPopover', 'MarkdownRenderChild', 'Menu', 'Plugin', 'QueryController', 'View']);
 
-/** The ancestor class name that triggers the suffix requirement. */
+/**
+The ancestor class name that triggers the suffix requirement.
+ */
 const REQUIRED_ANCESTOR = 'Component';
 
 interface TypeWithBaseTypes {

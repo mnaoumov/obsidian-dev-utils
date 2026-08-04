@@ -24,10 +24,14 @@ interface JsdocSettings {
 
 const TAG_NAME = 'typeParam';
 
-/** Message ID reported when a method type parameter has no matching `@typeParam` tag. */
+/**
+Message ID reported when a method type parameter has no matching `@typeParam` tag.
+ */
 export const MESSAGE_ID_MISSING_TEMPLATE = 'missingTemplate';
 
-/** Message ID reported when a method's `@typeParam` tag is missing a description. */
+/**
+Message ID reported when a method's `@typeParam` tag is missing a description.
+ */
 export const MESSAGE_ID_MISSING_TEMPLATE_DESCRIPTION = 'missingTemplateDescription';
 
 export const requireMethodTemplate: Rule.RuleModule = {

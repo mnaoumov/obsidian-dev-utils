@@ -45,7 +45,9 @@ interface ModuleState {
   collectedUnhandledAsyncErrors: null | unknown[];
 }
 
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+ */
 const moduleState: ModuleState = {
   asyncErrorHandlerCount: 0,
   asyncErrorIgnoreContextDepth: 0,

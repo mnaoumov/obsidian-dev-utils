@@ -24,7 +24,10 @@ import type { GetAbstractFileOrNullParams } from './file-system.ts';
 
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
-import { deleteIfNotUsed } from './vault-delete.ts';
+import {
+  deleteIfNotUsed,
+  DeleteIfNotUsedResult
+} from './vault-delete.ts';
 
 const mocks = vi.hoisted(() => ({
   getAbstractFileOrNull: vi.fn(),
@@ -77,22 +80,22 @@ beforeEach(() => {
 describe('deleteIfNotUsed', () => {
   it('should return false when file does not exist', async () => {
     mocks.getAbstractFileOrNull.mockReturnValue(null);
-    const wasDeleted = await deleteIfNotUsed({
+    const result = await deleteIfNotUsed({
       app,
       pathOrFile: 'nonexistent.md'
     });
-    expect(wasDeleted).toBe(false);
+    expect(result).toBe(DeleteIfNotUsedResult.NotDeleted);
   });
 
   it('should delete a file with no backlinks', async () => {
     const file = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
-    const wasDeleted = await deleteIfNotUsed({
+    const result = await deleteIfNotUsed({
       app,
       pathOrFile: file
     });
-    expect(wasDeleted).toBe(true);
+    expect(result).toBe(DeleteIfNotUsedResult.Deleted);
 
     expect(mocks.trashSafe).toHaveBeenCalledWith(app, file);
   });
@@ -101,11 +104,11 @@ describe('deleteIfNotUsed', () => {
     const file = TFile.create__(castTo(app.vault), 'note.md').asOriginalType2__();
     mocks.getAbstractFileOrNull.mockReturnValue(file);
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 2) });
-    const wasDeleted = await deleteIfNotUsed({
+    const result = await deleteIfNotUsed({
       app,
       pathOrFile: file
     });
-    expect(wasDeleted).toBe(false);
+    expect(result).toBe(DeleteIfNotUsedResult.NotDeleted);
 
     expect(mocks.trashSafe).not.toHaveBeenCalled();
   });
@@ -146,11 +149,11 @@ describe('deleteIfNotUsed', () => {
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.listSafe.mockResolvedValue({ files: [childFile], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
-    const wasDeleted = await deleteIfNotUsed({
+    const result = await deleteIfNotUsed({
       app,
       pathOrFile: folder
     });
-    expect(wasDeleted).toBe(true);
+    expect(result).toBe(DeleteIfNotUsedResult.Deleted);
   });
 
   it('should not delete folder when shouldDeleteEmptyFolders is false', async () => {
@@ -158,12 +161,12 @@ describe('deleteIfNotUsed', () => {
     mocks.getAbstractFileOrNull.mockReturnValue(folder);
     mocks.listSafe.mockResolvedValue({ files: [], folders: [] });
     mocks.isEmptyFolder.mockResolvedValue(true);
-    const wasDeleted = await deleteIfNotUsed({
+    const result = await deleteIfNotUsed({
       app,
       pathOrFile: folder,
       shouldDeleteEmptyFolders: false
     });
-    expect(wasDeleted).toBe(false);
+    expect(result).toBe(DeleteIfNotUsedResult.NotDeleted);
 
     expect(mocks.trashSafe).not.toHaveBeenCalled();
   });
@@ -174,10 +177,10 @@ describe('deleteIfNotUsed', () => {
     mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0) });
     mocks.trashSafe.mockRejectedValue(new Error('trash failed'));
 
-    const wasDeleted = await deleteIfNotUsed({
+    const result = await deleteIfNotUsed({
       app,
       pathOrFile: file
     });
-    expect(wasDeleted).toBe(false);
+    expect(result).toBe(DeleteIfNotUsedResult.NotDeleted);
   });
 });

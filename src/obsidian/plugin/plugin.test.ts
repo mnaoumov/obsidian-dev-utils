@@ -93,7 +93,9 @@ vi.mock('../../async.ts', async (importOriginal) => {
         return;
       }
       asyncFunction(abortSignal ?? new AbortController().signal).catch(() => {
-        /* Swallow errors in test mock. */
+        /*
+        Swallow errors in test mock.
+        */
       });
     })
   };

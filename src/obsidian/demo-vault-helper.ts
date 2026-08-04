@@ -24,6 +24,7 @@ import type { App } from 'obsidian';
 import { join } from '../path.ts';
 import {
   configureCommunityPlugin,
+  ConfigureCommunityPluginResult,
   disableCommunityPlugin,
   enableCommunityPlugin,
   installCommunityPlugin
@@ -88,7 +89,7 @@ const CODE_SCRIPT_TOOLKIT_SETTINGS: CodeScriptToolkitSettings = {
 export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Promise<void> {
   const { app } = params;
   await installCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
-  const didSettingsChange = await configureCommunityPlugin({
+  const result = await configureCommunityPlugin({
     app,
     pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID,
     settings: CODE_SCRIPT_TOOLKIT_SETTINGS
@@ -97,7 +98,7 @@ export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Prom
 
   if (!app.plugins.enabledPlugins.has(CODE_SCRIPT_TOOLKIT_PLUGIN_ID)) {
     await enableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
-  } else if (didSettingsChange) {
+  } else if (result === ConfigureCommunityPluginResult.Success) {
     // Already enabled with stale settings — reload so CodeScript Toolkit re-reads the freshly written data.json.
     await disableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
     await enableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });

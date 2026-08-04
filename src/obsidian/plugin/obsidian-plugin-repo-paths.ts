@@ -8,160 +8,264 @@
  * Enumeration of commonly used file and folder paths in Obsidian plugin development.
  */
 export enum ObsidianPluginRepoPaths {
-  /** CommonJS file. */
+  /**
+  CommonJS file.
+   */
   AnyCjs = '*.cjs',
 
-  /** Any integration-test TypeScript file. */
+  /**
+  Any integration-test TypeScript file.
+   */
   AnyIntegrationTestTs = '*.integration.test.ts',
 
-  /** JavaScript file. */
+  /**
+  JavaScript file.
+   */
   AnyJs = '*.js',
 
-  /** ESM JavaScript file. */
+  /**
+  ESM JavaScript file.
+   */
   AnyMjs = '*.mjs',
 
-  /** Any path recursively. */
+  /**
+  Any path recursively.
+   */
   AnyPath = '**',
 
-  /** Any test TypeScript file. */
+  /**
+  Any test TypeScript file.
+   */
   AnyTestTs = '*.test.ts',
 
-  /** TypeScript file. */
+  /**
+  TypeScript file.
+   */
   AnyTs = '*.ts',
 
-  /** ReactJS TypeScript file. */
+  /**
+  ReactJS TypeScript file.
+   */
   AnyTsx = '*.tsx',
 
-  /** Changelog file. */
+  /**
+  Changelog file.
+   */
   ChangelogMd = 'CHANGELOG.md',
 
-  /** Commitlint configuration file. */
+  /**
+  Commitlint configuration file.
+   */
   CommitlintConfigTs = 'commitlint.config.ts',
 
-  /** Current folder. */
+  /**
+  Current folder.
+   */
   CurrentFolder = '.',
 
-  /** Demo vault folder shipped in a plugin repo root. */
+  /**
+  Demo vault folder shipped in a plugin repo root.
+   */
   DemoVault = 'demo-vault',
 
-  /** Distribution folder. */
+  /**
+  Distribution folder.
+   */
   Dist = 'dist',
 
-  /** Build folder within the {@link Dist} folder. */
+  /**
+  Build folder within the {@link Dist} folder.
+   */
   DistBuild = 'dist/build',
 
-  /** Development folder within the {@link Dist} folder. */
+  /**
+  Development folder within the {@link Dist} folder.
+   */
   DistDev = 'dist/dev',
 
-  /** Obsidian configuration folder within a vault. */
+  /**
+  Obsidian configuration folder within a vault.
+   */
   // eslint-disable-next-line obsidianmd/hardcoded-config-path -- This is the default config folder name baked into a shipped demo-vault skeleton, not a lookup against a live vault.
   DotObsidian = '.obsidian',
 
-  /** CommonJS ESLint configuration file. */
+  /**
+  CommonJS ESLint configuration file.
+   */
   EslintConfigCjs = 'eslint.config.cjs',
 
-  /** CommonJS TypeScript ESLint configuration file. */
+  /**
+  CommonJS TypeScript ESLint configuration file.
+   */
   EslintConfigCts = 'eslint.config.cts',
 
-  /** JavaScript ESLint configuration file. */
+  /**
+  JavaScript ESLint configuration file.
+   */
   EslintConfigJs = 'eslint.config.js',
 
-  /** ESM JavaScript ESLint configuration file. */
+  /**
+  ESM JavaScript ESLint configuration file.
+   */
   EslintConfigMjs = 'eslint.config.mjs',
 
-  /** ESM TypeScript ESLint configuration file. */
+  /**
+  ESM TypeScript ESLint configuration file.
+   */
   EslintConfigMts = 'eslint.config.mts',
 
-  /** TypeScript ESLint configuration file. */
+  /**
+  TypeScript ESLint configuration file.
+   */
   EslintConfigTs = 'eslint.config.ts',
 
-  /** Hot reload file. */
+  /**
+  Hot reload file.
+   */
   HotReload = '.hotreload',
 
-  /** Main CSS file. */
+  /**
+  Main CSS file.
+   */
   MainCss = 'main.css',
 
-  /** Main JavaScript file. */
+  /**
+  Main JavaScript file.
+   */
   MainJs = 'main.js',
 
-  /** Main TypeScript file. */
+  /**
+  Main TypeScript file.
+   */
   MainTs = 'main.ts',
 
-  /** Manifest file for beta releases. */
+  /**
+  Manifest file for beta releases.
+   */
   ManifestBetaJson = 'manifest-beta.json',
 
-  /** Manifest file. */
+  /**
+  Manifest file.
+   */
   ManifestJson = 'manifest.json',
 
-  /** CommonJS Markdownlint CLI2 configuration file. */
+  /**
+  CommonJS Markdownlint CLI2 configuration file.
+   */
   MarkdownlintCli2ConfigCjs = '.markdownlint-cli2.cjs',
 
-  /** JSONC Markdownlint CLI2 configuration file. */
+  /**
+  JSONC Markdownlint CLI2 configuration file.
+   */
   MarkdownlintCli2ConfigJsonc = '.markdownlint-cli2.jsonc',
 
-  /** ESM Markdownlint CLI2 configuration file. */
+  /**
+  ESM Markdownlint CLI2 configuration file.
+   */
   MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',
 
-  /** YAML Markdownlint CLI2 configuration file. */
+  /**
+  YAML Markdownlint CLI2 configuration file.
+   */
   MarkdownlintCli2ConfigYaml = '.markdownlint-cli2.yaml',
 
-  /** CommonJS Markdownlint configuration file. */
+  /**
+  CommonJS Markdownlint configuration file.
+   */
   MarkdownlintConfigCjs = '.markdownlint.cjs',
 
-  /** JSON Markdownlint configuration file. */
+  /**
+  JSON Markdownlint configuration file.
+   */
   MarkdownlintConfigJson = '.markdownlint.json',
 
-  /** JSONC Markdownlint configuration file. */
+  /**
+  JSONC Markdownlint configuration file.
+   */
   MarkdownlintConfigJsonc = '.markdownlint.jsonc',
 
-  /** ESM Markdownlint configuration file. */
+  /**
+  ESM Markdownlint configuration file.
+   */
   MarkdownlintConfigMjs = '.markdownlint.mjs',
 
-  /** YAML Markdownlint configuration file. */
+  /**
+  YAML Markdownlint configuration file.
+   */
   MarkdownlintConfigYaml = '.markdownlint.yaml',
 
-  /** YAML Markdownlint configuration file. */
+  /**
+  YAML Markdownlint configuration file.
+   */
   MarkdownlintConfigYml = '.markdownlint.yml',
 
-  /** Mocks folder. */
+  /**
+  Mocks folder.
+   */
   Mocks = 'src/test-helpers',
 
-  /** Node modules folder. */
+  /**
+  Node modules folder.
+   */
   NodeModules = 'node_modules',
 
-  /** NPM shrinkwrap file. */
+  /**
+  NPM shrinkwrap file.
+   */
   NpmShrinkwrapJson = 'npm-shrinkwrap.json',
 
-  /** Package JSON file. */
+  /**
+  Package JSON file.
+   */
   PackageJson = 'package.json',
 
-  /** Package-lock JSON file. */
+  /**
+  Package-lock JSON file.
+   */
   PackageLockJson = 'package-lock.json',
 
-  /** Plugins folder within an Obsidian configuration folder. */
+  /**
+  Plugins folder within an Obsidian configuration folder.
+   */
   Plugins = 'plugins',
 
-  /** Scripts folder. */
+  /**
+  Scripts folder.
+   */
   Scripts = 'scripts',
 
-  /** Script utilities folder (dev-only tooling that runs in the consumer's Node environment, not the Obsidian runtime). */
+  /**
+  Script utilities folder (dev-only tooling that runs in the consumer's Node environment, not the Obsidian runtime).
+   */
   ScriptUtils = 'src/script-utils',
 
-  /** Source folder. */
+  /**
+  Source folder.
+   */
   Src = 'src',
 
-  /** Styles CSS file. */
+  /**
+  Styles CSS file.
+   */
   StylesCss = 'styles.css',
 
-  /** Tests folder. */
+  /**
+  Tests folder.
+   */
   Tests = '__tests__',
 
-  /** TypeScript configuration file. */
+  /**
+  TypeScript configuration file.
+   */
   TsConfigJson = 'tsconfig.json',
 
-  /** Versions JSON file. */
+  /**
+  Versions JSON file.
+   */
   VersionsJson = 'versions.json',
 
-  /** Vitest configuration file. */
+  /**
+  Vitest configuration file.
+   */
   VitestConfigTs = 'vitest.config.ts'
 }

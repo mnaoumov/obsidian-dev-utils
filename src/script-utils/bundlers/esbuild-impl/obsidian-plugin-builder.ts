@@ -60,9 +60,13 @@ const NODE_MODULES_RESTART_DEBOUNCE_IN_MILLISECONDS = 1000;
  * Enumeration representing the build modes.
  */
 export enum BuildMode {
-  /** Development mode for building the plugin */
+  /**
+  Development mode for building the plugin
+   */
   Development,
-  /** Production mode for building the plugin */
+  /**
+  Production mode for building the plugin
+   */
   Production
 }
 

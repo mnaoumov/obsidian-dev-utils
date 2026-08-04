@@ -33,6 +33,7 @@ import {
 } from './file-system.ts';
 import {
   createFolderSafe,
+  CreateFolderSafeResult,
   process,
   readSafe,
   renameSafe
@@ -153,8 +154,8 @@ export class VaultTransaction {
    */
   public async createFolder(path: string): Promise<void> {
     this.assertOpen();
-    const wasCreated = await createFolderSafe(this.app, path);
-    if (wasCreated) {
+    const result = await createFolderSafe(this.app, path);
+    if (result === CreateFolderSafeResult.Created) {
       this.pushUndo(async () => {
         await this.hardDelete(path);
       });

@@ -196,6 +196,21 @@ const COMMUNITY_PLUGINS_URL = 'https://raw.githubusercontent.com/obsidianmd/obsi
 const DATA_JSON_INDENT = 2;
 
 /**
+ * The result of {@link configureCommunityPlugin}.
+ */
+export enum ConfigureCommunityPluginResult {
+  /**
+   * The settings were already present in the plugin's `data.json`, so nothing was written.
+   */
+  Skipped = 'skipped',
+
+  /**
+   * The settings were merged into the plugin's `data.json`, which was written.
+   */
+  Success = 'success'
+}
+
+/**
  * Writes settings into a community plugin's `data.json`, shallow-merging them over any existing settings
  * (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load already
  * configured, with no reload. A no-op write is skipped: when the merge changes nothing, the file is left
@@ -207,7 +222,7 @@ const DATA_JSON_INDENT = 2;
  * written), or `false` if the settings were already present (nothing written).
  * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
  */
-export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<boolean> {
+export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<ConfigureCommunityPluginResult> {
   const { app, settings } = params;
   const pluginId = await resolveCommunityPluginId(params);
   const dataPath = `${app.vault.configDir}/plugins/${pluginId}/data.json`;
@@ -223,12 +238,12 @@ export async function configureCommunityPlugin(params: ConfigureCommunityPluginP
   const serializedBefore = JSON.stringify(data);
   Object.assign(data, settings);
   if (JSON.stringify(data) === serializedBefore) {
-    return false;
+    return ConfigureCommunityPluginResult.Skipped;
   }
 
   const serialized = String(JSON.stringify(data, null, DATA_JSON_INDENT));
   await app.vault.adapter.write(dataPath, `${serialized}\n`);
-  return true;
+  return ConfigureCommunityPluginResult.Success;
 }
 
 /**
@@ -337,7 +352,7 @@ export async function installCommunityPlugin(params: InstallCommunityPluginParam
 export async function installConfigureEnableCommunityPlugin(params: InstallConfigureEnableCommunityPluginParams): Promise<void> {
   const { app, settings } = params;
   await installCommunityPlugin(params);
-  const didSettingsChange = settings ? await configureCommunityPlugin({ ...params, settings }) : false;
+  const didSettingsChange = settings ? await configureCommunityPlugin({ ...params, settings }) === ConfigureCommunityPluginResult.Success : false;
   const pluginId = await resolveCommunityPluginId(params);
   if (!app.plugins.enabledPlugins.has(pluginId)) {
     await enableCommunityPlugin(params);

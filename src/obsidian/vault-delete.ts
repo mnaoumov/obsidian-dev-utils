@@ -24,6 +24,21 @@ import {
   trashSafe
 } from './vault.ts';
 
+/**
+ * The result of {@link deleteIfNotUsed}.
+ */
+export enum DeleteIfNotUsedResult {
+  /**
+   * The file/folder was deleted.
+   */
+  Deleted = 'deleted',
+
+  /**
+   * The file/folder was not deleted.
+   */
+  NotDeleted = 'not-deleted'
+}
+
 interface DeleteIfNotUsedParams {
   readonly app: App;
   readonly deletedNotePath?: string;
@@ -38,11 +53,11 @@ interface DeleteIfNotUsedParams {
  * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves to a boolean indicating whether the removal was successful.
  */
-export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<boolean> {
+export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<DeleteIfNotUsedResult> {
   const file = getAbstractFileOrNull({ app: params.app, pathOrFile: params.pathOrFile });
 
   if (!file) {
-    return false;
+    return DeleteIfNotUsedResult.NotDeleted;
   }
 
   let canDelete = isFile(file) || (params.shouldDeleteEmptyFolders ?? true);
@@ -69,7 +84,7 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<bo
         pathOrFile: child,
         pluginNoticeComponent: params.pluginNoticeComponent,
         shouldDeleteEmptyFolders: params.shouldDeleteEmptyFolders
-      }));
+      })) === DeleteIfNotUsedResult.Deleted;
     }
 
     canDelete &&= await isEmptyFolder(params.app, file);
@@ -84,5 +99,5 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<bo
     }
   }
 
-  return canDelete;
+  return canDelete ? DeleteIfNotUsedResult.Deleted : DeleteIfNotUsedResult.NotDeleted;
 }

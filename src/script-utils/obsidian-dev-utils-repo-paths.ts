@@ -10,168 +10,278 @@
  * Enumeration of common file paths and patterns used in the Obsidian development utilities repository.
  */
 export enum ObsidianDevUtilsRepoPaths {
-  /** Any file or folder. */
+  /**
+  Any file or folder.
+   */
   Any = '*',
 
-  /** CommonJS file. */
+  /**
+  CommonJS file.
+   */
   AnyCjs = '*.cjs',
 
-  /** CommonJS TypeScript declaration file. */
+  /**
+  CommonJS TypeScript declaration file.
+   */
   AnyDcts = '*.d.cts',
 
-  /** ESM TypeScript declaration file. */
+  /**
+  ESM TypeScript declaration file.
+   */
   AnyDmts = '*.d.mts',
 
-  /** TypeScript declaration file. */
+  /**
+  TypeScript declaration file.
+   */
   AnyDts = '*.d.ts',
 
-  /** ESM JavaScript file. */
+  /**
+  ESM JavaScript file.
+   */
   AnyMjs = '*.mjs',
 
-  /** Any path recursively. */
+  /**
+  Any path recursively.
+   */
   AnyPath = '**',
 
-  /** Any TypeScript file. */
+  /**
+  Any TypeScript file.
+   */
   AnyTs = '*.ts',
 
-  /** Astro configuration file (documentation site) at the repo root. */
+  /**
+  Astro configuration file (documentation site) at the repo root.
+   */
   AstroConfigTs = 'astro.config.ts',
 
-  /** CommonJS folder. */
+  /**
+  CommonJS folder.
+   */
   Cjs = 'cjs',
 
-  /** CommonJS file extension. */
+  /**
+  CommonJS file extension.
+   */
   CjsExtension = '.cjs',
 
-  /** Current folder. */
+  /**
+  Current folder.
+   */
   CurrentFolder = '.',
 
-  /** Dataview types. */
+  /**
+  Dataview types.
+   */
   DataviewTypes = 'src/obsidian/@types/dataview/**',
 
-  /** CommonJS TypeScript declaration file extension. */
+  /**
+  CommonJS TypeScript declaration file extension.
+   */
   DctsExtension = '.d.cts',
 
-  /** Distribution folder. */
+  /**
+  Distribution folder.
+   */
   Dist = 'dist',
 
-  /** A path to the built `demo-vault-helper` plugin within the {@link Dist} folder, injected into demo vaults at release time. */
+  /**
+  A path to the built `demo-vault-helper` plugin within the {@link Dist} folder, injected into demo vaults at release time.
+   */
   DistDemoVaultHelper = 'dist/demo-vault-helper',
 
-  /** A path to the built integration-test harness plugin within the {@link Dist} folder, seeded into a consumer's integration-test vault so its `evalInObsidian` closures reach the library via `lib`. */
+  /**
+  A path to the built integration-test harness plugin within the {@link Dist} folder, seeded into a consumer's integration-test vault so its `evalInObsidian` closures reach the library via `lib`.
+   */
   DistIntegrationTestPlugin = 'dist/integration-test-plugin',
 
-  /** A path to the `lib` folder within the {@link Dist} folder. */
+  /**
+  A path to the `lib` folder within the {@link Dist} folder.
+   */
   DistLib = 'dist/lib',
 
-  /** A path to the `templates` folder within the {@link Dist} folder, holding the consumer-facing templates. */
+  /**
+  A path to the `templates` folder within the {@link Dist} folder, holding the consumer-facing templates.
+   */
   DistTemplates = 'dist/templates',
 
-  /** Transpiled TypeScript declaration file extension. */
+  /**
+  Transpiled TypeScript declaration file extension.
+   */
   DjsExtension = '.d.js',
 
-  /** ESM TypeScript declaration file extension. */
+  /**
+  ESM TypeScript declaration file extension.
+   */
   DmtsExtension = '.d.mts',
 
-  /** Documentation site folder (Astro + Starlight API-docs sub-project). */
+  /**
+  Documentation site folder (Astro + Starlight API-docs sub-project).
+   */
   Docs = 'docs',
 
-  /** Build output folder of the documentation site. */
+  /**
+  Build output folder of the documentation site.
+   */
   DocsDist = 'docs/dist',
 
-  /** Dprint configuration file. */
+  /**
+  Dprint configuration file.
+   */
   DprintJson = 'dprint.json',
 
-  /** TypeScript declaration file extension. */
+  /**
+  TypeScript declaration file extension.
+   */
   DtsExtension = '.d.ts',
 
-  /** ESM TypeScript ESLint configuration file. */
+  /**
+  ESM TypeScript ESLint configuration file.
+   */
   EslintConfigMts = 'eslint.config.mts',
 
-  /** ESM JavaScript folder. */
+  /**
+  ESM JavaScript folder.
+   */
   Esm = 'esm',
 
-  /** Generated-during-build CommonJS file. */
+  /**
+  Generated-during-build CommonJS file.
+   */
   GeneratedDuringBuildCjs = 'generated-during-build.cjs',
 
-  /** Generated-during-build ESM JavaScript file. */
+  /**
+  Generated-during-build ESM JavaScript file.
+   */
   GeneratedDuringBuildMjs = 'generated-during-build.mjs',
 
-  /** CommonJS JavaScript index file. */
+  /**
+  CommonJS JavaScript index file.
+   */
   IndexCjs = 'index.cjs',
 
-  /** CommonJS TypeScript declaration file index file. */
+  /**
+  CommonJS TypeScript declaration file index file.
+   */
   IndexDcts = 'index.d.cts',
 
-  /** ESM TypeScript declaration file index file. */
+  /**
+  ESM TypeScript declaration file index file.
+   */
   IndexDmts = 'index.d.mts',
 
-  /** ESM JavaScript index file. */
+  /**
+  ESM JavaScript index file.
+   */
   IndexMjs = 'index.mjs',
 
-  /** TypeScript index file. */
+  /**
+  TypeScript index file.
+   */
   IndexTs = 'index.ts',
 
-  /** JavaScript file extension. */
+  /**
+  JavaScript file extension.
+   */
   JsExtension = '.js',
 
-  /** ESM Markdownlint CLI2 configuration file. */
+  /**
+  ESM Markdownlint CLI2 configuration file.
+   */
   MarkdownlintCli2ConfigMjs = '.markdownlint-cli2.mjs',
 
-  /** Markdownlint CLI2 configuration schema TypeScript declaration file. */
+  /**
+  Markdownlint CLI2 configuration schema TypeScript declaration file.
+   */
   MarkdownlintTypesMarkdownlintCli2ConfigSchemaDts = 'src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts',
 
-  /** Generated flat re-export barrel file. */
+  /**
+  Generated flat re-export barrel file.
+   */
   MergedTs = '__merged.ts',
 
-  /** ESM JavaScript file extension. */
+  /**
+  ESM JavaScript file extension.
+   */
   MjsExtension = '.mjs',
 
-  /** Node modules folder. */
+  /**
+  Node modules folder.
+   */
   NodeModules = 'node_modules',
 
-  /** Package JSON file. */
+  /**
+  Package JSON file.
+   */
   PackageJson = 'package.json',
 
-  /** Folder holding hand-written patched copies of third-party packages. */
+  /**
+  Folder holding hand-written patched copies of third-party packages.
+   */
   Patches = 'patches',
 
-  /** Root folder. */
+  /**
+  Root folder.
+   */
   RootFolder = '/',
 
-  /** Scripts folder. */
+  /**
+  Scripts folder.
+   */
   Scripts = 'scripts',
 
-  /** ScriptUtils folder. */
+  /**
+  ScriptUtils folder.
+   */
   ScriptUtils = 'script-utils',
 
-  /** Source folder. */
+  /**
+  Source folder.
+   */
   Src = 'src',
 
-  /** Styles folder. */
+  /**
+  Styles folder.
+   */
   Styles = 'styles',
 
-  /** Styles CSS file. */
+  /**
+  Styles CSS file.
+   */
   StylesCss = 'styles.css',
 
-  /** Templates folder. */
+  /**
+  Templates folder.
+   */
   Templates = 'templates',
 
-  /** Test helpers folder. */
+  /**
+  Test helpers folder.
+   */
   TestHelpers = 'test-helpers',
 
-  /** TypeScript configuration file. */
+  /**
+  TypeScript configuration file.
+   */
   TsConfigJson = 'tsconfig.json',
 
-  /** TypeScript configuration file that validates the generated CommonJS declarations. */
+  /**
+  TypeScript configuration file that validates the generated CommonJS declarations.
+   */
   TsConfigValidateDeclarationsCjsJson = 'tsconfig.validate-declarations-cjs.json',
 
-  /** TypeScript configuration file that validates the generated ESM declarations. */
+  /**
+  TypeScript configuration file that validates the generated ESM declarations.
+   */
   TsConfigValidateDeclarationsJson = 'tsconfig.validate-declarations.json',
 
-  /** TypeScript file extension. */
+  /**
+  TypeScript file extension.
+   */
   TsExtension = '.ts',
 
-  /** Types folder. */
+  /**
+  Types folder.
+   */
   Types = '@types'
 }

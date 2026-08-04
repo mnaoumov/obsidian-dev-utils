@@ -9,6 +9,21 @@ import { readPackageJson } from './npm.ts';
 import { execFromRoot } from './root.ts';
 
 /**
+ * The result of running an optional npm command.
+ */
+export enum NpmRunOptionalResult {
+  /**
+   * The command was skipped because it was not defined in the package.json scripts.
+   */
+  Skipped = 'skipped',
+
+  /**
+   * The command was found and run successfully.
+   */
+  Success = 'success'
+}
+
+/**
  * Runs a command using npm checking if the command is overridden in the package.json.
  *
  * @param command - The command to run.
@@ -28,15 +43,15 @@ export async function npmRun(command: string): Promise<void> {
  * If the command is not defined, it is silently skipped.
  *
  * @param command - The command to run.
- * @returns `true` if the command was found and run, `false` otherwise.
+ * @returns if the command was found and run, {@link NpmRunOptionalResult.Skipped} otherwise.
  */
-export async function npmRunOptional(command: string): Promise<boolean> {
+export async function npmRunOptional(command: string): Promise<NpmRunOptionalResult> {
   const packageJson = await readPackageJson();
   const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
   if (isKnownCommand) {
     await execFromRoot(['npm', 'run', command]);
-    return true;
+    return NpmRunOptionalResult.Success;
   }
   getLibDebugger('npmRunOptional')(`Command ${command} is not defined in the package.json, skipping`);
-  return false;
+  return NpmRunOptionalResult.Skipped;
 }

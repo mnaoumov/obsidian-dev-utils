@@ -15,7 +15,9 @@ import type {
 
 import { EVENT_METHODS } from './api-doc-constants.ts';
 
-/** Compute an overload key for methods with distinguishing first param (e.g. on('changed',...)) */
+/**
+Compute an overload key for methods with distinguishing first param (e.g. on('changed',...))
+*/
 export function computeOverloadKey(method: MemberInfo): string {
   if (EVENT_METHODS.has(method.name) && method.parameters.length > 0) {
     const firstParameter = method.parameters[0];
@@ -31,12 +33,16 @@ export async function ensureDirectory(filePath: string): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
 }
 
-/** Escape text for use inside a JS string within a JSX expression: {...{key: "..."}} */
+/**
+Escape text for use inside a JS string within a JSX expression: {...{key: "..."}}
+*/
 export function escapeJsString(text: string): string {
   return text.replaceAll('\\', '\\\\').replaceAll('"', String.raw`\"`).replaceAll('\n', ' ');
 }
 
-/** Escape text for use inside a JSX attribute: attr="..." (MDX uses HTML-style parsing) */
+/**
+Escape text for use inside a JSX attribute: attr="..." (MDX uses HTML-style parsing)
+*/
 export function escapeJsxAttribute(text: string): string {
   return text.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('\n', ' ');
 }
@@ -49,7 +55,9 @@ export function escapeMdxAngleBrackets(text: string): string {
   return text.replaceAll('<', String.raw`\<`).replaceAll('>', String.raw`\>`);
 }
 
-/** Escape curly braces in MDX markdown content to prevent JSX expression parsing */
+/**
+Escape curly braces in MDX markdown content to prevent JSX expression parsing
+*/
 export function escapeMdxBraces(text: string): string {
   return text.replaceAll('{', String.raw`\{`).replaceAll('}', String.raw`\}`);
 }
@@ -143,22 +151,30 @@ export function getNamespaceDirectory(namespace: string): string {
   return namespace;
 }
 
-/** Sanitize a member name for use in a case-PRESERVED URL/route segment (e.g. `showNotice`). */
+/**
+Sanitize a member name for use in a case-PRESERVED URL/route segment (e.g. `showNotice`).
+*/
 export function memberRouteSegment(name: string): string {
   return slugifyMemberName(name);
 }
 
-/** Sanitize a member name for use as an on-disk FILENAME (lowercased, collision-safe). */
+/**
+Sanitize a member name for use as an on-disk FILENAME (lowercased, collision-safe).
+*/
 export function memberSlug(name: string): string {
   return toRouteSegment(slugifyMemberName(name));
 }
 
-/** Slugify an overload key for a case-PRESERVED URL/route segment: on("changed") -> on-changed. */
+/**
+Slugify an overload key for a case-PRESERVED URL/route segment: on("changed") -> on-changed.
+*/
 export function overloadRouteSegment(overloadKey: string): string {
   return slugifyOverloadKey(overloadKey);
 }
 
-/** Slugify an overload key for an on-disk FILENAME: on("changed") -> on-changed (lowercased). */
+/**
+Slugify an overload key for an on-disk FILENAME: on("changed") -> on-changed (lowercased).
+*/
 export function overloadSlug(overloadKey: string): string {
   return toRouteSegment(slugifyOverloadKey(overloadKey));
 }
@@ -273,7 +289,9 @@ function slugifyOverloadKey(overloadKey: string): string {
 
 const OG_DESCRIPTION_MAX_LENGTH = 160;
 
-/** Strip markdown formatting to plain text for use in meta descriptions */
+/**
+Strip markdown formatting to plain text for use in meta descriptions
+*/
 export function stripMarkdown(text: string): string {
   return text
     .replaceAll(/\{@link\s+(?:[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...$arguments) => {

@@ -42,7 +42,9 @@ import {
 
 import { assertNonNullable } from '../../../type-guards.ts';
 
-/** Message ID reported when an async function is passed as a callback to a parameter whose return type is `any`/`unknown`, risking an unhandled promise rejection. */
+/**
+Message ID reported when an async function is passed as a callback to a parameter whose return type is `any`/`unknown`, risking an unhandled promise rejection.
+ */
 export const MESSAGE_ID = 'noAsyncCallbackToUnsafeReturn';
 
 /**

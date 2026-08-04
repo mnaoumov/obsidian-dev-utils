@@ -30,7 +30,9 @@ const compartmentByCodeMirror = new WeakMap<Editor['cm'], Compartment>();
 // Set true while a locked editor processes a `keydown` synchronously.
 // The read-only change filter reads it to block a keyboard-driven edit but pass a programmatic one.
 // It is reset in a microtask, after the key event's synchronous dispatch completes.
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+ */
 const moduleState = {
   isProcessingLockedEditorKeydown: false
 };

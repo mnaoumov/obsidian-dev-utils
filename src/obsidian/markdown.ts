@@ -40,7 +40,9 @@ import {
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+ */
 interface ModuleState {
   domEventsHandlersConstructor: DomEventsHandlersConstructor | null;
 }

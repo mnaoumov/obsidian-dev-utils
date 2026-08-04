@@ -58,7 +58,9 @@ export async function invoke(app) {
 }
 `;
 
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+*/
 interface ModuleState {
   demoVaultPath: string | undefined;
 }

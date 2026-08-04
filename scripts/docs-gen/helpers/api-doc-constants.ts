@@ -9,7 +9,9 @@ import {
   resolve
 } from 'node:path';
 
-/** The obsidian-dev-utils repo root. Override with DOCS_ROOT for out-of-tree runs. */
+/**
+The obsidian-dev-utils repo root. Override with DOCS_ROOT for out-of-tree runs.
+*/
 export const ROOT_DIR = process.env['DOCS_ROOT'] ?? resolve(process.cwd());
 
 export const BASE_PATH = '/obsidian-dev-utils';
@@ -20,10 +22,14 @@ export const CACHE_FILE = join(OUTPUT_DIR, '.cache-hash');
 
 export const SIDEBAR_FILE = join(ROOT_DIR, 'docs/src/generated-sidebar.json');
 
-/** Event-like method names that should be split by string literal first param */
+/**
+Event-like method names that should be split by string literal first param
+*/
 export const EVENT_METHODS = new Set(['off', 'on', 'trigger', 'tryTrigger']);
 
-/** Single-letter and common generic type parameter names — not linkable */
+/**
+Single-letter and common generic type parameter names — not linkable
+*/
 export const GENERIC_TYPE_PARAMS = new Set([
   'Arg',
   'Args', // Short identifiers / enum-like values that aren't types

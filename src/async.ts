@@ -285,7 +285,9 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
 }
 
 const pendingAsyncOperations = new Set<Promise<void>>();
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+ */
 const moduleState = {
   isTrackingEnabled: false
 };

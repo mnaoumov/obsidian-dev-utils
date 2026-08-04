@@ -107,7 +107,9 @@ export function extractEnumInfo(enumDeclaration: EnumDeclaration, namespace: str
   };
 }
 
-/** Extract the module-level `@file` description text, if any. */
+/**
+Extract the module-level `@file` description text, if any.
+*/
 export function extractFileOverview(src: SourceFile): string {
   const text = src.getFullText();
   const blockMatch = /\/\*\*(?<body>[\s\S]*?)\*\//.exec(text);
@@ -267,7 +269,9 @@ export function extractTypeAliasInfo(alias: TypeAliasDeclaration, namespace: str
   };
 }
 
-/** Get the return type as declared in source (preserves union order), falling back to resolved type */
+/**
+Get the return type as declared in source (preserves union order), falling back to resolved type
+*/
 export function getDeclaredReturnType(method: ReturnTypeProvider): string {
   const annotation = method.getReturnTypeNode?.()?.getText();
   if (annotation) {
@@ -285,7 +289,9 @@ export function getDescription(node: JSDocableNode): string {
   return foldTsDocParagraphs(raw);
 }
 
-/** Extract @example blocks from JSDoc */
+/**
+Extract @example blocks from JSDoc
+*/
 export function getExamples(node: JSDocableNode): string[] {
   const examples: string[] = [];
   for (const doc of node.getJsDocs()) {
@@ -303,7 +309,9 @@ export function getExamples(node: JSDocableNode): string[] {
   return examples;
 }
 
-/** Extract @param descriptions from JSDoc tags */
+/**
+Extract @param descriptions from JSDoc tags
+*/
 export function getParameterDescriptions(node: JSDocableNode): Map<string, string> {
   const result = new Map<string, string>();
   const docs = node.getJsDocs();
@@ -324,7 +332,9 @@ export function getParameterDescriptions(node: JSDocableNode): Map<string, strin
   return result;
 }
 
-/** Strip `| undefined` only when it was implicitly added by ts-morph for optional properties */
+/**
+Strip `| undefined` only when it was implicitly added by ts-morph for optional properties
+*/
 export function getPropertyType(property: PropertyDeclaration | PropertySignature): string {
   const typeNode = property.getTypeNode();
   if (typeNode) {
@@ -333,7 +343,9 @@ export function getPropertyType(property: PropertyDeclaration | PropertySignatur
   return simplifyType(property.getType().getText());
 }
 
-/** Extract @remarks text from JSDoc */
+/**
+Extract @remarks text from JSDoc
+*/
 export function getRemarks(node: JSDocableNode): string {
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
@@ -345,7 +357,9 @@ export function getRemarks(node: JSDocableNode): string {
   return '';
 }
 
-/** Extract @returns description from JSDoc */
+/**
+Extract @returns description from JSDoc
+*/
 export function getReturnDescription(node: JSDocableNode): string {
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {
@@ -357,7 +371,9 @@ export function getReturnDescription(node: JSDocableNode): string {
   return '';
 }
 
-/** Extract @since version from JSDoc */
+/**
+Extract @since version from JSDoc
+*/
 export function getSince(node: JSDocableNode): string {
   for (const doc of node.getJsDocs()) {
     for (const tag of doc.getTags()) {

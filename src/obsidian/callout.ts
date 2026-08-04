@@ -23,13 +23,19 @@ import { addToQueue } from './queue.ts';
  * Enum representing the mode of a callout.
  */
 export enum CalloutMode {
-  /** Default mode, with no special behavior. */
+  /**
+  Default mode, with no special behavior.
+   */
   Default,
 
-  /** Foldable mode with the callout collapsed. */
+  /**
+  Foldable mode with the callout collapsed.
+   */
   FoldableCollapsed,
 
-  /** Foldable mode with the callout expanded. */
+  /**
+  Foldable mode with the callout expanded.
+   */
   FoldableExpanded
 }
 

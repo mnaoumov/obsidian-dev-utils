@@ -64,7 +64,9 @@ export interface SidebarLink {
   link: string;
 }
 
-/** Recursive tree node for building the sidebar */
+/**
+Recursive tree node for building the sidebar
+*/
 export interface SidebarTreeNode {
   children: Map<string, SidebarTreeNode>;
   types: TypeInfo[];
@@ -76,13 +78,19 @@ export interface TextProvider {
 
 export interface TypeInfo {
   baseTypes: string[];
-  /** For classes: the constructor (public/protected), if any */
+  /**
+  For classes: the constructor (public/protected), if any
+  */
   constructorInfo?: MemberInfo;
   description: string;
-  /** For enums: the enum members */
+  /**
+  For enums: the enum members
+  */
   enumMembers: EnumMemberInfo[];
   examples: string[];
-  /** For classes: types in the `implements` clause */
+  /**
+  For classes: types in the `implements` clause
+  */
   implementsTypes: string[];
   kind: 'class' | 'enum' | 'function' | 'interface' | 'type' | 'variable';
   methods: MemberInfo[];
@@ -90,12 +98,18 @@ export interface TypeInfo {
   namespace: string;
   properties: MemberInfo[];
   remarks: string;
-  /** For type aliases: the right-hand-side type text */
+  /**
+  For type aliases: the right-hand-side type text
+  */
   typeAliasText?: string;
   typeParameters: string[];
-  /** For variables: the declaration keyword (let/const/var) */
+  /**
+  For variables: the declaration keyword (let/const/var)
+  */
   variableKeyword?: string;
-  /** For variables: the type annotation */
+  /**
+  For variables: the type annotation
+  */
   variableType?: string;
 }
 

@@ -62,6 +62,21 @@ import {
 import { t } from './i18n/i18n.ts';
 
 /**
+ * The result of {@link createFolderSafe}.
+ */
+export enum CreateFolderSafeResult {
+  /**
+   * The folder was created.
+   */
+  Created = 'created',
+
+  /**
+   * The folder was not created because it already exists.
+   */
+  NotCreated = 'not-created'
+}
+
+/**
  * A behavior for handling empty folders during cleanup.
  */
 export enum EmptyFolderBehavior {
@@ -79,6 +94,14 @@ export enum EmptyFolderBehavior {
    * Keep the empty folder.
    */
   Keep = 'Keep'
+}
+
+/**
+ * The result of {@link invokeFileActionSafe}.
+ */
+export enum InvokeFileActionSafeResult {
+  Invoked = 'invoked',
+  NotInvoked = 'not-invoked'
 }
 
 /**
@@ -418,19 +441,19 @@ export async function copySafe(params: CopySafeParams): Promise<string> {
  * @returns A {@link Promise} that resolves to a boolean indicating whether the folder was created.
  * @throws If an error occurs while creating the folder and it still doesn't exist.
  */
-export async function createFolderSafe(app: App, path: string): Promise<boolean> {
+export async function createFolderSafe(app: App, path: string): Promise<CreateFolderSafeResult> {
   if (await app.vault.adapter.exists(path)) {
-    return false;
+    return CreateFolderSafeResult.NotCreated;
   }
 
   try {
     await app.vault.createFolder(path);
-    return true;
+    return CreateFolderSafeResult.Created;
   } catch (error) {
     if (!await app.vault.exists(path)) {
       throw error;
     }
-    return true;
+    return CreateFolderSafeResult.Created;
   }
 }
 
@@ -854,7 +877,7 @@ export async function process(params: ProcessParams): Promise<void> {
       }
 
       let isSuccess = true;
-      const doesFileExist = await invokeFileActionSafe({
+      const result = await invokeFileActionSafe({
         app,
         async fileAction(file) {
           abortSignal.throwIfAborted();
@@ -878,7 +901,7 @@ export async function process(params: ProcessParams): Promise<void> {
         pathOrFile
       });
 
-      if (!doesFileExist) {
+      if (result === InvokeFileActionSafeResult.NotInvoked) {
         return shouldTreatMissingFileAsSuccess();
       }
 
@@ -1004,7 +1027,7 @@ export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promi
   }
 }
 
-async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise<boolean> {
+async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise<InvokeFileActionSafeResult> {
   const {
     app,
     fileAction,
@@ -1013,15 +1036,15 @@ async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise
   const path = getPath(app, pathOrFile);
   let file = getFileOrNull({ app, pathOrFile: path });
   if (!file || file.deleted) {
-    return false;
+    return InvokeFileActionSafeResult.NotInvoked;
   }
   try {
     await fileAction(file);
-    return true;
+    return InvokeFileActionSafeResult.Invoked;
   } catch (error) {
     file = getFileOrNull({ app, pathOrFile: path });
     if (!file || file.deleted) {
-      return false;
+      return InvokeFileActionSafeResult.NotInvoked;
     }
     throw error;
   }

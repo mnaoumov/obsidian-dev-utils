@@ -42,10 +42,14 @@ export interface CheckProjectTypesParams {
    */
   readonly isVerbose?: boolean;
 
-  /** Compiler options for the program. `skipLibCheck` is always forced to `false`. */
+  /**
+  Compiler options for the program. `skipLibCheck` is always forced to `false`.
+   */
   readonly options: CompilerOptions;
 
-  /** The root files to type-check. */
+  /**
+  The root files to type-check.
+   */
   readonly rootNames: readonly string[];
 
   /**
@@ -73,10 +77,14 @@ export interface CheckProjectTypesParams {
  * The resolved result of {@link parseTsConfig}.
  */
 export interface ParsedTsConfig {
-  /** The resolved list of files the config includes (absolute paths). */
+  /**
+  The resolved list of files the config includes (absolute paths).
+   */
   readonly fileNames: readonly string[];
 
-  /** The resolved compiler options (with `extends` applied). */
+  /**
+  The resolved compiler options (with `extends` applied).
+   */
   readonly options: CompilerOptions;
 }
 

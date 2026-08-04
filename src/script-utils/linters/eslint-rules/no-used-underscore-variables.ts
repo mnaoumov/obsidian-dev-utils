@@ -16,7 +16,9 @@ interface NodeWithBody {
   body?: Rule.Node;
 }
 
-/** Message ID reported when a variable carries a `_` prefix (signalling unused) but is actually used. */
+/**
+Message ID reported when a variable carries a `_` prefix (signalling unused) but is actually used.
+ */
 export const MESSAGE_ID = 'noUsedUnderscoreVariables';
 
 export const noUsedUnderscoreVariables: Rule.RuleModule = {

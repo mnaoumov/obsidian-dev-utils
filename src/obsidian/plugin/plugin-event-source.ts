@@ -17,7 +17,9 @@ import type { PluginBase } from './plugin.ts';
  * Event map for plugin events.
  */
 export interface PluginEventMap {
-  /** Fired when plugin settings are changed externally (e.g. sync, manual file edit). */
+  /**
+  Fired when plugin settings are changed externally (e.g. sync, manual file edit).
+   */
   externalSettingsChange: [];
 }
 

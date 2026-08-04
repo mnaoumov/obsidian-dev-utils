@@ -25,7 +25,10 @@ import {
 } from './check-project-types.ts';
 import { readdirPosix } from './fs.ts';
 import { readJson } from './json.ts';
-import { npmRunOptional } from './npm-run.ts';
+import {
+  npmRunOptional,
+  NpmRunOptionalResult
+} from './npm-run.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
@@ -50,10 +53,10 @@ export async function buildClean(): Promise<void> {
  * @returns A {@link Promise} that resolves when the code compiles successfully.
  */
 export async function buildCompile(): Promise<void> {
-  if (!await npmRunOptional('build:compile:svelte')) {
+  if (await npmRunOptional('build:compile:svelte') === NpmRunOptionalResult.Skipped) {
     await buildCompileSvelte();
   }
-  if (!await npmRunOptional('build:compile:typescript')) {
+  if (await npmRunOptional('build:compile:typescript') === NpmRunOptionalResult.Skipped) {
     await buildCompileTypeScript();
   }
 }

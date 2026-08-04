@@ -96,7 +96,9 @@ export function resolveInheritedMembers(types: Map<string, TypeInfo>): void {
   }
 }
 
-/** Apply type parameter substitution to all type-bearing fields of a member */
+/**
+Apply type parameter substitution to all type-bearing fields of a member
+*/
 export function substituteMemberTypes(member: MemberInfo, mapping: Map<string, string>): MemberInfo {
   if (mapping.size === 0) {
     return member;
@@ -113,7 +115,9 @@ export function substituteMemberTypes(member: MemberInfo, mapping: Map<string, s
   };
 }
 
-/** Substitute generic type parameters in a type string using a mapping */
+/**
+Substitute generic type parameters in a type string using a mapping
+*/
 export function substituteTypeParams(typeText: string, mapping: Map<string, string>): string {
   if (mapping.size === 0) {
     return typeText;

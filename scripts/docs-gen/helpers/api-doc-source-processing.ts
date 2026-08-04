@@ -39,10 +39,14 @@ import {
 } from './api-doc-jsdoc.ts';
 import { simplifyType } from './api-doc-text-utils.ts';
 
-/** Directory names whose entire subtree is excluded from documentation. */
+/**
+Directory names whose entire subtree is excluded from documentation.
+*/
 const EXCLUDED_DIR_SEGMENTS = new Set(['@types', 'styles', 'test-helpers']);
 
-/** Collect top-level exported functions. */
+/**
+Collect top-level exported functions.
+*/
 export function collectFunctions(src: SourceFile, types: Map<string, TypeInfo>, namespace: string): void {
   for (const $function of src.getFunctions()) {
     if (!$function.isExported()) {
@@ -96,7 +100,9 @@ export function collectFunctions(src: SourceFile, types: Map<string, TypeInfo>, 
   }
 }
 
-/** Collect top-level exported variable declarations (e.g. `export const EMPTY = ''`). */
+/**
+Collect top-level exported variable declarations (e.g. `export const EMPTY = ''`).
+*/
 export function collectVariables(src: SourceFile, types: Map<string, TypeInfo>, namespace: string): void {
   for (const variableStatement of src.getVariableStatements()) {
     if (!variableStatement.isExported()) {
@@ -129,7 +135,9 @@ export function collectVariables(src: SourceFile, types: Map<string, TypeInfo>, 
   }
 }
 
-/** Compute a hash of all entry source files + the generator scripts themselves */
+/**
+Compute a hash of all entry source files + the generator scripts themselves
+*/
 export function computeCacheHash(entryFiles: string[]): string {
   const hash = createHash('sha256');
 
@@ -154,7 +162,9 @@ export function computeCacheHash(entryFiles: string[]): string {
   return hash.digest('hex');
 }
 
-/** Compute the namespace (POSIX path relative to `src`, no extension) for a source file. */
+/**
+Compute the namespace (POSIX path relative to `src`, no extension) for a source file.
+*/
 export function computeNamespace(srcDirectory: string, filePath: string): string {
   return relative(srcDirectory, filePath).replaceAll('\\', '/').replace(/\.ts$/, '');
 }

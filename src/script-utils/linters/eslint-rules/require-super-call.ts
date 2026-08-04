@@ -32,7 +32,9 @@ import {
 
 import { assert } from '../../../type-guards.ts';
 
-/** Message ID reported when an `override` method does not access its `super` counterpart. */
+/**
+Message ID reported when an `override` method does not access its `super` counterpart.
+ */
 export const MESSAGE_ID = 'requireSuperCall';
 
 type MethodKind = 'get' | 'method' | 'set';

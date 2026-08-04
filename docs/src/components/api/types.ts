@@ -8,7 +8,9 @@
  * for cross-component API types.
  */
 
-/** A rendered API parameter. */
+/**
+A rendered API parameter.
+ */
 export interface ParameterInfo {
   description: string;
   name: string;

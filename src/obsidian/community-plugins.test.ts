@@ -19,6 +19,7 @@ import { strictProxy } from '../strict-proxy.ts';
 import { EMPTY } from '../string.ts';
 import {
   configureCommunityPlugin,
+  ConfigureCommunityPluginResult,
   disableCommunityPlugin,
   enableCommunityPlugin,
   getCommunityPluginRepo,
@@ -286,8 +287,8 @@ describe('configureCommunityPlugin', () => {
 
   it('should return false and not write when the settings are already present', async () => {
     const { adapterWrite, app } = createApp({ existingPluginData: { modulesRoot: 'root-x' } });
-    const hasDataJsonChanged = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
-    expect(hasDataJsonChanged).toBe(false);
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(result).toBe(ConfigureCommunityPluginResult.Skipped);
     expect(adapterWrite).not.toHaveBeenCalled();
   });
 });

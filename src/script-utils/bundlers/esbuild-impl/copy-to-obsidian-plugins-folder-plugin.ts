@@ -97,7 +97,9 @@ interface InstallAndEnableHotReloadParams {
 
 // The `npm run dev`-owned Obsidian instance: launched on the first rebuild and reused across rebuilds.
 // It is closed when the `npm run dev` process terminates (see `registerDevInstanceCleanup`).
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+ */
 interface ModuleState {
   devInstanceTransportPromise: Promise<ObsidianTransport> | undefined;
   isDevInstanceCleanupRegistered: boolean;

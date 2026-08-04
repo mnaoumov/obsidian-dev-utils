@@ -110,7 +110,9 @@ import {
  * Parameters for {@link analyzeOverExposure}.
  */
 export interface AnalyzeOverExposureParams {
-  /** The language service to query for references and types. */
+  /**
+  The language service to query for references and types.
+   */
   readonly languageService: LanguageService;
 
   /**
@@ -160,13 +162,19 @@ export interface AnalyzeOverExposureParams {
  * Parameters for {@link createLanguageServiceHost}.
  */
 export interface CreateLanguageServiceHostParams {
-  /** The compiler options. */
+  /**
+  The compiler options.
+   */
   readonly compilerOptions: CompilerOptions;
 
-  /** The files to include in the program. */
+  /**
+  The files to include in the program.
+   */
   readonly fileNames: readonly string[];
 
-  /** The file-system operations used to read sources. */
+  /**
+  The file-system operations used to read sources.
+   */
   readonly fileSystem: OverExposureFileSystem;
 }
 
@@ -174,7 +182,9 @@ export interface CreateLanguageServiceHostParams {
  * Parameters for {@link createProjectLanguageService}.
  */
 export interface CreateProjectLanguageServiceParams {
-  /** Absolute path to the project's `tsconfig.json`. */
+  /**
+  Absolute path to the project's `tsconfig.json`.
+   */
   readonly tsConfigPath: string;
 }
 
@@ -193,7 +203,9 @@ export interface FindOverExposureParams {
    */
   onProgress?(this: void, progress: OverExposureProgress): void;
 
-  /** Absolute path to the project root (the folder containing `tsconfig.json` and `src`). */
+  /**
+  Absolute path to the project root (the folder containing `tsconfig.json` and `src`).
+   */
   readonly projectFolder: string;
 
   /**
@@ -277,16 +289,24 @@ export interface OverExposureFileSystem {
  * A single over-exposed declaration.
  */
 export interface OverExposureFinding {
-  /** 1-based column of the declaration's name. */
+  /**
+  1-based column of the declaration's name.
+   */
   readonly column: number;
 
-  /** The current exposure level. */
+  /**
+  The current exposure level.
+   */
   readonly currentExposure: CurrentExposure;
 
-  /** Absolute path of the file declaring the symbol. */
+  /**
+  Absolute path of the file declaring the symbol.
+   */
   readonly filePath: string;
 
-  /** `true` when the declaration has no references at all (besides itself). */
+  /**
+  `true` when the declaration has no references at all (besides itself).
+   */
   readonly hasNoReferences: boolean;
 
   /**
@@ -295,13 +315,19 @@ export interface OverExposureFinding {
    */
   readonly isForcedByTestOnly: boolean;
 
-  /** `true` for a class member, `false` for a top-level export. */
+  /**
+  `true` for a class member, `false` for a top-level export.
+   */
   readonly isMember: boolean;
 
-  /** 1-based line of the declaration's name. */
+  /**
+  1-based line of the declaration's name.
+   */
   readonly line: number;
 
-  /** The declared name. */
+  /**
+  The declared name.
+   */
   readonly name: string;
 
   /**
@@ -310,10 +336,14 @@ export interface OverExposureFinding {
    */
   readonly skipReason: null | OverExposureSkipReason;
 
-  /** The exposure the declaration could be tightened to. */
+  /**
+  The exposure the declaration could be tightened to.
+   */
   readonly suggestedExposure: SuggestedExposure;
 
-  /** `true` when a fix run tightened this declaration in place. Always `false` in a report run. */
+  /**
+  `true` when a fix run tightened this declaration in place. Always `false` in a report run.
+   */
   readonly wasFixed: boolean;
 }
 
@@ -321,13 +351,19 @@ export interface OverExposureFinding {
  * Progress reported while analyzing a project, one event per analyzed source file.
  */
 export interface OverExposureProgress {
-  /** Number of source files fully analyzed before the current one (0-based). */
+  /**
+  Number of source files fully analyzed before the current one (0-based).
+   */
   readonly analyzedFileCount: number;
 
-  /** Absolute (canonical) path of the source file about to be analyzed. */
+  /**
+  Absolute (canonical) path of the source file about to be analyzed.
+   */
   readonly currentFilePath: string;
 
-  /** Total number of source files that will be analyzed. */
+  /**
+  Total number of source files that will be analyzed.
+   */
   readonly totalFileCount: number;
 }
 
@@ -382,16 +418,24 @@ interface AnalysisResult {
  * Parameters for {@link applyOverExposureFixes}.
  */
 interface ApplyOverExposureFixesParams {
-  /** The program whose source files supply the original text the edits are applied to; `undefined` when no program is available. */
+  /**
+  The program whose source files supply the original text the edits are applied to; `undefined` when no program is available.
+   */
   readonly program: Program | undefined;
 
-  /** The analysis result whose findings and edits are turned into in-place fixes. */
+  /**
+  The analysis result whose findings and edits are turned into in-place fixes.
+   */
   readonly result: AnalysisResult;
 
-  /** When `true`, declarations held wide purely by test references are tightened too instead of being skipped. */
+  /**
+  When `true`, declarations held wide purely by test references are tightened too instead of being skipped.
+   */
   readonly shouldForce: boolean;
 
-  /** Writes the tightened contents of a changed file back to disk. */
+  /**
+  Writes the tightened contents of a changed file back to disk.
+   */
   writeFile(this: void, path: string, content: string): void;
 }
 
@@ -399,19 +443,29 @@ interface ApplyOverExposureFixesParams {
  * Parameters for {@link buildFinding}.
  */
 interface BuildFindingParams {
-  /** The current exposure level of the declaration. */
+  /**
+  The current exposure level of the declaration.
+   */
   readonly currentExposure: CurrentExposure;
 
-  /** Flags describing whether the declaration has no references at all or is forced wide by test-only references. */
+  /**
+  Flags describing whether the declaration has no references at all or is forced wide by test-only references.
+   */
   readonly flags: FindingFlags;
 
-  /** The declaration's name node, used to resolve its position and text. */
+  /**
+  The declaration's name node, used to resolve its position and text.
+   */
   readonly nameNode: Node;
 
-  /** The declaration node, used to resolve its source file. */
+  /**
+  The declaration node, used to resolve its source file.
+   */
   readonly node: Node;
 
-  /** The tighter exposure level the declaration could be reduced to. */
+  /**
+  The tighter exposure level the declaration could be reduced to.
+   */
   readonly suggestedExposure: SuggestedExposure;
 }
 
@@ -421,13 +475,19 @@ type ClassMemberDeclaration = GetAccessorDeclaration | MethodDeclaration | Prope
  * Parameters for {@link collectStringLiteralReferences}.
  */
 interface CollectStringLiteralReferencesParams {
-  /** The analysis context providing the string-literal index and type checker. */
+  /**
+  The analysis context providing the string-literal index and type checker.
+   */
   readonly context: AnalysisContext;
 
-  /** The class declaring the member whose name the string literals might reference. */
+  /**
+  The class declaring the member whose name the string literals might reference.
+   */
   readonly declaringClass: ClassLikeDeclaration;
 
-  /** The member's name node, whose text is matched against string-literal occurrences. */
+  /**
+  The member's name node, whose text is matched against string-literal occurrences.
+   */
   readonly nameNode: Node;
 }
 
@@ -435,13 +495,19 @@ interface CollectStringLiteralReferencesParams {
  * Parameters for {@link computeNeededExposure}.
  */
 interface ComputeNeededExposureParams {
-  /** The analysis context providing the program and type checker. */
+  /**
+  The analysis context providing the program and type checker.
+   */
   readonly context: AnalysisContext;
 
-  /** The class declaring the member whose needed exposure is computed. */
+  /**
+  The class declaring the member whose needed exposure is computed.
+   */
   readonly declaringClass: ClassLikeDeclaration;
 
-  /** The reference locations that must remain reachable at the computed exposure. */
+  /**
+  The reference locations that must remain reachable at the computed exposure.
+   */
   readonly references: readonly ReferenceLocation[];
 }
 
@@ -449,13 +515,19 @@ interface ComputeNeededExposureParams {
  * Parameters for {@link determineSkipReason}.
  */
 interface DetermineSkipReasonParams {
-  /** The text edit that would tighten the finding, or `null` when no safe edit exists. */
+  /**
+  The text edit that would tighten the finding, or `null` when no safe edit exists.
+   */
   readonly edit: null | OverExposureTextEdit;
 
-  /** The finding under consideration. */
+  /**
+  The finding under consideration.
+   */
   readonly finding: OverExposureFinding;
 
-  /** When `true`, test-only findings are tightened rather than skipped. */
+  /**
+  When `true`, test-only findings are tightened rather than skipped.
+   */
   readonly shouldForce: boolean;
 }
 
@@ -475,13 +547,19 @@ interface FindingFlags {
  * Parameters for {@link getClassAtPosition}.
  */
 interface GetClassAtPositionParams {
-  /** Absolute path of the file containing the position. */
+  /**
+  Absolute path of the file containing the position.
+   */
   readonly fileName: string;
 
-  /** 0-based character offset of the reference within the file. */
+  /**
+  0-based character offset of the reference within the file.
+   */
   readonly position: number;
 
-  /** The program used to resolve the source file. */
+  /**
+  The program used to resolve the source file.
+   */
   readonly program: Program;
 }
 
@@ -489,13 +567,19 @@ interface GetClassAtPositionParams {
  * Parameters for {@link isDerivedFrom}.
  */
 interface IsDerivedFromParams {
-  /** The candidate base class. */
+  /**
+  The candidate base class.
+   */
   readonly base: ClassLikeDeclaration;
 
-  /** The type checker used to resolve heritage symbols. */
+  /**
+  The type checker used to resolve heritage symbols.
+   */
   readonly checker: TypeChecker;
 
-  /** The candidate derived class. */
+  /**
+  The candidate derived class.
+   */
   readonly derived: ClassLikeDeclaration;
 }
 
@@ -503,13 +587,19 @@ interface IsDerivedFromParams {
  * Parameters for {@link isKeyReferenceToClass}.
  */
 interface IsKeyReferenceToClassParams {
-  /** The type checker used to resolve the literal's contextual type. */
+  /**
+  The type checker used to resolve the literal's contextual type.
+   */
   readonly checker: TypeChecker;
 
-  /** The set of property keys declared by the class. */
+  /**
+  The set of property keys declared by the class.
+   */
   readonly keySet: ReadonlySet<string>;
 
-  /** The string-literal node being tested. */
+  /**
+  The string-literal node being tested.
+   */
   readonly node: StringLiteralLike;
 }
 
@@ -517,10 +607,14 @@ interface IsKeyReferenceToClassParams {
  * Parameters for {@link isOwnSourceFile}.
  */
 interface IsOwnSourceFileParams {
-  /** Absolute (canonical) path of the file under test. */
+  /**
+  Absolute (canonical) path of the file under test.
+   */
   readonly filePath: string;
 
-  /** Absolute (canonical) path of the project's `src` folder. */
+  /**
+  Absolute (canonical) path of the project's `src` folder.
+   */
   readonly srcFolder: string;
 }
 
@@ -541,13 +635,19 @@ interface OverExposureTextEdit {
  * Parameters for {@link record}.
  */
 interface RecordParams {
-  /** The analysis context whose findings and edits are appended to. */
+  /**
+  The analysis context whose findings and edits are appended to.
+   */
   readonly context: AnalysisContext;
 
-  /** The text edit that would tighten the finding, or `null` when no safe edit exists. */
+  /**
+  The text edit that would tighten the finding, or `null` when no safe edit exists.
+   */
   readonly edit: null | OverExposureTextEdit;
 
-  /** The finding to record. */
+  /**
+  The finding to record.
+   */
   readonly finding: OverExposureFinding;
 }
 
@@ -570,10 +670,14 @@ interface StringLiteralOccurrence {
  * Parameters for {@link toDisplayPath}.
  */
 interface ToDisplayPathParams {
-  /** When set, the path is rendered relative to this folder; paths outside it stay absolute. */
+  /**
+  When set, the path is rendered relative to this folder; paths outside it stay absolute.
+   */
   readonly baseFolder: string | undefined;
 
-  /** Absolute (canonical) path to render. */
+  /**
+  Absolute (canonical) path to render.
+   */
   readonly filePath: string;
 }
 

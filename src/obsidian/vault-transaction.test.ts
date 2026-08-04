@@ -45,6 +45,7 @@ beforeEach(() => {
   });
 });
 
+// eslint-disable-next-line unicorn/consistent-boolean-name -- The `exists` function is a helper for the tests below, and its name is clear enough in context.
 async function exists(path: string): Promise<boolean> {
   return app.vault.adapter.exists(path);
 }

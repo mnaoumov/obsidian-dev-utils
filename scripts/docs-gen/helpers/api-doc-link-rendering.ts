@@ -34,8 +34,12 @@ import {
   toRouteSegmentPreserveCase
 } from './api-doc-text-utils.ts';
 
-/** Loaded from typedoc-plugin-mdn-links data at runtime */
-/** Module-level mutable state, held in one object so each mutation names it explicitly. */
+/**
+Loaded from typedoc-plugin-mdn-links data at runtime
+*/
+/**
+Module-level mutable state, held in one object so each mutation names it explicitly.
+*/
 interface ModuleState {
   webApiTypes: Record<string, unknown>;
 }
@@ -43,9 +47,13 @@ interface ModuleState {
 const moduleState: ModuleState = {
   webApiTypes: {}
 };
-/** Lowercased, collision-disambiguated ON-DISK segment per qualified type key (`${namespace}#${name}`). */
+/**
+Lowercased, collision-disambiguated ON-DISK segment per qualified type key (`${namespace}#${name}`).
+*/
 const typeFileSegments = new Map<string, string>();
-/** Case-preserved URL/route segment per qualified type key (`${namespace}#${name}`). */
+/**
+Case-preserved URL/route segment per qualified type key (`${namespace}#${name}`).
+*/
 const typeRouteSegments = new Map<string, string>();
 
 /**
@@ -56,7 +64,9 @@ const typeRouteSegments = new Map<string, string>();
  */
 const generatedMemberPages = new Set<string>();
 
-/** Whether a member page will be generated for `routeSegment` on the given type. */
+/**
+Whether a member page will be generated for `routeSegment` on the given type.
+*/
 export function doesMemberPageExist(namespace: string, typeName: string, routeSegment: string): boolean {
   return generatedMemberPages.has(`${namespace}#${typeName}#${routeSegment}`);
 }
@@ -118,7 +128,9 @@ export function loadExternalTypeMaps(): void {
   }
 }
 
-/** Convert inline markdown to HTML for use in component props with set:html */
+/**
+Convert inline markdown to HTML for use in component props with set:html
+*/
 export function markdownToHtml(text: string): string {
   return text
     .replaceAll('&', '&amp;')
@@ -136,7 +148,9 @@ export function markdownToHtml(text: string): string {
     .replaceAll('\n', '<br/>');
 }
 
-/** Build the href for a member, pointing to the parent type's page if inherited */
+/**
+Build the href for a member, pointing to the parent type's page if inherited
+*/
 export function memberHref(memberSlugString: string, inheritedFrom: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   if (!inheritedFrom) {
     // Own (non-inherited) member — `generateMemberPages` always emits its page on this same page.
@@ -247,7 +261,9 @@ export function renderMdxProse(text: string, allTypes: Map<string, TypeInfo>, se
   return out.join('\n').replaceAll(/\n{3,}/g, '\n\n').trim();
 }
 
-/** Render a type string with clickable links for known types */
+/**
+Render a type string with clickable links for known types
+*/
 export function renderTypeWithLinks(typeText: string, allTypes: Map<string, TypeInfo>, selfTypeName?: string, selfNamespace?: string): string {
   // Pre-pass: link Object.method patterns to MDN before word-by-word linking
   const MDN_OBJECT_BASE = 'https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object';
@@ -315,7 +331,9 @@ export function renderTypeWithLinks(typeText: string, allTypes: Map<string, Type
   );
 }
 
-/** Resolve {@link Name} and {@link Name | display text} tags in description text */
+/**
+Resolve {@link Name} and {@link Name | display text} tags in description text
+*/
 export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
   return text.replaceAll(/\{@link\s+(?<target>[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...$arguments) => {
     const groups = $arguments.at(-1) as LinkMatchGroups;
@@ -375,22 +393,30 @@ export function resolveWebApiUrl(name: string): string | undefined {
   return undefined;
 }
 
-/** Resolve the lowercased ON-DISK segment for a type (file path + component-import relative path). */
+/**
+Resolve the lowercased ON-DISK segment for a type (file path + component-import relative path).
+*/
 export function toTypeFileSegment(namespace: string, name: string): string {
   return typeFileSegments.get(`${namespace}#${name}`) ?? toRouteSegment(name);
 }
 
-/** Resolve the case-preserved URL/ROUTE segment for a type (slug frontmatter + internal links). */
+/**
+Resolve the case-preserved URL/ROUTE segment for a type (slug frontmatter + internal links).
+*/
 export function toTypeRouteSegment(namespace: string, name: string): string {
   return typeRouteSegments.get(`${namespace}#${name}`) ?? toRouteSegmentPreserveCase(name);
 }
 
-/** Absolute link to a type's overview page. */
+/**
+Absolute link to a type's overview page.
+*/
 export function typeHref(info: TypeInfo): string {
   return `${BASE_PATH}/api/${getNamespaceDirectory(info.namespace)}/${toTypeRouteSegment(info.namespace, info.name)}/`;
 }
 
-/** Create an absolute link to a type page */
+/**
+Create an absolute link to a type page
+*/
 export function typeLink(typeName: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   const cleanName = typeName.replace(/<.*>$/, '').trim();
   const info = findType(allTypes, cleanName, currentNamespace);

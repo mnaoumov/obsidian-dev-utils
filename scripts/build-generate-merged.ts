@@ -48,7 +48,9 @@ const MERGED_BASENAME = basename(ObsidianDevUtilsRepoPaths.MergedTs, ObsidianDev
 
 const SRC_DIR = ObsidianDevUtilsRepoPaths.Src as string;
 
-/** The first module to export a given value name, and the symbol it resolves to (for collision detection). */
+/**
+The first module to export a given value name, and the symbol it resolves to (for collision detection).
+*/
 interface ExportOrigin {
   moduleSpecifier: string;
   symbol: TsSymbol;

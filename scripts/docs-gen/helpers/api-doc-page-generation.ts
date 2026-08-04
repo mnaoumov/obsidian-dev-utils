@@ -57,7 +57,9 @@ import {
 
 const JSON_INDENT = 2;
 
-/** Append backlinks to overview pages and write all files. Keyed by qualified `${namespace}#${name}`. */
+/**
+Append backlinks to overview pages and write all files. Keyed by qualified `${namespace}#${name}`.
+*/
 export async function appendBacklinksAndWrite(
   pageContents: Map<string, PageContent>,
   allTypes: Map<string, TypeInfo>
@@ -82,7 +84,9 @@ export async function appendBacklinksAndWrite(
   }
 }
 
-/** Build backlinks by scanning generated page content for internal API links. Keyed by qualified id. */
+/**
+Build backlinks by scanning generated page content for internal API links. Keyed by qualified id.
+*/
 export function buildBacklinksFromContent(
   pageContents: Map<string, PageContent>,
   allTypes: Map<string, TypeInfo>

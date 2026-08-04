@@ -94,6 +94,7 @@ class ConfirmModal extends ModalBase<boolean> {
  * @param params - The parameters for the confirm modal.
  * @returns A {@link Promise} that resolves with a boolean indicating whether the "OK" button was clicked.
  */
+// eslint-disable-next-line unicorn/consistent-boolean-name -- `boolean` gives better DX than enum.
 export async function confirm(params: ConfirmParams): Promise<boolean> {
   return await showModal<boolean>((promiseResolve) =>
     new ConfirmModal({
