@@ -72,7 +72,7 @@ describe('CommandHandlerComponent menu-event teardown', () => {
         const file = await app.vault.create('menu-teardown-test.md', '');
 
         try {
-          const disposable = commandHandlerComponent.registerCommandHandlers(() => [
+          const disposable = await commandHandlerComponent.registerCommandHandlers(() => [
             new FileMenuHandler({
               icon: 'lock',
               id: 'menu-teardown-test-cmd',

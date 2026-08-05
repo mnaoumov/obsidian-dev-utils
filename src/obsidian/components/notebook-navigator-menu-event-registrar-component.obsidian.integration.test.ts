@@ -183,7 +183,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
           menuEventRegistrar.load();
           notebookNavigatorMenuEventRegistrar.load();
           commandHandlerComponent.load();
-          commandHandlerComponent.registerCommandHandlers(() => [
+          await commandHandlerComponent.registerCommandHandlers(() => [
             new BridgeCommandHandler({
               icon: 'wand',
               id: 'notebook-navigator-bridge-test-cmd',

@@ -756,7 +756,7 @@ describe('resource-lock', () => {
     it('should register the "Unlock active note" command (with a checkCallback) via the real registrar and remove it on dispose', async () => {
       const result = await evalInObsidian({
         // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        fn({ app, lib: { AppActiveFileProvider, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, ResourceLockComponent, UnlockActiveNoteCommandHandler } }): UnlockCommandResult {
+        async fn({ app, lib: { AppActiveFileProvider, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, ResourceLockComponent, UnlockActiveNoteCommandHandler } }): Promise<UnlockCommandResult> {
           const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
           const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
           if (!harnessPlugin) {
@@ -778,7 +778,7 @@ describe('resource-lock', () => {
 
           try {
             const isRegisteredBefore = Object.hasOwn(app.commands.commands, commandId);
-            const disposable = commandHandlerComponent.registerCommandHandlers(() => [
+            const disposable = await commandHandlerComponent.registerCommandHandlers(() => [
               new UnlockActiveNoteCommandHandler({ app, resourceLockComponent })
             ]);
 

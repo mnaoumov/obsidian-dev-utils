@@ -13,7 +13,10 @@ import {
   vi
 } from 'vitest';
 
-import type { CommandHandlerConstructorParams } from './command-handler.ts';
+import type {
+  CommandHandlerConstructorParams,
+  CommandHandlerRegistrationContext
+} from './command-handler.ts';
 
 import { CommandHandler } from './command-handler.ts';
 
@@ -25,6 +28,18 @@ class TestCommandHandler extends CommandHandler {
       name: this.name
     };
   }
+}
+
+function createContext(): CommandHandlerRegistrationContext {
+  return {
+    activeFileProvider: { getActiveFile: () => null },
+    menuEventRegistrar: {
+      registerEditorMenuEventHandler: vi.fn(),
+      registerFileMenuEventHandler: vi.fn(),
+      registerFilesMenuEventHandler: vi.fn()
+    },
+    pluginName: 'Test Plugin'
+  };
 }
 
 function createParams(overrides?: Partial<CommandHandlerConstructorParams>): CommandHandlerConstructorParams {
@@ -52,14 +67,15 @@ describe('CommandHandler', () => {
 
   it('should have a no-op default onRegistered', async () => {
     const handler = new TestCommandHandler(createParams());
-    await expect(handler.onRegistered({
-      activeFileProvider: { getActiveFile: () => null },
-      menuEventRegistrar: {
-        registerEditorMenuEventHandler: vi.fn(),
-        registerFileMenuEventHandler: vi.fn(),
-        registerFilesMenuEventHandler: vi.fn()
-      },
-      pluginName: 'Test Plugin'
-    })).resolves.toBeUndefined();
+    await expect(handler.onRegistered(createContext())).resolves.toBeUndefined();
+  });
+
+  it('should throw when the same instance is registered twice', async () => {
+    const handler = new TestCommandHandler(createParams({ id: 'my-cmd' }));
+    await handler.onRegistered(createContext());
+
+    await expect(handler.onRegistered(createContext())).rejects.toThrow(
+      'Command handler \'my-cmd\' is already registered.'
+    );
   });
 });

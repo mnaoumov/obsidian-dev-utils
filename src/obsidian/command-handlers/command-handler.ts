@@ -121,10 +121,24 @@ export abstract class CommandHandler {
    * Called after the command has been registered with Obsidian.
    * Subclasses use the provided context to register menu event handlers.
    *
+   * Throws when the same instance is registered twice. A handler stores per-registration state — the
+   * plugin name here, the active-file provider and the submenu override in `AbstractFileCommandHandler`,
+   * plus whatever a subclass records — and the menu closures registered here read that state lazily, at
+   * menu-render time. So a second registration silently rewrites what the first registration's closures
+   * will see. `CommandHandlerComponent` registers a handler set once per menu surface, which is why
+   * `CommandHandlerFactory` must build FRESH instances on every call; this guard turns a factory that
+   * hands out shared instances into a loud failure instead of a wrong context menu.
+   *
    * @param context - The registration context providing runtime capabilities.
    */
   public async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
     await noopAsync();
+    if (this._pluginName !== undefined) {
+      throw new Error(
+        `Command handler '${this.id}' is already registered. A command handler instance cannot be registered twice - the command handler factory must build fresh instances on every call.`
+      );
+    }
+
     this._pluginName = context.pluginName;
   }
 }

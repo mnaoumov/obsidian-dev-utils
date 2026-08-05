@@ -265,7 +265,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
         })
       );
       // Always available; the command's own `canExecute` hides it unless the active note is locked.
-      this.commandHandlerComponent.registerCommandHandlers(() => [
+      await this.commandHandlerComponent.registerCommandHandlers(() => [
         new UnlockActiveNoteCommandHandler({
           app: this.app,
           resourceLockComponent: this.resourceLockComponent

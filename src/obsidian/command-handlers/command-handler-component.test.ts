@@ -160,11 +160,11 @@ function createTrackedMenuEventRegistrar(): TrackedMenuEventRegistrar {
 }
 
 describe('CommandHandlerComponent', () => {
-  it('should add the built command via the registrar when handlers are registered', () => {
+  it('should add the built command via the registrar when handlers are registered', async () => {
     const commandRegistrar = createMockCommandRegistrar();
     const component = createComponent(commandRegistrar);
 
-    component.registerCommandHandlers(() => [new TestHandler(createParams())]);
+    await component.registerCommandHandlers(() => [new TestHandler(createParams())]);
 
     expect(commandRegistrar.addCommand).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -178,7 +178,7 @@ describe('CommandHandlerComponent', () => {
     const commandHandler = new TestHandler(createParams());
     const component = createComponent(createMockCommandRegistrar());
 
-    component.registerCommandHandlers(() => [commandHandler]);
+    await component.registerCommandHandlers(() => [commandHandler]);
     await waitForAllAsyncOperations();
 
     expect(commandHandler.registeredContext).toBeDefined();
@@ -186,7 +186,7 @@ describe('CommandHandlerComponent', () => {
     expect(commandHandler.registeredContext?.menuEventRegistrar).toBeDefined();
   });
 
-  it('should not mutate handler id/name after addCommand', () => {
+  it('should not mutate handler id/name after addCommand', async () => {
     const addCommand = vi.fn((command: Command) => {
       // Simulate Obsidian mutating the command.
       command.id = 'modified-id';
@@ -197,14 +197,14 @@ describe('CommandHandlerComponent', () => {
     const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
     const component = createComponent(commandRegistrar);
 
-    component.registerCommandHandlers(() => [commandHandler]);
+    await component.registerCommandHandlers(() => [commandHandler]);
 
     // Handler should be unaffected.
     expect(commandHandler.buildCommand().id).toBe('original-id');
     expect(commandHandler.buildCommand().name).toBe('Original Name');
   });
 
-  it('should removeCommand with the pre-registration id even after addCommand prefixes command.id', () => {
+  it('should removeCommand with the pre-registration id even after addCommand prefixes command.id', async () => {
     const commandRegistrar = createMockCommandRegistrar();
     // Mirror Obsidian's Plugin.addCommand, which mutates command.id by prefixing it with the plugin id.
     vi.mocked(commandRegistrar.addCommand).mockImplementation((command: Command) => {
@@ -212,7 +212,7 @@ describe('CommandHandlerComponent', () => {
     });
     const component = createComponent(commandRegistrar);
 
-    const disposable = component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
+    const disposable = await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
     expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
 
     dispose(disposable);
@@ -221,12 +221,12 @@ describe('CommandHandlerComponent', () => {
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
   });
 
-  it('should removeCommand on component unload', () => {
+  it('should removeCommand on component unload', async () => {
     const commandRegistrar = createMockCommandRegistrar();
     const component = createComponent(commandRegistrar);
     component.load();
 
-    component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
     component.unload();
 
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
@@ -236,7 +236,7 @@ describe('CommandHandlerComponent', () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
-    const disposable = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(1);
@@ -252,8 +252,8 @@ describe('CommandHandlerComponent', () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
-    const disposableA = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'a' }))]);
-    component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'b' }))]);
+    const disposableA = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'a' }))]);
+    await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'b' }))]);
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(2);
@@ -272,7 +272,7 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
     // Dispose the batch before the fire-and-forget onRegistered has run.
-    const disposable = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
     dispose(disposable);
 
     await waitForAllAsyncOperations();
@@ -287,7 +287,7 @@ describe('CommandHandlerComponent', () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
-    const disposable = component.registerCommandHandlers(() => [new AllMenusRegisteringHandler(createParams())]);
+    const disposable = await component.registerCommandHandlers(() => [new AllMenusRegisteringHandler(createParams())]);
     await waitForAllAsyncOperations();
 
     expect(menuDisposeSpies).toHaveLength(3);
@@ -307,7 +307,7 @@ describe('CommandHandlerComponent', () => {
       return [commandHandler];
     });
 
-    component.registerCommandHandlers(commandHandlerFactory);
+    await component.registerCommandHandlers(commandHandlerFactory);
     await waitForAllAsyncOperations();
 
     // Once for Obsidian's own workspace events, once for the additional surface.
@@ -321,7 +321,7 @@ describe('CommandHandlerComponent', () => {
     const additional = createTrackedMenuEventRegistrar();
     const component = createComponentWith(commandRegistrar, createMockMenuEventRegistrar(), [additional.registrar]);
 
-    component.registerCommandHandlers(() => [new TestHandler(createParams())]);
+    await component.registerCommandHandlers(() => [new TestHandler(createParams())]);
     await waitForAllAsyncOperations();
 
     expect(commandRegistrar.addCommand).toHaveBeenCalledTimes(1);
@@ -332,7 +332,7 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(createMockCommandRegistrar(), createMockMenuEventRegistrar(), [additional.registrar]);
     const commandHandlers: TestHandler[] = [];
 
-    component.registerCommandHandlers(() => {
+    await component.registerCommandHandlers(() => {
       const commandHandler = new TestHandler(createParams());
       commandHandlers.push(commandHandler);
       return [commandHandler];
@@ -348,7 +348,7 @@ describe('CommandHandlerComponent', () => {
     const additional = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
 
-    const disposable = component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
     await waitForAllAsyncOperations();
 
     expect(additional.menuDisposeSpies).toHaveLength(1);
@@ -365,7 +365,7 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
     component.load();
 
-    component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
     await waitForAllAsyncOperations();
     component.unload();
 

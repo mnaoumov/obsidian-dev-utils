@@ -18,7 +18,6 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { invokeAsyncSafely } from '../../async.ts';
 import {
   CallbackDisposable,
   CombineDisposable,
@@ -34,7 +33,12 @@ import { ComponentEx } from '../components/component-ex.ts';
  * active-file provider, its plugin name, and whatever a subclass records in
  * {@link CommandHandler.onRegistered}) — so every surface needs its own instances.
  *
- * @returns The command handlers to register.
+ * Returning shared instances (`() => [handler1Singleton, handler2Singleton]`) reintroduces exactly the
+ * bug the factory exists to avoid, so it is not merely discouraged: {@link CommandHandler.onRegistered}
+ * throws on the second registration of an instance. Because {@link CommandHandler.onRegistered} runs
+ * fire-and-forget, that throw surfaces as an async error event rather than failing the caller.
+ *
+ * @returns The command handlers to register. A NEW instance of each on every call.
  */
 export type CommandHandlerFactory = () => CommandHandler[];
 
@@ -44,6 +48,12 @@ interface CommandHandlerComponentConstructorParams {
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly pluginName: string;
+}
+
+interface CommandHandlerComponentRegisterMenuEventHandlersParams {
+  readonly commandHandler: CommandHandler;
+  readonly menuEventRegistrar: MenuEventRegistrar;
+  readonly shouldAddCommandToSubmenu?: boolean;
 }
 
 /**
@@ -156,7 +166,7 @@ export class CommandHandlerComponent extends ComponentEx {
    * @param commandHandlerFactory - Builds a fresh set of command handlers, once per menu surface.
    * @returns A {@link DisposableEx} that unregisters the handlers (commands + menu events) registered by this call.
    */
-  public registerCommandHandlers(commandHandlerFactory: CommandHandlerFactory): DisposableEx {
+  public async registerCommandHandlers(commandHandlerFactory: CommandHandlerFactory): Promise<DisposableEx> {
     const disposables: Disposable[] = [];
     for (const commandHandler of commandHandlerFactory()) {
       const command = commandHandler.buildCommand();
@@ -168,7 +178,7 @@ export class CommandHandlerComponent extends ComponentEx {
 
       // Each command gets its own registration context with a per-command menu-event scope, so disposing one
       // Command tears down its own menu events without affecting the others.
-      const menuEventScope = this.registerMenuEventHandlers(commandHandler, this.menuEventRegistrar);
+      const menuEventScope = await this.registerMenuEventHandlers({ commandHandler, menuEventRegistrar: this.menuEventRegistrar });
 
       const disposable = new CallbackDisposable({
         callback: (): void => {
@@ -185,7 +195,7 @@ export class CommandHandlerComponent extends ComponentEx {
     // Forced off, because such a surface wraps everything in a plugin-titled parent entry of its own.
     for (const additionalMenuEventRegistrar of this.additionalMenuEventRegistrars) {
       for (const commandHandler of commandHandlerFactory()) {
-        disposables.push(this.registerDisposable(this.registerMenuEventHandlers(commandHandler, additionalMenuEventRegistrar, false)));
+        disposables.push(this.registerDisposable(await this.registerMenuEventHandlers({ commandHandler, menuEventRegistrar: additionalMenuEventRegistrar, shouldAddCommandToSubmenu: false })));
       }
     }
 
@@ -196,24 +206,18 @@ export class CommandHandlerComponent extends ComponentEx {
    * Hands a command handler its registration context, scoped so that disposing the returned scope
    * unregisters exactly the menu events that handler registered.
    *
-   * @param commandHandler - The command handler to register.
-   * @param menuEventRegistrar - The menu surface the handler registers its menu events with.
-   * @param shouldAddCommandToSubmenu - Overrides the handler's own value, or `undefined` to leave it alone.
+   * @param params - The parameters for this registration.
    * @returns The handler's menu-event scope.
    */
-  private registerMenuEventHandlers(
-    commandHandler: CommandHandler,
-    menuEventRegistrar: MenuEventRegistrar,
-    shouldAddCommandToSubmenu?: boolean
-  ): CommandMenuEventScope {
-    const menuEventScope = new CommandMenuEventScope(menuEventRegistrar);
+  private async registerMenuEventHandlers(params: CommandHandlerComponentRegisterMenuEventHandlersParams): Promise<CommandMenuEventScope> {
+    const menuEventScope = new CommandMenuEventScope(params.menuEventRegistrar);
     const context: CommandHandlerRegistrationContext = {
       activeFileProvider: this.activeFileProvider,
       menuEventRegistrar: menuEventScope,
       pluginName: this.pluginName,
-      shouldAddCommandToSubmenu
+      shouldAddCommandToSubmenu: params.shouldAddCommandToSubmenu
     };
-    invokeAsyncSafely(() => commandHandler.onRegistered(context));
+    await params.commandHandler.onRegistered(context);
     return menuEventScope;
   }
 }
