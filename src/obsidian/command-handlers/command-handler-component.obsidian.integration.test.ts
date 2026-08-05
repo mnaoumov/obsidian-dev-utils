@@ -30,10 +30,9 @@ describe('CommandHandlerComponent menu-event teardown', () => {
     const result = await evalInObsidian({
       // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
       async fn(
-        { app, lib: { AppActiveFileProvider, CommandHandler, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, waitUntil }, obsidianModule }
+        { app, lib: { AppActiveFileProvider, CommandHandler, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar }, obsidianModule }
       ): Promise<MenuTeardownResult> {
         const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
         const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
         if (!harnessPlugin) {
@@ -80,15 +79,9 @@ describe('CommandHandlerComponent menu-event teardown', () => {
             })
           ]);
 
-          // `onRegistered` runs fire-and-forget, so poll (by triggering) until the file-menu handler is live.
-          await waitUntil({
-            message: 'file-menu handler registered',
-            predicate: (): boolean => {
-              app.workspace.trigger('file-menu', new obsidianModule.Menu(), file, 'integration-test');
-              return fileMenuCallCount > 0;
-            },
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
-          });
+          // `registerCommandHandlers` awaits `onRegistered`, so the file-menu handler is live by now —
+          // No polling needed, a single trigger must already reach it.
+          app.workspace.trigger('file-menu', new obsidianModule.Menu(), file, 'integration-test');
           const countAfterFirstTrigger = fileMenuCallCount;
 
           disposable[Symbol.dispose]();

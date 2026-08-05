@@ -25,7 +25,6 @@ import type {
   CommandHandlerRegistrationContext
 } from './command-handler.ts';
 
-import { waitForAllAsyncOperations } from '../../async.ts';
 import {
   CallbackDisposable,
   dispose
@@ -179,8 +178,6 @@ describe('CommandHandlerComponent', () => {
     const component = createComponent(createMockCommandRegistrar());
 
     await component.registerCommandHandlers(() => [commandHandler]);
-    await waitForAllAsyncOperations();
-
     expect(commandHandler.registeredContext).toBeDefined();
     expect(commandHandler.registeredContext?.activeFileProvider).toBeDefined();
     expect(commandHandler.registeredContext?.menuEventRegistrar).toBeDefined();
@@ -237,8 +234,6 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
     const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
-    await waitForAllAsyncOperations();
-
     expect(menuDisposeSpies).toHaveLength(1);
     const menuDisposeSpy = menuDisposeSpies[0];
     assertNonNullable(menuDisposeSpy);
@@ -254,8 +249,6 @@ describe('CommandHandlerComponent', () => {
 
     const disposableA = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'a' }))]);
     await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'b' }))]);
-    await waitForAllAsyncOperations();
-
     expect(menuDisposeSpies).toHaveLength(2);
     const menuDisposeSpyA = menuDisposeSpies[0];
     const menuDisposeSpyB = menuDisposeSpies[1];
@@ -270,12 +263,16 @@ describe('CommandHandlerComponent', () => {
   it('should dispose a menu event registered after the returned disposable was already disposed', async () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
+    const commandHandler = new TestHandler(createParams());
 
-    // Dispose the batch before the fire-and-forget onRegistered has run.
-    const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    const disposable = await component.registerCommandHandlers(() => [commandHandler]);
     dispose(disposable);
 
-    await waitForAllAsyncOperations();
+    // A handler may keep its scope past `onRegistered` and register menu events later — a bridge
+    // Binding at layout-ready, say — so a post-dispose registration must be disposed immediately.
+    const registeredContext = commandHandler.registeredContext;
+    assertNonNullable(registeredContext);
+    registeredContext.menuEventRegistrar.registerFileMenuEventHandler(vi.fn());
 
     expect(menuDisposeSpies).toHaveLength(1);
     const menuDisposeSpy = menuDisposeSpies[0];
@@ -283,13 +280,41 @@ describe('CommandHandlerComponent', () => {
     expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
   });
 
+  it('should reject when the factory hands out an already-registered handler instance', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
+    const sharedCommandHandler = new MenuRegisteringHandler(createParams({ id: 'shared-cmd' }));
+
+    // The additional surface re-invokes the factory, so a shared instance is registered a second time.
+    await expect(component.registerCommandHandlers(() => [sharedCommandHandler])).rejects.toThrow(
+      'Command handler \'shared-cmd\' is already registered.'
+    );
+  });
+
+  it('should still remove a command added before a failing handler when the component unloads', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = createComponent(commandRegistrar);
+    component.load();
+    const sharedCommandHandler = new TestHandler(createParams({ id: 'shared-cmd' }));
+
+    await expect(component.registerCommandHandlers(() => [
+      new TestHandler(createParams({ id: 'first-cmd' })),
+      sharedCommandHandler,
+      sharedCommandHandler
+    ])).rejects.toThrow('Command handler \'shared-cmd\' is already registered.');
+
+    // The batch rejected, so the caller never got a disposable — the component's own unload is what
+    // Keeps the commands added before the failure from outliving it.
+    component.unload();
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('first-cmd');
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('shared-cmd');
+  });
+
   it('should dispose editor-, file-, and files-menu registrations for a command', async () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
     const disposable = await component.registerCommandHandlers(() => [new AllMenusRegisteringHandler(createParams())]);
-    await waitForAllAsyncOperations();
-
     expect(menuDisposeSpies).toHaveLength(3);
     dispose(disposable);
     for (const menuDisposeSpy of menuDisposeSpies) {
@@ -308,8 +333,6 @@ describe('CommandHandlerComponent', () => {
     });
 
     await component.registerCommandHandlers(commandHandlerFactory);
-    await waitForAllAsyncOperations();
-
     // Once for Obsidian's own workspace events, once for the additional surface.
     expect(commandHandlerFactory).toHaveBeenCalledTimes(2);
     expect(commandHandlers).toHaveLength(2);
@@ -322,8 +345,6 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(commandRegistrar, createMockMenuEventRegistrar(), [additional.registrar]);
 
     await component.registerCommandHandlers(() => [new TestHandler(createParams())]);
-    await waitForAllAsyncOperations();
-
     expect(commandRegistrar.addCommand).toHaveBeenCalledTimes(1);
   });
 
@@ -337,8 +358,6 @@ describe('CommandHandlerComponent', () => {
       commandHandlers.push(commandHandler);
       return [commandHandler];
     });
-    await waitForAllAsyncOperations();
-
     expect(commandHandlers).toHaveLength(2);
     expect(commandHandlers[0]?.registeredContext?.shouldAddCommandToSubmenu).toBeUndefined();
     expect(commandHandlers[1]?.registeredContext?.shouldAddCommandToSubmenu).toBe(false);
@@ -349,8 +368,6 @@ describe('CommandHandlerComponent', () => {
     const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
 
     const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
-    await waitForAllAsyncOperations();
-
     expect(additional.menuDisposeSpies).toHaveLength(1);
     const menuDisposeSpy = additional.menuDisposeSpies[0];
     assertNonNullable(menuDisposeSpy);
@@ -366,7 +383,6 @@ describe('CommandHandlerComponent', () => {
     component.load();
 
     await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
-    await waitForAllAsyncOperations();
     component.unload();
 
     const menuDisposeSpy = additional.menuDisposeSpies[0];

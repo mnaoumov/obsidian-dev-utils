@@ -195,6 +195,23 @@ describe('AbstractFileCommandHandler', () => {
     });
   });
 
+  describe('duplicate registration', () => {
+    it('should reject a second registration without rewriting the first registration\'s context', async () => {
+      const handler = new TestAbstractFileHandler(createParams());
+      const { context } = createMockContext(createMockFile());
+      await handler.onRegistered(context);
+
+      // `super.onRegistered` runs first, so the guard throws before the active-file provider and the
+      // Submenu override are overwritten — the first registration's closures keep reading its context.
+      const second = createMockContext();
+      await expect(handler.onRegistered(second.context)).rejects.toThrow('is already registered');
+
+      expect(second.fileMenuHandlers).toHaveLength(0);
+      expect(second.filesMenuHandlers).toHaveLength(0);
+      expect(handler.buildCommand().checkCallback?.(true)).toBe(true);
+    });
+  });
+
   describe('multi-file', () => {
     it('should execute files sequentially by default', async () => {
       const executionOrder: string[] = [];

@@ -192,7 +192,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
             })
           ]);
 
-          // The bridge binds at layout-ready and `onRegistered` runs fire-and-forget.
+          // The bridge binds at layout-ready, so its contributor arrives after registration resolves.
           await waitUntil({
             message: 'the bridge registered a file-menu contributor and collected the handler',
             predicate: (): boolean => fileMenuCallbacks.length > 0 && raiseFileMenu(matchingFile).items.length > 0,

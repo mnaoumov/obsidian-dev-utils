@@ -35,8 +35,8 @@ import { ComponentEx } from '../components/component-ex.ts';
  *
  * Returning shared instances (`() => [handler1Singleton, handler2Singleton]`) reintroduces exactly the
  * bug the factory exists to avoid, so it is not merely discouraged: {@link CommandHandler.onRegistered}
- * throws on the second registration of an instance. Because {@link CommandHandler.onRegistered} runs
- * fire-and-forget, that throw surfaces as an async error event rather than failing the caller.
+ * throws on the second registration of an instance. {@link CommandHandlerComponent.registerCommandHandlers}
+ * awaits it, so that throw rejects the caller's promise instead of degrading into a wrong context menu.
  *
  * @returns The command handlers to register. A NEW instance of each on every call.
  */
@@ -59,9 +59,9 @@ interface CommandHandlerComponentRegisterMenuEventHandlersParams {
 /**
  * A per-command {@link MenuEventRegistrar} that delegates to a shared registrar while collecting the
  * {@link DisposableEx} each registration returns, so disposing this scope unregisters exactly that command's
- * menu events. Because {@link CommandHandler.onRegistered} runs fire-and-forget (it may register menu events
- * after this scope has already been disposed), a registration that arrives post-dispose is disposed immediately
- * instead of leaking.
+ * menu events. A handler may keep the scope past {@link CommandHandler.onRegistered} and register menu events
+ * later — a bridge binding at layout-ready, say — so a registration that arrives after this scope was disposed
+ * is disposed immediately instead of leaking.
  */
 class CommandMenuEventScope extends DisposableBase implements MenuEventRegistrar {
   private readonly disposables: DisposableEx[] = [];
