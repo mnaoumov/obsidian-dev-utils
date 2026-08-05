@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 90.0.0
+
+- test: cover the duplicate-registration guard
+- refactor: async registerCommandHandlers
+
 ## 89.0.0
 
 - chore: update libs
