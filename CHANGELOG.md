@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 89.0.0
+
+- chore: update libs
+- test: align tests with the enum-returning refactor
+- fix: build
+- chore: lint
+- chore: update libs
+- fix(resource-lock): make a lock follow its resource across a rename
+- fix(rename-delete-handler): stop the phantom old-path registration disarming the link update
+- feat!: bridge every plugin's command handlers into Notebook Navigator's context menus
+- chore: fix build
+- chore: update libs
+- refactor!: migrate to unicorn rules
+- feat(eslint): enforce kebab-case file names
+- refactor!: drop the Async suffix from SyntaxHighlightingComponent's register methods
+- fix(markdownlint): ignore vendored node_modules markdown on top of the gitignore-derived set
+- fix(i18n): report the lazy I18N fallback via a debug namespace
+- chore(deps): sweep dependencies and triage the unused ones
+
 ## 88.8.0
 
 - feat(script-utils): unify the per-plugin vitest configuration
