@@ -211,7 +211,7 @@ function raiseFileMenu(file: TFileOriginal, selectedFiles: TFileOriginal[] = [fi
     callback(context);
   }
 
-  return menu.items__;
+  return menu.menuItems__;
 }
 
 /**
@@ -233,7 +233,7 @@ function raiseFolderMenu(folder: TFolderOriginal): MenuItem[] {
     callback(context);
   }
 
-  return menu.items__;
+  return menu.menuItems__;
 }
 
 /**
@@ -244,7 +244,7 @@ function raiseFolderMenu(folder: TFolderOriginal): MenuItem[] {
  */
 function submenuTitles(items: MenuItem[]): unknown[] {
   const parentItem = ensureNonNullable(items[0]);
-  return ensureNonNullable(parentItem.submenu__).items__.map((item) => item.title__);
+  return ensureNonNullable(parentItem.submenu__).menuItems__.map((item) => item.title__);
 }
 
 beforeEach(() => {
