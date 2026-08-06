@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 90.0.1
+
+- fix: load the plugin's component wrapper before wiring anything up
+
 ## 90.0.0
 
 - test: cover the duplicate-registration guard
