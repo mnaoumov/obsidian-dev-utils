@@ -204,13 +204,17 @@ async function getOrLaunchDevInstance(vaultPath: string): Promise<ObsidianTransp
 }
 
 /**
- * Installs the HotReload plugin from the official community store (if not already installed), enables it
- * (if not already enabled), and enables the freshly-built plugin — all through the `npm run dev`-owned
+ * Installs the HotReload plugin from the official community store (if not already installed), loads it
+ * (if not already running), and enables the freshly-built plugin — all through the `npm run dev`-owned
  * Obsidian instance, so HotReload then auto-refreshes the deployed plugin on every rebuild.
  *
  * The install goes through Obsidian's own `installPlugin` (the community-store mechanism), and every step
  * runs against the owned instance over CDP; any failure surfaces (the dev build reports it) rather than
  * being silently swallowed.
+ *
+ * The first step is leaving restricted mode for real, which the owned instance has only faked so far —
+ * without it "enabled" and "loaded" come apart and none of the vault's plugins, HotReload included, are
+ * running. See the comment on the `setEnable` call.
  *
  * The install-if-missing / enable-if-disabled logic below intentionally mirrors the public
  * `installCommunityPlugin` / `enableCommunityPlugin` helpers in `src/obsidian/community-plugins.ts`. It
@@ -238,6 +242,23 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
       const COMMUNITY_PLUGINS_REGISTRY_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json';
       const { requestUrl } = obsidianModule;
 
+      /*
+       * Genuinely leave restricted mode before touching anything else. The owned instance boots with a
+       * fresh user-data dir, so Obsidian starts restricted and `Plugins.initialize()` returns before
+       * loading a single plugin. The harness then closes the trust modal and writes the
+       * `enable-plugin-<appId>` localStorage flag directly — deliberately, to avoid a synchronous load —
+       * which leaves `isEnabled()` reporting `true` over a vault where nothing is actually running. Every
+       * `enabledPlugins` reading below (and in the mirrored `community-plugins.ts` helpers) would be
+       * answering about the vault's config file rather than this instance.
+       *
+       * `setEnable(true)` is what Obsidian's own "Exit restricted mode" button calls: it re-asserts the
+       * flag and loads everything in `enabledPlugins`. Unconditional on purpose — the flag is already
+       * `true`, so an `isEnabled()` guard would skip the load that is the whole point. Idempotent and
+       * effectively free once warm (`loadPlugin` returns the live instance), so re-running it on every
+       * rebuild costs nothing.
+       */
+      await app.plugins.setEnable(true);
+
       if (!Object.hasOwn(app.plugins.manifests, HOT_RELOAD_PLUGIN_ID)) {
         const registryResponse = await requestUrl(COMMUNITY_PLUGINS_REGISTRY_URL);
         const registryEntries = registryResponse.json as CommunityPluginRegistryEntry[];
@@ -254,7 +275,12 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
         await app.plugins.installPlugin(entry.repo, version, manifest);
       }
 
-      if (!app.plugins.enabledPlugins.has(HOT_RELOAD_PLUGIN_ID)) {
+      /*
+       * Ask whether HotReload is RUNNING, not whether the vault config lists it as enabled. After the
+       * `setEnable` above the two normally agree, but a HotReload that is listed and failed to load would
+       * pass an `enabledPlugins` check while leaving the dev build without auto-refresh.
+       */
+      if (!Object.hasOwn(app.plugins.plugins, HOT_RELOAD_PLUGIN_ID)) {
         await app.plugins.enablePluginAndSave(HOT_RELOAD_PLUGIN_ID);
       }
 
@@ -308,6 +334,12 @@ async function launchDevInstance(vaultPath: string): Promise<ObsidianTransport> 
 /**
  * Registers process-exit and signal handlers (once) that synchronously close the owned Obsidian
  * instance when the `npm run dev` process terminates.
+ *
+ * These handlers cover an orderly shutdown. A `SIGKILL` (or a Task Manager / IDE stop) runs no handler
+ * at all, and no operating system kills the instance just for being our child — so that case is caught
+ * from the other side, by the harness's parent-liveness watchdog: the instance's renderer holds a socket
+ * back to this process and destroys its window when the kernel closes it. See `parent-liveness.ts` in
+ * `obsidian-integration-testing` (its L33).
  *
  * @param transport - The owned transport to dispose on shutdown.
  */
