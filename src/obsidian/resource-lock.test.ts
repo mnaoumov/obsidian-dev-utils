@@ -663,7 +663,7 @@ describe('unlock context menu', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
     expect(item.icon__).toBe('unlock');
@@ -681,7 +681,7 @@ describe('unlock context menu', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
     expect(item.icon__).toBe('unlock');
@@ -700,7 +700,7 @@ describe('unlock context menu', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
   });
@@ -734,7 +734,7 @@ describe('unlock context menu', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -757,7 +757,7 @@ describe('unlock context menu', () => {
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -785,7 +785,7 @@ describe('unlock context menu', () => {
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -808,7 +808,7 @@ describe('unlock context menu', () => {
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -830,7 +830,7 @@ describe('unlock context menu', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -853,7 +853,7 @@ describe('unlock context menu', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -921,7 +921,7 @@ describe('unlock context menu', () => {
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -943,7 +943,7 @@ describe('unlock file menu', () => {
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
     expect(item.icon__).toBe('unlock');
@@ -957,7 +957,7 @@ describe('unlock file menu', () => {
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
-    expect(menu.items__).toHaveLength(0);
+    expect(menu.menuItems__).toHaveLength(0);
   });
 
   it('should not add an unlock item to the file menu for a folder', () => {
@@ -965,7 +965,7 @@ describe('unlock file menu', () => {
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, app.vault.getRoot(), 'file-explorer-context-menu');
 
-    expect(menu.items__).toHaveLength(0);
+    expect(menu.menuItems__).toHaveLength(0);
   });
 });
 
@@ -1096,7 +1096,7 @@ describe('subtree locking', () => {
     assertNonNullable(file);
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
@@ -1221,7 +1221,7 @@ describe('subtree locking', () => {
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, folder, 'file-explorer-context-menu');
 
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
   });
@@ -1234,7 +1234,7 @@ describe('subtree locking', () => {
     const menu = Menu.create2__();
     app.workspace.trigger('file-menu', menu, file, 'tab-header');
 
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
   });
@@ -1253,7 +1253,7 @@ describe('subtree locking', () => {
 
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     expect(item.title__).toBe('Unlock');
   });
@@ -1819,7 +1819,7 @@ describe('rename re-keying', () => {
     dispatchContextMenu(iconEl);
     const menu = getMenu();
     assertNonNullable(menu);
-    const item = menu.items__[0];
+    const item = menu.menuItems__[0];
     assertNonNullable(item);
     item.onClick__?.(new MouseEvent('click'));
     await flushAsync();
