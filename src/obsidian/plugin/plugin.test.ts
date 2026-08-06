@@ -18,6 +18,7 @@ import type { TranslationsMap } from '../i18n/i18n.ts';
 
 import { noopAsync } from '../../function.ts';
 import { strictProxy } from '../../strict-proxy.ts';
+import { FileCommandHandler } from '../command-handlers/file-command-handler.ts';
 import { ComponentEx } from '../components/component-ex.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 import { initI18N } from '../i18n/i18n.ts';
@@ -193,6 +194,40 @@ describe('PluginBase', () => {
     const plugin = new CustomTranslationsPlugin(app, manifest);
     await plugin.onload();
     expect(vi.mocked(initI18N)).toHaveBeenCalledWith(customMap);
+  });
+
+  it('should let onloadImpl register a file command handler, whose menu events the registrar accepts', async () => {
+    class FileMenuCommandHandler extends FileCommandHandler {
+      protected override canExecuteFile(): boolean {
+        return true;
+      }
+
+      protected override async executeFile(): Promise<void> {
+        await noopAsync();
+      }
+    }
+
+    class FileMenuPlugin extends TestPlugin {
+      protected override async onloadImpl(): Promise<void> {
+        await this.commandHandlerComponent.registerCommandHandlers(() => [
+          new FileMenuCommandHandler({
+            icon: 'file-icon',
+            id: 'file-command',
+            name: 'File Command'
+          })
+        ]);
+      }
+    }
+
+    const onSpy = vi.spyOn(app.workspace, 'on');
+    const plugin = new FileMenuPlugin(app, manifest);
+
+    // `registerCommandHandlers` awaits `onRegistered`, so a handler registers its menu events during
+    // `onloadImpl` rather than after it.
+    // The registrar is already loaded by then, because `onload` loads the wrapper up front.
+    // Were it not, this would reject with 'Component is not loaded' rather than register anything.
+    await expect(plugin.onload()).resolves.toBeUndefined();
+    expect(onSpy).toHaveBeenCalledWith('file-menu', expect.any(Function));
   });
 
   it('should load children sequentially (children-first) via onloadImpl', async () => {

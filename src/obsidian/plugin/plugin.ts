@@ -196,8 +196,9 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
   /**
    * Adds a child component.
    *
-   * The child is added to an internal wrapper component so that, during {@link onloadImpl},
-   * children are queued and then loaded sequentially (children-first) when the plugin loads.
+   * The child is added to an internal wrapper component, which {@link onload} attaches and loads
+   * before wiring anything up. So a child added during {@link onloadImpl} is loaded immediately,
+   * children-first, and is usable by the time this method returns.
    *
    * @typeParam TComponent - The type of component to add.
    * @param component - The component instance to add.
@@ -221,12 +222,24 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * Called when the plugin is loaded.
    *
    * Orchestrates loading: registers the universal components, lets the subclass wire its own
-   * components via {@link onloadImpl}, then loads all of them sequentially (children-first).
+   * components via {@link onloadImpl}, then awaits the async tail of every load.
+   * Each component loads as it is added, children-first.
    *
    * Do NOT override this method. Override {@link onloadImpl} instead.
    */
   public override async onload(): Promise<void> {
     try {
+      // The wrapper is attached and loaded before anything is wired up, so every `addChild` below
+      // Loads its child straight away rather than queuing it.
+      // That is what lets a command handler register its menu events from `onRegistered`, which
+      // `registerCommandHandlers` awaits and which a registrar refuses while unloaded.
+      // Attaching it up front also registers the wrapper for teardown before anything can throw.
+      // The load is explicit rather than left to `addChild`, which loads the child only when the
+      // Plugin itself is loaded — true when Obsidian calls `load()`, but not when a caller invokes
+      // `onload()` directly.
+      super.addChild(this.wrapperComponent);
+      this.wrapperComponent.load();
+
       await initI18N(this.createTranslationsMap());
       this.pluginContextComponent = this.addChild(
         new PluginContextComponent({
@@ -274,10 +287,8 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
 
       await this.onloadImpl();
 
-      // Add the wrapper to the native plugin only now, after all children are queued.
-      // The plugin is already loaded, so this loads the wrapper's children sequentially (children-first).
-      // It also registers the wrapper for automatic teardown on plugin unload.
-      super.addChild(this.wrapperComponent);
+      // Every child has already loaded as it was added; this awaits their accumulated async tails and
+      // Reports any failure as a single `AggregateError`.
       await this.wrapperComponent.loadWithPromises();
     } catch (error) {
       printError(new Error(`Error loading plugin ${this.manifest.name} (${this.manifest.id})`, { cause: error }));
