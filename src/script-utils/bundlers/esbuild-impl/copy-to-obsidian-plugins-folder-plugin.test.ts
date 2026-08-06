@@ -36,6 +36,10 @@ vi.mock('obsidian-integration-testing', () => ({
     disposeSync: vi.fn(),
     registerVault: mockRegisterVault
   }),
+  // The plain-object transport above is deliberately not an instance of it, so the owned-instance close watch stays off in tests.
+  DesktopCdpTransport: class DesktopCdpTransportMock {
+    public readonly isMobile = false;
+  },
   evalInObsidian: mockEvalInObsidian
 }));
 

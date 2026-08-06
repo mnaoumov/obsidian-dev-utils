@@ -20,9 +20,14 @@ import {
 import process from 'node:process';
 import {
   createTransportFromOptions,
+  DesktopCdpTransport,
   evalInObsidian
 } from 'obsidian-integration-testing';
 
+import {
+  invokeAsyncSafely,
+  sleep
+} from '../../../async.ts';
 import { getLibDebugger } from '../../../debug.ts';
 import {
   dirname,
@@ -53,6 +58,16 @@ export interface CopyToObsidianPluginsFolderPluginParams {
    * The name of the Obsidian plugin.
    */
   readonly pluginName: string;
+}
+
+/**
+ * The subset of a CDP target descriptor read from the owned instance's `/json` endpoint.
+ */
+interface CdpTarget {
+  /**
+   * The kind of the target, e.g. `page`.
+   */
+  readonly type: string;
 }
 
 /**
@@ -96,7 +111,9 @@ interface InstallAndEnableHotReloadParams {
 }
 
 // The `npm run dev`-owned Obsidian instance: launched on the first rebuild and reused across rebuilds.
-// It is closed when the `npm run dev` process terminates (see `registerDevInstanceCleanup`).
+// Its lifetime is tied to the `npm run dev` process in BOTH directions.
+// The instance is closed when the process terminates (see `registerDevInstanceCleanup`).
+// The process stops when the instance is closed (see `watchDevInstanceAndStopOnClose`).
 /**
 Module-level mutable state, held in one object so each mutation names it explicitly.
  */
@@ -111,6 +128,18 @@ const moduleState: ModuleState = {
   isDevInstanceCleanupRegistered: false,
   isDevInstanceDisposed: false
 };
+
+/**
+ * How often the owned Obsidian instance is probed to detect that it was closed.
+ */
+const DEV_INSTANCE_PROBE_INTERVAL_IN_MILLISECONDS = 2000;
+
+/**
+ * How many consecutive failed probes are tolerated before the owned instance is considered closed. A
+ * single failure can be a transient hiccup (a busy renderer, a momentarily refused connection), so the
+ * development build is only stopped once the endpoint stays unreachable.
+ */
+const DEV_INSTANCE_CLOSED_PROBE_COUNT = 3;
 /**
  * Creates an esbuild plugin that copies the build output to the Obsidian plugins folder.
  *
@@ -238,6 +267,26 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
 }
 
 /**
+ * Probes the owned Obsidian instance's CDP endpoint to determine whether it is still running.
+ *
+ * A closed instance stops serving CDP altogether, so an unreachable endpoint — or one left with no page
+ * targets while the app tears itself down — means the instance is gone.
+ *
+ * @param cdpUrl - The base CDP URL of the owned instance, e.g. `http://localhost:51888`.
+ * @returns A {@link Promise} resolving to `true` while the instance is still serving a page target.
+ */
+async function isDevInstanceRunning(cdpUrl: string): Promise<boolean> {
+  try {
+    // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
+    const response = await fetch(`${cdpUrl}/json`);
+    const targets = await response.json() as CdpTarget[];
+    return targets.some((target) => target.type === 'page');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Launches a fresh owned Obsidian instance (isolated user-data dir) and opens the given vault.
  *
  * @param vaultPath - The absolute path to the vault folder to open.
@@ -252,6 +301,7 @@ async function launchDevInstance(vaultPath: string): Promise<ObsidianTransport> 
     throw error;
   }
   registerDevInstanceCleanup(transport);
+  watchDevInstanceAndStopOnClose(transport);
   return transport;
 }
 
@@ -282,6 +332,51 @@ function registerDevInstanceCleanup(transport: ObsidianTransport): void {
     }
     moduleState.isDevInstanceDisposed = true;
     transport.disposeSync?.();
+  }
+}
+
+/**
+ * Watches the `npm run dev`-owned Obsidian instance and stops the development build once the instance is
+ * closed.
+ *
+ * This is the mirror image of {@link registerDevInstanceCleanup}: that one closes the instance when the
+ * `npm run dev` process terminates, this one terminates the process when the user closes the instance, so
+ * the two never outlive each other. A build watching an Obsidian that is no longer running has nothing
+ * left to deploy to.
+ *
+ * Only a harness-owned instance is watched. When the transport attaches to an already-running Obsidian
+ * (the user's own), that instance is not ours to be tied to and closing it leaves the build running.
+ *
+ * @param transport - The owned transport whose instance to watch.
+ */
+function watchDevInstanceAndStopOnClose(transport: ObsidianTransport): void {
+  if (!(transport instanceof DesktopCdpTransport)) {
+    return;
+  }
+
+  const endpoint = transport.getOwnedInstanceEndpoint();
+  if (!endpoint) {
+    return;
+  }
+
+  const cdpUrl = `http://${endpoint.host}:${String(endpoint.port)}`;
+  invokeAsyncSafely(stopWhenDevInstanceCloses);
+
+  async function stopWhenDevInstanceCloses(): Promise<void> {
+    let consecutiveFailedProbeCount = 0;
+    while (consecutiveFailedProbeCount < DEV_INSTANCE_CLOSED_PROBE_COUNT) {
+      await sleep({ milliseconds: DEV_INSTANCE_PROBE_INTERVAL_IN_MILLISECONDS });
+
+      // The process is already shutting down and killed the instance itself; the probes would just race the teardown.
+      if (moduleState.isDevInstanceDisposed) {
+        return;
+      }
+
+      consecutiveFailedProbeCount = await isDevInstanceRunning(cdpUrl) ? 0 : consecutiveFailedProbeCount + 1;
+    }
+
+    console.warn('The Obsidian instance owned by `npm run dev` was closed. Stopping the development build.');
+    process.exit();
   }
 }
 
