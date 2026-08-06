@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 90.1.1
+
+- chore: lint md
+- fix: hotreload
+
 ## 90.1.0
 
 - feat: stop the dev build when its owned Obsidian instance is closed
