@@ -3,7 +3,7 @@
 ## 90.1.0
 
 - feat: stop the dev build when its owned Obsidian instance is closed
-- test: read Menu.menuItems__ instead of narrowing Menu.items__
+- test: read `Menu.menuItems__` instead of narrowing `Menu.items__`
 
 ## 90.0.1
 
