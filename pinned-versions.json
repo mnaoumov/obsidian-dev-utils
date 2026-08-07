@@ -37,7 +37,7 @@
     },
     "js-yaml": {
       "section": "overrides",
-      "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x.",
+      "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x, which is the `v4-legacy` dist-tag: 4.3.1 backports the CVE-2026-59870 fix (GHSA-5p4m-2wfm-xmqj, quadratic CPU in !!omap resolution) that the vulnerable 4.0.0-4.3.0 range lacks, so this override is also what clears that advisory for astro, starlight, cosmiconfig, markdownlint-cli2 and @istanbuljs/load-nyc-config at once.",
       "check": "node -e \"process.stdout.write(require('astro/package.json').dependencies['js-yaml'])\"",
       "expect": "^4.3.0"
     }
