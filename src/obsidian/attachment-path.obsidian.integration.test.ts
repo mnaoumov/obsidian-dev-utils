@@ -25,6 +25,15 @@ interface AttachmentFolderModeResult {
   readonly obsidianAttachmentPath: string;
 }
 
+/**
+ * What one `attachmentFolderPath` mode resolves to, asynchronously and synchronously.
+ */
+interface SyncAttachmentFolderModeResult {
+  readonly asyncFolderPath: string;
+  readonly mode: string;
+  readonly syncFolderPath: null | string;
+}
+
 describe('attachment-path', () => {
   describe('getAttachmentFolderPath', () => {
     it('should return the attachment folder path for a note', async () => {
@@ -101,6 +110,60 @@ describe('attachment-path', () => {
 
       // Every built-in mode is shared by all the notes of the folder, so none of them is the note's own.
       expect(results.map((result) => result.hasOwnFolder)).toEqual([false, false, false, false]);
+    });
+  });
+
+  describe('getAttachmentFolderPathSyncOrNull', () => {
+    it('should agree with the async twin for every attachment folder mode', async () => {
+      const results = await evalInObsidian<Record<string, never>, SyncAttachmentFolderModeResult[]>({
+        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
+        async fn({ app, lib: { getAttachmentFolderPath, getAttachmentFolderPathSyncOrNull } }) {
+          const ROOT_FOLDER = 't357-attachment-path-sync';
+          const NOTE_FOLDER = `${ROOT_FOLDER}/docs`;
+          const NOTE_PATH = `${NOTE_FOLDER}/note.md`;
+          const FIXED_FOLDER = `${ROOT_FOLDER}/files`;
+
+          const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
+
+          try {
+            await app.vault.createFolder(NOTE_FOLDER);
+            await app.vault.createFolder(FIXED_FOLDER);
+            await app.vault.create(NOTE_PATH, '# T357\n');
+
+            const modeResults: SyncAttachmentFolderModeResult[] = [];
+
+            for (const mode of ['/', FIXED_FOLDER, './', './assets']) {
+              app.vault.setConfig('attachmentFolderPath', mode);
+              modeResults.push({
+                asyncFolderPath: await getAttachmentFolderPath({ app, notePathOrFile: NOTE_PATH }),
+                mode,
+                syncFolderPath: getAttachmentFolderPathSyncOrNull({ app, notePathOrFile: NOTE_PATH })
+              });
+            }
+
+            return modeResults;
+          } finally {
+            app.vault.setConfig('attachmentFolderPath', originalAttachmentFolderPath);
+            const rootFolder = app.vault.getAbstractFileByPath(ROOT_FOLDER);
+            if (rootFolder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(rootFolder, true);
+            }
+          }
+        }
+      });
+
+      // No attachment-location plugin is installed in the test vault, so every mode is answerable synchronously.
+      for (const result of results) {
+        expect(result.syncFolderPath).toBe(result.asyncFolderPath);
+      }
+
+      expect(results.map((result) => result.syncFolderPath)).toEqual([
+        '/',
+        't357-attachment-path-sync/files',
+        't357-attachment-path-sync/docs',
+        't357-attachment-path-sync/docs/assets'
+      ]);
     });
   });
 

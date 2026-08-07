@@ -25,6 +25,7 @@ import {
   AttachmentPathContext,
   getAttachmentFilePath,
   getAttachmentFolderPath,
+  getAttachmentFolderPathSyncOrNull,
   getAvailablePathForAttachments,
   hasOwnAttachmentFolder,
   isAtProperAttachmentPath
@@ -134,6 +135,50 @@ describe('getAttachmentFolderPath', () => {
         notePathOrFile: NOTE_PATH
       })
     ).toBe('Docs');
+  });
+});
+
+describe('getAttachmentFolderPathSyncOrNull', () => {
+  it.each([
+    ['/', NOTE_PATH, '/'],
+    ['Files', NOTE_PATH, 'Files'],
+    ['Missing', NOTE_PATH, 'Missing'],
+    ['./', NOTE_PATH, 'Docs'],
+    ['.', NOTE_PATH, 'Docs'],
+    ['./assets', NOTE_PATH, 'Docs/assets'],
+    ['./', 'Docs/missing.md', 'Docs'],
+    ['./', 'Missing/missing.md', 'Missing'],
+    ['./assets', 'Docs/missing.md', 'Docs/assets'],
+    ['\\Files\\\\Sub\\', NOTE_PATH, 'Files/Sub']
+  ])('should resolve the %j setting exactly as the async twin does', async (attachmentFolderPath, notePathOrFile, expectedFolderPath) => {
+    const app = createApp(attachmentFolderPath);
+    const syncFolderPath = getAttachmentFolderPathSyncOrNull({ app, notePathOrFile });
+    expect(syncFolderPath).toBe(expectedFolderPath);
+    expect(syncFolderPath).toBe(await getAttachmentFolderPath({ app, notePathOrFile }));
+  });
+
+  it('should fall back to the vault root for a note detached from the folder tree', async () => {
+    const app = createApp('./');
+    const note = getFile({ app, pathOrFile: NOTE_PATH });
+    note.parent = null;
+    const syncFolderPath = getAttachmentFolderPathSyncOrNull({ app, notePathOrFile: note });
+    expect(syncFolderPath).toBe('/');
+    expect(syncFolderPath).toBe(await getAttachmentFolderPath({ app, notePathOrFile: note }));
+  });
+
+  it('should fall back to a root subfolder for a note detached from the folder tree', async () => {
+    const app = createApp('./assets');
+    const note = getFile({ app, pathOrFile: NOTE_PATH });
+    note.parent = null;
+    const syncFolderPath = getAttachmentFolderPathSyncOrNull({ app, notePathOrFile: note });
+    expect(syncFolderPath).toBe('assets');
+    expect(syncFolderPath).toBe(await getAttachmentFolderPath({ app, notePathOrFile: note }));
+  });
+
+  it('should return null when an extended override owns the resolution', () => {
+    const app = createApp('./');
+    stubNoteNameFolder(app);
+    expect(getAttachmentFolderPathSyncOrNull({ app, notePathOrFile: NOTE_PATH })).toBeNull();
   });
 });
 

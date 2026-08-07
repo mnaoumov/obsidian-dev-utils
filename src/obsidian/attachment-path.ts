@@ -7,6 +7,7 @@
 import type {
   App,
   FileStats,
+  TFolder,
   Vault
 } from 'obsidian';
 
@@ -203,6 +204,21 @@ export interface GetAttachmentFolderPathParams {
 }
 
 /**
+ * Parameters for {@link getAttachmentFolderPathSyncOrNull}.
+ */
+export interface GetAttachmentFolderPathSyncOrNullParams {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path of the note.
+   */
+  readonly notePathOrFile: PathOrFile;
+}
+
+/**
  * Options for the getAvailablePathForAttachments function.
  */
 export interface GetAvailablePathForAttachmentsParams {
@@ -286,6 +302,97 @@ export interface IsAtProperAttachmentPathParams {
 }
 
 /**
+ * Parameters for {@link getAttachmentFilePathSync}.
+ */
+interface GetAttachmentFilePathSyncParams {
+  /**
+   * An Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * A path of the note.
+   */
+  readonly notePathOrFile: PathOrFile;
+
+  /**
+   * A path of the attachment.
+   */
+  readonly oldAttachmentPathOrFile: PathOrFile;
+
+  /**
+   * Should the duplicate check be skipped.
+   */
+  readonly shouldSkipDuplicateCheck: boolean;
+}
+
+/**
+ * Parameters for {@link getAvailablePathForAttachmentsSync}.
+ */
+interface GetAvailablePathForAttachmentsSyncParams {
+  /**
+   * An Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * A base name of the attachment.
+   */
+  readonly attachmentFileBaseName: string;
+
+  /**
+   * An extension of the attachment.
+   */
+  readonly attachmentFileExtension: string;
+
+  /**
+   * A file to attach to.
+   */
+  readonly notePathOrFile: null | PathOrFile;
+
+  /**
+   * Should the duplicate check be skipped.
+   */
+  readonly shouldSkipDuplicateCheck?: boolean;
+}
+
+/**
+ * Parameters for {@link resolveAttachmentFolder}.
+ */
+interface ResolveAttachmentFolderParams {
+  /**
+   * An Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * A file to attach to.
+   */
+  readonly notePathOrFile: null | PathOrFile;
+}
+
+/**
+ * The attachment folder a note resolves to, before the attachment file name is appended.
+ */
+interface ResolveAttachmentFolderResult {
+  /**
+   * The attachment folder, or `null` when it does not exist in the vault yet.
+   */
+  readonly folder: null | TFolder;
+
+  /**
+   * The normalized attachment folder path, whether or not the folder exists.
+   */
+  readonly path: string;
+
+  /**
+   * The part of the `attachmentFolderPath` setting that follows `./`, or `null` when the setting is not
+   * relative to the note. Only a relative setting may have its missing folder created.
+   */
+  readonly relativePath: null | string;
+}
+
+/**
  * Retrieves the file path for an attachment within a note.
  *
  * @param params - Parameters for the get attachment file path function.
@@ -298,32 +405,33 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
     oldAttachmentPathOrFile,
     shouldSkipDuplicateCheck
   } = params;
+
+  const extendedFunction = getExtendedFunction(app);
+  if (!extendedFunction) {
+    // Nobody overrides the resolution, so it is entirely synchronous.
+    // The same core answers `getAttachmentFolderPathSyncOrNull`, which is what keeps the two in step.
+    return getAttachmentFilePathSync({
+      app,
+      notePathOrFile,
+      oldAttachmentPathOrFile,
+      shouldSkipDuplicateCheck
+    });
+  }
+
   const attachmentPath = getPath(app, oldAttachmentPathOrFile);
   const attachmentFileExtension = extname(attachmentPath);
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
   const attachmentFile = getFileOrNull({ app, pathOrFile: attachmentPath });
 
-  const extendedFunction = (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFunctionExtended>).extended;
-  if (extendedFunction) {
-    return extendedFunction({
-      attachmentFileBaseName,
-      attachmentFileExtension: attachmentFileExtension.slice(1),
-      attachmentFileStats: attachmentFile?.stat,
-      context: params.context,
-      notePathOrFile,
-      oldAttachmentPathOrFile: params.oldAttachmentPathOrFile,
-      oldNotePathOrFile: params.oldNotePathOrFile,
-      readAttachmentFileContent: attachmentFile ? (): Promise<ArrayBuffer> => app.vault.readBinary(attachmentFile) : null,
-      shouldSkipDuplicateCheck,
-      shouldSkipMissingAttachmentFolderCreation: true
-    });
-  }
-
-  return await getAvailablePathForAttachments({
-    app,
+  return await extendedFunction({
     attachmentFileBaseName,
     attachmentFileExtension: attachmentFileExtension.slice(1),
+    attachmentFileStats: attachmentFile?.stat,
+    context: params.context,
     notePathOrFile,
+    oldAttachmentPathOrFile,
+    oldNotePathOrFile: params.oldNotePathOrFile,
+    readAttachmentFileContent: attachmentFile ? (): Promise<ArrayBuffer> => app.vault.readBinary(attachmentFile) : null,
     shouldSkipDuplicateCheck,
     shouldSkipMissingAttachmentFolderCreation: true
   });
@@ -353,6 +461,45 @@ export async function getAttachmentFolderPath(params: GetAttachmentFolderPathPar
 }
 
 /**
+ * Retrieves the attachment folder path for a given note **synchronously**, when that is possible at all.
+ *
+ * Obsidian builds its file/folder context menus and evaluates a command's `checkCallback` synchronously, so a
+ * caller deciding whether to merely *offer* a command cannot await {@link getAttachmentFolderPath}. This is
+ * the synchronous twin such a caller can use instead.
+ *
+ * The answer is `null` when it is not knowable synchronously — that is, when a plugin installed
+ * {@link GetAvailablePathForAttachmentsFunctionExtended.extended} and therefore owns the resolution, which is
+ * genuinely asynchronous. `null` means "ask {@link getAttachmentFolderPath}", never "there is no attachment
+ * folder". Otherwise the answer is exact rather than a guess: it is produced by the very same code
+ * {@link getAttachmentFolderPath} runs, whose only asynchronous step — creating a missing attachment folder —
+ * is unreachable on this path.
+ *
+ * There is deliberately no `context` parameter: {@link AttachmentPathContext} only ever reaches an
+ * {@link GetAvailablePathForAttachmentsFunctionExtended.extended} override, and this function answers `null`
+ * whenever one is installed.
+ *
+ * @param params - Parameters for the get attachment folder path sync or null function.
+ * @returns The attachment folder path, or `null` when it can only be resolved asynchronously.
+ */
+export function getAttachmentFolderPathSyncOrNull(params: GetAttachmentFolderPathSyncOrNullParams): null | string {
+  const {
+    app,
+    notePathOrFile
+  } = params;
+
+  if (getExtendedFunction(app)) {
+    return null;
+  }
+
+  return parentFolderPath(getAttachmentFilePathSync({
+    app,
+    notePathOrFile,
+    oldAttachmentPathOrFile: DUMMY_PATH,
+    shouldSkipDuplicateCheck: true
+  }));
+}
+
+/**
  * Retrieves the available path for attachments.
  *
  * @param params - Parameters for the get available path for attachments function.
@@ -361,57 +508,18 @@ export async function getAttachmentFolderPath(params: GetAttachmentFolderPathPar
 export async function getAvailablePathForAttachments(params: GetAvailablePathForAttachmentsParams): Promise<string> {
   const {
     app,
-    attachmentFileExtension,
     notePathOrFile,
-    shouldSkipDuplicateCheck,
     shouldSkipMissingAttachmentFolderCreation
   } = params;
-  let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
-  const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
-  const relativePath = attachmentFolderPath.startsWith('./')
-    ? trimStart({
-      $string: attachmentFolderPath,
-      prefix: './'
-    })
-    : null;
 
-  // A note that does not exist yet (a rename target, a dummy sibling) still belongs to its own folder.
-  // Materializing it from its path keeps that folder, where a vault lookup would fall back to the root.
-  // Only an explicitly note-less attachment resolves to the vault root.
-  const noteFileOrNull = notePathOrFile === null
-    ? null
-    : getFile({
-      app,
-      pathOrFile: notePathOrFile,
-      shouldIncludeNonExisting: true
-    });
-
-  if (isCurrentFolder) {
-    attachmentFolderPath = noteFileOrNull ? noteFileOrNull.parent?.path ?? '' : '';
-  } else if (relativePath) {
-    attachmentFolderPath = (noteFileOrNull ? noteFileOrNull.parent?.getParentPrefix() ?? '' : '') + relativePath;
+  // Materializing a missing attachment folder is the ONE genuinely asynchronous step in this function.
+  // Everything else lives in the synchronous core, which the synchronous entry points reuse verbatim.
+  const attachmentFolder = resolveAttachmentFolder({ app, notePathOrFile });
+  if (!attachmentFolder.folder && attachmentFolder.relativePath && !shouldSkipMissingAttachmentFolderCreation) {
+    await app.vault.createFolder(attachmentFolder.path);
   }
 
-  attachmentFolderPath = normalizeString(normalizeSlashes(attachmentFolderPath));
-  const attachmentFileBaseName = normalizeString(normalizeSlashes(params.attachmentFileBaseName));
-
-  let folder = getFolderOrNull({ app, isCaseInsensitive: true, pathOrFolder: attachmentFolderPath });
-
-  if (!folder && relativePath && !shouldSkipMissingAttachmentFolderCreation) {
-    folder = await app.vault.createFolder(attachmentFolderPath);
-  }
-
-  // A folder that does not exist yet still owns the attachment path.
-  // Resolving it as a non-existing folder stops the answer from collapsing to the vault root.
-  folder ??= getFolder({ app, pathOrFolder: attachmentFolderPath, shouldIncludeNonExisting: true });
-
-  const prefix = folder.getParentPrefix();
-  return shouldSkipDuplicateCheck
-    ? makeFileName({
-      fileBaseName: prefix + attachmentFileBaseName,
-      fileExtension: attachmentFileExtension
-    })
-    : app.vault.getAvailablePath(prefix + attachmentFileBaseName, attachmentFileExtension);
+  return getAvailablePathForAttachmentsSync(params);
 }
 
 /**
@@ -515,6 +623,73 @@ export async function isAtProperAttachmentPath(params: IsAtProperAttachmentPathP
 }
 
 /**
+ * The synchronous core of {@link getAttachmentFilePath}, reached when nobody installed
+ * {@link GetAvailablePathForAttachmentsFunctionExtended.extended}.
+ *
+ * @param params - Parameters for the get attachment file path sync function.
+ * @returns The file path of the attachment.
+ */
+function getAttachmentFilePathSync(params: GetAttachmentFilePathSyncParams): string {
+  const {
+    app,
+    notePathOrFile,
+    oldAttachmentPathOrFile,
+    shouldSkipDuplicateCheck
+  } = params;
+  const attachmentPath = getPath(app, oldAttachmentPathOrFile);
+  const attachmentFileExtension = extname(attachmentPath);
+
+  return getAvailablePathForAttachmentsSync({
+    app,
+    attachmentFileBaseName: basename(attachmentPath, attachmentFileExtension),
+    attachmentFileExtension: attachmentFileExtension.slice(1),
+    notePathOrFile,
+    shouldSkipDuplicateCheck
+  });
+}
+
+/**
+ * The synchronous core of {@link getAvailablePathForAttachments}, which cannot create a missing attachment
+ * folder. Its caller creates the folder first when that is wanted.
+ *
+ * @param params - Parameters for the get available path for attachments sync function.
+ * @returns The available path for attachments.
+ */
+function getAvailablePathForAttachmentsSync(params: GetAvailablePathForAttachmentsSyncParams): string {
+  const {
+    app,
+    attachmentFileExtension,
+    notePathOrFile,
+    shouldSkipDuplicateCheck
+  } = params;
+  const attachmentFolder = resolveAttachmentFolder({ app, notePathOrFile });
+  const attachmentFileBaseName = normalizeString(normalizeSlashes(params.attachmentFileBaseName));
+
+  // A folder that does not exist yet still owns the attachment path.
+  // Resolving it as a non-existing folder stops the answer from collapsing to the vault root.
+  const folder = attachmentFolder.folder ?? getFolder({ app, pathOrFolder: attachmentFolder.path, shouldIncludeNonExisting: true });
+
+  const prefix = folder.getParentPrefix();
+  return shouldSkipDuplicateCheck
+    ? makeFileName({
+      fileBaseName: prefix + attachmentFileBaseName,
+      fileExtension: attachmentFileExtension
+    })
+    : app.vault.getAvailablePath(prefix + attachmentFileBaseName, attachmentFileExtension);
+}
+
+/**
+ * Reads the {@link GetAvailablePathForAttachmentsFunctionExtended.extended} member an attachment-location
+ * plugin installs. Its presence is the synchronous probe for "somebody else owns the resolution".
+ *
+ * @param app - An Obsidian application instance.
+ * @returns The extended function, or `undefined` when nobody installed one.
+ */
+function getExtendedFunction(app: App): GetAvailablePathForAttachmentsFunctionExtended['extended'] | undefined {
+  return (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFunctionExtended>).extended;
+}
+
+/**
  * Normalizes a path by combining multiple slashes into a single slash and removing leading and trailing slashes.
  *
  * @param path - Path to normalize.
@@ -532,4 +707,50 @@ function normalizeSlashes(path: string): string {
     searchValue: /^\/+|\/+$/g
   });
   return path || '/';
+}
+
+/**
+ * Resolves the `attachmentFolderPath` setting against a note into a concrete attachment folder.
+ *
+ * @param params - Parameters for the resolve attachment folder function.
+ * @returns The resolved attachment folder.
+ */
+function resolveAttachmentFolder(params: ResolveAttachmentFolderParams): ResolveAttachmentFolderResult {
+  const {
+    app,
+    notePathOrFile
+  } = params;
+  let attachmentFolderPath = app.vault.getConfig('attachmentFolderPath') as string;
+  const isCurrentFolder = attachmentFolderPath === '.' || attachmentFolderPath === './';
+  const relativePath = attachmentFolderPath.startsWith('./')
+    ? trimStart({
+      $string: attachmentFolderPath,
+      prefix: './'
+    })
+    : null;
+
+  // A note that does not exist yet (a rename target, a dummy sibling) still belongs to its own folder.
+  // Materializing it from its path keeps that folder, where a vault lookup would fall back to the root.
+  // Only an explicitly note-less attachment resolves to the vault root.
+  const noteFileOrNull = notePathOrFile === null
+    ? null
+    : getFile({
+      app,
+      pathOrFile: notePathOrFile,
+      shouldIncludeNonExisting: true
+    });
+
+  if (isCurrentFolder) {
+    attachmentFolderPath = noteFileOrNull ? noteFileOrNull.parent?.path ?? '' : '';
+  } else if (relativePath) {
+    attachmentFolderPath = (noteFileOrNull ? noteFileOrNull.parent?.getParentPrefix() ?? '' : '') + relativePath;
+  }
+
+  attachmentFolderPath = normalizeString(normalizeSlashes(attachmentFolderPath));
+
+  return {
+    folder: getFolderOrNull({ app, isCaseInsensitive: true, pathOrFolder: attachmentFolderPath }),
+    path: attachmentFolderPath,
+    relativePath
+  };
 }
