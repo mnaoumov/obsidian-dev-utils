@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 90.2.0
+
+- chore: allow the GHSA advisory id and the YAML omap tag in cspell
+- feat(attachment-path): add getAttachmentFolderPathSyncOrNull
+- chore: update libs
+
 ## 90.1.1
 
 - chore: lint md
