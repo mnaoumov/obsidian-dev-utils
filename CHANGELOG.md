@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 91.0.0
+
+- chore!: update libs and adopt obsidian-integration-testing 10
+
 ## 90.2.0
 
 - chore: allow the GHSA advisory id and the YAML omap tag in cspell
