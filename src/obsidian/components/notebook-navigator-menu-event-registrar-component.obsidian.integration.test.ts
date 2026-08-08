@@ -48,8 +48,7 @@ interface NotebookNavigatorMenuResult {
 describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
   it('should contribute exactly one plugin-titled entry, with no nested duplicate inside it', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn(
+      async callback(
         {
           app,
           lib: {

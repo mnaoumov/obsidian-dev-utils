@@ -46,8 +46,7 @@ describe('rename-delete-handler', () => {
   describe('file operations', () => {
     it('should rename a file in the vault', async () => {
       const result = await evalInObsidian<Record<string, never>, RenameTestResult>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app }) {
+        async callback({ app }) {
           const file = await app.vault.create('rdh-rename-test.md', '# Rename test\n');
           try {
             await app.vault.rename(file, 'rdh-renamed-test.md');
@@ -72,8 +71,7 @@ describe('rename-delete-handler', () => {
 
     it('should delete a file from the vault', async () => {
       const isFileGone = await evalInObsidian<Record<string, never>, boolean>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app }) {
+        async callback({ app }) {
           const file = await app.vault.create('rdh-delete-test.md', '# Delete test\n');
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
           await app.vault.delete(file);
@@ -86,8 +84,7 @@ describe('rename-delete-handler', () => {
 
     it('should create and delete a folder', async () => {
       const isFolderGone = await evalInObsidian<Record<string, never>, boolean>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app }) {
+        async callback({ app }) {
           const folder = await app.vault.createFolder('rdh-test-folder');
           // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
           await app.vault.delete(folder, true);
@@ -102,8 +99,7 @@ describe('rename-delete-handler', () => {
   describe('attachment move decoupled from update links (issue #154)', () => {
     it('should move the attachment folder when "Move attachments with note" is on but "Update links" is off', async () => {
       const result = await evalInObsidian<Record<string, never>, AttachmentMoveResult>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { AbortSignalComponent, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+        async callback({ app, lib: { AbortSignalComponent, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
           const PLUGIN_ID = 'rdh-decouple-test';
           const SRC_FOLDER = 'rdh-decouple-src';
           const DST_FOLDER = 'rdh-decouple-dst';
@@ -182,8 +178,7 @@ describe('rename-delete-handler', () => {
   describe('does not interfere with a foreign locked transaction (issue #146)', () => {
     it('should not process a rename that occurs inside a foreign subtree-locked transaction', async () => {
       const result = await evalInObsidian<Record<string, never>, AttachmentMoveResult>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, ResourceLockComponent, waitUntil } }) {
+        async callback({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, ResourceLockComponent, waitUntil } }) {
           const PLUGIN_ID = 'rdh-foreign-lock-test';
           const FOREIGN_PLUGIN_ID = 'rdh-foreign-plugin';
           const SRC_FOLDER = 'rdh-foreign-src';
@@ -273,8 +268,7 @@ describe('rename-delete-handler', () => {
   describe('does not disarm Obsidian\'s own link update when "Update links" is off (issue #47)', () => {
     it('should let Obsidian rewrite the embed when an attachment is renamed', async () => {
       const result = await evalInObsidian<Record<string, never>, NativeLinkUpdateResult>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+        async callback({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
           const PLUGIN_ID = 'rdh-attachment-rename-test';
           const FOLDER = 'rdh-attachment-rename';
           const NOTE = `${FOLDER}/note.md`;
@@ -349,8 +343,7 @@ describe('rename-delete-handler', () => {
 
     it('should let Obsidian rewrite a backlink when a note is renamed', async () => {
       const result = await evalInObsidian<Record<string, never>, NativeLinkUpdateResult>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+        async callback({ app, lib: { AbortSignalComponent, flushQueue, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
           const PLUGIN_ID = 'rdh-note-rename-test';
           const FOLDER = 'rdh-note-rename';
           const OLD_NOTE = `${FOLDER}/note.md`;

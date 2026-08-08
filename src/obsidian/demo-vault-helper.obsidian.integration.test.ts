@@ -1,7 +1,7 @@
 /// <reference types="obsidian-integration-testing/vitest/typings" />
 
 import { pollInObsidian } from 'obsidian-integration-testing';
-import { getTempVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   describe,
   expect,
@@ -45,7 +45,7 @@ describe('demo-vault-helper bootstrap', () => {
   // Layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
   // Store serves a CST release built against the fixed dev-utils (CST 13.4.1+; see T126 / T130).
   it('should install, configure, enable CodeScript Toolkit and run startup with no reload', async () => {
-    const vaultPath = getTempVault().path;
+    const vaultPath = getTemporaryVault().path;
 
     let lastStatus: BootstrapStatus | undefined;
     let status: BootstrapStatus;
@@ -54,8 +54,7 @@ describe('demo-vault-helper bootstrap', () => {
     // Timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        args: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
+        input: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
         async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
           const isCstInstalled = Object.hasOwn(app.plugins.manifests, cstPluginId);

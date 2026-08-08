@@ -18,8 +18,7 @@ describe('markdown', () => {
   describe('markdownToHtml', () => {
     it('should convert simple markdown to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        fn({ app, lib: { markdownToHtml } }) {
+        callback({ app, lib: { markdownToHtml } }) {
           return markdownToHtml({ app, markdown: '**bold** and *italic*' });
         }
       });
@@ -30,8 +29,7 @@ describe('markdown', () => {
 
     it('should convert headings to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        fn({ app, lib: { markdownToHtml } }) {
+        callback({ app, lib: { markdownToHtml } }) {
           return markdownToHtml({ app, markdown: '# Heading 1\n## Heading 2' });
         }
       });
@@ -42,8 +40,7 @@ describe('markdown', () => {
 
     it('should convert a list to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        fn({ app, lib: { markdownToHtml } }) {
+        callback({ app, lib: { markdownToHtml } }) {
           return markdownToHtml({ app, markdown: '- item 1\n- item 2\n- item 3' });
         }
       });
@@ -56,8 +53,7 @@ describe('markdown', () => {
 
     it('should convert inline code to HTML', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        fn({ app, lib: { markdownToHtml } }) {
+        callback({ app, lib: { markdownToHtml } }) {
           return markdownToHtml({ app, markdown: 'use `console.log()` here' });
         }
       });
@@ -68,8 +64,7 @@ describe('markdown', () => {
 
     it('should handle empty markdown', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        fn({ app, lib: { markdownToHtml } }) {
+        callback({ app, lib: { markdownToHtml } }) {
           return markdownToHtml({ app, markdown: '' });
         }
       });
@@ -81,8 +76,7 @@ describe('markdown', () => {
   describe('fullRender', () => {
     it('should render markdown into an element', async () => {
       const result = await evalInObsidian<Record<string, never>, string>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { fullRender } }) {
+        async callback({ app, lib: { fullRender } }) {
           const element = createDiv();
           await fullRender({
             app,

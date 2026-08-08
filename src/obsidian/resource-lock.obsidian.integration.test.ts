@@ -133,8 +133,7 @@ describe('resource-lock', () => {
   describe('lockResourceForPath', () => {
     it('should lock the current tab, auto-lock a future split and popout of the same note, and leave other notes editable', async () => {
       const result = await evalInObsidian<Record<string, never>, LockForPathResult>({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { lockResourceForPath } }) {
+        async callback({ app, lib: { lockResourceForPath } }) {
           // This file shares its live Obsidian instance with the other integration suites.
           // Those suites leave their own leaves and popouts open.
           // Start from a clean workspace so the reconcile below sees only the views this test opens.
@@ -225,8 +224,7 @@ describe('resource-lock', () => {
 
     it('should prevent the user from typing in a locked note while allowing it in an unlocked one', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { lockResourceForPath, typeIntoEditor } }): Promise<TypingResult> {
+        async callback({ app, lib: { lockResourceForPath, typeIntoEditor } }): Promise<TypingResult> {
           // Start from a clean workspace so the reconcile sees only the views this test opens.
           app.workspace.detachLeavesOfType('markdown');
           await settle();
@@ -305,8 +303,7 @@ describe('resource-lock', () => {
 
     it('should reject a Shift+Enter keystroke in a locked note (which bypasses the read-only facet) and accept it after unlock', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { lockResourceForPath, pressKey, waitUntil } }): Promise<ShiftEnterResult> {
+        async callback({ app, lib: { lockResourceForPath, pressKey, waitUntil } }): Promise<ShiftEnterResult> {
           // Start from a clean workspace so the reconcile sees only the view this test opens.
           app.workspace.detachLeavesOfType('markdown');
           await settle();
@@ -386,8 +383,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent subtree lock', () => {
     it('should make a note inside a subtree-locked folder read-only and editable again on unlock', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { ResourceLockComponent } }): Promise<SubtreeLockResult> {
+        async callback({ app, lib: { ResourceLockComponent } }): Promise<SubtreeLockResult> {
           app.workspace.detachLeavesOfType('markdown');
           await settle();
 
@@ -448,8 +444,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent rename re-keying', () => {
     it('should keep covering every rename of a folder swap that renames the locked folders themselves', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { isResourceLockedForPathByAncestor, ResourceLockComponent, waitUntil } }): Promise<FolderSwapResult> {
+        async callback({ app, lib: { isResourceLockedForPathByAncestor, ResourceLockComponent, waitUntil } }): Promise<FolderSwapResult> {
           const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
           const root = 'resource-lock-swap';
           const temporaryFolderPath = 'resource-lock-swap-temp';
@@ -550,8 +545,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent force unlock', () => {
     it('should abort the operation and make a locked note editable again via requestUnlockForPath', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { ResourceLockComponent } }): Promise<ForceUnlockResult> {
+        async callback({ app, lib: { ResourceLockComponent } }): Promise<ForceUnlockResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
           app.workspace.detachLeavesOfType('markdown');
@@ -603,8 +597,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent mutation blocker', () => {
     it('should block real vault rename and file-manager trash of a locked file, then allow them after unlock', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { ResourceLockComponent, ResourceLockedError } }): Promise<MutationBlockerResult> {
+        async callback({ app, lib: { ResourceLockComponent, ResourceLockedError } }): Promise<MutationBlockerResult> {
           const path = 'resource-lock-blocker-target.md';
           const renamedPath = 'resource-lock-blocker-renamed.md';
           for (const cleanupPath of [path, renamedPath]) {
@@ -668,8 +661,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent mutation bypass scope', () => {
     it('should let a mutation through inside a bypass scope and enforce it again after', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { ResourceLockComponent, ResourceLockedError } }): Promise<BypassScopeResult> {
+        async callback({ app, lib: { ResourceLockComponent, ResourceLockedError } }): Promise<BypassScopeResult> {
           const path = 'resource-lock-bypass-target.md';
           if (await app.vault.adapter.exists(path)) {
             await app.vault.adapter.remove(path);
@@ -720,8 +712,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent external-change detection', () => {
     it('should abort the owning operation when a locked file is changed outside the blocker (raw adapter)', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { ResourceLockComponent } }): Promise<ExternalChangeResult> {
+        async callback({ app, lib: { ResourceLockComponent } }): Promise<ExternalChangeResult> {
           const path = 'resource-lock-detector-target.md';
           if (await app.vault.adapter.exists(path)) {
             await app.vault.adapter.remove(path);
@@ -755,8 +746,7 @@ describe('resource-lock', () => {
   describe('unlock-active-note command', () => {
     it('should register the "Unlock active note" command (with a checkCallback) via the real registrar and remove it on dispose', async () => {
       const result = await evalInObsidian({
-        // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-        async fn({ app, lib: { AppActiveFileProvider, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, ResourceLockComponent, UnlockActiveNoteCommandHandler } }): Promise<UnlockCommandResult> {
+        async callback({ app, lib: { AppActiveFileProvider, CommandHandlerComponent, MenuEventRegistrarComponent, PluginCommandRegistrar, ResourceLockComponent, UnlockActiveNoteCommandHandler } }): Promise<UnlockCommandResult> {
           const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
           const harnessPlugin = app.plugins.getPlugin(HARNESS_PLUGIN_ID);
           if (!harnessPlugin) {

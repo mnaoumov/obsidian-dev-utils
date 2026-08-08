@@ -181,7 +181,7 @@ Everything the context exposes is live — the arrays and objects it hands you a
 
 ```typescript
 await evalInObsidian({
-  async fn({ app, lib: { ensureMetadataCacheReady } }) {
+  async callback({ app, lib: { ensureMetadataCacheReady } }) {
     await ensureMetadataCacheReady(app);
   }
 });

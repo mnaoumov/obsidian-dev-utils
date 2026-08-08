@@ -41,8 +41,7 @@ const FENCE_CODE = 'const syntaxHighlightingTest = 1;';
 describe('SyntaxHighlightingComponent', () => {
   it('should highlight a fence in the editor while registered and render it cleanly after unload', async () => {
     const result = await evalInObsidian<Record<string, never>, EditorHighlightingResult>({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
+      async callback({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
         const LANGUAGE = 'odu-syntax-highlighting-editor-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
         const WAIT_TIMEOUT_IN_MILLISECONDS = 10_000;
@@ -143,8 +142,7 @@ describe('SyntaxHighlightingComponent', () => {
 
   it('should highlight a fence in reading view while registered and drop the grammar after unload', async () => {
     const result = await evalInObsidian<Record<string, never>, ReadingViewHighlightingResult>({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
+      async callback({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
         const LANGUAGE = 'odu-syntax-highlighting-reading-view-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
         const WAIT_TIMEOUT_IN_MILLISECONDS = 10_000;

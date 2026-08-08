@@ -55,10 +55,7 @@ const STAGING_FOLDER_PATH = '.obsidian-dev-utils-temp';
 describe('VaultTransaction', () => {
   it('should soft-delete a file on trash and restore it with its original content on rollback', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      args: { stagingFolderPath: STAGING_FOLDER_PATH },
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<TrashRollbackResult> {
+      async callback({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<TrashRollbackResult> {
         const adapter = app.vault.adapter;
         const targetPath = 'vt-trash-target.md';
         const originalContent = 'original content';
@@ -83,7 +80,8 @@ describe('VaultTransaction', () => {
             }
           }
         }
-      }
+      },
+      input: { stagingFolderPath: STAGING_FOLDER_PATH }
     });
 
     expect(result.isOriginalGoneAfterTrash).toBe(true);
@@ -92,10 +90,7 @@ describe('VaultTransaction', () => {
 
   it('should remove a soft-deleted file for real and drop the staging folder on commit', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      args: { stagingFolderPath: STAGING_FOLDER_PATH },
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<CommitResult> {
+      async callback({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<CommitResult> {
         const adapter = app.vault.adapter;
         const targetPath = 'vt-commit-target.md';
         await app.vault.create(targetPath, 'to be committed away');
@@ -121,7 +116,8 @@ describe('VaultTransaction', () => {
             }
           }
         }
-      }
+      },
+      input: { stagingFolderPath: STAGING_FOLDER_PATH }
     });
 
     expect(result.isOriginalGoneAfterTrash).toBe(true);
@@ -131,10 +127,7 @@ describe('VaultTransaction', () => {
 
   it('should soft-delete a whole folder subtree on trash and restore it on rollback', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      args: { stagingFolderPath: STAGING_FOLDER_PATH },
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<SubtreeRollbackResult> {
+      async callback({ app, lib: { VaultTransaction }, stagingFolderPath }): Promise<SubtreeRollbackResult> {
         const adapter = app.vault.adapter;
         const folderPath = 'vt-subtree';
         const childPaths = ['vt-subtree/a.md', 'vt-subtree/nested/c.md'];
@@ -175,7 +168,8 @@ describe('VaultTransaction', () => {
             }
           }
         }
-      }
+      },
+      input: { stagingFolderPath: STAGING_FOLDER_PATH }
     });
 
     expect(result.areChildrenGoneAfterTrash).toBe(true);
@@ -184,8 +178,7 @@ describe('VaultTransaction', () => {
 
   it('should mutate and roll back a mutation-blocked file when given an openMutationBypass', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { ResourceLockComponent, VaultTransaction } }): Promise<BypassResult> {
+      async callback({ app, lib: { ResourceLockComponent, VaultTransaction } }): Promise<BypassResult> {
         const folderPath = 'vt-bypass-folder';
         const filePath = `${folderPath}/note.md`;
         if (await app.vault.adapter.exists(folderPath)) {
@@ -229,8 +222,7 @@ describe('VaultTransaction', () => {
 
   it('should leave both disk and an open editor at the restored content after rollback', async () => {
     const result = await evalInObsidian({
-      // eslint-disable-next-line unicorn/name-replacements -- `fn` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-      async fn({ app, lib: { VaultTransaction }, obsidianModule }): Promise<EditorClobberResult> {
+      async callback({ app, lib: { VaultTransaction }, obsidianModule }): Promise<EditorClobberResult> {
         const { MarkdownView } = obsidianModule;
         const targetPath = 'vt-editor-clobber.md';
         const originalContent = 'first\nmiddle\nlast\n';

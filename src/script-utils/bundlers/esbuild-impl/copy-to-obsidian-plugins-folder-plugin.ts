@@ -234,10 +234,8 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
   const vaultPath = dirname(obsidianConfigFolder);
   const transport = await getOrLaunchDevInstance(vaultPath);
   await evalInObsidian({
-    // eslint-disable-next-line unicorn/name-replacements -- `args` is declared by `obsidian-integration-testing`; renaming it here would not match the API.
-    args: { pluginName },
-    // eslint-disable-next-line no-shadow, unicorn/name-replacements -- No actual shadowing as the function is executed externally, and `fn` is declared by `obsidian-integration-testing`.
-    async fn({ app, obsidianModule, pluginName }) {
+    // eslint-disable-next-line no-shadow -- No actual shadowing as the function is executed externally.
+    async callback({ app, obsidianModule, pluginName }) {
       const HOT_RELOAD_PLUGIN_ID = 'hot-reload';
       const COMMUNITY_PLUGINS_REGISTRY_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json';
       const { requestUrl } = obsidianModule;
@@ -286,6 +284,7 @@ async function installAndEnableHotReload(params: InstallAndEnableHotReloadParams
 
       await app.plugins.enablePluginAndSave(pluginName);
     },
+    input: { pluginName },
     shouldSkipPreflightChecks: true,
     transport,
     vaultPath
