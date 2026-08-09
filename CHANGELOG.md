@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 91.0.1
+
+- fix(modals): report prompt validity only once touched
+- chore: update libs
+
 ## 91.0.0
 
 - chore!: update libs and adopt obsidian-integration-testing 10
