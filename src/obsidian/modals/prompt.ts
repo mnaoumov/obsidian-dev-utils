@@ -80,6 +80,7 @@ type PromptModalConstructorParams = ModalBaseConstructorParams<null | string> & 
 class PromptModal extends ModalBase<null | string> {
   private readonly cancelButtonText: string;
   private isOkClicked = false;
+  private isTouched = false;
   private readonly okButtonText: string;
   private readonly placeholder: string;
   private readonly title: DocumentFragment | string;
@@ -106,10 +107,21 @@ class PromptModal extends ModalBase<null | string> {
     const textComponent = new TextComponent(this.contentEl);
     const inputEl = textComponent.inputEl;
 
-    const validate = async (): Promise<void> => {
+    const validate = async (shouldReport: boolean): Promise<void> => {
       const errorMessage = await this.valueValidator(inputEl.value) as string | undefined;
       inputEl.setCustomValidity(errorMessage ?? '');
-      inputEl.reportValidity();
+      if (shouldReport) {
+        inputEl.reportValidity();
+      }
+    };
+
+    const handleInput = async (): Promise<void> => {
+      this.isTouched = true;
+      await validate(true);
+    };
+
+    const handleFocus = async (): Promise<void> => {
+      await validate(this.isTouched);
     };
 
     textComponent.setValue(this.value);
@@ -126,9 +138,10 @@ class PromptModal extends ModalBase<null | string> {
         this.close();
       }
     });
-    inputEl.addEventListener('input', convertAsyncToSync(validate));
-    inputEl.addEventListener('focus', convertAsyncToSync(validate));
-    invokeAsyncSafely(validate);
+    inputEl.addEventListener('input', convertAsyncToSync(handleInput));
+    inputEl.addEventListener('focus', convertAsyncToSync(handleFocus));
+    // The modal must start out invalid so OK refuses, but the validity is not reported until the user types or submits.
+    invokeAsyncSafely(() => validate(false));
     const okButton = new ButtonComponent(this.contentEl);
     okButton.setButtonText(this.okButtonText);
     okButton.setCta();
@@ -145,6 +158,8 @@ class PromptModal extends ModalBase<null | string> {
   private handleOk(event: Event, textComponent: TextComponent): void {
     event.preventDefault();
     if (!textComponent.inputEl.checkValidity()) {
+      this.isTouched = true;
+      textComponent.inputEl.reportValidity();
       return;
     }
 

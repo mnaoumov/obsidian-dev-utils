@@ -5,6 +5,7 @@ import type {
   ButtonComponent,
   TextComponent
 } from 'obsidian-test-mocks/obsidian';
+import type { MockInstance } from 'vitest';
 
 import {
   ButtonComponent as ButtonComponentOriginal,
@@ -12,6 +13,7 @@ import {
 } from 'obsidian';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
+  beforeAll,
   beforeEach,
   describe,
   expect,
@@ -67,6 +69,13 @@ vi.mock('../../obsidian/plugin/plugin-context.ts', () => ({
 describe('prompt', () => {
   const buttonInstances: ButtonComponentOriginal[] = [];
   const textInstances: TextComponentOriginal[] = [];
+  let reportValiditySpy: MockInstance;
+
+  // Installed once for the whole file: a per-test `vi.spyOn` would wrap the previous spy every time.
+  // `vi.clearAllMocks()` below resets its recorded calls without uninstalling it.
+  beforeAll(() => {
+    reportValiditySpy = vi.spyOn(HTMLInputElement.prototype, 'reportValidity');
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -210,5 +219,71 @@ describe('prompt', () => {
       valueValidator: validator
     });
     expect(result).toBeNull();
+  });
+
+  it('should not report validity on open', async () => {
+    const result = await prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    expect(result).toBeNull();
+    expect(reportValiditySpy).not.toHaveBeenCalled();
+  });
+
+  it('should report validity once the value is edited', async () => {
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      castTo<TextComponent>(textComp).simulateEvent__('input');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(reportValiditySpy).toHaveBeenCalled();
+  });
+
+  it('should not report validity when the input is focused before it is edited', async () => {
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      castTo<TextComponent>(textComp).simulateEvent__('focus');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(reportValiditySpy).not.toHaveBeenCalled();
+  });
+
+  it('should report validity when the input is focused after it is edited', async () => {
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      castTo<TextComponent>(textComp).simulateEvent__('input');
+      castTo<TextComponent>(textComp).simulateEvent__('focus');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(reportValiditySpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should report validity and not submit when OK is clicked with an invalid value', async () => {
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const okButton = ensureNonNullable(buttonInstances[0]);
+      castTo<ButtonComponent>(okButton).simulateClick__();
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(reportValiditySpy).toHaveBeenCalled();
   });
 });
