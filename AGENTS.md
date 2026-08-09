@@ -408,7 +408,11 @@ export function myFunction(param: Type): ReturnType {
 ### Goals
 
 - The project aims for 100% test coverage. Every new or changed code path must be covered by tests.
-- Currently unit tests only; full E2E Obsidian Electron tests are planned for the next phase.
+- Three layers, one vitest project per concern (see `scripts/vitest-config.ts`): unit tests
+  (`*.test.ts`, jsdom or node), Node-side integration tests (`*.integration.test.ts`), and real-Obsidian
+  E2E tests (`*.obsidian.integration.test.ts`, driven over CDP by `obsidian-integration-testing`
+  against an owned Electron instance). The E2E layer is no longer "planned" — it is the only layer that
+  sees behavior the mocks cannot reproduce (see L7, L10, L11 above for cases that only surface there).
 
 ### Test setup
 
