@@ -74,6 +74,8 @@ function clickOn(el: HTMLElement): MouseEvent {
 function createBackgroundEl(modal: Modal): HTMLElement {
   // Obsidian's real `Modal` builds `containerEl > [bgEl('modal-bg'), modalEl('modal')]`, but the mock
   // Modal has no backdrop, so the tests add the missing sibling to reproduce that shape.
+  // TODO(T406): drop this helper and click `modal.bgEl` once T405 adds the backdrop to the
+  // `obsidian-test-mocks` Modal and this repo bumps past that release.
   return modal.containerEl.createDiv();
 }
 
