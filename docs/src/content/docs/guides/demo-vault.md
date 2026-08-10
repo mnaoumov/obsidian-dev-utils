@@ -35,7 +35,9 @@ Archiving is on by default. Pass `--no-demo-vault` to skip it for a release, or 
 
 ### The `demo-vault-helper` bootstrap plugin
 
-A demo vault usually showcases the plugin through notes whose `code-button`s run TypeScript via [CodeScript Toolkit](https://github.com/mnaoumov/obsidian-codescript-toolkit). So those buttons work with no manual setup, `archivePluginDemoVault` injects a tiny, plugin-agnostic bootstrap plugin — `demo-vault-helper`, owned, versioned, and bundled by `obsidian-dev-utils` — into every demo vault at release time. On layout-ready it installs CodeScript Toolkit from the community store (if missing), writes its settings, and enables it (writing the settings **before** a fresh enable, so it loads already configured with no reload). If CodeScript Toolkit is already enabled but the settings just changed, it is reloaded so it re-reads them; an ordinary re-open (settings unchanged) reloads nothing. CodeScript Toolkit then runs the vault's `startup.ts`.
+A demo vault usually showcases the plugin through notes whose `code-button`s run TypeScript via [CodeScript Toolkit](https://github.com/mnaoumov/obsidian-codescript-toolkit). So those buttons work with no manual setup, `archivePluginDemoVault` injects a tiny, plugin-agnostic bootstrap plugin — `demo-vault-helper`, owned, versioned, and bundled by `obsidian-dev-utils` — into every demo vault at release time. On layout-ready it installs CodeScript Toolkit from the community store (if missing), writes its settings, and enables it (writing the settings **before** a fresh enable, so it loads already configured with no reload). If CodeScript Toolkit is already enabled but the settings just changed, it is reloaded so it re-reads them; an ordinary re-open (settings unchanged) reloads nothing. CodeScript Toolkit then runs the vault's `startup.ts`, and the helper raises the [sandbox notice](#the-sandbox-notice).
+
+Among the settings it writes is a `defaultCodeButtonConfig` that turns CodeScript Toolkit's source viewer on for every button, so a reader can see the code a button runs. Because it is written by the helper, every demo vault gets it without editing a single note.
 
 Because `obsidian-dev-utils` owns and injects it, a demo vault commits **nothing** helper-related and never needs a manual "install CodeScript Toolkit" step; an `obsidian-dev-utils` bump propagates any fix to every demo vault. To adopt it, a demo vault commits only:
 
@@ -75,10 +77,18 @@ The command is **desktop only** — it hides itself on mobile (its `canExecute` 
 
 1. Resolves the plugin's GitHub repository from Obsidian's community registry (see [`getCommunityPluginRepo`](#getcommunitypluginrepo)).
 2. Reads the latest release version. If the installed version is the latest (or newer), its demo vault opens directly; otherwise the user is offered a choice between the latest and the currently-installed version via a [Select Option](/obsidian-dev-utils/guides/modals/#select-option) dialog.
-3. Downloads and extracts the chosen version's `<plugin-id>-demo-vault-<version>.zip` to a per-version cache folder (under the OS temp directory, reused if already extracted).
+3. Downloads the chosen version's `<plugin-id>-demo-vault-<version>.zip`. Only the **archive** is cached (under the OS temp directory, keyed by plugin id and version); every open extracts a **fresh** copy into its own folder, so a previous session's edits never leak into a new one. Extracted folders left over from earlier sessions are removed, best-effort, about a day after their last use.
 4. Opens that folder as a vault in a new window.
 
+A progress notice is shown from the moment the command is invoked (`Opening demo vault for …`, then `Downloading …`, then `Extracting …`), because resolving the release and downloading the archive can take a while and a silent command invites a second click — which would produce a second extracted vault.
+
 If the plugin is not in the community registry, or no archive exists for the chosen version, a notice is shown and nothing is opened.
+
+### The sandbox notice
+
+Because every open extracts a fresh copy, a user who writes their own notes in a demo vault will not find them in the next one. So once the vault is open, `demo-vault-helper` raises a notice — modelled on Obsidian's own sandbox-vault notice, staying up until it is clicked — that names the plugin the vault demonstrates, gives the folder it was extracted to, says the folder is cleaned up automatically about a day after its last use, and explains that re-running the command creates a new copy.
+
+The notice is raised by the **helper**, inside the demo vault, not by the `Open demo vault` command: that command runs in the vault the user started from, not the one being opened. Nothing is needed to opt in — every demo vault gets it through the injected helper.
 
 ### `getCommunityPluginRepo`
 
@@ -89,3 +99,53 @@ import { getCommunityPluginRepo } from 'obsidian-dev-utils/obsidian/community-pl
 
 const repo = await getCommunityPluginRepo('my-plugin'); // e.g. 'owner/my-plugin', or `null` if not listed
 ```
+
+## Authoring the notes
+
+The demo vault is not a set of samples sitting beside the documentation — it **is** the documentation, read either in Obsidian or straight from GitHub by someone who has not installed the plugin. That second reader is what the following rules protect, and the [coverage suite](#keeping-the-vault-honest) enforces them:
+
+1. **Every note opens with an `# H1`, then 1-3 sentences of what it does and why you would want it** — in behavior terms, not technical nouns. A note that goes from its title straight to a button teaches nothing to a reader who does not already know the feature.
+2. **Links between notes are `[Text](<./NN Name.md>)`, never `[[wikilinks]]`.** A wikilink renders as literal brackets on GitHub and leads nowhere. Angle brackets keep a name with spaces intact. Wikilinks shown *inside* a code fence are sample text and are fine.
+3. **No `[Docs](…)` link line.** The note is the docs; a line pointing elsewhere for the real explanation is the shape this convention exists to remove.
+4. **`00 Start.md` is a getting-started narrative**, not a bare list — what the vault is, one concrete first success, then an index grouped under headings with a one-line description per entry. Every other note must be reachable from it.
+5. **The first success spells out the mechanics**, because a first-time reader has never seen CodeScript Toolkit: a code button renders as a captioned rectangle, **clicking it runs the code**, the result appears below it, and the `</>` toggle beside it reveals the source. Nothing about a coloured rectangle says "button" to someone who does not already know — say it once, in the first example, instead of assuming it.
+6. **`.obsidian/app.json` pins `defaultViewMode: "preview"` and `livePreview: false`**, so a note opens as a reader sees it.
+
+Rules 1-3 and the reachability half of rule 4 are machine-checked by the coverage suite below. Whether `00 Start.md` actually reads as a narrative, rule 5, and rule 6 are convention only — no check can tell prose from filler.
+
+## Keeping the vault honest
+
+`registerDemoVaultCoverageSuite` (from `obsidian-dev-utils/script-utils/demo-vault-coverage`) registers a `vitest` suite that reads the plugin's real surface from source and checks the vault against it — without launching Obsidian. Call it once from `src/demo-vault.no-app.integration.test.ts`:
+
+```ts
+import { registerDemoVaultCoverageSuite } from 'obsidian-dev-utils/script-utils/demo-vault-coverage';
+import { getRootFolder } from 'obsidian-dev-utils/script-utils/root';
+
+registerDemoVaultCoverageSuite({
+  configInterfaces: [{ interfaceName: 'PluginSettings', sourcePath: 'src/plugin-settings.ts' }],
+  interfaces: [{ interfaceName: 'CodeButtonContext', kind: 'methods', receiver: 'codeButtonContext', sourcePath: 'src/code-button-context.ts' }],
+  nonTrivialGuard: {
+    expectDemoNote: '00 Start.md',
+    expectMember: 'console',
+    interfaceName: 'CodeButtonContext',
+    sourcePath: 'src/code-button-context.ts'
+  },
+  rootFolder: getRootFolder() ?? process.cwd()
+});
+```
+
+It asserts that every reflected member is demonstrated somewhere in the notes, that no note references a member that no longer exists (rename drift), **and** that the notes follow the authoring rules above.
+
+The authoring checks are always on — a note that breaks the convention is broken for real readers, so there is no flag to turn them off. The optional `authoring` member only tunes them:
+
+```ts
+authoring: {
+  // Notes outside the learning path, exempt from every authoring check.
+  // Defaults to the vault's own README, which addresses someone browsing the repo.
+  excludedNotes: ['README.md'],
+  // The note every other note must be reachable from. Defaults to `00 Start.md`.
+  startNote: '00 Start.md'
+}
+```
+
+`docs` stays optional and is only for a plugin that still keeps a separate `docs/` folder: it checks that every feature doc has a demo note linking to it. A plugin whose vault is its documentation has no use for it.
