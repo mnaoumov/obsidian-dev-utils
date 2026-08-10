@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 92.0.0
+
+- test(modals): click the mock modal backdrop instead of a hand-built one
+- feat(demo-vault): warn that the demo vault is a sandbox and enforce the authoring convention
+- feat(modals): minimize a minimizable modal on a background click
+- chore: update libs
+- docs: describe the three test layers instead of claiming unit tests only
+
 ## 91.0.1
 
 - fix(modals): report prompt validity only once touched
