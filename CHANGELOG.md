@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 92.1.0
+
+- docs: missing descriptions
+
 ## 92.0.0
 
 - test(modals): click the mock modal backdrop instead of a hand-built one
