@@ -67,21 +67,43 @@ export function* gen(): Generator<number> {
 }
 `;
 
+const START_NOTE_PATH = '00 Start.md';
+
 const START_NOTE = `# Start
+
+Try the buttons below to see what the plugin does before you install it anywhere.
 
 Call demoContext.doThing() and demoContext.doOther() here.
 Use demoProps.alpha and demoProps.beta.
 Enable optionA and set optionB.
+
+- [Surface](<./Surface.md>)
+- [More](<./nested/More.md>)
 
 See [feature one](docs/feature-one.md) and [feature two](docs/feature-two.md).
 `;
 
 const SURFACE_NOTE = `# Surface
 
+Lists every setting the plugin exposes, so you can see what each one changes before touching it.
+
 The DemoSettings class exposes isFullKeyDisplayEnabled, label, and VERSION.
 Call demoSettings.doAction() to run it.
 Modes: DemoMode.Fast, DemoMode.Slow, DemoMode.Careful.
 Helpers: doFoo(), doBar(), and gen().
+`;
+
+const MORE_NOTE = `# More
+
+More demo content.
+`;
+
+// The vault's own readme addresses someone browsing the repo, not a reader working through the vault, so
+// It is excluded from the authoring checks by default. It is written deliberately off-convention here, so
+// A regression in that exclusion fails loudly.
+const VAULT_README_NOTE = `[Docs](https://example.com/docs)
+
+See [[Start]] for the tour.
 `;
 
 function createFixtureRoot(prefix: string): string {
@@ -101,9 +123,10 @@ function populateFixture(root: string): void {
   writeFixtureFile(root, 'docs/feature-one.md', '# Feature one\n');
   writeFixtureFile(root, 'docs/feature-two.md', '# Feature two\n');
   writeFixtureFile(root, 'docs/usage.md', '# Usage\n');
-  writeFixtureFile(root, 'demo-vault/Start.md', START_NOTE);
+  writeFixtureFile(root, `demo-vault/${START_NOTE_PATH}`, START_NOTE);
   writeFixtureFile(root, 'demo-vault/Surface.md', SURFACE_NOTE);
-  writeFixtureFile(root, 'demo-vault/nested/More.md', 'More demo content.\n');
+  writeFixtureFile(root, 'demo-vault/nested/More.md', MORE_NOTE);
+  writeFixtureFile(root, 'demo-vault/README.md', VAULT_README_NOTE);
   writeFixtureFile(root, 'demo-vault/notes.txt', 'Not a markdown file.\n');
   // A stale reference buried in node_modules must be skipped by the corpus scan.
   writeFixtureFile(root, 'demo-vault/node_modules/uuid/README.md', 'demoContext.removedMethod() should be skipped.\n');
@@ -123,7 +146,7 @@ registerDemoVaultCoverageSuite({
   docs: { folder: 'docs', nonFeatureDocs: ['usage'] },
   interfaces: [{ interfaceName: 'DemoContext', kind: 'methods', receiver: 'demoContext', sourcePath: 'src/context.ts' }],
   nonTrivialGuard: {
-    expectDemoNote: 'Start.md',
+    expectDemoNote: START_NOTE_PATH,
     expectMember: 'doThing',
     interfaceName: 'DemoContext',
     sourcePath: 'src/context.ts'
@@ -131,12 +154,17 @@ registerDemoVaultCoverageSuite({
   rootFolder: suiteRoot
 });
 
-// A second registration with a properties-kind interface and no docs exercises the remaining suite branches.
+// A second registration with a properties-kind interface and no docs exercises the remaining suite branches,
+// Plus the `authoring` tuning path (an explicit start note and an extra excluded note).
 registerDemoVaultCoverageSuite({
+  authoring: {
+    excludedNotes: ['README.md', 'nested/More.md'],
+    startNote: START_NOTE_PATH
+  },
   configInterfaces: [],
   interfaces: [{ interfaceName: 'DemoProps', kind: 'properties', receiver: 'demoProps', sourcePath: 'src/props.ts' }],
   nonTrivialGuard: {
-    expectDemoNote: 'Start.md',
+    expectDemoNote: START_NOTE_PATH,
     expectMember: 'alpha',
     interfaceName: 'DemoProps',
     sourcePath: 'src/props.ts'
@@ -241,7 +269,7 @@ describe('DemoVaultCoverageChecker', () => {
   it('collects demo note relative paths, excluding node_modules and non-markdown files', () => {
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });
     const notes = checker.collectDemoNoteRelativePaths();
-    expect(notes).toContain('Start.md');
+    expect(notes).toContain(START_NOTE_PATH);
     expect(notes).toContain('nested/More.md');
     expect(notes).not.toContain('notes.txt');
     expect(notes.some((note) => note.includes('node_modules'))).toBe(false);
@@ -268,7 +296,7 @@ describe('DemoVaultCoverageChecker', () => {
   it('catches stale receiver references and de-duplicates them', () => {
     writeFixtureFile(
       root,
-      'demo-vault/Start.md',
+      `demo-vault/${START_NOTE_PATH}`,
       'demoContext.doThing() then demoContext.replaceCodeBlock() and demoContext.replaceCodeBlock() again.'
     );
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });
@@ -293,5 +321,144 @@ describe('DemoVaultCoverageChecker', () => {
   it('reports no unlinked feature docs when all are linked', () => {
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });
     expect(checker.findUnlinkedFeatureDocs({ docsFolder: 'docs', nonFeatureDocs: ['usage'] })).toEqual([]);
+  });
+
+  it('reads and caches every note individually', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const notes = checker.collectNotes();
+    expect(notes.map((note) => note.relativePath)).toContain('nested/More.md');
+    expect(notes.find((note) => note.relativePath === START_NOTE_PATH)?.content).toContain('# Start');
+    expect(checker.collectNotes()).toBe(notes);
+  });
+});
+
+describe('DemoVaultCoverageChecker authoring checks', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = createFixtureRoot('odu-dvc-authoring-');
+  });
+
+  afterEach(() => {
+    rmSync(root, { force: true, recursive: true });
+  });
+
+  it('accepts a conventional vault', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithoutH1()).toEqual([]);
+    expect(checker.findNotesWithoutIntroProse()).toEqual([]);
+    expect(checker.findNotesWithWikilinks()).toEqual([]);
+    expect(checker.findNotesWithDocsLinks()).toEqual([]);
+    expect(checker.findUnreachableNotes({ startNote: START_NOTE_PATH })).toEqual([]);
+  });
+
+  it('finds a note that does not open with an H1', () => {
+    writeFixtureFile(root, 'demo-vault/Headless.md', 'Straight into the prose, with no title.\n');
+    writeFixtureFile(root, 'demo-vault/Subheading.md', '## Subheading\n\nOpens at the wrong level.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithoutH1()).toEqual(['Headless.md', 'Subheading.md']);
+  });
+
+  it('accepts an H1 preceded by frontmatter or blank lines', () => {
+    writeFixtureFile(root, 'demo-vault/Front.md', '---\ntitle: Front\n---\n\n# Front\n\nHas frontmatter first.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithoutH1()).toEqual([]);
+  });
+
+  it('reports an empty note as missing both its H1 and its prose', () => {
+    writeFixtureFile(root, 'demo-vault/Empty.md', '\n\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithoutH1()).toEqual(['Empty.md']);
+    expect(checker.findNotesWithoutIntroProse()).toEqual(['Empty.md']);
+  });
+
+  it('finds a note that goes straight from its title to a code block', () => {
+    writeFixtureFile(root, 'demo-vault/Buttons.md', '# Buttons\n\n```code-button\nrun();\n```\n');
+    writeFixtureFile(root, 'demo-vault/Headings.md', '# Headings\n\n## Options\n\n~~~ts\nrun();\n~~~\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithoutIntroProse()).toEqual(['Buttons.md', 'Headings.md']);
+  });
+
+  it('finds a wikilink outside a code fence, but not one shown inside a fence or in inline code', () => {
+    writeFixtureFile(root, 'demo-vault/Linked.md', '# Linked\n\nSee [[Surface]] for more.\n');
+    writeFixtureFile(root, 'demo-vault/Sample.md', '# Sample\n\nA link looks like `[[Note]]`, for example:\n\n```md\n[[Note]]\n```\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithWikilinks()).toEqual(['Linked.md']);
+  });
+
+  it('finds a Docs link line', () => {
+    writeFixtureFile(root, 'demo-vault/Pointer.md', '# Pointer\n\n[Docs](https://example.com/docs)\n\nExplains nothing itself.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithDocsLinks()).toEqual(['Pointer.md']);
+  });
+
+  it('finds a note nothing links to', () => {
+    writeFixtureFile(root, 'demo-vault/Orphan.md', '# Orphan\n\nNothing links here.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findUnreachableNotes({ startNote: START_NOTE_PATH })).toEqual(['Orphan.md']);
+  });
+
+  it('follows links transitively, through anchors, percent-encoding, and repeated targets', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/nested/More.md',
+      `# More
+
+Links onward, twice, and to a heading inside the next note.
+
+- [Deep](<./Deeper note.md#section>)
+- [Deep again](./Deeper%20note.md)
+`
+    );
+    writeFixtureFile(root, 'demo-vault/nested/Deeper note.md', '# Deeper\n\nReached from More.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findUnreachableNotes({ startNote: START_NOTE_PATH })).toEqual([]);
+  });
+
+  it('does not follow external links or non-note targets, nor a link inside a code fence', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/nested/More.md',
+      `# More
+
+Everything below is a link the walk must not follow.
+
+- [External](https://example.com/Orphan.md)
+- [Image](./diagram.png)
+
+\`\`\`md
+[Orphan](<./Orphan.md>)
+\`\`\`
+`
+    );
+    writeFixtureFile(root, 'demo-vault/Orphan.md', '# Orphan\n\nOnly linked from inside a fence.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findUnreachableNotes({ startNote: START_NOTE_PATH })).toEqual(['Orphan.md']);
+  });
+
+  it('takes a malformed percent-escape in a link literally instead of throwing', () => {
+    writeFixtureFile(root, 'demo-vault/nested/More.md', '# More\n\nA link with a bare percent sign.\n\n[Odd](<./100%.md>)\n');
+    writeFixtureFile(root, 'demo-vault/nested/100%.md', '# Odd\n\nNamed with a percent sign.\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findUnreachableNotes({ startNote: START_NOTE_PATH })).toEqual([]);
+  });
+
+  it('treats every note as unreachable when the start note is missing', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findUnreachableNotes({ startNote: 'Missing.md' }))
+      .toEqual([START_NOTE_PATH, 'nested/More.md', 'Surface.md']);
+  });
+
+  it('excludes the vault\'s own readme by default, and any note named explicitly', () => {
+    const defaultChecker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(defaultChecker.findNotesWithDocsLinks()).toEqual([]);
+    expect(defaultChecker.findNotesWithWikilinks()).toEqual([]);
+    expect(defaultChecker.findNotesWithoutH1()).toEqual([]);
+
+    const strictChecker = new DemoVaultCoverageChecker({ excludedNotes: [], rootFolder: root });
+    expect(strictChecker.findNotesWithDocsLinks()).toEqual(['README.md']);
+    expect(strictChecker.findNotesWithWikilinks()).toEqual(['README.md']);
+    expect(strictChecker.findNotesWithoutH1()).toEqual(['README.md']);
+    expect(strictChecker.findUnreachableNotes({ startNote: START_NOTE_PATH })).toEqual(['README.md']);
   });
 });
