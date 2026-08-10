@@ -25,6 +25,12 @@ import {
   it
 } from 'vitest';
 
+interface BackgroundClickResult {
+  readonly barShown: boolean;
+  readonly isMinimized: boolean;
+  readonly isModalConnected: boolean;
+}
+
 interface CancelByClickResult {
   readonly barGone: boolean;
   readonly isMinimized: boolean;
@@ -329,6 +335,88 @@ describe('MinimizableModal', () => {
       expect(result.barGone).toBe(true);
       // Cancel CLOSED the modal (its container left the DOM) rather than merely restoring it.
       expect(result.isModalConnected).toBe(false);
+    });
+  });
+
+  describe('background click', () => {
+    it('should minimize the modal instead of closing it when its background is clicked', async () => {
+      const result = await evalInObsidian({
+        async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<BackgroundClickResult> {
+          const BACKGROUND_SELECTOR = '.modal-bg';
+          const BAR_SELECTOR = '.minimized-modal-bar';
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new MinimizableModal(modal);
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const backgroundEl = minimizable.modal.containerEl.querySelector(BACKGROUND_SELECTOR);
+          if (!backgroundEl) {
+            throw new Error('modal background not found');
+          }
+
+          // Obsidian dismisses a modal from a listener it registers on this very element in the `Modal`
+          // Constructor. Without the wrapper's capture-phase guard on `containerEl`, this click closes
+          // The modal — cancelling whatever operation it was running — instead of minimizing it.
+          backgroundEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const outcome: BackgroundClickResult = {
+            barShown: document.body.querySelector(BAR_SELECTOR) !== null,
+            isMinimized: minimizable.isMinimized,
+            isModalConnected: minimizable.modal.containerEl.isConnected
+          };
+
+          minimizable.restore();
+          minimizable.modal.close();
+
+          return outcome;
+        }
+      });
+
+      // The modal minimized to its floating bar...
+      expect(result.isMinimized).toBe(true);
+      expect(result.barShown).toBe(true);
+      // ...and is still open, so the operation it guards was never cancelled.
+      expect(result.isModalConnected).toBe(true);
+    });
+
+    it('should let Obsidian close the modal when shouldMinimizeOnClickOutside is false', async () => {
+      const result = await evalInObsidian({
+        async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<BackgroundClickResult> {
+          const BACKGROUND_SELECTOR = '.modal-bg';
+          const BAR_SELECTOR = '.minimized-modal-bar';
+          const SETTLE_DELAY_MILLISECONDS = 300;
+
+          const modal = new obsidianModule.Modal(app);
+          modal.setTitle('Working');
+          const minimizable = new MinimizableModal(modal, { shouldMinimizeOnClickOutside: false });
+          minimizable.modal.open();
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          const backgroundEl = minimizable.modal.containerEl.querySelector(BACKGROUND_SELECTOR);
+          if (!backgroundEl) {
+            throw new Error('modal background not found');
+          }
+
+          backgroundEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+
+          return {
+            barShown: document.body.querySelector(BAR_SELECTOR) !== null,
+            isMinimized: minimizable.isMinimized,
+            isModalConnected: minimizable.modal.containerEl.isConnected
+          };
+        }
+      });
+
+      // Opting out leaves Obsidian's own dismissal intact — which is also what the test above proves the
+      // Default now suppresses: the very same click closes the modal when the wrapper stays out of the way.
+      expect(result.isModalConnected).toBe(false);
+      expect(result.isMinimized).toBe(false);
+      expect(result.barShown).toBe(false);
     });
   });
 

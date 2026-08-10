@@ -40,6 +40,10 @@
  *
  * The wrapped modal can still be closed normally; the floating bar is cleaned up automatically when
  * the modal closes (even if it is closed while minimized).
+ *
+ * Clicking the dimmed background behind the modal **minimizes** it rather than closing it, so a stray
+ * click past the dialog no longer cancels the operation the modal is running — pass
+ * `{ shouldMinimizeOnClickOutside: false }` to keep Obsidian's native close-on-background-click.
  */
 
 import type { App } from 'obsidian';
@@ -113,6 +117,15 @@ const beeper = new Beeper();
  * Options for constructing a {@link MinimizableModal}.
  */
 export interface MinimizableModalConstructorOptions {
+  /**
+   * Whether clicking the dimmed background behind the modal minimizes it instead of closing it.
+   * Obsidian's native behavior is to close, which cancels whatever operation the modal is running;
+   * minimizing keeps that operation alive so the user can peek at the involved notes and come back.
+   *
+   * @default `true`
+   */
+  readonly shouldMinimizeOnClickOutside?: boolean;
+
   /**
    * Whether the minimized bar shows a Cancel button that closes the wrapped modal. Closing lets the
    * wrapped modal's own `onClose` define what "cancel" means (e.g. releasing a held lock).
@@ -228,6 +241,7 @@ export class MinimizableModal<TModal extends Modal> {
   private minimizedBarEl: HTMLElement | null = null;
   private peekLockComponent: null | PeekLockComponent = null;
   private peekLockEntry: null | PeekLockEntry = null;
+  private readonly shouldMinimizeOnClickOutside: boolean;
   private readonly shouldShowCancelButton: boolean;
 
   /**
@@ -238,9 +252,21 @@ export class MinimizableModal<TModal extends Modal> {
    */
   public constructor(modal: TModal, options: MinimizableModalConstructorOptions = {}) {
     this.modal = modal;
+    this.shouldMinimizeOnClickOutside = options.shouldMinimizeOnClickOutside ?? true;
     this.shouldShowCancelButton = options.shouldShowCancelButton ?? true;
     addPluginCssClasses(modal.containerEl, [CssClass.MinimizableModal]);
     this.minimizeButtonEl = this.createMinimizeButton();
+    if (this.shouldMinimizeOnClickOutside) {
+      // Obsidian dismisses a modal from a listener it registers on `bgEl` IN THE `Modal` CONSTRUCTOR —
+      // On macOS desktop that listener calls `close()` directly (no overridable method, no
+      // `defaultPrevented` guard), so neither overriding `onClickOutside` nor `preventDefault()` alone can
+      // Stop it. At the target phase the DOM invokes listeners in registration order regardless of the
+      // Capture flag, and Obsidian registered first, so the only way to run earlier is to capture on the
+      // PARENT element. Hence: capture-phase `click` on `containerEl`.
+      modal.containerEl.addEventListener('click', ($event) => {
+        this.handleContainerClick($event);
+      }, { capture: true });
+    }
     this.closePatchComponent.load();
     this.patchOnClose(modal);
   }
@@ -369,6 +395,35 @@ export class MinimizableModal<TModal extends Modal> {
     this.disablePeekLock();
     this.removeMinimizedBar();
     this.isMinimizedValue = false;
+  }
+
+  private handleContainerClick($event: MouseEvent): void {
+    // While minimized the container is hidden, so no click can reach it — but a synthetic one still can,
+    // And minimizing an already-minimized modal is meaningless.
+    if (this.isMinimizedValue) {
+      return;
+    }
+
+    // A click that passed through the modal itself is ordinary interaction with its content.
+    // `composedPath()` (rather than `modalEl.contains($event.target)`) needs no cast and stays correct
+    // Across windows, where an `instanceof HTMLElement` check against another realm's element would not.
+    if ($event.composedPath().includes(this.modal.modalEl)) {
+      return;
+    }
+
+    // A text selection dragged from inside the modal out onto the background makes the resulting
+    // `click` fire on their common ancestor — `containerEl`. Obsidian does not dismiss on that gesture (its
+    // Own listener sits on `bgEl`, which is never the target here), so neither does this.
+    if ($event.target === this.modal.containerEl) {
+      return;
+    }
+
+    // What is left is a click on the dimmed background itself. `stopImmediatePropagation()` is what
+    // Actually keeps it from reaching Obsidian's `bgEl` listener on BOTH platform branches;
+    // `preventDefault()` additionally satisfies the `defaultPrevented` guard in `onClickOutside`.
+    $event.preventDefault();
+    $event.stopImmediatePropagation();
+    this.minimize();
   }
 
   private patchOnClose(modal: Modal): void {

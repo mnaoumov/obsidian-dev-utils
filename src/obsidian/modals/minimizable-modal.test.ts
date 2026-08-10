@@ -65,6 +65,20 @@ afterEach(() => {
   activeDocument.body.empty();
 });
 
+function clickOn(el: HTMLElement): MouseEvent {
+  const $event = new MouseEvent('click', { bubbles: true, cancelable: true });
+  el.dispatchEvent($event);
+  return $event;
+}
+
+function createBackgroundEl(modal: Modal): HTMLElement {
+  // Obsidian's real `Modal` builds `containerEl > [bgEl('modal-bg'), modalEl('modal')]`, but the mock
+  // Modal has no backdrop, so the tests add the missing sibling to reproduce that shape.
+  // TODO(T406): drop this helper and click `modal.bgEl` once T405 adds the backdrop to the
+  // `obsidian-test-mocks` Modal and this repo bumps past that release.
+  return modal.containerEl.createDiv();
+}
+
 function getBar(): HTMLElement | null {
   return activeDocument.body.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBar}`);
 }
@@ -252,6 +266,80 @@ describe('MinimizableModal', () => {
       expect(getCancelButton()).toBeNull();
       // The restore button is still there — only the cancel button is opted out.
       expect(getBar()?.querySelector(`.${CssClass.RestoreButton}`)).not.toBeNull();
+    });
+  });
+
+  describe('background click', () => {
+    it('should minimize instead of closing when the background is clicked', () => {
+      const modal = new TrackingModal(app);
+      const minimizable = new MinimizableModal(modal);
+      const backgroundEl = createBackgroundEl(modal);
+
+      const $event = clickOn(backgroundEl);
+
+      expect(minimizable.isMinimized).toBe(true);
+      expect(modal.wasClosed).toBe(false);
+      expect(getBar()).not.toBeNull();
+      // Obsidian's own `bgEl` listener is stopped outright; the prevented default is what additionally
+      // Satisfies the `defaultPrevented` guard in `Modal.onClickOutside`.
+      expect($event.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should not minimize when a click lands inside the modal', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      createBackgroundEl(modal);
+      const contentButtonEl = modal.contentEl.createEl('button');
+
+      const $event = clickOn(contentButtonEl);
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      expect($event.defaultPrevented).toBe(false);
+    });
+
+    it('should not minimize when a drag out of the modal fires the click on the container', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      createBackgroundEl(modal);
+
+      // Selecting text inside the modal and releasing over the background fires the `click` on their
+      // Common ancestor. Obsidian does not dismiss on that gesture, so it must not minimize either.
+      const $event = clickOn(modal.containerEl);
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      expect($event.defaultPrevented).toBe(false);
+    });
+
+    it('should leave the background click to Obsidian when shouldMinimizeOnClickOutside is false', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal, { shouldMinimizeOnClickOutside: false });
+      const backgroundEl = createBackgroundEl(modal);
+
+      const $event = clickOn(backgroundEl);
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      // Untouched, so Obsidian's native close-on-background-click still runs in the real app.
+      expect($event.defaultPrevented).toBe(false);
+    });
+
+    it('should be inert when the background is clicked while already minimized', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      const backgroundEl = createBackgroundEl(modal);
+      minimizable.minimize();
+
+      const $event = clickOn(backgroundEl);
+
+      expect(minimizable.isMinimized).toBe(true);
+      expect($event.defaultPrevented).toBe(false);
+      expect(activeDocument.body.querySelectorAll(`.${CssClass.MinimizedModalBar}`)).toHaveLength(1);
+
+      minimizable.restore();
     });
   });
 

@@ -403,6 +403,30 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a design invariant; a custom rule could flag a `Map`/`Set` field whose
   name ends in `ByPath` in a class with no `vault.on('rename')` subscription, but not the captures)
 
+### L12. Do not read an unofficial member of a consumer-supplied object on a hot path
+
+- A member that only `@obsidian-typings` declares (`Modal.bgEl`, `App.setting`, …) type-checks fine here,
+  but the objects this library is *handed* by a consumer are, in that consumer's unit tests,
+  `obsidian-test-mocks` doubles — and every one is a `strictProxy` that **throws** on an unmocked string
+  read (R1 G90), not one that returns `undefined`. The mocks model the official surface; the unofficial
+  members are mostly absent. So reading one turns every consumer's unit test into a crash we caused.
+- The cost scales with how often the read runs. A read inside an **event handler** installed on a
+  consumer's object is the worst case: it fires on interactions the consumer's tests already simulate,
+  in tests that have nothing to do with the feature. `MinimizableModal`'s background-click guard was
+  planned as `$event.target === modal.bgEl` and would have thrown on *any* click inside *any* wrapped
+  modal, in this repo's tests and in every plugin's.
+- Prefer an equivalent expressed in **official** members: DOM structure (`composedPath().includes(modalEl)`,
+  `containerEl`) usually pins down the same element as the unofficial handle. Prefer `composedPath()` over
+  `contains($event.target)` / `instanceof HTMLElement` — it needs no cast and stays correct in popout
+  windows, where an `instanceof` against another realm's constructor is false (see
+  `src/obsidian/popovers/popover.ts`).
+- Reading one is still fine where the consumer cannot be caught in the blast radius: a one-shot read this
+  library performs on an object **it constructed**, or one behind an explicit opt-in. When there is no
+  official equivalent at all, teach `obsidian-test-mocks` the member instead of casting around it — and
+  remember that lands on consumers only after they bump it.
+- (cannot be forced by ESLint — a custom rule could flag member reads whose declaration file lives in
+  `@obsidian-typings`, via `ts-declaration-location`, but not the "hot path" judgment)
+
 ## Testing
 
 ### Goals
