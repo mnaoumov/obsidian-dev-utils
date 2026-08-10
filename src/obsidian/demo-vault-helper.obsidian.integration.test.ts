@@ -17,9 +17,14 @@ const TEST_TIMEOUT_IN_MILLISECONDS = 150_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 2000;
 const POLL_TIMEOUT_IN_MILLISECONDS = 120_000;
 
-// The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `cstEnabled` are the
-// Acceptance signal; the rest are asserted on success and reported on a flake (the CST store install is
-// Network-dependent, so a timeout shows how far the bootstrap got instead of a bare `false`).
+// The sandbox notice is the only notice that must OUTLIVE the bootstrap, so it is matched on its own
+// Wording. The vault it describes ships only the helper, so the notice names no plugin.
+const SANDBOX_NOTICE_MARKER = 'temporary sandbox';
+
+// The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `cstEnabled` +
+// `sandboxNoticeText` are the acceptance signal; the rest are asserted on success and reported on a flake
+// (the CST store install is network-dependent, so a timeout shows how far the bootstrap got instead of a
+// Bare `false`).
 interface BootstrapStatus {
   readonly activeFilePath: null | string;
   readonly cstEnabled: boolean;
@@ -29,6 +34,7 @@ interface BootstrapStatus {
   readonly helperInstalled: boolean;
   readonly noticeText: string;
   readonly probeValue: unknown;
+  readonly sandboxNoticeText: string;
   readonly startupRan: boolean;
 }
 
@@ -54,14 +60,18 @@ describe('demo-vault-helper bootstrap', () => {
     // Timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
-        input: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID },
+        input: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID, sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
-        async poll({ app, cstPluginId, helperPluginId }): Promise<BootstrapStatus> {
+        async poll({ app, cstPluginId, helperPluginId, sandboxNoticeMarker }): Promise<BootstrapStatus> {
           const isCstInstalled = Object.hasOwn(app.plugins.manifests, cstPluginId);
           let noticeText = '';
+          let sandboxNoticeText = '';
           for (const noticeEl of document.querySelectorAll('.notice')) {
             if (noticeEl.textContent.includes('Demo Vault Helper')) {
               noticeText = noticeEl.textContent;
+            }
+            if (noticeEl.textContent.includes(sandboxNoticeMarker)) {
+              sandboxNoticeText = noticeEl.textContent;
             }
           }
           return {
@@ -73,13 +83,17 @@ describe('demo-vault-helper bootstrap', () => {
             helperInstalled: Object.hasOwn(app.plugins.manifests, helperPluginId),
             noticeText,
             probeValue: Reflect.get(window, '__demoVaultHelperProbeValue') ?? null,
+            sandboxNoticeText,
             startupRan: Reflect.get(window, '__demoVaultHelperStartupRan') === true
           };
         },
         timeoutInMilliseconds: POLL_TIMEOUT_IN_MILLISECONDS,
         until(pollResult: BootstrapStatus): boolean {
           lastStatus = pollResult;
-          return pollResult.startupRan && pollResult.cstEnabled;
+          // The sandbox notice is required in the SAME sample as `startupRan`: that is what proves it
+          // Survived CodeScript Toolkit's startup script opening the start note, rather than being
+          // Replaced or dismissed by it.
+          return pollResult.startupRan && pollResult.cstEnabled && pollResult.sandboxNoticeText !== '';
         },
         vaultPath
       });
@@ -93,5 +107,12 @@ describe('demo-vault-helper bootstrap', () => {
     expect(status.dataJson).toContain('startupScriptPath');
     expect(status.activeFilePath).toBe(START_NOTE_PATH);
     expect(status.probeValue).toBe('ok');
+    // The vault ships only the helper, so the notice names no plugin — but it must still say what the
+    // Vault is, that it is temporary, and how long it lasts.
+    expect(status.sandboxNoticeText).toContain('This is a demo vault.');
+    expect(status.sandboxNoticeText).toContain('cleaned up automatically about a day after you last use it');
+    // Not compared against `vaultPath` itself: that is a Node-side path string, while the notice carries
+    // Whatever the adapter reports, which differs in separators per platform.
+    expect(status.sandboxNoticeText).toContain(`${SANDBOX_NOTICE_MARKER} at `);
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
