@@ -1,5 +1,6 @@
 ---
 title: Commands
+description: Build, lint, test, format, spellcheck, and release commands, callable from a script or the CLI.
 ---
 
 `Obsidian Dev Utils` exposes command functions from tool-specific modules. Each tool is identified by its import path. You can import and call them directly:

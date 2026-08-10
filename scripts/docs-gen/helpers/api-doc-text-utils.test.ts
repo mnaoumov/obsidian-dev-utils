@@ -70,6 +70,14 @@ describe('api-doc text utilities', () => {
     expect(truncateSignature(`  ${'alpha '.repeat(REPEATED_WORD_COUNT)}  `)).toHaveLength(MAX_SIGNATURE_LENGTH);
     expect(stripMarkdown('**Alpha** {@link Bravo | Bravo label} [Charlie](https://example.com)')).toBe('Alpha Bravo label Charlie');
   });
+
+  it('truncates over-long descriptions at a word boundary', () => {
+    const REPEATED_WORD_COUNT = 40;
+    const MAX_DESCRIPTION_LENGTH = 160;
+    const truncated = stripMarkdown(`${'alpha bravo '.repeat(REPEATED_WORD_COUNT)}charlie`);
+    expect(truncated.length).toBeLessThanOrEqual(MAX_DESCRIPTION_LENGTH);
+    expect(truncated).toMatch(/(?:alpha|bravo)…$/);
+  });
 });
 
 function createMemberInfo(overrides: Partial<MemberInfo> = {}): MemberInfo {

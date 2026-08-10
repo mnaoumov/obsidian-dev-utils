@@ -1,5 +1,6 @@
 ---
 title: Testing
+description: Async-operation tracking, unhandled-error surfacing, vitest configuration, and integration-test helpers.
 ---
 
 ## Async-operation tracking

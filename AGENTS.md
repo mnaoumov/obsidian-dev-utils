@@ -78,6 +78,12 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
   `docs/src/content/docs/api`, cache `…/api/.cache-hash`, sidebar `docs/src/generated-sidebar.json`,
   base path `/obsidian-dev-utils`. `DOCS_ROOT` overrides the repo root for out-of-tree runs. All three
   outputs are gitignored (`.gitignore:30-32`, the third being `docs/public/og`).
+  **Every** generated page kind (module index, type overview, property, method) emits its frontmatter
+  through the single `renderFrontMatter` helper in `helpers/api-doc-page-generation.ts`. `description`
+  is not only the meta description — it is the line the OG card renders under the title, so a page kind
+  that skips it produces a title-only card next to fully populated ones (module index pages did until
+  the helper was introduced). A hand-written guide must therefore carry a `description` too, and a
+  symbol with no TSDoc summary yields a title-only card no generator change can fix.
 - **Tooling scope:** ESLint validates `astro.config.ts`, `docs/src/**/*.ts`, `docs/**/*.astro`, and the
   documentation generator under `scripts/docs-gen/`; `npm run lint` explicitly supplies the `.astro` glob
   because ESLint does not discover that extension by default. Markdownlint excludes the whole docs sub-project

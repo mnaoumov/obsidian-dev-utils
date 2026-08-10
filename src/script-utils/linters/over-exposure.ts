@@ -246,29 +246,39 @@ export interface FormatOverExposureFindingsOptions {
  */
 export interface OverExposureFileSystem {
   /**
+   * Checks whether a directory exists.
+   *
    * @param path - Directory path.
    * @returns `true` when the directory exists.
    */
   directoryExists(this: void, path: string): boolean;
 
   /**
+   * Checks whether a file exists.
+   *
    * @param path - File path.
    * @returns `true` when the file exists.
    */
   fileExists(this: void, path: string): boolean;
 
   /**
+   * Resolves the directory that relative paths are resolved against.
+   *
    * @returns The current working directory.
    */
   getCurrentDirectory(this: void): string;
 
   /**
+   * Lists the immediate subdirectories of a directory.
+   *
    * @param path - Directory path.
    * @returns The immediate subdirectory names.
    */
   getDirectories(this: void, path: string): string[];
 
   /**
+   * Lists the files under a directory, filtered by extension and include/exclude patterns.
+   *
    * @param path - Root directory.
    * @param extensions - Extensions to include.
    * @param exclude - Patterns to exclude.
@@ -279,6 +289,8 @@ export interface OverExposureFileSystem {
   readDirectory(this: void, path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
 
   /**
+   * Reads a file as text.
+   *
    * @param path - File path.
    * @returns The file contents, or `undefined` when absent.
    */

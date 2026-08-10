@@ -1,5 +1,6 @@
 ---
 title: Helper Functions
+description: General-purpose and Obsidian-specific helpers, and the import paths they are grouped under.
 ---
 
 `Obsidian Dev Utils` provides a range of general-purpose and Obsidian-specific helper functions.

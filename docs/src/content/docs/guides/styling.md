@@ -1,5 +1,6 @@
 ---
 title: Styling
+description: Initialize the plugin context so the extensible styles behind the library's UI controls are applied.
 ---
 
 `Obsidian Dev Utils` provides some extensible styles that you can use to style your plugin UI controls.

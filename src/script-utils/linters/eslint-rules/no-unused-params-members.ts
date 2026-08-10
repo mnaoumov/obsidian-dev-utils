@@ -70,6 +70,9 @@ interface PatternBinding {
   type: 'pattern';
 }
 
+/**
+ * ESLint rule flagging `*Params`/`*Options` interface members that the function receiving them never accesses.
+ */
 export const noUnusedParamsMembers: Rule.RuleModule = {
   create(context) {
     const interfaceKeyNodes = new Map<string, Map<string, Rule.Node>>();

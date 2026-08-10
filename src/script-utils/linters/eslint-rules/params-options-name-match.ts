@@ -51,6 +51,9 @@ interface TypeAnnotationInfo {
   readonly node: Rule.Node;
 }
 
+/**
+ * ESLint rule requiring `*Params`/`*Options` type names to match their owning function or constructor, and to use the suffix that matches the sole-vs-supplementary argument convention.
+ */
 export const paramsOptionsNameMatch: Rule.RuleModule = {
   create(context) {
     return {

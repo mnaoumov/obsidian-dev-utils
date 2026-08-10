@@ -1,5 +1,6 @@
 ---
 title: Debugging
+description: Turn on conditional debug logging by enabling Verbose console mode and the debug namespaces you care about.
 ---
 
 By default, console debug messages are not shown. To enable them you have to enable `Verbose` mode in the console settings.

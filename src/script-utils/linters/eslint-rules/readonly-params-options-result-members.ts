@@ -21,6 +21,9 @@ interface PropertySignatureNode {
   readonly key: Rule.Node;
 }
 
+/**
+ * ESLint rule requiring every property of a `*Params`, `*Options`, or `*Result` interface to be `readonly`.
+ */
 export const readonlyParamsOptionsResultMembers: Rule.RuleModule = {
   create(context) {
     return {

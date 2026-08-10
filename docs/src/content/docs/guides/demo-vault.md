@@ -1,5 +1,6 @@
 ---
 title: Demo Vault
+description: Ship a curated vault with your plugin - archived into the GitHub release, and opened by an `Open demo vault` command.
 ---
 
 `Obsidian Dev Utils` lets a plugin ship a **demo vault** — a curated Obsidian vault, committed to the plugin repo, that showcases the plugin — and lets users open it in one step. There are two cooperating parts:

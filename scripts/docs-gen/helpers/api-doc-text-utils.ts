@@ -293,7 +293,7 @@ const OG_DESCRIPTION_MAX_LENGTH = 160;
 Strip markdown formatting to plain text for use in meta descriptions
 */
 export function stripMarkdown(text: string): string {
-  return text
+  const plain = text
     .replaceAll(/\{@link\s+(?:[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...$arguments) => {
       const groups = $arguments.at(-1) as Record<string, string | undefined>;
       return groups['display'] ?? '';
@@ -301,8 +301,18 @@ export function stripMarkdown(text: string): string {
     .replaceAll(/\[(?<text>[^\]]+)\]\([^)]+\)/g, '$<text>')
     .replaceAll(/[`*_~]/g, '')
     .replaceAll(/\s+/g, ' ')
-    .trim()
-    .slice(0, OG_DESCRIPTION_MAX_LENGTH);
+    .trim();
+
+  if (plain.length <= OG_DESCRIPTION_MAX_LENGTH) {
+    return plain;
+  }
+
+  // Cut back to a word boundary: a raw slice ends descriptions mid-word (`… the string module is ob`).
+  // That fragment is what readers see on the OG card and in search results.
+  const clipped = plain.slice(0, OG_DESCRIPTION_MAX_LENGTH - 1);
+  const lastSpaceIndex = clipped.lastIndexOf(' ');
+  const truncated = lastSpaceIndex > 0 ? clipped.slice(0, lastSpaceIndex) : clipped;
+  return `${truncated.replace(/[,;:.\s]+$/, '')}…`;
 }
 
 function escapeMdxProseChars(chunk: string): string {

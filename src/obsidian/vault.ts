@@ -128,6 +128,9 @@ export interface CleanupEmptyFoldersParams {
  * Arguments for {@link process}.
  */
 export interface ContentArguments {
+  /**
+   * The current content of the file.
+   */
   readonly content: string;
 }
 

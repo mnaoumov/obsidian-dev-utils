@@ -15,6 +15,9 @@ import { requireComponentSuffix } from './require-component-suffix.ts';
 import { requireMethodTemplate } from './require-method-template.ts';
 import { requireSuperCall } from './require-super-call.ts';
 
+/**
+ * ESLint plugin bundling every `obsidian-dev-utils` custom rule, registered under the `obsidian-dev-utils` namespace.
+ */
 export const obsidianDevUtilsPlugin: ESLint.Plugin = {
   rules: {
     'no-async-callback-to-unsafe-return': noAsyncCallbackToUnsafeReturn,

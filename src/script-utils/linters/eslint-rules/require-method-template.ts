@@ -34,6 +34,9 @@ Message ID reported when a method's `@typeParam` tag is missing a description.
  */
 export const MESSAGE_ID_MISSING_TEMPLATE_DESCRIPTION = 'missingTemplateDescription';
 
+/**
+ * ESLint rule requiring every generic method type parameter to carry a `@typeParam` tag with a description.
+ */
 export const requireMethodTemplate: Rule.RuleModule = {
   create(context) {
     const settings = context.settings['jsdoc'] as JsdocSettings | undefined;

@@ -15,6 +15,7 @@ import {
   buildBacklinksFromContent,
   buildSidebarTree,
   computeOverviewSignature,
+  renderFrontMatter,
   sidebarTreeToEntries
 } from './api-doc-page-generation.ts';
 
@@ -45,6 +46,54 @@ describe('api-doc page generation', () => {
       items: [{ items: [{ items: [{ label: 'Overview', link: '/api/obsidian/charlie/' }, { label: 'Alpha', link: '/api/obsidian/charlie/Alpha/' }, { label: 'Bravo', link: '/api/obsidian/charlie/Bravo/' }], label: 'charlie' }], label: 'obsidian' }],
       label: 'root'
     });
+  });
+
+  it('emits description frontmatter whenever a page has one, so its OG card is never title-only', () => {
+    expect(renderFrontMatter({ description: 'Array utilities.', sidebarLabel: 'array', slug: 'api/array', title: 'array' })).toEqual([
+      '---',
+      'title: "array"',
+      'slug: "api/array"',
+      'description: "Array utilities."',
+      'editUrl: false',
+      'sidebar:',
+      '  label: "array"',
+      '---',
+      ''
+    ]);
+  });
+
+  it('strips markdown and escapes quotes in frontmatter values', () => {
+    expect(renderFrontMatter({
+      description: 'Wraps `alpha` and the "bravo" [link](https://example.com).',
+      sidebarLabel: 'Alpha.charlie',
+      signature: 'function  charlie(value:   string): void',
+      slug: 'api/alpha/charlie',
+      title: 'Alpha.charlie method'
+    })).toEqual([
+      '---',
+      'title: "Alpha.charlie method"',
+      'slug: "api/alpha/charlie"',
+      String.raw`description: "Wraps alpha and the \"bravo\" link."`,
+      'signature: "function charlie(value: string): void"',
+      'editUrl: false',
+      'sidebar:',
+      '  label: "Alpha.charlie"',
+      '---',
+      ''
+    ]);
+  });
+
+  it('omits description and signature when the page has neither', () => {
+    expect(renderFrontMatter({ sidebarLabel: 'Alpha', slug: 'api/alpha/Alpha', title: 'Alpha' })).toEqual([
+      '---',
+      'title: "Alpha"',
+      'slug: "api/alpha/Alpha"',
+      'editUrl: false',
+      'sidebar:',
+      '  label: "Alpha"',
+      '---',
+      ''
+    ]);
   });
 
   it('computes overview signatures only for single-signature kinds', () => {

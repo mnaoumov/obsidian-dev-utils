@@ -1,5 +1,6 @@
 ---
 title: Popovers
+description: Ask for a value in a small floating panel anchored at the thing it acts on, where a modal would be wrong.
 ---
 
 A popover is a small floating panel that asks the user for a value and resolves a promise with it —

@@ -135,6 +135,11 @@ export type PatchHandlerFunction<$Object extends object, MethodName extends Meth
  * @typeParam MethodName - The method name being patched.
  */
 export interface PatchHandlerParams<$Object extends object, MethodName extends MethodKeys<$Object>> {
+  /**
+   * Invokes the original method with the original `this` and arguments.
+   *
+   * @returns Whatever the original method returns.
+   */
   fallback(this: void): ReturnType<ExtractFunction<$Object, MethodName>>;
 
   /**

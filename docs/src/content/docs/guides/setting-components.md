@@ -1,5 +1,6 @@
 ---
 title: Setting Components
+description: Typed setting controls - checkbox, date, file, number, password, dropdown, and more - for your plugin's settings tab.
 ---
 
 `Obsidian Dev Utils` provides some setting components that you can use in your plugin.

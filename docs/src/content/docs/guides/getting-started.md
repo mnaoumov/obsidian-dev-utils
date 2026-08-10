@@ -1,5 +1,6 @@
 ---
 title: Getting started
+description: Install `obsidian-dev-utils`, wire up the build tooling, and make your first call.
 sidebar:
     order: 0
 ---

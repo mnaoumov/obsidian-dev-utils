@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import type {
   MemberInfo,
   PageContent,
+  PageFrontMatter,
   SidebarEntry,
   SidebarLink,
   SidebarTreeNode,
@@ -56,6 +57,12 @@ import {
 } from './api-doc-text-utils.ts';
 
 const JSON_INDENT = 2;
+
+// Serves both as the root API page's prose and (stripped) as its `description` frontmatter.
+// Sharing one constant keeps the page and its OG card from drifting apart.
+const API_INDEX_INTRO =
+  'The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. '
+  + 'Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).';
 
 /**
 Append backlinks to overview pages and write all files. Keyed by qualified `${namespace}#${name}`.
@@ -176,18 +183,15 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
     const filePath = join(OUTPUT_DIR, nsDirectory, typeFileDirectory, `${memberSlug(property.name)}.mdx`);
     await ensureDirectory(filePath);
 
-    const lines: string[] = [];
     const propertyTitle = `${name}.${property.name}`;
+    const lines: string[] = renderFrontMatter({
+      description: property.description,
+      sidebarLabel: propertyTitle,
+      signature: `${property.signature}: ${property.type}`,
+      slug: `api/${nsDirectory}/${typeRouteDirectory}/${memberRouteSegment(property.name)}`,
+      title: propertyTitle
+    });
     lines.push(
-      '---',
-      `title: "${escapeYaml(propertyTitle)}"`,
-      `slug: "api/${nsDirectory}/${typeRouteDirectory}/${memberRouteSegment(property.name)}"`,
-      `signature: "${escapeYaml(truncateSignature(`${property.signature}: ${property.type}`))}"`,
-      'editUrl: false',
-      'sidebar:',
-      `  label: "${escapeYaml(propertyTitle)}"`,
-      '---',
-      '',
       componentImport,
       '',
       // Breadcrumb
@@ -226,20 +230,14 @@ export async function generateMemberPages(name: string, info: TypeInfo, allTypes
     const displayName = `${name}.${overloadKey} method`;
     const firstOverload = overloads[0];
 
-    const lines: string[] = [
-      '---',
-      `title: "${escapeYaml(displayName)}"`,
-      `slug: "api/${nsDirectory}/${typeRouteDirectory}/${overloadRouteSegment(overloadKey)}"`
-    ];
-    if (firstOverload) {
-      lines.push(`signature: "${escapeYaml(truncateSignature(`${firstOverload.signature}: ${firstOverload.returnType}`))}"`);
-    }
+    const lines: string[] = renderFrontMatter({
+      description: firstOverload?.description,
+      sidebarLabel: `${name}.${overloadKey}`,
+      signature: firstOverload ? `${firstOverload.signature}: ${firstOverload.returnType}` : undefined,
+      slug: `api/${nsDirectory}/${typeRouteDirectory}/${overloadRouteSegment(overloadKey)}`,
+      title: displayName
+    });
     lines.push(
-      'editUrl: false',
-      'sidebar:',
-      `  label: "${escapeYaml(`${name}.${overloadKey}`)}"`,
-      '---',
-      '',
       componentImport,
       '',
       // Breadcrumb
@@ -276,10 +274,17 @@ export async function generateNamespaceIndexPages(
     const filePath = join(OUTPUT_DIR, nsDirectory, 'index.mdx');
     await ensureDirectory(filePath);
 
-    const lines: string[] = ['---', `title: "${namespace}"`, `slug: "api/${nsDirectory}"`, 'editUrl: false', 'sidebar:', `  label: "${namespace}"`, '---', ''];
+    // The module's `@file` text doubles as its description.
+    // Without it the module card was title-only while every member card under it carried one.
+    const overview = moduleOverviews.get(namespace);
+    const lines: string[] = renderFrontMatter({
+      description: overview,
+      sidebarLabel: namespace,
+      slug: `api/${nsDirectory}`,
+      title: namespace
+    });
 
     // Module @file overview text
-    const overview = moduleOverviews.get(namespace);
     if (overview) {
       lines.push(renderMdxProse(overview, allTypes, namespace), '');
     }
@@ -295,7 +300,13 @@ export async function generateNamespaceIndexPages(
   }
 
   // Root API index page listing every module.
-  const rootLines: string[] = ['---', 'title: "API reference"', 'slug: "api"', 'editUrl: false', 'sidebar:', '  label: "Overview"', '---', '', 'The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).', '', '## Modules', ''];
+  const rootLines: string[] = renderFrontMatter({
+    description: API_INDEX_INTRO,
+    sidebarLabel: 'Overview',
+    slug: 'api',
+    title: 'API reference'
+  });
+  rootLines.push(API_INDEX_INTRO, '', '## Modules', '');
   const sortedNamespaces = [...namespaces.keys()].sort((a, b) => a.localeCompare(b));
   for (const namespace of sortedNamespaces) {
     rootLines.push(`- [${namespace}](${BASE_PATH}/api/${getNamespaceDirectory(namespace)}/)`);
@@ -313,19 +324,15 @@ export async function generateOverviewPage(name: string, info: TypeInfo, allType
   const filePath = join(OUTPUT_DIR, nsDirectory, typeFileSlug, 'index.mdx');
   await ensureDirectory(filePath);
 
-  const lines: string[] = [];
-
   // Frontmatter
   const displayName = getDisplayName(name, info);
-  lines.push('---', `title: "${displayName}"`, `slug: "api/${nsDirectory}/${typeRouteSlug}"`);
-  if (info.description) {
-    lines.push(`description: "${escapeYaml(stripMarkdown(info.description))}"`);
-  }
-  const pageSignature = computeOverviewSignature(name, info);
-  if (pageSignature) {
-    lines.push(`signature: "${escapeYaml(truncateSignature(pageSignature))}"`);
-  }
-  lines.push('editUrl: false', 'sidebar:', `  label: "${displayName}"`, '---', '');
+  const lines: string[] = renderFrontMatter({
+    description: info.description,
+    sidebarLabel: displayName,
+    signature: computeOverviewSignature(name, info),
+    slug: `api/${nsDirectory}/${typeRouteSlug}`,
+    title: displayName
+  });
 
   // Component imports — compute relative path from generated page to components
   const componentPath = getComponentImportPath(nsDirectory, typeFileSlug);
@@ -449,6 +456,26 @@ export function renderEnumPage(lines: string[], info: TypeInfo, allTypes: Map<st
     lines.push(`| \`${member.name}\` | ${value} | ${escapeMarkdown(resolveLinks(member.description, allTypes, info.namespace))} |`);
   }
   lines.push('');
+}
+
+/**
+Render the Starlight frontmatter block (through the closing `---` and its blank line) shared by every
+generated page kind: module index, type overview, property, and method.
+
+Every page kind goes through here so no field can be emitted on some kinds and silently dropped on
+others. `description` in particular is not just SEO metadata — it is the line the OG card renders under
+the title, so a page kind that skipped it produced a title-only card next to fully populated ones.
+*/
+export function renderFrontMatter(frontMatter: PageFrontMatter): string[] {
+  const lines: string[] = ['---', `title: "${escapeYaml(frontMatter.title)}"`, `slug: "${frontMatter.slug}"`];
+  if (frontMatter.description) {
+    lines.push(`description: "${escapeYaml(stripMarkdown(frontMatter.description))}"`);
+  }
+  if (frontMatter.signature) {
+    lines.push(`signature: "${escapeYaml(truncateSignature(frontMatter.signature))}"`);
+  }
+  lines.push('editUrl: false', 'sidebar:', `  label: "${escapeYaml(frontMatter.sidebarLabel)}"`, '---', '');
+  return lines;
 }
 
 export function renderFunctionPage(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {

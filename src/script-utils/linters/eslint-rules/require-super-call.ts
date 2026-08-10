@@ -47,6 +47,9 @@ interface OverrideMethodInfo {
   reportNode: Rule.Node;
 }
 
+/**
+ * ESLint rule requiring `override` methods to call `super.methodName()`, so the base implementation is not silently skipped.
+ */
 export const requireSuperCall: Rule.RuleModule = {
   create(context) {
     const methodStack: OverrideMethodInfo[] = [];

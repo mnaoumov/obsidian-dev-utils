@@ -52,6 +52,9 @@ interface TypeWithBaseTypes {
   getBaseTypes?(): Type[] | undefined;
 }
 
+/**
+ * ESLint rule requiring classes that extend `Component` to be named with a `Component` suffix, and abstract ones with a `ComponentBase` suffix.
+ */
 export const requireComponentSuffix: Rule.RuleModule = {
   create(context) {
     const services = context.sourceCode.parserServices as ParserServicesWithTypeInformation;

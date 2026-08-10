@@ -17,6 +17,9 @@ Message ID reported when `Promise.resolve()` is used for an async no-op instead 
  */
 export const MESSAGE_ID = 'preferNoopAsync';
 
+/**
+ * ESLint rule preferring `noopAsync()` over `Promise.resolve()` for an async no-op.
+ */
 export const preferNoopAsync: Rule.RuleModule = {
   create(context) {
     return {

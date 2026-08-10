@@ -1,5 +1,6 @@
 ---
 title: Plugin Helpers
+description: The `PluginBase` family - notices, settings components, settings tabs, and syntax highlighting - that a plugin builds on.
 ---
 
 `Obsidian Dev Utils` provides some helpers to simplify your own Obsidian plugin.

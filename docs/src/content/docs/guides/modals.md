@@ -1,5 +1,6 @@
 ---
 title: Modals
+description: Promise-returning `alert`, `confirm`, `prompt`, and item-selection modals for your plugin.
 ---
 
 `Obsidian Dev Utils` provides some modals that you can use in your plugin.

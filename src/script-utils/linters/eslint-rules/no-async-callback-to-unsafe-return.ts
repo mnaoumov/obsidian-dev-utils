@@ -146,6 +146,9 @@ function isUnsafeReturnSignature(checker: TypeChecker, sig: Signature): boolean 
   return !containsPromiseReference(checker, returnTypeNode);
 }
 
+/**
+ * ESLint rule disallowing async functions passed as callbacks to parameters with an `any` or `unknown` return type, where the returned promise is silently dropped.
+ */
 export const noAsyncCallbackToUnsafeReturn: Rule.RuleModule = {
   create(context) {
     const services = context.sourceCode.parserServices as ParserServicesWithTypeInformation;

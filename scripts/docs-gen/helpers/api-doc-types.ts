@@ -42,6 +42,18 @@ export interface PageContent {
   filePath: string;
 }
 
+/**
+Frontmatter shared by every generated page. `description` and `signature` are optional because not
+every page has them, but a page that HAS one must emit it: both feed the page's OG card.
+*/
+export interface PageFrontMatter {
+  description?: string;
+  sidebarLabel: string;
+  signature?: string;
+  slug: string;
+  title: string;
+}
+
 export interface ParameterInfo {
   description: string;
   name: string;
