@@ -26,8 +26,8 @@ const CST_VERSION = '1.0.0';
 const HELPER_PLUGIN_ID = 'demo-vault-helper';
 const DEMOED_PLUGIN_ID = 'my-plugin';
 const DEMOED_PLUGIN_NAME = 'My Plugin';
-const VAULT_BASE_PATH = '/tmp/obsidian-demo-vaults/extracted/my-plugin-1.2.3.demo-vault';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
+const INVALID_DEMO_VAULT_ERROR_MESSAGE = 'Invalid demo vault';
 
 const CST_SETTINGS = {
   defaultCodeButtonConfig: '---\nsourceVisibility: collapsed\n---',
@@ -58,39 +58,38 @@ const REGISTRY = [
 
 const PLUGINS_FOLDER_PATH = `${EMPTY}.obsidian/plugins`;
 const DATA_PATH = `${PLUGINS_FOLDER_PATH}/${CST_PLUGIN_ID}/data.json`;
+// The helper's own `data.json`, written by the packaging step: the vault's only statement of which
+// Plugin it demonstrates.
+const HELPER_SETTINGS_PATH = `${PLUGINS_FOLDER_PATH}/${HELPER_PLUGIN_ID}/data.json`;
+const HELPER_SETTINGS_JSON = JSON.stringify({ demoedPluginId: DEMOED_PLUGIN_ID });
 const INVOCABLE_SCRIPTS_FOLDER_PATH = `${CST_SETTINGS.modulesRoot}/${CST_SETTINGS.invocableScriptsFolder}`;
 
 interface AdapterMembers {
   exists: DataAdapter['exists'];
-  // Explicitly `undefined` rather than absent for the mobile-adapter case: the strict proxy throws on a
-  // Property it has never heard of, whereas a real mobile adapter just reads as `undefined` — which is
-  // The value the code under test actually branches on.
-  getBasePath?: (() => string) | undefined;
-  list: DataAdapter['list'];
   mkdir: DataAdapter['mkdir'];
   read: DataAdapter['read'];
   write: DataAdapter['write'];
 }
 
 interface AppMock {
-  readonly adapterList: DataAdapter['list'];
   readonly adapterMkdir: DataAdapter['mkdir'];
   readonly adapterWrite: DataAdapter['write'];
   readonly app: App;
   readonly disablePluginAndSave: App['plugins']['disablePluginAndSave'];
   readonly enablePluginAndSave: App['plugins']['enablePluginAndSave'];
   readonly installPlugin: App['plugins']['installPlugin'];
+  readonly settingClose: App['setting']['close'];
 }
 
 interface CreateAppOptions {
   readonly existingData?: string;
-  readonly hasVaultBasePath?: boolean;
+  // The content of the helper's `data.json`: `null` for a vault that has none at all, a string to hand
+  // Over exactly what the bootstrap will read. Omitted means a well-formed marker.
+  readonly helperSettingsJson?: null | string;
   readonly isCstEnabled?: boolean;
   readonly isCstInstalled?: boolean;
   readonly isDemoedPluginManifestPresent?: boolean;
   readonly isInvocableScriptsFolderPresent?: boolean;
-  readonly isPluginsFolderPresent?: boolean;
-  readonly pluginFolderIds?: string[];
 }
 
 const { mockNotice, mockRequestUrl } = vi.hoisted(() => ({
@@ -132,26 +131,24 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     return noopAsync();
   });
 
+  const helperSettingsJson = options.helperSettingsJson === undefined ? HELPER_SETTINGS_JSON : options.helperSettingsJson;
+
   const adapterExists = vi.fn<DataAdapter['exists']>().mockImplementation((path: string) => {
     switch (path) {
+      case HELPER_SETTINGS_PATH: {
+        return Promise.resolve(helperSettingsJson !== null);
+      }
       case INVOCABLE_SCRIPTS_FOLDER_PATH: {
         return Promise.resolve(options.isInvocableScriptsFolderPresent ?? false);
-      }
-      case PLUGINS_FOLDER_PATH: {
-        return Promise.resolve(options.isPluginsFolderPresent ?? true);
       }
       default: {
         return Promise.resolve(options.existingData !== undefined);
       }
     }
   });
-  const adapterRead = vi.fn<DataAdapter['read']>().mockResolvedValue(options.existingData ?? '{}');
+  const adapterRead = vi.fn<DataAdapter['read']>().mockImplementation((path: string) => Promise.resolve(path === HELPER_SETTINGS_PATH ? helperSettingsJson ?? EMPTY : options.existingData ?? '{}'));
   const adapterWrite = vi.fn<DataAdapter['write']>().mockResolvedValue();
   const adapterMkdir = vi.fn<DataAdapter['mkdir']>().mockResolvedValue();
-  const adapterList = vi.fn<DataAdapter['list']>().mockResolvedValue({
-    files: [`${PLUGINS_FOLDER_PATH}/.DS_Store`],
-    folders: (options.pluginFolderIds ?? [HELPER_PLUGIN_ID, DEMOED_PLUGIN_ID]).map((pluginId) => `${PLUGINS_FOLDER_PATH}/${pluginId}`)
-  });
 
   // A null-prototype record so the strict proxy does not re-wrap it: a missing key reads as `undefined`
   // (plugin not installed) instead of throwing.
@@ -164,9 +161,9 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     manifests[DEMOED_PLUGIN_ID] = strictProxy<PluginManifest>({ id: DEMOED_PLUGIN_ID, name: DEMOED_PLUGIN_NAME });
   }
 
-  // Built as a variable rather than inline, so the desktop-only `getBasePath` can be attached without
-  // Tripping the excess-property check against `DataAdapter`, which does not declare it.
-  const adapterMembers: AdapterMembers = { exists: adapterExists, getBasePath: (options.hasVaultBasePath ?? true) ? (): string => VAULT_BASE_PATH : undefined, list: adapterList, mkdir: adapterMkdir, read: adapterRead, write: adapterWrite };
+  const adapterMembers: AdapterMembers = { exists: adapterExists, mkdir: adapterMkdir, read: adapterRead, write: adapterWrite };
+
+  const settingClose = vi.fn<App['setting']['close']>();
 
   const app = strictProxy<App>({
     plugins: strictProxy<App['plugins']>({
@@ -176,6 +173,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
       installPlugin,
       manifests
     }),
+    setting: strictProxy<App['setting']>({ close: settingClose }),
     vault: strictProxy<Vault>({
       adapter: strictProxy<DataAdapter>(adapterMembers),
       // eslint-disable-next-line unicorn/name-replacements -- `configDir` is declared by `obsidian`; renaming it here would not match the API.
@@ -184,13 +182,13 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   });
 
   return {
-    adapterList,
     adapterMkdir,
     adapterWrite,
     app,
     disablePluginAndSave,
     enablePluginAndSave,
-    installPlugin
+    installPlugin,
+    settingClose
   };
 }
 
@@ -288,12 +286,11 @@ describe('bootstrapDemoVault', () => {
 });
 
 describe('bootstrapDemoVault sandbox notice', () => {
-  it('should name the demonstrated plugin, the vault path, and the command that replaces the vault', async () => {
+  it('should name the demonstrated plugin and the command that replaces the vault', async () => {
     const { app } = createApp();
     await bootstrapDemoVault({ app });
     const noticeText = getSandboxNoticeText();
     expect(noticeText).toContain(`This is a demo vault for ${DEMOED_PLUGIN_NAME}.`);
-    expect(noticeText).toContain(`temporary sandbox at ${VAULT_BASE_PATH}`);
     expect(noticeText).toContain(`${DEMOED_PLUGIN_NAME}: Open demo vault`);
   });
 
@@ -309,8 +306,8 @@ describe('bootstrapDemoVault sandbox notice', () => {
     const { app } = createApp();
     await bootstrapDemoVault({ app });
     const noticeText = getSandboxNoticeText();
-    expect(noticeText).toContain('cleaned up automatically about a day after you last use it');
-    expect(noticeText).toContain('copy anything you want to keep into your own vault');
+    expect(noticeText).toContain('It is a temporary sandbox, cleaned up automatically about a day after you last use it.');
+    expect(noticeText).toContain('so your notes will not appear in it');
   });
 
   it('should fall back to the plugin id when the demonstrated plugin has no manifest', async () => {
@@ -319,39 +316,57 @@ describe('bootstrapDemoVault sandbox notice', () => {
     expect(getSandboxNoticeText()).toContain(`This is a demo vault for ${DEMOED_PLUGIN_ID}.`);
   });
 
-  it('should identify the demonstrated plugin before CodeScript Toolkit is installed', async () => {
-    const { adapterList, app, installPlugin } = createApp();
+  // The demonstrated plugin comes from the marker the packaging step wrote, so it survives everything
+  // The bootstrap itself installs — including CodeScript Toolkit, and anything a demo note's
+  // Prerequisites add — which counting plugin folders would not.
+  it('should name the plugin from the marker even once other plugins are installed', async () => {
+    const { app } = createApp({ isCstEnabled: true, isCstInstalled: true });
     await bootstrapDemoVault({ app });
-    const listOrder = vi.mocked(adapterList).mock.invocationCallOrder[0] ?? 0;
-    const installOrder = vi.mocked(installPlugin).mock.invocationCallOrder[0] ?? 0;
-    expect(listOrder).toBeLessThan(installOrder);
+    expect(getSandboxNoticeText()).toContain(`This is a demo vault for ${DEMOED_PLUGIN_NAME}.`);
   });
 
-  it('should stay generic when the vault holds no plugin besides the helper', async () => {
-    const { app } = createApp({ pluginFolderIds: [HELPER_PLUGIN_ID] });
-    await bootstrapDemoVault({ app });
-    expect(getSandboxNoticeText()).toContain('This is a demo vault. It is a temporary sandbox');
-    expect(getSandboxNoticeText()).toContain('Running Open demo vault again');
+  // A vault carrying no readable marker was not produced by the packaging step, so there is no honest
+  // Answer to "which plugin is this demonstrating?" — the bootstrap refuses it rather than guessing.
+  it('should refuse a vault with no marker', async () => {
+    const { app } = createApp({ helperSettingsJson: null });
+    await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
   });
 
-  it('should stay generic when several plugins could be the demonstrated one', async () => {
-    const { app } = createApp({ pluginFolderIds: [HELPER_PLUGIN_ID, DEMOED_PLUGIN_ID, 'another-plugin'] });
-    await bootstrapDemoVault({ app });
-    expect(getSandboxNoticeText()).toContain('This is a demo vault. It is');
+  it('should refuse a vault whose marker is not valid JSON', async () => {
+    const { app } = createApp({ helperSettingsJson: '{ not json' });
+    await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
   });
 
-  it('should stay generic when there is no plugins folder to read', async () => {
-    const { adapterList, app } = createApp({ isPluginsFolderPresent: false });
-    await bootstrapDemoVault({ app });
-    expect(adapterList).not.toHaveBeenCalled();
-    expect(getSandboxNoticeText()).toContain('This is a demo vault. It is');
+  it('should refuse a vault whose marker names no plugin', async () => {
+    const { app } = createApp({ helperSettingsJson: JSON.stringify({ somethingElse: true }) });
+    await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
   });
 
-  it('should omit the path when the adapter does not expose one', async () => {
-    const { app } = createApp({ hasVaultBasePath: false });
+  it('should refuse a vault whose marker names an empty plugin id', async () => {
+    const { app } = createApp({ helperSettingsJson: JSON.stringify({ demoedPluginId: EMPTY }) });
+    await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
+  });
+
+  // The marker is read first, so a refused vault is left exactly as it was found: nothing installed,
+  // Nothing configured, no notice.
+  it('should touch nothing when it refuses the vault', async () => {
+    const { adapterWrite, app, enablePluginAndSave, installPlugin } = createApp({ helperSettingsJson: null });
+    await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
+    expect(installPlugin).not.toHaveBeenCalled();
+    expect(adapterWrite).not.toHaveBeenCalled();
+    expect(enablePluginAndSave).not.toHaveBeenCalled();
+    expect(mockNotice).not.toHaveBeenCalled();
+  });
+
+  // Obsidian opens Settings in a POPOUT WINDOW that becomes the active one, and a `Notice` is built in
+  // Whatever window is active — so a notice raised while Settings is open would be created inside the
+  // Settings window and disappear with it, taking the description of the vault with it.
+  it('should close the settings window before raising the notice', async () => {
+    const { app, settingClose } = createApp();
     await bootstrapDemoVault({ app });
-    const noticeText = getSandboxNoticeText();
-    expect(noticeText).toContain('It is a temporary sandbox, cleaned up automatically');
-    expect(noticeText).not.toContain(VAULT_BASE_PATH);
+    expect(settingClose).toHaveBeenCalled();
+    const closeOrder = vi.mocked(settingClose).mock.invocationCallOrder[0] ?? 0;
+    const noticeOrder = mockNotice.mock.invocationCallOrder[0] ?? 0;
+    expect(closeOrder).toBeLessThan(noticeOrder);
   });
 });

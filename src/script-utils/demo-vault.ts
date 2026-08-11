@@ -16,8 +16,11 @@ import { existsSync } from 'node:fs';
 import {
   cp,
   mkdir,
-  readFile
+  readFile,
+  writeFile
 } from 'node:fs/promises';
+
+import type { DemoVaultHelperSettings } from '../obsidian/demo-vault-helper-settings.ts';
 
 import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import {
@@ -31,6 +34,8 @@ import {
 } from './root.ts';
 
 const DEMO_VAULT_HELPER_PLUGIN_ID = 'demo-vault-helper';
+const DATA_JSON_FILE_NAME = 'data.json';
+const DATA_JSON_INDENT = 2;
 
 /**
  * The minimal shape of a plugin `manifest.json` read by {@link archivePluginDemoVault}.
@@ -79,7 +84,7 @@ export async function archivePluginDemoVault(): Promise<null | string> {
   const distBuildPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.DistBuild });
   await cp(distBuildPath, pluginFolder, { recursive: true });
 
-  await injectDemoVaultHelper();
+  await injectDemoVaultHelper(manifest.id);
 
   // Archive name is hand-synced with the runtime `openDemoVault` opener, which downloads this exact asset name.
   const zipPath = resolvePathFromRootSafe({
@@ -92,7 +97,12 @@ export async function archivePluginDemoVault(): Promise<null | string> {
 }
 
 // Injects the built, `obsidian-dev-utils`-owned `demo-vault-helper` bootstrap plugin (shipped in this package) into the demo vault, so no per-vault copy is committed and an `obsidian-dev-utils` bump propagates fixes.
-async function injectDemoVaultHelper(): Promise<void> {
+//
+// Alongside the binaries it writes the helper's own `data.json` naming the demonstrated plugin. That is
+// The one moment the id is known for certain — it comes from the plugin's own manifest — whereas the
+// Opened vault only offers plugin folders to count, which the bootstrap itself adds to (see
+// `DemoVaultHelperSettings`).
+async function injectDemoVaultHelper(demoedPluginId: string): Promise<void> {
   const packageFolder = getRootFolder(getFolderName(import.meta.url));
   if (!packageFolder) {
     throw new Error('Could not resolve the obsidian-dev-utils package folder to inject the demo-vault-helper plugin.');
@@ -109,4 +119,7 @@ async function injectDemoVaultHelper(): Promise<void> {
   });
   await mkdir(helperFolder, { recursive: true });
   await cp(helperSourcePath, helperFolder, { recursive: true });
+
+  const settings: DemoVaultHelperSettings = { demoedPluginId };
+  await writeFile(join(helperFolder, DATA_JSON_FILE_NAME), `${JSON.stringify(settings, null, DATA_JSON_INDENT)}\n`, 'utf-8');
 }

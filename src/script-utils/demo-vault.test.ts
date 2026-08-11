@@ -19,6 +19,7 @@ const {
   mockMkdir,
   mockReadFile,
   mockResolvePathFromRootSafe,
+  mockWriteFile,
   mockWriteZipPromise
 } = vi.hoisted(() => ({
   mockAddLocalFolder: vi.fn(),
@@ -28,6 +29,7 @@ const {
   mockMkdir: vi.fn(),
   mockReadFile: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockWriteFile: vi.fn(),
   mockWriteZipPromise: vi.fn()
 }));
 
@@ -52,7 +54,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     ...$module,
     cp: mockCp,
     mkdir: mockMkdir,
-    readFile: mockReadFile
+    readFile: mockReadFile,
+    writeFile: mockWriteFile
   };
 });
 
@@ -68,6 +71,7 @@ beforeEach(() => {
   mockCp.mockResolvedValue(undefined);
   mockMkdir.mockResolvedValue(undefined);
   mockReadFile.mockResolvedValue(JSON.stringify({ id: 'my-plugin', version: '1.2.3' }));
+  mockWriteFile.mockResolvedValue(undefined);
   mockWriteZipPromise.mockResolvedValue(true);
 });
 
@@ -100,6 +104,20 @@ describe('archivePluginDemoVault', () => {
 
     expect(mockMkdir).toHaveBeenCalledWith(`/root/demo-vault/${EMPTY}.obsidian/plugins/demo-vault-helper`, { recursive: true });
     expect(mockCp).toHaveBeenCalledWith('/package/dist/demo-vault-helper', `/root/demo-vault/${EMPTY}.obsidian/plugins/demo-vault-helper`, { recursive: true });
+  });
+
+  // The one moment the demonstrated plugin's id is known for certain — it comes from that plugin's own
+  // Manifest. The opened vault can only offer plugin folders to count, and the bootstrap adds to those
+  // Itself, so it reads this marker instead of guessing.
+  it('should record the demonstrated plugin id in the helper settings', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await archivePluginDemoVault();
+
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      `/root/demo-vault/${EMPTY}.obsidian/plugins/demo-vault-helper/data.json`,
+      `${JSON.stringify({ demoedPluginId: 'my-plugin' }, null, 2)}\n`,
+      'utf-8'
+    );
   });
 
   it('should throw when the obsidian-dev-utils package folder cannot be resolved', async () => {

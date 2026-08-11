@@ -29,9 +29,17 @@ import { join } from 'node:path';
 import { buildDemoVaultPopulate } from 'obsidian-integration-testing';
 import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 
+import type { DemoVaultHelperSettings } from '../src/obsidian/demo-vault-helper-settings.ts';
+
 import { buildDemoVaultHelper } from './helpers/build-demo-vault-helper.ts';
 
 const HELPER_PLUGIN_ID = 'demo-vault-helper';
+// The plugin the vault demonstrates. At release time the packaging step names it in the helper's own
+// `data.json`, which is what the bootstrap reads — so that marker is seeded below too. The plugin
+// Itself is seeded (never enabled) because the sandbox notice shows its manifest NAME, which only
+// Exists if Obsidian has scanned the folder.
+const DEMOED_PLUGIN_ID = 'my-demo-plugin';
+const DEMOED_PLUGIN_NAME = 'My Demo Plugin';
 const START_NOTE_PATH = '00 Start.md';
 const MODULES_ROOT = '_assets/CodeScriptToolkit';
 // CodeScript Toolkit resolves a single leading `/` against `modulesRoot`, so `/probe.ts` is `<modulesRoot>/probe.ts`.
@@ -40,6 +48,25 @@ const PROBE_MODULE_PATH = '/probe.ts';
 const DIST_HELPER_DIR = join(import.meta.dirname, '../dist/demo-vault-helper');
 
 const PROBE_MODULE = 'export const PROBE = \'ok\';\n';
+
+// Never loaded — the plugin is seeded but not enabled — so an empty module body is enough for Obsidian
+// To accept the folder and register its manifest.
+const DEMOED_PLUGIN_MAIN_JS = 'module.exports = {};\n';
+const MANIFEST_INDENT = 2;
+const DEMOED_PLUGIN_MANIFEST = `${
+  JSON.stringify(
+    {
+      author: 'obsidian-dev-utils',
+      description: 'Stands in for the plugin a demo vault demonstrates.',
+      id: DEMOED_PLUGIN_ID,
+      minAppVersion: '1.0.0',
+      name: DEMOED_PLUGIN_NAME,
+      version: '1.0.0'
+    },
+    null,
+    MANIFEST_INDENT
+  )
+}\n`;
 
 // The CodeScript Toolkit startup script (run once CST loads via `startupScriptPath`): opens the start note and resolves a module under `modulesRoot` via CST's `require`, proving the plugin loaded already configured with no reload. Runs inside CST, so it uses plain runtime `require` (not linted here).
 const STARTUP_SCRIPT = `
@@ -115,8 +142,20 @@ function buildDemoVaultPopulateForHelperTest(): PopulateFilesParams {
   writeFileSync(join(modulesDirectory, 'probe.ts'), PROBE_MODULE);
   writeFileSync(join(modulesDirectory, 'startup.ts'), STARTUP_SCRIPT);
 
-  return buildDemoVaultPopulate({
-    demoVaultPath: moduleState.demoVaultPath,
-    injectPlugins: [{ pluginId: HELPER_PLUGIN_ID, sourceDirectory: DIST_HELPER_DIR }]
-  });
+  return {
+    ...buildDemoVaultPopulate({
+      demoVaultPath: moduleState.demoVaultPath,
+      injectPlugins: [{
+        // The marker the packaging step writes at release time, reproduced here: it is what tells the
+        // Bootstrap which plugin the vault demonstrates.
+        data: { demoedPluginId: DEMOED_PLUGIN_ID } satisfies DemoVaultHelperSettings,
+        pluginId: HELPER_PLUGIN_ID,
+        sourceDirectory: DIST_HELPER_DIR
+      }]
+    }),
+    // Written directly rather than through `injectPlugins`: there are no built binaries to copy, and the
+    // Plugin is deliberately left disabled — the vault only has to LOOK like a demo vault.
+    [`.obsidian/plugins/${DEMOED_PLUGIN_ID}/main.js`]: DEMOED_PLUGIN_MAIN_JS,
+    [`.obsidian/plugins/${DEMOED_PLUGIN_ID}/manifest.json`]: DEMOED_PLUGIN_MANIFEST
+  };
 }

@@ -12,6 +12,9 @@ import {
 } from 'vitest';
 
 const HELPER_PLUGIN_ID = 'demo-vault-helper';
+// Seeded (never enabled) by `scripts/demo-vault-helper-global-setup.ts` so the vault is a valid demo
+// Vault: exactly one plugin folder besides the helper. Its manifest name is what the notice must show.
+const DEMOED_PLUGIN_NAME = 'My Demo Plugin';
 const CST_PLUGIN_ID = 'fix-require-modules';
 const START_NOTE_PATH = '00 Start.md';
 const MODULES_ROOT = '_assets/CodeScriptToolkit';
@@ -49,6 +52,12 @@ interface BootstrapStatus {
 // Dismissed notice out before removing its element.
 interface SandboxNoticeDismissal {
   readonly isGone: boolean;
+}
+
+// Where the re-run bootstrap put its notice, and whether it closed the settings window first.
+interface SettingsWindowResult {
+  readonly isSettingsWindowClosed: boolean;
+  readonly mainWindowSandboxNoticeCount: number;
 }
 
 describe('demo-vault-helper bootstrap', () => {
@@ -120,13 +129,11 @@ describe('demo-vault-helper bootstrap', () => {
     expect(status.dataJson).toContain('startupScriptPath');
     expect(status.activeFilePath).toBe(START_NOTE_PATH);
     expect(status.probeValue).toBe('ok');
-    // The vault ships only the helper, so the notice names no plugin — but it must still say what the
-    // Vault is, that it is temporary, and how long it lasts.
-    expect(status.sandboxNoticeText).toContain('This is a demo vault.');
+    // The notice names the plugin the vault demonstrates — read from the seeded plugin's manifest, not
+    // Its folder id — and says what the vault is, that it is temporary, and how long it lasts.
+    expect(status.sandboxNoticeText).toContain(`This is a demo vault for ${DEMOED_PLUGIN_NAME}.`);
     expect(status.sandboxNoticeText).toContain('cleaned up automatically about a day after you last use it');
-    // Not compared against `vaultPath` itself: that is a Node-side path string, while the notice carries
-    // Whatever the adapter reports, which differs in separators per platform.
-    expect(status.sandboxNoticeText).toContain(`${SANDBOX_NOTICE_MARKER} at `);
+    expect(status.sandboxNoticeText).toContain(`${DEMOED_PLUGIN_NAME}: Open demo vault`);
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 
   // The requested duration (`0`) only says "do not expire on a timer"; it does not prove the notice can
@@ -179,6 +186,79 @@ describe('demo-vault-helper bootstrap', () => {
       });
     } catch (error) {
       throw new Error(`the sandbox notice was still shown after being clicked; last state: ${String(JSON.stringify(lastDismissal))}`, { cause: error });
+    }
+  }, TEST_TIMEOUT_IN_MILLISECONDS);
+
+  // Obsidian opens Settings in a POPOUT WINDOW that becomes the active one, and a `Notice` is built in
+  // Whatever window is active — so a sandbox notice raised with Settings open would be created inside
+  // The settings window and vanish with it. The bootstrap closes Settings first; only a real Obsidian
+  // Has that popout, so this cannot be a unit test.
+  //
+  // Runs last, and re-triggers the bootstrap by reloading the helper plugin — which is only possible
+  // Because the demonstrated plugin is read from the helper's marker: CodeScript Toolkit is installed by
+  // Now, and counting plugin folders would make this second run ambiguous.
+  it('should close the settings window before raising the sandbox notice', async () => {
+    const vaultPath = getTemporaryVault().path;
+
+    const wasSettingsWindowOpen = await evalInObsidian({
+      async callback({ app, helperPluginId, lib: { waitUntil } }): Promise<boolean> {
+        const SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS = 15_000;
+
+        app.setting.open();
+        // Obsidian creates and focuses the popout asynchronously, and that focus is what hands it the
+        // Active window — the very condition the bootstrap has to survive.
+        await waitUntil({
+          message: 'the settings window to become the active window',
+          predicate: (): boolean => activeWindow !== window,
+          timeoutInMilliseconds: SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS
+        });
+        const isSettingsWindowActive = activeWindow !== window;
+
+        // Fires the bootstrap and returns straight away, leaving the wait for the notice to the poll
+        // Below rather than holding a single CDP command open for it.
+        await app.plugins.disablePlugin(helperPluginId);
+        await app.plugins.enablePlugin(helperPluginId);
+        return isSettingsWindowActive;
+      },
+      input: { helperPluginId: HELPER_PLUGIN_ID },
+      vaultPath
+    });
+
+    // Without this the test could pass on an Obsidian that never opened a settings window at all.
+    expect(wasSettingsWindowOpen).toBe(true);
+
+    let lastState: SettingsWindowResult | undefined;
+    try {
+      await pollInObsidian({
+        input: { sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
+        intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
+        poll({ app, sandboxNoticeMarker }): SettingsWindowResult {
+          // Counts only the notices in the MAIN window: the settings window has a notice container of
+          // Its own, and a notice raised into that one is exactly the defect under test.
+          let mainWindowSandboxNoticeCount = 0;
+          for (const noticeEl of document.querySelectorAll('.notice')) {
+            if (noticeEl.textContent.includes(sandboxNoticeMarker)) {
+              mainWindowSandboxNoticeCount++;
+            }
+          }
+          return {
+            // Read reflectively: `popout` is set only while the settings window exists, and is a 1.13
+            // Member absent from the public typings this library targets.
+            // TODO: Simplify to `app.setting.popout` once Obsidian 1.13 is public and
+            // `obsidian-public-latest` typings model `AppSetting.popout`.
+            isSettingsWindowClosed: !Reflect.get(app.setting, 'popout'),
+            mainWindowSandboxNoticeCount
+          };
+        },
+        timeoutInMilliseconds: POLL_TIMEOUT_IN_MILLISECONDS,
+        until(pollResult: SettingsWindowResult): boolean {
+          lastState = pollResult;
+          return pollResult.mainWindowSandboxNoticeCount > 0 && pollResult.isSettingsWindowClosed;
+        },
+        vaultPath
+      });
+    } catch (error) {
+      throw new Error(`the re-run bootstrap did not close the settings window and raise the notice in the main window; last state: ${String(JSON.stringify(lastState))}`, { cause: error });
     }
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
