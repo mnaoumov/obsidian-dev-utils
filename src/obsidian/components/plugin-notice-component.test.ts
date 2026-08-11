@@ -19,12 +19,16 @@ import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
 import { CssClass } from '../css-class.ts';
-import { PluginNoticeComponent } from './plugin-notice-component.ts';
+import {
+  PluginNoticeComponent,
+  PluginNoticeMode
+} from './plugin-notice-component.ts';
 
 interface NoticeInstance {
   containerEl: HTMLElement;
   hide: ReturnType<typeof vi.fn>;
   messageEl: HTMLElement;
+  setAutoHide: ReturnType<typeof vi.fn>;
   setMessage: ReturnType<typeof vi.fn>;
 }
 
@@ -42,10 +46,15 @@ const mocks = vi.hoisted(() => {
   const instances: NoticeInstance[] = [];
   const NoticeMock = vi.fn(function noticeMock(this: NoticeInstance, ..._arguments: unknown[]) {
     this.hide = vi.fn();
+    this.setAutoHide = vi.fn();
     this.setMessage = vi.fn();
     this.messageEl = createDiv();
     this.containerEl = createDiv();
     this.containerEl.append(this.messageEl);
+    // A freshly constructed notice IS on screen, and the component asks `isShown()` (as Obsidian's own
+    // `hide` does) before appending to it. `isShown()` reads `offsetParent`, which jsdom never computes,
+    // So it is declared here — and cleared by `dismissNotice` for the notice-is-gone cases.
+    Object.defineProperty(this.containerEl, 'offsetParent', { configurable: true, value: document.body });
     instances.push(this);
   });
   return { instances, NoticeMock };
@@ -74,6 +83,12 @@ vi.mock('../../obsidian-dev-utils-state.ts', () => ({
     return wrapper;
   })
 }));
+
+// Puts a mock notice in the state a real one is in once it has expired or been dismissed: detached, so
+// `isShown()` is false. That is what tells the component the slot has nothing left to append to.
+function dismissNotice(notice: NoticeInstance): void {
+  Object.defineProperty(notice.containerEl, 'offsetParent', { configurable: true, value: null });
+}
 
 function getPermanentNotices(): Map<string, NoticeInstance> {
   const wrapper = stateMocks.store.get(PERMANENT_NOTICES_STATE_KEY);
@@ -280,7 +295,7 @@ describe('PluginNoticeComponent', () => {
   });
 
   it('should dismiss a permanent notice left over from a previous load', () => {
-    const staleNotice: NoticeInstance = { containerEl: createDiv(), hide: vi.fn(), messageEl: createDiv(), setMessage: vi.fn() };
+    const staleNotice: NoticeInstance = { containerEl: createDiv(), hide: vi.fn(), messageEl: createDiv(), setAutoHide: vi.fn(), setMessage: vi.fn() };
     stateMocks.store.set(PERMANENT_NOTICES_STATE_KEY, { value: new Map([[PLUGIN_NAME, staleNotice]]) });
 
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
@@ -290,10 +305,10 @@ describe('PluginNoticeComponent', () => {
     expect(getPermanentNotices().has(PLUGIN_NAME)).toBe(false);
   });
 
-  it('should not hide a standalone notice when a reusable notice is shown', () => {
+  it('should not hide a separate notice when a slot notice is shown', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
-    component.showNotice('Standalone', { isReusable: false });
+    component.showNotice('Standalone', { mode: PluginNoticeMode.Separate });
     const standaloneNotice = mocks.instances[0];
 
     component.showNotice('Reusable');
@@ -301,33 +316,33 @@ describe('PluginNoticeComponent', () => {
     expect(standaloneNotice?.hide).not.toHaveBeenCalled();
   });
 
-  it('should not hide the current reusable notice when a standalone notice is shown', () => {
+  it('should not hide the current slot notice when a separate notice is shown', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
     component.showNotice('Reusable');
     const reusableNotice = mocks.instances[0];
 
-    component.showNotice('Standalone', { isReusable: false });
+    component.showNotice('Standalone', { mode: PluginNoticeMode.Separate });
 
     expect(reusableNotice?.hide).not.toHaveBeenCalled();
   });
 
-  it('should let multiple standalone notices coexist', () => {
+  it('should let multiple separate notices coexist', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
-    component.showNotice('First', { isReusable: false });
+    component.showNotice('First', { mode: PluginNoticeMode.Separate });
     const firstNotice = mocks.instances[0];
 
-    component.showNotice('Second', { isReusable: false });
+    component.showNotice('Second', { mode: PluginNoticeMode.Separate });
 
     expect(firstNotice?.hide).not.toHaveBeenCalled();
     expect(mocks.NoticeMock).toHaveBeenCalledTimes(2);
   });
 
-  it('should hide standalone notices on unload', () => {
+  it('should hide separate notices on unload', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
-    component.showNotice('Standalone', { isReusable: false });
+    component.showNotice('Standalone', { mode: PluginNoticeMode.Separate });
     const standaloneNotice = mocks.instances[0];
 
     component.unload();
@@ -335,12 +350,143 @@ describe('PluginNoticeComponent', () => {
     expect(standaloneNotice?.hide).toHaveBeenCalledTimes(1);
   });
 
-  it('should throw when a permanent notice is explicitly marked non-reusable', () => {
+  it('should append to the current notice instead of replacing it', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    const firstNotice = component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    const returnedNotice = component.showNotice('bravo', { mode: PluginNoticeMode.Append });
+
+    // No second notice was constructed: both messages live in the one that was already up.
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
+    expect(currentNotice.hide).not.toHaveBeenCalled();
+    expect(returnedNotice).toBe(firstNotice);
+    expect(currentNotice.messageEl.textContent).toBe('bravo');
+  });
+
+  it('should not repeat the plugin name on an appended message', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    component.showNotice('bravo', { mode: PluginNoticeMode.Append });
+
+    // The notice already opens with the plugin name; repeating it per line is noise.
+    expect(currentNotice.messageEl.querySelector(`.${CssClass.PluginNoticeName}`)).toBeNull();
+    expect(currentNotice.messageEl.textContent).not.toContain(PLUGIN_NAME);
+  });
+
+  it('should wrap an appended message so an interactive element keeps the notice open', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+    const messageFragment = createFragment((f) => {
+      f.createEl('a', { text: 'Link' });
+    });
+
+    component.showNotice(messageFragment, { mode: PluginNoticeMode.Append });
+
+    const dismissListener = vi.fn();
+    currentNotice.containerEl.addEventListener('click', dismissListener);
+    const linkEl = ensureNonNullable(currentNotice.messageEl.querySelector('a'));
+    linkEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(dismissListener).not.toHaveBeenCalled();
+  });
+
+  it('should restart the countdown when appending', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    component.showNotice('bravo', { mode: PluginNoticeMode.Append });
+
+    // Obsidian's own default duration, so the appended message is readable for a full duration rather
+    // Than inheriting what was left of the current one.
+    expect(currentNotice.setAutoHide).toHaveBeenCalledWith(4000);
+  });
+
+  it('should keep an appended permanent notice from expiring', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    component.showNotice('bravo', { isPermanent: true, mode: PluginNoticeMode.Append });
+
+    expect(currentNotice.setAutoHide).toHaveBeenCalledWith(0);
+    expect(getPermanentNotices().get(PLUGIN_NAME)).toBe(currentNotice);
+  });
+
+  it('should keep the permanent registration of the notice it appends to', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha', { isPermanent: true });
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    component.showNotice('bravo', { mode: PluginNoticeMode.Append });
+
+    // A later appended line is no reason to forget that this is the plugin's permanent notice.
+    expect(getPermanentNotices().get(PLUGIN_NAME)).toBe(currentNotice);
+  });
+
+  it('should show a new notice when appending with nothing on screen', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    component.showNotice('alpha', { mode: PluginNoticeMode.Append });
+
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
+    const [content] = mocks.NoticeMock.mock.calls[0] ?? [];
+    // Opening a notice, so it carries the plugin name like any other first message.
+    expect(castTo<DocumentFragment>(content).textContent).toBe('My Plugin\nalpha');
+  });
+
+  it('should show a new notice when appending to a notice that has been dismissed', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const dismissedNotice = ensureNonNullable(mocks.instances[0]);
+    dismissNotice(dismissedNotice);
+
+    component.showNotice('bravo', { mode: PluginNoticeMode.Append });
+
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(2);
+    expect(dismissedNotice.messageEl.textContent).toBe('');
+  });
+
+  it('should invoke onHide of an appending call when the notice is hidden', async () => {
+    const onHide = vi.fn();
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    const notice = component.showNotice('alpha');
+    component.showNotice('bravo', { mode: PluginNoticeMode.Append, onHide });
+
+    notice.hide();
+    await waitForAllAsyncOperations();
+
+    expect(onHide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw when an appending notice also does not hide on click', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     expect(() => {
-      component.showNotice('Bad', { isPermanent: true, isReusable: false });
+      component.showNotice('Bad', { mode: PluginNoticeMode.Append, shouldHideOnClick: false });
+    }).toThrow();
+  });
+
+  it('should throw when a permanent notice is asked to be separate', () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    expect(() => {
+      component.showNotice('Bad', { isPermanent: true, mode: PluginNoticeMode.Separate });
     }).toThrow();
   });
 
@@ -589,12 +735,12 @@ describe('PluginNoticeComponent', () => {
     expect(onHide).toHaveBeenCalledWith({ isCloseButtonClicked: false, isUserAction: false });
   });
 
-  it('should throw when a reusable notice also does not hide on click', () => {
+  it('should throw when a slot notice also does not hide on click', () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
 
     expect(() => {
-      component.showNotice('Bad', { isReusable: true, shouldHideOnClick: false });
+      component.showNotice('Bad', { mode: PluginNoticeMode.Replace, shouldHideOnClick: false });
     }).toThrow();
   });
 
@@ -795,12 +941,133 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     const handle = component.showNoticeAfterDelay({ content: 'Merging 1/10', delayInMilliseconds: DELAY_IN_MILLISECONDS });
     await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
 
+    // The content handed to `Notice`. The real Obsidian moves it into the notice; the mock leaves it
+    // Here, and either way the handle's message element is the thing rewritten in place.
+    const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    expect(content.textContent).toBe('My Plugin\nMerging 1/10');
+
     handle.setContent('Merging 7/10');
 
-    const setMessageMock = ensureNonNullable(mocks.instances[0]).setMessage;
-    expect(setMessageMock).toHaveBeenCalledTimes(1);
-    const updatedContent = castTo<DocumentFragment>(setMessageMock.mock.calls[0]?.[0]);
-    expect(updatedContent.textContent).toBe('My Plugin\nMerging 7/10');
+    expect(content.textContent).toBe('My Plugin\nMerging 7/10');
+    // The message element is swapped rather than the whole notice message rewritten, so a notice this
+    // Handle merely joined keeps the messages that are not its own.
+    expect(mocks.instances[0]?.setMessage).not.toHaveBeenCalled();
+  });
+
+  // A progress notice in the shared slot is hidden by any ordinary notice raised while the operation
+  // Runs — and it never comes back, because the handle then updates a notice that is no longer shown.
+  it('should keep a separate delayed notice alive when another notice is shown', async () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    const handle = component.showNoticeAfterDelay({
+      content: 'Working',
+      delayInMilliseconds: DELAY_IN_MILLISECONDS,
+      mode: PluginNoticeMode.Separate
+    });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+    const progressNotice = ensureNonNullable(mocks.instances[0]);
+
+    component.showNotice('Unrelated');
+
+    expect(progressNotice.hide).not.toHaveBeenCalled();
+
+    dispose(handle);
+    expect(progressNotice.hide).toHaveBeenCalledTimes(1);
+    // Dropped from the standalone tracking too, so unloading does not hide it a second time.
+    component.unload();
+    expect(progressNotice.hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('should append a delayed notice to the current notice', async () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    component.showNoticeAfterDelay({
+      content: 'Working',
+      delayInMilliseconds: DELAY_IN_MILLISECONDS,
+      mode: PluginNoticeMode.Append
+    });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    expect(mocks.NoticeMock).toHaveBeenCalledTimes(1);
+    expect(currentNotice.hide).not.toHaveBeenCalled();
+    expect(currentNotice.messageEl.textContent).toBe('Working');
+  });
+
+  it('should rewrite only its own message when an appended delayed notice updates', async () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    const handle = component.showNoticeAfterDelay({
+      content: 'Merging 1/10',
+      delayInMilliseconds: DELAY_IN_MILLISECONDS,
+      mode: PluginNoticeMode.Append
+    });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+    component.showNotice('bravo', { mode: PluginNoticeMode.Append });
+
+    handle.setContent('Merging 7/10');
+
+    // Its own message is updated; the message appended after it is untouched.
+    expect(currentNotice.messageEl.textContent).toBe('Merging 7/10bravo');
+  });
+
+  it('should remove only its own message when an appended delayed notice is disposed', async () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+    component.showNotice('alpha');
+    const currentNotice = ensureNonNullable(mocks.instances[0]);
+
+    const handle = component.showNoticeAfterDelay({
+      content: 'Working',
+      delayInMilliseconds: DELAY_IN_MILLISECONDS,
+      mode: PluginNoticeMode.Append
+    });
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+
+    dispose(handle);
+
+    // The notice belongs to whoever opened it, so it stays up — only the progress message goes.
+    expect(currentNotice.hide).not.toHaveBeenCalled();
+    expect(currentNotice.messageEl.textContent).toBe('');
+  });
+
+  // Resolving the content is asynchronous, so an operation reporting progress can call `setContent`
+  // While the notice is still being built. There is no notice to rewrite at that point, so the update
+  // Would be lost and the notice would open showing the message it started with — the newer message
+  // Replaced by the older one.
+  it('should open with the latest content when setContent lands while the content is resolving', async () => {
+    const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
+    component.load();
+
+    let releaseContent = noop;
+    const contentGate = new Promise<void>((resolve) => {
+      releaseContent = resolve;
+    });
+
+    const handle = component.showNoticeAfterDelay({
+      content: async (): Promise<string> => {
+        await contentGate;
+        return 'Opening';
+      },
+      delayInMilliseconds: DELAY_IN_MILLISECONDS
+    });
+
+    await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
+    // The delay has elapsed but the content is still resolving, so nothing is on screen to update.
+    expect(mocks.NoticeMock).not.toHaveBeenCalled();
+
+    handle.setContent('Downloading');
+    releaseContent();
+    await waitForAllAsyncOperations();
+
+    const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
+    expect(content.textContent).toBe('My Plugin\nDownloading');
   });
 
   it('should show the latest content when setContent is called before the delay elapses', async () => {

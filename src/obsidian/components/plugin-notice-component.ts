@@ -30,10 +30,46 @@ import { MonkeyAroundComponent } from './monkey-around-component.ts';
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
 const DEFAULT_DELAY_BEFORE_SHOW_IN_MILLISECONDS = 500;
+// Obsidian's own default notice duration, applied by the `Notice` constructor when none is given. It is
+// Repeated here because restarting the countdown on an append goes through `setAutoHide`, which takes an
+// Explicit duration and so cannot fall back to that default itself.
+const OBSIDIAN_DEFAULT_NOTICE_DURATION_IN_MILLISECONDS = 4000;
 
 // Elements a user clicks to act on them rather than to dismiss the notice. A click landing on (or
 // Inside) one of these is kept from bubbling to the notice, so the notice stays open.
 const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, select, textarea, label, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="tab"], [role="menuitem"]';
+
+/**
+ * How a new notice relates to the plugin's current notice — the one occupying the single per-plugin
+ * slot this component keeps.
+ *
+ * Raw `new Notice(...)` calls always pile up, which is rarely what a plugin wants: usually only the
+ * latest message matters. So the slot exists, and this chooses what a new message does with it.
+ */
+export enum PluginNoticeMode {
+  /**
+   * Adds the message to the current notice, so both messages stay visible in a single notice — for a
+   * running account of an operation. The countdown restarts, so an appended message is readable for a
+   * full duration rather than inheriting the remains of the current one.
+   *
+   * Falls back to {@link PluginNoticeMode.Replace} when there is no current notice on screen (it was
+   * never shown, or it has since been dismissed).
+   */
+  Append = 'append',
+
+  /**
+   * Hides the current notice and shows this one in its place, so only the latest message is on screen.
+   * This is the default, and the reason the slot exists.
+   */
+  Replace = 'replace',
+
+  /**
+   * Shows the message as its own notice, leaving the current one alone: both are on screen, piled up
+   * like plain `new Notice(...)` calls. A separate notice never replaces, and is never replaced by, a
+   * slot notice; any number of them coexist. They are still hidden together on unload.
+   */
+  Separate = 'separate'
+}
 
 /**
  * The event passed to {@link PluginNoticeComponentShowNoticeOptions.onCloseClick} when the notice's
@@ -53,9 +89,13 @@ export interface PluginNoticeCloseClickEvent {
  */
 export interface PluginNoticeComponentDelayedNotice extends Disposable {
   /**
-   * Replaces the notice content, re-applying the plugin-name prefix, the interactive-click guard, and
+   * Replaces this handle's message, re-applying the plugin-name prefix, the interactive-click guard, and
    * the Cancel button. Useful for reporting progress. If the delay has not elapsed yet, the new content
    * becomes what is shown once it does.
+   *
+   * Only this handle's own message is rewritten: when the notice was joined rather than opened (see
+   * {@link PluginNoticeComponentShowNoticeAfterDelayParams.mode}), the messages already in it are left
+   * alone.
    *
    * @param content - The new notice content.
    */
@@ -91,6 +131,21 @@ export interface PluginNoticeComponentShowNoticeAfterDelayParams {
    * @default `500`
    */
   readonly delayInMilliseconds?: number;
+
+  /**
+   * How this notice relates to the plugin's current notice — see {@link PluginNoticeMode}.
+   *
+   * {@link PluginNoticeMode.Separate} is worth considering for a long operation: on the default
+   * {@link PluginNoticeMode.Replace} the progress notice takes the shared slot, so any ordinary notice
+   * raised while the operation runs hides it, and the progress the user was watching does not come back.
+   *
+   * Whichever mode is used, the returned handle owns only ITS message: updating the content rewrites
+   * that message alone, and disposing takes away only that message when the notice was already on
+   * screen (a notice this handle opened is hidden as a whole).
+   *
+   * @default {@link PluginNoticeMode.Replace}
+   */
+  readonly mode?: PluginNoticeMode;
 }
 
 /**
@@ -110,18 +165,17 @@ export interface PluginNoticeComponentShowNoticeOptions {
   readonly isPermanent?: boolean;
 
   /**
-   * Whether the notice occupies the single per-plugin reusable slot.
+   * How this notice relates to the plugin's current notice — see {@link PluginNoticeMode}.
    *
-   * A reusable notice takes the shared slot: the next reusable notice hides it, and it is hidden on unload.
-   * A non-reusable (standalone) notice is not placed in the slot — it never hides, and is never hidden by, a
-   * reusable notice; multiple standalone notices coexist. Standalone notices are still hidden together on unload.
+   * A permanent notice cannot be {@link PluginNoticeMode.Separate} (it needs the shared slot it is
+   * tracked in), and a notice that does not hide on click must be
+   * {@link PluginNoticeMode.Separate} (so a later notice never silently replaces it); either
+   * contradiction throws.
    *
-   * A permanent notice must be reusable ({@link PluginNoticeComponentShowNoticeOptions.isPermanent} implies
-   * `isReusable`); passing `isReusable: false` together with `isPermanent: true` throws.
-   *
-   * @default `true`
+   * @default {@link PluginNoticeMode.Replace}, or {@link PluginNoticeMode.Separate} when
+   * {@link PluginNoticeComponentShowNoticeOptions.shouldHideOnClick} is `false`
    */
-  readonly isReusable?: boolean;
+  readonly mode?: PluginNoticeMode;
 
   /**
    * A callback invoked when the user clicks the close (X) button, before the notice is hidden. Call
@@ -149,9 +203,10 @@ export interface PluginNoticeComponentShowNoticeOptions {
    * {@link PluginNoticeComponentShowNoticeOptions.shouldShowCloseButton} and
    * {@link PluginNoticeComponentShowNoticeOptions.onCloseClick}).
    *
-   * A `shouldHideOnClick: false` notice is shown with an infinite duration and is standalone (implies
-   * {@link PluginNoticeComponentShowNoticeOptions.isReusable} `= false`), so a later notice never
-   * silently replaces it; passing `isReusable: true` together with `shouldHideOnClick: false` throws.
+   * A `shouldHideOnClick: false` notice is shown with an infinite duration and stands on its own
+   * (implies {@link PluginNoticeMode.Separate}), so a later notice never silently replaces it; passing
+   * any other {@link PluginNoticeComponentShowNoticeOptions.mode} together with `shouldHideOnClick: false`
+   * throws.
    *
    * @default `true`
    */
@@ -192,6 +247,13 @@ interface PluginNoticeComponentAppendCloseButtonParams {
   onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
 }
 
+interface PluginNoticeComponentAppendToCurrentNoticeParams {
+  readonly durationInMilliseconds: null | number;
+  readonly message: DocumentFragment | string;
+  onHide?(this: void, info: PluginNoticeHideInfo): Promisable<void>;
+  readonly shouldRegisterAsPermanent: boolean;
+}
+
 interface PluginNoticeComponentBuildDelayedNoticeMessageParams {
   readonly abortController?: AbortController;
   readonly cancelButtonText?: string;
@@ -226,6 +288,15 @@ interface PluginNoticeComponentBuildNoticeContentParams {
   readonly requiresExplicitClose?: boolean;
 
   /**
+   * Whether the message is prefixed with the plugin name. Only a message that opens a notice is
+   * prefixed; a message appended to one already showing it is not, so the name is not repeated on every
+   * line.
+   *
+   * @default `true`
+   */
+  readonly shouldPrefixWithPluginName?: boolean;
+
+  /**
    * Whether to render the close button when {@link PluginNoticeComponentBuildNoticeContentParams.requiresExplicitClose}.
    *
    * @default `true`
@@ -238,10 +309,52 @@ interface PluginNoticeComponentConstructorParams {
   readonly pluginName: string;
 }
 
+/**
+ * A built message: the wrapper element holding it, and the fragment that element sits in.
+ *
+ * The element is handed back because a notice can hold several of them (see {@link PluginNoticeMode.Append}),
+ * so whoever owns one message has to be able to update or remove exactly that message. The reference
+ * stays valid once the fragment is handed to `Notice`: appending a fragment moves its children rather
+ * than copying them.
+ */
+interface PluginNoticeComponentNoticeContent {
+  /**
+   * The element wrapping this message alone.
+   */
+  readonly contentEl: HTMLElement;
+
+  /**
+   * The fragment holding {@link PluginNoticeComponentNoticeContent.contentEl}, ready to hand to `Notice`
+   * or to append into one.
+   */
+  readonly fragment: DocumentFragment;
+}
+
+/**
+ * A message that has been put on screen, and where it ended up.
+ */
+interface PluginNoticeComponentShownNotice {
+  /**
+   * The element holding this message alone, inside {@link PluginNoticeComponentShownNotice.notice}.
+   */
+  readonly contentEl: HTMLElement;
+
+  /**
+   * Whether this message created the notice, as opposed to joining one that was already on screen.
+   * Only the creator may hide it; a joined message can merely remove itself.
+   */
+  readonly isNoticeOwned: boolean;
+
+  /**
+   * The notice the message is in.
+   */
+  readonly notice: Notice;
+}
+
 interface PluginNoticeComponentShowNoticeWithDurationParams {
   readonly durationInMilliseconds: null | number;
-  readonly isReusable: boolean;
   readonly message: DocumentFragment | string;
+  readonly mode: PluginNoticeMode;
   readonly onCloseClick: ((this: void, event: PluginNoticeCloseClickEvent) => Promisable<void>) | undefined;
   readonly onHide: ((this: void, info: PluginNoticeHideInfo) => Promisable<void>) | undefined;
   readonly requiresExplicitClose: boolean;
@@ -250,7 +363,9 @@ interface PluginNoticeComponentShowNoticeWithDurationParams {
 }
 
 /**
- * Manages showing plugin notices. Automatically hides the previous notice when a new one is shown.
+ * Manages showing plugin notices. By default a new notice hides the previous one, so only the latest
+ * message is on screen; {@link PluginNoticeComponentShowNoticeOptions.mode} chooses otherwise — see
+ * {@link PluginNoticeMode}.
  */
 export class PluginNoticeComponent extends ComponentEx {
   /**
@@ -318,26 +433,26 @@ export class PluginNoticeComponent extends ComponentEx {
     const isPermanent = options?.isPermanent ?? false;
     const shouldHideOnClick = options?.shouldHideOnClick ?? true;
     const requiresExplicitClose = !shouldHideOnClick;
-    const isReusable = options?.isReusable ?? !requiresExplicitClose;
+    const mode = options?.mode ?? (requiresExplicitClose ? PluginNoticeMode.Separate : PluginNoticeMode.Replace);
 
-    if (options?.isReusable === true && requiresExplicitClose) {
-      throw new Error('A notice that does not hide on click cannot be reusable.');
+    if (options?.mode !== undefined && options.mode !== PluginNoticeMode.Separate && requiresExplicitClose) {
+      throw new Error('A notice that does not hide on click must be shown in the separate mode.');
     }
-    if (options?.isReusable === false && isPermanent) {
-      throw new Error('A permanent notice must be reusable.');
+    if (mode === PluginNoticeMode.Separate && isPermanent) {
+      throw new Error('A permanent notice cannot be shown in the separate mode.');
     }
 
     const durationInMilliseconds = isPermanent || requiresExplicitClose ? PERMANENT_NOTICE_DURATION_IN_MILLISECONDS : null;
     return this.showNoticeWithDuration({
       durationInMilliseconds,
-      isReusable,
       message,
+      mode,
       onCloseClick: options?.onCloseClick,
       onHide: options?.onHide,
       requiresExplicitClose,
       shouldRegisterAsPermanent: isPermanent,
       shouldShowCloseButton: options?.shouldShowCloseButton ?? true
-    });
+    }).notice;
   }
 
   /**
@@ -362,7 +477,10 @@ export class PluginNoticeComponent extends ComponentEx {
    * timer) when disposed and lets the content be updated while it is shown.
    */
   public showNoticeAfterDelay(params: PluginNoticeComponentShowNoticeAfterDelayParams): PluginNoticeComponentDelayedNotice {
-    let shownNotice: Notice | null = null;
+    const mode = params.mode ?? PluginNoticeMode.Replace;
+    // Where this message ended up: a notice of its own, or a chunk inside one that was already up. It
+    // Decides what `setContent` rewrites and what disposing takes away.
+    let shown: null | PluginNoticeComponentShownNotice = null;
     let isDisposed = false;
     let timerId = 0;
     let currentContent: ValueProvider<DocumentFragment | string> = params.content;
@@ -382,15 +500,25 @@ export class PluginNoticeComponent extends ComponentEx {
     timerId = window.setTimeout(() => {
       cancelPendingTimer();
       invokeAsyncSafely(async () => {
-        const resolvedContent = await resolveValue(currentContent, {});
-        // The handle may have been disposed while the content was being resolved; don't show a stale notice.
-        if (isDisposed) {
-          return;
-        }
-        shownNotice = this.showNoticeWithDuration({
+        // Resolving the content is asynchronous, and the operation the notice describes keeps running
+        // While it happens — so `setContent` can land in between. It cannot rewrite a notice that does
+        // Not exist yet, so resolve again whenever that happens: the notice must open with the message
+        // The caller last asked for, not the one that was current when resolution started.
+        let requestedContent: ValueProvider<DocumentFragment | string>;
+        let resolvedContent: DocumentFragment | string;
+        do {
+          requestedContent = currentContent;
+          resolvedContent = await resolveValue(requestedContent, {});
+          // The handle may have been disposed while the content was being resolved; don't show a stale notice.
+          if (isDisposed) {
+            return;
+          }
+        } while (requestedContent !== currentContent);
+
+        shown = this.showNoticeWithDuration({
           durationInMilliseconds: PERMANENT_NOTICE_DURATION_IN_MILLISECONDS,
-          isReusable: true,
           message: buildDelayedMessage(resolvedContent),
+          mode,
           onCloseClick: undefined,
           onHide: undefined,
           requiresExplicitClose: false,
@@ -405,15 +533,35 @@ export class PluginNoticeComponent extends ComponentEx {
     return {
       setContent: (content: DocumentFragment | string): void => {
         currentContent = content;
-        // Re-wrap so the prefix, interactive guard, and Cancel button survive the content swap.
-        shownNotice?.setMessage(this.buildNoticeContent({ message: buildDelayedMessage(content) }));
+        if (!shown) {
+          return;
+        }
+        // Swaps THIS message's element for a freshly built one, rather than rewriting the whole notice:
+        // When the handle joined a notice that was already up, the other messages in it are not its to
+        // Overwrite. Rebuilding also re-applies the prefix, the interactive guard, and the Cancel button.
+        const rebuilt = this.buildNoticeContent({
+          message: buildDelayedMessage(content),
+          shouldPrefixWithPluginName: shown.isNoticeOwned
+        });
+        shown.contentEl.replaceWith(rebuilt.fragment);
+        shown = { ...shown, contentEl: rebuilt.contentEl };
       },
       [Symbol.dispose]: (): void => {
         isDisposed = true;
         cancelPendingTimer();
-        shownNotice?.hide();
-        if (this.notice === shownNotice) {
-          this.notice = null;
+        if (!shown) {
+          return;
+        }
+        // A notice this handle opened goes away with it; a notice it merely joined belongs to whoever
+        // Opened it, so only this message is taken out of it.
+        if (shown.isNoticeOwned) {
+          shown.notice.hide();
+          this.standaloneNotices.delete(shown.notice);
+          if (this.notice === shown.notice) {
+            this.notice = null;
+          }
+        } else {
+          shown.contentEl.remove();
         }
       }
     };
@@ -460,6 +608,46 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   /**
+   * Adds a message to the notice currently in the per-plugin slot, so both messages stay on screen in a
+   * single notice.
+   *
+   * The appended message carries no plugin-name prefix — the notice already opens with one, and
+   * repeating it on every line reads as noise. It is wrapped like any other notice content, so a link or
+   * button inside it still keeps the notice open when clicked.
+   *
+   * Appending restarts the notice's countdown ({@link Notice.setAutoHide}), so the new message gets a
+   * full duration instead of inheriting what was left of the current one — a line appended a moment
+   * before the notice expires would otherwise flash and vanish.
+   *
+   * @param params - The parameters.
+   * @returns The {@link PluginNoticeComponentShownNotice} describing the joined notice, or `null` when
+   * there is nothing on screen to append to — the slot is empty, or its notice has since been dismissed
+   * — and the caller should show a new notice instead.
+   */
+  private appendToCurrentNotice(params: PluginNoticeComponentAppendToCurrentNoticeParams): null | PluginNoticeComponentShownNotice {
+    const { durationInMilliseconds, message, onHide, shouldRegisterAsPermanent } = params;
+    const currentNotice = this.notice;
+    // `isShown` is the same check Obsidian's own `Notice.hide` makes before animating a notice away, so
+    // It is exactly "still on screen": a notice that expired or was dismissed has been detached.
+    if (!currentNotice?.containerEl.isShown()) {
+      return null;
+    }
+
+    const { contentEl, fragment } = this.buildNoticeContent({ message, shouldPrefixWithPluginName: false });
+    currentNotice.messageEl.append(fragment);
+    // A `null` duration means "Obsidian's own default", which only the constructor applies — so restart
+    // The countdown with that same default rather than leaving the current one running.
+    currentNotice.setAutoHide(durationInMilliseconds ?? OBSIDIAN_DEFAULT_NOTICE_DURATION_IN_MILLISECONDS);
+    this.wireOnHide(currentNotice, onHide);
+    // Only ever registers, never clears: the notice being appended to may already be this plugin's
+    // Permanent notice, and a later appended message is no reason to forget that.
+    if (shouldRegisterAsPermanent) {
+      this.setPermanentNotice(currentNotice);
+    }
+    return { contentEl, isNoticeOwned: false, notice: currentNotice };
+  }
+
+  /**
    * Builds the message for a delayed notice: the resolved content, optionally followed by a Cancel
    * button that aborts the provided controller when clicked.
    *
@@ -499,14 +687,20 @@ export class PluginNoticeComponent extends ComponentEx {
    * input, etc.) and stops them there, so the element's own handler still runs but the notice stays.
    *
    * @param params - The parameters.
-   * @returns A {@link DocumentFragment} holding the wrapped, prefixed notice content.
+   * @returns The {@link PluginNoticeComponentNoticeContent} holding the wrapped notice content.
    */
-  private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): DocumentFragment {
-    const { getNotice, message, onCloseClick, requiresExplicitClose = false, shouldShowCloseButton = true } = params;
+  private buildNoticeContent(params: PluginNoticeComponentBuildNoticeContentParams): PluginNoticeComponentNoticeContent {
+    const { getNotice, message, onCloseClick, requiresExplicitClose = false, shouldPrefixWithPluginName = true, shouldShowCloseButton = true } = params;
     const fragment = createFragment();
     const contentEl = fragment.createDiv();
     addPluginCssClasses(contentEl, CssClass.PluginNoticeContent);
-    contentEl.append(this.buildPrefixedMessage(message));
+    if (shouldPrefixWithPluginName) {
+      contentEl.append(this.buildPrefixedMessage(message));
+    } else if (typeof message === 'string') {
+      contentEl.appendText(message);
+    } else {
+      contentEl.append(message);
+    }
     contentEl.addEventListener('click', ($event) => {
       // A hard-to-close notice must not dismiss on any stray click; only its close button may hide it.
       if (requiresExplicitClose) {
@@ -525,7 +719,7 @@ export class PluginNoticeComponent extends ComponentEx {
         onCloseClick
       }));
     }
-    return fragment;
+    return { contentEl, fragment };
   }
 
   /**
@@ -621,25 +815,40 @@ export class PluginNoticeComponent extends ComponentEx {
   }
 
   /**
-   * Shows a notice with the given duration. A reusable notice replaces the current reusable notice (and
-   * is optionally registered as this plugin's permanent notice); a standalone notice is tracked
-   * separately, leaving the reusable slot untouched.
+   * Shows a notice with the given duration, placing it according to its {@link PluginNoticeMode}: a
+   * {@link PluginNoticeMode.Replace} notice takes the per-plugin slot (hiding whatever was in it, and
+   * optionally registering as this plugin's permanent notice), an {@link PluginNoticeMode.Append} one
+   * joins the notice already in the slot, and a {@link PluginNoticeMode.Separate} one is tracked on its
+   * own, leaving the slot untouched.
    *
    * @param params - The parameters.
-   * @returns The created notice.
+   * @returns The {@link PluginNoticeComponentShownNotice} describing where the message ended up.
    */
-  private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): Notice {
-    const { durationInMilliseconds, isReusable, message, onCloseClick, onHide, requiresExplicitClose, shouldRegisterAsPermanent, shouldShowCloseButton } = params;
+  private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): PluginNoticeComponentShownNotice {
+    const { durationInMilliseconds, message, mode, onCloseClick, onHide, requiresExplicitClose, shouldRegisterAsPermanent, shouldShowCloseButton } = params;
     // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
     // Duration" value to `undefined`.
     const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
+
+    if (mode === PluginNoticeMode.Append) {
+      const appendedNotice = this.appendToCurrentNotice(normalizeOptionalProperties<PluginNoticeComponentAppendToCurrentNoticeParams>({
+        durationInMilliseconds,
+        message,
+        onHide,
+        shouldRegisterAsPermanent
+      }));
+      if (appendedNotice) {
+        return appendedNotice;
+      }
+      // Nothing on screen to append to, so this message becomes the slot's notice instead.
+    }
 
     const hasCloseButton = requiresExplicitClose && shouldShowCloseButton;
     // The close button's click handler needs the `Notice`, which does not exist until it is built from
     // This content; capture it lazily via a holder resolved at click time. The getter is created only
     // When a close button is shown.
     let builtNotice: Notice | null = null;
-    const content = this.buildNoticeContent(normalizeOptionalProperties<PluginNoticeComponentBuildNoticeContentParams>({
+    const { contentEl, fragment } = this.buildNoticeContent(normalizeOptionalProperties<PluginNoticeComponentBuildNoticeContentParams>({
       getNotice: hasCloseButton ? (): Notice | null => builtNotice : undefined,
       message,
       onCloseClick,
@@ -647,17 +856,17 @@ export class PluginNoticeComponent extends ComponentEx {
       shouldShowCloseButton
     }));
 
-    if (!isReusable) {
-      builtNotice = new Notice(content, noticeDurationInMilliseconds);
+    if (mode === PluginNoticeMode.Separate) {
+      builtNotice = new Notice(fragment, noticeDurationInMilliseconds);
       this.installExplicitCloseGuards(builtNotice, requiresExplicitClose);
       this.installUserClickTracking(builtNotice);
       this.wireOnHide(builtNotice, onHide);
       this.standaloneNotices.add(builtNotice);
-      return builtNotice;
+      return { contentEl, isNoticeOwned: true, notice: builtNotice };
     }
 
     this.notice?.hide();
-    builtNotice = new Notice(content, noticeDurationInMilliseconds);
+    builtNotice = new Notice(fragment, noticeDurationInMilliseconds);
     this.notice = builtNotice;
     this.installExplicitCloseGuards(builtNotice, requiresExplicitClose);
     this.installUserClickTracking(builtNotice);
@@ -668,7 +877,7 @@ export class PluginNoticeComponent extends ComponentEx {
     } else {
       this.setPermanentNotice(null);
     }
-    return builtNotice;
+    return { contentEl, isNoticeOwned: true, notice: builtNotice };
   }
 
   /**

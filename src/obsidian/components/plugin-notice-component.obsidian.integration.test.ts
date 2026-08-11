@@ -336,3 +336,151 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     expect(result.updatedText).toContain('Updated 5/10');
   });
 });
+
+describe('PluginNoticeComponent notice modes', () => {
+  // Raw `new Notice(...)` calls pile up; the component's slot exists so only the latest message shows.
+  // Which of the three outcomes a message gets — replacing, joining, or standing alone — is a question
+  // About real notice ELEMENTS on screen, so it is answered here rather than against a mocked `Notice`.
+  it('should replace, append to, or stand alongside the current notice as asked', async () => {
+    const result = await evalInObsidian({
+      async callback({ app, lib: { PluginNoticeComponent, PluginNoticeMode, waitUntil } }) {
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+        const MARKER = 'mode-probe';
+
+        // Counts the notices this test raised, ignoring anything else on screen.
+        function getProbeNoticeEls(): HTMLElement[] {
+          return [...activeDocument.querySelectorAll<HTMLElement>('.notice')].filter((noticeEl) => noticeEl.textContent.includes(MARKER));
+        }
+
+        const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
+        // Loaded so the `unload` below actually runs: Obsidian's `Component.unload` returns early when
+        // The component was never loaded, which would leave these notices on screen for the suites that
+        // Run after this one — they overlay the corner of the window and swallow clicks.
+        component.load();
+        try {
+          component.showNotice(`${MARKER} alpha`);
+          await waitUntil({
+            message: 'the first notice should render',
+            predicate: () => getProbeNoticeEls().length === 1,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+
+          // Replace (the default): still one notice, and `alpha` is gone from it. Obsidian fades a
+          // Replaced notice out before detaching it, so the old element lingers for a moment — hence the
+          // Wait for the count to settle rather than a synchronous read.
+          component.showNotice(`${MARKER} bravo`);
+          await waitUntil({
+            message: 'the replaced notice should fade out, leaving a single notice',
+            predicate: () => getProbeNoticeEls().length === 1,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+          const afterReplaceEls = getProbeNoticeEls();
+          const afterReplace = {
+            noticeCount: afterReplaceEls.length,
+            text: afterReplaceEls.map((noticeEl) => noticeEl.textContent).join('|')
+          };
+
+          // Append: still one notice, now carrying both messages.
+          component.showNotice(`${MARKER} charlie`, { mode: PluginNoticeMode.Append });
+          const afterAppendEls = getProbeNoticeEls();
+          const afterAppend = {
+            noticeCount: afterAppendEls.length,
+            pluginNameCount: afterAppendEls[0]?.querySelectorAll('.obsidian-dev-utils.plugin-notice-name').length ?? 0,
+            text: afterAppendEls.map((noticeEl) => noticeEl.textContent).join('|')
+          };
+
+          // Separate: a second notice, piled up, leaving the first alone.
+          component.showNotice(`${MARKER} delta`, { mode: PluginNoticeMode.Separate });
+          const afterSeparateEls = getProbeNoticeEls();
+          const afterSeparate = {
+            noticeCount: afterSeparateEls.length,
+            text: afterSeparateEls.map((noticeEl) => noticeEl.textContent).join('|')
+          };
+
+          return { afterAppend, afterReplace, afterSeparate };
+        } finally {
+          component.unload();
+        }
+      }
+    });
+
+    // Replace: one notice, showing only the latest message.
+    expect(result.afterReplace.noticeCount).toBe(1);
+    expect(result.afterReplace.text).toContain('bravo');
+    expect(result.afterReplace.text).not.toContain('alpha');
+
+    // Append: still one notice, carrying both messages, with the plugin name shown once rather than
+    // Repeated on the appended line.
+    expect(result.afterAppend.noticeCount).toBe(1);
+    expect(result.afterAppend.text).toContain('bravo');
+    expect(result.afterAppend.text).toContain('charlie');
+    expect(result.afterAppend.pluginNameCount).toBe(1);
+
+    // Separate: two notices on screen at once, the appended-to one untouched.
+    expect(result.afterSeparate.noticeCount).toBe(2);
+    expect(result.afterSeparate.text).toContain('charlie');
+    expect(result.afterSeparate.text).toContain('delta');
+  });
+});
+
+describe('PluginNoticeComponent delayed notice modes', () => {
+  // The delayed handle owns one message inside a notice, not the whole notice: it rewrites that message
+  // In place and, when it merely joined a notice, takes only that message away again. Both are DOM moves
+  // Inside a live notice element, so a mocked `Notice` cannot show they work.
+  it('should update and remove only its own message when appended to a notice', async () => {
+    const result = await evalInObsidian({
+      async callback({ app, lib: { PluginNoticeComponent, PluginNoticeMode, waitUntil } }) {
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+        const MARKER = 'delayed-probe';
+
+        function getProbeNoticeEl(): HTMLElement | null {
+          return [...activeDocument.querySelectorAll<HTMLElement>('.notice')].find((noticeEl) => noticeEl.textContent.includes(MARKER)) ?? null;
+        }
+
+        const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
+        // See the note on the other modes test: without `load`, the `unload` below is a no-op and these
+        // Notices outlive the test.
+        component.load();
+        try {
+          component.showNotice(`${MARKER} host`);
+          const handle = component.showNoticeAfterDelay({
+            content: `${MARKER} working`,
+            delayInMilliseconds: 0,
+            mode: PluginNoticeMode.Append
+          });
+
+          await waitUntil({
+            message: 'the delayed message should join the notice already on screen',
+            predicate: () => (getProbeNoticeEl()?.textContent ?? '').includes('working'),
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
+          const afterAppend = getProbeNoticeEl()?.textContent ?? '';
+
+          handle.setContent(`${MARKER} finishing`);
+          const afterUpdate = getProbeNoticeEl()?.textContent ?? '';
+
+          handle[Symbol.dispose]();
+          const afterDispose = getProbeNoticeEl()?.textContent ?? null;
+
+          return { afterAppend, afterDispose, afterUpdate };
+        } finally {
+          component.unload();
+        }
+      }
+    });
+
+    // Both messages share the notice.
+    expect(result.afterAppend).toContain('host');
+    expect(result.afterAppend).toContain('working');
+
+    // The update rewrites the handle's message and leaves the host message alone.
+    expect(result.afterUpdate).toContain('host');
+    expect(result.afterUpdate).toContain('finishing');
+    expect(result.afterUpdate).not.toContain('working');
+
+    // Disposing takes away only the handle's message: the notice it joined is still up, still showing
+    // The message that was there first.
+    expect(result.afterDispose).toContain('host');
+    expect(result.afterDispose).not.toContain('finishing');
+  });
+});
