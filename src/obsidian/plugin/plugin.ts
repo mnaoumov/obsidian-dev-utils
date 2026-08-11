@@ -36,9 +36,28 @@ import { MenuEventRegistrarComponent } from '../components/menu-event-registrar-
 import { NotebookNavigatorMenuEventRegistrarComponent } from '../components/notebook-navigator-menu-event-registrar-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
+import { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
+import { PluginDataHandler } from '../data-handler.ts';
 import { initI18N } from '../i18n/i18n.ts';
 import { defaultTranslationsMap } from '../i18n/locales/translations-map.ts';
 import { ResourceLockComponent } from '../resource-lock.ts';
+import { PluginEventSourceImpl } from './plugin-event-source.ts';
+
+/**
+ * The universal components owned by {@link PluginBase}, keyed by the name of the accessor exposing
+ * each one. Every member is optional because a component only exists once {@link PluginBase.onload}
+ * has created it.
+ */
+interface PluginBaseComponents {
+  abortSignalComponent?: AbortSignalComponent;
+  asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
+  commandHandlerComponent?: CommandHandlerComponent;
+  consoleDebugComponent?: ConsoleDebugComponent;
+  pluginContextComponent?: PluginContextComponent;
+  pluginNoticeComponent?: PluginNoticeComponent;
+  pluginSettingsComponent?: PluginSettingsComponentBase<object>;
+  resourceLockComponent?: ResourceLockComponent;
+}
 
 /**
  * Base class for creating Obsidian plugins with a component-based architecture.
@@ -53,7 +72,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns abort signal component.
    */
   protected get abortSignalComponent(): AbortSignalComponent {
-    return ensureNonNullable(this._abortSignalComponent);
+    return ensureNonNullable(this.components.abortSignalComponent);
   }
 
   /**
@@ -62,7 +81,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - Abort signal component.
    */
   protected set abortSignalComponent(value: AbortSignalComponent) {
-    this._abortSignalComponent = value;
+    this.setComponent('abortSignalComponent', value);
   }
 
   /**
@@ -71,7 +90,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns async error handler component.
    */
   protected get asyncErrorHandlerComponent(): AsyncErrorHandlerComponent {
-    return ensureNonNullable(this._asyncErrorHandlerComponent);
+    return ensureNonNullable(this.components.asyncErrorHandlerComponent);
   }
 
   /**
@@ -80,7 +99,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - Async error handler component.
    */
   protected set asyncErrorHandlerComponent(value: AsyncErrorHandlerComponent) {
-    this._asyncErrorHandlerComponent = value;
+    this.setComponent('asyncErrorHandlerComponent', value);
   }
 
   /**
@@ -92,7 +111,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns The command handler component.
    */
   protected get commandHandlerComponent(): CommandHandlerComponent {
-    return ensureNonNullable(this._commandHandlerComponent);
+    return ensureNonNullable(this.components.commandHandlerComponent);
   }
 
   /**
@@ -101,7 +120,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - The command handler component.
    */
   protected set commandHandlerComponent(value: CommandHandlerComponent) {
-    this._commandHandlerComponent = value;
+    this.setComponent('commandHandlerComponent', value);
   }
 
   /**
@@ -110,7 +129,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns console debug component.
    */
   protected get consoleDebugComponent(): ConsoleDebugComponent {
-    return ensureNonNullable(this._consoleDebugComponent);
+    return ensureNonNullable(this.components.consoleDebugComponent);
   }
 
   /**
@@ -119,7 +138,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - Console debug component.
    */
   protected set consoleDebugComponent(value: ConsoleDebugComponent) {
-    this._consoleDebugComponent = value;
+    this.setComponent('consoleDebugComponent', value);
   }
 
   /**
@@ -128,7 +147,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns plugin context component.
    */
   protected get pluginContextComponent(): PluginContextComponent {
-    return ensureNonNullable(this._pluginContextComponent);
+    return ensureNonNullable(this.components.pluginContextComponent);
   }
 
   /**
@@ -137,7 +156,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - Plugin context component.
    */
   protected set pluginContextComponent(value: PluginContextComponent) {
-    this._pluginContextComponent = value;
+    this.setComponent('pluginContextComponent', value);
   }
 
   /**
@@ -146,7 +165,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns plugin notice component.
    */
   protected get pluginNoticeComponent(): PluginNoticeComponent {
-    return ensureNonNullable(this._pluginNoticeComponent);
+    return ensureNonNullable(this.components.pluginNoticeComponent);
   }
 
   /**
@@ -155,7 +174,25 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - Plugin notice component.
    */
   protected set pluginNoticeComponent(value: PluginNoticeComponent) {
-    this._pluginNoticeComponent = value;
+    this.setComponent('pluginNoticeComponent', value);
+  }
+
+  /**
+   * Gets plugin settings component.
+   *
+   * @returns plugin settings component.
+   */
+  protected get pluginSettingsComponent(): PluginSettingsComponentBase<object> {
+    return ensureNonNullable(this.components.pluginSettingsComponent);
+  }
+
+  /**
+   * Sets plugin settings component.
+   *
+   * @param value - Plugin settings component.
+   */
+  protected set pluginSettingsComponent(value: PluginSettingsComponentBase<object>) {
+    this.setComponent('pluginSettingsComponent', value);
   }
 
   /**
@@ -165,7 +202,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns Editor lock component.
    */
   protected get resourceLockComponent(): ResourceLockComponent {
-    return ensureNonNullable(this._resourceLockComponent);
+    return ensureNonNullable(this.components.resourceLockComponent);
   }
 
   /**
@@ -174,22 +211,10 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @param value - Editor lock component.
    */
   protected set resourceLockComponent(value: ResourceLockComponent) {
-    this._resourceLockComponent = value;
+    this.setComponent('resourceLockComponent', value);
   }
 
-  private _abortSignalComponent?: AbortSignalComponent;
-
-  private _asyncErrorHandlerComponent?: AsyncErrorHandlerComponent;
-
-  private _commandHandlerComponent?: CommandHandlerComponent;
-
-  private _consoleDebugComponent?: ConsoleDebugComponent;
-
-  private _pluginContextComponent?: PluginContextComponent;
-
-  private _pluginNoticeComponent?: PluginNoticeComponent;
-
-  private _resourceLockComponent?: ResourceLockComponent;
+  private readonly components: PluginBaseComponents = {};
 
   private readonly wrapperComponent = new ComponentEx();
 
@@ -285,6 +310,14 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
         })
       ]);
 
+      this.pluginSettingsComponent = this.addChild(
+        new PluginSettingsComponentBase<object>({
+          dataHandler: new PluginDataHandler(this),
+          pluginEventSource: new PluginEventSourceImpl(this),
+          pluginSettingsClass: Object
+        })
+      );
+
       await this.onloadImpl();
 
       // Every child has already loaded as it was added; this awaits their accumulated async tails and
@@ -342,6 +375,25 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    */
   protected onloadImpl(): Promisable<void> {
     return noopAsync();
+  }
+
+  /**
+   * Stores a universal component, unloading whichever component the key held before.
+   *
+   * Keyed by name rather than handed the previous value because `keyof this` excludes private
+   * members, so the components live in a single {@link PluginBaseComponents} bag whose keys ARE
+   * indexable.
+   *
+   * @typeParam TKey - The key of the component to store.
+   * @param key - The key of the component to store.
+   * @param value - The component to store.
+   */
+  private setComponent<TKey extends keyof PluginBaseComponents>(key: TKey, value: NonNullable<PluginBaseComponents[TKey]>): void {
+    const oldComponent = this.components[key];
+    if (oldComponent) {
+      this.removeChild(oldComponent);
+    }
+    this.components[key] = value;
   }
 }
 

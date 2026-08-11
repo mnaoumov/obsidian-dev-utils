@@ -142,8 +142,16 @@ class TestPlugin extends PluginBase {
     return this.pluginContextComponent;
   }
 
+  public getPluginSettingsComponent(): typeof this.pluginSettingsComponent {
+    return this.pluginSettingsComponent;
+  }
+
   public getResourceLockComponent(): typeof this.resourceLockComponent {
     return this.resourceLockComponent;
+  }
+
+  public setNoticeComponent(value: PluginNoticeComponent): void {
+    this.pluginNoticeComponent = value;
   }
 }
 
@@ -166,6 +174,27 @@ describe('PluginBase', () => {
     expect(plugin.getResourceLockComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
     expect(plugin.getPluginContextComponent()).toBeDefined();
+    expect(plugin.getPluginSettingsComponent()).toBeDefined();
+  });
+
+  it('should unload the component a setter replaces', async () => {
+    const plugin = new TestPlugin(app, manifest);
+    await plugin.onload();
+
+    const replacedComponent = plugin.getNoticeComponent();
+    expect(replacedComponent._loaded).toBe(true);
+
+    const replacementComponent = plugin.addChild(
+      new PluginNoticeComponent({
+        app,
+        pluginName: manifest.name
+      })
+    );
+    plugin.setNoticeComponent(replacementComponent);
+
+    expect(plugin.getNoticeComponent()).toBe(replacementComponent);
+    expect(replacedComponent._loaded).toBe(false);
+    expect(replacementComponent._loaded).toBe(true);
   });
 
   it('should create the command handler component and register the unlock active note command on load', async () => {
