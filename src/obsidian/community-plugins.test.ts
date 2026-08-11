@@ -15,6 +15,7 @@ import {
 } from 'vitest';
 
 import { noopAsync } from '../function.ts';
+import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { EMPTY } from '../string.ts';
 import {
@@ -46,6 +47,9 @@ interface CreateAppOptions {
   readonly existingPluginData?: object;
   readonly existingRawPluginData?: string;
   readonly installedIds?: string[];
+  // The loaded plugin instances, keyed by id. A plugin only appears here once it is running, which is
+  // What lets `configureCommunityPlugin` tell a live plugin from a merely installed one.
+  readonly loadedPlugins?: Record<string, unknown>;
 }
 
 const { mockRequestUrl } = vi.hoisted(() => ({
@@ -109,6 +113,14 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     manifests[id] = strictProxy<PluginManifest>({ id });
   }
 
+  // Same null-prototype treatment as `manifests`: a plugin that is not running must read as `undefined`
+  // Rather than throw, since that is exactly the case the `data.json` fallback exists for.
+  const plugins = castTo<App['plugins']['plugins']>({});
+  Object.setPrototypeOf(plugins, null);
+  for (const [id, instance] of Object.entries(options.loadedPlugins ?? {})) {
+    plugins[id] = castTo<App['plugins']['plugins'][string]>(instance);
+  }
+
   const existingData = options.existingRawPluginData
     ?? (options.existingPluginData === undefined ? undefined : JSON.stringify(options.existingPluginData));
   const adapterExists = vi.fn<DataAdapter['exists']>().mockResolvedValue(existingData !== undefined);
@@ -122,6 +134,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
       enablePluginAndSave,
       installPlugin,
       manifests,
+      plugins,
       uninstallPlugin
     }),
     vault: strictProxy<Vault>({
@@ -290,6 +303,55 @@ describe('configureCommunityPlugin', () => {
     const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
     expect(result).toBe(ConfigureCommunityPluginResult.Skipped);
     expect(adapterWrite).not.toHaveBeenCalled();
+  });
+
+  it('should apply the settings through a running plugin instead of writing data.json', async () => {
+    const pluginSettings = { modulesRoot: 'old' };
+    const editAndSave = vi.fn(async (settingsEditor: (settings: object) => void) => {
+      settingsEditor(pluginSettings);
+      await noopAsync();
+    });
+    const { adapterWrite, app } = createApp({ loadedPlugins: { 'plugin-a': { pluginSettingsComponent: { editAndSave } } } });
+
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'new' } });
+
+    expect(result).toBe(ConfigureCommunityPluginResult.AppliedLive);
+    expect(pluginSettings).toEqual({ modulesRoot: 'new' });
+    expect(adapterWrite).not.toHaveBeenCalled();
+  });
+
+  it('should shallow-merge over the running plugin settings, leaving unrelated ones alone', async () => {
+    const pluginSettings = { existing: 1, modulesRoot: 'old' };
+    const editAndSave = vi.fn(async (settingsEditor: (settings: object) => void) => {
+      settingsEditor(pluginSettings);
+      await noopAsync();
+    });
+    const { app } = createApp({ loadedPlugins: { 'plugin-a': { pluginSettingsComponent: { editAndSave } } } });
+
+    await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'new' } });
+
+    expect(pluginSettings).toEqual({ existing: 1, modulesRoot: 'new' });
+  });
+
+  it('should fall back to data.json when the running plugin exposes no settings component', async () => {
+    const { adapterWrite, app } = createApp({ loadedPlugins: { 'plugin-a': {} } });
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(result).toBe(ConfigureCommunityPluginResult.Success);
+    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify({ modulesRoot: 'root-x' }, null, 2)}\n`);
+  });
+
+  it('should fall back to data.json when the settings component has no editAndSave', async () => {
+    const { adapterWrite, app } = createApp({ loadedPlugins: { 'plugin-a': { pluginSettingsComponent: { editAndSave: 'not a function' } } } });
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(result).toBe(ConfigureCommunityPluginResult.Success);
+    expect(adapterWrite).toHaveBeenCalled();
+  });
+
+  it('should fall back to data.json when the plugin instance is not an object', async () => {
+    const { adapterWrite, app } = createApp({ loadedPlugins: { 'plugin-a': null } });
+    const result = await configureCommunityPlugin({ app, pluginId: 'plugin-a', settings: { modulesRoot: 'root-x' } });
+    expect(result).toBe(ConfigureCommunityPluginResult.Success);
+    expect(adapterWrite).toHaveBeenCalled();
   });
 });
 

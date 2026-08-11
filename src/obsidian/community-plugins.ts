@@ -182,6 +182,15 @@ interface CommunityPluginToggleInstallState {
 }
 
 /**
+ * The one method {@link configureCommunityPlugin} needs from a plugin's settings component to configure
+ * it live. Declared structurally rather than importing `PluginSettingsComponent`, so a plugin built on
+ * any version of it -- or on its own equivalent -- is configurable without a shared nominal type.
+ */
+interface EditableSettingsComponent {
+  editAndSave(settingsEditor: (settings: object) => void): Promise<void>;
+}
+
+/**
  * The subset of a GitHub release we read.
  */
 interface GitHubRelease {
@@ -200,6 +209,12 @@ const DATA_JSON_INDENT = 2;
  */
 export enum ConfigureCommunityPluginResult {
   /**
+   * The settings were applied through the running plugin's own settings component, which both updated
+   * them in memory and persisted them. The plugin is already using them, so it must NOT be reloaded.
+   */
+  AppliedLive = 'appliedLive',
+
+  /**
    * The settings were already present in the plugin's `data.json`, so nothing was written.
    */
   Skipped = 'skipped',
@@ -211,21 +226,41 @@ export enum ConfigureCommunityPluginResult {
 }
 
 /**
- * Writes settings into a community plugin's `data.json`, shallow-merging them over any existing settings
- * (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load already
- * configured, with no reload. A no-op write is skipped: when the merge changes nothing, the file is left
- * untouched and {@link ConfigureCommunityPluginResult.Skipped} is returned, so a caller can avoid
+ * Configures a community plugin, preferring the running plugin's own settings component over its
+ * `data.json`.
+ *
+ * When the plugin is loaded AND exposes a `pluginSettingsComponent` with an `editAndSave` method, the
+ * settings are shallow-merged through it: they take effect immediately and are persisted, so the plugin
+ * needs no reload and {@link ConfigureCommunityPluginResult.AppliedLive} is returned. This is what lets a
+ * plugin's own script reconfigure it without the disable/enable cycle that would tear down the very code
+ * doing the reconfiguring. Note that this path runs the plugin's setting validators, so an invalid value
+ * is replaced by its default rather than written through verbatim.
+ *
+ * Otherwise the settings are written into the plugin's `data.json`, shallow-merged over any existing
+ * settings (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load
+ * already configured, with no reload. A no-op write is skipped: when the merge changes nothing, the file
+ * is left untouched and {@link ConfigureCommunityPluginResult.Skipped} is returned, so a caller can avoid
  * reloading an already-correctly-configured plugin.
  *
  * @param params - The {@link ConfigureCommunityPluginParams}.
- * @returns A {@link Promise} that resolves to {@link ConfigureCommunityPluginResult.Success} if the
- * `data.json` content changed (and was written), or {@link ConfigureCommunityPluginResult.Skipped} if the
- * settings were already present (nothing written).
+ * @returns A {@link Promise} that resolves to {@link ConfigureCommunityPluginResult.AppliedLive} if the
+ * running plugin applied them itself (no reload needed), {@link ConfigureCommunityPluginResult.Success} if
+ * the `data.json` content changed (and was written), or {@link ConfigureCommunityPluginResult.Skipped} if
+ * the settings were already present (nothing written).
  * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
  */
 export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<ConfigureCommunityPluginResult> {
   const { app, settings } = params;
   const pluginId = await resolveCommunityPluginId(params);
+
+  const settingsComponent = getSettingsComponent(app.plugins.plugins[pluginId]);
+  if (checkHasEditAndSave(settingsComponent)) {
+    await settingsComponent.editAndSave((pluginSettings) => {
+      Object.assign(pluginSettings, settings);
+    });
+    return ConfigureCommunityPluginResult.AppliedLive;
+  }
+
   const dataPath = `${app.vault.configDir}/plugins/${pluginId}/data.json`;
 
   let data: object = {};
@@ -436,6 +471,16 @@ export async function uninstallCommunityPlugin(params: UninstallCommunityPluginP
   await app.plugins.uninstallPlugin(pluginId);
 }
 
+// Whether a plugin's `pluginSettingsComponent` can configure itself in place. Structural rather than an
+// `instanceof`: the plugin was loaded from its own bundle, so even a plugin built on this very library
+// Carries its own copy of the class and would fail an identity check.
+function checkHasEditAndSave(settingsComponent: unknown): settingsComponent is EditableSettingsComponent {
+  return typeof settingsComponent === 'object'
+    && settingsComponent !== null
+    && 'editAndSave' in settingsComponent
+    && typeof settingsComponent.editAndSave === 'function';
+}
+
 async function fetchCommunityPluginEntries(): Promise<CommunityPluginEntry[]> {
   const response = await requestUrl(COMMUNITY_PLUGINS_URL);
   return response.json as CommunityPluginEntry[];
@@ -456,6 +501,16 @@ async function getCommunityPluginEntries(): Promise<CommunityPluginEntry[]> {
 async function getPluginManifest(repo: string, version: string): Promise<PluginManifest> {
   const response = await requestUrl(`https://github.com/${repo}/releases/download/${version}/manifest.json`);
   return response.json as PluginManifest;
+}
+
+// Reads a loaded plugin's `pluginSettingsComponent`, or `null` when it has none. Takes `unknown` because
+// A plugin is under no obligation to expose one, so there is no type to narrow from.
+function getSettingsComponent(plugin: unknown): unknown {
+  if (typeof plugin !== 'object' || plugin === null || !('pluginSettingsComponent' in plugin)) {
+    return null;
+  }
+
+  return plugin.pluginSettingsComponent;
 }
 
 async function resolveCommunityPluginId(reference: CommunityPluginRef): Promise<string> {

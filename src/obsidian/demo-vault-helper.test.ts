@@ -15,6 +15,7 @@ import {
 } from 'vitest';
 
 import { noopAsync } from '../function.ts';
+import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { EMPTY } from '../string.ts';
 import { bootstrapDemoVault } from './demo-vault-helper.ts';
@@ -161,6 +162,11 @@ function createApp(options: CreateAppOptions = {}): AppMock {
     manifests[DEMOED_PLUGIN_ID] = strictProxy<PluginManifest>({ id: DEMOED_PLUGIN_ID, name: DEMOED_PLUGIN_NAME });
   }
 
+  // Empty, with the same null-prototype treatment as `manifests`: the bootstrap configures CodeScript
+  // Toolkit BEFORE enabling it, so it is never running at that point and the `data.json` path is taken.
+  const plugins = castTo<App['plugins']['plugins']>({});
+  Object.setPrototypeOf(plugins, null);
+
   const adapterMembers: AdapterMembers = { exists: adapterExists, mkdir: adapterMkdir, read: adapterRead, write: adapterWrite };
 
   const settingClose = vi.fn<App['setting']['close']>();
@@ -171,7 +177,8 @@ function createApp(options: CreateAppOptions = {}): AppMock {
       enabledPlugins,
       enablePluginAndSave,
       installPlugin,
-      manifests
+      manifests,
+      plugins
     }),
     setting: strictProxy<App['setting']>({ close: settingClose }),
     vault: strictProxy<Vault>({
