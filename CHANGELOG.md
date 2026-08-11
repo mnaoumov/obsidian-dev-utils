@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 93.1.0
+
+- feat(community-plugins)!: apply settings through a running plugin instead of data.json
+
 ## 93.0.0
 
 - feat(demo-vault)!: name the demonstrated plugin in the helper settings
