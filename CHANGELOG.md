@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 93.2.0
+
+- feat(plugin): add a settings component and unload replaced components
+
 ## 93.1.0
 
 - feat(community-plugins)!: apply settings through a running plugin instead of data.json
