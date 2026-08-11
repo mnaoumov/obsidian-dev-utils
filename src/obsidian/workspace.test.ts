@@ -1,7 +1,8 @@
 import type {
   App,
   WorkspaceContainer,
-  WorkspaceLeaf
+  WorkspaceLeaf,
+  WorkspaceRoot
 } from 'obsidian';
 
 import {
@@ -14,7 +15,10 @@ import { strictProxy } from '../strict-proxy.ts';
 import {
   ensureLayoutReady,
   getAllContainers,
-  getAllDomWindows
+  getAllDomWindows,
+  getMainWindow,
+  switchToMainWindow,
+  switchToWindow
 } from './workspace.ts';
 
 function createMockApp(containers: WorkspaceContainer[]): App {
@@ -34,8 +38,22 @@ function createMockApp(containers: WorkspaceContainer[]): App {
   });
 }
 
+function createMockAppWithMainWindow(mainWindow: Window): App {
+  return strictProxy<App>({
+    workspace: {
+      rootSplit: strictProxy<WorkspaceRoot>({ win: mainWindow })
+    }
+  });
+}
+
 function createMockContainer(win: Window): WorkspaceContainer {
   return strictProxy<WorkspaceContainer>({ win });
+}
+
+// A stand-in for a window Obsidian could make active. Only `document` is reachable: that is all the
+// Window-switching helpers read, and the strict proxy turns any other access into a failure.
+function createMockWindow(): Window {
+  return strictProxy<Window>({ document: strictProxy<Document>({}) });
 }
 
 describe('ensureLayoutReady', () => {
@@ -111,5 +129,75 @@ describe('getAllDomWindows', () => {
   it('should return empty array when no leaves exist', () => {
     const app = createMockApp([]);
     expect(getAllDomWindows(app)).toEqual([]);
+  });
+});
+
+describe('getMainWindow', () => {
+  it('should return the root split window', () => {
+    const mainWindow = createMockWindow();
+    expect(getMainWindow(createMockAppWithMainWindow(mainWindow))).toBe(mainWindow);
+  });
+});
+
+describe('switchToMainWindow', () => {
+  it('should activate the main window even while a popout window is active', () => {
+    const mainWindow = createMockWindow();
+    const app = createMockAppWithMainWindow(mainWindow);
+
+    const popoutSwitch = switchToWindow(createMockWindow());
+    const mainWindowSwitch = switchToMainWindow(app);
+    expect(activeWindow).toBe(mainWindow);
+    expect(activeDocument).toBe(mainWindow.document);
+
+    mainWindowSwitch.dispose();
+    popoutSwitch.dispose();
+  });
+});
+
+describe('switchToWindow', () => {
+  it('should activate the window until disposed, then restore the previous one', () => {
+    const previousActiveWindow = activeWindow;
+    const previousActiveDocument = activeDocument;
+    const otherWindow = createMockWindow();
+
+    const windowSwitch = switchToWindow(otherWindow);
+    expect(activeWindow).toBe(otherWindow);
+    expect(activeDocument).toBe(otherWindow.document);
+
+    windowSwitch.dispose();
+    expect(activeWindow).toBe(previousActiveWindow);
+    expect(activeDocument).toBe(previousActiveDocument);
+  });
+
+  // Each switch remembers the window that was active when IT was made, so unwinding nested switches in
+  // Reverse order walks back through them rather than jumping straight to the outermost one.
+  it('should restore nested switches one level at a time', () => {
+    const previousActiveWindow = activeWindow;
+    const outerWindow = createMockWindow();
+    const innerWindow = createMockWindow();
+
+    const outerSwitch = switchToWindow(outerWindow);
+    const innerSwitch = switchToWindow(innerWindow);
+    expect(activeWindow).toBe(innerWindow);
+
+    innerSwitch.dispose();
+    expect(activeWindow).toBe(outerWindow);
+
+    outerSwitch.dispose();
+    expect(activeWindow).toBe(previousActiveWindow);
+  });
+
+  // A second dispose must not re-apply the restore: it would overwrite whatever window became active in
+  // The meantime with a stale one.
+  it('should ignore a repeated dispose', () => {
+    const windowSwitch = switchToWindow(createMockWindow());
+    windowSwitch.dispose();
+
+    const laterWindow = createMockWindow();
+    const laterSwitch = switchToWindow(laterWindow);
+    windowSwitch.dispose();
+    expect(activeWindow).toBe(laterWindow);
+
+    laterSwitch.dispose();
   });
 });
