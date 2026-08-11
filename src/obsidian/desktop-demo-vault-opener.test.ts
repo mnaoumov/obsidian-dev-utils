@@ -27,6 +27,7 @@ import { strictProxy } from '../strict-proxy.ts';
 // The opener loads Electron's `node:original-fs` via `window.require`.
 // `beforeEach` stubs that global to return this `chmodSync` — the exact reference handed to adm-zip.
 import { chmodSync as originalFsStubChmodSync } from '../test-helpers/original-fs-stub.ts';
+import { PluginNoticeMode } from './components/plugin-notice-component.ts';
 import { openDemoVault } from './desktop-demo-vault-opener.ts';
 
 interface AdmZipInitOptionsLike {
@@ -233,6 +234,9 @@ describe('openDemoVault', () => {
     await openDemoVault(buildParams());
     expect(mockShowNoticeAfterDelay).toHaveBeenCalledTimes(1);
     expect(mockShowNoticeAfterDelay.mock.calls[0]?.[0]?.delayInMilliseconds).toBe(0);
+    // Kept out of the shared slot: this flow raises ordinary notices ("not in the registry", "no demo
+    // Vault for this version") while the operation runs, and a slot notice would hide the progress one.
+    expect(mockShowNoticeAfterDelay.mock.calls[0]?.[0]?.mode).toBe(PluginNoticeMode.Separate);
   });
 
   it('should open the current version directly when it is up to date', async () => {
