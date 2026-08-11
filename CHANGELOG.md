@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 93.0.0
+
+- feat(demo-vault)!: name the demonstrated plugin in the helper settings
+- fix(demo-vault): keep the opener progress notice out of the shared slot
+- feat(notices)!: replace isReusable with a notice mode, adding append
+- feat(workspace): add main-window helpers and scoped window switching
+
 ## 92.1.0
 
 - docs: missing descriptions
