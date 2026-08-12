@@ -40,6 +40,22 @@ const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
+// Each Obsidian project below owns a SEPARATE Obsidian instance, and Vitest runs projects in PARALLEL.
+// The per-project `fileParallelism: false` / `maxWorkers: 1` only serialize files WITHIN one project.
+// Without a group order, three Electron apps therefore launch at once and compete for the machine.
+// That contention stays invisible until one of them gets heavier, and then it fails the innocent ones.
+// Adding one community-store install to the demo-vault-helper bootstrap starved the other two instances.
+// Six `evalInObsidian` calls that pass standalone timed out at 30 s in the aggregate (2026-08-12, T451).
+// Distinct group orders run these three one after another, ascending, so only one instance is ever busy.
+// Every other project stays in the default group and keeps running in parallel, so nothing else is held up.
+// Serializing them is also FASTER end to end here: the aggregate went from roughly four minutes to one.
+// The numbering starts at 2 because `unit-tests:eslint-typecheck` already owns group 1.
+// Sharing that group would run a full ts-morph typecheck beside an Obsidian instance, starving it again.
+const ESLINT_TYPECHECK_GROUP_ORDER = 1;
+const OBSIDIAN_SHARED_INSTANCE_GROUP_ORDER = 2;
+const OBSIDIAN_DEMO_VAULT_HELPER_GROUP_ORDER = 3;
+const OBSIDIAN_CONSUMER_LIB_GROUP_ORDER = 4;
+
 export const config = defineConfig({
   resolve: SHARED_RESOLVE,
   test: {
@@ -90,7 +106,7 @@ export const config = defineConfig({
           maxWorkers: 1,
           name: 'unit-tests:eslint-typecheck',
           sequence: {
-            groupOrder: 1
+            groupOrder: ESLINT_TYPECHECK_GROUP_ORDER
           },
           server: SHARED_SERVER,
           setupFiles: []
@@ -135,6 +151,7 @@ export const config = defineConfig({
           include: [OBSIDIAN_INTEGRATION_TEST_FILES],
           maxWorkers: 1,
           name: 'obsidian-integration-tests',
+          sequence: { groupOrder: OBSIDIAN_SHARED_INSTANCE_GROUP_ORDER },
           setupFiles: [
             'obsidian-integration-testing/vitest-setup',
             './scripts/integration-test-obsidian-setup.ts'
@@ -153,6 +170,7 @@ export const config = defineConfig({
           include: [DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE],
           maxWorkers: 1,
           name: 'obsidian-integration-tests:demo-vault-helper',
+          sequence: { groupOrder: OBSIDIAN_DEMO_VAULT_HELPER_GROUP_ORDER },
           setupFiles: ['obsidian-integration-testing/vitest-setup'],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
@@ -168,6 +186,7 @@ export const config = defineConfig({
           include: [CONSUMER_LIB_INTEGRATION_TEST_FILE],
           maxWorkers: 1,
           name: 'obsidian-integration-tests:consumer-lib',
+          sequence: { groupOrder: OBSIDIAN_CONSUMER_LIB_GROUP_ORDER },
           setupFiles: [
             'obsidian-integration-testing/vitest-setup',
             './src/integration-test-setup.ts'
