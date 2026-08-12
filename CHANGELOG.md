@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 93.2.2
+
+- test: run the Obsidian integration projects one at a time
+- feat: install folder notes in every demo vault
+
 ## 93.2.1
 
 - fix(prompt): defer the invalid outline until the input is touched
