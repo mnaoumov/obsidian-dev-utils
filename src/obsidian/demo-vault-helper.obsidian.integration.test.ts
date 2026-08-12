@@ -16,6 +16,8 @@ const HELPER_PLUGIN_ID = 'demo-vault-helper';
 // Vault: exactly one plugin folder besides the helper. Its manifest name is what the notice must show.
 const DEMOED_PLUGIN_NAME = 'My Demo Plugin';
 const CST_PLUGIN_ID = 'fix-require-modules';
+const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
+const FOLDER_NOTE_NAME = 'README';
 const START_NOTE_PATH = '00 Start.md';
 const MODULES_ROOT = '_assets/CodeScriptToolkit';
 
@@ -40,6 +42,9 @@ interface BootstrapStatus {
   readonly cstEnabled: boolean;
   readonly cstInstalled: boolean;
   readonly dataJson: null | string;
+  readonly folderNotesDataJson: null | string;
+  readonly folderNotesEnabled: boolean;
+  readonly folderNotesInstalled: boolean;
   readonly helperEnabled: boolean;
   readonly helperInstalled: boolean;
   readonly noticeText: string;
@@ -82,10 +87,11 @@ describe('demo-vault-helper bootstrap', () => {
     // Timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
-        input: { cstPluginId: CST_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID, sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
+        input: { cstPluginId: CST_PLUGIN_ID, folderNotesPluginId: FOLDER_NOTES_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID, sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
-        async poll({ app, cstPluginId, helperPluginId, sandboxNoticeMarker }): Promise<BootstrapStatus> {
+        async poll({ app, cstPluginId, folderNotesPluginId, helperPluginId, sandboxNoticeMarker }): Promise<BootstrapStatus> {
           const isCstInstalled = Object.hasOwn(app.plugins.manifests, cstPluginId);
+          const isFolderNotesInstalled = Object.hasOwn(app.plugins.manifests, folderNotesPluginId);
           let noticeText = '';
           let sandboxNoticeText = '';
           for (const noticeEl of document.querySelectorAll('.notice')) {
@@ -101,6 +107,9 @@ describe('demo-vault-helper bootstrap', () => {
             cstEnabled: app.plugins.enabledPlugins.has(cstPluginId),
             cstInstalled: isCstInstalled,
             dataJson: isCstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
+            folderNotesDataJson: isFolderNotesInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${folderNotesPluginId}/data.json`) : null,
+            folderNotesEnabled: app.plugins.enabledPlugins.has(folderNotesPluginId),
+            folderNotesInstalled: isFolderNotesInstalled,
             helperEnabled: app.plugins.enabledPlugins.has(helperPluginId),
             helperInstalled: Object.hasOwn(app.plugins.manifests, helperPluginId),
             noticeText,
@@ -115,7 +124,7 @@ describe('demo-vault-helper bootstrap', () => {
           // The sandbox notice is required in the SAME sample as `startupRan`: that is what proves it
           // Survived CodeScript Toolkit's startup script opening the start note, rather than being
           // Replaced or dismissed by it.
-          return pollResult.startupRan && pollResult.cstEnabled && pollResult.sandboxNoticeText !== '';
+          return pollResult.startupRan && pollResult.cstEnabled && pollResult.folderNotesEnabled && pollResult.sandboxNoticeText !== '';
         },
         vaultPath
       });
@@ -129,6 +138,11 @@ describe('demo-vault-helper bootstrap', () => {
     expect(status.dataJson).toContain('startupScriptPath');
     expect(status.activeFilePath).toBe(START_NOTE_PATH);
     expect(status.probeValue).toBe('ok');
+    // Folder Notes comes from the same store install path as CodeScript Toolkit, pointed at `README` so a
+    // Grouped vault's folders describe themselves in the file explorer and on GitHub alike.
+    expect(status.folderNotesInstalled).toBe(true);
+    expect(status.folderNotesEnabled).toBe(true);
+    expect(status.folderNotesDataJson).toContain(FOLDER_NOTE_NAME);
     // The notice names the plugin the vault demonstrates — read from the seeded plugin's manifest, not
     // Its folder id — and says what the vault is, that it is temporary, and how long it lasts.
     expect(status.sandboxNoticeText).toContain(`This is a demo vault for ${DEMOED_PLUGIN_NAME}.`);

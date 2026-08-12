@@ -21,6 +21,12 @@
  * has the same layout even when the vault ships no invocable scripts — the vaults themselves commit no
  * empty folder for it.
  *
+ * It then installs the Folder Notes plugin, configured to treat `README.md` as a folder's own note. A
+ * demo vault that has outgrown a flat note list groups its notes into folders (G95), and a group folder
+ * only says what it is for if it has a note of its own — `README.md`, because that is also the file
+ * GitHub renders under the file list when the same vault is browsed as a repository, so one file serves
+ * both readers.
+ *
  * Finally it raises the sandbox notice explaining that the opened vault is a throwaway copy, so a user
  * who writes their own notes in it is never surprised by them being absent from the next copy. Settings
  * is closed first, so the notice lands in the vault's main window rather than in the settings popout.
@@ -39,7 +45,8 @@ import {
   ConfigureCommunityPluginResult,
   disableCommunityPlugin,
   enableCommunityPlugin,
-  installCommunityPlugin
+  installCommunityPlugin,
+  installConfigureEnableCommunityPlugin
 } from './community-plugins.ts';
 
 /**
@@ -83,6 +90,26 @@ interface CodeScriptToolkitSettings {
   readonly startupScriptPath: string;
 }
 
+/**
+ * Folder Notes' settings, written into its `data.json` before it is enabled.
+ */
+interface FolderNotesSettings {
+  /**
+   * The name a folder's own note is looked for under, without the extension.
+   */
+  readonly folderNoteName: string;
+
+  /**
+   * Whether a folder's own note is hidden from the file explorer, so the folder itself stands for it.
+   */
+  readonly hideFolderNote: boolean;
+
+  /**
+   * Where a folder's own note is kept, relative to the folder it describes.
+   */
+  readonly storageLocation: string;
+}
+
 const CODE_SCRIPT_TOOLKIT_PLUGIN_ID = 'fix-require-modules';
 const CODE_SCRIPT_TOOLKIT_MODULES_ROOT = '_assets/CodeScriptToolkit';
 const CODE_SCRIPT_TOOLKIT_SETTINGS: CodeScriptToolkitSettings = {
@@ -91,6 +118,17 @@ const CODE_SCRIPT_TOOLKIT_SETTINGS: CodeScriptToolkitSettings = {
   modulesRoot: CODE_SCRIPT_TOOLKIT_MODULES_ROOT,
   shouldHandleProtocolUrls: true,
   startupScriptPath: 'startup.ts'
+};
+
+const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
+// `README` rather than Folder Notes' own `{{folder_name}}` default: the same file has to be the folder's
+// Note in Obsidian AND the page GitHub renders when the vault is browsed as a repository, and GitHub
+// Only does that for `README.md`. `insideFolder` keeps it with the notes it describes rather than beside
+// The folder, and hiding it lets the folder itself stand for the note instead of listing both.
+const FOLDER_NOTES_SETTINGS: FolderNotesSettings = {
+  folderNoteName: 'README',
+  hideFolderNote: true,
+  storageLocation: 'insideFolder'
 };
 
 const DEMO_VAULT_HELPER_PLUGIN_ID = 'demo-vault-helper';
@@ -109,8 +147,10 @@ const SANDBOX_NOTICE_DURATION_IN_MILLISECONDS = 0;
  * reload. If CodeScript Toolkit is already enabled but the settings just changed, it is reloaded
  * (disabled then enabled) so it re-reads `data.json`; when the settings were already in place, nothing is
  * reloaded (so a routine vault re-open does not re-run CodeScript Toolkit's startup). CodeScript Toolkit
- * then runs the vault's `startup.ts`. Finally it closes Settings (so the notice cannot be raised inside
- * the settings popout) and raises the sandbox notice describing the opened vault as a throwaway copy.
+ * then runs the vault's `startup.ts`. Folder Notes is installed next, configured to treat `README.md` as
+ * a folder's own note, so a vault whose notes are grouped into folders describes each group in the file
+ * explorer. Finally it closes Settings (so the notice cannot be raised inside the settings popout) and
+ * raises the sandbox notice describing the opened vault as a throwaway copy.
  *
  * @param params - The {@link BootstrapDemoVaultParams}.
  * @returns A {@link Promise} that resolves once CodeScript Toolkit is installed, configured, and enabled
@@ -135,6 +175,14 @@ export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Prom
     await disableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
     await enableCommunityPlugin({ app, pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
   }
+
+  // After CodeScript Toolkit, so the vault's startup script has already opened the start note by the time
+  // The file explorer gains its folder-note behavior.
+  await installConfigureEnableCommunityPlugin({
+    app,
+    pluginId: FOLDER_NOTES_PLUGIN_ID,
+    settings: FOLDER_NOTES_SETTINGS
+  });
 
   showSandboxNotice(app, demoedPluginId);
 }

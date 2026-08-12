@@ -24,6 +24,10 @@ const CST_PLUGIN_ID = 'fix-require-modules';
 const CST_REPO = 'mnaoumov/obsidian-codescript-toolkit';
 const CST_VERSION = '1.0.0';
 
+const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
+const FOLDER_NOTES_REPO = 'LostPaul/obsidian-folder-notes';
+const FOLDER_NOTES_VERSION = '2.0.0';
+
 const HELPER_PLUGIN_ID = 'demo-vault-helper';
 const DEMOED_PLUGIN_ID = 'my-plugin';
 const DEMOED_PLUGIN_NAME = 'My Plugin';
@@ -38,6 +42,12 @@ const CST_SETTINGS = {
   startupScriptPath: 'startup.ts'
 };
 
+const FOLDER_NOTES_SETTINGS = {
+  folderNoteName: 'README',
+  hideFolderNote: true,
+  storageLocation: 'insideFolder'
+};
+
 const CST_MANIFEST: PluginManifest = {
   author: 'mnaoumov',
   description: 'CodeScript Toolkit',
@@ -47,6 +57,15 @@ const CST_MANIFEST: PluginManifest = {
   version: CST_VERSION
 };
 
+const FOLDER_NOTES_MANIFEST: PluginManifest = {
+  author: 'LostPaul',
+  description: 'Folder notes',
+  id: FOLDER_NOTES_PLUGIN_ID,
+  minAppVersion: '1.0.0',
+  name: 'Folder notes',
+  version: FOLDER_NOTES_VERSION
+};
+
 const REGISTRY = [
   {
     author: 'mnaoumov',
@@ -54,6 +73,13 @@ const REGISTRY = [
     id: CST_PLUGIN_ID,
     name: 'CodeScript Toolkit',
     repo: CST_REPO
+  },
+  {
+    author: 'LostPaul',
+    description: 'Folder notes',
+    id: FOLDER_NOTES_PLUGIN_ID,
+    name: 'Folder notes',
+    repo: FOLDER_NOTES_REPO
   }
 ];
 
@@ -64,6 +90,7 @@ const DATA_PATH = `${PLUGINS_FOLDER_PATH}/${CST_PLUGIN_ID}/data.json`;
 const HELPER_SETTINGS_PATH = `${PLUGINS_FOLDER_PATH}/${HELPER_PLUGIN_ID}/data.json`;
 const HELPER_SETTINGS_JSON = JSON.stringify({ demoedPluginId: DEMOED_PLUGIN_ID });
 const INVOCABLE_SCRIPTS_FOLDER_PATH = `${CST_SETTINGS.modulesRoot}/${CST_SETTINGS.invocableScriptsFolder}`;
+const FOLDER_NOTES_DATA_PATH = `${PLUGINS_FOLDER_PATH}/${FOLDER_NOTES_PLUGIN_ID}/data.json`;
 
 interface AdapterMembers {
   exists: DataAdapter['exists'];
@@ -84,12 +111,17 @@ interface AppMock {
 
 interface CreateAppOptions {
   readonly existingData?: string;
+  // Folder Notes' own `data.json`, kept separate from `existingData` so a vault can be set up with one
+  // Plugin already configured and the other not.
+  readonly existingFolderNotesData?: string;
   // The content of the helper's `data.json`: `null` for a vault that has none at all, a string to hand
   // Over exactly what the bootstrap will read. Omitted means a well-formed marker.
   readonly helperSettingsJson?: null | string;
   readonly isCstEnabled?: boolean;
   readonly isCstInstalled?: boolean;
   readonly isDemoedPluginManifestPresent?: boolean;
+  readonly isFolderNotesEnabled?: boolean;
+  readonly isFolderNotesInstalled?: boolean;
   readonly isInvocableScriptsFolderPresent?: boolean;
 }
 
@@ -121,7 +153,10 @@ vi.mock('obsidian', async (importOriginal) => {
 function createApp(options: CreateAppOptions = {}): AppMock {
   // A live set the enable/disable mocks mutate, so the real community-plugin helpers observe the change
   // (an already-enabled plugin is seen as enabled until disabled, and vice versa).
-  const enabledPlugins = new Set<string>(options.isCstEnabled ? [CST_PLUGIN_ID] : []);
+  const enabledPlugins = new Set<string>([
+    ...options.isCstEnabled ? [CST_PLUGIN_ID] : [],
+    ...options.isFolderNotesEnabled ? [FOLDER_NOTES_PLUGIN_ID] : []
+  ]);
   const installPlugin = vi.fn<App['plugins']['installPlugin']>().mockResolvedValue();
   const enablePluginAndSave = vi.fn<App['plugins']['enablePluginAndSave']>().mockImplementation((id: string) => {
     enabledPlugins.add(id);
@@ -136,6 +171,9 @@ function createApp(options: CreateAppOptions = {}): AppMock {
 
   const adapterExists = vi.fn<DataAdapter['exists']>().mockImplementation((path: string) => {
     switch (path) {
+      case FOLDER_NOTES_DATA_PATH: {
+        return Promise.resolve(options.existingFolderNotesData !== undefined);
+      }
       case HELPER_SETTINGS_PATH: {
         return Promise.resolve(helperSettingsJson !== null);
       }
@@ -147,7 +185,19 @@ function createApp(options: CreateAppOptions = {}): AppMock {
       }
     }
   });
-  const adapterRead = vi.fn<DataAdapter['read']>().mockImplementation((path: string) => Promise.resolve(path === HELPER_SETTINGS_PATH ? helperSettingsJson ?? EMPTY : options.existingData ?? '{}'));
+  const adapterRead = vi.fn<DataAdapter['read']>().mockImplementation((path: string) => {
+    switch (path) {
+      case FOLDER_NOTES_DATA_PATH: {
+        return Promise.resolve(options.existingFolderNotesData ?? '{}');
+      }
+      case HELPER_SETTINGS_PATH: {
+        return Promise.resolve(helperSettingsJson ?? EMPTY);
+      }
+      default: {
+        return Promise.resolve(options.existingData ?? '{}');
+      }
+    }
+  });
   const adapterWrite = vi.fn<DataAdapter['write']>().mockResolvedValue();
   const adapterMkdir = vi.fn<DataAdapter['mkdir']>().mockResolvedValue();
 
@@ -157,6 +207,9 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   Object.setPrototypeOf(manifests, null);
   if (options.isCstInstalled) {
     manifests[CST_PLUGIN_ID] = strictProxy<PluginManifest>({ id: CST_PLUGIN_ID });
+  }
+  if (options.isFolderNotesInstalled) {
+    manifests[FOLDER_NOTES_PLUGIN_ID] = strictProxy<PluginManifest>({ id: FOLDER_NOTES_PLUGIN_ID });
   }
   if (options.isDemoedPluginManifestPresent ?? true) {
     manifests[DEMOED_PLUGIN_ID] = strictProxy<PluginManifest>({ id: DEMOED_PLUGIN_ID, name: DEMOED_PLUGIN_NAME });
@@ -218,12 +271,13 @@ beforeEach(() => {
     if (url.includes('community-plugins.json')) {
       return Promise.resolve({ json: REGISTRY });
     }
+    const isFolderNotes = url.includes(FOLDER_NOTES_REPO);
     if (url.includes('releases/latest')) {
       // eslint-disable-next-line camelcase -- The field name is dictated by the GitHub API JSON.
-      return Promise.resolve({ json: { tag_name: CST_VERSION } });
+      return Promise.resolve({ json: { tag_name: isFolderNotes ? FOLDER_NOTES_VERSION : CST_VERSION } });
     }
     if (url.includes('manifest.json')) {
-      return Promise.resolve({ json: CST_MANIFEST });
+      return Promise.resolve({ json: isFolderNotes ? FOLDER_NOTES_MANIFEST : CST_MANIFEST });
     }
     return Promise.reject(new Error(`Unexpected URL: ${url}`));
   });
@@ -238,7 +292,7 @@ describe('bootstrapDemoVault', () => {
   });
 
   it('should not reinstall CodeScript Toolkit when it is already installed', async () => {
-    const { app, installPlugin } = createApp({ isCstInstalled: true });
+    const { app, installPlugin } = createApp({ isCstInstalled: true, isFolderNotesInstalled: true });
     await bootstrapDemoVault({ app });
     expect(installPlugin).not.toHaveBeenCalled();
     expect(mockRequestUrl).not.toHaveBeenCalled();
@@ -258,8 +312,11 @@ describe('bootstrapDemoVault', () => {
   it('should reload CodeScript Toolkit when it is already enabled but the settings changed', async () => {
     const { app, disablePluginAndSave, enablePluginAndSave, installPlugin } = createApp({
       existingData: JSON.stringify({ modulesRoot: 'stale' }),
+      existingFolderNotesData: JSON.stringify(FOLDER_NOTES_SETTINGS),
       isCstEnabled: true,
-      isCstInstalled: true
+      isCstInstalled: true,
+      isFolderNotesEnabled: true,
+      isFolderNotesInstalled: true
     });
     await bootstrapDemoVault({ app });
     expect(installPlugin).not.toHaveBeenCalled();
@@ -282,13 +339,74 @@ describe('bootstrapDemoVault', () => {
   it('should not reload CodeScript Toolkit when it is already enabled and the settings are unchanged', async () => {
     const { adapterWrite, app, disablePluginAndSave, enablePluginAndSave } = createApp({
       existingData: JSON.stringify(CST_SETTINGS),
+      existingFolderNotesData: JSON.stringify(FOLDER_NOTES_SETTINGS),
       isCstEnabled: true,
-      isCstInstalled: true
+      isCstInstalled: true,
+      isFolderNotesEnabled: true,
+      isFolderNotesInstalled: true
     });
     await bootstrapDemoVault({ app });
     expect(adapterWrite).not.toHaveBeenCalled();
     expect(disablePluginAndSave).not.toHaveBeenCalled();
     expect(enablePluginAndSave).not.toHaveBeenCalled();
+  });
+});
+
+describe('bootstrapDemoVault folder notes', () => {
+  it('should install and enable Folder Notes', async () => {
+    const { app, enablePluginAndSave, installPlugin } = createApp();
+    await bootstrapDemoVault({ app });
+    expect(installPlugin).toHaveBeenCalledWith(FOLDER_NOTES_REPO, FOLDER_NOTES_VERSION, FOLDER_NOTES_MANIFEST);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(FOLDER_NOTES_PLUGIN_ID);
+  });
+
+  // `README` rather than Folder Notes' own `{{folder_name}}` default: the same file has to be the folder's
+  // Note in Obsidian and the page GitHub renders when the vault is browsed as a repository.
+  it('should point Folder Notes at README so one file serves Obsidian and GitHub', async () => {
+    const { adapterWrite, app } = createApp();
+    await bootstrapDemoVault({ app });
+    expect(adapterWrite).toHaveBeenCalledWith(FOLDER_NOTES_DATA_PATH, `${JSON.stringify(FOLDER_NOTES_SETTINGS, null, 2)}\n`);
+  });
+
+  it('should write Folder Notes settings before enabling it', async () => {
+    const { adapterWrite, app, enablePluginAndSave } = createApp();
+    await bootstrapDemoVault({ app });
+    const writeOrder = vi.mocked(adapterWrite).mock.calls.findIndex(([path]) => path === FOLDER_NOTES_DATA_PATH);
+    expect(writeOrder).toBeGreaterThanOrEqual(0);
+    const writeInvocationOrder = vi.mocked(adapterWrite).mock.invocationCallOrder[writeOrder] ?? 0;
+    const enableInvocationOrder = vi.mocked(enablePluginAndSave).mock.invocationCallOrder.at(-1) ?? 0;
+    expect(writeInvocationOrder).toBeLessThan(enableInvocationOrder);
+  });
+
+  // CodeScript Toolkit's startup script opens the start note, so it is set up first; Folder Notes only
+  // Changes how the file explorer presents folders and has nothing to race with.
+  it('should set up Folder Notes after CodeScript Toolkit', async () => {
+    const { app, enablePluginAndSave } = createApp();
+    await bootstrapDemoVault({ app });
+    const enabledOrder = vi.mocked(enablePluginAndSave).mock.calls.map(([pluginId]) => pluginId);
+    expect(enabledOrder).toEqual([CST_PLUGIN_ID, FOLDER_NOTES_PLUGIN_ID]);
+  });
+
+  it('should leave Folder Notes alone when it is already installed, enabled and configured', async () => {
+    const { app, disablePluginAndSave, installPlugin } = createApp({
+      existingFolderNotesData: JSON.stringify(FOLDER_NOTES_SETTINGS),
+      isFolderNotesEnabled: true,
+      isFolderNotesInstalled: true
+    });
+    await bootstrapDemoVault({ app });
+    expect(installPlugin).not.toHaveBeenCalledWith(FOLDER_NOTES_REPO, expect.anything(), expect.anything());
+    expect(disablePluginAndSave).not.toHaveBeenCalledWith(FOLDER_NOTES_PLUGIN_ID);
+  });
+
+  it('should reload Folder Notes when it is already enabled but the settings changed', async () => {
+    const { app, disablePluginAndSave, enablePluginAndSave } = createApp({
+      existingFolderNotesData: JSON.stringify({ folderNoteName: '{{folder_name}}' }),
+      isFolderNotesEnabled: true,
+      isFolderNotesInstalled: true
+    });
+    await bootstrapDemoVault({ app });
+    expect(disablePluginAndSave).toHaveBeenCalledWith(FOLDER_NOTES_PLUGIN_ID);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(FOLDER_NOTES_PLUGIN_ID);
   });
 });
 
