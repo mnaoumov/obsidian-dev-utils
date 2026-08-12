@@ -258,6 +258,12 @@ export enum CssClass {
   TypedMultipleDropdownComponent = 'typed-multiple-dropdown-component',
 
   /**
+   * A CSS class for an input the user has not interacted with yet, used to defer the invalid styling until
+   * the input is touched.
+   */
+  Untouched = 'untouched',
+
+  /**
    * A CSS class for the url component.
    */
   UrlComponent = 'url-component',

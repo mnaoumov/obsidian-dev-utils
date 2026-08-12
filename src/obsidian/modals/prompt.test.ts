@@ -44,7 +44,8 @@ vi.mock('../css-class.ts', () => ({
     CancelButton: 'cancel-button',
     OkButton: 'ok-button',
     PromptModal: 'prompt-modal',
-    TextBox: 'text-box'
+    TextBox: 'text-box',
+    Untouched: 'untouched'
   }
 }));
 
@@ -271,6 +272,54 @@ describe('prompt', () => {
     const result = await resultPromise;
     expect(result).toBeNull();
     expect(reportValiditySpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('should mark the input as untouched on open', async () => {
+    let hasUntouchedClassOnOpen = null as boolean | null;
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      hasUntouchedClassOnOpen = textComp.inputEl.classList.contains('untouched');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(hasUntouchedClassOnOpen).toBe(true);
+  });
+
+  it('should stop marking the input as untouched once the value is edited', async () => {
+    let hasUntouchedClassAfterInput = null as boolean | null;
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      castTo<TextComponent>(textComp).simulateEvent__('input');
+      hasUntouchedClassAfterInput = textComp.inputEl.classList.contains('untouched');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(hasUntouchedClassAfterInput).toBe(false);
+  });
+
+  it('should stop marking the input as untouched when OK is clicked with an invalid value', async () => {
+    let hasUntouchedClassAfterOk = null as boolean | null;
+    const resultPromise = prompt({
+      app,
+      valueValidator: (value) => value === '' ? 'Value cannot be empty' : undefined
+    });
+    queueMicrotask(() => {
+      const okButton = ensureNonNullable(buttonInstances[0]);
+      castTo<ButtonComponent>(okButton).simulateClick__();
+      const textComp = ensureNonNullable(textInstances[0]);
+      hasUntouchedClassAfterOk = textComp.inputEl.classList.contains('untouched');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(hasUntouchedClassAfterOk).toBe(false);
   });
 
   it('should report validity and not submit when OK is clicked with an invalid value', async () => {

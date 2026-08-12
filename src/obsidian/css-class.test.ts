@@ -41,6 +41,7 @@ describe('CssClass', () => {
     ['TriStateCheckboxComponent', 'tri-state-checkbox-component'],
     ['TypedDropdownComponent', 'typed-dropdown-component'],
     ['TypedMultipleDropdownComponent', 'typed-multiple-dropdown-component'],
+    ['Untouched', 'untouched'],
     ['UrlComponent', 'url-component'],
     ['WeekComponent', 'week-component']
   ])('should have CssClass.%s equal to "%s"', (key: string, expectedValue: string) => {
