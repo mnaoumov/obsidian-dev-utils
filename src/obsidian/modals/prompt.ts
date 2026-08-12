@@ -116,7 +116,7 @@ class PromptModal extends ModalBase<null | string> {
     };
 
     const handleInput = async (): Promise<void> => {
-      this.isTouched = true;
+      this.markTouched(inputEl);
       await validate(true);
     };
 
@@ -128,6 +128,8 @@ class PromptModal extends ModalBase<null | string> {
     textComponent.inputEl.select();
     textComponent.setPlaceholder(this.placeholder);
     inputEl.addClass(CssClass.TextBox);
+    // The modal opens invalid by design (see below), so the invalid styling is deferred until touched.
+    inputEl.addClass(CssClass.Untouched);
     textComponent.onChange((newValue) => {
       this.value = newValue;
     });
@@ -158,13 +160,18 @@ class PromptModal extends ModalBase<null | string> {
   private handleOk(event: Event, textComponent: TextComponent): void {
     event.preventDefault();
     if (!textComponent.inputEl.checkValidity()) {
-      this.isTouched = true;
+      this.markTouched(textComponent.inputEl);
       textComponent.inputEl.reportValidity();
       return;
     }
 
     this.isOkClicked = true;
     this.close();
+  }
+
+  private markTouched(inputEl: HTMLInputElement): void {
+    this.isTouched = true;
+    inputEl.removeClass(CssClass.Untouched);
   }
 }
 
