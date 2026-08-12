@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 93.2.1
+
+- fix(prompt): defer the invalid outline until the input is touched
+- chore: update libs
+
 ## 93.2.0
 
 - feat(plugin): add a settings component and unload replaced components
