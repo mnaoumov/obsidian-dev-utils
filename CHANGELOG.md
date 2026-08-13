@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 93.3.0
+
+- feat(demo-vault): add inline wikilink directives, shaped after ESLint's
+- feat(demo-vault): let a note declare why its wikilinks are the point
+
 ## 93.2.2
 
 - test: run the Obsidian integration projects one at a time
