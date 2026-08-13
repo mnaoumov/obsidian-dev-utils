@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 94.1.0
+
+- feat(prompt): follow the vault spellcheck setting
+- chore: update libs
+
 ## 94.0.0
 
 - feat(demo-vault)!: own the four app.json settings instead of asking every vault to pin them
