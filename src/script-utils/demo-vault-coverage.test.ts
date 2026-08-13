@@ -386,6 +386,113 @@ describe('DemoVaultCoverageChecker authoring checks', () => {
     expect(checker.findNotesWithWikilinks()).toEqual(['Linked.md']);
   });
 
+  it('allows a wikilink on the line after a disable-next-line directive, and inside a disabled region', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/Clickable.md',
+      `# Clickable
+
+Clicking a link to a note that does not exist yet is the whole feature.
+
+<!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilinks -- The reader clicks it while it resolves to nothing. -->
+
+2. Click this link: [[Fresh idea]].
+`
+    );
+    writeFixtureFile(
+      root,
+      'demo-vault/Embeds.md',
+      `# Embeds
+
+Teaches both embed spellings.
+
+<!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- The wikilink embed is the syntax this note teaches. -->
+
+![[page.html|400]]
+
+![[page.html]]
+
+<!-- obsidian-dev-utils-enable demo-vault-validation/no-wikilinks -->
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithWikilinks()).toEqual([]);
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([]);
+  });
+
+  it('still reports a wikilink outside the region a directive covers', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/Partly.md',
+      `# Partly
+
+Only the embed is deliberate.
+
+<!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- The wikilink embed is the syntax this note teaches. -->
+
+![[page.html]]
+
+<!-- obsidian-dev-utils-enable demo-vault-validation/no-wikilinks -->
+
+See [[Surface]] for more.
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithWikilinks()).toEqual(['Partly.md']);
+  });
+
+  it('reports a directive that is misspelled, unreasoned, unclosed, or covering no wikilink', () => {
+    writeFixtureFile(root, 'demo-vault/Malformed.md', '# Malformed\n\nNames no rule.\n\n<!-- obsidian-dev-utils-disable-next-line -- Why. -->\n\n[[Surface]]\n');
+    writeFixtureFile(root, 'demo-vault/Silent.md', '# Silent\n\nStates no reason.\n\n<!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilinks -->\n\n[[Surface]]\n');
+    writeFixtureFile(root, 'demo-vault/Open.md', '# Open\n\nNever enables again.\n\n<!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- Why. -->\n\n[[Surface]]\n');
+    writeFixtureFile(root, 'demo-vault/Spare.md', '# Spare\n\nCovers nothing.\n\n<!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilinks -- Why. -->\n\nPlain prose.\n');
+    writeFixtureFile(root, 'demo-vault/Wrong.md', '# Wrong\n\nNames a rule that does not exist.\n\n<!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilink -- Why. -->\n\n[[Surface]]\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([
+      'Malformed.md: a malformed directive on line 5',
+      'Open.md: a region opened on line 5 that is never enabled again',
+      'Silent.md: a directive with no reason on line 5',
+      'Spare.md: a disable-next-line on line 5 covering no wikilink',
+      'Wrong.md: an unknown rule "demo-vault-validation/no-wikilink" on line 5'
+    ]);
+    // `Open.md` is absent: its region never closes, so it does cover the wikilink — the unclosed region is
+    // Reported as the mistake it is, rather than counted twice.
+    expect(checker.findNotesWithWikilinks()).toEqual(['Malformed.md', 'Silent.md', 'Wrong.md']);
+  });
+
+  it('reports a nested region, a stray enable, a region covering nothing, and a trailing disable-next-line', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/Nested.md',
+      `# Nested
+
+Opens a region twice.
+
+<!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- Why. -->
+
+[[Surface]]
+
+<!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- Why again. -->
+
+<!-- obsidian-dev-utils-enable demo-vault-validation/no-wikilinks -->
+`
+    );
+    writeFixtureFile(root, 'demo-vault/Stray.md', '# Stray\n\nEnables what was never disabled.\n\n<!-- obsidian-dev-utils-enable demo-vault-validation/no-wikilinks -->\n');
+    writeFixtureFile(
+      root,
+      'demo-vault/Pointless.md',
+      '# Pointless\n\nWraps prose.\n\n<!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- Why. -->\n\nPlain prose.\n\n<!-- obsidian-dev-utils-enable demo-vault-validation/no-wikilinks -->\n'
+    );
+    writeFixtureFile(root, 'demo-vault/Trailing.md', '# Trailing\n\nEnds on the directive.\n\n<!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilinks -- Why. -->\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([
+      'Nested.md: a disable on line 9 inside the region opened on line 5',
+      'Pointless.md: a region opened on line 5 covering no wikilink',
+      'Stray.md: an enable on line 5 with no region open',
+      'Trailing.md: a disable-next-line on line 5 covering no wikilink'
+    ]);
+  });
+
   it('allows a wikilink in a note whose frontmatter says why it needs one', () => {
     writeFixtureFile(
       root,
@@ -407,6 +514,30 @@ Embeds a page at a fixed size.
     expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([]);
   });
 
+  it('reports inline directives a note-level allowance already covers', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/Both.md',
+      `---
+obsidian-dev-utils:
+  demo-vault-validation:
+    allow-wikilinks: The property values ARE the demo.
+---
+# Both
+
+Declares the allowance twice over.
+
+<!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilinks -- Redundant. -->
+
+See [[Surface]].
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([
+      'Both.md: inline directives the note-level allowance already covers'
+    ]);
+  });
+
   it('rejects a wikilink allowance with no reason, and one the note no longer needs', () => {
     function declare(reason: string): string {
       return `---\nobsidian-dev-utils:\n  demo-vault-validation:\n    allow-wikilinks:${reason}\n---\n`;
@@ -415,7 +546,10 @@ Embeds a page at a fixed size.
     writeFixtureFile(root, 'demo-vault/Bare.md', `${declare('')}# Bare\n\nStates no reason.\n\n[[Surface]]\n`);
     writeFixtureFile(root, 'demo-vault/Stale.md', `${declare(' Was needed once.')}# Stale\n\nHas no wikilink left.\n`);
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });
-    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual(['Bare.md', 'Stale.md']);
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([
+      'Bare.md: a note-level allowance with no reason',
+      'Stale.md: a note-level allowance covering no wikilink'
+    ]);
   });
 
   it('does not read a wikilink allowance declared outside the demo-vault-validation path', () => {

@@ -16,23 +16,39 @@
  * broken for real readers. `authoring` only tunes them (which note is the start, which notes sit outside
  * the learning path); it cannot switch them off.
  *
- * The one exception is a note whose SUBJECT is the wikilink — a frontmatter property value that exists to
- * contrast with a Markdown link, a fixture that must keep the wikilink a command is supposed to leave
- * alone, a link the reader is meant to click while it still resolves to nothing. Such a note declares
- * itself in its own frontmatter, stating why:
+ * The one exception is a note whose SUBJECT is the wikilink — an embed spelling the reader is being taught
+ * to type, a frontmatter property value that exists to contrast with a Markdown link, a fixture that must
+ * keep the wikilink a command is supposed to leave alone, a link the reader clicks while it still resolves
+ * to nothing. Such a note says so itself, stating why, in one of two forms modelled on ESLint's.
+ *
+ * Per line or per region, written as an HTML comment so it is invisible in Obsidian AND on GitHub — the
+ * spelling these vaults already use for `markdownlint-disable-next-line`:
+ *
+ * ```markdown
+ * <!-- obsidian-dev-utils-disable-next-line demo-vault-validation/no-wikilinks -- Clicking a link to a note that does not exist yet IS the feature. -->
+ * 2. Click this link: [[Projects/Fresh idea]].
+ *
+ * <!-- obsidian-dev-utils-disable demo-vault-validation/no-wikilinks -- The wikilink embed is the syntax this note teaches. -->
+ * ![[basic.html|400]]
+ * <!-- obsidian-dev-utils-enable demo-vault-validation/no-wikilinks -->
+ * ```
+ *
+ * Per note, in the note's own frontmatter — the only form that can reach a wikilink INSIDE frontmatter,
+ * where a comment cannot go:
  *
  * ```yaml
  * ---
  * obsidian-dev-utils:
  *   demo-vault-validation:
- *     allow-wikilinks: Excalidraw stores its embeds as wikilinks, and this note shows they survive rewriting.
+ *     allow-wikilinks: The `wikilink` property value is the contrast this note is built around.
  * ---
  * ```
  *
- * The declaration travels with the note rather than sitting in a list somewhere else, it carries its
- * justification, and it exempts that note from the WIKILINK check only — the H1, prose, reachability and
- * `[Docs]` checks still apply. A declaration with no reason, or on a note that has no wikilink to allow,
- * fails: an exemption nobody can justify, or that nothing needs any more, is drift.
+ * Either way the declaration travels with the note rather than sitting in a list somewhere else, it carries
+ * its justification, and it exempts only the WIKILINK check — the H1, prose, reachability and `[Docs]`
+ * checks still apply. A declaration with no reason, one covering no wikilink, a region never enabled again,
+ * or a misspelled directive all fail: an exemption nobody can justify, that nothing needs any more, or that
+ * silently does nothing is worse than no exemption at all.
  *
  * Two layers are exposed:
  * - {@link DemoVaultCoverageChecker} — a framework-agnostic core that reads the corpus, parses interface /
@@ -313,6 +329,37 @@ export interface InterfaceMembers {
 }
 
 /**
+ * A note line paired with the line number it came from, so a check that skips fenced blocks can still
+ * report — and an inline directive can still name — the line as the reader sees it.
+ */
+export interface NoteLine {
+  /**
+   * The zero-based line number within the note.
+   */
+  readonly index: number;
+
+  /**
+   * The line's raw text.
+   */
+  readonly line: string;
+}
+
+/**
+ * A `disable` region that has been opened and not yet enabled again.
+ */
+export interface OpenWikilinkDirectiveRegion {
+  /**
+   * Whether the region has covered a wikilink, which is what stops it being reported as pointless.
+   */
+  isUsed: boolean;
+
+  /**
+   * The line the region was opened on.
+   */
+  readonly lineIndex: number;
+}
+
+/**
  * The parameters for {@link registerDemoVaultCoverageSuite}.
  */
 export interface RegisterDemoVaultCoverageSuiteParams {
@@ -351,6 +398,51 @@ export interface RegisterDemoVaultCoverageSuiteParams {
    * The absolute path of the plugin repo root. Callers typically pass `getRootFolder() ?? process.cwd()`.
    */
   readonly rootFolder: string;
+}
+
+/**
+ * What a note's inline `obsidian-dev-utils-disable…` directives allow, and what is wrong with them.
+ */
+export interface WikilinkDirectiveScan {
+  /**
+   * The zero-based line numbers a directive allows a wikilink on.
+   */
+  readonly allowedLineIndexes: ReadonlySet<number>;
+
+  /**
+   * The directive mistakes found, each phrased for a failing assertion.
+   */
+  readonly problems: string[];
+}
+
+/**
+ * The running state of a directive scan, threaded through the per-line helpers.
+ */
+export interface WikilinkDirectiveScanState {
+  /**
+   * The lines a directive has allowed a wikilink on so far.
+   */
+  readonly allowedLineIndexes: Set<number>;
+
+  /**
+   * The region currently open, and whether it has covered a wikilink yet.
+   */
+  openRegion: null | OpenWikilinkDirectiveRegion;
+
+  /**
+   * The line a `disable-next-line` was read on, while it still waits for the line it covers.
+   */
+  pendingNextLineIndex: null | number;
+
+  /**
+   * The directive mistakes found so far.
+   */
+  readonly problems: string[];
+
+  /**
+   * The lines of the note that carry a wikilink.
+   */
+  readonly wikilinkLineIndexes: ReadonlySet<number>;
 }
 
 /**
@@ -443,15 +535,21 @@ export class DemoVaultCoverageChecker {
    * @returns The relative paths of the offending notes.
    */
   public findNotesWithUnjustifiedWikilinkAllowance(): string[] {
-    return this.collectCheckableNotes()
-      .filter((note) => {
-        const reason = readWikilinkAllowanceReason(note.content);
-        if (reason === null) {
-          return false;
+    return this.collectCheckableNotes().flatMap((note) => {
+      const scan = scanWikilinkDirectives(note.content);
+      const problems = [...scan.problems];
+      const reason = readWikilinkAllowanceReason(note.content);
+      if (reason !== null) {
+        if (reason.trim() === '') {
+          problems.push('a note-level allowance with no reason');
+        } else if (!hasWikilink(note.content)) {
+          problems.push('a note-level allowance covering no wikilink');
+        } else if (scan.allowedLineIndexes.size > 0) {
+          problems.push('inline directives the note-level allowance already covers');
         }
-        return reason.trim() === '' || !hasWikilink(note.content);
-      })
-      .map((note) => note.relativePath);
+      }
+      return problems.map((problem) => `${note.relativePath}: ${problem}`);
+    });
   }
 
   /**
@@ -464,7 +562,13 @@ export class DemoVaultCoverageChecker {
    */
   public findNotesWithWikilinks(): string[] {
     return this.collectCheckableNotes()
-      .filter((note) => readWikilinkAllowanceReason(note.content) === null && hasWikilink(note.content))
+      .filter((note) => {
+        if (readWikilinkAllowanceReason(note.content) !== null) {
+          return false;
+        }
+        const { allowedLineIndexes } = scanWikilinkDirectives(note.content);
+        return findWikilinkLineIndexes(note.content).some((lineIndex) => !allowedLineIndexes.has(lineIndex));
+      })
       .map((note) => note.relativePath);
   }
 
@@ -706,11 +810,75 @@ const H1_REG_EXP = /^# \S/;
 const HEADING_REG_EXP = /^#{1,6} /;
 const INLINE_CODE_REG_EXP = /`[^`\n]*`/g;
 const MARKDOWN_LINK_REG_EXP = /\[[^\]]*]\((?<target>[^)]+)\)/g;
+// An inline directive, shaped after ESLint's and written as an HTML comment so it is invisible BOTH in
+// Obsidian and on GitHub — the same spelling the vaults already use for `markdownlint-disable-next-line`.
+// An Obsidian `%% … %%` comment would show up as literal text on GitHub, which is half the readership.
+const DIRECTIVE_REG_EXP = /^\s*<!--\s*obsidian-dev-utils-(?<action>disable-next-line|disable|enable)\s+(?<rule>[\w-]+\/[\w-]+)(?:\s+--\s+(?<reason>.*?))?\s*-->\s*$/;
+// Catches a directive that was MEANT to be one but is misspelled: it would otherwise read as an ordinary
+// Comment and silently do nothing, which is the failure mode a suppression syntax must never have.
+const DIRECTIVE_PROBE_REG_EXP = /<!--\s*obsidian-dev-utils-/;
+const WIKILINK_RULE = 'demo-vault-validation/no-wikilinks';
 // The `obsidian-dev-utils > demo-vault-validation > allow-wikilinks` frontmatter path, at any indentation:
 // The keys must nest in that order, and any line between them has to stay indented, so a dedent to the
 // Document's own top level ends the match rather than reaching a same-named key under another parent.
 const WIKILINK_ALLOWANCE_REG_EXP = /^obsidian-dev-utils:[^\S\n]*\n(?:[^\S\n]+.*\n)*?[^\S\n]+demo-vault-validation:[^\S\n]*\n(?:[^\S\n]+.*\n)*?[^\S\n]+allow-wikilinks:(?<reason>.*)$/m;
 const WIKILINK_REG_EXP = /\[\[[^\]]+]]/;
+
+// Applies one parsed directive to the scan.
+function applyWikilinkDirective(state: WikilinkDirectiveScanState, lineIndex: number, match: RegExpExecArray): void {
+  const action = getMandatoryNamedGroup(match, 'action');
+  const rule = getMandatoryNamedGroup(match, 'rule');
+  const reason = match.groups?.['reason']?.trim() ?? '';
+  if (rule !== WIKILINK_RULE) {
+    state.problems.push(`an unknown rule "${rule}" on ${formatLineNumber(lineIndex)}`);
+    return;
+  }
+  if (action !== 'enable' && reason === '') {
+    state.problems.push(`a directive with no reason on ${formatLineNumber(lineIndex)}`);
+    return;
+  }
+
+  if (action === 'disable-next-line') {
+    state.pendingNextLineIndex = lineIndex;
+    return;
+  }
+
+  if (action === 'disable') {
+    if (state.openRegion) {
+      state.problems.push(`a disable on ${formatLineNumber(lineIndex)} inside the region opened on ${formatLineNumber(state.openRegion.lineIndex)}`);
+      return;
+    }
+    state.openRegion = { isUsed: false, lineIndex };
+    return;
+  }
+
+  if (!state.openRegion) {
+    state.problems.push(`an enable on ${formatLineNumber(lineIndex)} with no region open`);
+    return;
+  }
+  if (!state.openRegion.isUsed) {
+    state.problems.push(`a region opened on ${formatLineNumber(state.openRegion.lineIndex)} covering no wikilink`);
+  }
+  state.openRegion = null;
+}
+
+// Applies one ordinary line to the scan: an open region covers it, and a pending `disable-next-line`
+// Claims the first line with content on it — the directive and its target are usually a blank line apart.
+function applyWikilinkScanLine(state: WikilinkDirectiveScanState, lineIndex: number, line: string): void {
+  if (state.openRegion) {
+    state.allowedLineIndexes.add(lineIndex);
+    state.openRegion.isUsed ||= state.wikilinkLineIndexes.has(lineIndex);
+    return;
+  }
+  if (state.pendingNextLineIndex === null || line.trim() === '') {
+    return;
+  }
+  state.allowedLineIndexes.add(lineIndex);
+  if (!state.wikilinkLineIndexes.has(lineIndex)) {
+    state.problems.push(`a disable-next-line on ${formatLineNumber(state.pendingNextLineIndex)} covering no wikilink`);
+  }
+  state.pendingNextLineIndex = null;
+}
 
 function buildMembers(methods: string[], properties: string[]): InterfaceMembers {
   return {
@@ -724,6 +892,24 @@ function buildMembers(methods: string[], properties: string[]): InterfaceMembers
 // File, made relative to the demo vault so it can be looked up in the note map. External URLs and
 // Non-note targets (images, scripts) are not part of the learning path and are skipped; a `#anchor` is
 // Dropped, since it addresses a place inside an already-resolved note.
+// Returns the note's lines with fenced code blocks removed (the fence lines included), paired with the
+// Line number each came from, so a check never mistakes sample code for prose — a `[[wikilink]]`
+// Demonstrated inside a fence is text, not navigation — and an inline directive can still name a line.
+function collectLinesOutsideFences(content: string): NoteLine[] {
+  const noteLines: NoteLine[] = [];
+  let isInsideFence = false;
+  for (const [index, line] of content.split('\n').entries()) {
+    if (CODE_FENCE_REG_EXP.test(line)) {
+      isInsideFence = !isInsideFence;
+      continue;
+    }
+    if (!isInsideFence) {
+      noteLines.push({ index, line });
+    }
+  }
+  return noteLines;
+}
+
 function collectNoteLinkTargets(note: DemoVaultNote): string[] {
   const targets: string[] = [];
   for (const line of getLinesOutsideFences(note.content)) {
@@ -763,21 +949,19 @@ function extractPropertyNames(interfaceBody: string): string[] {
   return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
 }
 
-// Returns the note's lines with fenced code blocks removed (the fence lines included), so a check never
-// Mistakes sample code for prose — a `[[wikilink]]` demonstrated inside a fence is text, not navigation.
+// The line numbers carrying a wikilink that is navigation rather than sample text.
+function findWikilinkLineIndexes(content: string): number[] {
+  return collectLinesOutsideFences(content)
+    .filter((noteLine) => WIKILINK_REG_EXP.test(stripInlineCode(noteLine.line)))
+    .map((noteLine) => noteLine.index);
+}
+
+function formatLineNumber(lineIndex: number): string {
+  return `line ${String(lineIndex + 1)}`;
+}
+
 function getLinesOutsideFences(content: string): string[] {
-  const lines: string[] = [];
-  let isInsideFence = false;
-  for (const line of content.split('\n')) {
-    if (CODE_FENCE_REG_EXP.test(line)) {
-      isInsideFence = !isInsideFence;
-      continue;
-    }
-    if (!isInsideFence) {
-      lines.push(line);
-    }
-  }
-  return lines;
+  return collectLinesOutsideFences(content).map((noteLine) => noteLine.line);
 }
 
 // Whether the note's first content line (frontmatter and blank lines aside) is an `# H1`.
@@ -811,7 +995,7 @@ function hasIntroProse(content: string): boolean {
 // Whether the note navigates with an Obsidian `[[wikilink]]`. Fenced blocks and inline code are sample
 // Text rather than navigation, so they are removed before looking.
 function hasWikilink(content: string): boolean {
-  return getLinesOutsideFences(content).some((line) => WIKILINK_REG_EXP.test(stripInlineCode(line)));
+  return findWikilinkLineIndexes(content).length > 0;
 }
 
 function isNonPublicMember(modifiers: string): boolean {
@@ -846,6 +1030,39 @@ function readWikilinkAllowanceReason(content: string): null | string {
     return null;
   }
   return reason.trim().replace(/^(?<quote>["'])(?<value>[\s\S]*)\k<quote>$/, '$<value>');
+}
+
+// Reads the note's inline `obsidian-dev-utils-disable…` directives, returning which lines they allow a
+// Wikilink on and everything wrong with them. A suppression that quietly does nothing is worse than none,
+// So a misspelled directive, one with no reason, an unclosed region and one covering no wikilink at all
+// Are each reported rather than ignored.
+function scanWikilinkDirectives(content: string): WikilinkDirectiveScan {
+  const state: WikilinkDirectiveScanState = {
+    allowedLineIndexes: new Set<number>(),
+    openRegion: null,
+    pendingNextLineIndex: null,
+    problems: [],
+    wikilinkLineIndexes: new Set(findWikilinkLineIndexes(content))
+  };
+
+  for (const { index, line } of collectLinesOutsideFences(content)) {
+    const match = DIRECTIVE_REG_EXP.exec(line);
+    if (match) {
+      applyWikilinkDirective(state, index, match);
+    } else if (DIRECTIVE_PROBE_REG_EXP.test(line)) {
+      state.problems.push(`a malformed directive on ${formatLineNumber(index)}`);
+    } else {
+      applyWikilinkScanLine(state, index, line);
+    }
+  }
+
+  if (state.openRegion) {
+    state.problems.push(`a region opened on ${formatLineNumber(state.openRegion.lineIndex)} that is never enabled again`);
+  }
+  if (state.pendingNextLineIndex !== null) {
+    state.problems.push(`a disable-next-line on ${formatLineNumber(state.pendingNextLineIndex)} covering no wikilink`);
+  }
+  return { allowedLineIndexes: state.allowedLineIndexes, problems: state.problems };
 }
 
 function stripFrontmatter(content: string): string {
