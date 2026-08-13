@@ -11,6 +11,7 @@ import type { GenericObject } from '../type-guards.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
   getNewLinkFormat,
+  isSpellcheckEnabled,
   shouldUseWikilinks
 } from './obsidian-settings.ts';
 
@@ -36,6 +37,23 @@ describe('getNewLinkFormat', () => {
   it('should return absolute when configured', () => {
     const app = createMockApp({ newLinkFormat: 'absolute' });
     expect(getNewLinkFormat(app)).toBe('absolute');
+  });
+});
+
+describe('isSpellcheckEnabled', () => {
+  it('should return true when spellcheck is true', () => {
+    const app = createMockApp({ spellcheck: true });
+    expect(isSpellcheckEnabled(app)).toBe(true);
+  });
+
+  it('should return false when spellcheck is false', () => {
+    const app = createMockApp({ spellcheck: false });
+    expect(isSpellcheckEnabled(app)).toBe(false);
+  });
+
+  it('should return false when spellcheck is undefined', () => {
+    const app = createMockApp({});
+    expect(isSpellcheckEnabled(app)).toBe(false);
   });
 });
 
