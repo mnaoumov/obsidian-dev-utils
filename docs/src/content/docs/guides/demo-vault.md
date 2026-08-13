@@ -15,7 +15,8 @@ Put a curated vault at `demo-vault/` in your plugin repo root (a normal vault, i
 1. The freshly built plugin (from `dist/build/`) is installed into `demo-vault/.obsidian/plugins/<plugin-id>/`.
 2. The bundled `demo-vault-helper` bootstrap plugin (shipped inside `obsidian-dev-utils`) is injected into `demo-vault/.obsidian/plugins/demo-vault-helper/` — see [The `demo-vault-helper` bootstrap plugin](#the-demo-vault-helper-bootstrap-plugin).
 3. The whole `demo-vault/` folder is zipped to `dist/build/<plugin-id>-demo-vault-<version>.zip` (named by plugin id so several plugins' demo vaults never collide, and by version so each release ships its own distinctly named artifact).
-4. Because the GitHub-release step uploads every file in `dist/build/`, the archive is attached to the release automatically.
+4. The archive's `.obsidian/app.json` gets the [demo-vault settings `obsidian-dev-utils` owns](#the-appjson-settings-obsidian-dev-utils-owns) merged into it.
+5. Because the GitHub-release step uploads every file in `dist/build/`, the archive is attached to the release automatically.
 
 If the repo has no `demo-vault/` folder, the step is silently skipped.
 
@@ -23,10 +24,33 @@ If the repo has no `demo-vault/` folder, the step is silently skipped.
 
 Archiving is on by default. Pass `--no-demo-vault` to skip it for a release, or set `shouldArchiveDemoVault: false` in the `updateVersion` options.
 
+### The `app.json` settings `obsidian-dev-utils` owns
+
+Four Obsidian settings have to be the same in every demo vault, so this package owns them rather than
+asking each vault to remember them:
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `defaultViewMode` | `"preview"` | A note opens as a reader sees it, not as raw markup — the vault is documentation first and an editing surface second. |
+| `livePreview` | `false` | Same reason; both are needed, and both are Obsidian-only (GitHub never reads `app.json`). |
+| `useMarkdownLinks` | `true` | Decides what Obsidian writes when a link is created inside the vault. At the default, every new link is a `[[wikilink]]` — which GitHub renders as literal brackets leading nowhere. |
+| `newLinkFormat` | `"relative"` | Keeps a link resolving once the vault is extracted to an arbitrary folder. `"absolute"` would not. |
+
+They are injected into the **archived** vault, and a demo vault must **not commit any of them**: a committed
+copy is a second source of truth that nothing reconciles, and it is the copy that goes stale. The
+[demo-vault coverage suite](#keeping-the-vault-honest) fails a vault that commits one, and
+`archivePluginDemoVault` refuses to archive it — so the settings have exactly one owner. Everything else in
+`app.json` is the vault's own and is carried into the archive untouched.
+
+One consequence worth knowing: because the injection reaches only the archived copy, creating a link while
+authoring the vault in your own Obsidian still follows *your* settings, not these. The coverage suite's
+no-wikilink check is what catches that before it ships.
+
 ### Consumer setup
 
 - Create `demo-vault/` with the curated notes and an `.obsidian/` config.
 - Commit `demo-vault/.obsidian/community-plugins.json` containing `["<plugin-id>"]` so the plugin is enabled when the demo vault is opened.
+- Do not commit the four [`app.json` settings above](#the-appjson-settings-obsidian-dev-utils-owns) — they are injected at release time.
 - Gitignore the installed build so nothing built lands in git:
 
   ```text
@@ -133,9 +157,9 @@ The demo vault is not a set of samples sitting beside the documentation — it *
 3. **No `[Docs](…)` link line.** The note is the docs; a line pointing elsewhere for the real explanation is the shape this convention exists to remove.
 4. **`00 Start.md` is a getting-started narrative**, not a bare list — what the vault is, one concrete first success, then an index grouped under headings with a one-line description per entry. Every other note must be reachable from it.
 5. **The first success spells out the mechanics**, because a first-time reader has never seen CodeScript Toolkit: a code button renders as a captioned rectangle, **clicking it runs the code**, the result appears below it, and the `</>` toggle beside it reveals the source. Nothing about a coloured rectangle says "button" to someone who does not already know — say it once, in the first example, instead of assuming it.
-6. **`.obsidian/app.json` pins `defaultViewMode: "preview"` and `livePreview: false`**, so a note opens as a reader sees it.
+6. **`.obsidian/app.json` commits none of the [settings `obsidian-dev-utils` owns](#the-appjson-settings-obsidian-dev-utils-owns)** — the reading experience they configure is injected into the archive, so the vault does not carry a second copy of it.
 
-Rules 1-3 and the reachability half of rule 4 are machine-checked by the coverage suite below. Whether `00 Start.md` actually reads as a narrative, rule 5, and rule 6 are convention only — no check can tell prose from filler.
+Rules 1-3, the reachability half of rule 4, and rule 6 are machine-checked by the coverage suite below. Whether `00 Start.md` actually reads as a narrative and rule 5 are convention only — no check can tell prose from filler.
 
 ## Keeping the vault honest
 
@@ -158,7 +182,7 @@ registerDemoVaultCoverageSuite({
 });
 ```
 
-It asserts that every reflected member is demonstrated somewhere in the notes, that no note references a member that no longer exists (rename drift), **and** that the notes follow the authoring rules above.
+It asserts that every reflected member is demonstrated somewhere in the notes, that no note references a member that no longer exists (rename drift), that `.obsidian/app.json` commits none of the [settings this package injects](#the-appjson-settings-obsidian-dev-utils-owns), **and** that the notes follow the authoring rules above.
 
 The authoring checks are always on — a note that breaks the convention is broken for real readers, so there is no flag to turn them off. The optional `authoring` member only tunes them:
 

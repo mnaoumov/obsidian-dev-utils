@@ -9,6 +9,10 @@
  * The runtime behavior of the plugin is covered by its other integration tests, not by the demo vault; the
  * vault is a learning resource, and these checks only guard that it stays truthful.
  *
+ * They also guard the vault's own `.obsidian/app.json`: the settings listed in
+ * {@link DEMO_VAULT_APP_JSON_SETTINGS} belong to `obsidian-dev-utils`, which writes them into the archived
+ * vault at release time, so a vault that commits any of them is keeping a second copy nothing reconciles.
+ *
  * They also enforce the demo-vault AUTHORING convention — every note opens with an `# H1` and a plain
  * prose paragraph, every note is reachable from the start note, and no note uses a `[[wikilink]]` or a
  * `[Docs](…)` line. These checks are unconditional: the demo vault is the published documentation, read
@@ -59,6 +63,7 @@
  */
 
 import {
+  existsSync,
   readdirSync,
   readFileSync
 } from 'node:fs';
@@ -77,6 +82,10 @@ import {
 } from '../path.ts';
 import { getMandatoryNamedGroup } from '../reg-exp.ts';
 import { ensureNonNullable } from '../type-guards.ts';
+import {
+  findOwnedDemoVaultAppJsonSettings,
+  parseDemoVaultAppJson
+} from './demo-vault-app-json.ts';
 
 /**
  * Tunes the always-on authoring checks. It cannot disable them — see the file overview.
@@ -493,6 +502,20 @@ export class DemoVaultCoverageChecker {
   }
 
   /**
+   * Finds the `.obsidian/app.json` settings the vault commits that `obsidian-dev-utils` owns and writes
+   * into the archived vault itself. A committed one is a second copy of a setting nothing reconciles, and
+   * it is the copy that goes stale — so the convention is that the vault commits none of them.
+   *
+   * @returns The names of the owned settings the committed `app.json` sets. A vault that commits no
+   * `app.json` at all is fine, and yields none.
+   */
+  public findCommittedAppJsonSettings(): string[] {
+    const appJsonPath = join(this.demoVaultFolder, ObsidianPluginRepoPaths.DotObsidian, ObsidianPluginRepoPaths.AppJson);
+    const content = existsSync(appJsonPath) ? readFileSync(appJsonPath, 'utf-8') : null;
+    return findOwnedDemoVaultAppJsonSettings({ appJson: parseDemoVaultAppJson({ content, path: appJsonPath }) });
+  }
+
+  /**
    * Finds notes carrying a `[Docs](…)` link line. The note IS the documentation, so a line pointing
    * elsewhere for the real explanation is the shape this convention exists to remove.
    *
@@ -787,6 +810,10 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
 
     it('carries no Docs link line, because the note is the docs', () => {
       expect(checker.findNotesWithDocsLinks()).toEqual([]);
+    });
+
+    it('commits none of the app.json settings obsidian-dev-utils injects at release time', () => {
+      expect(checker.findCommittedAppJsonSettings()).toEqual([]);
     });
 
     it('keeps the reflected surface non-trivial', () => {
