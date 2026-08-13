@@ -25,7 +25,12 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
     'MD052': {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       ignored_labels: [
+        // GitHub's five alert types, all of which Obsidian renders as callouts. markdownlint reads the
+        // Bracketed marker opening one as a shortcut reference link, so each has to be ignored explicitly.
+        '!caution',
+        '!important',
         '!note',
+        '!tip',
         '!warning',
         // Preserve markdownlint's default ignored label so GFM task-list items (`- [x]`) are not flagged as undefined shortcut references.
         'x'
