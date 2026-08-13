@@ -27,6 +27,11 @@ interface PromptInvalidOutlineResult {
   readonly value: null | string;
 }
 
+interface PromptSpellcheckResult {
+  readonly spellcheckAttributeWhenDisabled: null | string;
+  readonly spellcheckAttributeWhenEnabled: null | string;
+}
+
 interface PromptValidityResult {
   readonly reportCountAfterInput: number;
   readonly reportCountAfterOk: number;
@@ -116,6 +121,59 @@ describe('prompt', () => {
     expect(result.reportCountAfterInput).toBeGreaterThan(0);
     expect(result.reportCountAfterOk).toBeGreaterThan(result.reportCountAfterInput);
     expect(result.value).toBeNull();
+  });
+
+  it('should follow the vault spellcheck setting', async () => {
+    const result = await evalInObsidian({
+      async callback({ app, lib: { prompt, waitUntil } }): Promise<PromptSpellcheckResult> {
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+        const originalSpellcheck = app.vault.getConfig('spellcheck');
+
+        try {
+          const spellcheckAttributeWhenEnabled = await readSpellcheckAttribute(true);
+          const spellcheckAttributeWhenDisabled = await readSpellcheckAttribute(false);
+
+          return {
+            spellcheckAttributeWhenDisabled,
+            spellcheckAttributeWhenEnabled
+          };
+        } finally {
+          app.vault.setConfig('spellcheck', originalSpellcheck);
+        }
+
+        function getCancelButton(): HTMLButtonElement | undefined {
+          return [...document.querySelectorAll<HTMLButtonElement>('.prompt-modal .modal-content button')][1];
+        }
+
+        function getInputEl(): HTMLInputElement | null {
+          return document.querySelector<HTMLInputElement>('.prompt-modal .modal-content input');
+        }
+
+        async function readSpellcheckAttribute(isSpellcheckEnabled: boolean): Promise<null | string> {
+          app.vault.setConfig('spellcheck', isSpellcheckEnabled);
+          const resultPromise = prompt({ app });
+
+          try {
+            await waitUntil({
+              message: 'prompt modal input renders',
+              predicate: () => Boolean(getInputEl()),
+              timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            });
+
+            return getInputEl()?.getAttribute('spellcheck') ?? null;
+          } finally {
+            getCancelButton()?.click();
+            await resultPromise;
+          }
+        }
+      }
+    });
+
+    // The attribute is asserted rather than the property, because `AbstractTextComponent` forces
+    // `spellcheck="false"` on every text component and clearing it is the whole behavior under test.
+    expect(result.spellcheckAttributeWhenEnabled).toBe('true');
+    expect(result.spellcheckAttributeWhenDisabled).toBe('false');
   });
 
   it('should paint the invalid outline only once the value is edited', async () => {

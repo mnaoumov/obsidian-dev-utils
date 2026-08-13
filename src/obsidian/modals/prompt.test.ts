@@ -322,6 +322,36 @@ describe('prompt', () => {
     expect(hasUntouchedClassAfterOk).toBe(false);
   });
 
+  it('should enable spellcheck on the input when the vault setting is enabled', async () => {
+    app.vault.setConfig('spellcheck', true);
+    let spellcheckAttribute = null as null | string;
+    const resultPromise = prompt({
+      app
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      spellcheckAttribute = textComp.inputEl.getAttribute('spellcheck');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(spellcheckAttribute).toBe('true');
+  });
+
+  it('should disable spellcheck on the input when the vault setting is disabled', async () => {
+    app.vault.setConfig('spellcheck', false);
+    let spellcheckAttribute = null as null | string;
+    const resultPromise = prompt({
+      app
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      spellcheckAttribute = textComp.inputEl.getAttribute('spellcheck');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(spellcheckAttribute).toBe('false');
+  });
+
   it('should report validity and not submit when OK is clicked with an invalid value', async () => {
     const resultPromise = prompt({
       app,

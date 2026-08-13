@@ -26,6 +26,7 @@ import {
 import { noop } from '../../function.ts';
 import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
+import { isSpellcheckEnabled } from '../obsidian-settings.ts';
 import {
   ModalBase,
   showModal
@@ -106,6 +107,9 @@ class PromptModal extends ModalBase<null | string> {
     this.titleEl.setText(this.title);
     const textComponent = new TextComponent(this.contentEl);
     const inputEl = textComponent.inputEl;
+    // `AbstractTextComponent` forces `spellcheck="false"` on every text component, so the vault setting has to be re-applied here.
+    // Obsidian's own file explorer reads the same config when it starts an inline rename.
+    inputEl.setAttribute('spellcheck', String(isSpellcheckEnabled(this.app)));
 
     const validate = async (shouldReport: boolean): Promise<void> => {
       const errorMessage = await this.valueValidator(inputEl.value) as string | undefined;

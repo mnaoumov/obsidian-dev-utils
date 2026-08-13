@@ -22,6 +22,16 @@ export function getNewLinkFormat(app: App): NewLinkFormat {
 }
 
 /**
+ * Retrieves whether the spellcheck is enabled based on the Obsidian settings.
+ *
+ * @param app - The Obsidian app instance.
+ * @returns Whether the spellcheck is enabled.
+ */
+export function isSpellcheckEnabled(app: App): boolean {
+  return Boolean(app.vault.getConfig('spellcheck'));
+}
+
+/**
  * Retrieves whether to use wikilinks based on the Obsidian settings.
  *
  * @param app - The Obsidian app instance.
