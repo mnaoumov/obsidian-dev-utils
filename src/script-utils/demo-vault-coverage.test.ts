@@ -386,6 +386,56 @@ describe('DemoVaultCoverageChecker authoring checks', () => {
     expect(checker.findNotesWithWikilinks()).toEqual(['Linked.md']);
   });
 
+  it('allows a wikilink in a note whose frontmatter says why it needs one', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/Embeds.md',
+      `---
+obsidian-dev-utils:
+  demo-vault-validation:
+    allow-wikilinks: The size in an embed has no Markdown equivalent.
+---
+# Embeds
+
+Embeds a page at a fixed size.
+
+![[page.html|400]]
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithWikilinks()).toEqual([]);
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([]);
+  });
+
+  it('rejects a wikilink allowance with no reason, and one the note no longer needs', () => {
+    function declare(reason: string): string {
+      return `---\nobsidian-dev-utils:\n  demo-vault-validation:\n    allow-wikilinks:${reason}\n---\n`;
+    }
+
+    writeFixtureFile(root, 'demo-vault/Bare.md', `${declare('')}# Bare\n\nStates no reason.\n\n[[Surface]]\n`);
+    writeFixtureFile(root, 'demo-vault/Stale.md', `${declare(' Was needed once.')}# Stale\n\nHas no wikilink left.\n`);
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual(['Bare.md', 'Stale.md']);
+  });
+
+  it('does not read a wikilink allowance declared outside the demo-vault-validation path', () => {
+    writeFixtureFile(
+      root,
+      'demo-vault/Elsewhere.md',
+      `---
+allow-wikilinks: Not nested under the plugin's own key.
+---
+# Elsewhere
+
+Declares nothing the checker honours.
+
+[[Surface]]
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findNotesWithWikilinks()).toEqual(['Elsewhere.md']);
+  });
+
   it('finds a Docs link line', () => {
     writeFixtureFile(root, 'demo-vault/Pointer.md', '# Pointer\n\n[Docs](https://example.com/docs)\n\nExplains nothing itself.\n');
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });

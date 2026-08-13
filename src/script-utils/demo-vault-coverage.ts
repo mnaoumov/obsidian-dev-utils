@@ -16,6 +16,24 @@
  * broken for real readers. `authoring` only tunes them (which note is the start, which notes sit outside
  * the learning path); it cannot switch them off.
  *
+ * The one exception is a note whose SUBJECT is the wikilink — a frontmatter property value that exists to
+ * contrast with a Markdown link, a fixture that must keep the wikilink a command is supposed to leave
+ * alone, a link the reader is meant to click while it still resolves to nothing. Such a note declares
+ * itself in its own frontmatter, stating why:
+ *
+ * ```yaml
+ * ---
+ * obsidian-dev-utils:
+ *   demo-vault-validation:
+ *     allow-wikilinks: Excalidraw stores its embeds as wikilinks, and this note shows they survive rewriting.
+ * ---
+ * ```
+ *
+ * The declaration travels with the note rather than sitting in a list somewhere else, it carries its
+ * justification, and it exempts that note from the WIKILINK check only — the H1, prose, reachability and
+ * `[Docs]` checks still apply. A declaration with no reason, or on a note that has no wikilink to allow,
+ * fails: an exemption nobody can justify, or that nothing needs any more, is drift.
+ *
  * Two layers are exposed:
  * - {@link DemoVaultCoverageChecker} — a framework-agnostic core that reads the corpus, parses interface /
  *   class / enum members and exported functions, and returns diagnostic arrays (what is undemonstrated / stale
@@ -418,15 +436,35 @@ export class DemoVaultCoverageChecker {
   }
 
   /**
+   * Finds notes whose wikilink allowance is not doing any work — declared without a reason, or on a note
+   * that carries no wikilink at all. Both are drift: an exemption nobody can justify, and one nothing needs
+   * any more, which would go on hiding the next wikilink somebody adds by accident.
+   *
+   * @returns The relative paths of the offending notes.
+   */
+  public findNotesWithUnjustifiedWikilinkAllowance(): string[] {
+    return this.collectCheckableNotes()
+      .filter((note) => {
+        const reason = readWikilinkAllowanceReason(note.content);
+        if (reason === null) {
+          return false;
+        }
+        return reason.trim() === '' || !hasWikilink(note.content);
+      })
+      .map((note) => note.relativePath);
+  }
+
+  /**
    * Finds notes using an Obsidian `[[wikilink]]` outside a code fence. The demo vault is also read on
    * GitHub, where a wikilink renders as literal brackets and leads nowhere. A wikilink shown INSIDE a
-   * fence is sample text, not navigation, so fenced blocks are skipped.
+   * fence is sample text, not navigation, so fenced blocks are skipped, as is a note that declares in its
+   * frontmatter why its wikilinks are the point — see the file overview.
    *
    * @returns The relative paths of the offending notes.
    */
   public findNotesWithWikilinks(): string[] {
     return this.collectCheckableNotes()
-      .filter((note) => getLinesOutsideFences(note.content).some((line) => WIKILINK_REG_EXP.test(stripInlineCode(line))))
+      .filter((note) => readWikilinkAllowanceReason(note.content) === null && hasWikilink(note.content))
       .map((note) => note.relativePath);
   }
 
@@ -639,6 +677,10 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
       expect(checker.findNotesWithWikilinks()).toEqual([]);
     });
 
+    it('justifies every wikilink allowance, and declares none it no longer needs', () => {
+      expect(checker.findNotesWithUnjustifiedWikilinkAllowance()).toEqual([]);
+    });
+
     it('carries no Docs link line, because the note is the docs', () => {
       expect(checker.findNotesWithDocsLinks()).toEqual([]);
     });
@@ -664,6 +706,10 @@ const H1_REG_EXP = /^# \S/;
 const HEADING_REG_EXP = /^#{1,6} /;
 const INLINE_CODE_REG_EXP = /`[^`\n]*`/g;
 const MARKDOWN_LINK_REG_EXP = /\[[^\]]*]\((?<target>[^)]+)\)/g;
+// The `obsidian-dev-utils > demo-vault-validation > allow-wikilinks` frontmatter path, at any indentation:
+// The keys must nest in that order, and any line between them has to stay indented, so a dedent to the
+// Document's own top level ends the match rather than reaching a same-named key under another parent.
+const WIKILINK_ALLOWANCE_REG_EXP = /^obsidian-dev-utils:[^\S\n]*\n(?:[^\S\n]+.*\n)*?[^\S\n]+demo-vault-validation:[^\S\n]*\n(?:[^\S\n]+.*\n)*?[^\S\n]+allow-wikilinks:(?<reason>.*)$/m;
 const WIKILINK_REG_EXP = /\[\[[^\]]+]]/;
 
 function buildMembers(methods: string[], properties: string[]): InterfaceMembers {
@@ -762,6 +808,12 @@ function hasIntroProse(content: string): boolean {
   return false;
 }
 
+// Whether the note navigates with an Obsidian `[[wikilink]]`. Fenced blocks and inline code are sample
+// Text rather than navigation, so they are removed before looking.
+function hasWikilink(content: string): boolean {
+  return getLinesOutsideFences(content).some((line) => WIKILINK_REG_EXP.test(stripInlineCode(line)));
+}
+
 function isNonPublicMember(modifiers: string): boolean {
   return /\b(?:private|protected)\b/.test(modifiers);
 }
@@ -778,6 +830,22 @@ function parseMembers(keyword: string, body: string): InterfaceMembers {
       return buildMembers(extractMethodNames(body), extractPropertyNames(body));
     }
   }
+}
+
+// Reads the note's `obsidian-dev-utils > demo-vault-validation > allow-wikilinks` declaration: the stated
+// Reason, `''` when the key is present with nothing after it, or `null` when the note declares nothing.
+// Read with a regular expression rather than a YAML parser: it is one known key path, and every plugin that
+// Installs this package would otherwise carry a YAML dependency for it.
+function readWikilinkAllowanceReason(content: string): null | string {
+  const frontmatter = FRONTMATTER_REG_EXP.exec(content)?.[0];
+  if (frontmatter === undefined) {
+    return null;
+  }
+  const reason = WIKILINK_ALLOWANCE_REG_EXP.exec(frontmatter)?.groups?.['reason'];
+  if (reason === undefined) {
+    return null;
+  }
+  return reason.trim().replace(/^(?<quote>["'])(?<value>[\s\S]*)\k<quote>$/, '$<value>');
 }
 
 function stripFrontmatter(content: string): string {

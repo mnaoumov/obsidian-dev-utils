@@ -106,7 +106,17 @@ const repo = await getCommunityPluginRepo('my-plugin'); // e.g. 'owner/my-plugin
 The demo vault is not a set of samples sitting beside the documentation — it **is** the documentation, read either in Obsidian or straight from GitHub by someone who has not installed the plugin. That second reader is what the following rules protect, and the [coverage suite](#keeping-the-vault-honest) enforces them:
 
 1. **Every note opens with an `# H1`, then 1-3 sentences of what it does and why you would want it** — in behavior terms, not technical nouns. A note that goes from its title straight to a button teaches nothing to a reader who does not already know the feature.
-2. **Links between notes are `[Text](<./NN Name.md>)`, never `[[wikilinks]]`.** A wikilink renders as literal brackets on GitHub and leads nowhere. Angle brackets keep a name with spaces intact. Wikilinks shown *inside* a code fence are sample text and are fine.
+2. **Links between notes are `[Text](<./NN Name.md>)`, never `[[wikilinks]]`.** A wikilink renders as literal brackets on GitHub and leads nowhere. Angle brackets keep a name with spaces intact. Wikilinks shown *inside* a code fence or inline code are sample text and are fine. A note whose **subject** is the wikilink — a frontmatter property value that exists to contrast with a Markdown link, a fixture that must keep the wikilink a command is meant to leave alone, a link the reader is meant to click while it still resolves to nothing — declares that in its own frontmatter, with the reason:
+
+   ```yaml
+   ---
+   obsidian-dev-utils:
+     demo-vault-validation:
+       allow-wikilinks: Excalidraw stores its embeds as wikilinks, and this note shows they survive rewriting.
+   ---
+   ```
+
+   It exempts that note from the wikilink rule only; the rest still apply. A declaration with no reason, or on a note that no longer has a wikilink, fails the suite — an exemption nobody can justify, or that nothing needs any more, is drift.
 3. **No `[Docs](…)` link line.** The note is the docs; a line pointing elsewhere for the real explanation is the shape this convention exists to remove.
 4. **`00 Start.md` is a getting-started narrative**, not a bare list — what the vault is, one concrete first success, then an index grouped under headings with a one-line description per entry. Every other note must be reachable from it.
 5. **The first success spells out the mechanics**, because a first-time reader has never seen CodeScript Toolkit: a code button renders as a captioned rectangle, **clicking it runs the code**, the result appears below it, and the `</>` toggle beside it reveals the source. Nothing about a coloured rectangle says "button" to someone who does not already know — say it once, in the first example, instead of assuming it.
