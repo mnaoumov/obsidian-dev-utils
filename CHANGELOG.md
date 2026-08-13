@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 93.3.1
+
+- fix(markdownlint): ignore every GitHub alert label, not just note and warning
+
 ## 93.3.0
 
 - feat(demo-vault): add inline wikilink directives, shaped after ESLint's
