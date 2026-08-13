@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 94.0.0
+
+- feat(demo-vault)!: own the four app.json settings instead of asking every vault to pin them
+
 ## 93.3.1
 
 - fix(markdownlint): ignore every GitHub alert label, not just note and warning
