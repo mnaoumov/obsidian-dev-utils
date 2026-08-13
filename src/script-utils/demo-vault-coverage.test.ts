@@ -14,6 +14,7 @@ import {
   it
 } from 'vitest';
 
+import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import {
   dirname,
   join,
@@ -69,6 +70,12 @@ export function* gen(): Generator<number> {
 
 const START_NOTE_PATH = '00 Start.md';
 
+const APP_JSON_RELATIVE_PATH = join(
+  ObsidianPluginRepoPaths.DemoVault,
+  ObsidianPluginRepoPaths.DotObsidian,
+  ObsidianPluginRepoPaths.AppJson
+);
+
 const START_NOTE = `# Start
 
 Try the buttons below to see what the plugin does before you install it anywhere.
@@ -123,6 +130,8 @@ function populateFixture(root: string): void {
   writeFixtureFile(root, 'docs/feature-one.md', '# Feature one\n');
   writeFixtureFile(root, 'docs/feature-two.md', '# Feature two\n');
   writeFixtureFile(root, 'docs/usage.md', '# Usage\n');
+  // A demo vault may configure itself; what it may not do is commit the settings this package injects.
+  writeFixtureFile(root, APP_JSON_RELATIVE_PATH, '{ "attachmentFolderPath": "_assets" }\n');
   writeFixtureFile(root, `demo-vault/${START_NOTE_PATH}`, START_NOTE);
   writeFixtureFile(root, 'demo-vault/Surface.md', SURFACE_NOTE);
   writeFixtureFile(root, 'demo-vault/nested/More.md', MORE_NOTE);
@@ -248,6 +257,23 @@ describe('DemoVaultCoverageChecker', () => {
     const members = checker.getInterfaceMembers({ interfaceName: 'DemoSettings', sourcePath: 'src/settings.ts' });
     expect(checker.findStaleReferences({ receiver: 'demoSettings', validMembers: members.all }))
       .toEqual(['removedAction']);
+  });
+
+  it('accepts a committed app.json that sets none of the injected settings', () => {
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findCommittedAppJsonSettings()).toEqual([]);
+  });
+
+  it('accepts a vault that commits no app.json at all', () => {
+    rmSync(join(root, APP_JSON_RELATIVE_PATH));
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findCommittedAppJsonSettings()).toEqual([]);
+  });
+
+  it('reports the injected settings a committed app.json sets', () => {
+    writeFixtureFile(root, APP_JSON_RELATIVE_PATH, '{ "defaultViewMode": "preview", "useMarkdownLinks": true }\n');
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    expect(checker.findCommittedAppJsonSettings()).toEqual(['defaultViewMode', 'useMarkdownLinks']);
   });
 
   it('throws when the interface cannot be found', () => {

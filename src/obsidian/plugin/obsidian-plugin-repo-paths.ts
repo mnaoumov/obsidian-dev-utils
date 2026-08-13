@@ -49,6 +49,11 @@ export enum ObsidianPluginRepoPaths {
   AnyTsx = '*.tsx',
 
   /**
+  Obsidian application settings file within an Obsidian configuration folder.
+   */
+  AppJson = 'app.json',
+
+  /**
   Changelog file.
    */
   ChangelogMd = 'CHANGELOG.md',

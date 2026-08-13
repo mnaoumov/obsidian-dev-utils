@@ -12,30 +12,39 @@ import { EMPTY } from '../string.ts';
 import { archivePluginDemoVault } from './demo-vault.ts';
 
 const {
+  mockAddFile,
   mockAddLocalFolder,
   mockCp,
   mockExistsSync,
+  mockGetEntry,
   mockGetRootFolder,
   mockMkdir,
   mockReadFile,
   mockResolvePathFromRootSafe,
+  mockUpdateFile,
   mockWriteFile,
   mockWriteZipPromise
 } = vi.hoisted(() => ({
+  mockAddFile: vi.fn(),
   mockAddLocalFolder: vi.fn(),
   mockCp: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockGetEntry: vi.fn<(entryName: string) => null | object>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
   mockMkdir: vi.fn(),
-  mockReadFile: vi.fn(),
+  mockReadFile: vi.fn<(path: string, encoding: string) => Promise<string>>(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockUpdateFile: vi.fn(),
   mockWriteFile: vi.fn(),
   mockWriteZipPromise: vi.fn()
 }));
 
 vi.mock('adm-zip', () => ({
   default: class {
+    public addFile = mockAddFile;
     public addLocalFolder = mockAddLocalFolder;
+    public getEntry = mockGetEntry;
+    public updateFile = mockUpdateFile;
     public writeZipPromise = mockWriteZipPromise;
   }
 }));
@@ -64,13 +73,33 @@ vi.mock('./root.ts', () => ({
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
 }));
 
+const MANIFEST_PATH = '/root/manifest.json';
+const APP_JSON_PATH = `/root/demo-vault/${EMPTY}.obsidian/app.json`;
+const APP_JSON_ENTRY_NAME = `${EMPTY}.obsidian/app.json`;
+const INJECTED_APP_JSON_SETTINGS = {
+  defaultViewMode: 'preview',
+  livePreview: false,
+  newLinkFormat: 'relative',
+  useMarkdownLinks: true
+};
+
+// The vault's own settings, carrying none of the ones this package injects — the state the demo-vault
+// Coverage suite enforces on every consumer.
+let committedAppJson: string;
+
+function readInjectedAppJson(content: Buffer): unknown {
+  return JSON.parse(content.toString('utf-8'));
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
+  committedAppJson = JSON.stringify({ attachmentFolderPath: '_assets' });
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockGetRootFolder.mockReturnValue('/package');
   mockCp.mockResolvedValue(undefined);
+  mockGetEntry.mockReturnValue({});
   mockMkdir.mockResolvedValue(undefined);
-  mockReadFile.mockResolvedValue(JSON.stringify({ id: 'my-plugin', version: '1.2.3' }));
+  mockReadFile.mockImplementation((path: string) => Promise.resolve(path === MANIFEST_PATH ? JSON.stringify({ id: 'my-plugin', version: '1.2.3' }) : committedAppJson));
   mockWriteFile.mockResolvedValue(undefined);
   mockWriteZipPromise.mockResolvedValue(true);
 });
@@ -118,6 +147,57 @@ describe('archivePluginDemoVault', () => {
       `${JSON.stringify({ demoedPluginId: 'my-plugin' }, null, 2)}\n`,
       'utf-8'
     );
+  });
+
+  // The settings belong to this package, so the archived copy carries them whatever the vault committed —
+  // But the repo folder is never written to: `updateVersion` archives after it has already pushed, and
+  // `app.json` is a tracked file, so an in-place write would leave a change behind a published release.
+  it('should write the owned app.json settings into the archived vault, not into the repo folder', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await archivePluginDemoVault();
+
+    expect(mockUpdateFile).toHaveBeenCalledTimes(1);
+    const [entry, content] = mockUpdateFile.mock.calls[0] as [object, Buffer];
+    expect(entry).toEqual({});
+    expect(readInjectedAppJson(content)).toEqual({
+      ...INJECTED_APP_JSON_SETTINGS,
+      attachmentFolderPath: '_assets'
+    });
+    expect(mockAddFile).not.toHaveBeenCalled();
+    expect(mockWriteFile).toHaveBeenCalledTimes(1);
+    expect(mockWriteFile).not.toHaveBeenCalledWith(APP_JSON_PATH, expect.anything(), expect.anything());
+  });
+
+  it('should add an app.json to a vault that commits none', async () => {
+    mockExistsSync.mockImplementation((path: string) => path !== APP_JSON_PATH);
+    mockGetEntry.mockReturnValue(null);
+    await archivePluginDemoVault();
+
+    expect(mockReadFile).not.toHaveBeenCalledWith(APP_JSON_PATH, 'utf-8');
+    expect(mockUpdateFile).not.toHaveBeenCalled();
+    expect(mockAddFile).toHaveBeenCalledTimes(1);
+    const [entryName, content] = mockAddFile.mock.calls[0] as [string, Buffer];
+    expect(entryName).toBe(APP_JSON_ENTRY_NAME);
+    expect(readInjectedAppJson(content)).toEqual(INJECTED_APP_JSON_SETTINGS);
+  });
+
+  // Reaching here means the coverage suite that already forbids this was skipped, so the committed value
+  // Is refused rather than silently discarded.
+  it('should throw when the committed app.json sets an owned setting', async () => {
+    mockExistsSync.mockReturnValue(true);
+    committedAppJson = JSON.stringify({ livePreview: true, newLinkFormat: 'absolute' });
+
+    await expect(archivePluginDemoVault()).rejects.toThrow(
+      `${APP_JSON_PATH} sets livePreview, newLinkFormat, which obsidian-dev-utils owns and writes into the archived demo vault. Settings it owns must not be committed.`
+    );
+    expect(mockWriteZipPromise).not.toHaveBeenCalled();
+  });
+
+  it('should throw when the committed app.json cannot be parsed', async () => {
+    mockExistsSync.mockReturnValue(true);
+    committedAppJson = '{ not json';
+
+    await expect(archivePluginDemoVault()).rejects.toThrow(`Could not parse ${APP_JSON_PATH}.`);
   });
 
   it('should throw when the obsidian-dev-utils package folder cannot be resolved', async () => {
