@@ -35,8 +35,8 @@ import { CodeHighlighterComponent } from 'obsidian-dev-utils/obsidian/components
 const codeHighlighter = new CodeHighlighterComponent(containerEl);
 codeHighlighter
   .setLanguage('javascript')
-  .setValue(`function foo() {
-  console.log('bar');
+  .setValue(`function alpha() {
+  console.log('bravo');
 }`);
 
 // or
@@ -47,8 +47,8 @@ new SettingEx()
   .addCodeHighlighter((codeHighlighter) => {
     codeHighlighter
       .setLanguage('javascript')
-      .setValue(`function foo() {
-  console.log('bar');
+      .setValue(`function alpha() {
+  console.log('bravo');
 }`);
   });
 ```
@@ -101,7 +101,7 @@ new SettingEx()
 import { EmailComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/email-component';
 
 const email = new EmailComponent(containerEl);
-email.setValue('foo@bar.com');
+email.setValue('alpha@bravo.com');
 
 // or
 
@@ -109,7 +109,7 @@ import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addEmail((email) => {
-    email.setValue('foo@bar.com');
+    email.setValue('alpha@bravo.com');
   });
 ```
 
@@ -201,7 +201,7 @@ new SettingEx()
 import { MultipleEmailComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/multiple-email-component';
 
 const multipleEmail = new MultipleEmailComponent(containerEl);
-multipleEmail.setValue(['foo@bar.com', 'baz@qux.com']);
+multipleEmail.setValue(['alpha@bravo.com', 'charlie@delta.com']);
 
 // or
 
@@ -209,7 +209,7 @@ import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMultipleEmail((multipleEmail) => {
-    multipleEmail.setValue(['foo@bar.com', 'baz@qux.com']);
+    multipleEmail.setValue(['alpha@bravo.com', 'charlie@delta.com']);
   });
 ```
 
@@ -241,7 +241,7 @@ new SettingEx()
 import { MultipleTextComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/multiple-text-component';
 
 const multipleText = new MultipleTextComponent(containerEl);
-multipleText.setValue(['foo', 'bar']);
+multipleText.setValue(['alpha', 'bravo']);
 
 // or
 
@@ -249,7 +249,7 @@ import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addMultipleText((multipleText) => {
-    multipleText.setValue(['foo', 'bar']);
+    multipleText.setValue(['alpha', 'bravo']);
   });
 ```
 
@@ -281,7 +281,7 @@ new SettingEx()
 import { PasswordComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/password-component';
 
 const password = new PasswordComponent(containerEl);
-password.setValue('foo');
+password.setValue('alpha');
 
 // or
 
@@ -289,7 +289,7 @@ import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addPassword((password) => {
-    password.setValue('foo');
+    password.setValue('alpha');
   });
 ```
 
@@ -367,29 +367,29 @@ new SettingEx()
 import { TypedDropdownComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/typed-dropdown-component';
 
 export class TypedItem {
-  public static readonly Bar = new TypedItem('Bar');
+  public static readonly Bravo = new TypedItem('Bravo');
   public static readonly Baz = new TypedItem('Baz');
-  public static readonly Foo = new TypedItem('Foo');
+  public static readonly Alpha = new TypedItem('Alpha');
 
   public constructor(public readonly name: string) {}
 }
 
 const typedDropdown = new TypedDropdownComponent(containerEl);
 const map = new Map<TypedItem, string>();
-map.set(TypedItem.Foo, 'Display Foo');
-map.set(TypedItem.Bar, 'Display Bar');
+map.set(TypedItem.Alpha, 'Display Alpha');
+map.set(TypedItem.Bravo, 'Display Bravo');
 map.set(TypedItem.Baz, 'Display Baz');
 typedDropdown.addOptions(map);
-typedDropdown.setValue(TypedItem.Bar);
+typedDropdown.setValue(TypedItem.Bravo);
 
 // or
 
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 export class TypedItem {
-  public static readonly Bar = new TypedItem('Bar');
+  public static readonly Bravo = new TypedItem('Bravo');
   public static readonly Baz = new TypedItem('Baz');
-  public static readonly Foo = new TypedItem('Foo');
+  public static readonly Alpha = new TypedItem('Alpha');
 
   public constructor(public readonly name: string) {}
 }
@@ -397,11 +397,11 @@ export class TypedItem {
 new SettingEx()
   .addTypedDropdown((typedDropdown) => {
     const map = new Map<TypedItem, string>();
-    map.set(TypedItem.Foo, 'Display Foo');
-    map.set(TypedItem.Bar, 'Display Bar');
+    map.set(TypedItem.Alpha, 'Display Alpha');
+    map.set(TypedItem.Bravo, 'Display Bravo');
     map.set(TypedItem.Baz, 'Display Baz');
     typedDropdown.addOptions(map);
-    typedDropdown.setValue(TypedItem.Bar);
+    typedDropdown.setValue(TypedItem.Bravo);
   });
 ```
 
@@ -413,29 +413,29 @@ new SettingEx()
 import { TypedMultipleDropdownComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/typed-multiple-dropdown-component';
 
 export class TypedItem {
-  public static readonly Bar = new TypedItem('Bar');
+  public static readonly Bravo = new TypedItem('Bravo');
   public static readonly Baz = new TypedItem('Baz');
-  public static readonly Foo = new TypedItem('Foo');
+  public static readonly Alpha = new TypedItem('Alpha');
 
   public constructor(public readonly name: string) {}
 }
 
 const typedMultipleDropdown = new TypedMultipleDropdownComponent(containerEl);
 const map = new Map<TypedItem, string>();
-map.set(TypedItem.Foo, 'Display Foo');
-map.set(TypedItem.Bar, 'Display Bar');
+map.set(TypedItem.Alpha, 'Display Alpha');
+map.set(TypedItem.Bravo, 'Display Bravo');
 map.set(TypedItem.Baz, 'Display Baz');
 typedMultipleDropdown.addOptions(map);
-typedMultipleDropdown.setValue([TypedItem.Bar, TypedItem.Baz]);
+typedMultipleDropdown.setValue([TypedItem.Bravo, TypedItem.Baz]);
 
 // or
 
 import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 export class TypedItem {
-  public static readonly Bar = new TypedItem('Bar');
+  public static readonly Bravo = new TypedItem('Bravo');
   public static readonly Baz = new TypedItem('Baz');
-  public static readonly Foo = new TypedItem('Foo');
+  public static readonly Alpha = new TypedItem('Alpha');
 
   public constructor(public readonly name: string) {}
 }
@@ -443,11 +443,11 @@ export class TypedItem {
 new SettingEx()
   .addTypedMultipleDropdown((typedMultipleDropdown) => {
     const map = new Map<TypedItem, string>();
-    map.set(TypedItem.Foo, 'Display Foo');
-    map.set(TypedItem.Bar, 'Display Bar');
+    map.set(TypedItem.Alpha, 'Display Alpha');
+    map.set(TypedItem.Bravo, 'Display Bravo');
     map.set(TypedItem.Baz, 'Display Baz');
     typedMultipleDropdown.addOptions(map);
-    typedMultipleDropdown.setValue([TypedItem.Bar, TypedItem.Baz]);
+    typedMultipleDropdown.setValue([TypedItem.Bravo, TypedItem.Baz]);
   });
 ```
 
@@ -459,7 +459,7 @@ new SettingEx()
 import { UrlComponent } from 'obsidian-dev-utils/obsidian/components/setting-component/url-component';
 
 const url = new UrlComponent(containerEl);
-url.setValue('https://foo.com/');
+url.setValue('https://alpha.com/');
 
 // or
 
@@ -467,7 +467,7 @@ import { SettingEx } from 'obsidian-dev-utils/obsidian/setting-ex';
 
 new SettingEx()
   .addUrl((dateTime) => {
-    url.setValue('https://foo.com/');
+    url.setValue('https://alpha.com/');
   });
 ```
 

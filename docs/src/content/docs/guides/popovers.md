@@ -74,7 +74,7 @@ const chosen = await showPopover<string>({
   anchor: createAnchorFromSelection(activeDocument),
   build({ confirm, contentEl }) {
     const dropdown = new DropdownComponent(contentEl);
-    dropdown.addOptions({ bar: 'Bar', foo: 'Foo' });
+    dropdown.addOptions({ bravo: 'Bravo', alpha: 'Alpha' });
     dropdown.onChange(confirm);
     return () => dropdown.getValue();
   }
