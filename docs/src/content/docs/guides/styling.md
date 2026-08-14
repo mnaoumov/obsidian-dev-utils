@@ -28,10 +28,10 @@ Default styles are defined in [main.scss](https://github.com/mnaoumov/obsidian-d
 
 The list of css classes is defined in [css-class.ts](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/css-class.ts).
 
-You can override those styles in your plugin's `styles.css` file via adding your plugin's id to the selector, e.g. for plugin `foo-bar`:
+You can override those styles in your plugin's `styles.css` file via adding your plugin's id to the selector, e.g. for plugin `alpha-bravo`:
 
 ```css
-.foo-bar.obsidian-dev-utils :invalid {
+.alpha-bravo.obsidian-dev-utils :invalid {
   box-shadow: 0 0 0 2px var(--text-error);
 }
 ```

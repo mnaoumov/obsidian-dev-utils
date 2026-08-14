@@ -6,7 +6,7 @@
 
 ## Commands
 
-All npm scripts follow the `"foo:bar": "jiti scripts/foo-bar.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
+All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` pattern. Each script imports its command function directly from the relevant tool module (e.g., `linters/eslint.ts`, `formatters/dprint.ts`).
 
 - `npm test` — run tests (Vitest)
 - `npm run test:coverage` — run tests with v8 coverage
@@ -205,7 +205,7 @@ export function myFunction(param: Type): ReturnType {
   name was reported twice; it was deleted once measured. `unicorn/filename-case` arrives enabled with
   the `recommended` preset (nothing here turns it off) and defaults to `case: 'kebabCase'`, and it
   already does everything the in-house rule did: `multipleFileExtensions` (default on) makes it judge
-  only the part before the FIRST dot, so `foo.obsidian.integration.test.ts` reduces to `foo` exactly
+  only the part before the FIRST dot, so `alpha.obsidian.integration.test.ts` reduces to `alpha` exactly
   as before. It additionally checks DIRECTORY names, which the in-house rule never did. The only
   divergence is that unicorn exempts a name starting with `$` (`filename.startsWith('$')`) — no such
   file exists here. The in-house rule's other claimed edge, stripping a leading dot so

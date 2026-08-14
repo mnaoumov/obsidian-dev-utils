@@ -13,13 +13,13 @@ description: The `PluginBase` family - notices, settings components, settings ta
 > Most of the functionality in this section is defined in `public/protected` methods, which is very easy to accidentally override incorrectly.
 >
 > ```ts
-> class Foo extends Bar {
->   public override baz(): void {
->     super.baz(); // you should always add this call unless you have a very good reason not to.
+> class Alpha extends Bravo {
+>   public override charlie(): void {
+>     super.charlie(); // you should always add this call unless you have a very good reason not to.
 >   }
 >
->   public override async qux(): Promise<void> {
->     await super.qux(); // you should always add this call unless you have a very good reason not to.
+>   public override async delta(): Promise<void> {
+>     await super.delta(); // you should always add this call unless you have a very good reason not to.
 >   }
 > }
 > ```

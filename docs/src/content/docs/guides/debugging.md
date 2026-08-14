@@ -13,12 +13,12 @@ When you enable `Verbose` mode, you will see debug messages in the console sent 
 
 By default, none of the debug messages are shown. You have to enable the debug namespace explicitly.
 
-To see debug messages for your plugin `foo-bar`, you have to enable them by running the corresponding command in the console:
+To see debug messages for your plugin `alpha-bravo`, you have to enable them by running the corresponding command in the console:
 
 ```javascript
-window.DEBUG.enable('foo-bar'); // show all debug messages from the `foo-bar` plugin
-window.DEBUG.enable('foo-bar:obsidian-dev-utils:*'); // show all debug messages from the `obsidian-dev-utils` library within the `foo-bar` plugin
-window.DEBUG.enable('foo-bar:*'); // show all debug messages from the `foo-bar` plugin and its submodules
+window.DEBUG.enable('alpha-bravo'); // show all debug messages from the `alpha-bravo` plugin
+window.DEBUG.enable('alpha-bravo:obsidian-dev-utils:*'); // show all debug messages from the `obsidian-dev-utils` library within the `alpha-bravo` plugin
+window.DEBUG.enable('alpha-bravo:*'); // show all debug messages from the `alpha-bravo` plugin and its submodules
 window.DEBUG.enable('*:obsidian-dev-utils:*'); // show all debug messages for the `obsidian-dev-utils` library within any plugin
 window.DEBUG.enable('*'); // show all debug messages
 ```
@@ -34,7 +34,7 @@ See full documentation of [`window.DEBUG`](https://github.com/mnaoumov/obsidian-
 In order to write your debug messages from your plugin, use:
 
 ```js
-consoleDebugComponent.debug('foo', 'bar', 'baz');
+consoleDebugComponent.debug('alpha', 'bravo', 'charlie');
 ```
 
 ## Advanced Debug Mode
