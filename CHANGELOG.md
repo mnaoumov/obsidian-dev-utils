@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 94.3.0
+
+- feat(demo-vault-coverage): let a settings-less plugin register the suite
+- docs: use NATO placeholders instead of foo, bar and baz
+
 ## 94.2.0
 
 - feat(markdown): teach renderInternalLink the folder-note concept
