@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 94.2.0
+
+- feat(markdown): teach renderInternalLink the folder-note concept
+
 ## 94.1.0
 
 - feat(prompt): follow the vault spellcheck setting
