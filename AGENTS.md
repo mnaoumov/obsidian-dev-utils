@@ -335,7 +335,8 @@ export function myFunction(param: Type): ReturnType {
 ### L9. Another plugin's API: hand-declared narrow types + a runtime guard, never a build-time dependency
 
 - A plugin whose surface this library integrates with (today: Notebook Navigator, see
-  `src/obsidian/notebook-navigator.ts`) is reached through `app.plugins.getPlugin(<id>)` and typed by
+  `src/obsidian/notebook-navigator.ts`; and `folder-notes`, whose folder-note settings
+  `src/obsidian/folder-note.ts` reads) is reached through `app.plugins.getPlugin(<id>)` and typed by
   **interfaces declared here**, narrowed to the members actually called. Do NOT add the other plugin as
   a dependency — most ship a `.d.ts` for download rather than an npm package, and depending on one
   turns an optional integration into a build requirement. This mirrors the vendored
