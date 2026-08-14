@@ -197,3 +197,11 @@ authoring: {
 ```
 
 `docs` stays optional and is only for a plugin that still keeps a separate `docs/` folder: it checks that every feature doc has a demo note linking to it. A plugin whose vault is its documentation has no use for it.
+
+`rootFolder` is the only required member. A plugin with no settings and no public API to reflect — nothing to put in `configInterfaces`, `interfaces` or `nonTrivialGuard` — registers the suite with that alone:
+
+```ts
+registerDemoVaultCoverageSuite({ rootFolder: getRootFolder() ?? process.cwd() });
+```
+
+It then runs every authoring check, plus a guard that the vault is not empty — with no notes to read, the authoring checks would pass by having nothing to look at. Omit the reflection specs, never the suite: the authoring rules apply to every vault, whatever the plugin exposes.
