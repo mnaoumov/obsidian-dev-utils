@@ -198,6 +198,11 @@ registerDemoVaultCoverageSuite({
   rootFolder: suiteRoot
 });
 
+// A fourth registration passes nothing but `rootFolder` — the settings-less shape, where there is no
+// Config interface, no public API interface and nothing for the non-trivial guard to reflect. The
+// Authoring checks must still run, which is why every other member is optional.
+registerDemoVaultCoverageSuite({ rootFolder: suiteRoot });
+
 afterAll(() => {
   rmSync(suiteRoot, { force: true, recursive: true });
 });

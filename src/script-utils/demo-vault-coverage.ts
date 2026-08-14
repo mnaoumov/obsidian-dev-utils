@@ -20,6 +20,12 @@
  * broken for real readers. `authoring` only tunes them (which note is the start, which notes sit outside
  * the learning path); it cannot switch them off.
  *
+ * Only `rootFolder` is required, so a plugin with no settings and no public API to reflect registers the
+ * suite with that alone and still gets every authoring check — the checks have nothing to do with what the
+ * plugin exposes. Each reflection spec (`configInterfaces`, `interfaces`, `nonTrivialGuard`) adds the checks
+ * it describes when supplied. The vault is guarded against being empty either way: with no notes to read,
+ * every authoring check would pass by having nothing to look at.
+ *
  * The one exception is a note whose SUBJECT is the wikilink — an embed spelling the reader is being taught
  * to type, a frontmatter property value that exists to contrast with a Markdown link, a fixture that must
  * keep the wikilink a command is supposed to leave alone, a link the reader clicks while it still resolves
@@ -378,9 +384,10 @@ export interface RegisterDemoVaultCoverageSuiteParams {
   readonly authoring?: DemoVaultAuthoringSpec;
 
   /**
-   * The config interfaces whose options must each be demonstrated by their bare name.
+   * The config interfaces whose options must each be demonstrated by their bare name, or `undefined` when the
+   * plugin has no settings.
    */
-  readonly configInterfaces: DemoVaultConfigInterfaceCoverageSpec[];
+  readonly configInterfaces?: DemoVaultConfigInterfaceCoverageSpec[];
 
   /**
    * The feature-doc linking check, or `undefined` when the plugin ships no `docs/` folder.
@@ -394,14 +401,16 @@ export interface RegisterDemoVaultCoverageSuiteParams {
   readonly functionModules?: DemoVaultFunctionsCoverageSpec[];
 
   /**
-   * The interfaces whose members must each be demonstrated (and referenced without drift).
+   * The interfaces whose members must each be demonstrated (and referenced without drift), or `undefined` when
+   * the plugin exposes no public API surface to reflect.
    */
-  readonly interfaces: DemoVaultInterfaceCoverageSpec[];
+  readonly interfaces?: DemoVaultInterfaceCoverageSpec[];
 
   /**
-   * The guard that keeps the reflected surface non-trivial.
+   * The guard that keeps the reflected surface non-trivial, or `undefined` when there is no reflected surface
+   * to guard. The vault is checked for being non-empty either way.
    */
-  readonly nonTrivialGuard: DemoVaultNonTrivialGuardSpec;
+  readonly nonTrivialGuard?: DemoVaultNonTrivialGuardSpec;
 
   /**
    * The absolute path of the plugin repo root. Callers typically pass `getRootFolder() ?? process.cwd()`.
@@ -750,7 +759,7 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
   const startNote = params.authoring?.startNote ?? DEFAULT_START_NOTE;
 
   describe('demo-vault coverage', () => {
-    for (const spec of params.interfaces) {
+    for (const spec of params.interfaces ?? []) {
       it(`demonstrates every ${spec.interfaceName} ${spec.kind}`, () => {
         const members = checker.getInterfaceMembers(spec);
         const demonstrated = members[spec.kind];
@@ -764,7 +773,7 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
       });
     }
 
-    for (const spec of params.configInterfaces) {
+    for (const spec of params.configInterfaces ?? []) {
       it(`demonstrates every ${spec.interfaceName} option`, () => {
         const members = checker.getInterfaceMembers(spec);
         expect(members.properties.length).toBeGreaterThan(0);
@@ -816,12 +825,21 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
       expect(checker.findCommittedAppJsonSettings()).toEqual([]);
     });
 
-    it('keeps the reflected surface non-trivial', () => {
-      const guard = params.nonTrivialGuard;
-      const members = checker.getInterfaceMembers(guard);
-      expect(members.all).toContain(guard.expectMember);
-      expect(checker.collectDemoNoteRelativePaths()).toContain(guard.expectDemoNote);
+    // With no notes to read, every authoring check above passes by having nothing to look at, so a vault
+    // That stopped being found would go on reporting itself clean. This is the half of the non-trivial
+    // Guard that still applies when the plugin exposes nothing to reflect.
+    it('reads a non-empty demo vault', () => {
+      expect(checker.collectDemoNoteRelativePaths().length).toBeGreaterThan(0);
     });
+
+    const guard = params.nonTrivialGuard;
+    if (guard) {
+      it('keeps the reflected surface non-trivial', () => {
+        const members = checker.getInterfaceMembers(guard);
+        expect(members.all).toContain(guard.expectMember);
+        expect(checker.collectDemoNoteRelativePaths()).toContain(guard.expectDemoNote);
+      });
+    }
   });
 }
 
