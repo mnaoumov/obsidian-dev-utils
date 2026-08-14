@@ -12,7 +12,12 @@ import type {
   EmbedRegistryEmbedByExtensionRecord
 } from '@obsidian-typings/obsidian-public-latest';
 import type { ExtractConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
-import type { App } from 'obsidian';
+import type {
+  App,
+  TAbstractFile,
+  TFile,
+  TFolder
+} from 'obsidian';
 
 import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
@@ -23,8 +28,12 @@ import {
 } from 'obsidian';
 
 import type { PathOrAbstractFile } from './file-system.ts';
+import type { FolderNoteLocation } from './folder-note.ts';
 
-import { invokeAsyncSafely } from '../async.ts';
+import {
+  invokeAsyncSafely,
+  sleep
+} from '../async.ts';
 import {
   getZIndex,
   waitUntilConnected
@@ -35,8 +44,13 @@ import { getDomEventsHandlersConstructor } from './constructors/get-dom-events-h
 import {
   getAbstractFileOrNull,
   getPath,
+  isFile,
   isFolder
 } from './file-system.ts';
+import {
+  resolveFolderNote,
+  resolveFolderNoteConfig
+} from './folder-note.ts';
 
 type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
 
@@ -46,6 +60,13 @@ Module-level mutable state, held in one object so each mutation names it explici
 interface ModuleState {
   domEventsHandlersConstructor: DomEventsHandlersConstructor | null;
 }
+
+/**
+ * How long to let Obsidian settle before opening a folder note. The click can land right after an
+ * operation that created, rewrote and trashed notes, and opening into the middle of Obsidian's own
+ * reaction to that shows the note before its metadata has caught up.
+ */
+const DELAY_BEFORE_OPEN_IN_MILLISECONDS = 200;
 
 const moduleState: ModuleState = {
   domEventsHandlersConstructor: null
@@ -154,6 +175,43 @@ export interface RenderExternalLinkParams {
 }
 
 /**
+ * The folder-note setup {@link renderInternalLink} resolves a folder link's note with — everything
+ * {@link resolveFolderNoteConfig} takes except the app, which the link already carries.
+ */
+export interface RenderInternalLinkFolderNoteOptions {
+  /**
+   * The extensions a folder note may carry. See {@link ResolveFolderNoteConfigParams.extensions}.
+   *
+   * @default `['md']`
+   */
+  readonly extensions?: readonly string[];
+
+  /**
+   * Whether the folder note is hidden in the file explorer. See
+   * {@link ResolveFolderNoteConfigParams.isHidden}.
+   *
+   * @default `false`
+   */
+  readonly isHidden?: boolean;
+
+  /**
+   * Where the note sits relative to its folder. See {@link ResolveFolderNoteConfigParams.location}.
+   *
+   * @default {@link FolderNoteLocation.Auto}
+   */
+  readonly location?: FolderNoteLocation;
+
+  /**
+   * Names the folder note of a folder. See {@link ResolveFolderNoteConfigParams.resolveName}.
+   *
+   * @param folder - The folder whose note is being named.
+   * @returns The note's name.
+   * @default `(folder) => folder.name`
+   */
+  resolveName?(this: void, folder: TFolder): string;
+}
+
+/**
  * Parameters for {@link renderInternalLink}.
  */
 export interface RenderInternalLinkParams {
@@ -168,9 +226,32 @@ export interface RenderInternalLinkParams {
   readonly displayText?: string;
 
   /**
+   * How to answer which note is a folder's folder note, when the link names a FOLDER.
+   *
+   * Omitted means {@link FolderNoteLocation.Auto}: the installed `folder-notes` plugin's live
+   * configuration, or a note named after its folder, inside it, when that plugin is absent. Pass
+   * `{ location: FolderNoteLocation.None }` for a folder link that must only ever reveal.
+   *
+   * @default `{}`
+   */
+  readonly folderNote?: RenderInternalLinkFolderNoteOptions;
+
+  /**
    * The path or abstract file to render the internal link for.
    */
   readonly pathOrAbstractFile: PathOrAbstractFile;
+
+  /**
+   * Whether clicking a FILE link also highlights that file in the file explorer, on top of the open
+   * Obsidian's own link handler performs.
+   *
+   * Opt-in, unlike the folder branch: a folder link has always revealed (revealing was all its click
+   * could mean), whereas a file link has always only opened — so turning this on by default would change
+   * what every existing caller's link does.
+   *
+   * @default `false`
+   */
+  readonly shouldRevealFile?: boolean;
 }
 
 interface FixedZIndexDomEventsHandlersInfoConstructorParams {
@@ -347,13 +428,29 @@ export async function renderExternalLink(params: RenderExternalLinkParams): Prom
 /**
  * Renders an internal link.
  *
+ * What clicking the rendered link does depends on what it names:
+ *
+ * - A FILE is opened by Obsidian's own link handler — and, with
+ *   {@link RenderInternalLinkParams.shouldRevealFile}, additionally revealed in the file explorer.
+ * - A FOLDER cannot be opened, so its FOLDER NOTE is — the note whose properties describe the folder
+ *   itself, resolved through {@link resolveFolderNote} (by default from the installed `folder-notes`
+ *   plugin's live configuration). The reveal lands on that note, unless the note is hidden in the
+ *   explorer, in which case it lands on the folder — revealing a hidden note would highlight nothing.
+ *   A folder with NO folder note reveals the folder and opens nothing: nothing here ever creates a note.
+ *
+ * Everything is resolved at CLICK time rather than at render time, deliberately: a rendered link outlives
+ * the operation that produced it, so a destination renamed in between still reveals the right item, and a
+ * folder note written after the link appeared is still found.
+ *
  * @param params - The parameters for rendering the internal link.
  * @returns The HTMLAnchorElement containing the rendered internal link.
  */
 export async function renderInternalLink(params: RenderInternalLinkParams): Promise<HTMLAnchorElement> {
   const {
     app,
-    pathOrAbstractFile
+    folderNote,
+    pathOrAbstractFile,
+    shouldRevealFile
   } = params;
   const abstractFile = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
   const path = getPath(app, pathOrAbstractFile);
@@ -362,7 +459,14 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
     return createEl('a', { text: displayText }, (aEl) => {
       aEl.addEventListener('click', ($event) => {
         $event.preventDefault();
-        app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
+        const config = resolveFolderNoteConfig({ app, ...folderNote });
+        const folderNoteFile = resolveFolderNote({ app, config, folder: abstractFile });
+        revealInFileExplorer(app, folderNoteFile && !config.isHidden ? folderNoteFile : abstractFile);
+        if (folderNoteFile) {
+          // A DOM listener cannot await, and the open has to outlive this handler: it settles first, for
+          // The click that lands right as an operation finishes writing.
+          invokeAsyncSafely(() => openAfterSettling(app, folderNoteFile));
+        }
       });
     });
   }
@@ -378,7 +482,40 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
     app,
     el: aEl
   });
+  if (shouldRevealFile ?? false) {
+    aEl.addEventListener('click', () => {
+      // Layered ON TOP of Obsidian's own handler — no `preventDefault`, so the open is untouched. A path
+      // That resolves to nothing gets no reveal: an unresolved link has nothing to reveal, and clicking
+      // One CREATES the note it names.
+      const file = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
+      if (isFile(file)) {
+        revealInFileExplorer(app, file);
+      }
+    });
+  }
   return aEl;
+}
+
+/**
+ * Opens a file in the active leaf, once the vault has settled.
+ *
+ * @param app - The Obsidian app instance.
+ * @param file - The file to open.
+ * @returns A {@link Promise} that resolves once the file is open.
+ */
+async function openAfterSettling(app: App, file: TFile): Promise<void> {
+  await sleep({ milliseconds: DELAY_BEFORE_OPEN_IN_MILLISECONDS });
+  await app.workspace.getLeaf().openFile(file, { active: true });
+}
+
+/**
+ * Highlights a file or folder in the file explorer, when that core plugin is enabled.
+ *
+ * @param app - The Obsidian app instance.
+ * @param abstractFile - The file or folder to reveal.
+ */
+function revealInFileExplorer(app: App, abstractFile: TAbstractFile): void {
+  app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
 }
 
 /* v8 ignore stop */
