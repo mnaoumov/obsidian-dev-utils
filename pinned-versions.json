@@ -35,6 +35,13 @@
       "check": "node -e \"process.stdout.write(require('typescript-eslint/package.json').peerDependencies.typescript)\"",
       "expect": ">=4.8.4 <6.1.0"
     },
+    "@puppeteer/browsers": {
+      "section": "overrides",
+      "why": "Clears GHSA-jmr9-qjv8-65gv (extract-zip unvalidated symlink path traversal, 7 high advisories) and nothing else. extract-zip is vulnerable at every published version, so there is no patched version to override it to, and the direct dependency cannot be bumped either: obsidian-integration-testing is already latest and pins webdriverio exactly, and even the newest webdriverio still reaches extract-zip through @wdio/utils -> @puppeteer/browsers ^2.x. @puppeteer/browsers@3 replaced extract-zip with modern-tar, so forcing 3.x on @wdio/utils - the only consumer left on 2.x - removes the subtree entirely. It also dedupes: puppeteer-core already brings 3.2.0 into this tree, so the override collapses two copies into one rather than adding anything. The major bump is safe because @wdio/utils imports only install, canDownload, resolveBuildId, detectBrowserPlatform, Browser, ChromeReleaseChannel, computeExecutablePath and the InstallOptions type, all still exported by 3.x with compatible signatures, and both packages are ESM-only. NEVER take the `npm audit fix --force` remedy here: it downgrades obsidian-integration-testing from 10.x to 1.1.2 (rule G100).",
+      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/@wdio/utils/package.json','utf8')).dependencies['@puppeteer/browsers'])\"",
+      "expect": "^2.2.0",
+      "manualCheck": "The check reads @wdio/utils's own declared range, not a version, because that range is what makes the override necessary. When it moves to ^3 or later, @wdio/utils no longer pulls extract-zip on its own and this override can be deleted along with this entry. A `require('@wdio/utils/package.json')` check would not work - its exports map does not expose package.json - hence the readFileSync form, which resolves relative to the package root the sweep runs from."
+    },
     "js-yaml": {
       "section": "overrides",
       "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x, which is the `v4-legacy` dist-tag: 4.3.1 backports the CVE-2026-59870 fix (GHSA-5p4m-2wfm-xmqj, quadratic CPU in !!omap resolution) that the vulnerable 4.0.0-4.3.0 range lacks, so this override is also what clears that advisory for astro, starlight, cosmiconfig, markdownlint-cli2 and @istanbuljs/load-nyc-config at once.",

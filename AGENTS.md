@@ -608,7 +608,8 @@ retired by anyone but its author — do not add one.**
 | `@codemirror/view` | `6.38.6` | Same — `obsidian` peer-pins it exactly. | Same as above. |
 | `@lezer/common` | `1.5.2` | Must match the copy Obsidian bundles at runtime — our copy is types-only, so a newer pin declares API the runtime lacks. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. Verified against Obsidian `1.13.4` — see below. | A newer `@lezer/common` publishes — `npm view @lezer/common version` — which is the cue to re-derive what Obsidian bundles, not proof the pin is stale. `obsidian-api` still declares no `@lezer/*`, so there is no upstream manifest to ask. |
 | `typescript` | `6.0.3` | `@typescript-eslint` peer-requires `>=4.8.4 <6.1.0`, and its parser crashes on the TypeScript 7 (tsgo) native API, so type-aware ESLint cannot run on 7. TypeScript 7 was adopted in `db7c417c` (compile on 7, tooling on 6) and rolled back in `846d6c6a`; `3234c7d0` then made the pin exact so a dependency sweep could not drift it back. `6.0.3` is also the newest stable `6.x`. | `@typescript-eslint`'s peer range admits `7.x` — `node -e "console.log(require('typescript-eslint/package.json').peerDependencies.typescript)"` |
-| `js-yaml` (override) | `4.3.0` | `js-yaml@5` breaks `npm run docs:build` — see the next section. | `astro` accepts `js-yaml@5` — `node -e "console.log(require('astro/package.json').dependencies['js-yaml'])"` |
+| `js-yaml` (override) | `4.3.1` | `js-yaml@5` breaks `npm run docs:build` — see the next section. | `astro` accepts `js-yaml@5` — `node -e "console.log(require('astro/package.json').dependencies['js-yaml'])"` |
+| `@puppeteer/browsers` (override) | `^3.2.0` | Not a pin but an advisory-driven override, tracked here for the same reason: it clears `extract-zip` GHSA-jmr9-qjv8-65gv, which nothing else in a sweep can reach. See "Security overrides (`extract-zip`)" below. | `@wdio/utils` asks for `@puppeteer/browsers@^3` itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
 
 **The CodeMirror pins are already due — the condition has fired upstream but not yet on npm.**
 `obsidian-api` master ([`package.json`](https://github.com/obsidianmd/obsidian-api/blob/master/package.json))
@@ -658,7 +659,7 @@ Not pinned, despite what this table used to claim: `@types/node` is `^26.1.2`. T
 `25.0.3` "matches the Node.js version used in the project"; it has since moved to a caret range and
 tracks the `26.x` line.
 
-### The `js-yaml` override is pinned to `4.3.0` — do NOT take it to `5.x`
+### The `js-yaml` override is pinned to `4.3.1` — do NOT take it to `5.x`
 
 `overrides.js-yaml` is an **exact pin**, deliberately: `update-npm-deps.ps1` upgrades every
 caret-ranged override it finds and has no exclusion list, so `^4.x` got carried to `^5.2.2` twice. An
@@ -672,8 +673,11 @@ exact pin is the only self-enforcing form — the script skips exact versions by
 The pin is a compromise, not a consensus: `astro` asks for `^4.3.0` (raised from `^4.1.1` in
 `astro@7.1.6`), `@astrojs/starlight` and `@astrojs/internal-helpers` for `^4.1.1`, `cosmiconfig` for
 `^4.1.0` and `@istanbuljs/load-nyc-config` for `^3`, but `markdownlint-cli2` pins `5.2.2` **exactly**
-and is force-downgraded to `4.3.0` by this override. That downgrade is verified green through
-`lint:md`. `4.3.0` is the newest `4.x`, so Astro's bump changed nothing but the recorded `expect` in
+and is force-downgraded to `4.3.1` by this override. That downgrade is verified green through
+`lint:md`. `4.3.1` is the newest `4.x` — it is what the `v4-legacy` dist-tag points at, and it backports
+the CVE-2026-59870 fix (GHSA-5p4m-2wfm-xmqj) that `4.0.0`–`4.3.0` lack, so this override is also what
+clears that advisory for `astro`, `starlight`, `cosmiconfig`, `markdownlint-cli2` and
+`@istanbuljs/load-nyc-config` at once. Astro's bump changed nothing but the recorded `expect` in
 [`pinned-versions.json`](pinned-versions.json). When Astro moves to `js-yaml@5`, the pin can be
 retired — until then, check `lint:md` as well as `docs:build` on any bump.
 
@@ -724,6 +728,36 @@ published `brace-expansion@1.1.17` flows in through a plain `npm update`, at whi
 `eslint-plugin-import` →
 `import-x` alias is separate and does **not** retire with it — that one lasts as long as
 `eslint-plugin-import` needs `minimatch@^3`.
+
+### Security overrides (`extract-zip` GHSA-jmr9-qjv8-65gv)
+
+`extract-zip` is vulnerable at **every** published version (the advisory range is `*`, and `2.0.1` is the
+last release), so unlike `brace-expansion` there is no patched version to override it *to*. It reaches
+this tree through one chain only:
+
+```text
+obsidian-integration-testing → webdriverio → @wdio/utils → @puppeteer/browsers@2.x → extract-zip
+```
+
+Upgrading the direct dependency does not help either: `obsidian-integration-testing` is already at its
+latest and pins `webdriverio` **exactly**, and even the newest `webdriverio` still declares
+`@puppeteer/browsers: ^2.2.0` under `@wdio/utils`. So the fix goes one level up the chain —
+`@puppeteer/browsers` → `^3.2.0`, whose `3.x` line replaced `extract-zip` with `modern-tar`. That drops
+the vulnerable subtree entirely (43 packages) and **dedupes**: `puppeteer-core` already pulls `3.2.0`
+into this tree, so the override collapses two copies into one rather than adding anything.
+
+The major bump is safe for `@wdio/utils`, the only consumer left on `2.x`. It imports exactly `install`,
+`canDownload`, `resolveBuildId`, `detectBrowserPlatform`, `Browser`, `ChromeReleaseChannel`,
+`computeExecutablePath` and the `InstallOptions` type — all still exported by `3.x` — and its
+`downloadProgressCallback: (downloaded, total) => …` call sites still satisfy `3.x`'s widened
+`'default' | fn` type. Both packages are ESM-only, so there is no CJS/ESM break. `3.2.0` wants
+node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already imposed that.
+
+**Never take `npm audit fix --force` here.** Its remedy for this advisory is
+`obsidian-integration-testing@1.1.2` — a downgrade across nine majors from the `10.x` in use (rule G100).
+
+**Remove this override** when `@wdio/utils` moves to `@puppeteer/browsers@^3` on its own, which is what
+[`pinned-versions.json`](pinned-versions.json) checks on every sweep.
 
 ### Unused dependencies (`.depcheckrc.json`)
 
