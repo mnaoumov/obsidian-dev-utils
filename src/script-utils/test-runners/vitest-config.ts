@@ -37,6 +37,7 @@ const PERFORMANCE_TIMEOUT_IN_MILLISECONDS = 600_000;
 
 const ANDROID_TEST_FILES = 'src/**/*.android.integration.test.ts';
 const CROSS_PLATFORM_TEST_FILES = 'src/**/*.cross-platform.integration.test.ts';
+const DECLARATION_FILES = 'src/**/*.d.ts';
 const DESKTOP_PERFORMANCE_TEST_FILES = 'src/**/*.desktop-performance.integration.test.ts';
 const DESKTOP_TEST_FILES = 'src/**/*.desktop.integration.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
@@ -114,8 +115,13 @@ export class ObsidianPluginVitestConfigContext {
 
   /**
    * The coverage `exclude` globs. Push onto it to drop more files from the coverage report.
+   *
+   * Declaration files are excluded by default because the coverage `include` below is `src/**\/*.ts`,
+   * which a `.d.ts` matches. A declaration file emits no runtime code, so it reports 0% and no test can
+   * ever raise it — a plugin that grows one under `src/` silently loses its 100% gate, and the usual
+   * remedy of an inline `v8 ignore` comment does not apply to a type-only file.
    */
-  public readonly coverageExclude: string[] = [UNIT_TEST_FILES];
+  public readonly coverageExclude: string[] = [UNIT_TEST_FILES, DECLARATION_FILES];
 
   /**
    * The `integration-tests:desktop` project, running the desktop-only and cross-platform suites against a
