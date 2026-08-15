@@ -113,7 +113,9 @@ describe('defineObsidianPluginVitestConfig', () => {
     const config = defineObsidianPluginVitestConfig();
     expect(config.test).toMatchObject({
       coverage: {
-        exclude: ['src/**/*.test.ts'],
+        // Declaration files are excluded by default: `include` below matches them, and they can never
+        // Be covered.
+        exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
         include: ['src/**/*.ts'],
         provider: 'v8',
         reporter: ['text', 'lcov', 'html'],
@@ -130,7 +132,7 @@ describe('defineObsidianPluginVitestConfig', () => {
     const config = defineObsidianPluginVitestConfig({
       editContext(context) {
         context.desktopPerformance.globalSetup = ['./scripts/vitest-global-setup-performance.ts'];
-        context.coverageExclude.push('src/**/*.d.ts');
+        context.coverageExclude.push('src/**/*.generated.ts');
       }
     });
     expect(config.test?.projects?.[3]).toMatchObject({
@@ -139,7 +141,7 @@ describe('defineObsidianPluginVitestConfig', () => {
       }
     });
     expect(config.test?.coverage).toMatchObject({
-      exclude: ['src/**/*.test.ts', 'src/**/*.d.ts']
+      exclude: ['src/**/*.test.ts', 'src/**/*.d.ts', 'src/**/*.generated.ts']
     });
   });
 
