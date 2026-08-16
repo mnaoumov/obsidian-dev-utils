@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 94.4.0
+
+- docs(demo-vault): document the button-clicking suite and make it the fleet mechanism
+- chore: update libs
+- feat(script-utils): add a demo-vault button-clicking suite
+- fix(vitest-config): exclude declaration files from coverage by default
+- test(modals): assert the modal header X dismisses alert, confirm and prompt
+- chore: update libs
+
 ## 94.3.0
 
 - feat(demo-vault-coverage): let a settings-less plugin register the suite
