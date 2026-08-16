@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 94.4.1
+
+- fix(demo-vault-buttons): walk the note instead of pinning the preview to the bottom
+
 ## 94.4.0
 
 - docs(demo-vault): document the button-clicking suite and make it the fleet mechanism
