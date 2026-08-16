@@ -176,6 +176,8 @@ export const config = defineObsidianPluginVitestConfig({
 
 Everything the context exposes is live — the arrays and objects it hands you are the ones the final configuration is built from.
 
+That `integration-tests:demo-vault` project is written out in full above to show what `customProjects` can declare; a project that drives a real desktop Obsidian is shorter written as `...context.desktop` plus its own `globalSetup` and `include`. See [Clicking every button](/obsidian-dev-utils/guides/demo-vault/#clicking-every-button) for the whole three-part wiring — the project, its global setup, and the suite that uses them — and note that declaring a project here is only half the job: `scripts/test-integration.ts` has to list it too, or nothing ever runs it.
+
 ## Integration tests: reaching library helpers inside `evalInObsidian`
 
 [`obsidian-integration-testing`](https://github.com/mnaoumov/obsidian-integration-testing) runs a closure inside a real Obsidian, and injects a `lib` bag into it. `Obsidian Dev Utils` can merge its **entire** helper surface into that bag, so a serialized closure — which cannot use imports — reaches any helper as `lib.<helper>`:

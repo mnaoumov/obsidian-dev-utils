@@ -205,3 +205,122 @@ registerDemoVaultCoverageSuite({ rootFolder: getRootFolder() ?? process.cwd() })
 ```
 
 It then runs every authoring check, plus a guard that the vault is not empty — with no notes to read, the authoring checks would pass by having nothing to look at. Omit the reflection specs, never the suite: the authoring rules apply to every vault, whatever the plugin exposes.
+
+## Clicking every button
+
+The coverage suite reads the notes; it never runs them. A button whose `require('/demoSetup.ts')` path is wrong, or that calls an API which has since changed shape, fails **at click time** — `lint:md` reads the markdown, the coverage suite checks the conventions, and neither executes anything, so nothing in a normal gate run ever finds out. `registerDemoVaultButtonSuite` (from `obsidian-dev-utils/script-utils/demo-vault-buttons`) is the gate that does: it opens every note of the in-repo `demo-vault/` in a real Obsidian, clicks each `code-button`, and fails with the note, the caption and CodeScript Toolkit's own captured error for any button that reports an error or never reports at all.
+
+It takes three pieces of wiring, and all three are needed — the suite alone, without the other two, collects nothing or passes vacuously.
+
+### The suite
+
+`src/demo-vault-buttons.demo-vault.integration.test.ts` is the whole per-repo cost:
+
+```ts
+import { registerDemoVaultButtonSuite } from 'obsidian-dev-utils/script-utils/demo-vault-buttons';
+
+registerDemoVaultButtonSuite();
+```
+
+It registers one `it` per note that declares at least one button, and runs one `evalInObsidian` per button — a single closure is one CDP `Runtime.evaluate`, which the harness caps at 30 seconds, so a note with a dozen buttons batched into one closure would time out as a whole instead of naming the button that actually failed.
+
+Every option has a default worth knowing before overriding it:
+
+```ts
+registerDemoVaultButtonSuite({
+  // How long a clicked button may take to report a result. Defaults to 15000.
+  buttonResultTimeoutInMilliseconds: 15_000,
+  // Notes to skip. Defaults to `['README.md']` — the repo-facing page GitHub renders, not a walkthrough.
+  // `00 Start.md` is deliberately NOT excluded: landing notes carry buttons of their own.
+  excludedNotes: ['README.md'],
+  // The repo root holding `demo-vault/`. Defaults to the resolved repo root, falling back to `process.cwd()`.
+  rootFolder: getRootFolder() ?? process.cwd(),
+  // How long a note's preview and its buttons may take to mount. Defaults to 20000.
+  settleTimeoutInMilliseconds: 20_000
+});
+```
+
+### The global setup
+
+The suite opens a temporary copy of the vault, so something has to put the vault there first — including the CodeScript Toolkit binary, without which every ```` ```code-button ```` fence stays an inert code block. That half is `buildDemoVaultPopulate` from `obsidian-integration-testing`; this package deliberately does not duplicate it. Put it in `scripts/demo-vault-global-setup.ts`:
+
+```ts
+import type { PopulateFilesParams } from 'obsidian-integration-testing';
+
+import { join } from 'node:path';
+import process from 'node:process';
+import { CODE_SCRIPT_TOOLKIT_PLUGIN_ID } from 'obsidian-dev-utils/script-utils/demo-vault-buttons';
+import { getRootFolder } from 'obsidian-dev-utils/script-utils/root';
+import { buildDemoVaultPopulate } from 'obsidian-integration-testing';
+import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+
+const CODE_SCRIPT_TOOLKIT_SETTINGS = {
+  invocableScriptsFolder: 'Invocables',
+  modulesRoot: '_assets/CodeScriptToolkit',
+  shouldHandleProtocolUrls: true,
+  startupScriptPath: 'startup.ts'
+};
+
+function populate(): PopulateFilesParams {
+  return buildDemoVaultPopulate({
+    demoVaultPath: join(getRootFolder() ?? process.cwd(), 'demo-vault'),
+    injectPlugins: [{
+      data: CODE_SCRIPT_TOOLKIT_SETTINGS,
+      pluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID
+    }]
+  });
+}
+
+const { setup, teardown } = createSetup({
+  enableCommunityPlugins: [CODE_SCRIPT_TOOLKIT_PLUGIN_ID],
+  populate
+});
+
+export {
+  setup,
+  teardown
+};
+```
+
+`CODE_SCRIPT_TOOLKIT_PLUGIN_ID` is exported by the same module so no repo has to hard-code `fix-require-modules` — CodeScript Toolkit still carries its original manifest id, which no longer matches its name and cannot be changed now that it is published.
+
+The binary is **copied out of your own `demo-vault/`**, where the in-vault `demo-vault-helper` installs it from the community registry the first time the vault is opened. That keeps the run hermetic — no network, nothing to rate-limit — at the price of one manual step per repo. Until it has been done, the setup fails with:
+
+```text
+Community plugin "fix-require-modules" is not installed in the demo vault (…/main.js missing).
+Open demo-vault/ in Obsidian once so demo-vault-helper installs it, then re-run.
+```
+
+Do exactly that, once; the installed copy is gitignored, so each machine that runs the suite does it for itself.
+
+### The vitest project
+
+The suite drives a real desktop Obsidian, like the desktop project, but against a populated copy of `demo-vault/` rather than an empty vault — so it needs its own `globalSetup`, and its own file suffix so the desktop project does not collect it and open it against a vault with no notes:
+
+```ts
+export const config = defineObsidianPluginVitestConfig({
+  customProjects(context: ObsidianPluginVitestConfigContext): TestProjectConfiguration[] {
+    return [
+      {
+        test: {
+          ...context.desktop,
+          globalSetup: ['./scripts/demo-vault-global-setup.ts'],
+          include: ['src/**/*.demo-vault.integration.test.ts'],
+          name: 'integration-tests:demo-vault'
+        }
+      }
+    ];
+  }
+});
+```
+
+Then add the project to `scripts/test-integration.ts` alongside the standard ones. Both halves matter: a project that is never declared matches no filter, and `vitest` fails the run with `No projects matched the filter "integration-tests:demo-vault"` — which, in a script that awaits its projects in order, also stops every project after it from running at all. A suite file whose suffix matches no declared project's `include` is collected by nothing and reports nothing, which looks exactly like passing.
+
+Run it in isolation with `npx vitest run --project integration-tests:demo-vault`.
+
+### What reading view does to the assertions
+
+Two quirks of Obsidian's reading view shape the suite, and both explain assertions that otherwise look too weak:
+
+- **It renders lazily and unmounts sections far off-screen**, so a note's last buttons never mount if the preview simply sits at the top. The suite scrolls the preview to the bottom while it waits.
+- **While it settles it can hold several elements per fence** — the same button has been observed rendered twice, so a four-button note reports six buttons with the first two captions duplicated. Buttons are therefore addressed **by caption, deduplicated**, never by index: indexing would click one button twice and miss another entirely. For the same reason the count assertion is a lower bound (at least as many distinct buttons rendered as the source declares), which still catches the failure that matters — a fence that silently stayed a plain code block.
