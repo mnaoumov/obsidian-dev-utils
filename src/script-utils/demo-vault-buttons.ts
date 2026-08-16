@@ -322,16 +322,34 @@ async function clickButton(
         return buttons().find((candidate) => candidate.textContent === caption);
       }
 
+      // Reading view mounts lazily and unmounts sections far off-screen, so NO single scroll position
+      // Holds a whole note's buttons. Advance a viewport at a time and wrap back to the top, remounting
+      // Every section in turn until the one being looked for appears. Pinning to the BOTTOM instead —
+      // What this did until 94.4.1 — only ever mounts the note's tail, so a button anywhere but at the
+      // End of its note was reported as never rendered (`status: 'timeout'`, empty output) however
+      // Healthy it was.
+      const SCROLL_BOTTOM_TOLERANCE_IN_PIXELS = 4;
+      const SCROLL_STEP_RATIO = 0.8;
+      function advanceScroll(): void {
+        const scroller = previewEl();
+        if (!scroller) {
+          return;
+        }
+        const isAtBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - SCROLL_BOTTOM_TOLERANCE_IN_PIXELS;
+        scroller.scrollTop = isAtBottom ? 0 : scroller.scrollTop + Math.floor(scroller.clientHeight * SCROLL_STEP_RATIO);
+      }
+
+      // Held from the predicate rather than re-queried after it: the walk above keeps moving the
+      // Viewport, so a button found on one poll can be unmounted again by the next.
+      let button: HTMLButtonElement | undefined;
       try {
         await waitUntil({
           intervalInMilliseconds,
           message: `code button "${caption}" never rendered`,
           predicate: (): boolean => {
-            const scroller = previewEl();
-            if (scroller) {
-              scroller.scrollTop = scroller.scrollHeight;
-            }
-            return findButton() !== undefined;
+            advanceScroll();
+            button = findButton();
+            return button !== undefined;
           },
           timeoutInMilliseconds: settleTimeoutInMilliseconds
         });
@@ -339,7 +357,6 @@ async function clickButton(
         return { caption, output: '', status: 'timeout' };
       }
 
-      const button = findButton();
       if (!button) {
         return { caption, output: '', status: 'timeout' };
       }
@@ -386,11 +403,12 @@ async function clickButton(
  * Opens a note in reading view and lists the captions of the buttons that mounted, deduplicated and in
  * document order.
  *
- * Two quirks of reading view shape this. It renders lazily and unmounts sections far off-screen, so the
- * preview is scrolled to the bottom while waiting or a note's last buttons never mount at all. And
- * while it settles it can hold SEVERAL elements per fence — the same button was observed rendered twice
- * — so the captions are deduplicated; clicking by caption then addresses each button once however many
- * copies of it the DOM is holding.
+ * Two quirks of reading view shape this. It renders lazily and unmounts sections far off-screen, so no
+ * single scroll position holds a whole note's buttons — the preview is walked top to bottom and back
+ * while waiting, and the captions seen along the way are ACCUMULATED rather than read once at the end.
+ * And while it settles it can hold SEVERAL elements per fence — the same button was observed rendered
+ * twice — so the captions are deduplicated; clicking by caption then addresses each button once however
+ * many copies of it the DOM is holding.
  *
  * @param note - The note to open.
  * @param settleTimeoutInMilliseconds - How long to wait for the buttons to mount.
@@ -405,11 +423,29 @@ async function openNoteAndListButtonCaptions(note: DemoVaultNote, settleTimeoutI
       function previewEl(): HTMLElement | null {
         return view()?.containerEl.querySelector<HTMLElement>(':scope .markdown-preview-view') ?? null;
       }
+      // Accumulated across the walk below, never read from one snapshot: with the viewport moving, any
+      // Single reading holds only the sections currently mounted.
+      const seenCaptions = new Set<string>();
       function captions(): string[] {
-        const rendered = [...view()?.containerEl.querySelectorAll<HTMLButtonElement>(':scope .block-language-code-button button.mod-cta') ?? []]
-          .map((button) => button.textContent)
-          .filter((caption) => caption !== '');
-        return [...new Set(rendered)];
+        for (const button of view()?.containerEl.querySelectorAll<HTMLButtonElement>(':scope .block-language-code-button button.mod-cta') ?? []) {
+          if (button.textContent !== '') {
+            seenCaptions.add(button.textContent);
+          }
+        }
+        return [...seenCaptions];
+      }
+
+      // Same walk as `clickButton`, and for the same reason: a note whose buttons are in the MIDDLE
+      // Never mounts them if the preview is pinned to the bottom.
+      const SCROLL_BOTTOM_TOLERANCE_IN_PIXELS = 4;
+      const SCROLL_STEP_RATIO = 0.8;
+      function advanceScroll(): void {
+        const scroller = previewEl();
+        if (!scroller) {
+          return;
+        }
+        const isAtBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - SCROLL_BOTTOM_TOLERANCE_IN_PIXELS;
+        scroller.scrollTop = isAtBottom ? 0 : scroller.scrollTop + Math.floor(scroller.clientHeight * SCROLL_STEP_RATIO);
       }
 
       await app.workspace.openLinkText(notePath.replace(/\.md$/, ''), '', false);
@@ -420,10 +456,7 @@ async function openNoteAndListButtonCaptions(note: DemoVaultNote, settleTimeoutI
           intervalInMilliseconds,
           message: `"${notePath}" never mounted all ${String(expectedButtonCount)} of its buttons`,
           predicate: (): boolean => {
-            const scroller = previewEl();
-            if (scroller) {
-              scroller.scrollTop = scroller.scrollHeight;
-            }
+            advanceScroll();
             return captions().length >= expectedButtonCount;
           },
           timeoutInMilliseconds
