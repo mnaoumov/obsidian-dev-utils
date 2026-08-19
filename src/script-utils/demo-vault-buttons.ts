@@ -304,6 +304,7 @@ async function clickButton(
       caption,
       intervalInMilliseconds,
       lib: { waitUntil },
+      notePath: notePathToOpen,
       obsidianModule,
       outputExcerptLength,
       settleTimeoutInMilliseconds
@@ -338,6 +339,14 @@ async function clickButton(
         const isAtBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - SCROLL_BOTTOM_TOLERANCE_IN_PIXELS;
         scroller.scrollTop = isAtBottom ? 0 : scroller.scrollTop + Math.floor(scroller.clientHeight * SCROLL_STEP_RATIO);
       }
+
+      // Re-open the note before every click instead of assuming the previous button left the workspace
+      // Where it was found. Every helper above reads the ACTIVE view, and opening a note is one of the
+      // Most ordinary things a demo button does — so the first such button would otherwise send each
+      // Later button in its note to `status: 'timeout'` with an empty output, which is the shape of a
+      // Button that never rendered rather than one that was looked for in the wrong view.
+      await app.workspace.openLinkText(notePathToOpen.replace(/\.md$/, ''), '', false);
+      await app.workspace.getLeaf(false).setViewState({ state: { file: notePathToOpen, mode: 'preview' }, type: 'markdown' });
 
       // Held from the predicate rather than re-queried after it: the walk above keeps moving the
       // Viewport, so a button found on one poll can be unmounted again by the next.
