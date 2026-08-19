@@ -348,6 +348,13 @@ Run it in isolation with `npx vitest run --project integration-tests:demo-vault`
 Two quirks of Obsidian's reading view shape the suite, and both explain assertions that otherwise look too weak:
 
 - **It renders lazily and unmounts sections far off-screen**, so no single scroll position holds a whole note's buttons: sitting at the top never mounts the last ones, and sitting at the bottom never mounts the first ones. The suite therefore **walks** the preview — a viewport at a time, wrapping back to the top — while it waits, and accumulates the captions it sees along the way. Until 94.4.1 it pinned the preview to the bottom instead, which silently reported every button that was not near the end of its note as never rendered (`status: 'timeout'` with empty output). If you see that status with an empty output, the button did not fail — the suite failed to reach it.
+- **A button that opens a note moves the active view out from under the suite.** Every lookup reads the
+  active `MarkdownView`, so before 94.4.2 the first button that navigated — an ordinary thing for a demo
+  button to do — sent every later button in that note to `status: 'timeout'` with an empty output, which
+  reads as a button that never rendered rather than one looked for in the wrong view. Since 94.4.2 the
+  note is re-opened before each click, so buttons are independent of what the ones before them did to the
+  workspace. One consequence worth designing for: a button that acts on "the current file" sees the
+  walkthrough note, not whatever a previous button opened.
 - **While it settles it can hold several elements per fence** — the same button has been observed rendered twice, so a four-button note reports six buttons with the first two captions duplicated. Buttons are therefore addressed **by caption, deduplicated**, never by index: indexing would click one button twice and miss another entirely. For the same reason the count assertion is a lower bound (at least as many distinct buttons rendered as the source declares), which still catches the failure that matters — a fence that silently stayed a plain code block.
 
 ## The vault and the rest of your tooling
