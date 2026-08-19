@@ -46,17 +46,26 @@ One consequence worth knowing: because the injection reaches only the archived c
 authoring the vault in your own Obsidian still follows *your* settings, not these. The coverage suite's
 no-wikilink check is what catches that before it ships.
 
+These four settle the **Obsidian** reader and nothing else. GitHub never reads `app.json`; it renders every
+note as HTML whatever the file says. What serves the GitHub reader is the markdown itself — Markdown links
+rather than wikilinks, an `# H1` and prose opener, no `[Docs]` line — so a vault is not GitHub-ready by
+virtue of these shipping, and no setting under `.obsidian/` can fix a GitHub-rendering problem.
+
 ### Consumer setup
 
-- Create `demo-vault/` with the curated notes and an `.obsidian/` config.
-- Commit `demo-vault/.obsidian/community-plugins.json` containing `["<plugin-id>"]` so the plugin is enabled when the demo vault is opened.
+- Create `demo-vault/` with the curated notes and an `.obsidian/` config. The config directory must be the default `.obsidian` — the tooling resolves it by name.
+- Commit `demo-vault/.obsidian/community-plugins.json` containing **both** ids: `["demo-vault-helper", "<plugin-id>"]`. Listing only the helper is a silent failure: the helper installs, configures and enables **CodeScript Toolkit only**, so the vault would bootstrap and run `startup.ts` while the plugin the vault exists to demonstrate stays disabled.
 - Do not commit the four [`app.json` settings above](#the-appjson-settings-obsidian-dev-utils-owns) — they are injected at release time.
-- Gitignore the installed build so nothing built lands in git:
+- Commit no plugin `data.json` for any plugin: the helper writes CodeScript Toolkit's config at runtime, before enabling it.
+- Gitignore the injected plugins and the workspace state that rewrites itself on every session:
 
   ```text
-  demo-vault/.obsidian/plugins/<plugin-id>/
+  demo-vault/.obsidian/plugins/*
   demo-vault/.obsidian/workspace*.json
+  demo-vault/.obsidian/hotkeys.json
   ```
+
+  If your repo-root `.gitignore` drops `node_modules`, re-include anything the vault vendors deliberately — for example `!demo-vault/_assets/**/node_modules/**`.
 
 ### The `demo-vault-helper` bootstrap plugin
 
@@ -70,6 +79,22 @@ Because `obsidian-dev-utils` owns and injects it, a demo vault commits **nothing
 - `demo-vault/_assets/CodeScriptToolkit/startup.ts` exporting `invoke(app)` — where the vault opens its start note (e.g. `00 Start`) and does any plugin-specific setup.
 
 No CodeScript Toolkit config (`data.json`) is committed — the helper writes it at runtime.
+
+The settings it writes put CodeScript Toolkit's module root at `_assets/CodeScriptToolkit`, its invocable scripts in `Invocables`, and its startup script at `startup.ts`. Three consequences for what the vault commits:
+
+- **`startup.ts` must `export` an `invoke` function**, not run at top level. CodeScript Toolkit requires the module and calls `startupScript.invoke(app)`, so a direct-execution script that leans on a top-level global `app` throws `TypeError: this.startupScript.invoke is not a function` the moment the vault loads. An optional `export async function cleanup(app) {}` is called on unload. Use `invoke` to open the start note and do live-safe setup (binding a demo hotkey, say); anything that has to be in place *before* the plugin loads is written by the helper, not here.
+- **Put shared button code in `_assets/CodeScriptToolkit/demoSetup.ts`** so each note's `code-button` stays a one-liner — `require('/demoSetup.ts').installAndEnable(app, '<id>')` — instead of a block copy-pasted across notes. Third-party prerequisites install through `installCommunityPlugin` / `enableCommunityPlugin`; never commit someone else's plugin binary.
+- **Commit no `Invocables/` placeholder.** The helper creates the folder at runtime, so an empty directory or a `.gitkeep` in git is noise that has to be maintained.
+
+### Archiving without a release
+
+`npm run build` only bundles — it does not inject either plugin or write the zip. To prove the whole mechanism locally, call the archiver directly from the plugin root after a build:
+
+```shell
+node --input-type=module -e "import { archivePluginDemoVault } from 'obsidian-dev-utils/script-utils/demo-vault'; console.log(await archivePluginDemoVault());"
+```
+
+Both plugins are injected (gitignored) and the zip is written, exactly as at release time.
 
 ### `archivePluginDemoVault`
 
@@ -324,3 +349,12 @@ Two quirks of Obsidian's reading view shape the suite, and both explain assertio
 
 - **It renders lazily and unmounts sections far off-screen**, so no single scroll position holds a whole note's buttons: sitting at the top never mounts the last ones, and sitting at the bottom never mounts the first ones. The suite therefore **walks** the preview — a viewport at a time, wrapping back to the top — while it waits, and accumulates the captions it sees along the way. Until 94.4.1 it pinned the preview to the bottom instead, which silently reported every button that was not near the end of its note as never rendered (`status: 'timeout'` with empty output). If you see that status with an empty output, the button did not fail — the suite failed to reach it.
 - **While it settles it can hold several elements per fence** — the same button has been observed rendered twice, so a four-button note reports six buttons with the first two captions duplicated. Buttons are therefore addressed **by caption, deduplicated**, never by index: indexing would click one button twice and miss another entirely. For the same reason the count assertion is a lower bound (at least as many distinct buttons rendered as the source declares), which still catches the failure that matters — a fence that silently stayed a plain code block.
+
+## The vault and the rest of your tooling
+
+The shared script runners have been demo-vault-aware since 87.0.2, so nothing here needs the shared scripts patched.
+
+- **markdownlint** lints the vault like the rest of your documentation — do **not** add a scoped `demo-vault/.markdownlint-cli2.jsonc`. Such a file used to be needed to switch off `MD041` (notes that opened with a `[Docs]` link instead of a heading) and `MD052` (notes navigated by wikilinks); since 92.0.0 the coverage suite forbids both outright, so the suppressions suppress nothing. Keep the file only where a note legitimately carries a wikilink outside a fence, only for `MD052`, and write the reason in it. The vault's own `README.md` is exempt from the coverage suite but not from markdownlint, so it still needs an `# H1`.
+- **cspell** — add demo-specific words (plugin ids and the like) to the repo's `cspell.json` `words`.
+- **eslint, `tsc` and dprint** should leave `demo-vault/_assets` alone: the demo scripts show unusual module and `require` styles on purpose, and a formatter that "fixes" them breaks the lesson. Exclude the vault in eslint (`ignores: ['demo-vault/**']`), keep it out of the `tsconfig` `include`, and add `demo-vault` to `excludes` in the project's `dprint.json`. The shared eslint config does not do this for you.
+- **Link checking does cover the notes.** A broken link in a demo note is a real broken link — fix it rather than excluding the vault.
