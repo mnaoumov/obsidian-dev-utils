@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 94.4.2
+
+- fix(demo-vault-buttons): re-open the note before each click
+- docs(demo-vault): document the mechanism details only the rule set held
+
 ## 94.4.1
 
 - fix(demo-vault-buttons): walk the note instead of pinning the preview to the bottom
