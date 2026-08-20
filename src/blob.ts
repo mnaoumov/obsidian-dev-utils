@@ -4,7 +4,23 @@
  * Contains utility functions for Blob objects.
  */
 
+import {
+  extractJpegMetadataSegments,
+  injectJpegMetadataSegments
+} from './jpeg-metadata.ts';
 import { assertNonNullable } from './type-guards.ts';
+
+/**
+ * Options for {@link blobToJpegArrayBuffer}.
+ */
+export interface BlobToJpegArrayBufferOptions {
+  /**
+   * Whether to carry the source image's metadata segments (EXIF, GPS, XMP, ICC profile) into the
+   * re-encoded JPEG. Only has an effect when the source is a JPEG. Defaults to `false`, which is the
+   * behavior a canvas re-encode has always had.
+   */
+  readonly shouldPreserveMetadata?: boolean | undefined;
+}
 
 /**
  * Converts a {@link Blob} object to an {@link ArrayBuffer}.
@@ -37,11 +53,20 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
 /**
  * Converts a {@link Blob} object to a JPEG ArrayBuffer with the specified quality.
  *
+ * The conversion is a canvas re-encode, which keeps only the pixels — EXIF, GPS, XMP and the ICC
+ * profile are dropped by construction. Pass {@link BlobToJpegArrayBufferOptions.shouldPreserveMetadata}
+ * to carry those segments across from the source, which works only when the source is itself a JPEG:
+ * nothing else stores them in a form that can be copied verbatim.
+ *
  * @param blob - The Blob object to convert.
  * @param jpegQuality - The quality of the JPEG image (0 to 1).
+ * @param options - Conversion options.
  * @returns A {@link Promise} that resolves to an {@link ArrayBuffer}.
  */
-export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Promise<ArrayBuffer> {
+export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number, options?: BlobToJpegArrayBufferOptions): Promise<ArrayBuffer> {
+  const sourceSegments = options?.shouldPreserveMetadata
+    ? extractJpegMetadataSegments(new Uint8Array(await blob.arrayBuffer()))
+    : [];
   const dataUrl = await blobToDataUrl(blob);
   return new Promise((resolve) => {
     const image = new Image();
@@ -70,7 +95,8 @@ export async function blobToJpegArrayBuffer(blob: Blob, jpegQuality: number): Pr
 
       const jpegDataUrl = canvas.toDataURL('image/jpeg', jpegQuality);
       const arrayBuffer = dataUrlToArrayBuffer(jpegDataUrl);
-      resolve(arrayBuffer);
+      const withMetadata = injectJpegMetadataSegments(new Uint8Array(arrayBuffer), sourceSegments);
+      resolve(withMetadata.buffer as ArrayBuffer);
     }
   });
 }
