@@ -5,7 +5,10 @@ import {
   writeFileSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import {
+  dirname,
+  join
+} from 'node:path';
 import {
   afterEach,
   beforeEach,
@@ -28,6 +31,7 @@ function button(caption: string): string {
 }
 
 function writeNote(name: string, content: string): void {
+  mkdirSync(dirname(join(demoVaultPath, name)), { recursive: true });
   writeFileSync(join(demoVaultPath, name), content, 'utf-8');
 }
 
@@ -68,6 +72,33 @@ describe('listNotesWithButtons', () => {
     writeNote('README.md', `# Readme\n\n${button('Bravo')}\n`);
 
     expect(listNotesWithButtons(demoVaultPath, new Set(['README.md'])).map((note) => note.name)).toEqual(['01 One.md']);
+  });
+
+  it('walks group folders, because a grouped vault keeps no walkthrough at its root', () => {
+    writeNote('01 Merge/02 Merge folder.md', `# Merge folder\n\n${button('Alpha')}\n`);
+    writeNote('03 Split/09 Split by headings.md', `# Split\n\n${button('Bravo')}\n\n${button('Charlie')}\n`);
+
+    expect(listNotesWithButtons(demoVaultPath, new Set())).toEqual([
+      { buttonCount: 1, name: '01 Merge/02 Merge folder.md' },
+      { buttonCount: 2, name: '03 Split/09 Split by headings.md' }
+    ]);
+  });
+
+  it('leaves fixture and asset folders alone', () => {
+    writeNote('01 One.md', `# One\n\n${button('Alpha')}\n`);
+    writeNote('Materials/01 One/Fixture.md', `# Fixture\n\n${button('Bravo')}\n`);
+    writeNote('_assets/Snippet.md', `# Snippet\n\n${button('Charlie')}\n`);
+    writeNote('.obsidian/Notes.md', `# Config\n\n${button('Delta')}\n`);
+
+    expect(listNotesWithButtons(demoVaultPath, new Set()).map((note) => note.name)).toEqual(['01 One.md']);
+  });
+
+  it('excludes a grouped note by its file name or by its path', () => {
+    writeNote('01 Merge/README.md', `# Readme\n\n${button('Alpha')}\n`);
+    writeNote('01 Merge/02 Merge folder.md', `# Merge folder\n\n${button('Bravo')}\n`);
+
+    expect(listNotesWithButtons(demoVaultPath, new Set(['README.md'])).map((note) => note.name)).toEqual(['01 Merge/02 Merge folder.md']);
+    expect(listNotesWithButtons(demoVaultPath, new Set(['01 Merge/02 Merge folder.md'])).map((note) => note.name)).toEqual(['01 Merge/README.md']);
   });
 
   it('ignores non-markdown files and sub-folders', () => {

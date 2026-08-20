@@ -247,6 +247,12 @@ import { registerDemoVaultButtonSuite } from 'obsidian-dev-utils/script-utils/de
 registerDemoVaultButtonSuite();
 ```
 
+It walks the vault including any group folders, so a vault whose walkthroughs are grouped into numbered
+folders is gated like any other — `Materials/`, `_assets/`, and any folder whose name starts with `.` or
+`_` are skipped, since they hold fixtures and config rather than walkthroughs. Before 94.5.0 only the
+vault root was read, which reported nothing at all for a fully-grouped vault and silently gated only the
+ungrouped part of a mixed one. `excludedNotes` matches either a file name or a vault-relative path.
+
 It registers one `it` per note that declares at least one button, and runs one `evalInObsidian` per button — a single closure is one CDP `Runtime.evaluate`, which the harness caps at 30 seconds, so a note with a dozen buttons batched into one closure would time out as a whole instead of naming the button that actually failed.
 
 Every option has a default worth knowing before overriding it:
