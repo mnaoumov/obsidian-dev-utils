@@ -293,4 +293,57 @@ describe('blobToJpegArrayBuffer', () => {
     const caughtError = await errorPromise;
     expect(caughtError.message).toBe('Could not get 2D context.');
   });
+
+  describe('shouldPreserveMetadata', () => {
+    const APP1_MARKER = 0xE1;
+    const EOI_MARKER = 0xD9;
+    const MARKER_PREFIX = 0xFF;
+    const SOI_MARKER = 0xD8;
+
+    /**
+     * A JPEG carrying one EXIF `APP1` and nothing else. The canvas re-encode would drop it, which is
+     * exactly what the option exists to prevent — Advanced Maps plots photos from their EXIF GPS, and
+     * that stops working once the plugin has converted them.
+     */
+    function createJpegWithExif(): Blob {
+      const EXIF_PAYLOAD = Array.from('Exif\0\0', (character) => character.codePointAt(0) ?? 0);
+      const LENGTH_SIZE = 2;
+      const length = EXIF_PAYLOAD.length + LENGTH_SIZE;
+      return new Blob([
+        new Uint8Array([
+          MARKER_PREFIX,
+          SOI_MARKER,
+          MARKER_PREFIX,
+          APP1_MARKER,
+          0x00,
+          length,
+          ...EXIF_PAYLOAD,
+          MARKER_PREFIX,
+          EOI_MARKER
+        ])
+      ], { type: 'image/jpeg' });
+    }
+
+    function findApp1(buffer: ArrayBuffer): number {
+      const bytes = new Uint8Array(buffer);
+      return bytes.findIndex((byte, index) => byte === MARKER_PREFIX && bytes[index + 1] === APP1_MARKER);
+    }
+
+    it('should carry the source EXIF into the re-encoded JPEG when asked', async () => {
+      const buffer = await blobToJpegArrayBuffer(createJpegWithExif(), JPEG_QUALITY, { shouldPreserveMetadata: true });
+      expect(findApp1(buffer)).toBeGreaterThan(-1);
+    });
+
+    it('should drop it when not asked, which is what a canvas re-encode has always done', async () => {
+      const buffer = await blobToJpegArrayBuffer(createJpegWithExif(), JPEG_QUALITY);
+      expect(findApp1(buffer)).toBe(-1);
+    });
+
+    it('should leave a non-JPEG source alone rather than fail', async () => {
+      const blob = new Blob([new Uint8Array([0x89, 0x50, 0x4E, 0x47])], { type: 'image/png' });
+      const buffer = await blobToJpegArrayBuffer(blob, JPEG_QUALITY, { shouldPreserveMetadata: true });
+      expect(buffer).toBeInstanceOf(ArrayBuffer);
+      expect(findApp1(buffer)).toBe(-1);
+    });
+  });
 });
