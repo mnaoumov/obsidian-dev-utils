@@ -158,24 +158,52 @@ export function formatFailures(noteName: string, failures: readonly DemoVaultBut
 }
 
 /**
- * Lists the demo vault's top-level notes that declare at least one `code-button`.
+ * Folders that never hold a walkthrough. `Materials/` holds the fixtures the walkthroughs act on;
+ * `_assets/` holds the demo scripts; `.obsidian/` is vault config. A folder starting with `.` or `_`
+ * is skipped on the same reasoning, without having to be listed.
+ */
+const NON_WALKTHROUGH_FOLDERS = new Set(['Materials']);
+
+/**
+ * Lists the demo vault's notes that declare at least one `code-button`, walking group folders too.
  *
- * Only the vault root is walked: `Materials/` holds fixtures the walkthroughs act on, not walkthroughs.
+ * A vault big enough to need grouping puts its walkthroughs in numbered folders — and a root-only walk
+ * finds NONE of them, which is worse than it sounds: a vault whose notes are all grouped reports zero
+ * notes, and one that is partly grouped silently gates only the ungrouped part. Fixture and asset
+ * folders are still skipped, so what is walked is walkthroughs and nothing else.
  *
  * @param demoVaultPath - The demo vault root.
- * @param excludedNotes - Note file names to skip.
- * @returns The notes, sorted by name.
+ * @param excludedNotes - Note names to skip, matched against both the file name and the path relative
+ * to the vault root.
+ * @returns The notes, sorted by path.
  */
 export function listNotesWithButtons(demoVaultPath: string, excludedNotes: ReadonlySet<string>): DemoVaultNote[] {
-  return readdirSync(demoVaultPath, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.md') && !excludedNotes.has(entry.name))
-    .map((entry) => entry.name)
-    .sort()
-    .map((name) => ({
-      buttonCount: (readFileSync(join(demoVaultPath, name), 'utf-8').match(CODE_BUTTON_FENCE_REG_EXP) ?? []).length,
-      name
-    }))
-    .filter((note) => note.buttonCount > 0);
+  const notes: DemoVaultNote[] = [];
+
+  function walk(folder: string, relativeFolder: string): void {
+    for (const entry of readdirSync(folder, { withFileTypes: true })) {
+      const relativePath = relativeFolder === '' ? entry.name : `${relativeFolder}/${entry.name}`;
+
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('.') && !entry.name.startsWith('_') && !NON_WALKTHROUGH_FOLDERS.has(entry.name)) {
+          walk(join(folder, entry.name), relativePath);
+        }
+        continue;
+      }
+
+      if (!entry.name.endsWith('.md') || excludedNotes.has(entry.name) || excludedNotes.has(relativePath)) {
+        continue;
+      }
+
+      const buttonCount = (readFileSync(join(folder, entry.name), 'utf-8').match(CODE_BUTTON_FENCE_REG_EXP) ?? []).length;
+      if (buttonCount > 0) {
+        notes.push({ buttonCount, name: relativePath });
+      }
+    }
+  }
+
+  walk(demoVaultPath, '');
+  return notes.sort((a, b) => a.name.localeCompare(b.name, 'en'));
 }
 
 /* v8 ignore start -- Every assertion below runs against a real Obsidian over CDP, driven by closures this process serializes and another executes. The testable parts are listNotesWithButtons and formatFailures, which have their own unit tests. */
