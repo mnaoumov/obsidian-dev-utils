@@ -347,6 +347,15 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
 
       this.lastSavedState = await this.cloneState(this.currentState);
 
+      // A component that knows no property names cannot normalize anything: `settingsToRawRecord()` can
+      // Only ever return `{}`, so the save below would not rewrite `data.json` -- it would empty it.
+      // `PluginBase` adds a placeholder `PluginSettingsComponentBase<object>` before `onloadImpl()` swaps
+      // In the plugin's own component, and that placeholder is exactly this case: it read every real
+      // Setting, kept none of them, and saved the difference back over the file.
+      if (this.propertyNames.length === 0) {
+        return;
+      }
+
       const newRecord = await this.settingsToRawRecord(this.currentState.inputValues);
 
       if (!isDeepEqual(newRecord, data)) {

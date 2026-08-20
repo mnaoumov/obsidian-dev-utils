@@ -526,4 +526,55 @@ describe('PluginSettingsComponentBase', () => {
 
     expect(callback).toHaveBeenCalledOnce();
   });
+
+  describe('a component that knows no properties', () => {
+    // `PluginBase` adds a placeholder `PluginSettingsComponentBase<object>` during `onload` and only
+    // Replaces it in `onloadImpl`. Its `pluginSettingsClass` is `Object`, so it has no property names --
+    // And it used to normalize `data.json` down to `{}` on load, erasing every real setting. Reported as
+    // Embed HTML #15 and CodeScript Toolkit #59.
+    function createEmptyComponent(dataHandler: MockDataHandler): PluginSettingsComponentBase<object> {
+      return new PluginSettingsComponentBase<object>({
+        dataHandler,
+        pluginEventSource: createMockPluginEventSource(),
+        pluginSettingsClass: Object
+      });
+    }
+
+    it('should not overwrite settings it cannot describe', async () => {
+      const savedSettings = {
+        defaultHeight: 'fit-content',
+        shouldShowOpenInExternalBrowserButton: false
+      };
+      const dataHandler = new MockDataHandler({ ...savedSettings });
+      const component = createEmptyComponent(dataHandler);
+
+      await component.loadWithPromises();
+
+      expect(dataHandler.saveData).not.toHaveBeenCalled();
+      expect(dataHandler.data).toStrictEqual(savedSettings);
+    });
+
+    it('should still announce the load', async () => {
+      // The placeholder has to keep firing `loadSettings`, or anything waiting on the initial load hangs.
+      const dataHandler = new MockDataHandler({ defaultHeight: 'fit-content' });
+      const component = createEmptyComponent(dataHandler);
+      await component.loadWithPromises();
+
+      const callback = vi.fn();
+      component.on('loadSettings', callback);
+
+      await component.loadFromFile(true);
+
+      expect(callback).toHaveBeenCalledOnce();
+    });
+
+    it('should leave an already-empty file alone', async () => {
+      const dataHandler = new MockDataHandler({});
+      const component = createEmptyComponent(dataHandler);
+
+      await component.loadWithPromises();
+
+      expect(dataHandler.saveData).not.toHaveBeenCalled();
+    });
+  });
 });
