@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 94.5.0
+
+- feat(demo-vault-buttons): walk group folders, not just the vault root
+
 ## 94.4.2
 
 - fix(demo-vault-buttons): re-open the note before each click
