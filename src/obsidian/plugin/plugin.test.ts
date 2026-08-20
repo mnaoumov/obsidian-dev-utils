@@ -17,11 +17,15 @@ import {
 import type { TranslationsMap } from '../i18n/i18n.ts';
 
 import { noopAsync } from '../../function.ts';
+import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { FileCommandHandler } from '../command-handlers/file-command-handler.ts';
 import { ComponentEx } from '../components/component-ex.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
+import { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
+import { PluginDataHandler } from '../data-handler.ts';
 import { initI18N } from '../i18n/i18n.ts';
+import { PluginEventSourceImpl } from './plugin-event-source.ts';
 import {
   PluginBase,
   reloadPlugin,
@@ -326,6 +330,67 @@ describe('PluginBase', () => {
     await plugin.onExternalSettingsChange();
 
     // Should not throw even without a settings component registered
+  });
+
+  it('should keep the saved settings when onloadImpl replaces the placeholder settings component', async () => {
+    // The placeholder `PluginSettingsComponentBase<object>` added during `onload` knows no property
+    // Names, so it used to load every real setting, keep none of them, and save the difference back --
+    // Leaving `data.json` as `{}`. Reported as Embed HTML #15 and CodeScript Toolkit #59; whether the
+    // Wipe survived depended on which of the two components' saves landed last, which is why it read as
+    // Intermittent.
+    const savedSettings = {
+      defaultHeight: 'fit-content',
+      shouldShowOpenInExternalBrowserButton: false
+    };
+
+    class RealPluginSettings {
+      public defaultHeight = '';
+      public shouldShowOpenInExternalBrowserButton = true;
+    }
+
+    // Subclassed rather than instantiated generically, because that is how a real plugin supplies its
+    // Settings component -- and `PluginSettingsComponentBase<RealPluginSettings>` is not assignable to
+    // The `<object>` the setter takes under `exactOptionalPropertyTypes`.
+    class RealPluginSettingsComponent extends PluginSettingsComponentBase<RealPluginSettings> {}
+
+    class SettingsPlugin extends TestPlugin {
+      public data: unknown = { ...savedSettings };
+
+      public getSettings(): RealPluginSettings {
+        return this.pluginSettingsComponent.settings as RealPluginSettings;
+      }
+
+      public override loadData(): Promise<unknown> {
+        return Promise.resolve(this.data);
+      }
+
+      public override saveData(data: unknown): Promise<void> {
+        this.data = data;
+        return noopAsync();
+      }
+
+      protected override onloadImpl(): void {
+        // `castTo` for the same reason a real plugin narrows this accessor pair: a component typed on the
+        // Plugin's own settings class is not assignable to the base's `<object>` under
+        // `exactOptionalPropertyTypes`.
+        this.pluginSettingsComponent = castTo<PluginSettingsComponentBase<object>>(
+          this.addChild(
+            new RealPluginSettingsComponent({
+              dataHandler: new PluginDataHandler(this),
+              pluginEventSource: new PluginEventSourceImpl(this),
+              pluginSettingsClass: RealPluginSettings
+            })
+          )
+        );
+      }
+    }
+
+    const plugin = new SettingsPlugin(app, manifest);
+    await plugin.onload();
+
+    expect(plugin.data).toStrictEqual(savedSettings);
+    expect(plugin.getSettings().defaultHeight).toBe('fit-content');
+    expect(plugin.getSettings().shouldShowOpenInExternalBrowserButton).toBe(false);
   });
 });
 
