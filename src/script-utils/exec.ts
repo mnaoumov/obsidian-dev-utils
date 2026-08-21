@@ -414,11 +414,6 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
 
 /**
- * Default environment variables passed to child processes.
- */
-const CHILD_ENV = buildChildEnv(process.env, process.allowedNodeEnvironmentFlags);
-
-/**
  * Parameters for {@link executeBatches}.
  */
 interface ExecuteBatchesParams {
@@ -513,6 +508,22 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
   }
 
   return results.join('\n');
+}
+
+/**
+ * Default environment variables passed to child processes, resolved at spawn time.
+ *
+ * Deliberately not a module-level constant. `.env` is loaded by `loadEnvFileIfExists` from inside
+ * `wrapCliTask`, and ESM evaluates every import before the entry module's first statement — so a
+ * snapshot taken here would always predate the load, and every spawned child would run without the
+ * repo's own `.env`. Nothing surfaced that while Vitest 3 copied the `.env` it loaded into the
+ * worker's `process.env`; Vitest 4 writes those to `import.meta.env` only, leaving this the sole
+ * path and an empty one.
+ *
+ * @returns The environment to pass to spawned child processes, reflecting `process.env` as it stands now.
+ */
+function getChildEnv(): NodeJS.ProcessEnv {
+  return buildChildEnv(process.env, process.allowedNodeEnvironmentFlags);
 }
 
 /**
@@ -617,7 +628,7 @@ function isExecArgument(part: CommandPart): part is ExecArgument {
 function spawnViaShell(params: SpawnViaShellParams): ChildProcess {
   const { command, cwd, env: extraEnv, isInteractive = false, rawArguments } = params;
   const env: NodeJS.ProcessEnv = {
-    ...CHILD_ENV,
+    ...getChildEnv(),
     ...extraEnv
   };
   const stdio: 'inherit' | 'pipe' = isInteractive ? 'inherit' : 'pipe';
