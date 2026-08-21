@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 94.6.0
+
+- fix: override deepmerge-ts to clear GHSA-ggr8-5vv4-36mx (#T557)
+- feat(attachment-unit-folder): resolve the folder an attachment must travel with
+- feat(blob): carry JPEG metadata across a canvas re-encode, behind an option
+- fix(plugin-settings-component): stop a component that knows no properties from emptying data.json
+
 ## 94.5.0
 
 - feat(demo-vault-buttons): walk group folders, not just the vault root
