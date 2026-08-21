@@ -578,6 +578,32 @@ describe('exec', () => {
     expect(spawnOptions.env?.['NODE_OPTIONS']).toContain('--localstorage-file=:memory:');
   });
 
+  it('should pass a variable set after this module was imported to the child', async () => {
+    const child = createMockChild();
+    mockSpawn.mockReturnValue(child);
+
+    // `.env` is loaded by `wrapCliTask`, which necessarily runs after every import has been
+    // Evaluated. A child environment captured at module scope would predate that and drop the
+    // Variable, leaving every spawned gate blind to the repo's own `.env`.
+    vi.stubEnv('SET_AFTER_IMPORT', 'late-value');
+    try {
+      const promise = exec('cmd', { isQuiet: true });
+
+      child.stdout.end();
+      child.stderr.end();
+      child.emit('close', 0, null);
+
+      await promise;
+
+      const firstCall = mockSpawn.mock.calls[0];
+      assertNonNullable(firstCall);
+      const spawnOptions = firstCall[2] as SpawnCallOptions;
+      expect(spawnOptions.env?.['SET_AFTER_IMPORT']).toBe('late-value');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('should merge the env option over the inherited child environment', async () => {
     const child = createMockChild();
     mockSpawn.mockReturnValue(child);
