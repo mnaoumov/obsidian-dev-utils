@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 94.6.1
+
+- chore: update libs
+- fix: resolve the child environment at spawn time, not at import
+
 ## 94.6.0
 
 - fix: override deepmerge-ts to clear GHSA-ggr8-5vv4-36mx (#T557)
