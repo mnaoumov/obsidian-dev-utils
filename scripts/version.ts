@@ -6,7 +6,6 @@ import process from 'node:process';
 
 import { join } from '../src/path.ts';
 import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { publish } from '../src/script-utils/npm-publish.ts';
 import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
@@ -22,16 +21,13 @@ const [, , ...$arguments] = process.argv;
 await wrapCliTask(async () => {
   await execFromRoot(['npm', 'run', 'build:templates']);
   const { options, versionUpdateType } = parseVersionArguments($arguments);
+  // The NPM publish is deliberately NOT run from here.
+  // It happens in `.github/workflows/publish-npm.yml`, triggered by the GitHub release this creates.
+  // That way it authenticates as a trusted publisher (OIDC), with no long-lived NPM token on this machine.
   await updateVersion(versionUpdateType, {
     ...options,
     prepareGitHubRelease
   });
-  if (!options.shouldRelease) {
-    return;
-  }
-
-  const isPreRelease = Boolean(versionUpdateType?.startsWith('pre')) || Boolean(versionUpdateType?.includes('-'));
-  await publish(isPreRelease);
 });
 
 async function prepareGitHubRelease(newVersion: string): Promise<void> {

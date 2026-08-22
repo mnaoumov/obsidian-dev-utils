@@ -162,7 +162,7 @@ import { publish } from 'obsidian-dev-utils/script-utils/npm-publish';
 
 Publishes the package to NPM. Usually not applicable for plugins.
 
-To bypass manual verification, consider setting `NPM_TOKEN` to the environment variable or in your `.env` file.
+The command carries no credentials of its own. Run it from a CI job registered as a [trusted publisher](https://docs.npmjs.com/trusted-publishers) for the package on npmjs.com: there the npm CLI exchanges the job's short-lived OIDC token for a publish grant, so no NPM token has to exist on any machine, and the published package gets provenance for free. It requires npm `11.5.1` or later. This library publishes itself that way from `.github/workflows/publish-npm.yml`, triggered by the GitHub release that [Version Management](#version-management) creates.
 
 ### Spellcheck Code
 
@@ -209,6 +209,8 @@ If you use `beta` as version update type for your Obsidian plugin, the plugin wi
 Additionally, the script fetches the latest stable Obsidian version, which is used to update the `minAppVersion` in `manifest.json` and to add a new entry to `versions.json`.
 
 For the script to be able to publish releases in your repository, you need to ensure your `GitHub` token has `Read and write permissions` in `Settings > Actions > General`.
+
+The script stops at the GitHub release — it does not publish to NPM. An NPM package publishes itself from CI instead, so the publish can authenticate as a [trusted publisher](#publish) rather than with a long-lived token; a workflow triggered by the GitHub release runs [Publish](#publish).
 
 #### Flags
 

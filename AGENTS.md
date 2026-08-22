@@ -24,6 +24,7 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run spellcheck` — spell check with cspell
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version
+- `npm run publish:npm` — publish the built package to NPM; runs in CI only (see [Releasing](#releasing))
 - `npm run docs:dev` — start the documentation site dev server (Astro)
 - `npm run docs:build` — build the documentation site to `docs/dist`, then validate its internal links, assets, and anchors offline plus its (deduplicated) external links for 404s (`scripts/docs-link-check.ts`)
 - `npm run docs:preview` — serve the built documentation site locally
@@ -821,6 +822,32 @@ Every root config template under `templates/` (`commitlint.config.ts`, `eslint.c
 `templates/scripts/*-config.ts`, which ships alongside it — so the copied templates resolve without
 hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
 examples.
+
+## Releasing
+
+A release is two stages, split across two machines on purpose:
+
+1. **Local** — `npm run version -- <patch|minor|…>` runs the checks and the build, bumps the version,
+   writes the changelog, commits, tags, pushes, and creates the **GitHub release**. It stops there; it
+   does **not** publish to NPM (`scripts/version.ts` no longer calls `publish()`).
+2. **CI** — the `release: published` event triggers `.github/workflows/publish-npm.yml`, which reinstalls,
+   rebuilds (`dist/` is gitignored, so the tarball's contents exist only after a build) and runs
+   `npm run publish:npm` → `publish()` → `npm publish --tag <latest|beta>`, with the dist-tag derived from
+   whether the `package.json` version is a pre-release.
+
+The publish authenticates with **npm trusted publishing** (OIDC), not a token: the job's `id-token: write`
+permission lets the npm CLI trade a short-lived GitHub OIDC token for a publish grant, and provenance is
+generated automatically. Consequences worth knowing before touching any of this:
+
+- **No `NPM_TOKEN` exists anywhere** — not in repo secrets, not in a local `.env`. `publish()` reads no
+  credentials, and publishing from a developer machine is simply not possible (trusted publishing works
+  only from the configured CI). A "how do I publish locally?" answer does not exist; re-run the workflow.
+- **The npmjs.com side names the workflow file** (Package settings → Trusted publisher: owner, repo,
+  workflow filename `publish-npm.yml`, case-sensitive). Renaming or moving that file breaks publishing
+  with an auth error that says nothing about the rename — update the setting in the same change.
+- Requires npm ≥ `11.5.1` and Node ≥ `22.14.0`; the version in `.nvmrc` satisfies both.
+- `workflow_dispatch` is also wired up, so a failed publish can be retried from the Actions tab without
+  cutting a new release.
 
 ## Commits
 
