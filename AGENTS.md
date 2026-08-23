@@ -435,6 +435,37 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a custom rule could flag member reads whose declaration file lives in
   `@obsidian-typings`, via `ts-declaration-location`, but not the "hot path" judgment)
 
+### L13. A listener cannot protect data from a destructive action — intercept the primitive
+
+- `RenameDeleteHandlerComponent` is otherwise purely reactive (`vault.on('delete')`, `vault.on('rename')`,
+  `metadataCache.on('deleted')`), and for a *note* deletion that is enough: the note is gone but its
+  attachments are not, so `deleteIfNotUsed` can still decide their fate afterwards. For a *folder* deletion
+  it is not — Obsidian reports the folder only once its children are already destroyed, so there is nothing
+  left to protect. The event tells you what happened, never what is about to. Whenever the thing at risk is
+  destroyed *by* the event, the hook has to be a patch on the primitive, not a listener.
+- **Patch every primitive that can perform the action, and remember they nest.** A folder deletion arrives
+  through `FileManager.trashFile` (the file-explorer Delete flow, via `promptForDeletion`) *and* through the
+  raw `Vault.delete` / `Vault.trash` a plugin may call directly — and `trashFile` itself calls down into the
+  other two. So one user action fires several patches. Guard with a **path-scoped** in-flight set, not a
+  boolean flag, or a concurrent unrelated deletion interleaving on an `await` loses its protection.
+- **Do the work through the intercepted primitive's unpatched original** (`originalMethodBound`). It keeps
+  the caller's semantics — `vault.delete` is permanent, `vault.trash` is not, and routing both through
+  `trashSafe` would silently change which one the user gets — and it makes re-entry into your own patch
+  impossible by construction rather than by bookkeeping.
+- **Scan first; when nothing is at risk, call `fallback()` and let the native action run untouched.** This is
+  what makes patching a shared primitive safe: the overwhelming majority of deletions behave exactly as they
+  did before, and only the rare one that would lose data takes your replacement path. It also dodges the
+  trap that `deleteIfNotUsed` refuses to remove a folder containing anything Obsidian does not track, which
+  would otherwise turn ordinary folder deletions into silent no-ops.
+- **A protection that cannot be overridden is a bug of its own.** `deleteIfNotUsed` keeps *any* still-
+  referenced file, so handing it a whole folder would preserve every note inside that anything else links
+  to — making a folder of linked-to notes undeletable. Obsidian's own answer is to leave a dangling link,
+  so notes are exempted via `shouldProtectIfStillUsed`. Ask what the feature makes *impossible*, not only
+  what it makes safe.
+- Prove it with a **negative control**: detach the patch and confirm the integration test goes red on every
+  primitive, and that the "deletes normally" control stays green. A protection test that passes because
+  nothing was ever at risk asserts nothing.
+
 ## Testing
 
 ### Goals
