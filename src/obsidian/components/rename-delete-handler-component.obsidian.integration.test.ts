@@ -28,6 +28,32 @@ interface AttachmentMoveResult {
 }
 
 /**
+ * The deletion primitive a folder-deletion test drives. All three are patched, and `FileManager.trashFile`
+ * itself calls down into the other two, so each has to be proven independently.
+ */
+type DeletionPrimitive = 'trashFile' | 'vaultDelete' | 'vaultTrash';
+
+/**
+ * Input of a folder-deletion test.
+ */
+interface FolderDeletionInput {
+  readonly deletionPrimitive: DeletionPrimitive;
+  readonly [key: string]: unknown;
+}
+
+/**
+ * Result of a folder-deletion test.
+ */
+interface FolderDeletionResult {
+  readonly hasAttachmentFolder: boolean;
+  readonly hasNoticeForSharedAttachment: boolean;
+  readonly hasSharedAttachment: boolean;
+  readonly hasSourceFolder: boolean;
+  readonly hasSourceNote: boolean;
+  readonly hasUnsharedAttachment: boolean;
+}
+
+/**
  * Result of a test asserting that Obsidian's own post-rename link update rewrote a link.
  */
 interface NativeLinkUpdateResult {
@@ -411,6 +437,195 @@ describe('rename-delete-handler', () => {
       });
 
       expect(result.referencingNoteContent).toContain('renamed-note');
+    });
+  });
+
+  describe('folder deletion does not destroy a still-referenced attachment (T558)', () => {
+    it.each<DeletionPrimitive>(['trashFile', 'vaultDelete', 'vaultTrash'])(
+      'should keep an attachment referenced from outside the deleted folder — via %s',
+      async (deletionPrimitive) => {
+        const result = await evalInObsidian<FolderDeletionInput, FolderDeletionResult>({
+          async callback({ app, deletionPrimitive: primitive, lib: { AbortSignalComponent, getBacklinksForFileSafe, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+            const PLUGIN_ID = 'rdh-folder-delete-test';
+            const SRC_FOLDER = 'rdh-folder-delete-src';
+            const OTHER_FOLDER = 'rdh-folder-delete-other';
+            const ATTACHMENT_FOLDER = `${SRC_FOLDER}/attachments`;
+            const SRC_NOTE = `${SRC_FOLDER}/note.md`;
+            const OTHER_NOTE = `${OTHER_FOLDER}/note.md`;
+            const SHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/shared.png`;
+            const UNSHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/unshared.png`;
+            const EXPECTED_SHARED_BACKLINK_COUNT = 2;
+            const ATTACHMENT_BYTE_LENGTH = 8;
+            const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+            const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+            const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Folder Delete Test' });
+            const handlerComponent = new RenameDeleteHandlerComponent({
+              abortSignalComponent,
+              app,
+              pluginId: PLUGIN_ID,
+              pluginNoticeComponent,
+              resourceLockComponent: null,
+              settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+                isNote: (path: string): boolean => path.endsWith('.md'),
+                shouldHandleDeletions: true
+              })
+            });
+            handlerComponent.load();
+
+            try {
+              await app.vault.createFolder(ATTACHMENT_FOLDER);
+              await app.vault.createFolder(OTHER_FOLDER);
+              await app.vault.createBinary(SHARED_ATTACHMENT, new ArrayBuffer(ATTACHMENT_BYTE_LENGTH));
+              await app.vault.createBinary(UNSHARED_ATTACHMENT, new ArrayBuffer(ATTACHMENT_BYTE_LENGTH));
+              await app.vault.create(SRC_NOTE, `![[${SHARED_ATTACHMENT}]]\n![[${UNSHARED_ATTACHMENT}]]\n`);
+              await app.vault.create(OTHER_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+
+              // The protection decides from backlinks, so both references have to be indexed before the folder goes.
+              await waitUntil({
+                message: 'both references to the shared attachment indexed by the metadata cache',
+                predicate: async () => {
+                  const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: SHARED_ATTACHMENT });
+                  return backlinks.count() === EXPECTED_SHARED_BACKLINK_COUNT;
+                },
+                timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+              });
+
+              const srcFolder = app.vault.getFolderByPath(SRC_FOLDER);
+              if (!srcFolder) {
+                throw new Error(`${SRC_FOLDER} not found`);
+              }
+
+              switch (primitive) {
+                case 'trashFile': {
+                  await app.fileManager.trashFile(srcFolder);
+                  break;
+                }
+                case 'vaultDelete': {
+                  // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- The point of this case is that the raw primitive is protected too.
+                  await app.vault.delete(srcFolder, true);
+                  break;
+                }
+                case 'vaultTrash': {
+                  // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- The point of this case is that the raw primitive is protected too.
+                  await app.vault.trash(srcFolder, false);
+                  break;
+                }
+                default: {
+                  throw new Error(`Unknown deletion primitive: ${String(primitive)}`);
+                }
+              }
+
+              const noticeTexts = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
+                .map((noticeContentEl) => noticeContentEl.textContent);
+
+              return {
+                hasAttachmentFolder: app.vault.getAbstractFileByPath(ATTACHMENT_FOLDER) !== null,
+                hasNoticeForSharedAttachment: noticeTexts.some((noticeText) => noticeText.includes(SHARED_ATTACHMENT)),
+                hasSharedAttachment: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) !== null,
+                hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
+                hasSourceNote: app.vault.getAbstractFileByPath(SRC_NOTE) !== null,
+                hasUnsharedAttachment: app.vault.getAbstractFileByPath(UNSHARED_ATTACHMENT) !== null
+              };
+            } finally {
+              // Unload first: while the handler is loaded its patch would protect the shared attachment from this cleanup too.
+              handlerComponent.unload();
+              for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+                const folder = app.vault.getAbstractFileByPath(folderPath);
+                if (folder) {
+                  // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+                  await app.vault.delete(folder, true);
+                }
+              }
+            }
+          },
+          input: { deletionPrimitive }
+        });
+
+        // The attachment another note still needs survives, together with the folders holding it...
+        expect(result.hasSharedAttachment).toBe(true);
+        expect(result.hasAttachmentFolder).toBe(true);
+        expect(result.hasSourceFolder).toBe(true);
+        expect(result.hasNoticeForSharedAttachment).toBe(true);
+
+        // ...while everything nothing else references is deleted as it always was.
+        expect(result.hasSourceNote).toBe(false);
+        expect(result.hasUnsharedAttachment).toBe(false);
+      }
+    );
+
+    it('should delete a folder whose attachment nothing outside it references', async () => {
+      const result = await evalInObsidian<Record<string, never>, FolderDeletionResult>({
+        async callback({ app, lib: { AbortSignalComponent, getBacklinksForFileSafe, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+          const PLUGIN_ID = 'rdh-folder-delete-control-test';
+          const SRC_FOLDER = 'rdh-folder-delete-control-src';
+          const ATTACHMENT_FOLDER = `${SRC_FOLDER}/attachments`;
+          const SRC_NOTE = `${SRC_FOLDER}/note.md`;
+          const UNSHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/unshared.png`;
+          const ATTACHMENT_BYTE_LENGTH = 8;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+          const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+          const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Folder Delete Control Test' });
+          const handlerComponent = new RenameDeleteHandlerComponent({
+            abortSignalComponent,
+            app,
+            pluginId: PLUGIN_ID,
+            pluginNoticeComponent,
+            resourceLockComponent: null,
+            settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+              isNote: (path: string): boolean => path.endsWith('.md'),
+              shouldHandleDeletions: true
+            })
+          });
+          handlerComponent.load();
+
+          try {
+            await app.vault.createFolder(ATTACHMENT_FOLDER);
+            await app.vault.createBinary(UNSHARED_ATTACHMENT, new ArrayBuffer(ATTACHMENT_BYTE_LENGTH));
+            await app.vault.create(SRC_NOTE, `![[${UNSHARED_ATTACHMENT}]]\n`);
+
+            // Wait for the sole reference to be indexed, so the scan runs against a settled cache rather than an empty one.
+            await waitUntil({
+              message: 'the reference to the unshared attachment indexed by the metadata cache',
+              predicate: async () => {
+                const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: UNSHARED_ATTACHMENT });
+                return backlinks.count() === 1;
+              },
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            const srcFolder = app.vault.getFolderByPath(SRC_FOLDER);
+            if (!srcFolder) {
+              throw new Error(`${SRC_FOLDER} not found`);
+            }
+
+            await app.fileManager.trashFile(srcFolder);
+
+            return {
+              hasAttachmentFolder: app.vault.getAbstractFileByPath(ATTACHMENT_FOLDER) !== null,
+              hasNoticeForSharedAttachment: false,
+              hasSharedAttachment: false,
+              hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
+              hasSourceNote: app.vault.getAbstractFileByPath(SRC_NOTE) !== null,
+              hasUnsharedAttachment: app.vault.getAbstractFileByPath(UNSHARED_ATTACHMENT) !== null
+            };
+          } finally {
+            handlerComponent.unload();
+            const folder = app.vault.getAbstractFileByPath(SRC_FOLDER);
+            if (folder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(folder, true);
+            }
+          }
+        }
+      });
+
+      // Nothing is referenced from outside, so the deletion runs exactly as it did before the protection existed.
+      expect(result.hasSourceFolder).toBe(false);
+      expect(result.hasAttachmentFolder).toBe(false);
+      expect(result.hasSourceNote).toBe(false);
+      expect(result.hasUnsharedAttachment).toBe(false);
     });
   });
 });
