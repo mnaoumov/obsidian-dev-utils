@@ -4,7 +4,11 @@
  * This module provides deletion utilities that require metadata cache access.
  */
 
-import type { App } from 'obsidian';
+import type {
+  App,
+  TAbstractFile,
+  TFile
+} from 'obsidian';
 
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 import type { PathOrAbstractFile } from './file-system.ts';
@@ -41,14 +45,31 @@ export enum DeleteIfNotUsedResult {
 
 interface DeleteIfNotUsedParams {
   readonly app: App;
+  deleteAbstractFile?(this: void, file: TAbstractFile): Promise<void>;
   readonly deletedNotePath?: string;
+  readonly deletedNotePaths?: readonly string[];
   readonly pathOrFile: PathOrAbstractFile;
   readonly pluginNoticeComponent?: PluginNoticeComponent;
   readonly shouldDeleteEmptyFolders?: boolean;
+  shouldProtectIfStillUsed?(this: void, file: TFile): boolean;
 }
 
 /**
  * Deletes an abstract file safely from the vault, but only if it is not referenced by other notes.
+ *
+ * Backlinks originating from {@link DeleteIfNotUsedParams.deletedNotePath} and
+ * {@link DeleteIfNotUsedParams.deletedNotePaths} are discounted before deciding whether a file is still
+ * used — a note that is itself going away cannot keep an attachment alive. Deleting a single note needs
+ * only the former; deleting a folder needs the latter, because every note inside it disappears at once.
+ *
+ * {@link DeleteIfNotUsedParams.shouldProtectIfStillUsed} narrows which files that protection covers; a file
+ * it rejects is deleted no matter how many notes link to it. Deleting a whole folder of notes uses this to
+ * exempt the notes themselves — leaving a dangling link behind is what Obsidian normally does, so keeping
+ * every linked-to note would make folder deletion impossible. By default every still-used file is kept.
+ *
+ * The actual removal goes through {@link DeleteIfNotUsedParams.deleteAbstractFile} when supplied,
+ * otherwise through {@link trashSafe}. A caller that intercepted a specific deletion primitive passes its
+ * unpatched original here, so the user's chosen semantics (permanent delete vs trash) survive the detour.
  *
  * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves to {@link DeleteIfNotUsedResult.Deleted} if the abstract file
@@ -66,11 +87,7 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
   /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; the false branch of isFile leads to isFolder. */
   if (isFile(file)) {
     /* v8 ignore stop */
-    const backlinks = await getBacklinksForFileSafe({ app: params.app, pathOrFile: file });
-    if (params.deletedNotePath) {
-      backlinks.clear(params.deletedNotePath);
-    }
-    if (backlinks.count() !== 0) {
+    if (await isStillUsedAfterDeletion(params, file)) {
       params.pluginNoticeComponent?.showNotice(t(($) => $.obsidianDevUtils.notices.attachmentIsStillUsed, { attachmentPath: file.path }));
       canDelete = false;
     }
@@ -81,10 +98,13 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
     for (const child of [...listedFiles.files, ...listedFiles.folders]) {
       canDelete &&= await deleteIfNotUsed(normalizeOptionalProperties<DeleteIfNotUsedParams>({
         app: params.app,
+        deleteAbstractFile: params.deleteAbstractFile,
         deletedNotePath: params.deletedNotePath,
+        deletedNotePaths: params.deletedNotePaths,
         pathOrFile: child,
         pluginNoticeComponent: params.pluginNoticeComponent,
-        shouldDeleteEmptyFolders: params.shouldDeleteEmptyFolders
+        shouldDeleteEmptyFolders: params.shouldDeleteEmptyFolders,
+        shouldProtectIfStillUsed: params.shouldProtectIfStillUsed
       })) === DeleteIfNotUsedResult.Deleted;
     }
 
@@ -93,7 +113,11 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
 
   if (canDelete) {
     try {
-      await trashSafe(params.app, file);
+      if (params.deleteAbstractFile) {
+        await params.deleteAbstractFile(file);
+      } else {
+        await trashSafe(params.app, file);
+      }
     } catch (error) {
       printError(new Error(`Failed to delete ${file.path}`, { cause: error }));
       canDelete = false;
@@ -101,4 +125,28 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
   }
 
   return canDelete ? DeleteIfNotUsedResult.Deleted : DeleteIfNotUsedResult.NotDeleted;
+}
+
+/**
+ * Checks whether a file would still be referenced once everything being deleted alongside it is gone.
+ *
+ * @param params - The parameters {@link deleteIfNotUsed} was called with.
+ * @param file - The file whose remaining references are counted.
+ * @returns A {@link Promise} that resolves to whether the file must be kept.
+ */
+async function isStillUsedAfterDeletion(params: DeleteIfNotUsedParams, file: TFile): Promise<boolean> {
+  if (!(params.shouldProtectIfStillUsed?.(file) ?? true)) {
+    return false;
+  }
+
+  const backlinks = await getBacklinksForFileSafe({ app: params.app, pathOrFile: file });
+  const deletedNotePaths = new Set(params.deletedNotePaths);
+  if (params.deletedNotePath) {
+    deletedNotePaths.add(params.deletedNotePath);
+  }
+  for (const deletedNotePath of deletedNotePaths) {
+    backlinks.clear(deletedNotePath);
+  }
+
+  return backlinks.count() !== 0;
 }

@@ -11,10 +11,10 @@ import type {
 import type {
   App,
   CachedMetadata,
-  FileManager,
   Reference,
   TAbstractFile,
-  TFile
+  TFile,
+  TFolder
 } from 'obsidian';
 
 /* v8 ignore start -- Deeply coupled to Obsidian runtime; requires running vault for meaningful testing. */
@@ -23,7 +23,10 @@ import {
   InternalPluginName
 } from '@obsidian-typings/obsidian-public-latest/implementations';
 import { t } from 'i18next';
-import { Vault } from 'obsidian';
+import {
+  FileManager,
+  Vault
+} from 'obsidian';
 
 import type { LinkUpdateProgressReporter } from '../link-update-progress.ts';
 import type {
@@ -63,6 +66,7 @@ import {
   getFolderOrNull,
   isCanvasFile,
   isFile,
+  isFolder,
   isMarkdownFile,
   isNote
 } from '../file-system.ts';
@@ -86,6 +90,7 @@ import {
   cleanupEmptyFolders,
   EmptyFolderBehavior,
   getSafeRenamePath,
+  isChildOrSelf,
   renameSafe,
   trashSafe
 } from '../vault.ts';
@@ -205,6 +210,13 @@ interface DeleteHandlerConstructorParams {
   readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   readonly file: TAbstractFile;
   readonly settingsManager: SettingsManager;
+}
+
+interface DeleteProtectionPatchComponentConstructorParams {
+  readonly app: App;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly settingsManager: SettingsManager;
+  shouldInvokeHandler(this: void): boolean;
 }
 
 interface FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams {
@@ -380,6 +392,238 @@ class DeleteHandler {
       shouldDeleteEmptyFolders: settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep
     });
     this.abortSignal.throwIfAborted();
+  }
+}
+
+/**
+ * Keeps a folder deletion from destroying an attachment a note outside that folder still references.
+ *
+ * Deleting a NOTE is already safe: {@link deleteIfNotUsed} discounts the deleted note's own backlinks, sees
+ * another note still referencing the attachment, and keeps it. Deleting a FOLDER was not, because
+ * {@link RenameDeleteHandlerComponent} only listens (`vault.on('delete')`) and by the time a folder deletion
+ * is reported its children are already gone. Nothing reactive can help, so this component intercepts the
+ * deletion primitives instead: `FileManager.trashFile` (what the file-explorer Delete flow reaches through
+ * `promptForDeletion`) plus the raw `Vault.delete` / `Vault.trash` a plugin may call directly.
+ *
+ * A folder deletion is scanned first. When nothing inside it is still referenced from outside — the
+ * overwhelming majority of deletions — the original runs untouched, so the native behavior is preserved
+ * exactly. Only when something would be lost does this take over, replaying the deletion through
+ * {@link deleteIfNotUsed}: everything else in the folder goes, the still-referenced attachments and the
+ * folders holding them stay, and the `attachmentIsStillUsed` notice fires, mirroring the note case.
+ *
+ * Files are never intercepted — deleting a file is the user naming that file explicitly.
+ */
+class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
+  private readonly app: App;
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
+   * Roots of the folder deletions currently being replayed. The replay deletes through the UNPATCHED
+   * original, so it cannot re-enter this component directly — but `FileManager.trashFile` itself calls down
+   * into `Vault.trash` / `Vault.delete`, which are patched too, and re-scanning a subtree already being
+   * walked is pure waste. Scoped by path rather than by a flag so that an unrelated folder deletion
+   * interleaving on an `await` is still protected.
+   */
+  private readonly replayedFolderPaths = new Set<string>();
+
+  private readonly settingsManager: SettingsManager;
+  private readonly shouldInvokeHandler: () => boolean;
+
+  public constructor(params: DeleteProtectionPatchComponentConstructorParams) {
+    super();
+    this.app = params.app;
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
+    this.settingsManager = params.settingsManager;
+    this.shouldInvokeHandler = params.shouldInvokeHandler;
+  }
+
+  public override onload(): void {
+    this.registerMethodPatch<FileManager, 'trashFile'>({
+      $object: FileManager.prototype,
+      methodName: 'trashFile',
+      patchHandler: ({ fallback, originalArguments: [file], originalMethodBound }) =>
+        this.handleDeletion(file, fallback, async (abstractFile) => {
+          await originalMethodBound(abstractFile);
+        })
+    });
+    this.registerMethodPatch<Vault, 'delete'>({
+      $object: Vault.prototype,
+      methodName: 'delete',
+      patchHandler: ({ fallback, originalArguments: [file, force], originalMethodBound }) =>
+        this.handleDeletion(file, fallback, async (abstractFile) => {
+          await originalMethodBound(abstractFile, force);
+        })
+    });
+    this.registerMethodPatch<Vault, 'trash'>({
+      $object: Vault.prototype,
+      methodName: 'trash',
+      patchHandler: ({ fallback, originalArguments: [file, system], originalMethodBound }) =>
+        this.handleDeletion(file, fallback, async (abstractFile) => {
+          await originalMethodBound(abstractFile, system);
+        })
+    });
+  }
+
+  /**
+   * Collects the paths of every note inside the folder. They are the link sources that disappear along with
+   * the folder, so their backlinks must not keep an attachment alive.
+   *
+   * @param folder - The folder being deleted.
+   * @param settings - The aggregated rename/delete handler settings.
+   * @returns The paths of the notes inside the folder.
+   */
+  private collectDeletedNotePaths(folder: TFolder, settings: Partial<RenameDeleteHandlerSettings>): Set<string> {
+    const deletedNotePaths = new Set<string>();
+    Vault.recurseChildren(folder, (child) => {
+      if (isFile(child) && (settings.isNote?.(child.path) ?? false)) {
+        deletedNotePaths.add(child.path);
+      }
+    });
+    return deletedNotePaths;
+  }
+
+  /**
+   * Finds the attachments inside the folder that a note outside it still references, and would therefore be
+   * destroyed by deleting the folder.
+   *
+   * @param folder - The folder being deleted.
+   * @param deletedNotePaths - The paths of the notes that disappear along with the folder.
+   * @param settings - The aggregated rename/delete handler settings.
+   * @returns The paths of the attachments that must survive the deletion.
+   */
+  private async findStillUsedAttachmentPaths(
+    folder: TFolder,
+    deletedNotePaths: Set<string>,
+    settings: Partial<RenameDeleteHandlerSettings>
+  ): Promise<string[]> {
+    const candidateFiles: TFile[] = [];
+    Vault.recurseChildren(folder, (child) => {
+      if (isFile(child) && !(settings.isNote?.(child.path) ?? false)) {
+        candidateFiles.push(child);
+      }
+    });
+
+    const stillUsedAttachmentPaths: string[] = [];
+
+    for (const candidateFile of candidateFiles) {
+      const backlinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: candidateFile });
+      for (const deletedNotePath of deletedNotePaths) {
+        backlinks.clear(deletedNotePath);
+      }
+      if (backlinks.count() !== 0) {
+        stillUsedAttachmentPaths.push(candidateFile.path);
+      }
+    }
+
+    return stillUsedAttachmentPaths;
+  }
+
+  /**
+   * Decides whether a deletion needs protecting and, if so, replaces it with a protected replay.
+   *
+   * @param file - The abstract file being deleted.
+   * @param fallback - Invokes the intercepted method unchanged.
+   * @param deleteAbstractFile - Deletes a single abstract file through the intercepted method's unpatched original.
+   * @returns A {@link Promise} that resolves when the deletion is done.
+   */
+  private handleDeletion(
+    file: TAbstractFile,
+    fallback: () => Promise<void>,
+    deleteAbstractFile: (abstractFile: TAbstractFile) => Promise<void>
+  ): Promise<void> {
+    if (!this.shouldConsiderFolder(file)) {
+      return fallback();
+    }
+
+    return this.replayFolderDeletion(file, fallback, deleteAbstractFile);
+  }
+
+  /**
+   * Deletes the folder while keeping whatever inside it is still referenced from outside.
+   *
+   * @param folder - The folder being deleted.
+   * @param fallback - Invokes the intercepted method unchanged.
+   * @param deleteAbstractFile - Deletes a single abstract file through the intercepted method's unpatched original.
+   * @returns A {@link Promise} that resolves when the deletion is done.
+   */
+  private async replayFolderDeletion(
+    folder: TFolder,
+    fallback: () => Promise<void>,
+    deleteAbstractFile: (abstractFile: TAbstractFile) => Promise<void>
+  ): Promise<void> {
+    const settings = this.settingsManager.getSettings();
+    const deletedNotePaths = this.collectDeletedNotePaths(folder, settings);
+    const stillUsedAttachmentPaths = await this.findStillUsedAttachmentPaths(folder, deletedNotePaths, settings);
+
+    if (stillUsedAttachmentPaths.length === 0) {
+      getLibDebugger('RenameDeleteHandler:deleteProtection')(`Nothing to protect in ${folder.path}; deleting it as usual.`);
+      await fallback();
+      return;
+    }
+
+    getLibDebugger('RenameDeleteHandler:deleteProtection')(
+      `Protecting ${stillUsedAttachmentPaths.length.toString()} still-referenced attachment(s) from the deletion of ${folder.path}: ${toJson(stillUsedAttachmentPaths)}`
+    );
+
+    this.replayedFolderPaths.add(folder.path);
+    try {
+      await deleteIfNotUsed({
+        app: this.app,
+        deleteAbstractFile,
+        deletedNotePaths: [...deletedNotePaths],
+        pathOrFile: folder,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        /*
+         * The user named THIS folder, so it goes even under `EmptyFolderBehavior.Keep` — that setting
+         * governs folders emptied incidentally, not the one explicitly deleted. `deleteIfNotUsed` still
+         * refuses to remove any folder whose child had to be kept, which is the protection wanted here.
+         */
+        shouldDeleteEmptyFolders: true,
+        /*
+         * A note that others link to is deleted as normal; Obsidian leaves the dangling link. Protecting
+         * notes too would make deleting a folder of linked-to notes impossible.
+         */
+        shouldProtectIfStillUsed: (candidateFile) => !(settings.isNote?.(candidateFile.path) ?? false)
+      });
+    } finally {
+      this.replayedFolderPaths.delete(folder.path);
+    }
+  }
+
+  /**
+   * Checks whether a deletion is a folder deletion this handler is responsible for protecting.
+   *
+   * Every check here is synchronous and cheap, so a file deletion — the overwhelming majority — costs one
+   * {@link isFolder} call and reaches the original untouched.
+   *
+   * @param file - The abstract file being deleted.
+   * @returns `true` when the deletion should be scanned before it runs.
+   */
+  private shouldConsiderFolder(file: TAbstractFile): file is TFolder {
+    if (!isFolder(file)) {
+      return false;
+    }
+
+    if (!this.shouldInvokeHandler()) {
+      return false;
+    }
+
+    const settings = this.settingsManager.getSettings();
+    if (!settings.shouldHandleDeletions) {
+      return false;
+    }
+
+    if (settings.isPathIgnored?.(file.path) ?? false) {
+      return false;
+    }
+
+    for (const replayedFolderPath of this.replayedFolderPaths) {
+      if (isChildOrSelf({ app: this.app, childPathOrFile: file.path, parentPathOrFile: replayedFolderPath })) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 
@@ -1139,6 +1383,15 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
         app: this.app,
         fileManager: this.app.fileManager,
         settingsManager: this.settingsManager
+      })
+    );
+
+    this.addChild(
+      new DeleteProtectionPatchComponent({
+        app: this.app,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        settingsManager: this.settingsManager,
+        shouldInvokeHandler: this.shouldInvokeHandler.bind(this)
       })
     );
   }
