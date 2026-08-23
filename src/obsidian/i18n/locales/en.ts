@@ -33,6 +33,7 @@ export const en = {
     },
     notices: {
       attachmentIsStillUsed: 'Attachment {{attachmentPath}} is still used by other notes. It will not be deleted.',
+      attachmentRescued: 'Attachment {{attachmentPath}} is still used by other notes. It was moved to {{newAttachmentPath}}.',
       closeAriaLabel: 'Close',
       unhandledError: 'An unhandled error occurred. Please check the console for more information.'
     },

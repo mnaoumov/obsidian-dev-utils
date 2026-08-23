@@ -34,11 +34,13 @@ import type {
   UpdateLinksInFileParams
 } from '../link.ts';
 import type { ResourceLockComponent } from '../resource-lock.ts';
+import type { RescueStillUsedFileParams } from '../vault-delete.ts';
 import type { AbortSignalComponent } from './abort-signal-component.ts';
 import type { PluginNoticeComponent } from './plugin-notice-component.ts';
 
 import { filterInPlace } from '../../array.ts';
 import { getLibDebugger } from '../../debug.ts';
+import { printError } from '../../error.ts';
 import {
   normalizeOptionalProperties,
   toJson
@@ -101,6 +103,21 @@ import {
 } from './monkey-around-component.ts';
 
 /**
+ * Parameters for {@link RenameDeleteHandlerSettings.getRescuePath}.
+ */
+export interface GetRescuePathParams {
+  /**
+   * The path of the attachment that is about to be stranded.
+   */
+  readonly attachmentPath: string;
+
+  /**
+   * The paths of the notes that still reference the attachment once the deletion is done. Never empty.
+   */
+  readonly survivingNotePaths: readonly string[];
+}
+
+/**
  * Settings for the rename/delete handler.
  */
 export interface RenameDeleteHandlerSettings {
@@ -108,6 +125,16 @@ export interface RenameDeleteHandlerSettings {
    * A behavior of the rename/delete handler when deleting empty folders.
    */
   emptyFolderBehavior: EmptyFolderBehavior;
+
+  /**
+   * Where to move an attachment that a deletion would otherwise strand — one that survives because another
+   * note still references it, but is left sitting in a folder whose owning note is gone.
+   *
+   * Deciding the destination is the plugin's attachment-path policy, which is why the handler asks rather
+   * than guesses. Returning `null` — or not implementing this at all — keeps the attachment where it is,
+   * which is the behavior every consumer had before this member existed.
+   */
+  getRescuePath?(params: GetRescuePathParams): Promise<null | string>;
 
   /**
    * Whether the path is a note.
@@ -209,6 +236,7 @@ interface DeleteHandlerConstructorParams {
   readonly app: App;
   readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   readonly file: TAbstractFile;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly settingsManager: SettingsManager;
 }
 
@@ -217,6 +245,13 @@ interface DeleteProtectionPatchComponentConstructorParams {
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly settingsManager: SettingsManager;
   shouldInvokeHandler(this: void): boolean;
+}
+
+interface DidRescueStillUsedAttachmentParams {
+  readonly app: App;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly rescueParams: RescueStillUsedFileParams;
+  readonly settingsManager: SettingsManager;
 }
 
 interface FileManagerRunAsyncLinkUpdatePatchComponentConstructorParams {
@@ -268,6 +303,13 @@ class SettingsManager {
       settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
       settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
       settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
+      if (newSettings.getRescuePath) {
+        /*
+         * First plugin to answer owns the destination, mirroring `emptyFolderBehavior`. Left `undefined`
+         * when nobody implements it, so the rescue never runs for consumers that did not opt in.
+         */
+        settings.getRescuePath ??= newSettings.getRescuePath;
+      }
       const isPathIgnored = settings.isPathIgnored;
       settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
       const currentIsNote = settings.isNote;
@@ -289,12 +331,14 @@ class DeleteHandler {
   private readonly app: App;
   private readonly deletedMetadataCacheMap: Map<string, CachedMetadata>;
   private readonly file: TAbstractFile;
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly settingsManager: SettingsManager;
 
   public constructor(params: DeleteHandlerConstructorParams) {
     this.app = params.app;
     this.file = params.file;
     this.abortSignal = params.abortSignal;
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsManager = params.settingsManager;
     this.deletedMetadataCacheMap = params.deletedMetadataCacheMap;
   }
@@ -343,6 +387,7 @@ class DeleteHandler {
             app: this.app,
             deletedNotePath: this.file.path,
             pathOrFile: attachmentFile,
+            rescueStillUsedFile: this.rescueStillUsedFile.bind(this),
             shouldDeleteEmptyFolders: settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep
           });
           this.abortSignal.throwIfAborted();
@@ -389,9 +434,19 @@ class DeleteHandler {
       app: this.app,
       deletedNotePath: this.file.path,
       pathOrFile: attachmentFolder,
+      rescueStillUsedFile: this.rescueStillUsedFile.bind(this),
       shouldDeleteEmptyFolders: settings.emptyFolderBehavior !== EmptyFolderBehavior.Keep
     });
     this.abortSignal.throwIfAborted();
+  }
+
+  private rescueStillUsedFile(rescueParams: RescueStillUsedFileParams): Promise<boolean> {
+    return didRescueStillUsedAttachment({
+      app: this.app,
+      pluginNoticeComponent: this.pluginNoticeComponent,
+      rescueParams,
+      settingsManager: this.settingsManager
+    });
   }
 }
 
@@ -573,6 +628,7 @@ class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
         deletedNotePaths: [...deletedNotePaths],
         pathOrFile: folder,
         pluginNoticeComponent: this.pluginNoticeComponent,
+        rescueStillUsedFile: this.rescueStillUsedFile.bind(this),
         /*
          * The user named THIS folder, so it goes even under `EmptyFolderBehavior.Keep` — that setting
          * governs folders emptied incidentally, not the one explicitly deleted. `deleteIfNotUsed` still
@@ -588,6 +644,15 @@ class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
     } finally {
       this.replayedFolderPaths.delete(folder.path);
     }
+  }
+
+  private rescueStillUsedFile(rescueParams: RescueStillUsedFileParams): Promise<boolean> {
+    return didRescueStillUsedAttachment({
+      app: this.app,
+      pluginNoticeComponent: this.pluginNoticeComponent,
+      rescueParams,
+      settingsManager: this.settingsManager
+    });
   }
 
   /**
@@ -1407,6 +1472,7 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
           app: this.app,
           deletedMetadataCacheMap: this.deletedMetadataCacheMap,
           file,
+          pluginNoticeComponent: this.pluginNoticeComponent,
           settingsManager: this.settingsManager
         }).handle(),
       operationName: t(($) => $.obsidianDevUtils.renameDeleteHandler.handleDelete, { filePath: file.path })
@@ -1533,6 +1599,79 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
     const mainPluginId = [...renameDeleteHandlersMap.keys()][0];
     return mainPluginId === this.pluginId;
+  }
+}
+
+/**
+ * Moves an attachment a deletion would otherwise strand to wherever the consuming plugin says it belongs.
+ *
+ * Shared by both delete paths — the note delete in {@link DeleteHandler} and the folder delete replayed by
+ * {@link DeleteProtectionPatchComponent} — because both reach the same point: {@link deleteIfNotUsed} has
+ * decided the attachment must survive, and without this it would survive in a folder nothing owns any more.
+ *
+ * A consumer that does not implement {@link RenameDeleteHandlerSettings.getRescuePath}, or that answers
+ * `null`, gets exactly the behavior it had before this existed: the attachment stays put.
+ *
+ * @param params - The parameters for the function.
+ * @returns A {@link Promise} that resolves to whether the attachment was moved.
+ */
+async function didRescueStillUsedAttachment(params: DidRescueStillUsedAttachmentParams): Promise<boolean> {
+  const settings = params.settingsManager.getSettings();
+  if (!settings.getRescuePath) {
+    return false;
+  }
+
+  const attachmentPath = params.rescueParams.file.path;
+  const rescuePath = await settings.getRescuePath({
+    attachmentPath,
+    survivingNotePaths: params.rescueParams.survivingNotePaths
+  });
+
+  if (rescuePath === null) {
+    getLibDebugger('RenameDeleteHandler:didRescueStillUsedAttachment')(`No rescue path for ${attachmentPath}; keeping it where it is.`);
+    return false;
+  }
+
+  try {
+    /*
+     * `renameSafe` creates the destination folder, resolves a collision via `getSafeRenamePath`, and moves
+     * through `app.fileManager.renameFile`, so the surviving notes' links follow the attachment.
+     */
+    const newAttachmentPath = await renameSafe({
+      app: params.app,
+      newPath: rescuePath,
+      oldPathOrAbstractFile: params.rescueParams.file
+    });
+
+    if (newAttachmentPath === attachmentPath) {
+      /*
+       * The attachment is already where it belongs. This is the normal second look at a file the folder
+       * delete just rescued: the owning note's own deletion is reported afterwards and walks its links
+       * again. Nothing moved, so nothing is claimed — the caller keeps it in place, which is the truth.
+       */
+      getLibDebugger('RenameDeleteHandler:didRescueStillUsedAttachment')(`${attachmentPath} already sits at its rescue path; nothing to move.`);
+      return false;
+    }
+
+    /*
+     * The move fires `vault.on('rename')`, so this handler's own `RenameHandler` picks it up like any other
+     * attachment move. It is deliberately NOT registered in `handledRenames`:
+     * `FileManagerRunAsyncLinkUpdatePatchComponent` already discards Obsidian's native link update while
+     * `shouldHandleRenames` is on, so suppressing the handler as well would leave dangling exactly the links
+     * this rescue exists to preserve. Let the rewrite settle before the delete walk carries on.
+     */
+    await waitForPendingLinkUpdates(params.app);
+
+    getLibDebugger('RenameDeleteHandler:didRescueStillUsedAttachment')(`Rescued ${attachmentPath} to ${newAttachmentPath}.`);
+    params.pluginNoticeComponent.showNotice(t(($) => $.obsidianDevUtils.notices.attachmentRescued, { attachmentPath, newAttachmentPath }));
+    return true;
+  } catch (error) {
+    /*
+     * A rescue that half happened must not read as success — reporting `false` falls back to keeping the
+     * attachment in place with the `attachmentIsStillUsed` notice, which is still safe.
+     */
+    printError(new Error(`Failed to rescue ${attachmentPath} to ${rescuePath}`, { cause: error }));
+    return false;
   }
 }
 

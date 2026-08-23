@@ -28,6 +28,17 @@ interface AttachmentMoveResult {
 }
 
 /**
+ * Result of an attachment-rescue test.
+ */
+interface AttachmentRescueResult {
+  readonly hasNoticeForRescue: boolean;
+  readonly hasRescuedAttachment: boolean;
+  readonly hasSourceFolder: boolean;
+  readonly isOriginalAttachmentGone: boolean;
+  readonly survivingNoteResolvedLinkPaths: readonly string[];
+}
+
+/**
  * The deletion primitive a folder-deletion test drives. All three are patched, and `FileManager.trashFile`
  * itself calls down into the other two, so each has to be proven independently.
  */
@@ -626,6 +637,328 @@ describe('rename-delete-handler', () => {
       expect(result.hasAttachmentFolder).toBe(false);
       expect(result.hasSourceNote).toBe(false);
       expect(result.hasUnsharedAttachment).toBe(false);
+    });
+  });
+
+  describe('a deletion relocates a still-referenced attachment via getRescuePath (T579)', () => {
+    it.each<DeletionPrimitive>(['trashFile', 'vaultDelete', 'vaultTrash'])(
+      'should move the attachment to the rescue path when the folder holding it is deleted — via %s',
+      async (deletionPrimitive) => {
+        const result = await evalInObsidian<FolderDeletionInput, AttachmentRescueResult>({
+          async callback({ app, deletionPrimitive: primitive, lib: { AbortSignalComponent, getBacklinksForFileSafe, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+            const PLUGIN_ID = 'rdh-rescue-folder-test';
+            const SRC_FOLDER = 'rdh-rescue-folder-src';
+            const OTHER_FOLDER = 'rdh-rescue-folder-other';
+            const ATTACHMENT_FOLDER = `${SRC_FOLDER}/attachments`;
+            const SRC_NOTE = `${SRC_FOLDER}/note.md`;
+            const OTHER_NOTE = `${OTHER_FOLDER}/note.md`;
+            const SHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/shared.png`;
+            const RESCUE_PATH = `${OTHER_FOLDER}/attachments/shared.png`;
+            const EXPECTED_SHARED_BACKLINK_COUNT = 2;
+            const ATTACHMENT_BYTE_LENGTH = 8;
+            const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+            // A case that timed out earlier cannot run its own cleanup, so start from a known-empty slate.
+            for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+              const staleFolder = app.vault.getAbstractFileByPath(folderPath);
+              if (staleFolder) {
+                // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+                await app.vault.delete(staleFolder, true);
+              }
+            }
+
+            const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+            const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Rescue Folder Test' });
+            const handlerComponent = new RenameDeleteHandlerComponent({
+              abortSignalComponent,
+              app,
+              pluginId: PLUGIN_ID,
+              pluginNoticeComponent,
+              resourceLockComponent: null,
+              settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+                getRescuePath: (): Promise<null | string> => Promise.resolve(RESCUE_PATH),
+                isNote: (path: string): boolean => path.endsWith('.md'),
+                shouldHandleDeletions: true,
+                shouldHandleRenames: true
+              })
+            });
+            handlerComponent.load();
+
+            try {
+              await app.vault.createFolder(ATTACHMENT_FOLDER);
+              await app.vault.createFolder(OTHER_FOLDER);
+              await app.vault.createBinary(SHARED_ATTACHMENT, new ArrayBuffer(ATTACHMENT_BYTE_LENGTH));
+              await app.vault.create(SRC_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+              await app.vault.create(OTHER_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+
+              // The rescue decides from backlinks, so both references have to be indexed before the folder goes.
+              await waitUntil({
+                message: 'both references to the shared attachment indexed by the metadata cache',
+                predicate: async () => {
+                  const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: SHARED_ATTACHMENT });
+                  return backlinks.count() === EXPECTED_SHARED_BACKLINK_COUNT;
+                },
+                timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+              });
+
+              const srcFolder = app.vault.getFolderByPath(SRC_FOLDER);
+              if (!srcFolder) {
+                throw new Error(`${SRC_FOLDER} not found`);
+              }
+
+              switch (primitive) {
+                case 'trashFile': {
+                  await app.fileManager.trashFile(srcFolder);
+                  break;
+                }
+                case 'vaultDelete': {
+                  // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- The point of this case is that the raw primitive is rescued too.
+                  await app.vault.delete(srcFolder, true);
+                  break;
+                }
+                case 'vaultTrash': {
+                  // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- The point of this case is that the raw primitive is rescued too.
+                  await app.vault.trash(srcFolder, false);
+                  break;
+                }
+                default: {
+                  throw new Error(`Unknown deletion primitive: ${String(primitive)}`);
+                }
+              }
+
+              /*
+               * Assert on the RESOLVED link, not on the note's text: Obsidian rewrites the embed to its
+               * shortest unambiguous form (`![[shared.png]]`), so the destination path never appears in the
+               * markdown. Re-resolution also lags the rewrite, so wait for the cache to catch up.
+               */
+              await waitUntil({
+                message: 'the surviving note resolves its embed to the rescued attachment',
+                predicate: () => Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH),
+                timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+              });
+
+              const noticeTexts = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
+                .map((noticeContentEl) => noticeContentEl.textContent);
+
+              return {
+                hasNoticeForRescue: noticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
+                hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
+                hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
+                isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
+                survivingNoteResolvedLinkPaths: Object.keys(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {})
+              };
+            } finally {
+              // Unload first: while the handler is loaded its patch would protect these files from this cleanup too.
+              handlerComponent.unload();
+              for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+                const folder = app.vault.getAbstractFileByPath(folderPath);
+                if (folder) {
+                  // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+                  await app.vault.delete(folder, true);
+                }
+              }
+            }
+          },
+          input: { deletionPrimitive }
+        });
+
+        // The attachment moves to where the consumer said it belongs, taking the surviving note's link with it...
+        expect(result.hasRescuedAttachment).toBe(true);
+        expect(result.isOriginalAttachmentGone).toBe(true);
+        expect(result.survivingNoteResolvedLinkPaths).toContain('rdh-rescue-folder-other/attachments/shared.png');
+        expect(result.hasNoticeForRescue).toBe(true);
+
+        // ...and nothing is left behind to keep the deleted folder alive.
+        expect(result.hasSourceFolder).toBe(false);
+      }
+    );
+
+    it('should move the attachment to the rescue path when the note owning its folder is deleted', async () => {
+      const result = await evalInObsidian<Record<string, never>, AttachmentRescueResult>({
+        async callback({ app, lib: { AbortSignalComponent, getBacklinksForFileSafe, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+          const PLUGIN_ID = 'rdh-rescue-note-test';
+          const SRC_FOLDER = 'rdh-rescue-note-src';
+          const OTHER_FOLDER = 'rdh-rescue-note-other';
+          const ATTACHMENT_FOLDER = `${SRC_FOLDER}/attachments`;
+          const SRC_NOTE = `${SRC_FOLDER}/note.md`;
+          const OTHER_NOTE = `${OTHER_FOLDER}/note.md`;
+          const SHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/shared.png`;
+          const RESCUE_PATH = `${OTHER_FOLDER}/attachments/shared.png`;
+          const EXPECTED_SHARED_BACKLINK_COUNT = 2;
+          const ATTACHMENT_BYTE_LENGTH = 8;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+          for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+            const staleFolder = app.vault.getAbstractFileByPath(folderPath);
+            if (staleFolder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(staleFolder, true);
+            }
+          }
+
+          const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+          const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Rescue Note Test' });
+          const handlerComponent = new RenameDeleteHandlerComponent({
+            abortSignalComponent,
+            app,
+            pluginId: PLUGIN_ID,
+            pluginNoticeComponent,
+            resourceLockComponent: null,
+            settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+              getRescuePath: (): Promise<null | string> => Promise.resolve(RESCUE_PATH),
+              isNote: (path: string): boolean => path.endsWith('.md'),
+              shouldHandleDeletions: true,
+              shouldHandleRenames: true
+            })
+          });
+          handlerComponent.load();
+
+          try {
+            await app.vault.createFolder(ATTACHMENT_FOLDER);
+            await app.vault.createFolder(OTHER_FOLDER);
+            await app.vault.createBinary(SHARED_ATTACHMENT, new ArrayBuffer(ATTACHMENT_BYTE_LENGTH));
+            await app.vault.create(SRC_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+            await app.vault.create(OTHER_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+
+            await waitUntil({
+              message: 'both references to the shared attachment indexed by the metadata cache',
+              predicate: async () => {
+                const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: SHARED_ATTACHMENT });
+                return backlinks.count() === EXPECTED_SHARED_BACKLINK_COUNT;
+              },
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            const srcNote = app.vault.getFileByPath(SRC_NOTE);
+            if (!srcNote) {
+              throw new Error(`${SRC_NOTE} not found`);
+            }
+
+            await app.fileManager.trashFile(srcNote);
+
+            // The note delete handler runs on the queue, so the rescue lands after `trashFile` resolves.
+            await waitUntil({
+              message: 'the surviving note resolves its embed to the rescued attachment',
+              predicate: () => Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH),
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            const noticeTexts = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
+              .map((noticeContentEl) => noticeContentEl.textContent);
+
+            return {
+              hasNoticeForRescue: noticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
+              hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
+              hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
+              isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
+              survivingNoteResolvedLinkPaths: Object.keys(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {})
+            };
+          } finally {
+            handlerComponent.unload();
+            for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+              const folder = app.vault.getAbstractFileByPath(folderPath);
+              if (folder) {
+                // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+                await app.vault.delete(folder, true);
+              }
+            }
+          }
+        }
+      });
+
+      // Deleting the owning note strands the attachment exactly the same way, so the same seam has to fire.
+      expect(result.hasRescuedAttachment).toBe(true);
+      expect(result.isOriginalAttachmentGone).toBe(true);
+      expect(result.survivingNoteResolvedLinkPaths).toContain('rdh-rescue-note-other/attachments/shared.png');
+      expect(result.hasNoticeForRescue).toBe(true);
+    });
+
+    it('should leave the attachment where it is when no getRescuePath is implemented', async () => {
+      const result = await evalInObsidian<Record<string, never>, AttachmentRescueResult>({
+        async callback({ app, lib: { AbortSignalComponent, getBacklinksForFileSafe, PluginNoticeComponent, RenameDeleteHandlerComponent, waitUntil } }) {
+          const PLUGIN_ID = 'rdh-rescue-control-test';
+          const SRC_FOLDER = 'rdh-rescue-control-src';
+          const OTHER_FOLDER = 'rdh-rescue-control-other';
+          const ATTACHMENT_FOLDER = `${SRC_FOLDER}/attachments`;
+          const SRC_NOTE = `${SRC_FOLDER}/note.md`;
+          const OTHER_NOTE = `${OTHER_FOLDER}/note.md`;
+          const SHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/shared.png`;
+          const RESCUE_PATH = `${OTHER_FOLDER}/attachments/shared.png`;
+          const EXPECTED_SHARED_BACKLINK_COUNT = 2;
+          const ATTACHMENT_BYTE_LENGTH = 8;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+          for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+            const staleFolder = app.vault.getAbstractFileByPath(folderPath);
+            if (staleFolder) {
+              // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+              await app.vault.delete(staleFolder, true);
+            }
+          }
+
+          const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
+          const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Rescue Control Test' });
+          const handlerComponent = new RenameDeleteHandlerComponent({
+            abortSignalComponent,
+            app,
+            pluginId: PLUGIN_ID,
+            pluginNoticeComponent,
+            resourceLockComponent: null,
+            settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
+              isNote: (path: string): boolean => path.endsWith('.md'),
+              shouldHandleDeletions: true,
+              shouldHandleRenames: true
+            })
+          });
+          handlerComponent.load();
+
+          try {
+            await app.vault.createFolder(ATTACHMENT_FOLDER);
+            await app.vault.createFolder(OTHER_FOLDER);
+            await app.vault.createBinary(SHARED_ATTACHMENT, new ArrayBuffer(ATTACHMENT_BYTE_LENGTH));
+            await app.vault.create(SRC_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+            await app.vault.create(OTHER_NOTE, `![[${SHARED_ATTACHMENT}]]\n`);
+
+            await waitUntil({
+              message: 'both references to the shared attachment indexed by the metadata cache',
+              predicate: async () => {
+                const backlinks = await getBacklinksForFileSafe({ app, pathOrFile: SHARED_ATTACHMENT });
+                return backlinks.count() === EXPECTED_SHARED_BACKLINK_COUNT;
+              },
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+            });
+
+            const srcFolder = app.vault.getFolderByPath(SRC_FOLDER);
+            if (!srcFolder) {
+              throw new Error(`${SRC_FOLDER} not found`);
+            }
+
+            await app.fileManager.trashFile(srcFolder);
+
+            return {
+              hasNoticeForRescue: false,
+              hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
+              hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
+              isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
+              survivingNoteResolvedLinkPaths: Object.keys(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {})
+            };
+          } finally {
+            handlerComponent.unload();
+            for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
+              const folder = app.vault.getAbstractFileByPath(folderPath);
+              if (folder) {
+                // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+                await app.vault.delete(folder, true);
+              }
+            }
+          }
+        }
+      });
+
+      // Without the hook the attachment is kept exactly where 94.7.0 left it — stranded, but safe.
+      expect(result.hasRescuedAttachment).toBe(false);
+      expect(result.isOriginalAttachmentGone).toBe(false);
+      expect(result.hasSourceFolder).toBe(true);
     });
   });
 });
