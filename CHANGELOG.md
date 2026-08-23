@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 94.7.0
+
+- fix(rename-delete-handler): protect a still-referenced attachment from a folder deletion
+- feat(npm-publish)!: authenticate the publish with trusted publishing instead of an NPM token
+- chore: update libs
+
 ## 94.6.1
 
 - chore: update libs
