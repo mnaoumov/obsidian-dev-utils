@@ -531,6 +531,40 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a custom rule could flag imported identifiers inside the serialized
   functions, but not the `globalThis` autofix interaction)
 
+### L16. A notice is transient by design — record it as it arrives, never sample the DOM for it
+
+- `PluginNoticeComponent.showNotice` defaults to `PluginNoticeMode.Replace`, which calls
+  `this.notice?.hide()` before showing the new one: **the next notice from the same component removes
+  the previous one from the DOM.** So a test that reads
+  `activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content')` is not asking "was
+  this notice shown?" — it is asking "is it *still* the newest notice at this instant?", and any
+  follow-up notice makes that false.
+- Two mechanisms turn that into an unwinnable race. The rescue notice in
+  `didRescueStillUsedAttachment` is followed by the `updatedLinks` notice the `RenameHandler` defers
+  through `addToQueue`, which takes the same slot; and OIT's `waitUntil` **polls immediately**, so a
+  predicate whose condition is already met exits on the first poll and a latch riding along in that
+  predicate never gets a second look.
+- **The tell is inverted timing: it fails when the run is FAST and passes under load.** `waitUntil`
+  returns instantly when the machine is idle, so the loop never runs; a loaded machine spreads the
+  queue out and a poll happens to land while the notice is still up. That is the opposite of a normal
+  flake, which is why running the whole suite is not a valid check — the bug hides there. Run the file
+  ALONE (`npx vitest run --project=obsidian-integration-tests <file>`) to reproduce it.
+- **The fix is a `MutationObserver` installed before the action**, accumulating the text of every
+  `.obsidian-dev-utils.plugin-notice-content` element as it is inserted (test the added node and sweep
+  its subtree — the content element rides inside the `.notice` container that is what actually gets
+  added). Do not seed it with a sweep of the existing DOM: a notice left over from an earlier case
+  would then satisfy this one. Assert on the recording, and put both conditions in the same `waitUntil`
+  predicate rather than reading one after the other.
+- **Size an in-vault `waitUntil` to fail INSIDE the harness's 30 s `Runtime.evaluate` ceiling.** A
+  30 s wait can never report: the CDP command is killed first, and vitest's own 30 s `testTimeout`
+  fires at the same moment — so the message naming the unmet condition is replaced by a bare "Test
+  timed out"/"CDP command timed out". The rescue cases use 12 s for this reason. Raising the vitest
+  timeout does not help; the CDP ceiling is the binding one.
+- Prove the assertion is not vacuous with a **negative control**: comment out the `showNotice` call and
+  confirm the case fails on the wait's own message.
+- (cannot be forced by ESLint — a rule could flag `querySelectorAll('…plugin-notice-content')` inside
+  an `evalInObsidian` closure, but not the timing judgment)
+
 ## Testing
 
 ### Goals
