@@ -769,6 +769,7 @@ describe('parseVersionArgs', () => {
   it('should parse the version update type with no flags', () => {
     const { options, versionUpdateType } = parseVersionArguments(['patch']);
     expect(versionUpdateType).toBe('patch');
+    expect(options.minAppVersion).toBeUndefined();
     expect(options).toEqual({
       shouldArchiveDemoVault: true,
       shouldBuild: true,
@@ -782,6 +783,7 @@ describe('parseVersionArgs', () => {
   it('should parse all flags', () => {
     const { options, versionUpdateType } = parseVersionArguments([
       'patch',
+      '--min-app-version=1.9.0',
       '--no-build',
       '--no-changelog-editing',
       '--no-checks',
@@ -791,6 +793,7 @@ describe('parseVersionArgs', () => {
     ]);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
+      minAppVersion: '1.9.0',
       shouldArchiveDemoVault: false,
       shouldBuild: false,
       shouldEditChangelog: false,
@@ -809,6 +812,11 @@ describe('parseVersionArgs', () => {
   it('should return undefined version update type when no positional is provided', () => {
     const { versionUpdateType } = parseVersionArguments(['--no-release']);
     expect(versionUpdateType).toBeUndefined();
+  });
+
+  it('should parse the min app version override with --min-app-version', () => {
+    const { options } = parseVersionArguments(['patch', '--min-app-version=1.9.0']);
+    expect(options.minAppVersion).toBe('1.9.0');
   });
 });
 
@@ -945,6 +953,71 @@ describe('updateVersion', () => {
     }
   });
 
+  it('should read the latest obsidian version from the desktop releases feed', async () => {
+    setupFullMocks();
+    mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
+    mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
+    mockReaddirPosix.mockResolvedValue([]);
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({ latestVersion: '1.7.0' })
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    try {
+      await updateVersion('patch');
+      expect(mockFetch).toHaveBeenCalledWith('https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/desktop-releases.json');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('should throw when the desktop releases feed has no latest version', async () => {
+    setupFullMocks();
+    mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
+    mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
+    mockReaddirPosix.mockResolvedValue([]);
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({})
+    });
+    vi.stubGlobal('fetch', mockFetch);
+
+    try {
+      await expect(updateVersion('patch')).rejects.toThrow('Could not find the latest desktop Obsidian version');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('should use the minAppVersion option verbatim without fetching', async () => {
+    setupFullMocks();
+    mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
+    mockExistsSync.mockImplementation((path: string) => path.includes('manifest.json'));
+    mockReaddirPosix.mockResolvedValue([]);
+
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+
+    try {
+      await updateVersion('patch', { minAppVersion: '1.9.0' });
+      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockEditJson).toHaveBeenCalledTimes(2);
+
+      const manifestCallback = (mockEditJson.mock.calls[0]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
+      const manifest: Record<string, string> = { minAppVersion: '1.0.0', version: '1.0.0' };
+      await manifestCallback(manifest);
+      expect(manifest['minAppVersion']).toBe('1.9.0');
+
+      const versionsCallback = (mockEditJson.mock.calls[1]?.[0] as EditJsonParams<Record<string, string>>).editFunction;
+      const versions: Record<string, string> = {};
+      await versionsCallback(versions);
+      expect(versions['1.0.1']).toBe('1.9.0');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('should update plugin manifest with latest obsidian version for non-beta release', async () => {
     setupFullMocks();
     mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
@@ -952,7 +1025,7 @@ describe('updateVersion', () => {
     mockReaddirPosix.mockResolvedValue([]);
 
     const mockFetch = vi.fn().mockResolvedValue({
-      json: vi.fn().mockResolvedValue({ name: '1.7.0' })
+      json: vi.fn().mockResolvedValue({ latestVersion: '1.7.0' })
     });
     vi.stubGlobal('fetch', mockFetch);
 
@@ -982,7 +1055,7 @@ describe('updateVersion', () => {
     mockReaddirPosix.mockResolvedValue([]);
 
     const mockFetch = vi.fn().mockResolvedValue({
-      json: vi.fn().mockResolvedValue({ name: '1.7.0' })
+      json: vi.fn().mockResolvedValue({ latestVersion: '1.7.0' })
     });
     vi.stubGlobal('fetch', mockFetch);
 

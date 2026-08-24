@@ -100,6 +100,18 @@ export interface UpdateChangelogOptions {
  */
 export interface UpdateVersionOptions {
   /**
+   * An explicit `minAppVersion` to write into the plugin's `manifest.json` and its new `versions.json`
+   * entry. When set, it is used verbatim and the latest Obsidian desktop version is not fetched at all.
+   *
+   * Set this when the plugin has a known minimum it actually requires, rather than tracking whatever
+   * Obsidian released most recently. Only applies to Obsidian plugins, and only to non-pre-release
+   * versions (a pre-release copies the existing `manifest.json` and never writes `minAppVersion`).
+   *
+   * @default the latest Obsidian desktop version
+   */
+  readonly minAppVersion?: string | undefined;
+
+  /**
    * A callback function to prepare the GitHub release.
    *
    * @param newVersion - The new version number for the release.
@@ -169,6 +181,15 @@ interface NpmPackResult {
 const DEFAULT_PREID = 'beta';
 
 /**
+ * The feed the Obsidian desktop app updates from.
+ *
+ * Deliberately NOT the GitHub `releases/latest` API: that endpoint returns the newest release of any kind
+ * in `obsidianmd/obsidian-releases`, including one whose only asset is the Android APK, which no desktop
+ * user can install. See {@link getLatestObsidianVersion}.
+ */
+const DESKTOP_RELEASES_JSON_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/desktop-releases.json';
+
+/**
  * Enum representing different types of version updates.
  *
  * Aligns with npm's `npm version` increment types plus `Manual` for explicit versions.
@@ -186,6 +207,19 @@ export enum VersionUpdateType {
 }
 
 /**
+ * Type representing the structure of Obsidian's `desktop-releases.json` feed.
+ *
+ * This is the feed the desktop app itself updates from, so it is the only source that states a version
+ * desktop users can actually run.
+ */
+export interface DesktopReleasesJson {
+  /**
+   * The latest Obsidian version available for desktop.
+   */
+  latestVersion: string;
+}
+
+/**
  * Type representing the manifest file format for Obsidian plugins.
  */
 export interface Manifest {
@@ -198,16 +232,6 @@ export interface Manifest {
    * A version of the plugin.
    */
   version: string;
-}
-
-/**
- * Type representing the structure of Obsidian releases JSON.
- */
-export interface ObsidianReleasesJson {
-  /**
-   * A name of the Obsidian release.
-   */
-  name: string;
 }
 
 /**
@@ -447,7 +471,10 @@ export async function gitPush(): Promise<void> {
  * Parses the command-line arguments for a version update into a version update type and
  * {@link UpdateVersionOptions}.
  *
- * Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. Recognized flags:
+ * Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. `--min-app-version`
+ * takes a value instead and has no default. Recognized flags:
+ * - `--min-app-version=<x.y.z>` — write this `minAppVersion` into the plugin's `manifest.json` and its new
+ *   `versions.json` entry instead of tracking the latest Obsidian desktop version.
  * - `--no-build` — skip the build step (only safe when the build output already matches the current code).
  * - `--no-changelog-editing` — generate the changelog without opening it for manual review.
  * - `--no-checks` — skip the clean-repo check, format, spellcheck, lint, over-exposure analysis, and tests (the build still runs).
@@ -464,6 +491,7 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
     // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
     args: $arguments,
     options: {
+      'min-app-version': { type: 'string' },
       'no-build': { type: 'boolean' },
       'no-changelog-editing': { type: 'boolean' },
       'no-checks': { type: 'boolean' },
@@ -475,6 +503,7 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
 
   return {
     options: {
+      minAppVersion: values['min-app-version'],
       shouldArchiveDemoVault: !(values['no-demo-vault'] ?? false),
       shouldBuild: !(values['no-build'] ?? false),
       shouldEditChangelog: !(values['no-changelog-editing'] ?? false),
@@ -626,6 +655,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  */
 export async function updateVersion(versionUpdateType?: string, options: UpdateVersionOptions = {}): Promise<void> {
   const {
+    minAppVersion,
     prepareGitHubRelease,
     shouldArchiveDemoVault = true,
     shouldBuild = true,
@@ -681,7 +711,7 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   const newVersion = await getNewVersion(versionUpdateType);
   await updateVersionInFiles(newVersion);
   if (isObsidianPlugin) {
-    await updateVersionInFilesForPlugin(newVersion);
+    await updateVersionInFilesForPlugin(newVersion, minAppVersion);
   }
 
   await updateChangelog(newVersion, { shouldEditChangelog });
@@ -741,15 +771,21 @@ export function validate(versionUpdateType: string): void {
 }
 
 /**
- * Fetches the latest version of Obsidian from the GitHub releases API.
+ * Fetches the latest version of Obsidian that the desktop app can actually run.
  *
- * @returns A {@link Promise} that resolves to the latest version of Obsidian.
+ * Reads {@link DESKTOP_RELEASES_JSON_URL}, not the GitHub `releases/latest` API. The API returns the newest
+ * release of ANY kind, so whenever a mobile-only release (an APK-only asset) is newer than the desktop one,
+ * it reports a version that does not exist for desktop. A plugin released in that window gets a
+ * `minAppVersion` no desktop user can satisfy, and Obsidian silently keeps offering them the previous
+ * release instead — the release succeeds and reaches nobody.
+ *
+ * @returns A {@link Promise} that resolves to the latest Obsidian version available for desktop.
  */
 async function getLatestObsidianVersion(): Promise<string> {
   // eslint-disable-next-line no-restricted-globals -- We run this outside of Obsidian, so we don't have `requestUrl()`.
-  const response = await fetch('https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest');
-  const obsidianReleasesJson = await response.json() as Partial<ObsidianReleasesJson>;
-  return ensureNonNullable(obsidianReleasesJson.name, 'Could not find the name of the latest Obsidian release');
+  const response = await fetch(DESKTOP_RELEASES_JSON_URL);
+  const desktopReleasesJson = await response.json() as Partial<DesktopReleasesJson>;
+  return ensureNonNullable(desktopReleasesJson.latestVersion, 'Could not find the latest desktop Obsidian version');
 }
 
 function isPreRelease(version: string): boolean {
@@ -760,7 +796,7 @@ function toFirstLine($string: string): string {
   return $string.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
 }
 
-async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> {
+async function updateVersionInFilesForPlugin(newVersion: string, minAppVersion: string | undefined): Promise<void> {
   const manifestBetaJsonPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ManifestBetaJson });
   if (isPreRelease(newVersion)) {
     await cp(
@@ -775,11 +811,11 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
       path: ObsidianPluginRepoPaths.ManifestBetaJson
     });
   } else {
-    const latestObsidianVersion = await getLatestObsidianVersion();
+    const resolvedMinAppVersion = minAppVersion ?? await getLatestObsidianVersion();
 
     await editJson<Manifest>({
       editFunction: (manifest) => {
-        manifest.minAppVersion = latestObsidianVersion;
+        manifest.minAppVersion = resolvedMinAppVersion;
         manifest.version = newVersion;
       },
       path: ObsidianPluginRepoPaths.ManifestJson
@@ -787,7 +823,7 @@ async function updateVersionInFilesForPlugin(newVersion: string): Promise<void> 
 
     await editJson<Record<string, string>>({
       editFunction: (versions) => {
-        versions[newVersion] = latestObsidianVersion;
+        versions[newVersion] = resolvedMinAppVersion;
       },
       path: ObsidianPluginRepoPaths.VersionsJson
     });
