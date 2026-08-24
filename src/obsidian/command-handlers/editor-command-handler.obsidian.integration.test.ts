@@ -11,11 +11,14 @@
  * `MarkdownFileInfo` context - the assumption that lets this menu reuse `canExecuteEditor` /
  * `executeEditor` with no new abstract surface.
  *
- * What it deliberately does NOT cover: the DOM path. Obsidian's own `cm.scrollDOM` listener gates on
- * `e.isTrusted`, so a dispatched `MouseEvent` is ignored, and the harness exposes no way to inject a
- * trusted input event. That a margin right-click reaches THIS event (and not `editor-menu`) therefore
- * rests on reading `obsidian-1.13.7.asar`, where the listener skips only when the target is inside
- * `sizerEl` and not under `.cm-gutters`.
+ * What it does NOT yet cover: the DOM path. Obsidian's own `cm.scrollDOM` listener gates on
+ * `e.isTrusted`, so a dispatched `MouseEvent` is ignored - it is NOT that the click is untestable, but
+ * that the trusted-input helpers (`desktop-trusted-input.ts` here, the `lib` bag in the harness) have
+ * pointer MOVES and no CLICK. A trusted right-click via `webContents.sendInputEvent` was verified by hand
+ * to raise this event; wiring it up as a reusable helper across both hand-synced copies is T599-P21.
+ * Until then, that a margin right-click reaches THIS event (and not `editor-menu`) rests on reading
+ * `obsidian-1.13.7.asar`, where the listener skips only when the target is inside `sizerEl` and not under
+ * `.cm-gutters`.
  */
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
