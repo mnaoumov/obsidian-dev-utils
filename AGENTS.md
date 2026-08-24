@@ -466,6 +466,43 @@ export function myFunction(param: Type): ReturnType {
   primitive, and that the "deletes normally" control stays green. A protection test that passes because
   nothing was ever at risk asserts nothing.
 
+### L14. Never drive the user's workspace to obtain a runtime handle — supply the missing half yourself
+
+- Reaching an unofficial Obsidian internal by **making the app do something** (open a leaf, open a file,
+  render a view) so a monkey-patch can intercept what it passes around is not a neutral read: it is a
+  mutation of the user's workspace, and it lands on **every consumer, on every load**.
+  `getDomEventsHandlersConstructor` did exactly that to obtain the `DomEventsHandlers` class —
+  `getLeaf(true)` + `openFile(…, { active: true, state: { mode: 'preview' } })`, a 5 s
+  `retryWithTimeout`, `leaf.detach()`, and `__temp.md` created and trashed in an empty vault. Measured
+  cost per plugin load, desktop and Android alike: leaf count 9 → 10 → 9, two `file-open` and two
+  `active-leaf-change` cascading into every other plugin, and an unrelated note rendered in preview.
+  A consumer could not opt out (the memoised constructor is module-private), so the only lever was
+  *when* the dance ran — which is why it ping-ponged between the first dialog and plugin load.
+- **Look for the seam first: how much of the internal do you actually need?** Obsidian's link handling
+  is two separable halves — `MarkdownPreviewRenderer.registerDomEvents(el, handlers)` does the
+  **delegation** (which element was hit, which link text it carries, `belongsToMe` scoping, and the
+  `a.internal-link` / `a.footnote-link` / `a.external-link` / `a.tag` / `img,video` cases), and the
+  `handlers` object does the **behavior**. Only the second half was private. Porting those seven
+  methods (`markdown.ts`'s `LinkDomEventsHandlers`) removed the leaf entirely while keeping every
+  delegation case, which hand-wiring a bare `createEl('a')` + click listener would have silently
+  dropped.
+- **Port from the shipped bundle, not from memory.** The reference implementation is readable in
+  `%APPDATA%\obsidian\obsidian-<version>.asar` (`grep -aob '<methodName>'`, then `dd` a window around
+  the offset). Substitute house helpers where Obsidian reaches for its own privates (`isUrl` for its
+  `new URL(…)` probe; an `obsidianDevUtils.*` i18n key for its own catalog, which our typed `t()`
+  cannot address).
+- The cost of the port is that the copy can drift from Obsidian's original. That is the trade: a
+  behavior that may lag a version against a workspace mutation every consumer pays on every load.
+  Pin it down with integration assertions on the **contract** — the `hover-link` payload, the URL
+  handed to `win.open`, the `tag:` query — not on Obsidian's internals.
+- **The assertion that catches this class of bug is a workspace-invariance snapshot**: leaf count via
+  `iterateAllLeaves`, the active file, and `active-leaf-change` / `file-open` counters taken around the
+  call, plus `vault.getFiles().length` for the file-writing half. Prove it with a **negative control** —
+  restore the extraction and confirm the leaf assertion goes red; a leaf-count assertion is exactly the
+  kind that passes vacuously.
+- (cannot be forced by ESLint — a custom rule could flag `getLeaf(` / `openFile(` inside a module whose
+  purpose is extraction, but not the judgment)
+
 ## Testing
 
 ### Goals

@@ -11,7 +11,6 @@ import type {
   DomEventsHandlersInfo,
   EmbedRegistryEmbedByExtensionRecord
 } from '@obsidian-typings/obsidian-public-latest';
-import type { ExtractConstructor } from '@obsidian-typings/obsidian-public-latest/implementations';
 import type {
   App,
   TAbstractFile,
@@ -20,11 +19,15 @@ import type {
 } from 'obsidian';
 
 import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
+import { t } from 'i18next';
 import {
   Component,
   HoverPopover,
+  Keymap,
   MarkdownPreviewRenderer,
-  MarkdownRenderer
+  MarkdownRenderer,
+  Menu,
+  Notice
 } from 'obsidian';
 
 import type { PathOrAbstractFile } from './file-system.ts';
@@ -39,8 +42,8 @@ import {
   waitUntilConnected
 } from '../html-element.ts';
 import { normalizeOptionalProperties } from '../object-utils.ts';
+import { isUrl } from '../url.ts';
 import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
-import { getDomEventsHandlersConstructor } from './constructors/get-dom-events-handlers-constructor.ts';
 import {
   getAbstractFileOrNull,
   getPath,
@@ -52,15 +55,6 @@ import {
   resolveFolderNoteConfig
 } from './folder-note.ts';
 
-type DomEventsHandlersConstructor = ExtractConstructor<DomEventsHandlers>;
-
-/**
-Module-level mutable state, held in one object so each mutation names it explicitly.
- */
-interface ModuleState {
-  domEventsHandlersConstructor: DomEventsHandlersConstructor | null;
-}
-
 /**
  * How long to let Obsidian settle before opening a folder note. The click can land right after an
  * operation that created, rewrote and trashed notes, and opening into the middle of Obsidian's own
@@ -68,9 +62,38 @@ interface ModuleState {
  */
 const DELAY_BEFORE_OPEN_IN_MILLISECONDS = 200;
 
-const moduleState: ModuleState = {
-  domEventsHandlersConstructor: null
-};
+/**
+ * The sections an external link's context menu declares, in Obsidian's own order. The order is what
+ * {@link Menu.sort} groups the items by, so it has to match what
+ * {@link Workspace.handleExternalLinkContextMenu} and every `url-menu` listener expect to fill.
+ */
+const EXTERNAL_LINK_MENU_SECTIONS = [
+  'title',
+  'open',
+  'selection',
+  'clipboard',
+  'info',
+  'action',
+  'view',
+  '',
+  'danger'
+];
+
+/**
+ * The sections an internal link's context menu declares, in Obsidian's own order. See
+ * {@link EXTERNAL_LINK_MENU_SECTIONS} — the counterpart for `file-menu` listeners.
+ */
+const INTERNAL_LINK_MENU_SECTIONS = [
+  'title',
+  'open',
+  'action',
+  'clipboard',
+  'view',
+  'info',
+  '',
+  'danger'
+];
+
 /**
  * The params for the full render.
  */
@@ -319,6 +342,79 @@ class FixedZIndexDomEventsHandlersInfo implements DomEventsHandlersInfo {
 }
 
 /**
+ * What a rendered link DOES when it is clicked, hovered, dragged or right-clicked.
+ *
+ * {@link MarkdownPreviewRenderer.registerDomEvents} only performs the DELEGATION half — which element an
+ * event landed on, which link text it carries, and which of these methods to call. The half it does not
+ * provide is this one, and Obsidian keeps its own implementation private: the only handle on it is the
+ * instance a live preview view passes in. {@link getDomEventsHandlersConstructor} used to obtain it by
+ * opening a real leaf on an arbitrary note and intercepting that call — which mutated the user's
+ * workspace on EVERY consumer's load (a tab opening and closing, two `file-open` and two
+ * `active-leaf-change` events, an unrelated note rendered in preview).
+ *
+ * These bodies are a port of that class, so nothing has to be opened. Keeping
+ * {@link MarkdownPreviewRenderer.registerDomEvents} for the delegation is what keeps footnote links,
+ * tags, external links, mod-click and drag behaving exactly as they do inside a real preview.
+ */
+class LinkDomEventsHandlers implements DomEventsHandlers {
+  public constructor(private readonly info: DomEventsHandlersInfo) {}
+
+  public onExternalLinkClick($event: MouseEvent, targetEl: HTMLElement, linkText: string): void {
+    $event.preventDefault();
+    if (!isUrl(linkText)) {
+      new Notice(t(($) => $.obsidianDevUtils.notices.failedToOpenUrl, { url: linkText }));
+      return;
+    }
+
+    const modifierPaneType = Keymap.isModEvent($event);
+    targetEl.win.open(linkText, typeof modifierPaneType === 'boolean' ? '' : modifierPaneType);
+  }
+
+  public onExternalLinkRightClick($event: MouseEvent, targetEl: HTMLElement, linkText: string): void {
+    const menu = Menu.forEvent($event);
+    menu.addSections(EXTERNAL_LINK_MENU_SECTIONS);
+    addCopyMenuItem(menu, targetEl);
+    this.info.app.workspace.handleExternalLinkContextMenu(menu, linkText);
+  }
+
+  public onInternalLinkClick($event: MouseEvent, _targetEl: HTMLElement, linkText: string): void {
+    $event.preventDefault();
+    invokeAsyncSafely(() => this.info.app.workspace.openLinkText(linkText, this.info.path, Keymap.isModEvent($event)));
+  }
+
+  public onInternalLinkDrag($event: DragEvent, _targetEl: HTMLElement, linkText: string, title?: string): void {
+    const dragManager = this.info.app.dragManager;
+    dragManager.onDragStart($event, dragManager.dragLink($event, linkText, this.info.path, title));
+  }
+
+  public onInternalLinkMouseover($event: MouseEvent, targetEl: HTMLElement, linkText: string): void {
+    // `hoverParent` is the info object itself, exactly as Obsidian passes its own — which is what keeps
+    // `FixedZIndexDomEventsHandlersInfo`'s popover z-index fix in play.
+    this.info.app.workspace.trigger('hover-link', {
+      event: $event,
+      hoverParent: this.info,
+      linktext: linkText,
+      source: 'preview',
+      sourcePath: this.info.path,
+      targetEl
+    });
+  }
+
+  public onInternalLinkRightClick($event: MouseEvent, targetEl: HTMLElement, linkText: string): void {
+    const menu = Menu.forEvent($event);
+    menu.setParentElement(targetEl);
+    menu.addSections(INTERNAL_LINK_MENU_SECTIONS);
+    addCopyMenuItem(menu, targetEl);
+    this.info.app.workspace.handleLinkContextMenu(menu, linkText, this.info.path);
+  }
+
+  public onTagClick(_$event: MouseEvent, _targetEl: HTMLElement, tag: string): void {
+    // `registerDomEvents` has already called `preventDefault()` for a tag click.
+    this.info.app.internalPlugins.getEnabledPluginById(InternalPluginName.GlobalSearch)?.openGlobalSearch(`tag:${tag}`);
+  }
+}
+
+/**
  * Render the markdown and embeds.
  *
  * @param params - The parameters for the full render.
@@ -345,7 +441,7 @@ export async function fullRender(params: FullRenderParams): Promise<void> {
   }
 
   if (params.shouldRegisterLinkHandlers) {
-    await registerLinkHandlers(normalizeOptionalProperties<RegisterLinkHandlersParams>({
+    registerLinkHandlers(normalizeOptionalProperties<RegisterLinkHandlersParams>({
       app: params.app,
       el: params.el,
       sourcePath: params.sourcePath
@@ -379,17 +475,15 @@ export async function markdownToHtml(params: MarkdownToHtmlParams): Promise<stri
  *
  * @param params - The parameters for registering link handlers.
  */
-export async function registerLinkHandlers(params: RegisterLinkHandlersParams): Promise<void> {
+export function registerLinkHandlers(params: RegisterLinkHandlersParams): void {
   const {
     app,
     el,
     sourcePath
   } = params;
-  // eslint-disable-next-line require-atomic-updates -- No race condition.
-  moduleState.domEventsHandlersConstructor ??= await getDomEventsHandlersConstructor(app);
   MarkdownPreviewRenderer.registerDomEvents(
     el,
-    new moduleState.domEventsHandlersConstructor(
+    new LinkDomEventsHandlers(
       new FixedZIndexDomEventsHandlersInfo({
         app,
         el,
@@ -418,7 +512,7 @@ export async function renderExternalLink(params: RenderExternalLinkParams): Prom
     markdown: `[${displayText}](${url})`
   });
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  await registerLinkHandlers({
+  registerLinkHandlers({
     app,
     el: aEl
   });
@@ -478,7 +572,7 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
     markdown: `[[${path}|${displayText}]]`
   });
   const aEl = wrapperEl.find('a') as HTMLAnchorElement;
-  await registerLinkHandlers({
+  registerLinkHandlers({
     app,
     el: aEl
   });
@@ -494,6 +588,25 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
     });
   }
   return aEl;
+}
+
+/**
+ * Adds the `clipboard`-section Copy item every link context menu carries, copying the link's DISPLAY
+ * text — which is what Obsidian's own menu copies, not the target path.
+ *
+ * @param menu - The menu to add the item to.
+ * @param targetEl - The link element the menu was opened on.
+ */
+function addCopyMenuItem(menu: Menu, targetEl: HTMLElement): void {
+  menu.addItem((item) => {
+    item
+      .setSection('clipboard')
+      .setTitle(t(($) => $.obsidianDevUtils.menu.copy))
+      .setIcon('lucide-copy')
+      .onClick(() => {
+        invokeAsyncSafely(() => targetEl.win.navigator.clipboard.writeText(targetEl.getText()));
+      });
+  });
 }
 
 /**
