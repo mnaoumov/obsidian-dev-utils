@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 95.0.0
+
+- test(rename-delete-handler): record notices as they arrive instead of polling the DOM
+- fix(preprocess-plugin): fill in a partial host process instead of skipping the shim
+- fix(markdown)!: register link handlers without opening a workspace leaf
+
 ## 94.8.0
 
 - test(rename-delete-handler): latch the rescue notice instead of reading it after the wait
