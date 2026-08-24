@@ -149,7 +149,8 @@ function createTrackedMenuEventRegistrar(): TrackedMenuEventRegistrar {
   const registrar = strictProxy<MenuEventRegistrar>({
     registerEditorMenuEventHandler: () => make(),
     registerFileMenuEventHandler: () => make(),
-    registerFilesMenuEventHandler: () => make()
+    registerFilesMenuEventHandler: () => make(),
+    registerMarkdownViewportMenuEventHandler: () => make()
   });
 
   return {

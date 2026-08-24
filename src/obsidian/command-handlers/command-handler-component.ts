@@ -11,6 +11,7 @@ import type {
   EditorMenuEventHandler,
   FileMenuEventHandler,
   FilesMenuEventHandler,
+  MarkdownViewportMenuEventHandler,
   MenuEventRegistrar
 } from '../menu-event-registrar.ts';
 import type {
@@ -80,6 +81,10 @@ class CommandMenuEventScope extends DisposableBase implements MenuEventRegistrar
 
   public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): DisposableEx {
     return this.collect(this.inner.registerFilesMenuEventHandler(handler));
+  }
+
+  public registerMarkdownViewportMenuEventHandler(handler: MarkdownViewportMenuEventHandler): DisposableEx {
+    return this.collect(this.inner.registerMarkdownViewportMenuEventHandler(handler));
   }
 
   protected override performDispose(): void {

@@ -104,6 +104,23 @@ describe('MenuEventRegistrarComponent', () => {
     expect(offref).toHaveBeenCalledWith(eventRef);
   });
 
+  it('should register markdown-viewport-menu event and return a disposable that offrefs it', () => {
+    const {
+      app,
+      eventRef,
+      offref,
+      registeredEvents
+    } = createMocks();
+    const registrar = new MenuEventRegistrarComponent(app);
+    registrar.load();
+
+    const disposable = registrar.registerMarkdownViewportMenuEventHandler(vi.fn());
+
+    expect(registeredEvents).toContain('markdown-viewport-menu');
+    disposable.dispose();
+    expect(offref).toHaveBeenCalledWith(eventRef);
+  });
+
   it('should offref every registered menu event on component unload', () => {
     const {
       app,
@@ -131,6 +148,9 @@ describe('MenuEventRegistrarComponent', () => {
     }).toThrow('Component is not loaded');
     expect(() => {
       registrar.registerFilesMenuEventHandler(vi.fn());
+    }).toThrow('Component is not loaded');
+    expect(() => {
+      registrar.registerMarkdownViewportMenuEventHandler(vi.fn());
     }).toThrow('Component is not loaded');
   });
 });

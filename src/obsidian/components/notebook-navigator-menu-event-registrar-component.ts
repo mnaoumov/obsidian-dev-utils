@@ -24,6 +24,7 @@ import type {
   EditorMenuEventHandler,
   FileMenuEventHandler,
   FilesMenuEventHandler,
+  MarkdownViewportMenuEventHandler,
   MenuEventRegistrar
 } from '../menu-event-registrar.ts';
 import type {
@@ -144,6 +145,20 @@ export class NotebookNavigatorMenuEventRegistrarComponent extends LayoutReadyCom
         }
       })
     );
+  }
+
+  /**
+   * Accepts a markdown-viewport-menu registration and does nothing with it.
+   *
+   * Notebook Navigator extends the file tree, not the editor — the margin beside a note's text is
+   * Obsidian's own viewport, which the handlers already reach through the workspace event. The
+   * registration is inert rather than refused so a handler that declares one is not a load-time error.
+   *
+   * @param _handler - The handler, deliberately unused.
+   * @returns A {@link DisposableEx} that has nothing to undo.
+   */
+  public registerMarkdownViewportMenuEventHandler(_handler: MarkdownViewportMenuEventHandler): DisposableEx {
+    return new CallbackDisposable({ callback: noop });
   }
 
   /**

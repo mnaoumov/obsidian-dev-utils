@@ -7,6 +7,7 @@
 import type {
   Editor as EditorOriginal,
   MarkdownFileInfo as MarkdownFileInfoOriginal,
+  MarkdownView as MarkdownViewOriginal,
   Menu as MenuOriginal
 } from 'obsidian';
 
@@ -18,7 +19,10 @@ import {
 } from 'vitest';
 
 import type { DisposableEx } from '../../disposable.ts';
-import type { EditorMenuEventHandler } from '../menu-event-registrar.ts';
+import type {
+  EditorMenuEventHandler,
+  MarkdownViewportMenuEventHandler
+} from '../menu-event-registrar.ts';
 import type { CommandHandlerRegistrationContext } from './command-handler.ts';
 import type { EditorCommandHandlerConstructorParams } from './editor-command-handler.ts';
 
@@ -29,6 +33,7 @@ import { EditorCommandHandler } from './editor-command-handler.ts';
 interface MockContext {
   context: CommandHandlerRegistrationContext;
   editorMenuHandlers: EditorMenuEventHandler[];
+  viewportMenuHandlers: MarkdownViewportMenuEventHandler[];
 }
 
 class TestEditorHandler extends EditorCommandHandler {
@@ -36,6 +41,7 @@ class TestEditorHandler extends EditorCommandHandler {
   public executeFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
   public shouldAddToCommandPaletteFunction = vi.fn(() => true);
   public shouldAddToEditorMenuFunction = vi.fn(() => false);
+  public shouldAddToViewportMenuFunction = vi.fn((_mode: string, _source: string) => false);
 
   protected override canExecuteEditor(editor: EditorOriginal, context: MarkdownFileInfoOriginal): boolean {
     super.canExecuteEditor(editor, context);
@@ -55,10 +61,16 @@ class TestEditorHandler extends EditorCommandHandler {
     super.shouldAddToEditorMenu(editor, context);
     return this.shouldAddToEditorMenuFunction();
   }
+
+  protected override shouldAddToViewportMenu(view: MarkdownViewOriginal, mode: string, source: string): boolean {
+    super.shouldAddToViewportMenu(view, mode, source);
+    return this.shouldAddToViewportMenuFunction(mode, source);
+  }
 }
 
 function createMockContext(): MockContext {
   const editorMenuHandlers: EditorMenuEventHandler[] = [];
+  const viewportMenuHandlers: MarkdownViewportMenuEventHandler[] = [];
   return {
     context: {
       activeFileProvider: { getActiveFile: () => null },
@@ -68,11 +80,16 @@ function createMockContext(): MockContext {
           return strictProxy<DisposableEx>({});
         },
         registerFileMenuEventHandler: vi.fn(),
-        registerFilesMenuEventHandler: vi.fn()
+        registerFilesMenuEventHandler: vi.fn(),
+        registerMarkdownViewportMenuEventHandler: (handler: MarkdownViewportMenuEventHandler): DisposableEx => {
+          viewportMenuHandlers.push(handler);
+          return strictProxy<DisposableEx>({});
+        }
       },
       pluginName: 'Test Plugin'
     },
-    editorMenuHandlers
+    editorMenuHandlers,
+    viewportMenuHandlers
   };
 }
 
@@ -82,6 +99,10 @@ function createMockEditor(): EditorOriginal {
 
 function createMockMarkdownFileInfo(): MarkdownFileInfoOriginal {
   return strictProxy<MarkdownFileInfoOriginal>({});
+}
+
+function createMockMarkdownView(): MarkdownViewOriginal {
+  return strictProxy<MarkdownViewOriginal>({ editor: createMockEditor() });
 }
 
 function createParams(overrides?: Partial<EditorCommandHandlerConstructorParams>): EditorCommandHandlerConstructorParams {
@@ -344,5 +365,128 @@ describe('EditorCommandHandler', () => {
     });
     Object.assign(menu, { addItem });
     editorMenuHandlers[0]?.(menu, createMockEditor(), createMockMarkdownFileInfo());
+  });
+
+  it('should register markdown-viewport-menu event handler on registration', async () => {
+    const handler = new TestEditorHandler(createParams());
+    const { context, viewportMenuHandlers } = createMockContext();
+
+    await handler.onRegistered(context);
+    expect(viewportMenuHandlers).toHaveLength(1);
+  });
+
+  it('should not add viewport menu item when shouldAddToViewportMenu returns false', async () => {
+    const handler = new TestEditorHandler(createParams());
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const addItem = vi.fn();
+    const menu = strictProxy<MenuOriginal>({ addItem });
+    viewportMenuHandlers[0]?.(menu, createMockMarkdownView(), 'source', '');
+
+    expect(addItem).not.toHaveBeenCalled();
+  });
+
+  it('should add viewport menu item when shouldAddToViewportMenu returns true', async () => {
+    const handler = new TestEditorHandler(createParams());
+    handler.shouldAddToViewportMenuFunction.mockReturnValue(true);
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const addItem = vi.fn();
+    const menu = strictProxy<MenuOriginal>({ addItem });
+    viewportMenuHandlers[0]?.(menu, createMockMarkdownView(), 'source', '');
+
+    expect(addItem).toHaveBeenCalledOnce();
+  });
+
+  it('should pass the view mode and source through to shouldAddToViewportMenu', async () => {
+    const handler = new TestEditorHandler(createParams());
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const view = createMockMarkdownView();
+    viewportMenuHandlers[0]?.(strictProxy<MenuOriginal>({ addItem: vi.fn() }), view, 'preview', 'gutter');
+
+    expect(handler.shouldAddToViewportMenuFunction).toHaveBeenCalledWith('preview', 'gutter');
+  });
+
+  it('should not add viewport menu item when canExecuteEditor returns false', async () => {
+    const handler = new TestEditorHandler(createParams());
+    handler.shouldAddToViewportMenuFunction.mockReturnValue(true);
+    handler.canExecuteFunction.mockReturnValue(false);
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const addItem = vi.fn();
+    const menu = strictProxy<MenuOriginal>({ addItem });
+    viewportMenuHandlers[0]?.(menu, createMockMarkdownView(), 'source', '');
+
+    expect(addItem).not.toHaveBeenCalled();
+  });
+
+  it('should set the viewport menu section submenu when shouldAddCommandToSubmenu is true', async () => {
+    const handler = new TestEditorHandler(createParams({
+      editorMenuSection: 'my-section',
+      editorMenuSubmenuIcon: 'folder',
+      shouldAddCommandToSubmenu: true
+    }));
+    handler.shouldAddToViewportMenuFunction.mockReturnValue(true);
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const setSectionSubmenu = vi.fn();
+    const addItem = vi.fn();
+    const menu = strictProxy<MenuOriginal>({ addItem, setSectionSubmenu });
+    viewportMenuHandlers[0]?.(menu, createMockMarkdownView(), 'source', '');
+
+    expect(setSectionSubmenu).toHaveBeenCalledWith('my-section', {
+      icon: 'folder',
+      title: 'my-section'
+    });
+  });
+
+  it('should execute via the viewport menu item onClick callback', async () => {
+    const handler = new TestEditorHandler(createParams());
+    handler.shouldAddToViewportMenuFunction.mockReturnValue(true);
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const menu = strictProxy<MenuOriginal>({});
+    const addItem = vi.fn((callback: (item: unknown) => void) => {
+      const item = {
+        onClick: vi.fn((clickCallback: () => void) => {
+          clickCallback();
+          return item;
+        }),
+        setIcon: vi.fn().mockReturnThis(),
+        setSection: vi.fn().mockReturnThis(),
+        setTitle: vi.fn().mockReturnThis()
+      };
+      callback(item);
+      return menu;
+    });
+    Object.assign(menu, { addItem });
+    viewportMenuHandlers[0]?.(menu, createMockMarkdownView(), 'source', '');
+
+    expect(handler.executeFunction).toHaveBeenCalledOnce();
+  });
+
+  it('should use default shouldAddToViewportMenu returning false', async () => {
+    class DefaultViewportMenuHandler extends EditorCommandHandler {
+      protected override async executeEditor(): Promise<void> {
+        await noopAsync();
+      }
+    }
+
+    const handler = new DefaultViewportMenuHandler(createParams());
+    const { context, viewportMenuHandlers } = createMockContext();
+    await handler.onRegistered(context);
+
+    const addItem = vi.fn();
+    const menu = strictProxy<MenuOriginal>({ addItem });
+    viewportMenuHandlers[0]?.(menu, createMockMarkdownView(), 'source', '');
+
+    expect(addItem).not.toHaveBeenCalled();
   });
 });

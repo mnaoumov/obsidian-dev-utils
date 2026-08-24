@@ -79,7 +79,8 @@ function createMockContext(activeFile?: TFileOriginal): MockContext {
         registerFilesMenuEventHandler: (handler: FilesMenuEventHandler): DisposableEx => {
           filesMenuHandlers.push(handler);
           return strictProxy<DisposableEx>({});
-        }
+        },
+        registerMarkdownViewportMenuEventHandler: vi.fn()
       },
       pluginName: 'Test Plugin'
     },

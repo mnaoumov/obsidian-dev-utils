@@ -293,6 +293,17 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
       expect(notebookNavigator.fileMenuCallbacks).toHaveLength(1);
     });
 
+    it('should ignore a markdown-viewport-menu registration, which Notebook Navigator has no menu for', async () => {
+      const component = await loadComponent();
+
+      const disposable = component.registerMarkdownViewportMenuEventHandler(() => {
+        throw new Error('The markdown-viewport-menu handler must never be invoked.');
+      });
+      disposable.dispose();
+
+      expect(notebookNavigator.fileMenuCallbacks).toHaveLength(1);
+    });
+
     it('should drop a file-menu handler once its registration is disposed', async () => {
       const component = await loadComponent();
       const disposable = component.registerFileMenuEventHandler((menu) => {
