@@ -40,7 +40,29 @@ export enum DeleteIfNotUsedResult {
   /**
    * The file/folder was not deleted.
    */
-  NotDeleted = 'not-deleted'
+  NotDeleted = 'not-deleted',
+
+  /**
+   * The file was still used, and {@link DeleteIfNotUsedParams.rescueStillUsedFile} moved it out of the way
+   * instead of it being deleted or left where it was.
+   */
+  Rescued = 'rescued'
+}
+
+/**
+ * Parameters passed to {@link DeleteIfNotUsedParams.rescueStillUsedFile}.
+ */
+export interface RescueStillUsedFileParams {
+  /**
+   * The file that is about to be kept because other notes still reference it.
+   */
+  readonly file: TFile;
+
+  /**
+   * The paths of the notes that still reference the file once everything being deleted alongside it is
+   * gone. Never empty.
+   */
+  readonly survivingNotePaths: readonly string[];
 }
 
 interface DeleteIfNotUsedParams {
@@ -50,6 +72,7 @@ interface DeleteIfNotUsedParams {
   readonly deletedNotePaths?: readonly string[];
   readonly pathOrFile: PathOrAbstractFile;
   readonly pluginNoticeComponent?: PluginNoticeComponent;
+  rescueStillUsedFile?(this: void, params: RescueStillUsedFileParams): Promise<boolean>;
   readonly shouldDeleteEmptyFolders?: boolean;
   shouldProtectIfStillUsed?(this: void, file: TFile): boolean;
 }
@@ -67,13 +90,20 @@ interface DeleteIfNotUsedParams {
  * exempt the notes themselves — leaving a dangling link behind is what Obsidian normally does, so keeping
  * every linked-to note would make folder deletion impossible. By default every still-used file is kept.
  *
+ * A kept file is stranded: it survives in a folder whose owning note is gone, while the note still
+ * referencing it lives elsewhere. {@link DeleteIfNotUsedParams.rescueStillUsedFile} is the seam that lets
+ * the caller relocate it instead, since where it belongs is the caller's attachment-path policy, not this
+ * function's. Without that callback the file is simply kept, exactly as before.
+ *
  * The actual removal goes through {@link DeleteIfNotUsedParams.deleteAbstractFile} when supplied,
  * otherwise through {@link trashSafe}. A caller that intercepted a specific deletion primitive passes its
  * unpatched original here, so the user's chosen semantics (permanent delete vs trash) survive the detour.
  *
  * @param params - The parameters for the function.
  * @returns A {@link Promise} that resolves to {@link DeleteIfNotUsedResult.Deleted} if the abstract file
- * was deleted, or {@link DeleteIfNotUsedResult.NotDeleted} if it was kept.
+ * was deleted, {@link DeleteIfNotUsedResult.Rescued} if it was moved away by
+ * {@link DeleteIfNotUsedParams.rescueStillUsedFile}, or {@link DeleteIfNotUsedResult.NotDeleted} if it was
+ * kept where it was.
  */
 export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<DeleteIfNotUsedResult> {
   const file = getAbstractFileOrNull({ app: params.app, pathOrFile: params.pathOrFile });
@@ -87,7 +117,12 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
   /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; the false branch of isFile leads to isFolder. */
   if (isFile(file)) {
     /* v8 ignore stop */
-    if (await isStillUsedAfterDeletion(params, file)) {
+    const survivingNotePaths = await getSurvivingNotePaths(params, file);
+    if (survivingNotePaths.length > 0) {
+      if (await params.rescueStillUsedFile?.({ file, survivingNotePaths })) {
+        return DeleteIfNotUsedResult.Rescued;
+      }
+
       params.pluginNoticeComponent?.showNotice(t(($) => $.obsidianDevUtils.notices.attachmentIsStillUsed, { attachmentPath: file.path }));
       canDelete = false;
     }
@@ -96,16 +131,19 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
     /* v8 ignore stop */
     const listedFiles = await listSafe(params.app, file);
     for (const child of [...listedFiles.files, ...listedFiles.folders]) {
-      canDelete &&= await deleteIfNotUsed(normalizeOptionalProperties<DeleteIfNotUsedParams>({
-        app: params.app,
-        deleteAbstractFile: params.deleteAbstractFile,
-        deletedNotePath: params.deletedNotePath,
-        deletedNotePaths: params.deletedNotePaths,
-        pathOrFile: child,
-        pluginNoticeComponent: params.pluginNoticeComponent,
-        shouldDeleteEmptyFolders: params.shouldDeleteEmptyFolders,
-        shouldProtectIfStillUsed: params.shouldProtectIfStillUsed
-      })) === DeleteIfNotUsedResult.Deleted;
+      canDelete &&= isGoneFromParent(
+        await deleteIfNotUsed(normalizeOptionalProperties<DeleteIfNotUsedParams>({
+          app: params.app,
+          deleteAbstractFile: params.deleteAbstractFile,
+          deletedNotePath: params.deletedNotePath,
+          deletedNotePaths: params.deletedNotePaths,
+          pathOrFile: child,
+          pluginNoticeComponent: params.pluginNoticeComponent,
+          rescueStillUsedFile: params.rescueStillUsedFile,
+          shouldDeleteEmptyFolders: params.shouldDeleteEmptyFolders,
+          shouldProtectIfStillUsed: params.shouldProtectIfStillUsed
+        }))
+      );
     }
 
     canDelete &&= await isEmptyFolder(params.app, file);
@@ -128,15 +166,16 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
 }
 
 /**
- * Checks whether a file would still be referenced once everything being deleted alongside it is gone.
+ * Lists the notes that would still reference a file once everything being deleted alongside it is gone.
  *
  * @param params - The parameters {@link deleteIfNotUsed} was called with.
  * @param file - The file whose remaining references are counted.
- * @returns A {@link Promise} that resolves to whether the file must be kept.
+ * @returns A {@link Promise} that resolves to the paths of the notes that keep the file alive. Empty means
+ * the file is free to go.
  */
-async function isStillUsedAfterDeletion(params: DeleteIfNotUsedParams, file: TFile): Promise<boolean> {
+async function getSurvivingNotePaths(params: DeleteIfNotUsedParams, file: TFile): Promise<readonly string[]> {
   if (!(params.shouldProtectIfStillUsed?.(file) ?? true)) {
-    return false;
+    return [];
   }
 
   const backlinks = await getBacklinksForFileSafe({ app: params.app, pathOrFile: file });
@@ -148,5 +187,16 @@ async function isStillUsedAfterDeletion(params: DeleteIfNotUsedParams, file: TFi
     backlinks.clear(deletedNotePath);
   }
 
-  return backlinks.count() !== 0;
+  return backlinks.keys();
+}
+
+/**
+ * Checks whether a child no longer sits in the folder being walked — deleted outright, or moved elsewhere
+ * by a rescue. Either way the folder holding it can still be removed; only a child kept in place blocks it.
+ *
+ * @param result - The result of deleting the child.
+ * @returns `true` when the child is gone from its parent folder.
+ */
+function isGoneFromParent(result: DeleteIfNotUsedResult): boolean {
+  return result === DeleteIfNotUsedResult.Deleted || result === DeleteIfNotUsedResult.Rescued;
 }
