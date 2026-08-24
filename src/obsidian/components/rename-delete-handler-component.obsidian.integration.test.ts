@@ -727,21 +727,34 @@ describe('rename-delete-handler', () => {
               }
 
               /*
+               * Latch the notice rather than reading it at the end: it auto-dismisses, and the wait below
+               * can outlast it on a loaded machine — which is exactly how this went green three times and
+               * then failed inside a release preflight.
+               */
+              let hasNoticeForRescue = false;
+              function latchRescueNotice(): void {
+                hasNoticeForRescue ||= [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
+                  .some((noticeContentEl) => noticeContentEl.textContent.includes(RESCUE_PATH));
+              }
+
+              latchRescueNotice();
+
+              /*
                * Assert on the RESOLVED link, not on the note's text: Obsidian rewrites the embed to its
                * shortest unambiguous form (`![[shared.png]]`), so the destination path never appears in the
                * markdown. Re-resolution also lags the rewrite, so wait for the cache to catch up.
                */
               await waitUntil({
                 message: 'the surviving note resolves its embed to the rescued attachment',
-                predicate: () => Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH),
+                predicate: () => {
+                  latchRescueNotice();
+                  return Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH);
+                },
                 timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
               });
 
-              const noticeTexts = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
-                .map((noticeContentEl) => noticeContentEl.textContent);
-
               return {
-                hasNoticeForRescue: noticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
+                hasNoticeForRescue,
                 hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
                 hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
                 isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
@@ -836,18 +849,22 @@ describe('rename-delete-handler', () => {
 
             await app.fileManager.trashFile(srcNote);
 
+            // The notice auto-dismisses, so latch it as the wait polls instead of reading it at the end.
+            let hasNoticeForRescue = false;
+
             // The note delete handler runs on the queue, so the rescue lands after `trashFile` resolves.
             await waitUntil({
               message: 'the surviving note resolves its embed to the rescued attachment',
-              predicate: () => Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH),
+              predicate: () => {
+                hasNoticeForRescue ||= [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
+                  .some((noticeContentEl) => noticeContentEl.textContent.includes(RESCUE_PATH));
+                return Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH);
+              },
               timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
 
-            const noticeTexts = [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
-              .map((noticeContentEl) => noticeContentEl.textContent);
-
             return {
-              hasNoticeForRescue: noticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
+              hasNoticeForRescue,
               hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
               hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
               isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
