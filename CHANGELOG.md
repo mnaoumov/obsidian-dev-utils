@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 94.8.0
+
+- test(rename-delete-handler): latch the rescue notice instead of reading it after the wait
+- feat(rename-delete-handler): let a consumer relocate an attachment a deletion would strand
+
 ## 94.7.0
 
 - fix(rename-delete-handler): protect a still-referenced attachment from a folder deletion
