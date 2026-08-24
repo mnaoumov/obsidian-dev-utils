@@ -503,6 +503,34 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a custom rule could flag `getLeaf(` / `openFile(` inside a module whose
   purpose is extraction, but not the judgment)
 
+### L15. A function serialized into the emitted banner may only reference its own module — and `globalThis` stays spelled out
+
+- `preprocess-plugin.ts` ships code as **text**: `makeBanner()` builds the esbuild banner out
+  of `String(fn)`, so what lands in every consumer's bundle is source text, not a linked module. Two
+  consequences that no type-check or unit test catches, because both are correct in the builder process
+  and wrong only in the emitted artifact:
+- **Cross-module calls do not survive.** esbuild compiles an imported call to `(0, import_module.fn)(…)`
+  in the CJS dist — `makeValidVariableName` appears exactly that way in
+  `dist/lib/cjs/script-utils/bundlers/esbuild-impl/preprocess-plugin.cjs` — naming a binding the emitted
+  bundle does not have. Only **same-module** references stay bare identifiers. That is why
+  `ensureBrowserProcess` / `keepName` live beside `initCjs` / `initEsm` rather than in a tidy
+  `banner-shims.ts` (drafted for T581, then deleted for this reason), and why `makeBanner()` serializes
+  the shims alongside the `init` function that calls them.
+- **A helper that is referenced but not serialized fails silently**, degrading to whatever the consumer's global
+  scope holds under that name. `globalThisRecord['__name'] ??= name;` shipped for years resolving `name`
+  to `window.name` — a string, not a function. Nothing threw, because nothing called it.
+- **Never let `lint:fix` shorten `globalThis.x` to `x` in banner code.** `unicorn/no-unnecessary-global-this`
+  autofixes `globalThis.process` → `process`, which is equivalent in a module but not in the banner: there
+  a bare `process` is a free identifier, so reading it where the host has none throws a **ReferenceError**
+  — precisely the case `ensureBrowserProcess` exists to handle. The line carries a disable comment saying
+  so; keep it.
+- **Verify against the built `dist`, never only the source.** Run `npm run build`, then execute the
+  banner sliced out of `dist/lib/cjs/*.cjs` and `dist/lib/esm/*.mjs` against the host shapes you care
+  about. The unit tests call `String(fn)` on vitest's transform, which is exactly the compilation step
+  that differs.
+- (cannot be forced by ESLint — a custom rule could flag imported identifiers inside the serialized
+  functions, but not the `globalThis` autofix interaction)
+
 ## Testing
 
 ### Goals
