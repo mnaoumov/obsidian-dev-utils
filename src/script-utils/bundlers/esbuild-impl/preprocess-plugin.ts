@@ -5,9 +5,15 @@
  *
  * @remarks
  * We cannot use `.` instead of `(dot)` in the above description because the file itself is preprocessed with the same rule.
+ *
+ * `initCjs`, `initEsm` and the shims they call are stringified with `String(fn)` and injected into every
+ * built bundle as an esbuild banner, so they must be reachable from one another by BARE identifier. That is
+ * why they all live in this module: esbuild compiles a cross-module call to `(0, import_module.fn)(…)`,
+ * which would name a binding the emitted bundle does not have. Same-module references stay bare, and
+ * `makeBanner()` serializes the shims alongside the `init` function so they are in scope there. A shim that
+ * is not serialized silently degrades to whatever the consumer's global scope holds under that name — which
+ * is how `__name` used to end up holding `window.name`.
  */
-
-/* v8 ignore start -- esbuild plugin that preprocesses source files with import.meta.url shims and process polyfills; requires a live esbuild context. Covers `name` at the bottom too: it exists only to be captured by the serialized `initCjs` banner, so it runs inside the emitted bundle and never in this process. */
 
 /* eslint-disable unicorn/prefer-module -- The CommonJS surface is the subject here, not an oversight. This plugin emits the interop shims that let a bundle run under either module system, so it has to name `__filename` and `require` to detect and bridge them. `import.meta.filename` is precisely what is unavailable in the environment these branches exist to serve. */
 
@@ -27,7 +33,13 @@ import {
   replaceAll
 } from '../../../string.ts';
 
+/**
+ * A browser-flavored stand-in for Node's `process` global.
+ */
 interface BrowserProcess extends Partial<NodeJS.Process> {
+  /**
+   * Marks the process as a browser one. The bundled `debug` package selects its browser entry point on it.
+   */
   browser: boolean;
 }
 
@@ -43,6 +55,72 @@ interface RequirePatched extends NodeJS.Require {
 interface UrlModule {
   pathToFileURL: typeof pathToFileURL;
 }
+
+/**
+ * Ensures the bundle runs against a `process` global that browser-targeting packages recognize.
+ *
+ * @remarks
+ * Serialized into the emitted banner, so it never runs in the builder process — but it is an ordinary
+ * function here, so it is unit-tested directly rather than by evaluating the banner text.
+ *
+ * Fills in the keys MISSING from a host-provided `process` rather than replacing or skipping it. Obsidian
+ * Mobile exposes a partial `process`, and the whole-object guards this replaced (`if (globalThis.process) {
+ * return; }` / `globalThisRecord['process'] ??= …`) took that as "already shimmed", so `browser` never
+ * landed. The bundled `debug` package then selected its Node entry point, which calls
+ * `require('util').deprecate()` at module top level, and on mobile the patched `require` returns `{}` — so
+ * the plugin threw before its `onload` ran.
+ *
+ * A real Node or Electron `process` is left completely untouched. `process.versions.node` is the signal for
+ * it, and — unlike `globalThis.app.isMobile` — it is self-contained, so it also holds in the Node CLI
+ * bundles this banner is emitted into, where no Obsidian `app` exists.
+ */
+export function ensureBrowserProcess(): void {
+  const browserProcess: GenericObject<BrowserProcess> = {
+    browser: true,
+    cwd() {
+      return '/';
+    },
+    env: {},
+    platform: 'android'
+  };
+
+  // eslint-disable-next-line obsidianmd/no-global-this, unicorn/no-unnecessary-global-this -- Must stay `globalThis`-qualified: in the emitted banner a bare `process` is a free identifier, so reading it where the host has none throws a ReferenceError instead of yielding `undefined`. That is the very case this function exists to handle.
+  const existingProcess = globalThis.process as Partial<NodeJS.Process> | undefined;
+
+  if (!existingProcess) {
+    // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
+    globalThis.process = browserProcess as NodeJS.Process;
+    return;
+  }
+
+  if (existingProcess.versions?.node) {
+    return;
+  }
+
+  const existingProcessRecord = existingProcess as GenericObject;
+
+  for (const [key, value] of Object.entries(browserProcess)) {
+    existingProcessRecord[key] ??= value;
+  }
+
+  existingProcessRecord['browser'] = true;
+}
+
+/**
+ * Returns its argument unchanged.
+ *
+ * @param $unknown - The value to return.
+ * @returns The value passed in.
+ *
+ * @remarks
+ * Serialized into the emitted banner, where it stands in for esbuild's `__name` helper — which names a
+ * function and returns it — for bundles that reference the helper without emitting their own.
+ */
+export function keepName($unknown: unknown): unknown {
+  return $unknown;
+}
+
+/* v8 ignore start -- Everything from here to the matching `stop` either needs a live esbuild context or is serialized into the emitted banner and so runs inside the built bundle, never in this process. The shims above are deliberately NOT ignored: they are ordinary functions here and are unit-tested directly. */
 
 /**
  * Creates an esbuild plugin that preprocesses JavaScript and TypeScript files.
@@ -94,7 +172,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
       build.initialOptions.banner ??= {};
       build.initialOptions.banner['js'] ??= '';
-      build.initialOptions.banner['js'] += `\n(${String(isEsm ? initEsm : initCjs)})();\n`;
+      build.initialOptions.banner['js'] += makeBanner(isEsm);
 
       build.onLoad({ filter: /\.(?:js|ts|cjs|mjs|cts|mts)$/ }, async ($arguments) => {
         let contents = await readFile($arguments.path, 'utf-8');
@@ -133,7 +211,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 function initCjs(): void {
   // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const globalThisRecord = globalThis as GenericObject;
-  globalThisRecord['__name'] ??= name;
+  globalThisRecord['__name'] ??= keepName;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
   if (originalRequire && !originalRequire.__isPatched) {
     // eslint-disable-next-line no-global-assign, no-implicit-globals -- We need to patch the `require()` function.
@@ -146,26 +224,9 @@ function initCjs(): void {
     ) as RequirePatched;
   }
 
-  const newFuncs: Record<string, () => unknown> = {
-    __extractDefault() {
-      return extractDefault;
-    },
-    process() {
-      const browserProcess: BrowserProcess = {
-        browser: true,
-        cwd() {
-          return '/';
-        },
-        env: {},
-        platform: 'android'
-      };
-      return browserProcess;
-    }
-  };
+  globalThisRecord['__extractDefault'] ??= extractDefault;
 
-  for (const key of Object.keys(newFuncs)) {
-    globalThisRecord[key] ??= newFuncs[key]?.();
-  }
+  ensureBrowserProcess();
 
   function extractDefault(module: Partial<EsmModule> | undefined): unknown {
     return module && module.__esModule && 'default' in module ? module.default : module;
@@ -229,27 +290,25 @@ function initCjs(): void {
 }
 
 function initEsm(): void {
-  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  if ((globalThis.process as NodeJS.Process | undefined)) {
-    return;
-  }
-
-  const browserProcess: BrowserProcess = {
-    browser: true,
-    cwd() {
-      return '/';
-    },
-    env: {},
-    platform: 'android'
-  };
-  // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
-  globalThis.process = browserProcess as NodeJS.Process;
-}
-
-function name($unknown: unknown): unknown {
-  return $unknown;
+  ensureBrowserProcess();
 }
 
 /* v8 ignore stop */
+
+/**
+ * Builds the banner injected at the top of every emitted bundle.
+ *
+ * `String(fn)` captures only the function's own body, so every shim the `init` function calls has to be
+ * serialized next to it and wrapped in one shared scope; otherwise the call it makes resolves against the
+ * consumer's global scope at runtime. See this file's `@file` remarks.
+ *
+ * @param isEsm - Whether the build is for an ESM format.
+ * @returns The banner source to prepend to the emitted bundle.
+ */
+function makeBanner(isEsm: boolean | undefined): string {
+  const shims = isEsm ? [ensureBrowserProcess] : [ensureBrowserProcess, keepName];
+  const init = isEsm ? initEsm : initCjs;
+  return `\n(function () {\n${shims.map(String).join('\n\n')}\n\n(${String(init)})();\n})();\n`;
+}
 
 /* eslint-enable unicorn/prefer-module -- Pairs with the file-level disable above. */
