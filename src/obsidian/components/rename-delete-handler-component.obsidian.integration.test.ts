@@ -656,7 +656,9 @@ describe('rename-delete-handler', () => {
             const RESCUE_PATH = `${OTHER_FOLDER}/attachments/shared.png`;
             const EXPECTED_SHARED_BACKLINK_COUNT = 2;
             const ATTACHMENT_BYTE_LENGTH = 8;
-            const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+            // Each wait has to give up INSIDE the harness's 30 s `Runtime.evaluate` ceiling, or the CDP command is
+            // Killed first and the message naming the unmet condition never makes it out of the vault.
+            const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
             // A case that timed out earlier cannot run its own cleanup, so start from a known-empty slate.
             for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
@@ -683,6 +685,38 @@ describe('rename-delete-handler', () => {
               })
             });
             handlerComponent.load();
+
+            /*
+             * A notice shown in the default `PluginNoticeMode.Replace` is transient: the next notice from the
+             * same component hides it. The rescue's rename makes the handler queue an `updatedLinks` notice,
+             * which takes the slot the rescue notice was in — so sampling the DOM races that replacement and
+             * loses whenever nothing slows the run down. Record notices as they arrive instead. Only notices
+             * inserted from here on are recorded, so a notice left over from an earlier case cannot count.
+             */
+            const observedNoticeTexts: string[] = [];
+            function recordNoticesIn(root: ParentNode): void {
+              for (const noticeContentEl of root.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')) {
+                observedNoticeTexts.push(noticeContentEl.textContent);
+              }
+            }
+
+            const noticeObserver = new MutationObserver((mutations) => {
+              for (const mutation of mutations) {
+                for (const addedNode of mutation.addedNodes) {
+                  if (!addedNode.instanceOf(HTMLElement)) {
+                    continue;
+                  }
+
+                  // The content element sits inside the `.notice` container that is what actually gets added,
+                  // So sweep the added subtree as well as testing the added node itself.
+                  if (addedNode.matches('.obsidian-dev-utils.plugin-notice-content')) {
+                    observedNoticeTexts.push(addedNode.textContent);
+                  }
+                  recordNoticesIn(addedNode);
+                }
+              }
+            });
+            noticeObserver.observe(activeDocument.body, { childList: true, subtree: true });
 
             try {
               await app.vault.createFolder(ATTACHMENT_FOLDER);
@@ -727,40 +761,30 @@ describe('rename-delete-handler', () => {
               }
 
               /*
-               * Latch the notice rather than reading it at the end: it auto-dismisses, and the wait below
-               * can outlast it on a loaded machine — which is exactly how this went green three times and
-               * then failed inside a release preflight.
-               */
-              let hasNoticeForRescue = false;
-              function latchRescueNotice(): void {
-                hasNoticeForRescue ||= [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
-                  .some((noticeContentEl) => noticeContentEl.textContent.includes(RESCUE_PATH));
-              }
-
-              latchRescueNotice();
-
-              /*
                * Assert on the RESOLVED link, not on the note's text: Obsidian rewrites the embed to its
                * shortest unambiguous form (`![[shared.png]]`), so the destination path never appears in the
-               * markdown. Re-resolution also lags the rewrite, so wait for the cache to catch up.
+               * markdown. Re-resolution also lags the rewrite, so wait for the cache to catch up. The
+               * notice is waited for in the same predicate rather than read afterwards: `waitUntil` polls
+               * immediately, so a condition that is already met exits on the first poll and a second
+               * condition read after it would never get a poll of its own.
                */
               await waitUntil({
-                message: 'the surviving note resolves its embed to the rescued attachment',
-                predicate: () => {
-                  latchRescueNotice();
-                  return Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH);
-                },
+                message: 'the surviving note resolves its embed to the rescued attachment, and the rescue notice is shown',
+                predicate: () =>
+                  Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH)
+                  && observedNoticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
                 timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
               });
 
               return {
-                hasNoticeForRescue,
+                hasNoticeForRescue: observedNoticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
                 hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
                 hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
                 isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
                 survivingNoteResolvedLinkPaths: Object.keys(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {})
               };
             } finally {
+              noticeObserver.disconnect();
               // Unload first: while the handler is loaded its patch would protect these files from this cleanup too.
               handlerComponent.unload();
               for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
@@ -799,7 +823,9 @@ describe('rename-delete-handler', () => {
           const RESCUE_PATH = `${OTHER_FOLDER}/attachments/shared.png`;
           const EXPECTED_SHARED_BACKLINK_COUNT = 2;
           const ATTACHMENT_BYTE_LENGTH = 8;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          // Each wait has to give up INSIDE the harness's 30 s `Runtime.evaluate` ceiling, or the CDP command is
+          // Killed first and the message naming the unmet condition never makes it out of the vault.
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
             const staleFolder = app.vault.getAbstractFileByPath(folderPath);
@@ -826,6 +852,37 @@ describe('rename-delete-handler', () => {
           });
           handlerComponent.load();
 
+          /*
+           * A notice shown in the default `PluginNoticeMode.Replace` is transient: the next notice from the
+           * same component hides it. The rescue's rename makes the handler queue an `updatedLinks` notice,
+           * which takes the slot the rescue notice was in — so sampling the DOM races that replacement and
+           * loses whenever nothing slows the run down. Record notices as they arrive instead.
+           */
+          const observedNoticeTexts: string[] = [];
+          function recordNoticesIn(root: ParentNode): void {
+            for (const noticeContentEl of root.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')) {
+              observedNoticeTexts.push(noticeContentEl.textContent);
+            }
+          }
+
+          const noticeObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+              for (const addedNode of mutation.addedNodes) {
+                if (!addedNode.instanceOf(HTMLElement)) {
+                  continue;
+                }
+
+                // The content element sits inside the `.notice` container that is what actually gets added,
+                // So sweep the added subtree as well as testing the added node itself.
+                if (addedNode.matches('.obsidian-dev-utils.plugin-notice-content')) {
+                  observedNoticeTexts.push(addedNode.textContent);
+                }
+                recordNoticesIn(addedNode);
+              }
+            }
+          });
+          noticeObserver.observe(activeDocument.body, { childList: true, subtree: true });
+
           try {
             await app.vault.createFolder(ATTACHMENT_FOLDER);
             await app.vault.createFolder(OTHER_FOLDER);
@@ -849,28 +906,29 @@ describe('rename-delete-handler', () => {
 
             await app.fileManager.trashFile(srcNote);
 
-            // The notice auto-dismisses, so latch it as the wait polls instead of reading it at the end.
-            let hasNoticeForRescue = false;
-
-            // The note delete handler runs on the queue, so the rescue lands after `trashFile` resolves.
+            /*
+             * The note delete handler runs on the queue, so the rescue lands after `trashFile` resolves. The
+             * notice is waited for in the same predicate rather than read afterwards: `waitUntil` polls
+             * immediately, so a condition that is already met exits on the first poll and a second condition
+             * read after it would never get a poll of its own.
+             */
             await waitUntil({
-              message: 'the surviving note resolves its embed to the rescued attachment',
-              predicate: () => {
-                hasNoticeForRescue ||= [...activeDocument.querySelectorAll<HTMLElement>('.obsidian-dev-utils.plugin-notice-content')]
-                  .some((noticeContentEl) => noticeContentEl.textContent.includes(RESCUE_PATH));
-                return Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH);
-              },
+              message: 'the surviving note resolves its embed to the rescued attachment, and the rescue notice is shown',
+              predicate: () =>
+                Object.hasOwn(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {}, RESCUE_PATH)
+                && observedNoticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
               timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
 
             return {
-              hasNoticeForRescue,
+              hasNoticeForRescue: observedNoticeTexts.some((noticeText) => noticeText.includes(RESCUE_PATH)),
               hasRescuedAttachment: app.vault.getAbstractFileByPath(RESCUE_PATH) !== null,
               hasSourceFolder: app.vault.getAbstractFileByPath(SRC_FOLDER) !== null,
               isOriginalAttachmentGone: app.vault.getAbstractFileByPath(SHARED_ATTACHMENT) === null,
               survivingNoteResolvedLinkPaths: Object.keys(app.metadataCache.resolvedLinks[OTHER_NOTE] ?? {})
             };
           } finally {
+            noticeObserver.disconnect();
             handlerComponent.unload();
             for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
               const folder = app.vault.getAbstractFileByPath(folderPath);
