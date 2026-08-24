@@ -28,6 +28,9 @@ export const en = {
       jumpToPage: 'Jump to page:',
       pageHeader: 'Page {{pageNumber, number}} of {{totalPages, number}}, Total items: {{totalItems, number}}'
     },
+    menu: {
+      copy: 'Copy'
+    },
     metadataCache: {
       getBacklinksForFilePath: 'Get backlinks for {{filePath}}'
     },
@@ -35,6 +38,7 @@ export const en = {
       attachmentIsStillUsed: 'Attachment {{attachmentPath}} is still used by other notes. It will not be deleted.',
       attachmentRescued: 'Attachment {{attachmentPath}} is still used by other notes. It was moved to {{newAttachmentPath}}.',
       closeAriaLabel: 'Close',
+      failedToOpenUrl: 'Failed to open {{url}}',
       unhandledError: 'An unhandled error occurred. Please check the console for more information.'
     },
     pathSettings: {
