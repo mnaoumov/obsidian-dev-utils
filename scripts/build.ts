@@ -15,6 +15,9 @@ const BUILD_STEPS = [
   'build:generate-exports',
   'build:templates',
   'build:styles',
+  // Must sit after the stylesheet it reads and before the two bundling steps below.
+  // Those steps would otherwise inline the placeholders instead of the stamped values.
+  'build:stamp-generated',
   'build:demo-vault-helper',
   'build:integration-test-plugin'
 ];

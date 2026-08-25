@@ -3,10 +3,10 @@
  *
  * Values substituted into the built library during release.
  *
- * The `$(...)` placeholders below are inert source text; the release step (`scripts/version.ts`)
- * rewrites them in the compiled `generated-during-build.{cjs,mjs}` output with the real library
- * version and bundled styles. They carry no Obsidian import or API, so this module stays
- * Obsidian-runtime-agnostic.
+ * The `$(...)` placeholders below are inert source text; the build step `build:stamp-generated`
+ * (`scripts/stamp-generated-during-build.ts`) rewrites them in the compiled
+ * `generated-during-build.{cjs,mjs}` output with the real library version and bundled styles. They carry
+ * no Obsidian import or API, so this module stays Obsidian-runtime-agnostic.
  */
 
 /**

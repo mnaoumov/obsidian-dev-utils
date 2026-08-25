@@ -642,6 +642,7 @@
     "build:integration-test-plugin": "jiti scripts/build-integration-test-plugin.ts",
     "build:lib": "jiti scripts/build-lib.ts",
     "build:styles": "jiti scripts/build-styles.ts",
+    "build:stamp-generated": "jiti scripts/build-stamp-generated.ts",
     "build:templates": "jiti scripts/build-templates.ts",
     "build:types": "jiti scripts/build-types.ts",
     "build:validate-declarations": "jiti scripts/build-validate-declarations.ts",
