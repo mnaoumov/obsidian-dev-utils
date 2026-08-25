@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 96.0.0
+
+- test(integration): stop a settings-popout test poisoning the shared Obsidian instance
+- test(command-handler-component): cover the markdown-viewport-menu forwarder
+- feat(command-handlers): let an editor command add itself to the readable-line-length margin menu
+- fix(version)!: read minAppVersion from the desktop feed, not GitHub's latest release
+
 ## 95.0.0
 
 - test(rename-delete-handler): record notices as they arrive instead of polling the DOM
