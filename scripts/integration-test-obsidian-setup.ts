@@ -11,12 +11,17 @@
  * The `lib` resolver comes from the PUBLISHED registration the `obsidian-dev-utils/integration-test-setup`
  * endpoint calls — the very code consumer plugins get — so this repo's own suites exercise the consumer path
  * rather than a private copy of it.
+ *
+ * It also restores the ACTIVE WINDOW after every test — see the `afterEach` below.
  */
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { evalInObsidian } from 'obsidian-integration-testing';
-import { beforeAll } from 'vitest';
+import {
+  afterEach,
+  beforeAll
+} from 'vitest';
 
 import { registerIntegrationTestLibResolver } from '../src/script-utils/test-runners/integration-test-plugin.ts';
 
@@ -36,5 +41,31 @@ beforeAll(async () => {
       });
     },
     input: { css: cssContent }
+  });
+});
+
+/*
+ * Every file in this project shares ONE Obsidian instance, and window-sensitive UI — a modal, a popover,
+ * a notice — is built inside whatever window the `activeWindow` / `activeDocument` globals point at.
+ * Obsidian moves them on window FOCUS, so a test that opens the settings POPOUT leaves them on that
+ * popout; and because the owned test window is hidden off-screen, closing the popout never focuses the
+ * main window back, so the globals stay pinned to a window that no longer exists. Every later test then
+ * renders into that dead window and waits for an element that can never appear — a flat 30 s timeout with
+ * no assertion failure, in files that pass perfectly on their own (T600).
+ *
+ * A test that opens the popout is expected to point the globals home itself; this is the net that keeps
+ * one that forgets from failing every unrelated file that happens to run after it.
+ */
+afterEach(async () => {
+  await evalInObsidian({
+    callback({ app, lib: { getMainWindow } }): void {
+      const mainWindow = getMainWindow(app);
+      if (activeWindow === mainWindow) {
+        return;
+      }
+
+      window.activeWindow = mainWindow;
+      window.activeDocument = mainWindow.document;
+    }
   });
 });
