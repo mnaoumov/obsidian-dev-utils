@@ -722,6 +722,20 @@ describe('MyModule', () => {
   `npm run build:generate-merged` regenerates the gitignored `src/__merged.ts`; otherwise `tsc` fails with
   `Property '<name>' does not exist on type 'Lib'`. The runtime source is
   `window.__obsidianDevUtilsModule`, published by the harness plugin.
+- **A test that opens the settings POPOUT must point the active window home before it ends.** Obsidian
+  moves the `activeWindow` / `activeDocument` globals on window FOCUS, and the owned test instance is
+  hidden by being moved OFF-SCREEN — so `app.setting.close()` alone leaves them pinned to the popout
+  that was just destroyed, permanently. Every later file shares that instance and builds its UI in
+  `activeDocument`, so each modal / popover / notice then renders into a dead window and waits out its
+  full timeout with no assertion failure. Close Settings and reassign
+  `window.activeWindow = getMainWindow(app)` (plus `window.activeDocument`) in a `finally`.
+  `scripts/integration-test-obsidian-setup.ts` carries an `afterEach` that does this for every file as a
+  net, but a test that leaks is still a bug — the net exists so one leak cannot fail unrelated files.
+- **A whole-file, flat-timeout failure is an ordering symptom, not a load symptom.** Vitest orders files
+  from its `node_modules/.vite/vitest` duration cache, so the order changes run to run and a
+  state-leak like the one above surfaces as a different set of "flaky" files each time, while every file
+  passes in isolation. Before blaming load, run the suspect file alone, then again with the files that
+  preceded it, and bisect.
 
 ## Dependencies
 
