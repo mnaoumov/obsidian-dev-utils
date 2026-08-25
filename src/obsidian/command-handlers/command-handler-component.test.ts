@@ -53,6 +53,7 @@ class AllMenusRegisteringHandler extends CommandHandler {
     context.menuEventRegistrar.registerEditorMenuEventHandler(vi.fn());
     context.menuEventRegistrar.registerFileMenuEventHandler(vi.fn());
     context.menuEventRegistrar.registerFilesMenuEventHandler(vi.fn());
+    context.menuEventRegistrar.registerMarkdownViewportMenuEventHandler(vi.fn());
   }
 }
 
@@ -311,12 +312,12 @@ describe('CommandHandlerComponent', () => {
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('shared-cmd');
   });
 
-  it('should dispose editor-, file-, and files-menu registrations for a command', async () => {
+  it('should dispose editor-, file-, files-, and markdown-viewport-menu registrations for a command', async () => {
     const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
     const component = createComponentWith(createMockCommandRegistrar(), registrar);
 
     const disposable = await component.registerCommandHandlers(() => [new AllMenusRegisteringHandler(createParams())]);
-    expect(menuDisposeSpies).toHaveLength(3);
+    expect(menuDisposeSpies).toHaveLength(4);
     dispose(disposable);
     for (const menuDisposeSpy of menuDisposeSpies) {
       expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
