@@ -10,6 +10,27 @@ import {
 } from './strict-proxy.ts';
 import { ensureGenericObject } from './type-guards.ts';
 
+/**
+ * The properties `@vitest/pretty-format` and the matchers duck-type on, none of which belongs to a real
+ * API. Mirrors `PASSTHROUGH_PROPS` in `strict-proxy.ts`.
+ */
+const PROBED_BY_TEST_TOOLING = [
+  '$$typeof',
+  '_isMockFunction',
+  '@@__IMMUTABLE_ITERABLE__@@',
+  '@@__IMMUTABLE_KEYED__@@',
+  '@@__IMMUTABLE_LIST__@@',
+  '@@__IMMUTABLE_MAP__@@',
+  '@@__IMMUTABLE_ORDERED__@@',
+  '@@__IMMUTABLE_RECORD__@@',
+  '@@__IMMUTABLE_SEQ__@@',
+  '@@__IMMUTABLE_SET__@@',
+  '@@__IMMUTABLE_STACK__@@',
+  'asymmetricMatch',
+  'nodeType',
+  'tagName'
+];
+
 interface Nested {
   value: number;
 }
@@ -29,6 +50,22 @@ describe('strictProxy', () => {
   it('should throw on unmocked property access', () => {
     const proxy = strictProxy<TestObject>({ name: 'test' });
     expect(() => proxy.$function()).toThrow('Unmocked property "$function" was accessed on mock object');
+  });
+
+  it('should yield rather than throw on the properties test tooling duck-types on', () => {
+    const proxy = strictProxy<Record<string, unknown>>({ name: 'test' });
+    for (const property of PROBED_BY_TEST_TOOLING) {
+      expect(proxy[property]).toBeUndefined();
+    }
+  });
+
+  it('should let a failing assertion render its diff instead of throwing while formatting', () => {
+    // This is why the properties above must not throw.
+    // `@vitest/pretty-format` probes them to pick a serializer, and it does so while rendering the
+    // Mismatch — so a throw there replaced the whole diff with the unmocked-property error.
+    expect(() => {
+      expect(strictProxy<TestObject>({ name: 'actual' })).toEqual(strictProxy<TestObject>({ name: 'expected' }));
+    }).not.toThrow('was accessed on mock object');
   });
 
   it('should recursively proxy nested plain objects', () => {
