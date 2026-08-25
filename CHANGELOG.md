@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 96.0.2
+
+- fix(strict-proxy): yield on the properties test tooling duck-types on
+- docs(agents): record that the build must be self-sufficient, because CI rebuilds
+- chore: update libs
+
 ## 96.0.1
 
 - fix(build): stamp the generated library values during the build, not during the release
