@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 96.0.1
+
+- fix(build): stamp the generated library values during the build, not during the release
+
 ## 96.0.0
 
 - test(integration): stop a settings-popout test poisoning the shared Obsidian instance
