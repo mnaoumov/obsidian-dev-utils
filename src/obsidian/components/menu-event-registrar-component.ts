@@ -11,6 +11,7 @@ import type {
   EditorMenuEventHandler,
   FileMenuEventHandler,
   FilesMenuEventHandler,
+  MarkdownViewportMenuEventHandler,
   MenuEventRegistrar
 } from '../menu-event-registrar.ts';
 
@@ -63,5 +64,16 @@ export class MenuEventRegistrarComponent extends ComponentEx implements MenuEven
   public registerFilesMenuEventHandler(handler: FilesMenuEventHandler): DisposableEx {
     this.ensureLoaded();
     return this.registerDisposable(new EventReferenceDisposable(this.app.workspace.on('files-menu', handler)));
+  }
+
+  /**
+   * Registers a handler for the markdown viewport (margin) context menu event.
+   *
+   * @param handler - The handler to register.
+   * @returns A {@link DisposableEx} that unregisters the handler when disposed (or on component unload).
+   */
+  public registerMarkdownViewportMenuEventHandler(handler: MarkdownViewportMenuEventHandler): DisposableEx {
+    this.ensureLoaded();
+    return this.registerDisposable(new EventReferenceDisposable(this.app.workspace.on('markdown-viewport-menu', handler)));
   }
 }

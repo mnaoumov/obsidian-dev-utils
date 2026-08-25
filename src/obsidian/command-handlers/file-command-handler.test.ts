@@ -86,7 +86,8 @@ function createMockContext(activeFile?: TFileOriginal): MockContext {
         registerFilesMenuEventHandler: (handler: FilesMenuEventHandler): DisposableEx => {
           filesMenuHandlers.push(handler);
           return strictProxy<DisposableEx>({});
-        }
+        },
+        registerMarkdownViewportMenuEventHandler: vi.fn()
       },
       pluginName: 'Test Plugin'
     },
@@ -136,7 +137,8 @@ describe('FileCommandHandler', () => {
         menuEventRegistrar: {
           registerEditorMenuEventHandler: vi.fn(),
           registerFileMenuEventHandler: vi.fn(),
-          registerFilesMenuEventHandler: vi.fn()
+          registerFilesMenuEventHandler: vi.fn(),
+          registerMarkdownViewportMenuEventHandler: vi.fn()
         },
         pluginName: 'Test Plugin'
       });

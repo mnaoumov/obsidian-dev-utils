@@ -9,6 +9,7 @@ import type {
   Editor,
   IconName,
   MarkdownFileInfo,
+  MarkdownView,
   Menu
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
@@ -92,10 +93,37 @@ export interface EditorCommandHandlerHandleEditorMenuParams {
 }
 
 /**
+ * Parameters for {@link EditorCommandHandler.handleViewportMenu}.
+ */
+export interface EditorCommandHandlerHandleViewportMenuParams {
+  /**
+   * The menu to add items to.
+   */
+  readonly menu: Menu;
+
+  /**
+   * The view mode (`'source'` or `'preview'`).
+   */
+  readonly mode: string;
+
+  /**
+   * What raised the menu. Obsidian 1.13.7 always passes `'gutter'` - see
+   * {@link MarkdownViewportMenuEventHandler}.
+   */
+  readonly source: string;
+
+  /**
+   * The markdown view the menu was raised over.
+   */
+  readonly view: MarkdownView;
+}
+
+/**
  * Command handler for editor commands.
  *
  * Subclasses override {@link canExecuteEditor} and {@link executeEditor} to provide behavior.
- * Optionally integrates with the editor context menu via {@link shouldAddToEditorMenu}.
+ * Optionally integrates with the editor context menu via {@link shouldAddToEditorMenu}, and with the
+ * markdown viewport (margin) menu via {@link shouldAddToViewportMenu}.
  */
 export abstract class EditorCommandHandler extends CommandHandler {
   /**
@@ -164,7 +192,10 @@ export abstract class EditorCommandHandler extends CommandHandler {
   }
 
   /**
-   * Registers the editor-menu event handler.
+   * Registers the editor-menu and markdown-viewport-menu event handlers.
+   *
+   * Both are registered unconditionally; whether an item actually appears is decided per menu render by
+   * {@link shouldAddToEditorMenu} / {@link shouldAddToViewportMenu}, which both default to `false`.
    *
    * @param context - The registration context.
    */
@@ -175,6 +206,14 @@ export abstract class EditorCommandHandler extends CommandHandler {
         context: $context,
         editor,
         menu
+      });
+    });
+    context.menuEventRegistrar.registerMarkdownViewportMenuEventHandler((menu, view, mode, source) => {
+      this.handleViewportMenu({
+        menu,
+        mode,
+        source,
+        view
       });
     });
   }
@@ -227,6 +266,55 @@ export abstract class EditorCommandHandler extends CommandHandler {
     return false;
   }
 
+  /**
+   * Checks whether the command should appear in the markdown viewport (margin) context menu.
+   *
+   * That is the menu carrying `Readable line length` / `Line numbers` / `Inline title`, raised by
+   * right-clicking the empty space beside the text or the line-number gutter — a menu
+   * {@link shouldAddToEditorMenu} can never reach, because a margin click lands outside the editor's
+   * `contentDOM`. It is a natural home for whole-note commands once the editor menu gets crowded.
+   *
+   * `mode` and `source` are passed through rather than filtered here: whether a command belongs in
+   * reading mode is the consuming plugin's call. Note that Obsidian 1.13.7 always passes `'gutter'` as
+   * `source`, so only `mode` currently discriminates - see {@link MarkdownViewportMenuEventHandler}.
+   *
+   * @param _view - The markdown view the menu was raised over.
+   * @param _mode - The view mode (`'source'` or `'preview'`).
+   * @param _source - What raised the menu.
+   * @returns Whether to add to the viewport menu.
+   */
+  protected shouldAddToViewportMenu(_view: MarkdownView, _mode: string, _source: string): boolean {
+    return false;
+  }
+
+  /**
+   * Adds the command's item to a menu, in the handler's own section.
+   *
+   * Shared by both menu surfaces: an item presents identically whichever of the two it was opted into,
+   * so the section / submenu / icon plumbing lives here once.
+   *
+   * @param menu - The menu to add the item to.
+   * @param editor - The editor the command will run against.
+   * @param context - The markdown file context the command will run against.
+   */
+  private addMenuItem(menu: Menu, editor: Editor, context: MarkdownFileInfo): void {
+    const section = this.editorMenuSection ?? this.pluginName;
+    if (this.shouldAddCommandToSubmenu()) {
+      menu.setSectionSubmenu(section, {
+        icon: this.editorMenuSubmenuIcon ?? '',
+        title: section
+      });
+    }
+
+    menu.addItem((item) => {
+      item
+        .setTitle(this.editorMenuItemName ?? this.name)
+        .setIcon(this.icon)
+        .setSection(section)
+        .onClick(convertAsyncToSync(async () => this.executeEditor(editor, context)));
+    });
+  }
+
   private editorCheckCallback(params: EditorCommandHandlerEditorCheckCallbackParams): boolean {
     const {
       checking,
@@ -262,20 +350,29 @@ export abstract class EditorCommandHandler extends CommandHandler {
       return;
     }
 
-    const section = this.editorMenuSection ?? this.pluginName;
-    if (this.shouldAddCommandToSubmenu()) {
-      menu.setSectionSubmenu(section, {
-        icon: this.editorMenuSubmenuIcon ?? '',
-        title: section
-      });
+    this.addMenuItem(menu, editor, context);
+  }
+
+  private handleViewportMenu(params: EditorCommandHandlerHandleViewportMenuParams): void {
+    const {
+      menu,
+      mode,
+      source,
+      view
+    } = params;
+    if (!this.shouldAddToViewportMenu(view, mode, source)) {
+      return;
     }
 
-    menu.addItem((item) => {
-      item
-        .setTitle(this.editorMenuItemName ?? this.name)
-        .setIcon(this.icon)
-        .setSection(section)
-        .onClick(convertAsyncToSync(async () => this.executeEditor(editor, context)));
-    });
+    // A `MarkdownView` IS a `MarkdownFileInfo`, so the existing editor-side gate and body serve this
+    // Menu unchanged, with no new abstract surface for subclasses to implement.
+    const editor = view.editor;
+    if (!this.canExecuteEditor(editor, view)) {
+      return;
+    }
+
+    // The event's menu already declares sections `['view', '']`. An item in the handler's own section
+    // Therefore sorts below Obsidian's `Readable line length` / `Line numbers` / `Inline title` toggles.
+    this.addMenuItem(menu, editor, view);
   }
 }

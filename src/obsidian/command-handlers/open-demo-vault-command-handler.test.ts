@@ -87,7 +87,8 @@ describe('OpenDemoVaultCommandHandler', () => {
       menuEventRegistrar: {
         registerEditorMenuEventHandler: vi.fn(),
         registerFileMenuEventHandler: vi.fn(),
-        registerFilesMenuEventHandler: vi.fn()
+        registerFilesMenuEventHandler: vi.fn(),
+        registerMarkdownViewportMenuEventHandler: vi.fn()
       },
       pluginName: PLUGIN_NAME
     });
