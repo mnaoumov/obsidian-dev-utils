@@ -992,6 +992,16 @@ generated automatically. Consequences worth knowing before touching any of this:
 - Requires npm ≥ `11.5.1` and Node ≥ `22.14.0`; the version in `.nvmrc` satisfies both.
 - `workflow_dispatch` is also wired up, so a failed publish can be retried from the Actions tab without
   cutting a new release.
+- **Because CI rebuilds, anything the tarball needs must happen in `npm run build` — never in
+  `scripts/version.ts`.** The release script runs only on the maintainer's machine, so a step placed
+  there reaches the local `dist/` and nothing else, while CI publishes a `dist/` that never saw it.
+  This is not hypothetical: the placeholder substitution used to live in `prepareGitHubRelease`, and
+  every release from `94.7.0` (the one that moved publishing to CI) through `96.0.0` shipped a literal
+  `$(LIBRARY_VERSION)`, which made `initPluginContext` throw `Invalid argument not valid semver` in
+  every consumer. It is now the build step `build:stamp-generated`, which throws if the declaration it
+  rewrites is missing, so an unstamped publish fails the build instead of reaching NPM. Verify a
+  release with `npm pack obsidian-dev-utils@<version>` and grep the extracted
+  `dist/lib/esm/generated-during-build.mjs` for the stamped value.
 
 ## Commits
 
