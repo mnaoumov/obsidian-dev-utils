@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.1.0
+
+- feat(desktop-trusted-input): add trusted clickMouse and clickElement
+- docs(agents): record why a position-bearing link key breaks, and that a skipped link must be logged
+
 ## 96.0.3
 
 - fix(rename-delete-handler): key links by text, not position, so a concurrent edit cannot orphan them
