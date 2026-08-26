@@ -2,9 +2,9 @@
  * @file
  *
  * Desktop-only trusted input helpers that drive the real Electron renderer via
- * `webContents.sendInputEvent`, so keystrokes and pointer moves flow through the same trusted input
- * pipeline a real user produces (unlike untrusted `dispatchEvent`, which CodeMirror and the CSS `:hover`
- * engine ignore).
+ * `webContents.sendInputEvent`, so keystrokes, pointer moves and clicks flow through the same trusted
+ * input pipeline a real user produces (unlike untrusted `dispatchEvent`, which CodeMirror, the CSS
+ * `:hover` engine and every `e.isTrusted` guard in Obsidian ignore).
  *
  * These are the importable-module twins of the base helpers the `obsidian-integration-testing` harness
  * seeds into the `lib` bag; the two copies are kept behaviorally in sync by hand (see the project
@@ -21,6 +21,61 @@ import { Platform } from 'obsidian';
 import { assertNever } from '../type-guards.ts';
 
 /**
+ * Parameters for {@link clickElement}.
+ */
+export interface ClickElementParams {
+  /**
+   * The mouse button to click with.
+   *
+   * @default `'left'`
+   */
+  readonly button?: MouseButton;
+
+  /**
+   * The element to click. The pointer is moved to its center.
+   */
+  readonly element: HTMLElement;
+
+  /**
+   * The modifier keys to hold, using Obsidian's {@link Modifier} names. `'Mod'` resolves per-platform
+   * (Cmd on macOS, Ctrl elsewhere).
+   *
+   * @default `[]`
+   */
+  readonly modifiers?: readonly Modifier[];
+}
+
+/**
+ * Parameters for {@link clickMouse}.
+ */
+export interface ClickMouseParams {
+  /**
+   * The mouse button to click with.
+   *
+   * @default `'left'`
+   */
+  readonly button?: MouseButton;
+
+  /**
+   * The modifier keys to hold, using Obsidian's {@link Modifier} names. `'Mod'` resolves per-platform
+   * (Cmd on macOS, Ctrl elsewhere).
+   *
+   * @default `[]`
+   */
+  readonly modifiers?: readonly Modifier[];
+
+  /**
+   * The x coordinate (web-contents DIP) to click at.
+   */
+  readonly x: number;
+
+  /**
+   * The y coordinate (web-contents DIP) to click at.
+   */
+  readonly y: number;
+}
+
+/**
  * Parameters for {@link hoverElement}.
  */
 export interface HoverElementParams {
@@ -29,6 +84,11 @@ export interface HoverElementParams {
    */
   readonly element: HTMLElement;
 }
+
+/**
+ * The mouse button a trusted click presses, in Electron's `sendInputEvent` spelling.
+ */
+export type MouseButton = NonNullable<ElectronMouseInputEvent['button']>;
 
 /**
  * Parameters for {@link moveMouse}.
@@ -97,6 +157,15 @@ type CurrentWebContents = ReturnType<Window['electron']['remote']['getCurrentWeb
 // The type is derived from the web-contents type so it stays in sync with the Electron typings.
 type ElectronModifier = NonNullable<Parameters<CurrentWebContents['sendInputEvent']>[0]['modifiers']>[number];
 
+// The pointer variant of the `sendInputEvent` union, picked out by the coordinates only it carries.
+// Derived from the web-contents type so it stays in sync with the Electron typings.
+type ElectronMouseInputEvent = Extract<Parameters<CurrentWebContents['sendInputEvent']>[0], PointerCoordinates>;
+
+// The shape that discriminates a pointer `sendInputEvent` payload from a keyboard one.
+interface PointerCoordinates {
+  x: number;
+}
+
 /**
  * Interval (in ms) between polls while waiting for a trusted input event to take effect (the editor
  * document updates, or an element's `:hover` state flips).
@@ -113,6 +182,79 @@ const INPUT_TIMEOUT_IN_MILLISECONDS = 5000;
  * Divisor used to find the center of an element's bounding box.
  */
 const CENTER_DIVISOR = 2;
+
+/**
+ * The `clickCount` a single (non-double) trusted click carries.
+ */
+const SINGLE_CLICK_COUNT = 1;
+
+/**
+ * Clicks the center of an element using **trusted** Electron pointer input.
+ *
+ * The element-relative counterpart of {@link clickMouse}, mirroring the {@link moveMouse} /
+ * {@link hoverElement} split. Use {@link clickMouse} directly when the point to click is **not** the
+ * element's center — the markdown editor's margin, for instance, lies inside `cm.scrollDOM` but outside
+ * `.cm-sizer`, so no element's center lands on it.
+ *
+ * @param params - The element to click, the button to press and any modifiers to hold.
+ */
+export function clickElement(params: ClickElementParams): void {
+  const { button = 'left', element, modifiers = [] } = params;
+
+  // Viewport coords equal web-contents DIP coords for the full-window `BrowserWindow`.
+  const rect = element.getBoundingClientRect();
+  clickMouse({
+    button,
+    modifiers,
+    x: rect.left + rect.width / CENTER_DIVISOR,
+    y: rect.top + rect.height / CENTER_DIVISOR
+  });
+}
+
+/**
+ * Clicks at the given web-contents coordinates using **trusted** Electron pointer input, so Chromium
+ * synthesizes a real `click` (or `contextmenu`, for the right button) with `isTrusted === true`.
+ *
+ * This is what `element.dispatchEvent(new MouseEvent('click'))` cannot do: Obsidian and CodeMirror gate
+ * on `isTrusted`, so a dispatched event silently exercises nothing while the test still passes. Obsidian
+ * 1.13.7's markdown viewport (margin) menu, for example, opens from
+ * `cm.scrollDOM.addEventListener('contextmenu', (e) => { if (!e.defaultPrevented && e.isTrusted && …) })`
+ * — a dispatched `contextmenu` never gets past that check.
+ *
+ * It is the low-level primitive: a single trusted `mouseMove` → `mouseDown` → `mouseUp` at one point,
+ * with no waiting for any effect (callers poll their own readiness signal). The leading move is what puts
+ * the pointer over the hit-test target before the button goes down. Prefer {@link clickElement} for
+ * element-relative clicks.
+ *
+ * @param params - The web-contents DIP coordinates to click at, the button to press and any modifiers to
+ * hold.
+ */
+export function clickMouse(params: ClickMouseParams): void {
+  const { button = 'left', modifiers = [], x, y } = params;
+
+  const electronModifiers = toElectronModifiers(modifiers);
+  const roundedX = Math.round(x);
+  const roundedY = Math.round(y);
+  const webContents = getWebContents();
+
+  webContents.sendInputEvent({ modifiers: electronModifiers, type: 'mouseMove', x: roundedX, y: roundedY });
+  webContents.sendInputEvent({
+    button,
+    clickCount: SINGLE_CLICK_COUNT,
+    modifiers: electronModifiers,
+    type: 'mouseDown',
+    x: roundedX,
+    y: roundedY
+  });
+  webContents.sendInputEvent({
+    button,
+    clickCount: SINGLE_CLICK_COUNT,
+    modifiers: electronModifiers,
+    type: 'mouseUp',
+    x: roundedX,
+    y: roundedY
+  });
+}
 
 /**
  * Moves the mouse pointer to the center of an element using **trusted** Electron pointer input, then polls
@@ -167,33 +309,7 @@ export function moveMouse(params: MoveMouseParams): void {
 export function pressKey(params: PressKeyParams): void {
   const { key, modifiers = [] } = params;
 
-  // 'Mod' is Obsidian's platform-agnostic modifier: Cmd (meta) on macOS, Ctrl elsewhere.
-  const isMacOS = Platform.isMacOS;
-
-  // Map Obsidian's `Modifier` names to Electron's lowercase `sendInputEvent` modifier names.
-  const electronModifiers = modifiers.map((modifier): ElectronModifier => {
-    switch (modifier) {
-      case 'Alt': {
-        return 'alt';
-      }
-      case 'Ctrl': {
-        return 'control';
-      }
-      case 'Meta': {
-        return 'meta';
-      }
-      case 'Mod': {
-        return isMacOS ? 'meta' : 'control';
-      }
-      case 'Shift': {
-        return 'shift';
-      }
-      default: {
-        return assertNever(modifier);
-      }
-    }
-  });
-
+  const electronModifiers = toElectronModifiers(modifiers);
   const webContents = getWebContents();
 
   // A trusted key press is keyDown -> char -> keyUp: the full real key pipeline.
@@ -270,4 +386,34 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
 
 function getWebContents(): CurrentWebContents {
   return window.electron.remote.getCurrentWebContents();
+}
+
+// Maps Obsidian's `Modifier` names to Electron's lowercase `sendInputEvent` modifier names.
+// Shared by every trusted-input helper, so a key press and a click cannot disagree on `'Mod'`.
+function toElectronModifiers(modifiers: readonly Modifier[]): ElectronModifier[] {
+  // 'Mod' is Obsidian's platform-agnostic modifier: Cmd (meta) on macOS, Ctrl elsewhere.
+  const isMacOS = Platform.isMacOS;
+
+  return modifiers.map((modifier): ElectronModifier => {
+    switch (modifier) {
+      case 'Alt': {
+        return 'alt';
+      }
+      case 'Ctrl': {
+        return 'control';
+      }
+      case 'Meta': {
+        return 'meta';
+      }
+      case 'Mod': {
+        return isMacOS ? 'meta' : 'control';
+      }
+      case 'Shift': {
+        return 'shift';
+      }
+      default: {
+        return assertNever(modifier);
+      }
+    }
+  });
 }
