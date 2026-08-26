@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 96.0.3
+
+- fix(rename-delete-handler): key links by text, not position, so a concurrent edit cannot orphan them
+
 ## 96.0.2
 
 - fix(strict-proxy): yield on the properties test tooling duck-types on
