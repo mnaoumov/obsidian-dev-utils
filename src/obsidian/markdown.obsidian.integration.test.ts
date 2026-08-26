@@ -247,10 +247,21 @@ describe('markdown', () => {
       const result = await evalInObsidian<Record<string, never>, HoverResult>({
         async callback({
           app,
-          lib: { renderInternalLink }
+          lib: { hoverElement, renderInternalLink, waitUntil }
         }) {
+          const HOVER_LINK_TIMEOUT_IN_MILLISECONDS = 5000;
+
           const file = await app.vault.create('rlh-hover.md', '');
           const aEl = await renderInternalLink({ app, pathOrAbstractFile: file });
+          // A trusted hover hit-tests for real, so the link has to genuinely be the topmost element at
+          // Its own coordinates — floated above the app rather than appended into the page flow, where
+          // Obsidian's own absolutely-positioned containers would cover it.
+          aEl.setCssStyles({
+            left: '10px',
+            position: 'fixed',
+            top: '10px',
+            zIndex: '9999'
+          });
           document.body.append(aEl);
 
           let hasHoverPopoverSlot = false;
@@ -267,9 +278,15 @@ describe('markdown', () => {
           });
 
           try {
-            // `trigger` is synchronous, so the payload is readable the moment the event has been
-            // Dispatched — no wait to take.
-            aEl.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+            // A real pointer move over the link, so the `mouseover` that reaches the handler is the one
+            // A user produces. `trigger` itself is synchronous, but the trusted event arrives on a later
+            // Task than the call that injected it, so the payload has to be awaited.
+            await hoverElement({ element: aEl });
+            await waitUntil({
+              message: 'the hover-link event to fire for the hovered link',
+              predicate: () => linkText !== null,
+              timeoutInMilliseconds: HOVER_LINK_TIMEOUT_IN_MILLISECONDS
+            });
             return {
               hasHoverPopoverSlot,
               isTargetElTheLink,
