@@ -138,6 +138,7 @@ describe('trusted click helpers', () => {
         try {
           // The one deliberate untrusted dispatch in the codebase: it is the control case this whole
           // Suite is contrasted against, so it must never be converted to a trusted helper.
+          // eslint-disable-next-line obsidian-dev-utils/no-untrusted-input-events -- This IS the untrusted control case the trusted helpers are measured against; converting it would delete the assertion.
           target.dispatchEvent(new MouseEvent('click'));
         } finally {
           target.detach();

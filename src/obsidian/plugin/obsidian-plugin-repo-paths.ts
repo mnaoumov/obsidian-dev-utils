@@ -9,6 +9,16 @@
  */
 export enum ObsidianPluginRepoPaths {
   /**
+  Any Android capture integration-test TypeScript file.
+   */
+  AnyAndroidCaptureIntegrationTestTs = '*.android-capture.integration.test.ts',
+
+  /**
+  Any Android integration-test TypeScript file.
+   */
+  AnyAndroidIntegrationTestTs = '*.android.integration.test.ts',
+
+  /**
   CommonJS file.
    */
   AnyCjs = '*.cjs',

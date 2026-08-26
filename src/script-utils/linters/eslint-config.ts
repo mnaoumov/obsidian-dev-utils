@@ -408,6 +408,29 @@ function getIntegrationTestConfigs(): Linter.Config[] {
         'import-x/no-nodejs-modules': 'off',
         'obsidianmd/no-nodejs-modules': 'off'
       }
+    },
+    {
+      /*
+       * An integration test that drives the UI with `dispatchEvent(new KeyboardEvent(...))` produces an
+       * UNTRUSTED event, and Obsidian and CodeMirror gate on `isTrusted` — so the test can exercise
+       * nothing while still passing. Only integration tests are covered: a unit test has no real input
+       * pipeline to reach, so dispatching is the only thing it can do.
+       *
+       * Android is exempt BY FILENAME rather than by a disable comment, because the exemption is a
+       * property of the platform rather than of any one call site: the trusted helpers are built on
+       * `window.electron`, which does not exist there, so every dispatch in such a file is legitimate and
+       * always will be. A `*.cross-platform.*` file is deliberately NOT exempt — it runs on desktop too,
+       * where the trusted path is available, so it should branch on `Platform.isDesktopApp` and disable
+       * the rule on the mobile arm alone.
+       */
+      files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyIntegrationTestTs)],
+      ignores: [
+        join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyAndroidIntegrationTestTs),
+        join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyAndroidCaptureIntegrationTestTs)
+      ],
+      rules: {
+        'obsidian-dev-utils/no-untrusted-input-events': 'error'
+      }
     }
   ]);
 }
