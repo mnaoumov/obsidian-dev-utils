@@ -565,6 +565,35 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a rule could flag `querySelectorAll('…plugin-notice-content')` inside
   an `evalInObsidian` closure, but not the timing judgment)
 
+### L17. Never key a cached `Reference` by its `position` across an `await` — and never skip a link in silence
+
+- A `Reference` carries `position.{start,end}.{line,col,offset}`, so `toJson(reference)` is a
+  **position-bearing** key. `RenameHandler` used exactly that to match links snapshotted before the
+  attachments moved against links re-read from the live metadata cache afterwards. Any edit to the file
+  in between shifts the offsets of every link **below** it, so each of those missed its key — while the
+  links above it matched and were rewritten. Partial, ordered, and completely silent. Key by the link's
+  **text** (`getLinkIdentityKey`: `{ link, original }`) instead: text is the only part that survives the
+  gap, unchanged text matches however far it moved, and text somebody else already rewrote legitimately
+  misses because it needs no rewrite. Identical link texts in one file resolve to the same target, so
+  collapsing them costs nothing.
+- **Assume something else edits the file inside your window.** The window here is wide — snapshot,
+  N attachment renames, then the rewrite — and `FileManagerRunAsyncLinkUpdatePatchComponent` only
+  suppresses *Obsidian's* markdown link updates, never a co-installed plugin's. This is why
+  <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60> reproduced only with
+  other plugins enabled, and why the plain "move a note with 30 attachments" test stayed green against
+  the broken build. A single-plugin test cannot cover a multi-plugin window; supply the concurrent edit
+  yourself, from inside the `vault.on('rename')` of the first attachment move.
+- **A lookup miss on a link you were asked to rewrite must be logged.** That branch had no output of
+  any kind, so every broken embed reported nothing — no error, no retry, no notice, and the user's only
+  signal was an image that stopped rendering. Where a skip is a legitimate outcome and a bug looks
+  identical to it, the debug line is the only thing that tells them apart.
+- **Insert the perturbation in the MIDDLE when diagnosing this shape.** An edit at the top shifts every
+  link and loses all of them, which is indistinguishable from a whole-file bail-out
+  (`applyFileChanges` returning `null`). A middle insertion leaves a contiguous stale **tail**, which
+  only a per-link key mismatch can produce.
+- (cannot be forced by ESLint — a rule could flag `toJson()` on a value typed `Reference` used as a
+  `Map` key, but not the lifetime that makes it wrong)
+
 ## Testing
 
 ### Goals
