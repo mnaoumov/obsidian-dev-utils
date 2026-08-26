@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.2.0
+
+- feat(eslint): add no-untrusted-input-events, banning dispatched input in integration tests
+- test(dev-utils): drive integration tests with trusted input instead of dispatchEvent
+
 ## 96.1.0
 
 - feat(desktop-trusted-input): add trusted clickMouse and clickElement
