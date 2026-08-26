@@ -77,7 +77,7 @@ describe('PluginNoticeComponent styling', () => {
 describe('PluginNoticeComponent hard-to-close notice', () => {
   it('should not dismiss on stray clicks and close directly via the close button', async () => {
     const result = await evalInObsidian({
-      async callback({ app, lib: { PluginNoticeComponent, waitUntil } }) {
+      async callback({ app, lib: { clickMouse, PluginNoticeComponent, waitUntil } }) {
         const SETTLE_IN_MILLISECONDS = 250;
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
 
@@ -124,10 +124,10 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           const isShownAfterMessageClick = findLockedContentEl() !== null;
 
           // A real click at the notice's very corner (where the padding used to be) must land on the
-          // Guarded content and NOT dismiss it.
+          // Guarded content and NOT dismiss it. It is a genuine trusted click at that point, so the
+          // Renderer hit-tests it exactly as it would a user's.
           const rect = containerEl.getBoundingClientRect();
-          const cornerEl = activeDocument.elementFromPoint(rect.left + 2, rect.top + 2);
-          cornerEl?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          clickMouse({ x: rect.left + 2, y: rect.top + 2 });
           await sleep(SETTLE_IN_MILLISECONDS);
           const isShownAfterPaddingClick = findLockedContentEl() !== null;
 

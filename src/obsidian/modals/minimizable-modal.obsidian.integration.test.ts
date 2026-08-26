@@ -47,6 +47,11 @@ interface ModalOpenBlockedResult {
   readonly didOpenWhileMinimized: boolean;
 }
 
+interface Point {
+  readonly x: number;
+  readonly y: number;
+}
+
 interface RestoreByClickResult {
   readonly barGoneAfterBarClick: boolean;
   readonly barGoneAfterTitleClick: boolean;
@@ -248,10 +253,11 @@ describe('MinimizableModal', () => {
   describe('restore', () => {
     it('should restore when the minimized bar body or its title is clicked, not only the restore button', async () => {
       const result = await evalInObsidian({
-        async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<RestoreByClickResult> {
+        async callback({ app, lib: { clickElement, clickMouse, MinimizableModal, waitUntil }, obsidianModule }): Promise<RestoreByClickResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const TITLE_SELECTOR = '.minimized-modal-bar .minimized-modal-bar-title';
           const SETTLE_DELAY_MILLISECONDS = 300;
+          const RESTORE_TIMEOUT_IN_MILLISECONDS = 5000;
 
           const modal = new obsidianModule.Modal(app);
           modal.setTitle('Working');
@@ -261,22 +267,28 @@ describe('MinimizableModal', () => {
 
           // Clicking the bar's title (a child of the bar) restores via the bar-level click handler.
           minimizable.minimize();
-          const titleEl = document.body.querySelector(TITLE_SELECTOR);
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const titleEl = document.body.querySelector<HTMLElement>(TITLE_SELECTOR);
           if (!titleEl) {
             throw new Error('minimized bar title not found');
           }
-          titleEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          const wasRestoredByTitleClick = !minimizable.isMinimized;
+          clickElement({ element: titleEl });
+          const wasRestoredByTitleClick = await didRestore();
           const isBarGoneAfterTitleClick = document.body.querySelector(BAR_SELECTOR) === null;
 
           // Clicking the bar body itself (not the restore button) restores too.
           minimizable.minimize();
-          const barEl = document.body.querySelector(BAR_SELECTOR);
+          await sleep(SETTLE_DELAY_MILLISECONDS);
+          const barEl = document.body.querySelector<HTMLElement>(BAR_SELECTOR);
           if (!barEl) {
             throw new Error('minimized bar not found');
           }
-          barEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-          const wasRestoredByBarClick = !minimizable.isMinimized;
+          // A trusted click hit-tests for real, so aiming at the bar's centre would land on whichever
+          // Child sits there (the title, or the restore button this case must avoid). Find a point the
+          // Bar itself actually owns and click that.
+          const barPoint = findOwnPoint(barEl);
+          clickMouse({ x: barPoint.x, y: barPoint.y });
+          const wasRestoredByBarClick = await didRestore();
           const isBarGoneAfterBarClick = document.body.querySelector(BAR_SELECTOR) === null;
 
           minimizable.modal.close();
@@ -287,6 +299,46 @@ describe('MinimizableModal', () => {
             restoredByBarClick: wasRestoredByBarClick,
             restoredByTitleClick: wasRestoredByTitleClick
           };
+
+          /*
+           * A trusted click travels through Electron's input pipeline, so the handler runs on a later
+           * task rather than inside the call — the state has to be awaited, not read straight after.
+           *
+           * @returns Whether the modal came back from its minimized bar.
+           */
+          async function didRestore(): Promise<boolean> {
+            try {
+              await waitUntil({
+                message: 'the modal to restore from its minimized bar',
+                predicate: () => !minimizable.isMinimized,
+                timeoutInMilliseconds: RESTORE_TIMEOUT_IN_MILLISECONDS
+              });
+              return true;
+            } catch {
+              return false;
+            }
+          }
+
+          /*
+           * Finds a point inside the element that the element itself owns — no child of it is on top
+           * there. `elementFromPoint` is the same hit test a trusted click performs, so a point it
+           * attributes to the element is a point the click will land on.
+           *
+           * @param element - The element to find an unobstructed point of.
+           * @returns The viewport coordinates of that point.
+           */
+          function findOwnPoint(element: HTMLElement): Point {
+            const STEPS = 20;
+            const rect = element.getBoundingClientRect();
+            for (let stepIndex = 1; stepIndex < STEPS; stepIndex++) {
+              const x = rect.left + rect.width * stepIndex / STEPS;
+              const y = rect.top + rect.height / 2;
+              if (document.elementFromPoint(x, y) === element) {
+                return { x, y };
+              }
+            }
+            throw new Error('every point of the element is covered by one of its children');
+          }
         }
       });
 
@@ -300,7 +352,7 @@ describe('MinimizableModal', () => {
   describe('cancel', () => {
     it('should close the modal (not merely restore it) when the bar cancel button is clicked', async () => {
       const result = await evalInObsidian({
-        async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<CancelByClickResult> {
+        async callback({ app, lib: { clickElement, MinimizableModal }, obsidianModule }): Promise<CancelByClickResult> {
           const BAR_SELECTOR = '.minimized-modal-bar';
           const CANCEL_SELECTOR = '.minimized-modal-bar .cancel-button';
           const SETTLE_DELAY_MILLISECONDS = 300;
@@ -314,12 +366,12 @@ describe('MinimizableModal', () => {
           minimizable.minimize();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
-          const cancelButtonEl = document.body.querySelector(CANCEL_SELECTOR);
+          const cancelButtonEl = document.body.querySelector<HTMLElement>(CANCEL_SELECTOR);
           if (!cancelButtonEl) {
             throw new Error('minimized bar cancel button not found');
           }
           // Clicking Cancel must close the wrapped modal, not trigger the bar-level restore handler.
-          cancelButtonEl.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+          clickElement({ element: cancelButtonEl });
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           return {
@@ -341,7 +393,7 @@ describe('MinimizableModal', () => {
   describe('background click', () => {
     it('should minimize the modal instead of closing it when its background is clicked', async () => {
       const result = await evalInObsidian({
-        async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<BackgroundClickResult> {
+        async callback({ app, lib: { clickMouse, MinimizableModal }, obsidianModule }): Promise<BackgroundClickResult> {
           const BACKGROUND_SELECTOR = '.modal-bg';
           const BAR_SELECTOR = '.minimized-modal-bar';
           const SETTLE_DELAY_MILLISECONDS = 300;
@@ -352,7 +404,7 @@ describe('MinimizableModal', () => {
           minimizable.modal.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
-          const backgroundEl = minimizable.modal.containerEl.querySelector(BACKGROUND_SELECTOR);
+          const backgroundEl = minimizable.modal.containerEl.querySelector<HTMLElement>(BACKGROUND_SELECTOR);
           if (!backgroundEl) {
             throw new Error('modal background not found');
           }
@@ -360,7 +412,8 @@ describe('MinimizableModal', () => {
           // Obsidian dismisses a modal from a listener it registers on this very element in the `Modal`
           // Constructor. Without the wrapper's capture-phase guard on `containerEl`, this click closes
           // The modal — cancelling whatever operation it was running — instead of minimizing it.
-          backgroundEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          const backgroundPoint = findOwnPoint(backgroundEl);
+          clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           const outcome: BackgroundClickResult = {
@@ -373,6 +426,27 @@ describe('MinimizableModal', () => {
           minimizable.modal.close();
 
           return outcome;
+
+          /*
+           * Finds a point inside the element that the element itself owns. The background stretches
+           * behind the modal, so its centre belongs to the modal — and a trusted click hit-tests for
+           * real, unlike a dispatched one, which the target receives regardless of what covers it.
+           *
+           * @param element - The element to find an unobstructed point of.
+           * @returns The viewport coordinates of that point.
+           */
+          function findOwnPoint(element: HTMLElement): Point {
+            const STEPS = 20;
+            const rect = element.getBoundingClientRect();
+            for (let stepIndex = 1; stepIndex < STEPS; stepIndex++) {
+              const x = rect.left + rect.width * stepIndex / STEPS;
+              const y = rect.top + rect.height / 2;
+              if (document.elementFromPoint(x, y) === element) {
+                return { x, y };
+              }
+            }
+            throw new Error('every point of the modal background is covered');
+          }
         }
       });
 
@@ -385,7 +459,7 @@ describe('MinimizableModal', () => {
 
     it('should let Obsidian close the modal when shouldMinimizeOnClickOutside is false', async () => {
       const result = await evalInObsidian({
-        async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<BackgroundClickResult> {
+        async callback({ app, lib: { clickMouse, MinimizableModal }, obsidianModule }): Promise<BackgroundClickResult> {
           const BACKGROUND_SELECTOR = '.modal-bg';
           const BAR_SELECTOR = '.minimized-modal-bar';
           const SETTLE_DELAY_MILLISECONDS = 300;
@@ -396,12 +470,13 @@ describe('MinimizableModal', () => {
           minimizable.modal.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
-          const backgroundEl = minimizable.modal.containerEl.querySelector(BACKGROUND_SELECTOR);
+          const backgroundEl = minimizable.modal.containerEl.querySelector<HTMLElement>(BACKGROUND_SELECTOR);
           if (!backgroundEl) {
             throw new Error('modal background not found');
           }
 
-          backgroundEl.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          const backgroundPoint = findOwnPoint(backgroundEl);
+          clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           return {
@@ -409,6 +484,27 @@ describe('MinimizableModal', () => {
             isMinimized: minimizable.isMinimized,
             isModalConnected: minimizable.modal.containerEl.isConnected
           };
+
+          /*
+           * Finds a point inside the element that the element itself owns. The background stretches
+           * behind the modal, so its centre belongs to the modal — and a trusted click hit-tests for
+           * real, unlike a dispatched one, which the target receives regardless of what covers it.
+           *
+           * @param element - The element to find an unobstructed point of.
+           * @returns The viewport coordinates of that point.
+           */
+          function findOwnPoint(element: HTMLElement): Point {
+            const STEPS = 20;
+            const rect = element.getBoundingClientRect();
+            for (let stepIndex = 1; stepIndex < STEPS; stepIndex++) {
+              const x = rect.left + rect.width * stepIndex / STEPS;
+              const y = rect.top + rect.height / 2;
+              if (document.elementFromPoint(x, y) === element) {
+                return { x, y };
+              }
+            }
+            throw new Error('every point of the modal background is covered');
+          }
         }
       });
 

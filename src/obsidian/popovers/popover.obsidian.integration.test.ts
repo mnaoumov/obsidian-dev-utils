@@ -146,7 +146,7 @@ describe('editFieldsInPopover', () => {
 
   it('should dismiss with no value when a pointer gesture starts outside it', async () => {
     const result = await evalInObsidian({
-      async callback({ lib: { createAnchorFromPoint, editFieldsInPopover, waitUntil } }): Promise<DismissResult> {
+      async callback({ lib: { clickElement, createAnchorFromPoint, editFieldsInPopover, waitUntil } }): Promise<DismissResult> {
         const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
         const ANCHOR_X_IN_PIXELS = 40;
         const ANCHOR_Y_IN_PIXELS = 40;
@@ -162,13 +162,33 @@ describe('editFieldsInPopover', () => {
           timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
         });
 
-        activeDocument.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        /*
+         * A trusted gesture lands on whatever is really under the pointer, so it is aimed at a scratch
+         * overlay well clear of the popover rather than at whichever piece of Obsidian's UI happens to
+         * sit there. The `pointerdown` still reaches the document-level listener that dismisses the
+         * popover, and nothing in the app is clicked.
+         */
+        const overlayEl = activeDocument.body.createDiv();
+        overlayEl.setCssStyles({
+          bottom: '0',
+          height: '40%',
+          position: 'fixed',
+          right: '0',
+          width: '40%',
+          zIndex: '9998'
+        });
 
-        const resolved = await resultPromise;
-        return {
-          isRemoved: !getPopoverEl(),
-          resolved
-        };
+        try {
+          clickElement({ element: overlayEl });
+
+          const resolved = await resultPromise;
+          return {
+            isRemoved: !getPopoverEl(),
+            resolved
+          };
+        } finally {
+          overlayEl.detach();
+        }
 
         function getPopoverEl(): HTMLElement | null {
           return activeDocument.body.querySelector<HTMLElement>('.obsidian-dev-utils.popover');
