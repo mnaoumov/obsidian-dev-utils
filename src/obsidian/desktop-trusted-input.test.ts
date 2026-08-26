@@ -18,6 +18,8 @@ import {
 import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import {
+  clickElement,
+  clickMouse,
   hoverElement,
   moveMouse,
   pressKey,
@@ -60,6 +62,50 @@ function createElement(rect: DOMRect, doesMatchHover: () => boolean): HTMLElemen
 function createRect(overrides: Partial<DOMRect>): DOMRect {
   return strictProxy<DOMRect>(overrides);
 }
+
+describe('clickMouse', () => {
+  beforeEach(() => {
+    vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
+  });
+
+  it('should send a trusted mouseMove -> mouseDown -> mouseUp with rounded coordinates', () => {
+    clickMouse({ x: 10.7, y: 20.2 });
+    expect(sendInputEvent).toHaveBeenCalledTimes(3);
+    expect(sendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: [], type: 'mouseMove', x: 11, y: 20 });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'left', clickCount: 1, modifiers: [], type: 'mouseDown', x: 11, y: 20 });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(3, { button: 'left', clickCount: 1, modifiers: [], type: 'mouseUp', x: 11, y: 20 });
+  });
+
+  it('should press the requested button', () => {
+    clickMouse({ button: 'right', x: 1, y: 2 });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'right', clickCount: 1, modifiers: [], type: 'mouseDown', x: 1, y: 2 });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(3, { button: 'right', clickCount: 1, modifiers: [], type: 'mouseUp', x: 1, y: 2 });
+  });
+
+  it('should map modifiers the same way pressKey does', () => {
+    clickMouse({ modifiers: ['Mod', 'Shift'], x: 1, y: 2 });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: ['control', 'shift'], type: 'mouseMove', x: 1, y: 2 });
+  });
+});
+
+describe('clickElement', () => {
+  beforeEach(() => {
+    vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
+  });
+
+  it('should click the center of the element with the left button by default', () => {
+    const element = createElement(createRect({ height: 10, left: 0, top: 0, width: 10 }), () => false);
+    clickElement({ element });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: [], type: 'mouseMove', x: 5, y: 5 });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'left', clickCount: 1, modifiers: [], type: 'mouseDown', x: 5, y: 5 });
+  });
+
+  it('should forward the button and the modifiers', () => {
+    const element = createElement(createRect({ height: 4, left: 20, top: 30, width: 6 }), () => false);
+    clickElement({ button: 'middle', element, modifiers: ['Alt'] });
+    expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'middle', clickCount: 1, modifiers: ['alt'], type: 'mouseDown', x: 23, y: 32 });
+  });
+});
 
 describe('moveMouse', () => {
   it('should send a trusted mouseMove with rounded coordinates', () => {
