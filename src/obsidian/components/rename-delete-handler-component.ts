@@ -987,14 +987,24 @@ class RenameHandler {
 
       const backlinkEntries = [...combinedBacklinksMap, ...this.interruptedCombinedBacklinksMap];
       let processedBacklinkFiles = 0;
-      for (const [newBacklinkPath, linkJsonToPathMap] of backlinkEntries) {
+      for (const [newBacklinkPath, linkKeyToPathMap] of backlinkEntries) {
         let linkIndex = 0;
         await editLinks({
           app: this.app,
           linkConverter: (link) => {
             linkIndex++;
-            const oldAttachmentPath = linkJsonToPathMap.get(toJson(link));
+            const oldAttachmentPath = linkKeyToPathMap.get(getLinkIdentityKey(link));
             if (!oldAttachmentPath) {
+              /*
+               * A link that is not in the snapshot was either never ours to rewrite, or was already
+               * rewritten by someone else (leaving it correct). Either way there is nothing to do -
+               * but log it, because a silent skip here is exactly how
+               * https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60 stayed
+               * invisible: every skipped link left a broken embed and reported nothing.
+               */
+              getLibDebugger('RenameDeleteHandler:updateBacklinks')(
+                `No snapshot entry for link ${toJson(link)} in ${newBacklinkPath}; leaving it unchanged.`
+              );
               return;
             }
 
@@ -1315,10 +1325,10 @@ class RenameMap {
     } = params;
     for (const [backlinkPath, links] of singleBacklinksMap) {
       const newBacklinkPath = this.map.get(backlinkPath) ?? backlinkPath;
-      const linkJsonToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
-      combinedBacklinksMap.set(newBacklinkPath, linkJsonToPathMap);
+      const linkKeyToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
+      combinedBacklinksMap.set(newBacklinkPath, linkKeyToPathMap);
       for (const link of links) {
-        linkJsonToPathMap.set(toJson(link), path);
+        linkKeyToPathMap.set(getLinkIdentityKey(link), path);
       }
     }
   }
@@ -1673,6 +1683,30 @@ async function didRescueStillUsedAttachment(params: DidRescueStillUsedAttachment
     printError(new Error(`Failed to rescue ${attachmentPath} to ${rescuePath}`, { cause: error }));
     return false;
   }
+}
+
+/**
+ * Builds the key under which a link is remembered while a rename is in flight.
+ *
+ * The rewrite has to match links captured BEFORE the attachments moved against the links the metadata cache
+ * reports AFTER they moved, and the only thing that reliably survives that gap is the link's TEXT.
+ * Deliberately excludes `position`: keying on the whole {@link Reference} meant that as soon as anything
+ * edited the file in between — a co-installed plugin rewriting its own links, most often — every link below
+ * the edit shifted its offsets, missed its key, and was skipped in silence, leaving the note with some embeds
+ * rewritten and the rest broken. See
+ * https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60.
+ *
+ * Two links with identical text in one file necessarily resolve to the same target, so collapsing them onto
+ * one key loses nothing.
+ *
+ * @param link - The link to build the key for.
+ * @returns The key identifying the link by its text alone.
+ */
+function getLinkIdentityKey(link: Reference): string {
+  return toJson({
+    link: link.link,
+    original: link.original
+  });
 }
 
 /* v8 ignore stop */
