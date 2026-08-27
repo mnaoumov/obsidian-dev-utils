@@ -251,10 +251,11 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
     const commandLine = buildCommandLine($arguments);
 
     const maxCommandLength = getMaxCommandLength();
-    if (commandLine.length > maxCommandLength) {
+    const effectiveLength = getEffectiveCommandLineLength(commandLine);
+    if (effectiveLength > maxCommandLength) {
       return Promise.reject(
         new Error(
-          `Command line is too long (${String(commandLine.length)} chars, max ${String(maxCommandLength)} on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
+          `Command line is too long (${String(effectiveLength)} chars once wrapped for the shell, max ${String(maxCommandLength)} on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
         )
       );
     }
@@ -267,10 +268,11 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
   }
 
   const maxCommandLength = getMaxCommandLength();
-  if (command.length > maxCommandLength) {
+  const effectiveLength = getEffectiveCommandLineLength(command);
+  if (effectiveLength > maxCommandLength) {
     return Promise.reject(
       new Error(
-        `Command line is too long (${String(command.length)} chars, max ${String(maxCommandLength)} on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
+        `Command line is too long (${String(effectiveLength)} chars once wrapped for the shell, max ${String(maxCommandLength)} on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
       )
     );
   }
@@ -414,6 +416,27 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
 
 /**
+ * Characters held back from the Windows command-line budget when sizing an {@link ExecArgument} batch, to
+ * cover expansions that happen INSIDE the command we spawn and are therefore invisible from here.
+ *
+ * A `npx <tool> <args…>` invocation is not one `cmd.exe` command line but a chain of them: `npx.cmd`
+ * re-expands `%*` into a fresh `node … npx-cli.js <args…>` line, the tool's own `.bin/<tool>.cmd` shim does
+ * it again, and each hop re-quotes what it forwards. Every one of those lines is subject to the same 8191
+ * limit, and every one is longer than the line we assembled — but by how much is the child's business, not
+ * ours, so no formula can be right. Only the deliberate slack below can.
+ *
+ * `2048` is roughly double the overhead measured when this was found (T635). Over a repository's 187
+ * markdown paths, a `npx markdownlint-cli2 …` line **assembled at 7051 chars** — 1140 under the limit —
+ * still died with `The command line is too long.`; the same payload split in two runs clean. Note the tool:
+ * this is not specific to `linkinator`, it is the shape of every `npx`-fronted invocation.
+ *
+ * Over-reserving costs one extra sequential invocation of a command that was already going to be batched;
+ * under-reserving costs a lint failure that names nothing wrong with the content. Raise it, never lower it,
+ * if the symptom returns.
+ */
+const WINDOWS_CHILD_EXPANSION_RESERVE = 2048;
+
+/**
  * Parameters for {@link executeBatches}.
  */
 interface ExecuteBatchesParams {
@@ -483,14 +506,28 @@ function buildCommandLine($arguments: string[]): string {
 }
 
 /**
- * Executes batched commands sequentially and concatenates stdout.
+ * Executes batched commands sequentially and concatenates their output.
+ *
+ * `execString` returns a `string` or an {@link ExecResult} depending on `options.shouldIncludeDetails`, so
+ * both shapes are unpacked — reading only the `string` one silently threw away every batch's output in
+ * exactly the mode that asked for it.
+ *
+ * A batch that exits non-zero normally rejects; it only reaches here when `shouldIgnoreExitCode` asked for
+ * it to be reported instead. The first such failure is what the aggregate reports, so splitting a command
+ * into batches cannot turn a failure into a success.
+ *
+ * Silent batches contribute nothing to the joined output. `execString` already trims each result's trailing
+ * newline, so joining empty ones back in would reintroduce exactly the blank-line noise it removed — a
+ * command that printed nothing must aggregate to `''`, not to a run of newlines.
  *
  * @param params - The parameters for the batched execution.
  * @returns A Promise resolving to the concatenated result.
  */
 async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult | string> {
   const { baseCommand, batches, options } = params;
-  const results: string[] = [];
+  const stdoutParts: string[] = [];
+  const stderrParts: string[] = [];
+  let failure: ExecResult | null = null;
 
   for (const batch of batches) {
     const batchCommand = `${baseCommand} ${buildCommandLine(batch)}`;
@@ -499,15 +536,25 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
       options
     });
     if (typeof result === 'string') {
-      results.push(result);
+      pushIfNotEmpty(stdoutParts, result);
+      continue;
     }
+
+    pushIfNotEmpty(stdoutParts, result.stdout);
+    pushIfNotEmpty(stderrParts, result.stderr);
+    failure ??= result.exitCode === 0 ? null : result;
   }
 
   if (options.shouldIncludeDetails) {
-    return { exitCode: 0, exitSignal: null, stderr: '', stdout: results.join('\n') };
+    return {
+      exitCode: failure?.exitCode ?? 0,
+      exitSignal: failure?.exitSignal ?? null,
+      stderr: stderrParts.join('\n'),
+      stdout: stdoutParts.join('\n')
+    };
   }
 
-  return results.join('\n');
+  return stdoutParts.join('\n');
 }
 
 /**
@@ -524,6 +571,49 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
  */
 function getChildEnv(): NodeJS.ProcessEnv {
   return buildChildEnv(process.env, process.allowedNodeEnvironmentFlags);
+}
+
+/**
+ * Returns the length of the command line as the operating system will actually see it, which on Windows is
+ * NOT the length of the string passed in.
+ *
+ * {@link spawnViaShell} routes the command through `cmd.exe`, and two things are spent between here and
+ * there, neither of them visible in the assembled command:
+ * - Node's `spawn(…, { shell: true })` wraps it as `<comspec> /d /s /c "<command>"`.
+ * - {@link cmdEscapeCommandLine} `^`-escapes every one of `cmd.exe`'s metacharacters, which on a list of
+ *   quoted paths is a few percent of the whole (measured: +236 chars on a 7216-char invocation).
+ *
+ * Both are ours to compute, so they are computed rather than guessed. What is NOT computable from here is
+ * what the spawned command does to its own arguments — see {@link WINDOWS_CHILD_EXPANSION_RESERVE}.
+ *
+ * The platform branch here MUST stay in sync with the one in {@link spawnViaShell}.
+ *
+ * @param commandLine - The assembled command line, before any shell wrapping.
+ * @returns The length in characters of what reaches the operating system.
+ */
+function getEffectiveCommandLineLength(commandLine: string): number {
+  if (process.platform !== 'win32') {
+    return commandLine.length;
+  }
+
+  const comspec = process.env['comspec'] ?? 'cmd.exe';
+  const CMD_WRAPPER = ' /d /s /c ""';
+  return comspec.length + CMD_WRAPPER.length + commandEscapeCommandLine(commandLine).length;
+}
+
+/**
+ * Returns the max command line length to size an {@link ExecArgument} batch against — the platform maximum
+ * less {@link WINDOWS_CHILD_EXPANSION_RESERVE}.
+ *
+ * Deliberately more conservative than {@link getMaxCommandLength}, because the two answer different
+ * questions. Exceeding the plain-command limit is a hard failure the caller cannot avoid, so that check
+ * stays exact. Exceeding the batching limit only costs one extra invocation, so that check may — and
+ * should — leave room to spare.
+ *
+ * @returns The max length in characters available to a single batch.
+ */
+function getMaxBatchCommandLength(): number {
+  return getMaxCommandLength() - (process.platform === 'win32' ? WINDOWS_CHILD_EXPANSION_RESERVE : 0);
 }
 
 /**
@@ -559,11 +649,11 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
   assertNonNullable(execArgument);
   const staticParts = parts.filter((part): part is string => typeof part === 'string');
   const baseCommand = buildCommandLine(staticParts);
-  const maxCommandLength = getMaxCommandLength();
+  const maxCommandLength = getMaxBatchCommandLength();
 
   // Try expanding all args inline
   const fullCommand = `${baseCommand} ${buildCommandLine([...execArgument.batchedArguments])}`;
-  if (fullCommand.length <= maxCommandLength) {
+  if (getEffectiveCommandLineLength(fullCommand) <= maxCommandLength) {
     return execString({
       command: fullCommand,
       options
@@ -576,11 +666,11 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
 
   for (const argument of execArgument.batchedArguments) {
     const tentative = `${baseCommand} ${buildCommandLine([...currentBatch, argument])}`;
-    if (tentative.length > maxCommandLength) {
+    if (getEffectiveCommandLineLength(tentative) > maxCommandLength) {
       if (currentBatch.length === 0) {
         return Promise.reject(
           new Error(
-            `Cannot split command into batches: a single argument (${String(argument.length)} chars) plus the base command (${String(baseCommand.length)} chars) exceeds the max command length (${String(maxCommandLength)}).`
+            `Cannot split command into batches: a single argument (${String(argument.length)} chars) plus the base command (${String(baseCommand.length)} chars) exceeds the max batch command length (${String(maxCommandLength)}).`
           )
         );
       }
@@ -611,6 +701,19 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
  */
 function isExecArgument(part: CommandPart): part is ExecArgument {
   return typeof part === 'object' && 'batchedArguments' in part;
+}
+
+/**
+ * Appends a batch's captured output to the accumulator, skipping an empty one so the eventual join does not
+ * fabricate blank lines for batches that printed nothing.
+ *
+ * @param accumulator - The collected outputs so far.
+ * @param output - The output of a single batch.
+ */
+function pushIfNotEmpty(accumulator: string[], output: string): void {
+  if (output !== '') {
+    accumulator.push(output);
+  }
 }
 
 /**

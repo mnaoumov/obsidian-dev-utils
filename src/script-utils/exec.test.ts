@@ -30,6 +30,12 @@ interface SpawnCallOptions {
   readonly stdio?: string;
 }
 
+/**
+ * The batch budget `exec` applies on Windows: the raw 8191 less the 2048 reserved for the expansions the
+ * spawned command performs on its own arguments. Mirrors `WINDOWS_CHILD_EXPANSION_RESERVE` in `exec.ts`.
+ */
+const WINDOWS_MAX_BATCH_COMMAND_LENGTH = 8191 - 2048;
+
 function createMockChild(): MockChild {
   // eslint-disable-next-line unicorn/prefer-event-target -- This stands in for a Node `ChildProcess`, which IS an `EventEmitter`. The code under test calls `.on(...)` and reads emitter semantics, so an `EventTarget` would not be a substitute.
   const child = new EventEmitter() as MockChild;
@@ -37,6 +43,19 @@ function createMockChild(): MockChild {
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
   return child;
+}
+
+function mockSpawnSequence(): void {
+  mockSpawn.mockImplementation(() => {
+    const child = createMockChild();
+    // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
+    setTimeout(() => {
+      child.stdout.end();
+      child.stderr.end();
+      child.emit('close', 0, null);
+    }, 0);
+    return child;
+  });
 }
 
 const {
@@ -281,7 +300,7 @@ describe('exec', () => {
     Object.defineProperty(process, 'platform', { value: 'win32' });
     try {
       const longArgument = 'x'.repeat(4000);
-      const children = [createMockChild(), createMockChild()];
+      const children = [createMockChild(), createMockChild(), createMockChild()];
       let callIndex = 0;
       mockSpawn.mockImplementation(() => {
         const child = children[callIndex];
@@ -299,7 +318,8 @@ describe('exec', () => {
 
       const result = await exec(['echo', { batchedArguments: [longArgument, longArgument, longArgument] }], { isQuiet: true });
 
-      expect(mockSpawn).toHaveBeenCalledTimes(2);
+      // One argument per batch: two of them (8005 chars) exceed the batch budget of 8191 - 2048.
+      expect(mockSpawn).toHaveBeenCalledTimes(3);
       expect(result).toContain('out');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
@@ -311,7 +331,7 @@ describe('exec', () => {
     Object.defineProperty(process, 'platform', { value: 'win32' });
     try {
       const longArgument = 'x'.repeat(4000);
-      const children = [createMockChild(), createMockChild()];
+      const children = [createMockChild(), createMockChild(), createMockChild()];
       let callIndex = 0;
       mockSpawn.mockImplementation(() => {
         const child = children[callIndex];
@@ -333,7 +353,7 @@ describe('exec', () => {
         exitCode: 0,
         exitSignal: null,
         stderr: '',
-        stdout: ''
+        stdout: 'batch1\nbatch2\nbatch3'
       });
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
@@ -348,6 +368,74 @@ describe('exec', () => {
       await expect(
         exec(['echo', { batchedArguments: [hugeArgument] }])
       ).rejects.toThrow('Cannot split');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should split a batched command that fits the raw Windows limit but not the reserved batch budget', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      mockSpawnSequence();
+
+      // 7004 chars assembled: under the raw 8191 (so the pre-T635 budget sent it as ONE `cmd.exe` command
+      // That then died with `The command line is too long.`), over the 8191 - 2048 batch budget.
+      const $arguments = Array.from({ length: 70 }, () => 'a'.repeat(99));
+      await exec(['echo', { batchedArguments: $arguments }], { isQuiet: true });
+
+      expect(mockSpawn.mock.calls.length).toBeGreaterThan(1);
+      for (const [command] of mockSpawn.mock.calls as [string][]) {
+        expect(command.length).toBeLessThanOrEqual(WINDOWS_MAX_BATCH_COMMAND_LENGTH);
+      }
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should count the ^-escaping toward the batch budget', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      // Same assembled length either way; only the cmd metacharacters grow once `^`-escaped.
+      const plainArguments = Array.from({ length: 60 }, () => 'a'.repeat(99));
+      const metaArguments = Array.from({ length: 60 }, () => `${'a'.repeat(94)}&&&&&`);
+      expect(plainArguments.join(' ').length).toBe(metaArguments.join(' ').length);
+
+      mockSpawnSequence();
+      await exec(['echo', { batchedArguments: plainArguments }], { isQuiet: true });
+      expect(mockSpawn).toHaveBeenCalledTimes(1);
+
+      mockSpawn.mockClear();
+      mockSpawnSequence();
+      await exec(['echo', { batchedArguments: metaArguments }], { isQuiet: true });
+      expect(mockSpawn.mock.calls.length).toBeGreaterThan(1);
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should not reserve any batch budget off Windows', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'linux' });
+    try {
+      mockSpawnSequence();
+
+      const $arguments = Array.from({ length: 70 }, () => 'a'.repeat(99));
+      await exec(['echo', { batchedArguments: $arguments }], { isQuiet: true });
+
+      expect(mockSpawn).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should count the cmd.exe wrapper toward the hard limit of a non-batched command', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      // 8185 chars assembled — under the raw 8191, over it once `cmd.exe /d /s /c "..."` is added.
+      await expect(exec(['echo', 'x'.repeat(8180)])).rejects.toThrow('Command line is too long');
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
