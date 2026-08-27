@@ -594,6 +594,28 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a rule could flag `toJson()` on a value typed `Reference` used as a
   `Map` key, but not the lifetime that makes it wrong)
 
+### L18. The Windows command-line budget is not 8191 — measure what you can, reserve for what you cannot
+
+- `exec()` has **two** length limits on purpose and they must not be collapsed into one.
+  `getMaxCommandLength()` is the raw platform maximum and guards a command that cannot be split;
+  `getMaxBatchCommandLength()` subtracts `WINDOWS_CHILD_EXPANSION_RESERVE` and sizes an
+  `ExecArgument` batch. Splitting a batch costs one extra sequential invocation, so that side may be
+  wrong in the safe direction; rejecting a command that cannot be split is fatal, so that side must stay exact.
+- **The assembled command is not what `cmd.exe` sees.** Two costs are spent after any naive length
+  check: node's `spawn(…, { shell: true })` wraps the command as `%ComSpec% /d /s /c "…"`, and
+  `spawnViaShell` then runs `cmdEscapeCommandLine` over it, which grows a list of quoted paths by a few
+  percent. Both are ours, so `getEffectiveCommandLineLength()` computes them rather than guessing —
+  and its platform branch must stay in sync with `spawnViaShell`'s.
+- **A third cost is not computable and must be reserved for.** `npx <tool> <args…>` is a *chain* of
+  `cmd.exe` lines: `npx.cmd` re-expands `%*`, the tool's `.bin/<tool>.cmd` shim does it again, and each
+  hop re-quotes what it forwards. Every line in the chain faces the same 8191 limit and every one is
+  longer than ours. Measured on P36's 187-file list (T635): a `markdownlint-cli2` invocation **assembled
+  at 7051 chars** — 1140 under the limit — died with `The command line is too long.`
+- **The symptom names nothing wrong with the content**, and it is size-dependent, so a repo passes until
+  the day it adds a few files and does not. Both halves of `markdownlint.ts`' `lint()` are exposed, not
+  just the `linkinator` one. If it ever returns, raise the reserve; never lower it.
+- (cannot be forced by ESLint — the limit is a property of the spawned process's own shim chain)
+
 ## Testing
 
 ### Goals
