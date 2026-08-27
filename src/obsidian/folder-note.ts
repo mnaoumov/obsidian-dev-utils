@@ -4,7 +4,7 @@
  * The folder-note concept: which note, if any, is the one whose properties describe a FOLDER itself.
  *
  * Obsidian has no such concept — it is a convention the community settled on, and the plugin that owns it
- * for most vaults is [`folder-notes`](https://github.com/LostPaul/obsidian-folder-notes). So the answer to
+ * for most vaults is [`folder-notes`](https://community.obsidian.md/plugins/folder-notes). So the answer to
  * "which note belongs to this folder" is that plugin's to give whenever it is installed, and this module
  * asks it rather than inventing a second answer: {@link FolderNoteLocation.Auto} — the default — reads its
  * live configuration at every use.

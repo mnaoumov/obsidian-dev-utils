@@ -329,4 +329,4 @@ The commands that walk the whole project — `lint`, `lint:md`, `format`, `spell
 
 This is wired per tool: ESLint reads `.gitignore` through its ignore-file config, dprint respects it natively, `markdownlint-cli2` uses `gitignore: true`, and cspell is invoked with `--gitignore`. Only paths git does **not** ignore — a checked-in folder you nonetheless want a given tool to skip — still need an explicit entry in that tool's own config.
 
-[Hot Reload]: https://github.com/pjeby/hot-reload
+[Hot Reload]: https://community.obsidian.md/plugins/hot-reload
