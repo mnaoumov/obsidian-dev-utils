@@ -58,6 +58,14 @@ function mockSpawnSequence(): void {
   });
 }
 
+function setComSpec(value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env['comspec'];
+    return;
+  }
+  process.env['comspec'] = value;
+}
+
 const {
   mockSpawn,
   mockStderrWrite,
@@ -436,6 +444,67 @@ describe('exec', () => {
     try {
       // 8185 chars assembled — under the raw 8191, over it once `cmd.exe /d /s /c "..."` is added.
       await expect(exec(['echo', 'x'.repeat(8180)])).rejects.toThrow('Command line is too long');
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
+  it('should count the length of the ComSpec path itself toward the batch budget', async () => {
+    const originalPlatform = process.platform;
+    const originalComSpec = process.env['comspec'];
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      // 6004 chars assembled: inside the 6143 batch budget with the shortest possible wrapper, outside it with a long one.
+      const $arguments = Array.from({ length: 60 }, () => 'a'.repeat(99));
+
+      setComSpec(undefined);
+      mockSpawnSequence();
+      await exec(['echo', { batchedArguments: $arguments }], { isQuiet: true });
+      expect(mockSpawn).toHaveBeenCalledTimes(1);
+
+      setComSpec(`C:\\${'nested\\'.repeat(40)}cmd.exe`);
+      mockSpawn.mockClear();
+      mockSpawnSequence();
+      await exec(['echo', { batchedArguments: $arguments }], { isQuiet: true });
+      expect(mockSpawn.mock.calls.length).toBeGreaterThan(1);
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+      setComSpec(originalComSpec);
+    }
+  });
+
+  it('should report the first failing batch instead of aggregating to a success', async () => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const longArgument = 'x'.repeat(4000);
+      const exitCodes = [0, 3, 0];
+      let callIndex = 0;
+      mockSpawn.mockImplementation(() => {
+        const child = createMockChild();
+        const index = callIndex;
+        callIndex++;
+        // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
+        setTimeout(() => {
+          child.stdout.end(`out${String(index)}`);
+          child.stderr.end(index === 1 ? 'boom' : '');
+          child.emit('close', exitCodes[index], null);
+        }, 0);
+        return child;
+      });
+
+      const result = await exec(['echo', { batchedArguments: [longArgument, longArgument, longArgument] }], {
+        isQuiet: true,
+        shouldIgnoreExitCode: true,
+        shouldIncludeDetails: true
+      });
+
+      expect(result).toEqual({
+        exitCode: 3,
+        exitSignal: null,
+        stderr: 'boom',
+        stdout: 'out0\nout1\nout2'
+      });
     } finally {
       Object.defineProperty(process, 'platform', { value: originalPlatform });
     }
