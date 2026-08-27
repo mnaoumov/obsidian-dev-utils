@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.2.1
+
+- test(exec): cover the ComSpec fallback and the failing-batch exit code
+- fix(exec): reserve command-line budget for the child's own shim expansion
+
 ## 96.2.0
 
 - feat(eslint): add no-untrusted-input-events, banning dispatched input in integration tests
