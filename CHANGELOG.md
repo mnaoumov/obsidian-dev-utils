@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.3.0
+
+- test(components): type the suggestion mock and order the test module members
+- feat(components): add PluginSuggestionComponent and take note-priority in
+
 ## 96.2.2
 
 - fix(setup)!: fail a test on any unhandled async error, including between tests
