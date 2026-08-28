@@ -44,6 +44,13 @@ export const en = {
     pathSettings: {
       invalidRegularExpression: 'Invalid regular expression: {{regExp}}'
     },
+    pluginSuggestion: {
+      enable: 'Enable',
+      install: 'Install and enable',
+      installed: '{{pluginName}} is installed and enabled.',
+      installFailed: 'Failed to install {{pluginName}}. Check the console for more information.',
+      notNow: 'Not now'
+    },
     queue: {
       flushQueue: 'Flush queue'
     },

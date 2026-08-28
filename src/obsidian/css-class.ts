@@ -183,6 +183,11 @@ export enum CssClass {
   PluginSettingsTab = 'plugin-settings-tab',
 
   /**
+   * A CSS class for the banner a plugin-suggestion renders into a settings tab.
+   */
+  PluginSuggestionBanner = 'plugin-suggestion-banner',
+
+  /**
    * A CSS class for the popover.
    */
   Popover = 'popover',
