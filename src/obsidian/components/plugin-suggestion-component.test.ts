@@ -31,19 +31,21 @@ import {
   SuggestedPluginState
 } from './plugin-suggestion-component.ts';
 
+interface ComponentContext {
+  readonly app: AppOriginal;
+  readonly component: PluginSuggestionComponent;
+  readonly setSuggestionDeclined: SetSuggestionDeclinedMock;
+  readonly showNotice: ReturnType<typeof vi.fn>;
+  triggerLayoutReady(): void;
+}
+
 interface CreateComponentOptions {
   readonly isDeclined?: boolean;
   readonly isEnabled?: boolean;
   readonly isInstalled?: boolean;
 }
 
-interface ComponentContext {
-  readonly app: AppOriginal;
-  readonly component: PluginSuggestionComponent;
-  readonly setSuggestionDeclined: ReturnType<typeof vi.fn>;
-  readonly showNotice: ReturnType<typeof vi.fn>;
-  triggerLayoutReady(): void;
-}
+type SetSuggestionDeclinedMock = ReturnType<typeof vi.fn<(isDeclined: boolean) => Promise<void>>>;
 
 const SUGGESTED_PLUGIN_ID = 'suggested-plugin';
 const SUGGESTED_PLUGIN_NAME = 'Suggested Plugin';
@@ -114,17 +116,17 @@ function createComponent(options: CreateComponentOptions = {}): ComponentContext
   });
 
   const showNotice = vi.fn();
-  const setSuggestionDeclined = vi.fn().mockResolvedValue(undefined);
+  const setSuggestionDeclined: SetSuggestionDeclinedMock = vi.fn<(isDeclined: boolean) => Promise<void>>().mockResolvedValue();
   let isDeclined = options.isDeclined ?? false;
 
   const component = new PluginSuggestionComponent({
     app,
-    isSuggestionDeclined: () => isDeclined,
+    isSuggestionDeclined: (): boolean => isDeclined,
     pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNotice }),
     reason: REASON,
-    setSuggestionDeclined: (value: boolean) => {
-      isDeclined = value;
-      return setSuggestionDeclined(value);
+    setSuggestionDeclined: async (isDeclinedNew: boolean): Promise<void> => {
+      isDeclined = isDeclinedNew;
+      await setSuggestionDeclined(isDeclinedNew);
     },
     suggestedPluginId: SUGGESTED_PLUGIN_ID,
     suggestedPluginName: SUGGESTED_PLUGIN_NAME
