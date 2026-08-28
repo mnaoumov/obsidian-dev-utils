@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 96.2.2
+
+- fix(setup)!: fail a test on any unhandled async error, including between tests
+- chore: update libs
+- docs: point other plugins at their community.obsidian.md pages
+
 ## 96.2.1
 
 - test(exec): cover the ComSpec fallback and the failing-batch exit code
