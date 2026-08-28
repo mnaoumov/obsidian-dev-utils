@@ -21,15 +21,6 @@ errorAsyncEvents.on('asyncError', handleAsyncError);
 
 interface ModuleState {
   /**
-   * The number of consumer handlers currently registered via {@link registerAsyncErrorEventHandler}.
-   *
-   * The built-in {@link handleAsyncError} listener is registered directly on the event source and is
-   * deliberately not counted, so a value of `0` means no consumer is listening and an emitted async
-   * error is therefore considered unhandled (see {@link emitAsyncErrorEvent}).
-   */
-  asyncErrorHandlerCount: number;
-
-  /**
    * The nesting depth of active {@link startAsyncErrorIgnoreContext} scopes. While greater than `0`, an
    * async error emitted (or a fire-and-forget operation whose rejection was captured) within the scope is
    * treated as expected and not collected as unhandled.
@@ -38,9 +29,10 @@ interface ModuleState {
 
   /**
    * The buffer that collects unhandled async errors while a collection window is open, or `null` when
-   * no window is open (the default in production). Opened by {@link startCollectingUnhandledAsyncErrors}
-   * and drained by {@link stopCollectingUnhandledAsyncErrors} — used by the test harness to fail a test
-   * that swallowed an async error.
+   * no window is open (the default in production). Opened by {@link startCollectingUnhandledAsyncErrors},
+   * emptied without closing by {@link drainCollectedUnhandledAsyncErrors}, and drained-and-closed by
+   * {@link stopCollectingUnhandledAsyncErrors} — used by the test harness to fail a test that swallowed
+   * an async error.
    */
   collectedUnhandledAsyncErrors: null | unknown[];
 }
@@ -49,7 +41,6 @@ interface ModuleState {
 Module-level mutable state, held in one object so each mutation names it explicitly.
  */
 const moduleState: ModuleState = {
-  asyncErrorHandlerCount: 0,
   asyncErrorIgnoreContextDepth: 0,
   collectedUnhandledAsyncErrors: null
 };
@@ -158,18 +149,34 @@ export class SilentError extends Error {
 }
 
 /**
+ * Empties the collection window opened by {@link startCollectingUnhandledAsyncErrors} and returns what it
+ * held, leaving the window **open** so errors emitted afterwards keep being collected.
+ *
+ * This is what {@link setup!setup}'s `beforeEach` / `afterEach` use, rather than
+ * {@link stopCollectingUnhandledAsyncErrors}: an async error emitted in the gap between two tests (e.g. by a
+ * `setTimeout` the test left pending) would otherwise land on a closed window and vanish unreported.
+ *
+ * @returns The unhandled async errors collected so far, or an empty array if no window is open.
+ */
+export function drainCollectedUnhandledAsyncErrors(): unknown[] {
+  return moduleState.collectedUnhandledAsyncErrors?.splice(0) ?? [];
+}
+
+/**
  * Emits an asynchronous error event.
  *
  * When a collection window is open (see {@link startCollectingUnhandledAsyncErrors}) the error is
- * collected as unhandled unless it is ignored — either because `shouldIgnore` is `true`, an
- * {@link startAsyncErrorIgnoreContext} scope is active, or a consumer handler is registered.
+ * collected as unhandled unless it is ignored — either because `shouldIgnore` is `true` or an
+ * {@link startAsyncErrorIgnoreContext} scope is active. A registered consumer handler deliberately does
+ * **not** exempt the error: in production it shows the user a Notice, which is not a test asserting that
+ * the error was expected. {@link startAsyncErrorIgnoreContext} is the single, explicit opt-out.
  *
  * @param asyncError - The error to emit as an asynchronous error event.
  * @param shouldIgnore - Whether to treat the error as expected and never collect it as unhandled, regardless of the active ignore context. Used to carry the schedule-time ignore decision of a deferred fire-and-forget rejection.
  */
 export function emitAsyncErrorEvent(asyncError: unknown, shouldIgnore = false): void {
   const isIgnored = shouldIgnore || moduleState.asyncErrorIgnoreContextDepth > 0;
-  if (moduleState.collectedUnhandledAsyncErrors && !isIgnored && moduleState.asyncErrorHandlerCount === 0) {
+  if (moduleState.collectedUnhandledAsyncErrors && !isIgnored) {
     moduleState.collectedUnhandledAsyncErrors.push(asyncError);
   }
   errorAsyncEvents.trigger('asyncError', asyncError);
@@ -238,16 +245,18 @@ export function printError(error: unknown, console?: Console): void {
 /**
  * Registers an event handler for asynchronous errors.
  *
+ * Registering a handler does not mark the errors it receives as expected — see
+ * {@link emitAsyncErrorEvent}. A test that deliberately triggers an async error opens a
+ * {@link startAsyncErrorIgnoreContext} scope regardless of who is listening.
+ *
  * @param handler - The handler function to be called when an asynchronous error event occurs.
  * @returns A {@link Disposable} that unregisters the handler when disposed, for use with `using`.
  */
 export function registerAsyncErrorEventHandler(handler: (asyncError: unknown) => void): Disposable {
   const eventRef = errorAsyncEvents.on('asyncError', handler);
-  moduleState.asyncErrorHandlerCount++;
   return new CallbackDisposable({
     callback: (): void => {
       errorAsyncEvents.offref(eventRef);
-      moduleState.asyncErrorHandlerCount--;
     },
     multipleDisposeBehavior: MultipleDisposeBehavior.Ignore
   });
@@ -285,12 +294,13 @@ export function startAsyncErrorIgnoreContext(): Disposable {
 }
 
 /**
- * Opens a window in which async errors emitted while no consumer handler is registered are collected
- * as unhandled (see {@link emitAsyncErrorEvent}), discarding anything collected by a previous window.
+ * Opens a window in which async errors emitted outside an ignore context are collected as unhandled
+ * (see {@link emitAsyncErrorEvent}), discarding anything collected by a previous window.
  *
- * Intended for the test harness only: the per-test setup opens a window before each test and drains it
- * after each test via {@link stopCollectingUnhandledAsyncErrors}. In production no window is open, so
- * emitting an async error carries no bookkeeping overhead.
+ * Intended for the test harness only: the per-test setup opens a window before each test and empties it
+ * after each test via {@link drainCollectedUnhandledAsyncErrors}, closing it for good with
+ * {@link stopCollectingUnhandledAsyncErrors} once the file's last test has run. In production no window
+ * is open, so emitting an async error carries no bookkeeping overhead.
  */
 export function startCollectingUnhandledAsyncErrors(): void {
   moduleState.collectedUnhandledAsyncErrors = [];
@@ -299,6 +309,9 @@ export function startCollectingUnhandledAsyncErrors(): void {
 /**
  * Closes the window opened by {@link startCollectingUnhandledAsyncErrors} and returns the unhandled
  * async errors collected while it was open.
+ *
+ * Use {@link drainCollectedUnhandledAsyncErrors} instead wherever collection must continue afterwards —
+ * once the window is closed, a later async error is not collected by anyone.
  *
  * @returns The collected unhandled async errors, or an empty array if no window was open.
  */

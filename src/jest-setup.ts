@@ -12,6 +12,7 @@
 
 /* v8 ignore start -- Thin Jest setup-file glue; setup is unit-tested separately. */
 import {
+  afterAll,
   afterEach,
   beforeEach
 } from '@jest/globals';
@@ -19,6 +20,7 @@ import {
 import { setup } from './setup.ts';
 
 setup({
+  afterAll,
   afterEach,
   beforeEach
 });

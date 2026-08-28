@@ -10,6 +10,7 @@ import { dispose } from './disposable.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
   CustomStackTraceError,
+  drainCollectedUnhandledAsyncErrors,
   emitAsyncErrorEvent,
   errorToString,
   getStackTrace,
@@ -518,6 +519,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     const handler = vi.fn();
     using _registration = registerAsyncErrorEventHandler(handler);
 
+    // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+    using _ignore = startAsyncErrorIgnoreContext();
     const error = new Error('async error');
     emitAsyncErrorEvent(error);
 
@@ -555,6 +558,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     using _registration1 = registerAsyncErrorEventHandler(handler1);
     using _registration2 = registerAsyncErrorEventHandler(handler2);
 
+    // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+    using _ignore = startAsyncErrorIgnoreContext();
     const error = new Error('multi');
     emitAsyncErrorEvent(error);
 
@@ -572,6 +577,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 
     dispose(registration1);
 
+    // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+    using _ignore = startAsyncErrorIgnoreContext();
     emitAsyncErrorEvent(new Error('selective'));
 
     expect(handler1).not.toHaveBeenCalled();
@@ -585,6 +592,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
     const handler = vi.fn();
     using _registration = registerAsyncErrorEventHandler(handler);
 
+    // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+    using _ignore = startAsyncErrorIgnoreContext();
     emitAsyncErrorEvent(value);
     expect(handler).toHaveBeenCalledWith(value);
   });
@@ -592,7 +601,8 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 
 describe('unhandled async error collection', () => {
   afterEach(() => {
-    // Close any window a test left open so it cannot leak into the global per-test harness.
+    // Close any window a test left open so it cannot leak into the global per-test harness, which drains
+    // Its window rather than closing it.
     stopCollectingUnhandledAsyncErrors();
   });
 
@@ -605,13 +615,37 @@ describe('unhandled async error collection', () => {
     expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([error]);
   });
 
-  it('should not collect an async error while a consumer handler is registered', () => {
+  it('should collect an async error even while a consumer handler is registered', () => {
     startCollectingUnhandledAsyncErrors();
     using _registration = registerAsyncErrorEventHandler(vi.fn());
 
-    emitAsyncErrorEvent(new Error('handled'));
+    const error = new Error('handled, yet still unexpected');
+    emitAsyncErrorEvent(error);
 
-    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([error]);
+  });
+
+  it('should drain the collected errors while leaving the window open', () => {
+    startCollectingUnhandledAsyncErrors();
+    const firstError = new Error('first');
+    emitAsyncErrorEvent(firstError);
+
+    expect(drainCollectedUnhandledAsyncErrors()).toStrictEqual([firstError]);
+    expect(drainCollectedUnhandledAsyncErrors()).toStrictEqual([]);
+
+    // The window is still open, so a later error is still collected.
+    const secondError = new Error('second');
+    emitAsyncErrorEvent(secondError);
+
+    expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([secondError]);
+  });
+
+  it('should drain to an empty array while no collection window is open', () => {
+    stopCollectingUnhandledAsyncErrors();
+
+    emitAsyncErrorEvent(new Error('no window'));
+
+    expect(drainCollectedUnhandledAsyncErrors()).toStrictEqual([]);
   });
 
   it('should not collect an async error while no collection window is open', () => {
