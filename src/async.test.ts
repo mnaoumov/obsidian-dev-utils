@@ -1127,6 +1127,8 @@ describe('Async', () => {
     it('should emit async error event when the async function throws', async () => {
       const handler = vi.fn();
       using _registration = registerAsyncErrorEventHandler(handler);
+      // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+      using _ignore = startAsyncErrorIgnoreContext();
 
       await addErrorHandler(async () => {
         await noopAsync();
@@ -1187,6 +1189,8 @@ describe('Async', () => {
     it('should emit async error event when function throws', async () => {
       const handler = vi.fn();
       using _registration = registerAsyncErrorEventHandler(handler);
+      // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+      using _ignore = startAsyncErrorIgnoreContext();
 
       invokeAsyncSafely(async () => {
         await noopAsync();
@@ -1212,6 +1216,8 @@ describe('Async', () => {
     it('should emit async error event when a sync function throws', async () => {
       const handler = vi.fn();
       using _registration = registerAsyncErrorEventHandler(handler);
+      // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+      using _ignore = startAsyncErrorIgnoreContext();
 
       invokeAsyncSafely(() => {
         throw new Error('sync invoke error');
@@ -1228,6 +1234,8 @@ describe('Async', () => {
     it('should emit async error event when a non-async function returns a rejecting promise', async () => {
       const handler = vi.fn();
       using _registration = registerAsyncErrorEventHandler(handler);
+      // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+      using _ignore = startAsyncErrorIgnoreContext();
 
       invokeAsyncSafely(() => Promise.reject(new Error('rejected promise')));
 
@@ -1484,6 +1492,8 @@ describe('Async', () => {
     it('should emit async error event when async function rejects', async () => {
       const handler = vi.fn();
       using _registration = registerAsyncErrorEventHandler(handler);
+      // A registered handler does not exempt the emit, so mark it as expected for the test harness.
+      using _ignore = startAsyncErrorIgnoreContext();
 
       async function asyncFunction(): Promise<never> {
         await noopAsync();

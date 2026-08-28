@@ -10,6 +10,7 @@
 
 /* v8 ignore start -- Thin Vitest setup-file glue; setup is unit-tested separately. */
 import {
+  afterAll,
   afterEach,
   beforeEach
 } from 'vitest';
@@ -17,6 +18,7 @@ import {
 import { setup } from './setup.ts';
 
 setup({
+  afterAll,
   afterEach,
   beforeEach
 });

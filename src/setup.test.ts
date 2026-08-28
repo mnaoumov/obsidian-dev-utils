@@ -14,6 +14,7 @@ import {
   waitForAllAsyncOperations
 } from './async.ts';
 import {
+  drainCollectedUnhandledAsyncErrors,
   emitAsyncErrorEvent,
   registerAsyncErrorEventHandler,
   startAsyncErrorIgnoreContext
@@ -35,6 +36,7 @@ import { assertNonNullable } from './type-guards.ts';
 type CapturedHook = HookFunction | undefined;
 
 interface CapturedSetupHooks {
+  afterAllCallback(): ReturnType<HookFunction>;
   afterEachCallback(): ReturnType<HookFunction>;
   beforeEachCallback(): ReturnType<HookFunction>;
 }
@@ -49,8 +51,10 @@ describe('setup', () => {
   it('should register handlers with the provided hooks', () => {
     const beforeEachRegistrar = vi.fn<HookRegistrar>();
     const afterEachRegistrar = vi.fn<HookRegistrar>();
+    const afterAllRegistrar = vi.fn<HookRegistrar>();
 
     setup({
+      afterAll: afterAllRegistrar,
       afterEach: afterEachRegistrar,
       beforeEach: beforeEachRegistrar
     });
@@ -59,6 +63,8 @@ describe('setup', () => {
     expect(beforeEachRegistrar).toHaveBeenCalledWith(expect.any(Function));
     expect(afterEachRegistrar).toHaveBeenCalledTimes(1);
     expect(afterEachRegistrar).toHaveBeenCalledWith(expect.any(Function));
+    expect(afterAllRegistrar).toHaveBeenCalledTimes(1);
+    expect(afterAllRegistrar).toHaveBeenCalledWith(expect.any(Function));
   });
 
   it('should reset state and enable tracking via beforeEach, and disable tracking via afterEach', async () => {
@@ -73,6 +79,7 @@ describe('setup', () => {
     });
 
     setup({
+      afterAll: noop,
       afterEach: afterEachRegistrar,
       beforeEach: beforeEachRegistrar
     });
@@ -101,6 +108,7 @@ describe('setup', () => {
     let beforeEachCallback: CapturedHook;
 
     setup({
+      afterAll: noop,
       afterEach: noop,
       beforeEach: ($function) => {
         beforeEachCallback = $function;
@@ -184,14 +192,98 @@ describe('setup', () => {
     await expect(afterEachCallback()).resolves.toBeUndefined();
   });
 
-  it('should not report an async error consumed by a registered handler', async () => {
+  it('should report an async error even while a consumer handler is registered', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    // A registered handler shows the user a Notice; that is not a test asserting the error was expected.
+    using _registration = registerAsyncErrorEventHandler(vi.fn());
+    const error = new Error('handled by a consumer, yet still unexpected');
+    emitAsyncErrorEvent(error);
+
+    const thrown = await captureRejection(afterEachCallback);
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).message).toContain('during the test');
+    expect((thrown as AggregateError).errors).toStrictEqual([error]);
+  });
+
+  it('should not report an async error emitted within an ignore context while a handler is registered', async () => {
     const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
 
     await beforeEachCallback();
     using _registration = registerAsyncErrorEventHandler(vi.fn());
-    emitAsyncErrorEvent(new Error('handled'));
+    {
+      using _ignore = startAsyncErrorIgnoreContext();
+      emitAsyncErrorEvent(new Error('deliberate'));
+    }
 
     await expect(afterEachCallback()).resolves.toBeUndefined();
+  });
+
+  it('should report an async error emitted from a timer the test left pending', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    const error = new Error('late timer');
+    // A pending timer is not a tracked async operation, so only the macrotask drain in afterEach catches it.
+    window.setTimeout(() => {
+      emitAsyncErrorEvent(error);
+    }, 0);
+
+    const thrown = await captureRejection(afterEachCallback);
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).errors).toStrictEqual([error]);
+  });
+
+  it('should report an async error emitted between tests via the next beforeEach', async () => {
+    const { afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    await afterEachCallback();
+
+    // AfterEach empties the collection window but deliberately leaves it open, so an error emitted in the
+    // Gap before the next test is still collected instead of vanishing.
+    silenceConsole();
+    const error = new Error('between tests');
+    emitAsyncErrorEvent(error);
+
+    const thrown = await captureRejection(beforeEachCallback);
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).message).toContain('after the previous test finished');
+    expect((thrown as AggregateError).errors).toStrictEqual([error]);
+  });
+
+  it('should report an async error emitted after the last test via afterAll', async () => {
+    const { afterAllCallback, afterEachCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+    await afterEachCallback();
+
+    // No next beforeEach will ever run, so afterAll is the only hook left to report this.
+    silenceConsole();
+    const error = new Error('after the last test');
+    emitAsyncErrorEvent(error);
+
+    const thrown = await captureRejection(afterAllCallback);
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).message).toContain('after the last test finished');
+    expect((thrown as AggregateError).errors).toStrictEqual([error]);
+  });
+
+  it('should close the collection window via afterAll', async () => {
+    const { afterAllCallback, beforeEachCallback } = captureSetupHooks();
+
+    await beforeEachCallback();
+
+    await expect(afterAllCallback()).resolves.toBeUndefined();
+
+    silenceConsole();
+    emitAsyncErrorEvent(new Error('after the window closed'));
+    expect(drainCollectedUnhandledAsyncErrors()).toStrictEqual([]);
   });
 
   it('should tolerate a test that disabled async-operation tracking itself', async () => {
@@ -231,11 +323,25 @@ describe('silenceConsole / restoreConsole', () => {
   });
 });
 
+async function captureRejection($function: () => ReturnType<HookFunction>): Promise<unknown> {
+  let thrown: unknown;
+  try {
+    await $function();
+  } catch (error) {
+    thrown = error;
+  }
+  return thrown;
+}
+
 function captureSetupHooks(): CapturedSetupHooks {
   let beforeEachCallback: CapturedHook;
   let afterEachCallback: CapturedHook;
+  let afterAllCallback: CapturedHook;
 
   setup({
+    afterAll: ($function) => {
+      afterAllCallback = $function;
+    },
     afterEach: ($function) => {
       afterEachCallback = $function;
     },
@@ -246,5 +352,6 @@ function captureSetupHooks(): CapturedSetupHooks {
 
   assertNonNullable(beforeEachCallback);
   assertNonNullable(afterEachCallback);
-  return { afterEachCallback, beforeEachCallback };
+  assertNonNullable(afterAllCallback);
+  return { afterAllCallback, afterEachCallback, beforeEachCallback };
 }

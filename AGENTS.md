@@ -631,14 +631,17 @@ export function myFunction(param: Type): ReturnType {
 
 - Consumers wire the library's per-test setup into their suites via three endpoints, mirroring
   `obsidian-test-mocks`'s naming: `obsidian-dev-utils/setup` (framework-agnostic
-  `setup({ beforeEach, afterEach })`), `obsidian-dev-utils/vitest-setup`, and
-  `obsidian-dev-utils/jest-setup`.
+  `setup({ beforeEach, afterEach, afterAll })`), `obsidian-dev-utils/vitest-setup`, and
+  `obsidian-dev-utils/jest-setup`. `afterAll` is **required** — it closes the unhandled-async-error
+  collection window for the file (see "Unhandled async errors" below); the two framework endpoints pass it
+  for you.
   Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
   accumulated state does not leak between tests), enables async-operation tracking, silences every
   `console` method (replacing each with a no-op via `silenceConsole()`, so incidental log/warn/error
   output does not pollute the test report), clears `localStorage` (so per-worker Web Storage does
   not leak between tests), and starts collecting unhandled async errors; after each test it drains any
-  tracked fire-and-forget operations, disables tracking, restores the original `console` methods
+  tracked fire-and-forget operations **and the pending macrotask queue**, disables tracking, restores the
+  original `console` methods
   (`restoreConsole()`), and fails the test with an `AggregateError` if any unhandled async error was
   emitted (see "Unhandled async errors" below), so tests can `await waitForAllAsyncOperations()` against
   isolated state. A test that needs to assert on console output re-instruments the method it cares about (e.g.
@@ -679,18 +682,32 @@ export function myFunction(param: Type): ReturnType {
 
 ### Unhandled async errors
 
-- The standard `setup()` also fails a test if a fire-and-forget async operation emitted an async error
-  that no consumer handler was there to receive — the "no swallowed async errors" harness. `beforeEach`
-  calls `startCollectingUnhandledAsyncErrors()` (`src/error.ts`); `afterEach` drains tracked operations
+- The standard `setup()` also fails a test if a fire-and-forget async operation emitted an async error the
+  test did not declare as expected — the "no swallowed async errors" harness. `beforeEach` calls
+  `startCollectingUnhandledAsyncErrors()` (`src/error.ts`); `afterEach` drains tracked operations
   via `waitForAllAsyncOperations()` (guarded by `isAsyncOperationTrackingEnabled()`, so a test that
   disabled tracking itself does not trip the drain), then throws an `AggregateError` of whatever
-  `stopCollectingUnhandledAsyncErrors()` returns. It is forced, not opt-in.
-- "Unhandled" is decided the Node `unhandledRejection` way: `emitAsyncErrorEvent()` collects an error
-  only when `asyncErrorHandlerCount === 0` — i.e. no handler registered via
-  `registerAsyncErrorEventHandler()` is active at emit time (the built-in `handleAsyncError` printer is
-  registered directly on the event source and is deliberately not counted). So the many existing tests
-  that register a handler and assert on the emitted error are auto-exempt and needed no changes.
-- A test that deliberately triggers an async error with no consumer handler opens an ignore context:
+  `drainCollectedUnhandledAsyncErrors()` returns. It is forced, not opt-in.
+- **A registered consumer handler does NOT exempt an error** (changed by T655; it used to, via an
+  `asyncErrorHandlerCount === 0` gate mirroring Node's `unhandledRejection`). `PluginBase` adds
+  `AsyncErrorHandlerComponent` during `onload`, which registers such a handler — so the old gate disarmed
+  the harness for the whole of **every plugin's `plugin.test.ts`**, where it was needed most. In
+  production a handler showing the user a Notice is a defensible definition of "handled"; in a test it is
+  not an assertion that the error was expected. `startAsyncErrorIgnoreContext()` is now the single,
+  explicit opt-out, and it is explicit at the call site rather than dependent on which components a plugin
+  happens to load. Consequence for consumers: a test that registers a handler and asserts on the emitted
+  error must now also open an ignore context.
+- **The collection window spans the gaps between tests, and `afterAll` closes it.** A `setTimeout(…, 0)`
+  a test leaves pending (e.g. `LayoutReadyComponent.onload`) is not a tracked async operation, so
+  `waitForAllAsyncOperations()` does not wait for it. `afterEach` therefore also lets the macrotask queue
+  turn over (`drainPendingMacrotasks()`, built on a `globalThis.setTimeout` captured at module load so
+  `vi.useFakeTimers()` cannot hang teardown), and *drains* the window rather than closing it — an error
+  emitted in the gap is reported by the next `beforeEach` ("after the previous test finished"), and one
+  emitted after the file's last test by `afterAll` ("after the last test finished"). Before T655 such an
+  error hit a nulled bucket after `restoreConsole()` had run: it printed to a real console and failed
+  nothing. The tell was a `stderr | <file>` block with **no test name** — i.e. emitted outside any running
+  test.
+- A test that deliberately triggers an async error opens an ignore context:
   `using _ = startAsyncErrorIgnoreContext()` (an `asyncErrorIgnoreContextDepth` counter checked by
   `emitAsyncErrorEvent`, exposed via `isAsyncErrorIgnoreContextActive()`). Crucially this also covers
   **fire-and-forget** operations: `addErrorHandler` (`src/async.ts`) captures the active ignore context

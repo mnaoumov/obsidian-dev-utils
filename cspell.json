@@ -100,6 +100,7 @@
     "localtime",
     "luxon",
     "macrotask",
+    "macrotasks",
     "maxby",
     "mdast",
     "mday",
