@@ -109,6 +109,15 @@ export interface MonkeyAroundComponentRegisterMethodPatchParams<$Object extends 
 
   /**
    * An optional token to identify the patch.
+   *
+   * The token is recorded against the method this patch INSTALLS, so the next patch of the same method
+   * detects it via {@link hasPatchToken} on its own `originalMethod` and can defer to this one. The
+   * patch that installs a token therefore never sees its own token — only the patches stacked on top of
+   * it do. Use a `Symbol.for` token to make the detection work across independently bundled copies of
+   * this library.
+   *
+   * The token is dropped when this component unloads, so a later patch that had deferred takes over on
+   * its next call.
    */
   readonly patchToken?: symbol;
 
@@ -263,11 +272,6 @@ export class MonkeyAroundComponent extends ComponentEx {
   ): void {
     this.ensureLoaded();
 
-    if (params.patchToken) {
-      const originalMethod = params.$object[params.methodName] as GenericFunction;
-      getMonkeyAroundPatches().set(originalMethod, params.patchToken);
-    }
-
     type $Function = ExtractFunction<$Object, MethodName>;
 
     this.registerFunctionPatch({
@@ -296,6 +300,22 @@ export class MonkeyAroundComponent extends ComponentEx {
           });
         }
       }
+    });
+
+    if (!params.patchToken) {
+      return;
+    }
+
+    // The token marks the INSTALLED method, read back once the patch is in place.
+    // That is the identity the next patch of the same method receives as its `originalMethod`.
+    // `monkey-around` installs a wrapper of its own and exposes the value built above only via its prototype.
+    // Marking that value, or the method being wrapped as this once did, matches nothing the next patch sees.
+    // Dropping the token on unload lets a deferring later patch take over, since the guard is read per call.
+    const patchedMethod = params.$object[params.methodName] as GenericFunction;
+    const monkeyAroundPatches = getMonkeyAroundPatches();
+    monkeyAroundPatches.set(patchedMethod, params.patchToken);
+    this.register(() => {
+      monkeyAroundPatches.delete(patchedMethod);
     });
   }
 
@@ -329,6 +349,21 @@ export function around<$Object extends object>($object: $Object, factories: Fact
 
 /**
  * Checks if a function has a specific patch token.
+ *
+ * A token is carried by the method a {@link MonkeyAroundComponent#registerMethodPatch} call INSTALLED, so
+ * the intended caller is a later patch of the same method, checking the `originalMethod` it wrapped in
+ * order to defer to the patch already in place:
+ *
+ * ```ts
+ * patchHandler: ({ fallback, originalMethod }) => {
+ *   if (hasPatchToken(originalMethod, PATCH_TOKEN)) {
+ *     return fallback();
+ *   }
+ *   ...
+ * }
+ * ```
+ *
+ * The check is made per call, so it stops reporting the earlier patch once that patch's component unloads.
  *
  * @param $function - The function to check.
  * @param patchToken - The patch token to check for.
