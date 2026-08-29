@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.3.1
+
+- fix(monkey-around): record the patch token on the method a patch installs
+- chore: update libs
+
 ## 96.3.0
 
 - test(components): type the suggestion mock and order the test module members
