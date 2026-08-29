@@ -34,6 +34,13 @@ interface MarkedGreet {
   marker: string;
 }
 
+interface RegisterDeferringPatchParams {
+  readonly $object: TestObject;
+  readonly component: MonkeyAroundComponent;
+  readonly label: string;
+  readonly patchToken: symbol;
+}
+
 interface TestObject {
   greet(name: string): string;
   sum(a: number, b: number): number;
@@ -52,6 +59,28 @@ function createTestObject(): TestObject {
     },
     value: 42
   };
+}
+
+/**
+ * Registers the de-duplication pattern the token exists for: the patch labels the greeting, unless the
+ * method it wrapped already carries the token — in which case an earlier copy of the same patch is
+ * already live and this one defers to it.
+ *
+ * @param params - The parameters of the patch.
+ */
+function registerDeferringPatch(params: RegisterDeferringPatchParams): void {
+  params.component.registerMethodPatch<TestObject, 'greet'>({
+    $object: params.$object,
+    methodName: 'greet',
+    patchHandler: ({ fallback, originalMethod }) => {
+      if (hasPatchToken(originalMethod, params.patchToken)) {
+        return fallback();
+      }
+
+      return `${params.label}: ${fallback()}`;
+    },
+    patchToken: params.patchToken
+  });
 }
 
 describe('around', () => {
@@ -553,7 +582,7 @@ describe('MonkeyAroundComponent', () => {
       expect(hasPatchToken(noop, token)).toBe(false);
     });
 
-    it('should return true when checking the original method inside the handler', () => {
+    it('should not detect its own token on the method it wrapped', () => {
       const component = new MonkeyAroundComponent();
       component.load();
       const $object = createTestObject();
@@ -571,7 +600,7 @@ describe('MonkeyAroundComponent', () => {
       });
 
       $object.greet('world');
-      expect(wasTokenDetected).toBe(true);
+      expect(wasTokenDetected).toBe(false);
     });
 
     it('should return false for a different token on the original method', () => {
@@ -625,7 +654,7 @@ describe('MonkeyAroundComponent', () => {
       expect(wasSecondPatchDetectedFirst).toBe(true);
     });
 
-    it('should track token on the original function, not the wrapped one', () => {
+    it('should track the token on the installed method, not on the one it wrapped', () => {
       const component = new MonkeyAroundComponent();
       component.load();
       const $object = createTestObject();
@@ -639,8 +668,98 @@ describe('MonkeyAroundComponent', () => {
         patchToken: token
       });
 
-      expect(hasPatchToken(originalGreet, token)).toBe(true);
-      expect(hasPatchToken($object.greet, token)).toBe(false);
+      expect(hasPatchToken(originalGreet, token)).toBe(false);
+      expect(hasPatchToken($object.greet, token)).toBe(true);
+    });
+
+    it('should track the token on the installed method of a `once` patch', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const $object = createTestObject();
+      const token = Symbol('test-patch');
+
+      component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
+        methodName: 'greet',
+        once: true,
+        patchHandler: ({ fallback }) => `once: ${fallback()}`,
+        patchToken: token
+      });
+
+      expect(hasPatchToken($object.greet, token)).toBe(true);
+    });
+
+    it('should drop the token when the patching component unloads', () => {
+      const component = new MonkeyAroundComponent();
+      component.load();
+      const $object = createTestObject();
+      const token = Symbol('test-patch');
+
+      component.registerMethodPatch<TestObject, 'greet'>({
+        $object,
+        methodName: 'greet',
+        patchHandler: ({ fallback }) => fallback(),
+        patchToken: token
+      });
+      const patchedGreet = $object.greet;
+
+      expect(hasPatchToken(patchedGreet, token)).toBe(true);
+
+      component.unload();
+
+      expect(hasPatchToken(patchedGreet, token)).toBe(false);
+    });
+
+    it('should keep only the first patch live when a later patch defers on the shared token', () => {
+      const $object = createTestObject();
+      const patchToken = Symbol.for('obsidian-dev-utils:deferring-patch');
+      const component1 = new MonkeyAroundComponent();
+      component1.load();
+      const component2 = new MonkeyAroundComponent();
+      component2.load();
+
+      registerDeferringPatch({
+        $object,
+        component: component1,
+        label: 'first',
+        patchToken
+      });
+      registerDeferringPatch({
+        $object,
+        component: component2,
+        label: 'second',
+        patchToken
+      });
+
+      expect($object.greet('world')).toBe('first: hello world');
+    });
+
+    it('should let a later patch take over once the first patching component unloads', () => {
+      const $object = createTestObject();
+      const patchToken = Symbol.for('obsidian-dev-utils:deferring-patch');
+      const component1 = new MonkeyAroundComponent();
+      component1.load();
+      const component2 = new MonkeyAroundComponent();
+      component2.load();
+
+      registerDeferringPatch({
+        $object,
+        component: component1,
+        label: 'first',
+        patchToken
+      });
+      registerDeferringPatch({
+        $object,
+        component: component2,
+        label: 'second',
+        patchToken
+      });
+
+      expect($object.greet('world')).toBe('first: hello world');
+
+      component1.unload();
+
+      expect($object.greet('world')).toBe('second: hello world');
     });
   });
 
