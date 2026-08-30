@@ -662,6 +662,35 @@ export function myFunction(param: Type): ReturnType {
   `%APPDATA%\obsidian\obsidian-<version>.asar`, then `dd` a window around the offset (same technique as L14).
 - (cannot be forced by ESLint — a runtime-behavior asymmetry between adapters)
 
+### L20. A patch token is for a NON-IDEMPOTENT patch — an idempotent one stacks safely and must not defer
+
+- Every plugin bundles its own copy of this library, so a patch on a shared object (`app.vault.adapter`,
+  `app.fileManager`) is installed once per plugin that opts in. The reflex is to add a `patchToken` +
+  `hasPatchToken` so later copies defer to the first. **That reflex is right only when running the patch
+  twice would actually do something different from running it once.**
+- **The stacking is already safe, because `monkey-around` neutralizes an unloaded wrapper in place.** Its
+  `remove()` sets `current = original` unconditionally — it restores `obj[method]` only when its own wrapper
+  is still the outermost, but the wrapper it cannot splice out of the middle becomes a pass-through either
+  way. So N patches can be unloaded in **any** order and the method stays patched until the last one goes.
+  `rmdir-guard-component.test.ts` pins this with all six unload orders of three guards; they pass with and
+  without a token, which is the measurement that settles the question.
+- **Idempotent → no token.** `RmdirGuardComponent` is "prove empty, then delete": the outermost guard either
+  throws or forwards with `recursive: true`, which every guard beneath passes straight through. One `stat`,
+  one `list`, same result. A token would only move the decision from the outermost (last-loaded) guard to
+  the innermost (first-loaded) one — an equally arbitrary load-order accident — while adding a code path on
+  which a guard **declines to guard**. For anything protecting data, that trade is strictly negative.
+- **Non-idempotent → token.** `FileManagerRunAsyncLinkUpdatePatchComponent` suppresses `runAsyncLinkUpdate`
+  so a custom handler owns link rewriting. Two of those would both suppress and both rewrite — a real
+  conflict — so deferring via `hasPatchToken(originalMethod, PATCH_TOKEN)` is what keeps them from fighting.
+- **Cost of a token, when you do add one:** it is a deferral, i.e. trusting a patch you do not control. Its
+  safety rests on the token being dropped on unload (`registerMethodPatch` does this) — otherwise a guard
+  defers to a neutralized wrapper and the call falls through to the unpatched original. And `Symbol.for` is
+  a global name, so anything that registers the same token can switch your patch off.
+- The question to ask is therefore never "could this be installed twice?" but **"does installing it twice
+  behave differently from installing it once?"** If no, write down why there is no token — otherwise the
+  reflex re-fires on the next reader.
+- (cannot be forced by ESLint — an idempotence judgment about the patch body)
+
 ## Testing
 
 ### Goals

@@ -45,6 +45,17 @@ export const NOT_EMPTY_DIRECTORY_ERROR_CODE = 'ENOTEMPTY';
  * Calls that already pass `recursive: true`, and calls whose target is not a folder (a file, a missing path),
  * are passed through untouched and keep their native behavior.
  *
+ * Loading the guard more than once is safe, and it deliberately carries **no patch token**. Every plugin
+ * bundles its own copy of this library and they all patch the one shared adapter, so several guards do stack
+ * — but the operation is idempotent (prove empty, then delete), so stacking changes nothing: the outermost
+ * guard either throws or forwards with `recursive: true`, which every guard beneath passes straight through.
+ * They can also be unloaded in any order and the method stays guarded until the last one goes, because
+ * `monkey-around` neutralizes an unloaded wrapper in place rather than splicing it out. A token would only
+ * move the decision to the innermost guard — an equally arbitrary choice — while adding a path on which a
+ * guard declines to guard. For a data-loss guard that trade is not worth making. Contrast
+ * `RenameDeleteHandlerComponent`, which does need one: suppressing `runAsyncLinkUpdate` is not idempotent,
+ * so two of those would conflict.
+ *
  * This component is deliberately **opt-in**: `app.vault.adapter` is shared by the whole app, so a library that
  * installed this patch on its own would change `rmdir` semantics for every other plugin, including the ones
  * that never asked for it. A plugin that deletes folders opts in for itself:
