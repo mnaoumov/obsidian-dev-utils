@@ -58,6 +58,25 @@ export enum FileSystemType {
    */
   Folder = 'folder'
 }
+/**
+ * How {@link getBasename} and {@link getExtension} should answer for a path that resolves to nothing in the vault.
+ *
+ * Nothing in the vault says whether an unresolved `alpha.bravo` names a dotted folder or a `.bravo` file, so the caller decides.
+ */
+export enum MissingPathTreatment {
+  /**
+   * Read the path as a file path: `alpha.bravo` is basename `alpha` plus extension `bravo`.
+   */
+  File = 'file',
+  /**
+   * Read the path as a folder path: `alpha.bravo` is basename `alpha.bravo` with no extension.
+   */
+  Folder = 'folder',
+  /**
+   * Throw instead of guessing.
+   */
+  Throw = 'throw'
+}
 
 /**
  * Parameters for {@link doesExist}.
@@ -128,6 +147,50 @@ export interface GetAbstractFileParams {
    * The path or abstract file to retrieve the abstract file for.
    */
   readonly pathOrFile: PathOrAbstractFile;
+}
+
+/**
+ * Parameters for {@link getBasename}.
+ */
+export interface GetBasenameParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or abstract file to get the base name of.
+   */
+  readonly pathOrFile: PathOrAbstractFile;
+
+  /**
+   * How to answer when the path resolves to nothing in the vault.
+   *
+   * @default `MissingPathTreatment.File`
+   */
+  readonly whenMissingTreatAs?: MissingPathTreatment;
+}
+
+/**
+ * Parameters for {@link getExtension}.
+ */
+export interface GetExtensionParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or abstract file to get the extension of.
+   */
+  readonly pathOrFile: PathOrAbstractFile;
+
+  /**
+   * How to answer when the path resolves to nothing in the vault.
+   *
+   * @default `MissingPathTreatment.File`
+   */
+  readonly whenMissingTreatAs?: MissingPathTreatment;
 }
 
 /**
@@ -524,15 +587,20 @@ export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null
  * contains a dot answer with its whole name instead of a bogus extension split, and it is why a caller handling both kinds no longer has to branch on
  * {@link isFile} itself — a folder has no `basename` of its own.
  *
- * A path that resolves to nothing is read as a **file** path, so `alpha.bravo` is treated as basename `alpha` plus extension `bravo` rather than as a dotted
- * folder name. Nothing in the vault says which it is, an unresolved string is almost always a file about to be created, and `checkExtension` in this same
- * module already reads a bare string the same way. Pass the folder itself when the folder answer is the one you want. The function never throws.
+ * A path that resolves to nothing has no answer to look up, so {@link GetBasenameParams.whenMissingTreatAs} decides what it is read as. It defaults to
+ * {@link MissingPathTreatment.File}, matching `checkExtension` in this same module, which also reads a bare string as a file path.
  *
- * @param app - The Obsidian App instance.
- * @param pathOrFile - The path or abstract file.
+ * @param params - The parameters for the retrieval.
  * @returns The base name of the `pathOrFile`.
+ * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw}.
  */
-export function getBasename(app: App, pathOrFile: PathOrAbstractFile): string {
+export function getBasename(params: GetBasenameParams): string {
+  const {
+    app,
+    pathOrFile,
+    whenMissingTreatAs
+  } = params;
+
   const abstractFile = getAbstractFileOrNull({
     app,
     pathOrFile
@@ -547,6 +615,17 @@ export function getBasename(app: App, pathOrFile: PathOrAbstractFile): string {
   }
 
   const path = getPath(app, pathOrFile);
+
+  const treatment = whenMissingTreatAs ?? MissingPathTreatment.File;
+
+  if (treatment === MissingPathTreatment.Throw) {
+    throw new Error(`Abstract file not found: ${path}`);
+  }
+
+  if (treatment === MissingPathTreatment.Folder) {
+    return basename(path);
+  }
+
   return basename(path, extname(path));
 }
 
@@ -557,15 +636,20 @@ export function getBasename(app: App, pathOrFile: PathOrAbstractFile): string {
  * answers with an empty string rather than a bogus extension. A folder has no `extension` of its own, which is why a caller handling both kinds would
  * otherwise branch on {@link isFile} itself.
  *
- * A path that resolves to nothing is read as a **file** path, so `alpha.bravo` is treated as basename `alpha` plus extension `bravo` rather than as a dotted
- * folder name. Nothing in the vault says which it is, an unresolved string is almost always a file about to be created, and `checkExtension` in this same
- * module already reads a bare string the same way. Pass the folder itself when the folder answer is the one you want. The function never throws.
+ * A path that resolves to nothing has no answer to look up, so {@link GetExtensionParams.whenMissingTreatAs} decides what it is read as. It defaults to
+ * {@link MissingPathTreatment.File}, matching `checkExtension` in this same module, which also reads a bare string as a file path.
  *
- * @param app - The Obsidian App instance.
- * @param pathOrFile - The path or abstract file.
+ * @param params - The parameters for the retrieval.
  * @returns The extension of the `pathOrFile`, or an empty string if it has none.
+ * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw}.
  */
-export function getExtension(app: App, pathOrFile: PathOrAbstractFile): string {
+export function getExtension(params: GetExtensionParams): string {
+  const {
+    app,
+    pathOrFile,
+    whenMissingTreatAs
+  } = params;
+
   const abstractFile = getAbstractFileOrNull({
     app,
     pathOrFile
@@ -579,8 +663,20 @@ export function getExtension(app: App, pathOrFile: PathOrAbstractFile): string {
     return '';
   }
 
-  // Obsidian lowercases a file's canonical extension, so an unresolved path has to answer in the same case.
-  return extname(getPath(app, pathOrFile)).slice(1).toLowerCase();
+  const path = getPath(app, pathOrFile);
+
+  const treatment = whenMissingTreatAs ?? MissingPathTreatment.File;
+
+  if (treatment === MissingPathTreatment.Throw) {
+    throw new Error(`Abstract file not found: ${path}`);
+  }
+
+  if (treatment === MissingPathTreatment.Folder) {
+    return '';
+  }
+
+  // Obsidian lowercases a file's canonical extension, so a path read as a file has to answer in the same case.
+  return extname(path).slice(1).toLowerCase();
 }
 
 /**
