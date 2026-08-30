@@ -43,6 +43,14 @@ interface LifecycleProbe {
 }
 
 /**
+ * What the validation probe reports back.
+ */
+interface ValidationProbe {
+  readonly invalidCallError: null | string;
+  readonly validCallGreeting: null | string;
+}
+
+/**
  * What the negotiation probe reports back.
  */
 interface VersionProbe {
@@ -102,6 +110,31 @@ describe('cross-copy plugin API registry', () => {
     // Each watch negotiates its own range against the two versions published side by side.
     expect(probe.greetingV1).toBe('v1.0.0: world');
     expect(probe.greetingV2).toBe('v2.0.0: world');
+  });
+
+  it('should validate a payload against a schema authored by the other library copy', async () => {
+    const probe = await evalInObsidian({
+      callback(): ValidationProbe {
+        const testProbe = window.__pluginApiIntegrationTestProbe;
+        if (!testProbe) {
+          throw new Error('The plugin-API consumer plugin did not install its probe.');
+        }
+
+        return {
+          // The schema doing the rejecting was authored and published by the PROVIDER's copy of the library
+          // And traveled across in the registry record; the wrapper invoking it was built by the CONSUMER's
+          // Copy, and the debug gate it consulted is the consumer's too.
+          invalidCallError: String(testProbe.callWithInvalidInputWhileValidating().error),
+          // Validation is off again afterwards, and a well-typed call is unaffected either way.
+          validCallGreeting: testProbe.greetV2()
+        };
+      }
+    });
+
+    expect(probe.invalidCallError).toContain('PluginApiValidationError');
+    expect(probe.invalidCallError).toContain('greet');
+    expect(probe.invalidCallError).toContain('greet expects exactly one string argument');
+    expect(probe.validCallGreeting).toBe('v2.0.0: world');
   });
 
   it('should revoke a cached handle when the provider unloads and recover on re-enable', async () => {

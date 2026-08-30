@@ -22,17 +22,67 @@ import {
 } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 ```
 
-## Providing an API
+## Declaring the contract
+
+A cross-plugin call is **RPC across a version boundary**: the code on the other side was compiled separately,
+released separately, and may be older or newer than what you compiled against. So the contract is where you
+write down what each method takes and returns — and the payload schemas are the substance of it, not a
+decoration.
+
+Schemas are reached through [Standard Schema](https://standardschema.dev), so zod, valibot, arktype or a
+hand-written validator all plug in and **none of them becomes a dependency of `obsidian-dev-utils`** or of a
+plugin that does not want one.
 
 ```typescript
 import type { PluginApiContract } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 
-export interface SearchApi {
-  search(query: string): Promise<string[]>;
+import { z } from 'zod';
+
+export interface SearchOptions {
+  limit: number;
 }
 
-const SEARCH_CONTRACT: PluginApiContract = { search: {} };
+export interface SearchHit {
+  path: string;
+  score: number;
+}
 
+export interface SearchApi {
+  search(query: string, options: SearchOptions): Promise<SearchHit[]>;
+}
+
+export const SEARCH_CONTRACT: PluginApiContract = {
+  search: {
+    // `input` validates the ARGUMENT LIST as an array — hence a tuple, one member per parameter.
+    input: z.tuple([
+      z.string().min(1),
+      z.object({ limit: z.number().int().positive() })
+    ]),
+    // `output` validates the return value — or, for a method returning a thenable, what it resolves to.
+    output: z.array(z.object({
+      path: z.string(),
+      score: z.number()
+    }))
+  }
+};
+```
+
+That is what turns "the provider is on 1.9 and returns `{ path }` where I expect `{ file }`" into a legible
+error naming the method and the offending field, at the call site that made the call:
+
+```text
+PluginApiValidationError: The output of "their-plugin-id" API method "search"
+failed validation: 0.path: Invalid input: expected string, received undefined
+```
+
+Both schemas are optional per method. A method entry may declare only its input, only its output, or neither
+— `{ search: {} }` still declares that `search` must **exist**, which is the shape check every consumer gets
+for free. Declaring nothing is what `@vanakat/plugin-api` gives you, so there is not much point stopping
+there.
+
+## Providing an API
+
+```typescript
 export default class MyPlugin extends Plugin {
   public override onload(): void {
     publishPluginApi({
@@ -144,7 +194,7 @@ a `PluginApiUnavailableError` carrying the reason:
 ```typescript
 try {
   const api = await ref.whenAvailable();
-  await api.search('query');
+  await api.search('query', { limit: 10 });
 } catch (error) {
   if (error instanceof PluginApiUnavailableError) {
     console.log(error.reason, error.pluginId);
@@ -152,34 +202,22 @@ try {
 }
 ```
 
-## Payload validation
+## When validation runs
 
-A cross-plugin call is RPC across a version boundary, so the contract can carry
-[Standard Schema](https://standardschema.dev) validators per method. Any Standard-Schema-compatible library
-works — zod, valibot, arktype, or a hand-written validator — and none of them becomes a dependency of your
-plugin unless you choose one.
+Validation runs **only while the `obsidian-dev-utils:PluginApi` debugger is enabled**. Outside debug mode the
+methods are not wrapped at all, so production pays nothing — no schema call, no proxy hop, nothing. See
+[Debugging](/obsidian-dev-utils/guides/debugging/) for how to turn the namespace on. The gate is checked per
+call, so flipping `DEBUG` at runtime takes effect without re-acquiring the handle.
 
-```typescript
-import { z } from 'zod';
+A schema that answers **synchronously** throws a `PluginApiValidationError` at the call site — which is the
+point, because that is where the wrong assumption lives. A schema that answers with a **`Promise`** cannot do
+that: the synchronous call it was guarding has already returned by the time the answer arrives, so there is
+nothing left to throw into and the failure is reported through the debugger instead. Prefer synchronous
+schemas for anything you want to fail loudly.
 
-const SEARCH_CONTRACT: PluginApiContract = {
-  search: {
-    input: z.tuple([z.string()]),
-    output: z.array(z.string())
-  }
-};
-```
-
-`input` validates the arguments **as an array**; `output` validates the return value, or — when the method
-returns a thenable — what it resolves to.
-
-Validation runs **only while the `obsidian-dev-utils:PluginApi` debugger is enabled**, so production pays
-nothing at all: outside debug mode the methods are not wrapped. A schema that answers synchronously throws a
-`PluginApiValidationError` at the call site; one that answers with a `Promise` cannot (the call it was
-guarding has already returned), so its failure is reported through the debugger instead. See
-[Debugging](/obsidian-dev-utils/guides/debugging/) for how to turn the namespace on.
-
-The consumer's contract wins when it supplies one; otherwise the provider's published contract is used.
+Both sides may declare a contract, and **the consumer's wins when it supplies one** — it is the consumer's own
+compiled-against expectation, so its violation is the consumer's problem to see. With no consumer contract,
+the provider's published one is used.
 
 ### Why the contract is a map of methods, not one schema over the whole API
 
