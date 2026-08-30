@@ -9,7 +9,6 @@ import {
 
 import { assertNonNullable } from '../type-guards.ts';
 import {
-  encodeUrl,
   escapeAlias,
   isParseLinkFrontmatterReference,
   isParseLinkReference,
@@ -19,18 +18,6 @@ import {
   toParseLinkReference,
   unescapeAlias
 } from './parse-link.ts';
-
-describe('encodeUrl', () => {
-  it.each([
-    { expected: 'path%20with%20spaces.md', input: 'path with spaces.md' },
-    { expected: 'path%5Cto%5Cfile.md', input: String.raw`path\to\file.md` },
-    { expected: 'simple-path/file.md', input: 'simple-path/file.md' },
-    { expected: '', input: '' },
-    { expected: 'a%20b%20c', input: 'a b c' }
-  ])('should encode "$input" to "$expected"', ({ expected, input }) => {
-    expect(encodeUrl(input)).toBe(expected);
-  });
-});
 
 describe('escapeAlias', () => {
   it.each([
@@ -530,18 +517,6 @@ describe('parseLinks', () => {
       assertNonNullable(secondWikilink);
       expect(secondWikilink.alias).toBe('alias2');
     });
-  });
-});
-
-describe('encodeUrl (additional edge cases)', () => {
-  it.each([
-    { description: 'vertical tab', expected: 'path%0Bfile.md', input: 'path\u{B}file.md' },
-    { description: 'backspace', expected: 'path%08file.md', input: 'path\u{8}file.md' },
-    { description: 'form feed', expected: 'path%0Cfile.md', input: 'path\u{C}file.md' },
-    { description: 'null character', expected: 'path%00file.md', input: 'path\u{0}file.md' },
-    { description: 'mixed safe and unsafe', expected: 'path/to%20the%5Cfile.md', input: String.raw`path/to the\file.md` }
-  ])('should encode $description correctly', ({ expected, input }) => {
-    expect(encodeUrl(input)).toBe(expected);
   });
 });
 

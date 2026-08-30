@@ -26,15 +26,10 @@ import { normalizeOptionalProperties } from '../object-utils.ts';
 import { replaceAll } from '../string.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import {
+  encodeUrl,
   isFileUrl,
   isUrl
 } from '../url.ts';
-
-/**
- * Regular expression for special link symbols.
- */
-// eslint-disable-next-line no-control-regex, unicorn/prefer-unicode-code-point-escapes -- The regular expression is written to capture control characters, which are conventionally spelled as `\x` escapes; `\u{0}`-style escapes would obscure the `\x0E-\x1F` range without expressing anything the two-digit form cannot.
-const SPECIAL_LINK_SYMBOLS_REGEXP = /[\\\x00\x08\x0B\x0C\x0E-\x1F ]/g;
 
 /**
  * Regular expression for special markdown link symbols.
@@ -427,20 +422,6 @@ class FrontmatterLinksParser {
       this.parseValue(childValue, key ? `${key}.${childKey}` : childKey);
     }
   }
-}
-
-/**
- * Encodes a URL.
- *
- * @param url - The URL to encode.
- * @returns The encoded URL.
- */
-export function encodeUrl(url: string): string {
-  return replaceAll({
-    $string: url,
-    replacer: ({ substring: specialLinkSymbol }) => encodeURIComponent(specialLinkSymbol),
-    searchValue: SPECIAL_LINK_SYMBOLS_REGEXP
-  });
 }
 
 /**
