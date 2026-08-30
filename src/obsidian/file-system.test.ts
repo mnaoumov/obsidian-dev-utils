@@ -35,6 +35,8 @@ import {
   FileSystemType,
   getAbstractFile,
   getAbstractFileOrNull,
+  getBasename,
+  getExtension,
   getFile,
   getFileOrNull,
   getFileSystemType,
@@ -658,6 +660,94 @@ describe('getPath', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getPath(app, 'note.md');
     expect(result).toBe('note.md');
+  });
+});
+
+describe('getBasename', () => {
+  it('should return the file name without its extension for an existing file path', () => {
+    app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
+    expect(getBasename(app, 'folder/note.md')).toBe('note');
+  });
+
+  it('should return the file name without its extension for a TFile', () => {
+    const file = TFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType2__();
+    expect(getBasename(app, file)).toBe('note');
+  });
+
+  it('should return the full folder name for an existing folder path', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
+    expect(getBasename(app, 'my-folder')).toBe('my-folder');
+  });
+
+  it('should return the full folder name for a TFolder', () => {
+    const folder = TFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
+    expect(getBasename(app, folder)).toBe('my-folder');
+  });
+
+  it('should keep the dot in a folder name instead of splitting an extension off it', () => {
+    app = App.createConfigured__({ files: { 'My.Folder/': '' } }).asOriginalType__();
+    expect(getBasename(app, 'My.Folder')).toBe('My.Folder');
+  });
+
+  it('should fall back to parsing the path when it resolves to nothing', () => {
+    expect(getBasename(app, 'missing.md')).toBe('missing');
+  });
+
+  it('should read an unresolved dotted path as a file, not as a folder name', () => {
+    expect(getBasename(app, 'alpha.bravo')).toBe('alpha');
+
+    app = App.createConfigured__({ files: { 'alpha.bravo/': '' } }).asOriginalType__();
+    expect(getBasename(app, 'alpha.bravo')).toBe('alpha.bravo');
+  });
+
+  it('should return the whole name when an unresolved path has no extension', () => {
+    expect(getBasename(app, 'missing')).toBe('missing');
+  });
+});
+
+describe('getExtension', () => {
+  it('should return the extension for an existing file path', () => {
+    app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
+    expect(getExtension(app, 'folder/note.md')).toBe('md');
+  });
+
+  it('should return the extension for a TFile', () => {
+    const file = TFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType2__();
+    expect(getExtension(app, file)).toBe('md');
+  });
+
+  it('should return an empty string for an existing folder path', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
+    expect(getExtension(app, 'my-folder')).toBe('');
+  });
+
+  it('should return an empty string for a TFolder', () => {
+    const folder = TFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
+    expect(getExtension(app, folder)).toBe('');
+  });
+
+  it('should return an empty string for a folder whose name contains a dot', () => {
+    app = App.createConfigured__({ files: { 'My.Folder/': '' } }).asOriginalType__();
+    expect(getExtension(app, 'My.Folder')).toBe('');
+  });
+
+  it('should fall back to parsing the path when it resolves to nothing', () => {
+    expect(getExtension(app, 'missing.md')).toBe('md');
+  });
+
+  it('should read an unresolved dotted path as a file, not as a folder name', () => {
+    expect(getExtension(app, 'alpha.bravo')).toBe('bravo');
+
+    app = App.createConfigured__({ files: { 'alpha.bravo/': '' } }).asOriginalType__();
+    expect(getExtension(app, 'alpha.bravo')).toBe('');
+  });
+
+  it('should return an empty string when an unresolved path has no extension', () => {
+    expect(getExtension(app, 'missing')).toBe('');
+  });
+
+  it('should lower-case the extension of an unresolved path', () => {
+    expect(getExtension(app, 'missing.MD')).toBe('md');
   });
 });
 

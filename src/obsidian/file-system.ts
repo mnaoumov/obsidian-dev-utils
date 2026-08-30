@@ -518,6 +518,72 @@ export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null
 }
 
 /**
+ * Returns the base name of the given `pathOrFile`: a file's name without its extension, a folder's full name.
+ *
+ * Unlike `basename` from `path.ts`, which is a pure string function, this resolves the argument against the vault first. That is what lets a folder whose name
+ * contains a dot answer with its whole name instead of a bogus extension split, and it is why a caller handling both kinds no longer has to branch on
+ * {@link isFile} itself — a folder has no `basename` of its own.
+ *
+ * A path that resolves to nothing is read as a **file** path, so `alpha.bravo` is treated as basename `alpha` plus extension `bravo` rather than as a dotted
+ * folder name. Nothing in the vault says which it is, an unresolved string is almost always a file about to be created, and `checkExtension` in this same
+ * module already reads a bare string the same way. Pass the folder itself when the folder answer is the one you want. The function never throws.
+ *
+ * @param app - The Obsidian App instance.
+ * @param pathOrFile - The path or abstract file.
+ * @returns The base name of the `pathOrFile`.
+ */
+export function getBasename(app: App, pathOrFile: PathOrAbstractFile): string {
+  const abstractFile = getAbstractFileOrNull({
+    app,
+    pathOrFile
+  });
+
+  if (isFile(abstractFile)) {
+    return abstractFile.basename;
+  }
+
+  if (isFolder(abstractFile)) {
+    return abstractFile.name;
+  }
+
+  const path = getPath(app, pathOrFile);
+  return basename(path, extname(path));
+}
+
+/**
+ * Returns the extension of the given `pathOrFile`: a file's extension without the leading dot, and an empty string for a folder.
+ *
+ * Unlike `extname` from `path.ts`, which is a pure string function, this resolves the argument against the vault first, so a folder whose name contains a dot
+ * answers with an empty string rather than a bogus extension. A folder has no `extension` of its own, which is why a caller handling both kinds would
+ * otherwise branch on {@link isFile} itself.
+ *
+ * A path that resolves to nothing is read as a **file** path, so `alpha.bravo` is treated as basename `alpha` plus extension `bravo` rather than as a dotted
+ * folder name. Nothing in the vault says which it is, an unresolved string is almost always a file about to be created, and `checkExtension` in this same
+ * module already reads a bare string the same way. Pass the folder itself when the folder answer is the one you want. The function never throws.
+ *
+ * @param app - The Obsidian App instance.
+ * @param pathOrFile - The path or abstract file.
+ * @returns The extension of the `pathOrFile`, or an empty string if it has none.
+ */
+export function getExtension(app: App, pathOrFile: PathOrAbstractFile): string {
+  const abstractFile = getAbstractFileOrNull({
+    app,
+    pathOrFile
+  });
+
+  if (isFile(abstractFile)) {
+    return abstractFile.extension;
+  }
+
+  if (isFolder(abstractFile)) {
+    return '';
+  }
+
+  // Obsidian lowercases a file's canonical extension, so an unresolved path has to answer in the same case.
+  return extname(getPath(app, pathOrFile)).slice(1).toLowerCase();
+}
+
+/**
  * Retrieves a file based on the provided path or file.
  *
  * @param params - The parameters for the retrieval.
