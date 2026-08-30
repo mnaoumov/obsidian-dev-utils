@@ -105,8 +105,16 @@ export enum PluginApiPayloadKind {
 /**
  * The reason a plugin API could not be handed over.
  *
- * The whole point of the enum is that the five failures below are told apart: `@vanakat/plugin-api` collapses
- * all of them into a `Notice` plus `undefined`.
+ * The whole point of the enum is that these are told apart. `@vanakat/plugin-api` cannot tell any of them
+ * apart, and not uniformly: `NotInstalled` / `NotEnabled` / `NotPublished` all reduce to one `Notice` plus
+ * `undefined`, while `VersionMismatch` / `ShapeMismatch` produce NO signal at all — it never examines what it
+ * found, so it hands the object over and the mismatch surfaces later, somewhere else, as somebody else's
+ * `TypeError`.
+ *
+ * @remarks
+ * {@link PluginApiRef.whenAvailable} can report the first five; {@link PluginApiUnavailabilityReason.Revoked}
+ * is not one of them, because it describes a handle that WAS valid and is carried by
+ * {@link PluginApiRevokedError} instead.
  */
 export enum PluginApiUnavailabilityReason {
   /**

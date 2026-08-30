@@ -11,7 +11,9 @@ up until one of five things happens:
 2. **Version drift.** The provider ships API v2, you compiled against v1, and nothing says so.
 3. **Stale handles.** The provider gets disabled and you keep calling into a torn-down plugin.
 4. **Name collisions.** Nothing stops two plugins claiming the same free-form key.
-5. **Opaque failure.** All five causes collapse into a `Notice` and an `undefined`.
+5. **Opaque failure.** Not-installed, not-enabled and no-API-published are one indistinguishable `Notice`
+   plus `undefined` — and a version or shape mismatch produces no signal at all, because the object is never
+   examined before it is handed to you.
 
 `obsidian-dev-utils` ships a registry that answers all five.
 
@@ -77,8 +79,12 @@ failed validation: 0.path: Invalid input: expected string, received undefined
 
 Both schemas are optional per method. A method entry may declare only its input, only its output, or neither
 — `{ search: {} }` still declares that `search` must **exist**, which is the shape check every consumer gets
-for free. Declaring nothing is what `@vanakat/plugin-api` gives you, so there is not much point stopping
-there.
+for free, and it is already more than `@vanakat/plugin-api` does: that never examines the object at all, so a
+provider missing the method hands you a value and fails as a `TypeError` at your first call. Here it fails as
+a `ShapeMismatch` before you are given a handle.
+
+But the names are the cheap half. The schemas are the half that checks the version boundary, which is the
+thing that actually drifts.
 
 ## Providing an API
 
@@ -189,7 +195,10 @@ a `PluginApiUnavailableError` carrying the reason:
 | `NotPublished` | It is running but published no API — likely too old to have one. |
 | `VersionMismatch` | It published an API, but nothing satisfies your range. |
 | `ShapeMismatch` | A satisfying record exists, but the object is missing a method the contract declares. |
-| `Revoked` | The handle was valid and the provider has since unloaded. |
+
+There is a sixth reason, `Revoked`, which `whenAvailable()` never reports: it describes a handle that *was*
+valid, and it arrives on a `PluginApiRevokedError` thrown by the handle itself. See
+[Revoked handles](#revoked-handles).
 
 ```typescript
 try {
