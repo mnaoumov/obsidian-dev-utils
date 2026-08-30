@@ -181,9 +181,26 @@ guarding has already returned), so its failure is reported through the debugger 
 
 The consumer's contract wins when it supplies one; otherwise the provider's published contract is used.
 
-Note that a schema cannot validate the API *object* — in zod 4, `z.function()` is no longer a schema, and an
-API is a bag of functions. Declaring a method name in the contract is what gets checked, with a plain
-`typeof`, and that is the honest check.
+### Why the contract is a map of methods, not one schema over the whole API
+
+An API is a bag of functions, and in zod 4 `z.function()` returns a function *factory* rather than a schema,
+so it cannot be a `z.object()` member directly. There is a
+[known workaround](https://github.com/colinhacks/zod/issues/4143#issuecomment-2845134912):
+
+```typescript
+const functionSchema = <T extends z.core.$ZodFunction>(schema: T) =>
+  z.custom<Parameters<T['implement']>[0]>((fn) => schema.implement(fn));
+```
+
+It is genuinely useful if you want `z.infer` to produce your API type from a single schema. It does **not**
+give you runtime validation, though: `z.custom` is a boolean predicate that returns its input unchanged, so
+the validating wrapper `implement` builds is thrown away and the runtime check collapses back to "is it
+callable". Keeping the wrapper would take a further `.transform()` — and that would put validation on every
+call rather than behind the debug gate, and tie the contract to zod specifically, which is the coupling
+reaching through Standard Schema is meant to avoid.
+
+So the contract declares method **names**, checked with a plain `typeof`, and validates **payloads** per
+method.
 
 ## A note on library copies
 

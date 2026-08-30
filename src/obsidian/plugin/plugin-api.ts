@@ -149,8 +149,15 @@ export enum PluginApiUnavailabilityReason {
  * record is usable at all. The schemas are optional and only ever consulted while debugging.
  *
  * @remarks
- * In zod 4 `z.function()` is no longer a schema, so an API object — a bag of functions — cannot be validated
- * as data. `typeof value === 'function'` is the honest check, and it is the one performed here.
+ * Why the shape check is a `typeof` rather than a schema over the whole API object. In zod 4 `z.function()`
+ * returns a function FACTORY, not a schema, so it cannot be a `z.object()` member directly. There is a known
+ * workaround (zod#4143) — `z.custom((fn) => functionSchema.implement(fn))` — and it does buy correct
+ * `z.infer` types for a function member. It does not buy runtime validation here, though: `z.custom` is a
+ * boolean predicate that returns its input unchanged, so the validating wrapper `implement` builds is
+ * discarded and the check collapses back to "is it callable". Keeping that wrapper would need a further
+ * `.transform()`, and would then move validation onto every call instead of behind the debug gate, and bind
+ * the contract to zod specifically — which is exactly what reaching through Standard Schema avoids. So the
+ * declared method names are checked with `typeof`, and the payloads are validated per method instead.
  */
 export type PluginApiContract = Record<string, PluginApiMethodContract>;
 
