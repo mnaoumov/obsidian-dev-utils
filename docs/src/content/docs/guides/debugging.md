@@ -40,3 +40,30 @@ consoleDebugComponent.debug('alpha', 'bravo', 'charlie');
 ## Advanced Debug Mode
 
 You can use [Advanced Debug Mode](https://community.obsidian.md/plugins/advanced-debug-mode) plugin to configure debug namespaces via Settings UI.
+
+## Cancelling a runaway operation
+
+A vault-wide operation that turns out to be slower, or wronger, than expected can be aborted from the console:
+
+```javascript
+__obsidianDevUtils.sharedAbortController.value.abort();
+```
+
+This aborts the app-wide shared abort signal, so every operation currently observing it stops. It is shared across every plugin built on `obsidian-dev-utils`, so it cancels whichever one is running.
+
+The signal is replaced immediately after the abort, which means the next operation starts with a fresh one and the call above works as many times as you press it. A plain `AbortController` would stay aborted forever after the first call.
+
+For this to cancel anything, the operation has to be observing that signal in the first place. From plugin code, pass it wherever an `abortSignal` is accepted — most usefully to `loop()`:
+
+```typescript
+await loop({
+  abortSignal: getSharedAbortSignal(),
+  buildNoticeMessage: (file) => `Processing ${file.path}`,
+  items: app.vault.getMarkdownFiles(),
+  processItem: async (file) => {
+    await processFile(file);
+  }
+});
+```
+
+Call `getSharedAbortSignal()` at the start of each operation rather than caching it, or the operation after the first abort starts already aborted.

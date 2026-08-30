@@ -9,6 +9,9 @@ import {
   vi
 } from 'vitest';
 
+import type { ValueWrapper } from '../../value-wrapper.ts';
+
+import { ResettableAbortController } from '../../abort-controller.ts';
 import { Library } from '../../library.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
@@ -18,6 +21,14 @@ import {
   initDebugController,
   initPluginContext
 } from './plugin-context.ts';
+
+interface GlobalThisWithState {
+  __obsidianDevUtils: ObsidianDevUtilsState;
+}
+
+interface ObsidianDevUtilsState {
+  sharedAbortController: ValueWrapper<ResettableAbortController>;
+}
 
 const mocks = vi.hoisted(() => ({
   compareVersions: vi.fn((_a: string, _b: string) => 1),
@@ -189,5 +200,22 @@ describe('initPluginContext', () => {
     vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
     expect(wrapper.value).toBe('1.0.0');
+  });
+
+  // The shared abort controller is documented as callable straight from the devtools console
+  // (`__obsidianDevUtils.sharedAbortController.value.abort()`). Nothing else in the library touches it, so
+  // Without this eager call the key would be absent until a consumer plugin happened to start an operation,
+  // And the documented console line would throw instead of aborting. This asserts the console path itself,
+  // Reaching the global exactly as the console does.
+  it('should create the shared abort controller so the console call always resolves', () => {
+    // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
+    delete castTo<Partial<GlobalThisWithState>>(globalThis).__obsidianDevUtils;
+    mocks.compareVersions.mockReturnValue(0);
+
+    initPluginContext('my-plugin');
+
+    // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
+    const state = castTo<GlobalThisWithState>(globalThis).__obsidianDevUtils;
+    expect(state.sharedAbortController.value).toBeInstanceOf(ResettableAbortController);
   });
 });

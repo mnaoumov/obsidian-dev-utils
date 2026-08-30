@@ -9,11 +9,64 @@ import {
   CombineDisposable
 } from './disposable.ts';
 import { noop } from './function.ts';
+import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 
 /**
  * A constant representing an infinite timeout.
  */
 export const INFINITE_TIMEOUT = Infinity;
+
+/**
+ * An {@link AbortController} that can be aborted more than once.
+ *
+ * A plain {@link AbortController} is single-use: once aborted, its signal stays aborted forever, so it
+ * cannot back a cancel button that the user may press more than once. This one aborts the current signal
+ * and immediately replaces it, so the next operation starts with a fresh, non-aborted signal while the work
+ * that captured the previous signal still observes the abort.
+ *
+ * Read {@link ResettableAbortController.signal} at the start of each operation. Never cache it, or the
+ * operation after the first abort starts already aborted.
+ *
+ * @example
+ * ```typescript
+ * const resettableAbortController = new ResettableAbortController();
+ *
+ * await loop({
+ *   abortSignal: resettableAbortController.signal,
+ *   buildNoticeMessage: (file) => `Processing ${file.path}`,
+ *   items: app.vault.getMarkdownFiles(),
+ *   processItem: async (file) => { await processFile(file); }
+ * });
+ *
+ * // From a cancel button, a command, or the devtools console.
+ * resettableAbortController.abort();
+ * ```
+ *
+ * @see {@link getSharedAbortController} for the app-wide instance.
+ */
+export class ResettableAbortController {
+  /**
+   * The current abort signal.
+   *
+   * @returns The {@link AbortSignal} that aborts on the next {@link ResettableAbortController.abort} call.
+   */
+  public get signal(): AbortSignal {
+    return this.abortController.signal;
+  }
+
+  private abortController = new AbortController();
+
+  /**
+   * Aborts the current signal and replaces it with a fresh, non-aborted one.
+   *
+   * @param reason - The reason to abort with. When omitted, the signal is aborted with the native
+   * `AbortError` {@link DOMException}, exactly as {@link AbortController.abort} does.
+   */
+  public abort(reason?: unknown): void {
+    this.abortController.abort(reason);
+    this.abortController = new AbortController();
+  }
+}
 
 /**
  * An abort signal that aborts when any of the given abort signals abort.
@@ -93,6 +146,47 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
     abortController.abort(new DOMException(`Timed out in ${String(timeoutInMilliseconds)} milliseconds`, 'TimeoutError'));
   }, timeoutInMilliseconds);
   return abortController.signal;
+}
+
+/**
+ * The app-wide shared {@link ResettableAbortController}.
+ *
+ * Every plugin built on this library shares one instance, so a single {@link ResettableAbortController.abort}
+ * call cancels whatever long-running operation is in flight, whichever plugin started it. A plugin that needs
+ * a cancel button of its own scope constructs its own {@link ResettableAbortController} instead.
+ *
+ * It lives in the shared state, so it is reachable from the devtools console:
+ *
+ * ```javascript
+ * __obsidianDevUtils.sharedAbortController.value.abort();
+ * ```
+ *
+ * @returns The shared {@link ResettableAbortController}.
+ */
+export function getSharedAbortController(): ResettableAbortController {
+  return getObsidianDevUtilsState('sharedAbortController', new ResettableAbortController()).value;
+}
+
+/**
+ * The signal of the app-wide shared {@link ResettableAbortController}.
+ *
+ * Call it at the start of each operation. Never cache it, or the operation after the first abort starts
+ * already aborted.
+ *
+ * @example
+ * ```typescript
+ * await loop({
+ *   abortSignal: getSharedAbortSignal(),
+ *   buildNoticeMessage: (file) => `Processing ${file.path}`,
+ *   items: app.vault.getMarkdownFiles(),
+ *   processItem: async (file) => { await processFile(file); }
+ * });
+ * ```
+ *
+ * @returns The {@link AbortSignal} of the shared {@link ResettableAbortController}.
+ */
+export function getSharedAbortSignal(): AbortSignal {
+  return getSharedAbortController().signal;
 }
 
 /**

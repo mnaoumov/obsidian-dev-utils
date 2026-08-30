@@ -10,6 +10,7 @@ import { compareVersions } from 'compare-versions';
 
 import type { DebugController } from '../../debug-controller.ts';
 
+import { getSharedAbortController } from '../../abort-controller.ts';
 import {
   getDebugController,
   showInitialDebugMessage
@@ -82,6 +83,11 @@ export function initPluginContext(pluginId: string): void {
     shouldPrintStackTrace: true
   });
   showInitialDebugMessage(pluginId);
+
+  // Nothing else in the library reaches for the shared abort controller -- only consumer plugins do. Create
+  // It here so `__obsidianDevUtils.sharedAbortController.value.abort()` always resolves in the devtools
+  // Console, instead of throwing until some plugin happens to start an abortable operation.
+  getSharedAbortController();
 
   const lastLibraryVersionWrapper = getObsidianDevUtilsState('lastLibraryVersion', '0.0.0');
   if (compareVersions(LIBRARY_VERSION, lastLibraryVersionWrapper.value) <= 0) {
