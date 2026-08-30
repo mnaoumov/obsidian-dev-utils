@@ -919,7 +919,8 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
 
   const sourceFile = member.getSourceFile();
   const directReferences = collectReferences(context.languageService.findReferences(sourceFile.fileName, nameNode.getStart()))
-    .filter((reference) => !isDeclarationItself(reference, nameNode));
+    .filter((reference) => !isDeclarationItself(reference, nameNode))
+    .filter((reference) => isCodeReference(context, reference));
   const references = [...directReferences, ...collectStringLiteralReferences({ context, declaringClass, nameNode })];
   const nonTestReferences = references.filter((reference) => !isTestFile(toCanonical(reference.fileName)));
 
@@ -1316,6 +1317,26 @@ function hasTsDocComment(node: Node): boolean {
     && fullText.charAt(range.pos + JSDOC_SECOND_ASTERISK_OFFSET) === '*'
     && fullText.charAt(range.pos + JSDOC_FOURTH_CHARACTER_OFFSET) !== '/'
   );
+}
+
+/**
+ * Whether a reference points at real code rather than at a TSDoc link tag.
+ *
+ * `findReferences` reports the member name inside a `SomeType.member` link tag as a reference, but JSDoc
+ * is not part of the AST walk, so nothing resolves at that position. Such a reference must be dropped for two
+ * reasons: {@link computeNeededExposure} would otherwise assert on the missing node and abort the whole run,
+ * and — semantically — documenting a member is not using it, so a doc link must not hold a member `public`.
+ * The export-level analysis deliberately does NOT do this: narrowing an export to file-local WOULD break a
+ * cross-file link tag, so there a doc link really is a reason to keep the export.
+ *
+ * @param context - The analysis context.
+ * @param reference - The reference to classify.
+ * @returns `true` when a node resolves at the reference's position.
+ */
+function isCodeReference(context: AnalysisContext, reference: ReferenceLocation): boolean {
+  const sourceFile = context.program.getSourceFile(reference.fileName);
+  assertNonNullable(sourceFile, `Source file not found in program: ${reference.fileName}`);
+  return findNodeAtPosition(sourceFile, reference.start) !== undefined;
 }
 
 function isDeclarationItself(reference: ReferenceLocation, nameNode: Node): boolean {

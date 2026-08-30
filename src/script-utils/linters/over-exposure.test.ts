@@ -115,6 +115,32 @@ describe('analyzeOverExposure', () => {
     expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
   });
 
+  it('should treat a TSDoc link to a member as documentation, not as a use', () => {
+    const findings = analyze({
+      '/proj/src/a.ts': `
+        /**
+         * Mentions {@link A.helper} in prose only.
+         */
+        export function documented(): void {
+          return undefined;
+        }
+
+        export class A {
+          public helper(): number {
+            return 1;
+          }
+          public run(): number {
+            return this.helper();
+          }
+        }
+      `
+    });
+    // \`findReferences\` reports the name inside the link tag, but JSDoc is not in the AST walk, so nothing
+    // Resolves at that position. Before this was filtered out the whole run aborted on the missing node;
+    // Now the link is ignored and the only real reference — the in-class call — narrows the member.
+    expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
+  });
+
   it('should flag a public member with no references at all', () => {
     const findings = analyze({
       '/proj/src/a.ts': `
