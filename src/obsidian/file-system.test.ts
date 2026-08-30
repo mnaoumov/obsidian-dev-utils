@@ -690,8 +690,8 @@ describe('getBasename', () => {
     expect(getBasename({ app, pathOrFile: 'alpha.bravo' })).toBe('alpha.bravo');
   });
 
-  it('should read a missing path as a file by default', () => {
-    expect(getBasename({ app, pathOrFile: 'alpha.bravo' })).toBe('alpha');
+  it('should throw for a missing path by default', () => {
+    expect(() => getBasename({ app, pathOrFile: 'alpha.bravo' })).toThrow('Abstract file not found: alpha.bravo');
   });
 
   it('should read a missing path as a file when asked to', () => {
@@ -706,8 +706,8 @@ describe('getBasename', () => {
     expect(() => getBasename({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Throw })).toThrow('Abstract file not found: alpha.bravo');
   });
 
-  it('should return the whole name when a missing path has no extension', () => {
-    expect(getBasename({ app, pathOrFile: 'missing' })).toBe('missing');
+  it('should return the whole name when a missing path read as a file has no extension', () => {
+    expect(getBasename({ app, pathOrFile: 'missing', whenMissingTreatAs: MissingPathTreatment.File })).toBe('missing');
   });
 
   it('should ignore whenMissingTreatAs when the path resolves', () => {
@@ -742,8 +742,8 @@ describe('getExtension', () => {
     expect(getExtension({ app, pathOrFile: 'alpha.bravo' })).toBe('');
   });
 
-  it('should read a missing path as a file by default', () => {
-    expect(getExtension({ app, pathOrFile: 'alpha.bravo' })).toBe('bravo');
+  it('should throw for a missing path by default', () => {
+    expect(() => getExtension({ app, pathOrFile: 'alpha.bravo' })).toThrow('Abstract file not found: alpha.bravo');
   });
 
   it('should read a missing path as a file when asked to', () => {
@@ -758,12 +758,12 @@ describe('getExtension', () => {
     expect(() => getExtension({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Throw })).toThrow('Abstract file not found: alpha.bravo');
   });
 
-  it('should return an empty string when a missing path has no extension', () => {
-    expect(getExtension({ app, pathOrFile: 'missing' })).toBe('');
+  it('should return an empty string when a missing path read as a file has no extension', () => {
+    expect(getExtension({ app, pathOrFile: 'missing', whenMissingTreatAs: MissingPathTreatment.File })).toBe('');
   });
 
-  it('should lower-case the extension of a missing path', () => {
-    expect(getExtension({ app, pathOrFile: 'missing.MD' })).toBe('md');
+  it('should lower-case the extension of a missing path read as a file', () => {
+    expect(getExtension({ app, pathOrFile: 'missing.MD', whenMissingTreatAs: MissingPathTreatment.File })).toBe('md');
   });
 
   it('should ignore whenMissingTreatAs when the path resolves', () => {

@@ -73,7 +73,7 @@ export enum MissingPathTreatment {
    */
   Folder = 'folder',
   /**
-   * Throw instead of guessing.
+   * Throw instead of guessing. This is the default.
    */
   Throw = 'throw'
 }
@@ -166,7 +166,7 @@ export interface GetBasenameParams {
   /**
    * How to answer when the path resolves to nothing in the vault.
    *
-   * @default `MissingPathTreatment.File`
+   * @default `MissingPathTreatment.Throw`
    */
   readonly whenMissingTreatAs?: MissingPathTreatment;
 }
@@ -188,7 +188,7 @@ export interface GetExtensionParams {
   /**
    * How to answer when the path resolves to nothing in the vault.
    *
-   * @default `MissingPathTreatment.File`
+   * @default `MissingPathTreatment.Throw`
    */
   readonly whenMissingTreatAs?: MissingPathTreatment;
 }
@@ -587,12 +587,14 @@ export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null
  * contains a dot answer with its whole name instead of a bogus extension split, and it is why a caller handling both kinds no longer has to branch on
  * {@link isFile} itself — a folder has no `basename` of its own.
  *
- * A path that resolves to nothing has no answer to look up, so {@link GetBasenameParams.whenMissingTreatAs} decides what it is read as. It defaults to
- * {@link MissingPathTreatment.File}, matching `checkExtension` in this same module, which also reads a bare string as a file path.
+ * A path that resolves to nothing has no answer to look up, so {@link GetBasenameParams.whenMissingTreatAs} decides what happens. It defaults to
+ * {@link MissingPathTreatment.Throw} rather than to a guess: `alpha.bravo` may name a dotted folder or a `.bravo` file, and nothing in the vault says
+ * which, so a silently wrong answer is worse than an error. Pass {@link MissingPathTreatment.File} for the `checkExtension` reading of a bare string, or
+ * {@link MissingPathTreatment.Folder} for the other one.
  *
  * @param params - The parameters for the retrieval.
  * @returns The base name of the `pathOrFile`.
- * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw}.
+ * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw} (the default).
  */
 export function getBasename(params: GetBasenameParams): string {
   const {
@@ -616,7 +618,7 @@ export function getBasename(params: GetBasenameParams): string {
 
   const path = getPath(app, pathOrFile);
 
-  const treatment = whenMissingTreatAs ?? MissingPathTreatment.File;
+  const treatment = whenMissingTreatAs ?? MissingPathTreatment.Throw;
 
   if (treatment === MissingPathTreatment.Throw) {
     throw new Error(`Abstract file not found: ${path}`);
@@ -636,12 +638,14 @@ export function getBasename(params: GetBasenameParams): string {
  * answers with an empty string rather than a bogus extension. A folder has no `extension` of its own, which is why a caller handling both kinds would
  * otherwise branch on {@link isFile} itself.
  *
- * A path that resolves to nothing has no answer to look up, so {@link GetExtensionParams.whenMissingTreatAs} decides what it is read as. It defaults to
- * {@link MissingPathTreatment.File}, matching `checkExtension` in this same module, which also reads a bare string as a file path.
+ * A path that resolves to nothing has no answer to look up, so {@link GetExtensionParams.whenMissingTreatAs} decides what happens. It defaults to
+ * {@link MissingPathTreatment.Throw} rather than to a guess: `alpha.bravo` may name a dotted folder or a `.bravo` file, and nothing in the vault says
+ * which, so a silently wrong answer is worse than an error. Pass {@link MissingPathTreatment.File} for the `checkExtension` reading of a bare string, or
+ * {@link MissingPathTreatment.Folder} for the other one.
  *
  * @param params - The parameters for the retrieval.
  * @returns The extension of the `pathOrFile`, or an empty string if it has none.
- * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw}.
+ * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw} (the default).
  */
 export function getExtension(params: GetExtensionParams): string {
   const {
@@ -665,7 +669,7 @@ export function getExtension(params: GetExtensionParams): string {
 
   const path = getPath(app, pathOrFile);
 
-  const treatment = whenMissingTreatAs ?? MissingPathTreatment.File;
+  const treatment = whenMissingTreatAs ?? MissingPathTreatment.Throw;
 
   if (treatment === MissingPathTreatment.Throw) {
     throw new Error(`Abstract file not found: ${path}`);
