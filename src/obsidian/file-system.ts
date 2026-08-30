@@ -58,6 +58,25 @@ export enum FileSystemType {
    */
   Folder = 'folder'
 }
+/**
+ * How {@link getBasename} and {@link getExtension} should answer for a path that resolves to nothing in the vault.
+ *
+ * Nothing in the vault says whether an unresolved `alpha.bravo` names a dotted folder or a `.bravo` file, so the caller decides.
+ */
+export enum MissingPathTreatment {
+  /**
+   * Read the path as a file path: `alpha.bravo` is basename `alpha` plus extension `bravo`.
+   */
+  File = 'file',
+  /**
+   * Read the path as a folder path: `alpha.bravo` is basename `alpha.bravo` with no extension.
+   */
+  Folder = 'folder',
+  /**
+   * Throw instead of guessing. This is the default.
+   */
+  Throw = 'throw'
+}
 
 /**
  * Parameters for {@link doesExist}.
@@ -128,6 +147,50 @@ export interface GetAbstractFileParams {
    * The path or abstract file to retrieve the abstract file for.
    */
   readonly pathOrFile: PathOrAbstractFile;
+}
+
+/**
+ * Parameters for {@link getBasename}.
+ */
+export interface GetBasenameParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or abstract file to get the base name of.
+   */
+  readonly pathOrFile: PathOrAbstractFile;
+
+  /**
+   * How to answer when the path resolves to nothing in the vault.
+   *
+   * @default `MissingPathTreatment.Throw`
+   */
+  readonly whenMissingTreatAs?: MissingPathTreatment;
+}
+
+/**
+ * Parameters for {@link getExtension}.
+ */
+export interface GetExtensionParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or abstract file to get the extension of.
+   */
+  readonly pathOrFile: PathOrAbstractFile;
+
+  /**
+   * How to answer when the path resolves to nothing in the vault.
+   *
+   * @default `MissingPathTreatment.Throw`
+   */
+  readonly whenMissingTreatAs?: MissingPathTreatment;
 }
 
 /**
@@ -515,6 +578,109 @@ export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null
     isCaseInsensitive,
     path: resolvedPath
   }));
+}
+
+/**
+ * Returns the base name of the given `pathOrFile`: a file's name without its extension, a folder's full name.
+ *
+ * Unlike `basename` from `path.ts`, which is a pure string function, this resolves the argument against the vault first. That is what lets a folder whose name
+ * contains a dot answer with its whole name instead of a bogus extension split, and it is why a caller handling both kinds no longer has to branch on
+ * {@link isFile} itself — a folder has no `basename` of its own.
+ *
+ * A path that resolves to nothing has no answer to look up, so {@link GetBasenameParams.whenMissingTreatAs} decides what happens. It defaults to
+ * {@link MissingPathTreatment.Throw} rather than to a guess: `alpha.bravo` may name a dotted folder or a `.bravo` file, and nothing in the vault says
+ * which, so a silently wrong answer is worse than an error. Pass {@link MissingPathTreatment.File} for the `checkExtension` reading of a bare string, or
+ * {@link MissingPathTreatment.Folder} for the other one.
+ *
+ * @param params - The parameters for the retrieval.
+ * @returns The base name of the `pathOrFile`.
+ * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw} (the default).
+ */
+export function getBasename(params: GetBasenameParams): string {
+  const {
+    app,
+    pathOrFile,
+    whenMissingTreatAs
+  } = params;
+
+  const abstractFile = getAbstractFileOrNull({
+    app,
+    pathOrFile
+  });
+
+  if (isFile(abstractFile)) {
+    return abstractFile.basename;
+  }
+
+  if (isFolder(abstractFile)) {
+    return abstractFile.name;
+  }
+
+  const path = getPath(app, pathOrFile);
+
+  const treatment = whenMissingTreatAs ?? MissingPathTreatment.Throw;
+
+  if (treatment === MissingPathTreatment.Throw) {
+    throw new Error(`Abstract file not found: ${path}`);
+  }
+
+  if (treatment === MissingPathTreatment.Folder) {
+    return basename(path);
+  }
+
+  return basename(path, extname(path));
+}
+
+/**
+ * Returns the extension of the given `pathOrFile`: a file's extension without the leading dot, and an empty string for a folder.
+ *
+ * Unlike `extname` from `path.ts`, which is a pure string function, this resolves the argument against the vault first, so a folder whose name contains a dot
+ * answers with an empty string rather than a bogus extension. A folder has no `extension` of its own, which is why a caller handling both kinds would
+ * otherwise branch on {@link isFile} itself.
+ *
+ * A path that resolves to nothing has no answer to look up, so {@link GetExtensionParams.whenMissingTreatAs} decides what happens. It defaults to
+ * {@link MissingPathTreatment.Throw} rather than to a guess: `alpha.bravo` may name a dotted folder or a `.bravo` file, and nothing in the vault says
+ * which, so a silently wrong answer is worse than an error. Pass {@link MissingPathTreatment.File} for the `checkExtension` reading of a bare string, or
+ * {@link MissingPathTreatment.Folder} for the other one.
+ *
+ * @param params - The parameters for the retrieval.
+ * @returns The extension of the `pathOrFile`, or an empty string if it has none.
+ * @throws Error if the path resolves to nothing and `whenMissingTreatAs` is {@link MissingPathTreatment.Throw} (the default).
+ */
+export function getExtension(params: GetExtensionParams): string {
+  const {
+    app,
+    pathOrFile,
+    whenMissingTreatAs
+  } = params;
+
+  const abstractFile = getAbstractFileOrNull({
+    app,
+    pathOrFile
+  });
+
+  if (isFile(abstractFile)) {
+    return abstractFile.extension;
+  }
+
+  if (isFolder(abstractFile)) {
+    return '';
+  }
+
+  const path = getPath(app, pathOrFile);
+
+  const treatment = whenMissingTreatAs ?? MissingPathTreatment.Throw;
+
+  if (treatment === MissingPathTreatment.Throw) {
+    throw new Error(`Abstract file not found: ${path}`);
+  }
+
+  if (treatment === MissingPathTreatment.Folder) {
+    return '';
+  }
+
+  // Obsidian lowercases a file's canonical extension, so a path read as a file has to answer in the same case.
+  return extname(path).slice(1).toLowerCase();
 }
 
 /**

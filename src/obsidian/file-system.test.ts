@@ -35,6 +35,8 @@ import {
   FileSystemType,
   getAbstractFile,
   getAbstractFileOrNull,
+  getBasename,
+  getExtension,
   getFile,
   getFileOrNull,
   getFileSystemType,
@@ -53,6 +55,7 @@ import {
   isNote,
   isTreatedAsAttachment,
   MARKDOWN_FILE_EXTENSION,
+  MissingPathTreatment,
   trimMarkdownExtension
 } from './file-system.ts';
 
@@ -658,6 +661,114 @@ describe('getPath', () => {
     app = App.createConfigured__({ files: { 'note.md': '' } }).asOriginalType__();
     const result = getPath(app, 'note.md');
     expect(result).toBe('note.md');
+  });
+});
+
+describe('getBasename', () => {
+  it('should return the file name without its extension for an existing file path', () => {
+    app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
+    expect(getBasename({ app, pathOrFile: 'folder/note.md' })).toBe('note');
+  });
+
+  it('should return the file name without its extension for a TFile', () => {
+    const file = TFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType2__();
+    expect(getBasename({ app, pathOrFile: file })).toBe('note');
+  });
+
+  it('should return the full folder name for an existing folder path', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
+    expect(getBasename({ app, pathOrFile: 'my-folder' })).toBe('my-folder');
+  });
+
+  it('should return the full folder name for a TFolder', () => {
+    const folder = TFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
+    expect(getBasename({ app, pathOrFile: folder })).toBe('my-folder');
+  });
+
+  it('should keep the dot in an existing folder name instead of splitting an extension off it', () => {
+    app = App.createConfigured__({ files: { 'alpha.bravo/': '' } }).asOriginalType__();
+    expect(getBasename({ app, pathOrFile: 'alpha.bravo' })).toBe('alpha.bravo');
+  });
+
+  it('should throw for a missing path by default', () => {
+    expect(() => getBasename({ app, pathOrFile: 'alpha.bravo' })).toThrow('Abstract file not found: alpha.bravo');
+  });
+
+  it('should read a missing path as a file when asked to', () => {
+    expect(getBasename({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.File })).toBe('alpha');
+  });
+
+  it('should read a missing path as a folder when asked to', () => {
+    expect(getBasename({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Folder })).toBe('alpha.bravo');
+  });
+
+  it('should throw for a missing path when asked to', () => {
+    expect(() => getBasename({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Throw })).toThrow('Abstract file not found: alpha.bravo');
+  });
+
+  it('should return the whole name when a missing path read as a file has no extension', () => {
+    expect(getBasename({ app, pathOrFile: 'missing', whenMissingTreatAs: MissingPathTreatment.File })).toBe('missing');
+  });
+
+  it('should ignore whenMissingTreatAs when the path resolves', () => {
+    app = App.createConfigured__({ files: { 'alpha.bravo/': '' } }).asOriginalType__();
+    expect(getBasename({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Throw })).toBe('alpha.bravo');
+  });
+});
+
+describe('getExtension', () => {
+  it('should return the extension for an existing file path', () => {
+    app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
+    expect(getExtension({ app, pathOrFile: 'folder/note.md' })).toBe('md');
+  });
+
+  it('should return the extension for a TFile', () => {
+    const file = TFile.create__(castTo(app.vault), 'folder/note.md').asOriginalType2__();
+    expect(getExtension({ app, pathOrFile: file })).toBe('md');
+  });
+
+  it('should return an empty string for an existing folder path', () => {
+    app = App.createConfigured__({ files: { 'my-folder/': '' } }).asOriginalType__();
+    expect(getExtension({ app, pathOrFile: 'my-folder' })).toBe('');
+  });
+
+  it('should return an empty string for a TFolder', () => {
+    const folder = TFolder.create__(castTo(app.vault), 'my-folder').asOriginalType2__();
+    expect(getExtension({ app, pathOrFile: folder })).toBe('');
+  });
+
+  it('should return an empty string for an existing folder whose name contains a dot', () => {
+    app = App.createConfigured__({ files: { 'alpha.bravo/': '' } }).asOriginalType__();
+    expect(getExtension({ app, pathOrFile: 'alpha.bravo' })).toBe('');
+  });
+
+  it('should throw for a missing path by default', () => {
+    expect(() => getExtension({ app, pathOrFile: 'alpha.bravo' })).toThrow('Abstract file not found: alpha.bravo');
+  });
+
+  it('should read a missing path as a file when asked to', () => {
+    expect(getExtension({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.File })).toBe('bravo');
+  });
+
+  it('should read a missing path as a folder when asked to', () => {
+    expect(getExtension({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Folder })).toBe('');
+  });
+
+  it('should throw for a missing path when asked to', () => {
+    expect(() => getExtension({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Throw })).toThrow('Abstract file not found: alpha.bravo');
+  });
+
+  it('should return an empty string when a missing path read as a file has no extension', () => {
+    expect(getExtension({ app, pathOrFile: 'missing', whenMissingTreatAs: MissingPathTreatment.File })).toBe('');
+  });
+
+  it('should lower-case the extension of a missing path read as a file', () => {
+    expect(getExtension({ app, pathOrFile: 'missing.MD', whenMissingTreatAs: MissingPathTreatment.File })).toBe('md');
+  });
+
+  it('should ignore whenMissingTreatAs when the path resolves', () => {
+    app = App.createConfigured__({ files: { 'alpha.bravo/': '' } }).asOriginalType__();
+    expect(getExtension({ app, pathOrFile: 'alpha.bravo', whenMissingTreatAs: MissingPathTreatment.Throw })).toBe('');
   });
 });
 
