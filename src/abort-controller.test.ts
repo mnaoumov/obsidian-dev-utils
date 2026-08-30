@@ -7,17 +7,31 @@ import {
   vi
 } from 'vitest';
 
+import type { ValueWrapper } from './value-wrapper.ts';
+
 import {
   abortSignalAny,
   abortSignalNever,
   abortSignalTimeout,
+  getSharedAbortController,
+  getSharedAbortSignal,
   INFINITE_TIMEOUT,
   onAbort,
+  ResettableAbortController,
   waitForAbort
 } from './abort-controller.ts';
 import { dispose } from './disposable.ts';
 import { castTo } from './object-utils.ts';
+import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 import { assertNonNullable } from './type-guards.ts';
+
+interface GlobalThisWithState {
+  __obsidianDevUtils: ObsidianDevUtilsState;
+}
+
+interface ObsidianDevUtilsState {
+  sharedAbortController: ValueWrapper<ResettableAbortController>;
+}
 
 describe('INFINITE_TIMEOUT', () => {
   it('should equal Number.POSITIVE_INFINITY', () => {
@@ -508,5 +522,114 @@ describe('waitForAbort', () => {
     controller.abort(reason);
 
     await expect(waitForAbort(controller.signal, true)).rejects.toBe(reason);
+  });
+});
+
+describe('ResettableAbortController', () => {
+  it('should start with a non-aborted signal', () => {
+    const resettableAbortController = new ResettableAbortController();
+    expect(resettableAbortController.signal.aborted).toBe(false);
+  });
+
+  it('should return the same signal until aborted', () => {
+    const resettableAbortController = new ResettableAbortController();
+    expect(resettableAbortController.signal).toBe(resettableAbortController.signal);
+  });
+
+  it('should abort a signal captured before the abort', () => {
+    const resettableAbortController = new ResettableAbortController();
+    const signal = resettableAbortController.signal;
+
+    resettableAbortController.abort();
+
+    expect(signal.aborted).toBe(true);
+  });
+
+  it('should replace the aborted signal with a fresh non-aborted one', () => {
+    const resettableAbortController = new ResettableAbortController();
+    const signal = resettableAbortController.signal;
+
+    resettableAbortController.abort();
+
+    expect(resettableAbortController.signal).not.toBe(signal);
+    expect(resettableAbortController.signal.aborted).toBe(false);
+  });
+
+  it('should propagate the abort reason', () => {
+    const resettableAbortController = new ResettableAbortController();
+    const signal = resettableAbortController.signal;
+    const reason = new Error('cancelled by the user');
+
+    resettableAbortController.abort(reason);
+
+    expect(signal.reason).toBe(reason);
+  });
+
+  it('should abort with the native AbortError when no reason is given', () => {
+    const resettableAbortController = new ResettableAbortController();
+    const signal = resettableAbortController.signal;
+
+    resettableAbortController.abort();
+
+    expect(castTo<Error>(signal.reason).name).toBe('AbortError');
+  });
+
+  it('should stay usable after an abort, unlike a plain AbortController', () => {
+    const resettableAbortController = new ResettableAbortController();
+    const firstSignal = resettableAbortController.signal;
+    resettableAbortController.abort();
+    const secondSignal = resettableAbortController.signal;
+
+    resettableAbortController.abort();
+
+    expect(firstSignal.aborted).toBe(true);
+    expect(secondSignal.aborted).toBe(true);
+  });
+});
+
+describe('getSharedAbortController', () => {
+  afterEach(() => {
+    resetObsidianDevUtilsState();
+  });
+
+  it('should return the same instance on repeat calls', () => {
+    expect(getSharedAbortController()).toBe(getSharedAbortController());
+  });
+
+  it('should return a new instance after the shared state is reset', () => {
+    const sharedAbortController = getSharedAbortController();
+    resetObsidianDevUtilsState();
+    expect(getSharedAbortController()).not.toBe(sharedAbortController);
+  });
+
+  it('should be abortable from the devtools console via the shared state', () => {
+    const signal = getSharedAbortSignal();
+    // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
+    const state = (globalThis as Partial<GlobalThisWithState>).__obsidianDevUtils;
+    assertNonNullable(state);
+
+    state.sharedAbortController.value.abort();
+
+    expect(signal.aborted).toBe(true);
+    expect(getSharedAbortSignal().aborted).toBe(false);
+  });
+});
+
+describe('getSharedAbortSignal', () => {
+  afterEach(() => {
+    resetObsidianDevUtilsState();
+  });
+
+  it('should return the signal of the shared controller', () => {
+    expect(getSharedAbortSignal()).toBe(getSharedAbortController().signal);
+  });
+
+  it('should return a fresh non-aborted signal after the shared controller is aborted', () => {
+    const signal = getSharedAbortSignal();
+
+    getSharedAbortController().abort();
+
+    expect(signal.aborted).toBe(true);
+    expect(getSharedAbortSignal().aborted).toBe(false);
   });
 });
