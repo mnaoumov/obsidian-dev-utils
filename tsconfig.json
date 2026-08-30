@@ -32,6 +32,7 @@
     "./demo-vault-helper/**/*.ts",
     "./eslint.config.mts",
     "./integration-test-plugin/**/*.ts",
+    "./integration-test-plugin-api/**/*.ts",
     "./scripts/**/*.ts",
     "./src/**/*.ts",
     "./vitest.config.ts"

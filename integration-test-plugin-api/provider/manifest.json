@@ -1,0 +1,8 @@
+{
+  "author": "mnaoumov",
+  "description": "Test-only plugin that publishes an API through obsidian-dev-utils' cross-plugin registry.",
+  "id": "obsidian-dev-utils-plugin-api-provider",
+  "minAppVersion": "1.11.0",
+  "name": "Plugin API Provider (integration test)",
+  "version": "0.0.0"
+}

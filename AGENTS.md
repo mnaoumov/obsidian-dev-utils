@@ -333,8 +333,20 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — the opposing rule is the one ESLint has; `build:validate-declarations` is
   the check that catches it)
 
-### L9. Another plugin's API: hand-declared narrow types + a runtime guard, never a build-time dependency
+### L9. Another plugin's API: the registry when it publishes one, hand-declared narrow types otherwise — never a build-time dependency
 
+- **When the other plugin publishes through the registry, use the registry.** `publishPluginApi` /
+  `watchPluginApi` (`src/obsidian/plugin/plugin-api.ts`) are this library's own protocol for cross-plugin
+  APIs, and they generalize everything below into one mechanism: records keyed by `manifest.id`, semver
+  contract-version negotiation, a revocable handle that names its provider instead of null-dereferencing,
+  a `PluginApiUnavailabilityReason` that tells the five failure causes apart, and debug-gated Standard
+  Schema payload validation. The live `PluginApiRef` is what replaces the layout-ready timing dance below:
+  its `value` starts `null` and becomes correct on its own, so there is nothing to time. The rest of this
+  rule is the fallback for the (currently universal) case of a plugin that publishes nothing.
+- **The registry record is a WIRE FORMAT between different `obsidian-dev-utils` copies**, since every plugin
+  bundles its own. Nothing crossing it may be `instanceof`-checked — plain data and plain functions only,
+  read structurally. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
+  actually catch a violation; a unit test cannot, because it has only one copy of the library.
 - A plugin whose surface this library integrates with (today: Notebook Navigator, see
   `src/obsidian/notebook-navigator.ts`; and `folder-notes`, whose folder-note settings
   `src/obsidian/folder-note.ts` reads) is reached through `app.plugins.getPlugin(<id>)` and typed by
@@ -626,6 +638,17 @@ export function myFunction(param: Type): ReturnType {
   E2E tests (`*.obsidian.integration.test.ts`, driven over CDP by `obsidian-integration-testing`
   against an owned Electron instance). The E2E layer is no longer "planned" — it is the only layer that
   sees behavior the mocks cannot reproduce (see L7, L10, L11 above for cases that only surface there).
+- **Three E2E projects own a DEDICATED Obsidian instance each**, because their vaults cannot be shared with
+  the pooled `obsidian-integration-tests` one. Each has its own `globalSetup` and its own ascending
+  `groupOrder`, so the instances never run concurrently:
+  `obsidian-integration-tests:demo-vault-helper` (bootstraps a whole demo vault),
+  `obsidian-integration-tests:consumer-lib` (a vault with NO plugin-under-test, proving a consumer's `lib`
+  wiring), and `obsidian-integration-tests:plugin-api` (two SEPARATELY BUNDLED plugins in one vault, so two
+  distinct copies of this library share one renderer — the only place the plugin-API registry's wire-format
+  claim can actually be tested; sources under `integration-test-plugin-api/`, built by
+  `scripts/helpers/build-plugin-api-test-plugins.ts` into `dist/` and never shipped). A file belonging to
+  one of these must ALSO be added to the pooled project's `exclude` list, or it runs twice against the
+  wrong vault.
 
 ### Test setup
 

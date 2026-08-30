@@ -35,6 +35,7 @@ const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
 const DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE = 'src/obsidian/demo-vault-helper.obsidian.integration.test.ts';
 const CONSUMER_LIB_INTEGRATION_TEST_FILE = 'src/integration-test-lib.obsidian.integration.test.ts';
+const PLUGIN_API_INTEGRATION_TEST_FILE = 'src/obsidian/plugin/plugin-api.obsidian.integration.test.ts';
 const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
 const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
@@ -55,6 +56,7 @@ const ESLINT_TYPECHECK_GROUP_ORDER = 1;
 const OBSIDIAN_SHARED_INSTANCE_GROUP_ORDER = 2;
 const OBSIDIAN_DEMO_VAULT_HELPER_GROUP_ORDER = 3;
 const OBSIDIAN_CONSUMER_LIB_GROUP_ORDER = 4;
+const OBSIDIAN_PLUGIN_API_GROUP_ORDER = 5;
 
 export const config = defineConfig({
   resolve: SHARED_RESOLVE,
@@ -145,7 +147,12 @@ export const config = defineConfig({
           // These integration tests share ONE Obsidian instance and mutate its global state.
           // Parallel files would stomp each other: focus and the active workspace are global.
           // So this project runs serially in a single worker.
-          exclude: [...SHARED_EXCLUDE, DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE, CONSUMER_LIB_INTEGRATION_TEST_FILE],
+          exclude: [
+            ...SHARED_EXCLUDE,
+            DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE,
+            CONSUMER_LIB_INTEGRATION_TEST_FILE,
+            PLUGIN_API_INTEGRATION_TEST_FILE
+          ],
           fileParallelism: false,
           globalSetup: ['./scripts/integration-test-obsidian-global-setup.ts'],
           include: [OBSIDIAN_INTEGRATION_TEST_FILES],
@@ -191,6 +198,23 @@ export const config = defineConfig({
             'obsidian-integration-testing/vitest-setup',
             './src/integration-test-setup.ts'
           ],
+          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+        }
+      },
+      {
+        test: {
+          environment: 'node',
+          // Proves the cross-COPY claim, which no other project can reach: its own Obsidian instance/vault
+          // Carries two separately bundled plugins, so two distinct copies of the library share one renderer.
+          // That is the situation every real pair of plugins is in, and the only place where reading a
+          // Registry record by class identity instead of structurally would actually fail.
+          fileParallelism: false,
+          globalSetup: ['./scripts/integration-test-plugin-api-global-setup.ts'],
+          include: [PLUGIN_API_INTEGRATION_TEST_FILE],
+          maxWorkers: 1,
+          name: 'obsidian-integration-tests:plugin-api',
+          sequence: { groupOrder: OBSIDIAN_PLUGIN_API_GROUP_ORDER },
+          setupFiles: ['obsidian-integration-testing/vitest-setup'],
           testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
         }
       }

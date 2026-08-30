@@ -101,6 +101,16 @@ export enum ObsidianDevUtilsRepoPaths {
   DistLib = 'dist/lib',
 
   /**
+  A path to the built plugin-API integration-test CONSUMER plugin within the {@link Dist} folder. Test-only and never shipped; built separately from its provider so the two carry distinct `obsidian-dev-utils` copies.
+   */
+  DistPluginApiTestConsumer = 'dist/plugin-api-test-consumer',
+
+  /**
+  A path to the built plugin-API integration-test PROVIDER plugin within the {@link Dist} folder. Test-only and never shipped; built separately from its consumer so the two carry distinct `obsidian-dev-utils` copies.
+   */
+  DistPluginApiTestProvider = 'dist/plugin-api-test-provider',
+
+  /**
   A path to the `templates` folder within the {@link Dist} folder, holding the consumer-facing templates.
    */
   DistTemplates = 'dist/templates',
@@ -179,6 +189,16 @@ export enum ObsidianDevUtilsRepoPaths {
   TypeScript index file.
    */
   IndexTs = 'index.ts',
+
+  /**
+  A path to the sources of the plugin-API integration-test CONSUMER plugin.
+   */
+  IntegrationTestPluginApiConsumer = 'integration-test-plugin-api/consumer',
+
+  /**
+  A path to the sources of the plugin-API integration-test PROVIDER plugin.
+   */
+  IntegrationTestPluginApiProvider = 'integration-test-plugin-api/provider',
 
   /**
   JavaScript file extension.

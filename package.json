@@ -693,6 +693,7 @@
     "@eslint/js": "^10.0.1",
     "@lezer/common": "1.5.2",
     "@obsidian-typings/obsidian-public-latest": "^6.35.0",
+    "@standard-schema/spec": "^1.1.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tsconfig/strictest": "^2.0.8",
     "@types/babel__core": "^7.20.5",
