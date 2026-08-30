@@ -22,6 +22,10 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run build:compile:typescript` — type-check with tsc
 - `npm run build:templates` — copy consumer templates
 - `npm run spellcheck` — spell check with cspell
+- `npm run find-overexposed` / `find-overexposed:fix` — report (or narrow) declarations exposed more broadly
+  than their references require. **It is NOT part of `lint` / `test` / `format` / `spellcheck`, but it IS one
+  of `npm run version`'s preflight checks** — so a fully green branch gate can still fail at release time on
+  it. Run it before releasing rather than discovering it there (2026-08-29, T677).
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version
 - `npm run publish:npm` — publish the built package to NPM; runs in CI only (see [Releasing](#releasing))
