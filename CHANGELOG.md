@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.4.0
+
+- fix(over-exposure): do not abort the member analysis on a TSDoc link to a member
+- feat(plugin-api): add a typed, versioned, lifecycle-aware cross-plugin API registry
+
 ## 96.3.1
 
 - fix(monkey-around): record the patch token on the method a patch installs
