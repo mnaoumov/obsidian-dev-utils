@@ -1,0 +1,8 @@
+{
+  "author": "mnaoumov",
+  "description": "Test-only plugin that consumes an API through obsidian-dev-utils' cross-plugin registry.",
+  "id": "obsidian-dev-utils-plugin-api-consumer",
+  "minAppVersion": "1.11.0",
+  "name": "Plugin API Consumer (integration test)",
+  "version": "0.0.0"
+}
