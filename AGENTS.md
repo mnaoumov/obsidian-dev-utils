@@ -632,6 +632,36 @@ export function myFunction(param: Type): ReturnType {
   just the `linkinator` one. If it ever returns, raise the reserve; never lower it.
 - (cannot be forced by ESLint — the limit is a property of the spawned process's own shim chain)
 
+### L19. An adapter flag is a claim, not a contract — check the two adapters separately, and they may fail opposite ways
+
+- `DataAdapter.rmdir(path, recursive)` looks like one API with one behavior. It is two implementations that
+  disagree, and **both** ignore the flag — in **opposite directions**. Read from `obsidian-1.13.7.asar`:
+  `CapacitorAdapter` (mobile) is `rmdir(e, t) { this.fs.rmdir(this.getFullPath(e)) }` over a layer that
+  hardcodes `Lf.rmdir({ …, recursive: !0 })` — the argument is not even accepted, so a non-recursive call
+  **deletes the whole subtree silently**. `FileSystemAdapter` (desktop) is
+  `fsPromises.rm(fullPath, { maxRetries: 5, recursive: t })`, and Node's `fs.rm` throws `ERR_FS_EISDIR` for
+  **any** directory when `recursive` is `false` — so the non-recursive call **never succeeds, not even on an
+  empty folder**. One is data loss, the other is a permanent failure, and no single-platform test can see both.
+- **Do not generalize a footgun from the platform you happen to run on.** T686 was opened describing the
+  mobile data loss as universal, because that is the half that gets noticed. The desktop half is invisible
+  until something calls it — and then it looks like a bug in the caller.
+- **The fix for "the flag is ignored" is to establish the precondition yourself and then call the mode that
+  works.** `RmdirGuardComponent` proves the folder empty (through `isEmptyFolder` → `adapter.list`, i.e. the
+  adapter's own truth) and forwards to `originalMethodBound(path, true)`. Forwarding *recursively* after
+  proving emptiness looks redundant and is not: it is what makes the empty-folder case succeed on desktop.
+  Anything the precondition does not cover takes `fallback()` and keeps native semantics exactly.
+- **Never decide "is this folder empty?" from the vault file tree.** `folder.children.length === 0` is not
+  the question — the index omits dot-prefixed and otherwise hidden entries, so a folder holding only hidden
+  files reads as empty there. For a guard whose whole job is preventing a deletion, that inverts it.
+- **Pin the premise with a negative control at the integration layer.** The unit tests here drive
+  `obsidian-test-mocks`' in-memory adapter, which is *our own* reimplementation of `rmdir` — it can only
+  confirm the component matches our model. `rmdir-guard-component.obsidian.integration.test.ts` asserts the
+  unguarded `ERR_FS_EISDIR` directly, so if Obsidian ever fixes `rmdir` the case goes red and says the guard
+  is obsolete, rather than quietly guarding nothing.
+- **Read the bundle rather than trusting the signature or the memory of it.** `grep -aob '<methodName>'` over
+  `%APPDATA%\obsidian\obsidian-<version>.asar`, then `dd` a window around the offset (same technique as L14).
+- (cannot be forced by ESLint — a runtime-behavior asymmetry between adapters)
+
 ## Testing
 
 ### Goals
