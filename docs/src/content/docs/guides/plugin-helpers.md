@@ -1,6 +1,6 @@
 ---
 title: Plugin Helpers
-description: The `PluginBase` family - notices, settings components, settings tabs, and syntax highlighting - that a plugin builds on.
+description: The `PluginBase` family - notices, settings components, settings tabs, syntax highlighting, and an `rmdir` guard - that a plugin builds on.
 ---
 
 `Obsidian Dev Utils` provides some helpers to simplify your own Obsidian plugin.
@@ -155,6 +155,25 @@ The most important methods in the execution order:
 - `getSettingDefinitionItems()` (or `displayLegacy()` for the imperative fallback)
 - `settingGroupEx()` / `settingEx()`
 - `bind()`
+
+## [RmdirGuardComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/rmdir-guard-component.ts)
+
+`app.vault.adapter.rmdir(path, recursive)` does not honor `recursive: false`, and the two adapters get it wrong in opposite directions:
+
+- `CapacitorAdapter` (mobile) does not accept the argument at all - it always removes recursively, so a non-recursive call **silently deletes the folder and everything under it**.
+- `FileSystemAdapter` (desktop) forwards it to `fs.promises.rm(path, { recursive })`, which throws `ERR_FS_EISDIR` for *any* directory when `recursive` is `false` - so the non-recursive call never succeeds, not even on an empty folder.
+
+`RmdirGuardComponent` gives both platforms the same, correct behavior while it is loaded: a folder that still has children is refused with an error carrying `code: 'ENOTEMPTY'` and nothing is deleted, and an empty folder is removed. Calls that already pass `recursive: true`, and calls whose target is not a folder, are passed through untouched.
+
+Emptiness is decided from the adapter, not from the vault file tree - the tree omits dot-prefixed and otherwise hidden entries, so a folder holding only hidden files reads as empty there and the guard would wave through exactly the deletion it exists to prevent.
+
+It is deliberately opt-in. `app.vault.adapter` is shared by the whole app, so a library that installed this patch on its own would change `rmdir` semantics for every other plugin, including the ones that never asked for it. A plugin that deletes folders opts in for itself:
+
+```ts
+this.addChild(new RmdirGuardComponent(this.app));
+```
+
+Check `error.code === 'ENOTEMPTY'` rather than `instanceof` - every plugin bundles its own copy of the library, so the error may cross a copy boundary.
 
 ## [SyntaxHighlightingComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/syntax-highlighting-component.ts)
 
