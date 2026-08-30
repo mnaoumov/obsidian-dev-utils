@@ -5,12 +5,110 @@ import {
 } from 'vitest';
 
 import {
+  encodeUrl,
   isFileUrl,
   isUrl,
-  normalizeFileUrl
+  normalizeFileUrl,
+  pathToFileUrl
 } from './url.ts';
 
 describe('url', () => {
+  describe('encodeUrl', () => {
+    it.each([
+      { expected: 'path%20with%20spaces.md', input: 'path with spaces.md' },
+      { expected: 'path%5Cto%5Cfile.md', input: String.raw`path\to\file.md` },
+      { expected: 'simple-path/file.md', input: 'simple-path/file.md' },
+      { expected: '', input: '' },
+      { expected: 'a%20b%20c', input: 'a b c' }
+    ])('should encode "$input" to "$expected"', ({ expected, input }) => {
+      expect(encodeUrl(input)).toBe(expected);
+    });
+
+    it.each([
+      { description: 'vertical tab', expected: 'path%0Bfile.md', input: 'path\u{B}file.md' },
+      { description: 'backspace', expected: 'path%08file.md', input: 'path\u{8}file.md' },
+      { description: 'form feed', expected: 'path%0Cfile.md', input: 'path\u{C}file.md' },
+      { description: 'null character', expected: 'path%00file.md', input: 'path\u{0}file.md' },
+      { description: 'mixed safe and unsafe', expected: 'path/to%20the%5Cfile.md', input: String.raw`path/to the\file.md` }
+    ])('should encode $description correctly', ({ expected, input }) => {
+      expect(encodeUrl(input)).toBe(expected);
+    });
+
+    it('should leave non-ASCII characters unencoded', () => {
+      expect(encodeUrl('café/naïve.md')).toBe('café/naïve.md');
+    });
+
+    it('should leave a literal percent alone by default', () => {
+      expect(encodeUrl('a%20b')).toBe('a%20b');
+    });
+
+    it('should leave a literal percent alone when the flag is explicitly off', () => {
+      expect(encodeUrl('a%20b', false)).toBe('a%20b');
+    });
+
+    it('should encode a literal percent when the flag is on', () => {
+      expect(encodeUrl('a%20b', true)).toBe('a%2520b');
+    });
+
+    it('should encode a percent alongside the other special symbols when the flag is on', () => {
+      expect(encodeUrl(String.raw`a%b c\d`, true)).toBe('a%25b%20c%5Cd');
+    });
+  });
+
+  describe('pathToFileUrl', () => {
+    it('should encode a Windows path with spaces', () => {
+      expect(pathToFileUrl(String.raw`C:\a b\c.txt`)).toBe('file:///C:/a%20b/c.txt');
+    });
+
+    it('should convert backslashes to forward slashes after encoding', () => {
+      expect(pathToFileUrl(String.raw`C:\dir\sub\file.md`)).toBe('file:///C:/dir/sub/file.md');
+    });
+
+    it('should collapse the leading slash of a POSIX path', () => {
+      expect(pathToFileUrl('/home/user/a b.txt')).toBe('file:///home/user/a%20b.txt');
+    });
+
+    it('should collapse every leading slash of a UNC path', () => {
+      expect(pathToFileUrl(String.raw`\\server\share\x.txt`)).toBe('file:///server/share/x.txt');
+    });
+
+    it('should handle a relative path', () => {
+      expect(pathToFileUrl('dir/file.md')).toBe('file:///dir/file.md');
+    });
+
+    it('should handle a path with no special characters', () => {
+      expect(pathToFileUrl('C:/dir/file.md')).toBe('file:///C:/dir/file.md');
+    });
+
+    it('should handle an empty path', () => {
+      expect(pathToFileUrl('')).toBe('file:///');
+    });
+
+    it('should encode control characters', () => {
+      expect(pathToFileUrl('C:/a\u{0}b.txt')).toBe('file:///C:/a%00b.txt');
+    });
+
+    it('should leave non-ASCII characters unencoded', () => {
+      expect(pathToFileUrl(String.raw`C:\café\naïve.md`)).toBe('file:///C:/café/naïve.md');
+    });
+
+    it('should leave a literal percent alone by default', () => {
+      expect(pathToFileUrl(String.raw`C:\a%20b\c.txt`)).toBe('file:///C:/a%20b/c.txt');
+    });
+
+    it('should encode a literal percent when the flag is on', () => {
+      expect(pathToFileUrl(String.raw`C:\a%20b\c.txt`, true)).toBe('file:///C:/a%2520b/c.txt');
+    });
+
+    it('should produce a URL the rest of the family agrees is a well-formed file URL', () => {
+      const url = pathToFileUrl(String.raw`C:\a b\c.txt`);
+      expect(isFileUrl(url)).toBe(true);
+      expect(isUrl(url)).toBe(true);
+      expect(normalizeFileUrl(url)).toBe(url);
+      expect(decodeURIComponent(new URL(url).pathname)).toBe('/C:/a b/c.txt');
+    });
+  });
+
   describe('isFileUrl', () => {
     it('should accept a file:// URL', () => {
       expect(isFileUrl('file:///F:/dir/x.txt')).toBe(true);

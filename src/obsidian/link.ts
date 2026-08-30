@@ -49,7 +49,10 @@ import {
   assertNonNullable,
   ensureNonNullable
 } from '../type-guards.ts';
-import { normalizeFileUrl } from '../url.ts';
+import {
+  encodeUrl,
+  normalizeFileUrl
+} from '../url.ts';
 import {
   applyContentChanges,
   applyFileChanges,
@@ -75,7 +78,6 @@ import {
   shouldUseWikilinks
 } from './obsidian-settings.ts';
 import {
-  encodeUrl,
   escapeAlias,
   isParseLinkFrontmatterReference,
   isParseLinkReference,
