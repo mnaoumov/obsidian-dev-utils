@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.5.0
+
+- feat(abort-controller): add a shared, resettable app-wide abort controller
+- docs: note that find-overexposed only runs in the release preflight
+
 ## 96.4.0
 
 - fix(over-exposure): do not abort the member analysis on a TSDoc link to a member
