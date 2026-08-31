@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 96.5.4
+
+- fix(templates): call parseVersionArguments, and type-check templates so a rename cannot ship broken
+
 ## 96.5.3
 
 - fix(version): extract the changelog section by lines, so a first release ships its notes
