@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 96.5.3
+
+- fix(version): extract the changelog section by lines, so a first release ships its notes
+- fix(version): settle the changelog before bumping, and refuse a blocking review with no TTY
+
 ## 96.5.2
 
 - fix(deps): declare the obsidian-integration-testing peer at ^11
