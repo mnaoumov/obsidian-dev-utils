@@ -542,6 +542,45 @@ describe('getReleaseNotes', () => {
     const notes = await getReleaseNotes('1.0.0');
     expect(notes).toBe('**Full Changelog**: https://github.com/user/repo/compare/0.9.0...1.0.0');
   });
+
+  it('should return the only section when no older release follows it', async () => {
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 1.0.0\n\nInitial release\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('1.0.0')
+      .mockResolvedValueOnce('https://github.com/user/repo');
+    const notes = await getReleaseNotes('1.0.0');
+    expect(notes).toBe('Initial release\n\n**Full Changelog**: https://github.com/user/repo/commits/1.0.0');
+  });
+
+  it('should return only the requested section when it sits between two others', async () => {
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 1.1.0\n\nNewer\n\n## 1.0.0\n\nWanted\n\n## 0.9.0\n\nOlder\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('1.1.0\n1.0.0')
+      .mockResolvedValueOnce('https://github.com/user/repo');
+    const notes = await getReleaseNotes('1.0.0');
+    expect(notes).toContain('Wanted');
+    expect(notes).not.toContain('Newer');
+    expect(notes).not.toContain('Older');
+  });
+
+  it('should keep a sub-heading inside the section instead of truncating there', async () => {
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 1.0.0\n\nIntro\n\n### Details\n\nMore\n\n## 0.9.0\n\nOld\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('1.0.0\n0.9.0')
+      .mockResolvedValueOnce('https://github.com/user/repo');
+    const notes = await getReleaseNotes('1.0.0');
+    expect(notes).toContain('Intro\n\n### Details\n\nMore');
+    expect(notes).not.toContain('Old');
+  });
+
+  it('should read a changelog with Windows line endings', async () => {
+    mockReadFile.mockResolvedValue('# CHANGELOG\r\n\r\n## 1.0.0\r\n\r\nInitial release\r\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('1.0.0')
+      .mockResolvedValueOnce('https://github.com/user/repo');
+    const notes = await getReleaseNotes('1.0.0');
+    expect(notes).toBe('Initial release\n\n**Full Changelog**: https://github.com/user/repo/commits/1.0.0');
+  });
 });
 
 describe('publishGitHubRelease', () => {
