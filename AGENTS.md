@@ -1158,6 +1158,17 @@ examples.
 
 ## Releasing
 
+- **Choose the bump from `git log <lastTag>..HEAD`, never from the change you happen to be working on.**
+  `npm run version -- <type>` takes the type as an ARGUMENT and derives nothing, so the release ships
+  every commit accumulated since the last tag — which is routinely more than the current task's. Scan that
+  range for `feat:` (→ minor) and `!` / `BREAKING CHANGE:` (→ major) before picking. Missed on `96.5.1`:
+  it was chosen as a patch for a one-line `fix`, and shipped six unreleased `feat:` commits with it.
+- **A commit that reaches `main` and is then superseded still lands in the changelog**, which is generated
+  from commit messages (`git log <lastTag>..HEAD --format=%B --first-parent`). If an approach is reworked
+  before it is ever released, squash the unreleased commits rather than letting the changelog announce a
+  state that never shipped (done for `96.5.1` — two `fix(build)!` commits carrying a `BREAKING CHANGE:`
+  footer for an abandoned barrel change were squashed into one `fix(obsidian):` commit and force-pushed).
+
 A release is two stages, split across two machines on purpose:
 
 1. **Local** — `npm run version -- <patch|minor|…>` runs the checks and the build, bumps the version,
