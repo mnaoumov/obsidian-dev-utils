@@ -15,11 +15,19 @@
  * previous session's edits never leak into a new one. The extracted vault folder is named
  * `<plugin-id>-<version>.demo-vault` so it reads nicely in Obsidian's vault switcher. Orphaned
  * extracted folders left over from earlier sessions are cleaned up (best-effort) on each open.
+ *
+ * **`adm-zip` is loaded lazily, and must stay that way.** The `node:` imports below are safe to merely
+ * evaluate on mobile — `require` hands back `undefined` there and nothing reads it at load time — but
+ * `adm-zip`'s zip-crypto method opens with a top-level `const { randomFillSync } = require('crypto')`,
+ * which throws the moment the module is initialized. Because the generated barrels re-export this module,
+ * a static `import AdmZip from 'adm-zip'` therefore killed the whole library's load on Android (see the
+ * mobile-load check in `scripts/helpers/assert-mobile-loadable-bundle.ts`, which fails the build on
+ * exactly that). Any future dependency that touches a platform-only API while initializing has to be
+ * deferred the same way.
  */
 
 import type { App } from 'obsidian';
 
-import AdmZip from 'adm-zip';
 import { compareVersions } from 'compare-versions';
 /* eslint-disable import-x/no-nodejs-modules -- Desktop-only feature gated by `Platform.isDesktopApp`; the command is hidden on mobile so these Node APIs are never reached there. */
 import { Buffer } from 'node:buffer';
@@ -191,7 +199,7 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
 
   progressNotice.setContent(`Extracting demo vault for ${pluginName} v${versionToOpen}…`);
   cleanupOrphanedExtractedVaults();
-  const vaultDirectory = extractDemoVaultToFreshFolder({
+  const vaultDirectory = await extractDemoVaultToFreshFolder({
     archive,
     pluginId,
     version: versionToOpen
@@ -241,10 +249,16 @@ function cleanupOrphanedExtractedVaults(): void {
  * `.asar` file is treated as a plain file and `chmod` succeeds. It is a desktop-only Electron module
  * with no bundled types, so it is loaded via `window.require` and typed as `node:fs`'s shape.
  *
+ * `adm-zip` is imported here rather than at the top of the module: it initializes a Node-only dependency
+ * (`require('crypto')`), so a static import would break the library's load on mobile even though this
+ * function only ever runs on desktop. See the module's `@file` note.
+ *
  * @param archive - The raw zip archive bytes.
  * @param targetDirectory - The directory to extract into.
+ * @returns A {@link Promise} that resolves once the archive has been extracted.
  */
-function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): void {
+async function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): Promise<void> {
+  const { default: AdmZip } = await import('adm-zip');
   const originalFs = window.require('node:original-fs') as typeof import('node:fs');
   const zip = new AdmZip(archive, { fs: originalFs });
   zip.extractAllTo(targetDirectory, true);
@@ -259,15 +273,15 @@ function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): void
  * basename) rather than the random temp id.
  *
  * @param params - The {@link ExtractDemoVaultToFreshFolderParams}.
- * @returns The absolute path of the freshly extracted vault folder.
+ * @returns A {@link Promise} resolving to the absolute path of the freshly extracted vault folder.
  */
-function extractDemoVaultToFreshFolder(params: ExtractDemoVaultToFreshFolderParams): string {
+async function extractDemoVaultToFreshFolder(params: ExtractDemoVaultToFreshFolderParams): Promise<string> {
   const { archive, pluginId, version } = params;
   const extractedVaultsRoot = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, EXTRACTED_VAULTS_SUBFOLDER);
   mkdirSync(extractedVaultsRoot, { recursive: true });
   const uniqueParentDirectory = mkdtempSync(join(extractedVaultsRoot, `${pluginId}-${version}-`));
   const vaultDirectory = join(uniqueParentDirectory, `${pluginId}-${version}.demo-vault`);
-  extractDemoVaultArchive(archive, vaultDirectory);
+  await extractDemoVaultArchive(archive, vaultDirectory);
   return vaultDirectory;
 }
 

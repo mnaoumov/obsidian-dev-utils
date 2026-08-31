@@ -19,9 +19,12 @@ import { existsSync } from 'node:fs';
 import {
   cp,
   mkdir,
+  readFile,
   rm
 } from 'node:fs/promises';
 import { join } from 'node:path';
+
+import { assertMobileLoadableBundle } from './assert-mobile-loadable-bundle.ts';
 
 const PROJECT_ROOT = join(import.meta.dirname, '../..');
 const PLUGIN_DIR = join(PROJECT_ROOT, 'integration-test-plugin');
@@ -53,6 +56,7 @@ export interface BuildIntegrationTestPluginParams {
  */
 export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPluginParams): Promise<void> {
   const outDirectoryPath = join(PROJECT_ROOT, params.outDirectory);
+  const mainJsPath = join(outDirectoryPath, 'main.js');
 
   if (existsSync(outDirectoryPath)) {
     await rm(outDirectoryPath, { recursive: true });
@@ -72,10 +76,18 @@ export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPlu
     ],
     format: 'cjs',
     logLevel: 'info',
-    outfile: join(outDirectoryPath, 'main.js'),
+    outfile: mainJsPath,
     platform: 'node',
     sourcemap: (params.shouldGenerateSourceMap ?? true) ? 'inline' : false,
     target: 'ES2022'
+  });
+
+  // This plugin has to load on a phone — an Android integration run seeds this very bundle into its
+  // Vault — and a load-time reach for a platform-only API surfaces there as an opaque plugin-failed-to-load
+  // Error, with every test in the project failing behind it. Catch it here instead.
+  assertMobileLoadableBundle({
+    bundlePath: mainJsPath,
+    bundleSource: await readFile(mainJsPath, 'utf-8')
   });
 
   await cp(join(PLUGIN_DIR, 'manifest.json'), join(outDirectoryPath, 'manifest.json'));

@@ -120,6 +120,21 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
   `src/@types/obsidian-integration-testing.d.ts`. The generator **fails the build if two modules export
   the same value name**: every public value export must be unique (this is why `path.ts` / `string.ts`
   `normalize` were renamed to `normalizePath` / `normalizeString`). Do NOT edit `__merged.ts` manually.
+- **The integration-test harness plugin bundle is checked at build time for whether it can load on mobile.**
+  `buildIntegrationTestPlugin` runs `assertMobileLoadableBundle`
+  (`scripts/helpers/assert-mobile-loadable-bundle.ts`), which evaluates the emitted `main.js` in a
+  `node:vm` context shaped like Obsidian mobile — `require` returns `undefined` for every Node builtin and
+  a permissive stand-in for the app-provided externals, and `process` is present and renderer-shaped so a
+  load-time branch (as in `debug`) takes the browser path a webview does. It asserts only that module
+  INITIALIZATION survives, so L6's call-time dynamic `import()` of platform-only work still passes. It
+  guards both outputs (`dist/integration-test-plugin/`, which ships, and `dist/dev/`), because that
+  bundle is seeded into an Android integration vault, where a load-time reach for a platform-only API
+  surfaces as an opaque "plugin failed to load" with every test in the project failing behind it.
+- **That one check covers the whole library, which is why L5 can allow the barrels to re-export every
+  module.** The harness plugin's entry imports `../src/index.ts` — the entire public surface — so its
+  bundle is the worst-case consumer: a plugin that imports everything. Any module that stops being
+  import-safe on mobile fails `npm run build` here, long before it reaches a phone. Do not weaken that
+  entry to a narrower import; it is what makes the check load-bearing rather than incidental.
 
 ### Type Validation (manual `skipLibCheck` wrapper)
 
@@ -261,16 +276,26 @@ export function myFunction(param: Type): ReturnType {
   gets no prefix — e.g. `community-plugins.ts` (uses `requestUrl`), and `open-demo-vault-command-handler.ts`,
   which is desktop-*gated* but stays cross-platform-loadable by dynamic-importing the desktop-only opener
   (see **L6**).
-- The prefix is **especially important when the module has a static top-level import of a
-  platform-only builtin** (e.g. `import { existsSync } from 'node:fs'`). Such an import is evaluated at
-  **module-load** time, so a mobile bundle merely *loading* the module — not just calling it — can fail
-  on the missing builtin, even behind a `Platform.isDesktopApp` runtime guard. The `desktop-` prefix
-  flags that the module (and anything importing it) must be kept off the mobile load path — but a
-  **public-facing** module must instead be made cross-platform-loadable (see **L6**), not exposed with
-  a `desktop-` prefix and pushed onto the consumer.
+- **The prefix restricts where a module may be CALLED, never whether it may be IMPORTED — every module
+  in `src/` must survive being imported on either platform.** The generated barrels (`src/**/index.ts`,
+  `src/__merged.ts`) re-export **every** leaf they find, and `src/index.ts` pulls in both, so anything
+  under `src/` is on the load path of every consumer that imports a namespace — and of the
+  integration-test harness plugin, which loads the whole library on a phone. A `desktop-` name therefore
+  buys no exemption from being loaded there; it only says "calling this on mobile is a bug".
+  `desktop-trusted-input.ts` is the model: it names `window.electron` only *inside* its functions, so
+  importing it on mobile is inert.
+- **So a platform-only dependency that runs code while INITIALIZING must be dynamically imported.** A
+  static `import { existsSync } from 'node:fs'` is fine (mobile's `require` returns `undefined` and
+  nothing reads it at load time), but a dependency whose own top level *evaluates* a platform-only API is
+  not. `adm-zip` opens with `const { randomFillSync } = require('crypto')`, so a static
+  `import AdmZip from 'adm-zip'` in `desktop-demo-vault-opener.ts` threw during barrel initialization and
+  killed the harness plugin's load on Android — every test in its `integration-tests:android` project
+  failed behind an opaque "plugin failed to load". It is now loaded inside the one function that extracts.
 - No `mobile-` example exists yet; the rule is stated for symmetry.
-- (cannot be forced by ESLint — a filename convention; a custom check could flag `node:`/`window.electron`
-  usage in a non-`desktop-` file)
+- (the naming half cannot be forced by ESLint — a custom check could flag `node:`/`window.electron` usage
+  in a non-`desktop-` file. The **import-safety** half IS enforced, by the mobile-load check on the
+  harness plugin bundle described under **Build** — that bundle imports the entire library, so it stands
+  in for the worst-case consumer.)
 
 ### L6. Public-facing APIs must be cross-platform-loadable — internalize the platform split
 
