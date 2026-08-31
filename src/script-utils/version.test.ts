@@ -1,4 +1,5 @@
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -10,6 +11,7 @@ import type { GenericObject } from '../type-guards.ts';
 import type { EditJsonParams } from './json.ts';
 import type { ResolvePathFromRootSafeParams } from './root.ts';
 
+import { noopAsync } from '../function.ts';
 import {
   addGitTag,
   addUpdatedFilesToGit,
@@ -41,6 +43,7 @@ const {
   mockEditPackageLockJson,
   mockExecFromRoot,
   mockExistsSync,
+  mockMkdtemp,
   mockNpmRun,
   mockNpmRunOptional,
   mockReaddirPosix,
@@ -59,6 +62,7 @@ const {
   mockEditPackageLockJson: vi.fn(),
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockMkdtemp: vi.fn(),
   mockNpmRun: vi.fn(),
   mockNpmRunOptional: vi.fn(),
   mockReaddirPosix: vi.fn(),
@@ -98,6 +102,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   return {
     ...$module,
     cp: mockCp,
+    mkdtemp: mockMkdtemp,
     readFile: mockReadFile,
     rm: mockRm,
     writeFile: mockWriteFile
@@ -129,6 +134,9 @@ vi.mock('../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
 }));
 
+const SCRATCH_FOLDER = '/tmp/obsidian-dev-utils-changelog-abc123';
+const SCRATCH_CHANGELOG_PATH = `${SCRATCH_FOLDER}/CHANGELOG.md`;
+
 beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
@@ -137,6 +145,7 @@ beforeEach(() => {
   mockEditNpmShrinkWrapJson.mockResolvedValue(undefined);
   mockEditJson.mockResolvedValue(undefined);
   mockCp.mockResolvedValue(undefined);
+  mockMkdtemp.mockResolvedValue(SCRATCH_FOLDER);
   mockRm.mockResolvedValue(undefined);
   mockNpmRun.mockResolvedValue(undefined);
   mockNpmRunOptional.mockResolvedValue(undefined);
@@ -152,6 +161,21 @@ function setIsTty(value: boolean | undefined): void {
     value,
     writable: true
   });
+}
+
+/**
+ * Mimics a review that leaves the composed changelog exactly as it was handed over: whatever is written to
+ * the scratch copy is what is read back from it. Any other path reads back `previousChangelog`.
+ */
+function stubPassThroughReview(previousChangelog = ''): void {
+  let scratchContent = '';
+  mockWriteFile.mockImplementation((path: string, content: string) => {
+    if (path === SCRATCH_CHANGELOG_PATH) {
+      scratchContent = content;
+    }
+    return noopAsync();
+  });
+  mockReadFile.mockImplementation((path: string) => Promise.resolve(path === SCRATCH_CHANGELOG_PATH ? scratchContent : previousChangelog));
 }
 
 describe('VersionUpdateType', () => {
@@ -639,6 +663,7 @@ describe('autolinkBareUrls', () => {
 describe('updateChangelog', () => {
   it('should autolink bare URLs in the generated bullets', async () => {
     mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
     mockExecFromRoot
       .mockResolvedValueOnce('fix: re https://github.com/user/repo/issues/146\0')
       .mockResolvedValueOnce('');
@@ -655,6 +680,7 @@ describe('updateChangelog', () => {
 
   it('should create changelog from scratch when file does not exist', async () => {
     mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
     mockExecFromRoot
       .mockResolvedValueOnce('Initial commit\0')
       .mockResolvedValueOnce('');
@@ -663,7 +689,7 @@ describe('updateChangelog', () => {
     });
     await updateChangelog('1.0.0');
     expect(mockWriteFile).toHaveBeenCalledWith(
-      expect.stringContaining('CHANGELOG.md'),
+      '/root/CHANGELOG.md',
       expect.stringContaining('## 1.0.0'),
       'utf-8'
     );
@@ -671,7 +697,7 @@ describe('updateChangelog', () => {
 
   it('should append to existing changelog', async () => {
     mockExistsSync.mockReturnValue(true);
-    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 0.9.0\n\n- Old change\n');
+    stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Old change\n');
     mockExecFromRoot
       .mockResolvedValueOnce('New feature\0')
       .mockResolvedValueOnce('');
@@ -680,7 +706,7 @@ describe('updateChangelog', () => {
     });
     await updateChangelog('1.0.0');
     expect(mockWriteFile).toHaveBeenCalledWith(
-      expect.any(String),
+      '/root/CHANGELOG.md',
       expect.stringContaining('## 0.9.0'),
       'utf-8'
     );
@@ -688,6 +714,7 @@ describe('updateChangelog', () => {
 
   it('should open VS Code when available', async () => {
     mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
     mockExecFromRoot
       .mockResolvedValueOnce('msg\0')
       .mockResolvedValueOnce('1.92.0')
@@ -701,6 +728,7 @@ describe('updateChangelog', () => {
 
   it('should fall back to console when VS Code is not available', async () => {
     mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
     mockExecFromRoot
       .mockResolvedValueOnce('msg\0')
       .mockResolvedValueOnce('');
@@ -711,8 +739,74 @@ describe('updateChangelog', () => {
     expect(mockCreateInterface).toHaveBeenCalled();
   });
 
+  it('should review a scratch copy and write only the reviewed result into the repository', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 1.0.0\n\n- Hand-written note\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('msg\0')
+      .mockResolvedValueOnce('1.92.0')
+      .mockResolvedValueOnce('');
+    await updateChangelog('1.0.0');
+
+    expect(mockMkdtemp).toHaveBeenCalledWith(expect.stringContaining('obsidian-dev-utils-changelog-'));
+    expect(mockWriteFile).toHaveBeenCalledWith(SCRATCH_CHANGELOG_PATH, expect.stringContaining('- msg\n'), 'utf-8');
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['code', '-w', SCRATCH_CHANGELOG_PATH], expect.any(Object));
+    expect(mockReadFile).toHaveBeenCalledWith(SCRATCH_CHANGELOG_PATH, 'utf-8');
+    // The repository gets the REVIEWED text, and gets it only after the review is over.
+    expect(mockWriteFile).toHaveBeenCalledWith('/root/CHANGELOG.md', '# CHANGELOG\n\n## 1.0.0\n\n- Hand-written note\n', 'utf-8');
+    expect(mockRm).toHaveBeenCalledWith(SCRATCH_FOLDER, {
+      force: true,
+      recursive: true
+    });
+  });
+
+  it('should leave the repository untouched and remove the scratch folder when the review fails', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockExecFromRoot.mockImplementation((command: string | string[]) => {
+      const commandString = Array.isArray(command) ? command.join(' ') : command;
+      if (commandString.startsWith('code -w')) {
+        return Promise.reject(new Error('Editor crashed'));
+      }
+      if (commandString === 'code --version') {
+        return Promise.resolve('1.92.0');
+      }
+      return Promise.resolve('msg\0');
+    });
+
+    await expect(updateChangelog('1.0.0')).rejects.toThrow('Editor crashed');
+    expect(mockWriteFile).not.toHaveBeenCalledWith('/root/CHANGELOG.md', expect.any(String), 'utf-8');
+    expect(mockRm).toHaveBeenCalledWith(SCRATCH_FOLDER, {
+      force: true,
+      recursive: true
+    });
+  });
+
+  it('should use the prepared notes file instead of the commit log, and skip the review entirely', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReadFile.mockResolvedValue('- Prepared note\r\n- Another one\r\n');
+    await updateChangelog('1.0.0', { changelogFilePath: '/notes.md' });
+
+    expect(mockReadFile).toHaveBeenCalledWith('/notes.md', 'utf-8');
+    expect(mockWriteFile).toHaveBeenCalledWith('/root/CHANGELOG.md', '# CHANGELOG\n\n## 1.0.0\n\n- Prepared note\n- Another one\n', 'utf-8');
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith(expect.stringContaining('git log'), expect.any(Object));
+    expect(mockMkdtemp).not.toHaveBeenCalled();
+    expect(mockCreateInterface).not.toHaveBeenCalled();
+  });
+
+  it('should prefer the prepared notes file over an explicitly requested review', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReadFile.mockResolvedValue('- Prepared note\n');
+    await updateChangelog('1.0.0', {
+      changelogFilePath: '/notes.md',
+      shouldEditChangelog: true
+    });
+    expect(mockMkdtemp).not.toHaveBeenCalled();
+    expect(mockCreateInterface).not.toHaveBeenCalled();
+  });
+
   it('should keep only the first line of multi-line commit messages', async () => {
     mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
     mockExecFromRoot
       .mockResolvedValueOnce('Line1\nLine2\0')
       .mockResolvedValueOnce('');
@@ -735,7 +829,7 @@ describe('updateChangelog', () => {
   it('should handle existing changelog without trailing newline', async () => {
     mockExistsSync.mockReturnValue(true);
     // No trailing \n — last element after split won't be ''
-    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 0.9.0\n\n- Old change');
+    stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Old change');
     mockExecFromRoot
       .mockResolvedValueOnce('New feature\0')
       .mockResolvedValueOnce('');
@@ -744,7 +838,7 @@ describe('updateChangelog', () => {
     });
     await updateChangelog('1.0.0');
     expect(mockWriteFile).toHaveBeenCalledWith(
-      expect.any(String),
+      '/root/CHANGELOG.md',
       expect.stringContaining('## 0.9.0'),
       'utf-8'
     );
@@ -755,10 +849,11 @@ describe('updateChangelog', () => {
     mockExecFromRoot.mockResolvedValueOnce('msg\0');
     await updateChangelog('1.0.0', { shouldEditChangelog: false });
     expect(mockWriteFile).toHaveBeenCalledWith(
-      expect.stringContaining('CHANGELOG.md'),
+      '/root/CHANGELOG.md',
       expect.stringContaining('## 1.0.0'),
       'utf-8'
     );
+    expect(mockMkdtemp).not.toHaveBeenCalled();
     expect(mockCreateInterface).not.toHaveBeenCalled();
     expect(mockExecFromRoot).not.toHaveBeenCalledWith(['code', '-w', expect.any(String)], expect.any(Object));
     expect(mockExecFromRoot).not.toHaveBeenCalledWith('code --version', expect.any(Object));
@@ -783,6 +878,7 @@ describe('parseVersionArgs', () => {
   it('should parse all flags', () => {
     const { options, versionUpdateType } = parseVersionArguments([
       'patch',
+      '--changelog-file=notes.md',
       '--min-app-version=1.9.0',
       '--no-build',
       '--no-changelog-editing',
@@ -793,6 +889,7 @@ describe('parseVersionArgs', () => {
     ]);
     expect(versionUpdateType).toBe('patch');
     expect(options).toEqual({
+      changelogFilePath: 'notes.md',
       minAppVersion: '1.9.0',
       shouldArchiveDemoVault: false,
       shouldBuild: false,
@@ -818,10 +915,27 @@ describe('parseVersionArgs', () => {
     const { options } = parseVersionArguments(['patch', '--min-app-version=1.9.0']);
     expect(options.minAppVersion).toBe('1.9.0');
   });
+
+  it('should parse the prepared changelog notes path with --changelog-file', () => {
+    const { options } = parseVersionArguments(['patch', '--changelog-file=notes.md']);
+    expect(options.changelogFilePath).toBe('notes.md');
+  });
 });
 
 describe('updateVersion', () => {
+  let isOriginallyTty: boolean | undefined;
+
+  beforeEach(() => {
+    isOriginallyTty = process.stdin.isTTY;
+  });
+
+  afterEach(() => {
+    setIsTty(isOriginallyTty);
+  });
+
   function setupFullMocks(): void {
+    // The interactive changelog review is on by default, and the preflight refuses it without a terminal.
+    setIsTty(true);
     mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: '1.0.0' });
     mockExistsSync.mockReturnValue(false);
     mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
@@ -1099,5 +1213,73 @@ describe('updateVersion', () => {
     mockReaddirPosix.mockResolvedValue([]);
     await updateVersion('prerelease', { shouldRelease: false });
     expect(mockArchivePluginDemoVault).not.toHaveBeenCalled();
+  });
+
+  it('should refuse up front when the interactive changelog review has no terminal to answer it', async () => {
+    setupFullMocks();
+    setIsTty(false);
+    await expect(updateVersion('patch')).rejects.toThrow('--changelog-file');
+    // The whole point of the preflight placement: nothing is checked, built or written first.
+    expect(mockNpmRun).not.toHaveBeenCalled();
+    expect(mockEditPackageJson).not.toHaveBeenCalled();
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('should not refuse without a terminal when prepared changelog notes are supplied', async () => {
+    setupFullMocks();
+    setIsTty(false);
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { changelogFilePath: '/notes.md' });
+    expect(mockEditPackageJson).toHaveBeenCalled();
+    expect(mockMkdtemp).not.toHaveBeenCalled();
+  });
+
+  it('should not refuse without a terminal when the changelog review is disabled', async () => {
+    setupFullMocks();
+    setIsTty(false);
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { shouldEditChangelog: false });
+    expect(mockEditPackageJson).toHaveBeenCalled();
+  });
+
+  it('should settle the changelog before any file is written, and write it only after the version bump', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    const steps: string[] = [];
+    mockExecFromRoot.mockImplementation((command: string | string[]) => {
+      const commandString = Array.isArray(command) ? command.join(' ') : command;
+      if (commandString.startsWith('code -w')) {
+        steps.push('review');
+        return Promise.resolve('');
+      }
+      if (commandString === 'code --version') {
+        return Promise.resolve('1.92.0');
+      }
+      if (commandString.startsWith('git commit')) {
+        steps.push('commit');
+        return Promise.resolve('');
+      }
+      if (commandString.startsWith('git tag')) {
+        return Promise.resolve('1.0.1');
+      }
+      if (commandString.startsWith('gh repo view')) {
+        return Promise.resolve('https://github.com/user/repo');
+      }
+      if (commandString.includes('npm pack')) {
+        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2));
+      }
+      return Promise.resolve('');
+    });
+    mockEditPackageJson.mockImplementation(() => {
+      steps.push('bump');
+      return noopAsync();
+    });
+    mockWriteFile.mockImplementation((path: string) => {
+      steps.push(path === SCRATCH_CHANGELOG_PATH ? 'write-scratch' : 'write-changelog');
+      return noopAsync();
+    });
+
+    await updateVersion('patch');
+    expect(steps).toEqual(['write-scratch', 'review', 'bump', 'write-changelog', 'commit']);
   });
 });

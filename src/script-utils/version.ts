@@ -12,10 +12,12 @@ import type { ReleaseType } from 'semver';
 import { existsSync } from 'node:fs';
 import {
   cp,
+  mkdtemp,
   readFile,
   rm,
   writeFile
 } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 import {
@@ -86,9 +88,23 @@ export interface ParsedVersionArguments {
  */
 export interface UpdateChangelogOptions {
   /**
+   * A path to a file whose contents become the body of the new version's changelog section, instead of
+   * the bullets derived from the commit messages. Use it to supply prepared release notes from a
+   * non-interactive caller (a background process, CI, an agent).
+   *
+   * Setting it implies no interactive review: the commit log is not read, and the changelog is never
+   * opened in the editor nor waited on at the console, regardless of {@link shouldEditChangelog}.
+   *
+   * @default the first-parent commit subjects since the previous version
+   */
+  readonly changelogFilePath?: string | undefined;
+
+  /**
    * Whether to open the generated changelog in the editor for an interactive review. When `false`,
    * the changelog is still generated from commit messages, but it is not opened in the editor for
    * manual review.
+   *
+   * Ignored when {@link changelogFilePath} is set.
    *
    * @default `true`
    */
@@ -99,6 +115,18 @@ export interface UpdateChangelogOptions {
  * Options for {@link updateVersion}.
  */
 export interface UpdateVersionOptions {
+  /**
+   * A path to a file whose contents become the body of the new version's changelog section, instead of
+   * the bullets derived from the commit messages. Use it to supply prepared release notes from a
+   * non-interactive caller (a background process, CI, an agent).
+   *
+   * Setting it implies no interactive review: the commit log is not read, and the changelog is never
+   * opened in the editor nor waited on at the console, regardless of {@link shouldEditChangelog}.
+   *
+   * @default the first-parent commit subjects since the previous version
+   */
+  readonly changelogFilePath?: string | undefined;
+
   /**
    * An explicit `minAppVersion` to write into the plugin's `manifest.json` and its new `versions.json`
    * entry. When set, it is used verbatim and the latest Obsidian desktop version is not fetched at all.
@@ -140,6 +168,10 @@ export interface UpdateVersionOptions {
 
   /**
    * Whether to open the generated changelog in the editor for an interactive review.
+   *
+   * Ignored when {@link changelogFilePath} is set. When it is neither set nor disabled, the release
+   * requires an interactive terminal, and {@link updateVersion} refuses up front without one rather
+   * than blocking on an editor nobody will close.
    *
    * @default `true`
    */
@@ -471,8 +503,10 @@ export async function gitPush(): Promise<void> {
  * Parses the command-line arguments for a version update into a version update type and
  * {@link UpdateVersionOptions}.
  *
- * Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. `--min-app-version`
- * takes a value instead and has no default. Recognized flags:
+ * Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. `--changelog-file` and
+ * `--min-app-version` take a value instead and have no default. Recognized flags:
+ * - `--changelog-file=<path>` — use this file's contents as the new version's changelog section instead of
+ *   the commit-derived bullets, and skip the interactive review entirely.
  * - `--min-app-version=<x.y.z>` — write this `minAppVersion` into the plugin's `manifest.json` and its new
  *   `versions.json` entry instead of tracking the latest Obsidian desktop version.
  * - `--no-build` — skip the build step (only safe when the build output already matches the current code).
@@ -491,6 +525,7 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
     // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
     args: $arguments,
     options: {
+      'changelog-file': { type: 'string' },
       'min-app-version': { type: 'string' },
       'no-build': { type: 'boolean' },
       'no-changelog-editing': { type: 'boolean' },
@@ -503,6 +538,7 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
 
   return {
     options: {
+      changelogFilePath: values['changelog-file'],
       minAppVersion: values['min-app-version'],
       shouldArchiveDemoVault: !(values['no-demo-vault'] ?? false),
       shouldBuild: !(values['no-build'] ?? false),
@@ -570,70 +606,16 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
  * This function reads the current changelog, appends new entries for the latest version,
  * and prompts the user to review the changes.
  *
+ * The review happens on a scratch copy in the OS temporary folder, and the repository's own
+ * `CHANGELOG.md` is written only once the review is over — so interrupting the review leaves the
+ * repository untouched.
+ *
  * @param newVersion - The new version number to be added to the changelog.
  * @param options - The {@link UpdateChangelogOptions} controlling the changelog review behavior.
  * @returns A {@link Promise} that resolves when the changelog update is complete.
  */
 export async function updateChangelog(newVersion: string, options: UpdateChangelogOptions = {}): Promise<void> {
-  const { shouldEditChangelog = true } = options;
-  const HEADER_LINES_COUNT = 2;
-  const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
-  let previousChangelogLines: string[];
-  if (existsSync(changelogPath)) {
-    const content = await readFile(changelogPath, 'utf-8');
-    previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
-    if (previousChangelogLines.at(-1) === '') {
-      previousChangelogLines.pop();
-    }
-  } else {
-    previousChangelogLines = [];
-  }
-
-  const lastTag = replaceAll({
-    $string: previousChangelogLines[0] ?? '',
-    replacer: '',
-    searchValue: '## '
-  });
-  const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-  const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
-  const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toFirstLine(commitMessage));
-
-  let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
-
-  for (const message of commitMessages) {
-    newChangeLog += `- ${autolinkBareUrls(message)}\n`;
-  }
-
-  if (previousChangelogLines.length > 0) {
-    newChangeLog += '\n';
-    for (const line of previousChangelogLines) {
-      newChangeLog += `${line}\n`;
-    }
-  }
-
-  await writeFile(changelogPath, newChangeLog, 'utf-8');
-
-  if (!shouldEditChangelog) {
-    return;
-  }
-
-  const codeVersion = await execFromRoot('code --version', {
-    isQuiet: true,
-    shouldIgnoreExitCode: true
-  });
-  const versionDebugger = getLibDebugger('Version');
-  if (codeVersion) {
-    versionDebugger(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
-    await execFromRoot(['code', '-w', changelogPath], {
-      isQuiet: true,
-      shouldIgnoreExitCode: true
-    });
-  } else {
-    versionDebugger('Could not find Visual Studio Code in your PATH. Using console mode instead.');
-    await createInterface(process.stdin, process.stdout).question(
-      `Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Press Enter when you are done...`
-    );
-  }
+  await writeChangelog(await prepareChangelog(newVersion, options));
 }
 
 /**
@@ -642,12 +624,15 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  * This function performs a series of tasks to handle version updates:
  * 1. Validates the version update type.
  * 2. Checks if Git and GitHub CLI are installed.
- * 3. Verifies that the Git repository is clean.
- * 4. Runs spellcheck and linting.
- * 5. Builds the project.
- * 6. Updates version in files and changelog.
- * 7. Adds updated files to Git, tags the commit, and pushes to the repository.
- * 8. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
+ * 3. Verifies that the interactive changelog review, if one is due, can actually be answered.
+ * 4. Verifies that the Git repository is clean.
+ * 5. Runs spellcheck and linting.
+ * 6. Builds the project.
+ * 7. Settles the changelog — the only step that can block on a human, and deliberately the last one before
+ *    anything is written, so an interrupt here leaves the working tree clean and the release re-runnable.
+ * 8. Updates version in files, then writes the settled changelog.
+ * 9. Adds updated files to Git, tags the commit, and pushes to the repository.
+ * 10. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
  *
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, premajor, preminor, prepatch, prerelease, or x.y.z[-suffix]).
  * @param options - The {@link UpdateVersionOptions} controlling the release behavior.
@@ -655,6 +640,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  */
 export async function updateVersion(versionUpdateType?: string, options: UpdateVersionOptions = {}): Promise<void> {
   const {
+    changelogFilePath,
     minAppVersion,
     prepareGitHubRelease,
     shouldArchiveDemoVault = true,
@@ -687,6 +673,10 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   validate(versionUpdateType);
   await assertGitInstalled();
   await assertGitHubCliInstalled();
+  // Checked here, before the checks and the build, rather than at the changelog step itself: a non-interactive
+  // Caller learns in seconds instead of paying for the whole preflight and only then blocking on an editor
+  // Window nobody will ever close.
+  assertChangelogStepIsNonBlocking(changelogFilePath, shouldEditChangelog);
 
   if (shouldRunChecks) {
     await assertGitRepoClean();
@@ -709,12 +699,21 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   }
 
   const newVersion = await getNewVersion(versionUpdateType);
+
+  // The changelog is settled BEFORE anything is written, because this is the only step that can block on a
+  // Human. Interrupting it therefore leaves the working tree pristine and the whole release re-runnable,
+  // Instead of stranding a bumped-but-uncommitted tree that `assertGitRepoClean` then refuses to re-release.
+  const newChangeLog = await prepareChangelog(newVersion, {
+    changelogFilePath,
+    shouldEditChangelog
+  });
+
   await updateVersionInFiles(newVersion);
   if (isObsidianPlugin) {
     await updateVersionInFilesForPlugin(newVersion, minAppVersion);
   }
 
-  await updateChangelog(newVersion, { shouldEditChangelog });
+  await writeChangelog(newChangeLog);
   await addUpdatedFilesToGit(newVersion, { shouldVerifyCommit });
   await addGitTag(newVersion);
 
@@ -771,6 +770,25 @@ export function validate(versionUpdateType: string): void {
 }
 
 /**
+ * Refuses a release that would have to stop at the interactive changelog review with nobody there to
+ * finish it. Called from the preflight so the refusal costs seconds, not the whole check-and-build gate.
+ *
+ * @param changelogFilePath - The path to the prepared release notes, or `undefined` when there is none.
+ * @param shouldEditChangelog - Whether the generated changelog is meant to be reviewed interactively.
+ */
+function assertChangelogStepIsNonBlocking(changelogFilePath: string | undefined, shouldEditChangelog: boolean): void {
+  if (changelogFilePath !== undefined || !shouldEditChangelog || process.stdin.isTTY) {
+    return;
+  }
+
+  throw new Error(
+    'The interactive changelog review needs a terminal, and this process has none, so the release would block forever.'
+      + ' Pass `--changelog-file <path>` to supply prepared release notes, or `--no-changelog-editing` to accept the'
+      + ' changelog generated from the commit messages as is.'
+  );
+}
+
+/**
  * Fetches the latest version of Obsidian that the desktop app can actually run.
  *
  * Reads {@link DESKTOP_RELEASES_JSON_URL}, not the GitHub `releases/latest` API. The API returns the newest
@@ -790,6 +808,109 @@ async function getLatestObsidianVersion(): Promise<string> {
 
 function isPreRelease(version: string): boolean {
   return prerelease(version) !== null;
+}
+
+/**
+ * Composes the full new `CHANGELOG.md` content — including the interactive review, when one is due —
+ * WITHOUT touching the repository. Nothing here writes into the repo, so an interrupt anywhere in the
+ * review window (the whole point of the split) leaves the working tree exactly as it was.
+ *
+ * @param newVersion - The new version number the changelog section is written for.
+ * @param options - The {@link UpdateChangelogOptions} controlling where the section body comes from.
+ * @returns A {@link Promise} that resolves to the settled `CHANGELOG.md` content.
+ */
+async function prepareChangelog(newVersion: string, options: UpdateChangelogOptions): Promise<string> {
+  const {
+    changelogFilePath,
+    shouldEditChangelog = true
+  } = options;
+  const HEADER_LINES_COUNT = 2;
+  const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
+  let previousChangelogLines: string[];
+  if (existsSync(changelogPath)) {
+    const content = await readFile(changelogPath, 'utf-8');
+    previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
+    if (previousChangelogLines.at(-1) === '') {
+      previousChangelogLines.pop();
+    }
+  } else {
+    previousChangelogLines = [];
+  }
+
+  let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
+
+  if (changelogFilePath === undefined) {
+    const lastTag = replaceAll({
+      $string: previousChangelogLines[0] ?? '',
+      replacer: '',
+      searchValue: '## '
+    });
+    const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
+    const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
+    const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toFirstLine(commitMessage));
+
+    for (const message of commitMessages) {
+      newChangeLog += `- ${autolinkBareUrls(message)}\n`;
+    }
+  } else {
+    const preparedNotes = await readFile(changelogFilePath, 'utf-8');
+    newChangeLog += `${replaceAll({ $string: preparedNotes, replacer: '\n', searchValue: '\r\n' }).trim()}\n`;
+  }
+
+  if (previousChangelogLines.length > 0) {
+    newChangeLog += '\n';
+    for (const line of previousChangelogLines) {
+      newChangeLog += `${line}\n`;
+    }
+  }
+
+  // Prepared notes are already the reviewed text, so they never open an editor, whatever `shouldEditChangelog` says.
+  if (changelogFilePath !== undefined || !shouldEditChangelog) {
+    return newChangeLog;
+  }
+
+  return await reviewChangelog(newChangeLog);
+}
+
+/**
+ * Hands the composed changelog to the user for review on a scratch copy outside the repository, and
+ * returns whatever they left behind. The scratch folder is removed even when the review fails.
+ *
+ * @param newChangeLog - The composed `CHANGELOG.md` content to hand over for review.
+ * @returns A {@link Promise} that resolves to the reviewed content.
+ */
+async function reviewChangelog(newChangeLog: string): Promise<string> {
+  const scratchFolder = await mkdtemp(join(tmpdir(), 'obsidian-dev-utils-changelog-'));
+  const scratchChangelogPath = join(scratchFolder, ObsidianPluginRepoPaths.ChangelogMd);
+
+  try {
+    await writeFile(scratchChangelogPath, newChangeLog, 'utf-8');
+
+    const codeVersion = await execFromRoot('code --version', {
+      isQuiet: true,
+      shouldIgnoreExitCode: true
+    });
+    const versionDebugger = getLibDebugger('Version');
+    if (codeVersion) {
+      versionDebugger(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
+      await execFromRoot(['code', '-w', scratchChangelogPath], {
+        isQuiet: true,
+        shouldIgnoreExitCode: true
+      });
+    } else {
+      versionDebugger('Could not find Visual Studio Code in your PATH. Using console mode instead.');
+      await createInterface(process.stdin, process.stdout).question(
+        `Please update the ${scratchChangelogPath} file. Press Enter when you are done...`
+      );
+    }
+
+    return await readFile(scratchChangelogPath, 'utf-8');
+  } finally {
+    await rm(scratchFolder, {
+      force: true,
+      recursive: true
+    });
+  }
 }
 
 function toFirstLine($string: string): string {
@@ -834,4 +955,15 @@ async function updateVersionInFilesForPlugin(newVersion: string, minAppVersion: 
   }
 
   await copyUpdatedManifest();
+}
+
+/**
+ * Writes the composed changelog into the repository. Deliberately the last thing the changelog step does,
+ * so nothing lands on disk until the content is settled.
+ *
+ * @param newChangeLog - The settled `CHANGELOG.md` content to write.
+ * @returns A {@link Promise} that resolves once the changelog has been written.
+ */
+async function writeChangelog(newChangeLog: string): Promise<void> {
+  await writeFile(resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd }), newChangeLog, 'utf-8');
 }
