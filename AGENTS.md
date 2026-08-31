@@ -352,8 +352,9 @@ export function myFunction(param: Type): ReturnType {
   read structurally. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
   actually catch a violation; a unit test cannot, because it has only one copy of the library.
 - A plugin whose surface this library integrates with (today: Notebook Navigator, see
-  `src/obsidian/notebook-navigator.ts`; and `folder-notes`, whose folder-note settings
-  `src/obsidian/folder-note.ts` reads) is reached through `app.plugins.getPlugin(<id>)` and typed by
+  `src/obsidian/notebook-navigator.ts`; `folder-notes`, whose folder-note settings
+  `src/obsidian/folder-note.ts` reads; and Templater, whose UNDOCUMENTED internals
+  `src/obsidian/templater.ts` wraps) is reached through `app.plugins.getPlugin(<id>)` and typed by
   **interfaces declared here**, narrowed to the members actually called. Do NOT add the other plugin as
   a dependency — most ship a `.d.ts` for download rather than an npm package, and depending on one
   turns an optional integration into a build requirement. This mirrors the vendored
@@ -361,6 +362,15 @@ export function myFunction(param: Type): ReturnType {
 - The value arrives as `unknown`, so narrow it with a **runtime type-guard predicate**, never an `as`
   cast (R1 G43). A version that predates the API, renames it, or breaks it then reads as "not there"
   and the integration stays dormant, instead of throwing while the user's context menu is opening.
+- **Binding to UNDOCUMENTED internals is a further step, and it ships in two tiers or not at all.**
+  Templater publishes nothing — not through this registry, not as a documented API — so
+  `src/obsidian/templater.ts` reads `plugin.templater`, which no version guarantee covers. Where that
+  trade-off is taken deliberately (owner's call, T689), the module says so in its `@file` block, NAMES
+  the Templater version its shapes were read from, and exposes BOTH a `resolve…Api` returning `null`
+  (for an optional integration) and a `require…Api` throwing a named error carrying a
+  `…UnavailabilityReason` (for a caller that cannot carry on without it). What is never acceptable is
+  the middle ground: an `as` cast that fails somewhere deep inside the other plugin with no name
+  attached to it.
 - Bind at **layout-ready**, not `onload`: plugin load order is not ours to choose, and the other
   plugin's API only exists once it is up.
 - **Menu surfaces plug in as additional `MenuEventRegistrar`s.** `CommandHandlerComponent` takes
