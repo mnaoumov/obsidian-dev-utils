@@ -780,7 +780,7 @@
     "yaml": "^2.9.0"
   },
   "peerDependencies": {
-    "obsidian-integration-testing": "^10.0.0"
+    "obsidian-integration-testing": "^11.0.0"
   },
   "peerDependenciesMeta": {
     "obsidian-integration-testing": {
