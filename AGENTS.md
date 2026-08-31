@@ -1088,7 +1088,7 @@ The major bump is safe for `@wdio/utils`, the only consumer left on `2.x`. It im
 node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already imposed that.
 
 **Never take `npm audit fix --force` here.** Its remedy for this advisory is
-`obsidian-integration-testing@1.1.2` — a downgrade across nine majors from the `10.x` in use (rule G100).
+`obsidian-integration-testing@1.1.2` — a downgrade across ten majors from the `11.x` in use (rule G100).
 
 **Remove this override** when `@wdio/utils` moves to `@puppeteer/browsers@^3` on its own, which is what
 [`pinned-versions.json`](pinned-versions.json) checks on every sweep.
