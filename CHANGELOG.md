@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 96.5.2
+
+- fix(deps): declare the obsidian-integration-testing peer at ^11
+- fix(deps): drop the brace-expansion file: override that breaks a clean install
+- chore: update libs
+- docs(agents): record how to pick a release bump, and squash superseded commits
+
 ## 96.5.1
 
 - fix(obsidian): load adm-zip lazily so the whole library still imports on mobile
