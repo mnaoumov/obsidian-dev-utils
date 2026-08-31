@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 96.5.1
+
+- fix(obsidian): load adm-zip lazily so the whole library still imports on mobile
+- feat(templater): add best-effort access to Templater's internals
+- feat(frontmatter): add a recursive empty-value cleaner
+- feat(file-system): add getBasename and getExtension for files and folders
+- feat(rmdir-guard): add opt-in RmdirGuardComponent
+- feat(url): add pathToFileUrl and move encodeUrl into url.ts
+
 ## 96.5.0
 
 - feat(abort-controller): add a shared, resettable app-wide abort controller
