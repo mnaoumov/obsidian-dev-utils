@@ -64,6 +64,12 @@ export enum CssClass {
   FileComponent = 'file-component',
 
   /**
+   * Obsidian's class for a control that is currently ON, reused so a pressed command button matches the
+   * app's own toggled controls.
+   */
+  IsActive = 'is-active',
+
+  /**
    * A CSS class for the placeholder.
    */
   IsPlaceholder = 'is-placeholder',
@@ -103,6 +109,21 @@ export enum CssClass {
    * A CSS class for the title of the minimized bar of the minimizable modal.
    */
   MinimizedModalBarTitle = 'minimized-modal-bar-title',
+
+  /**
+   * A CSS class for one button in a modal's command strip.
+   */
+  ModalCommand = 'modal-command',
+
+  /**
+   * A CSS class for the hotkey hint inside a modal command button.
+   */
+  ModalCommandHotkey = 'modal-command-hotkey',
+
+  /**
+   * A CSS class for the strip of commands a modal renders along its bottom edge.
+   */
+  ModalCommands = 'modal-commands',
 
   /**
    * Obsidian's class for a modal header button (e.g. the modal close button), reused to match the
@@ -191,6 +212,18 @@ export enum CssClass {
    * A CSS class for the popover.
    */
   Popover = 'popover',
+
+  /**
+   * Obsidian's class for one row of its modal instruction bar, reused so a self-created bar inherits the
+   * app's own instruction styling.
+   */
+  PromptInstruction = 'prompt-instruction',
+
+  /**
+   * Obsidian's class for its modal instruction bar, reused so a self-created bar inherits the app's own
+   * instruction styling.
+   */
+  PromptInstructions = 'prompt-instructions',
 
   /**
    * A CSS class for the prompt modal.
