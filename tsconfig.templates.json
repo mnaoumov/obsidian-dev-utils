@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "obsidian-dev-utils": ["./dist/lib/esm/index.d.mts"],
+      "obsidian-dev-utils/*": ["./dist/lib/esm/*.d.mts"]
+    }
+  },
+  "include": [
+    "./templates/**/*.ts"
+  ]
+}

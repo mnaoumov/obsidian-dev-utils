@@ -14,6 +14,9 @@ const BUILD_STEPS = [
   'build:lib',
   'build:generate-exports',
   'build:templates',
+  // Type-checks `templates/` against the `dist/lib/esm` declarations, so it must sit after they are built.
+  // A rename a template still spells the old way then fails the build instead of shipping (T754).
+  'build:validate-templates',
   'build:styles',
   // Must sit after the stylesheet it reads and before the two bundling steps below.
   // Those steps would otherwise inline the placeholders instead of the stamped values.
