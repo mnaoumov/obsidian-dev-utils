@@ -646,6 +646,7 @@
     "build:templates": "jiti scripts/build-templates.ts",
     "build:types": "jiti scripts/build-types.ts",
     "build:validate-declarations": "jiti scripts/build-validate-declarations.ts",
+    "build:validate-templates": "jiti scripts/build-validate-templates.ts",
     "commit": "jiti scripts/commit.ts",
     "docs:build": "jiti scripts/docs-build.ts",
     "docs:dev": "jiti scripts/docs-dev.ts",
