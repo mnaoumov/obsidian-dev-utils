@@ -20,6 +20,15 @@ import {
   it
 } from 'vitest';
 
+interface PromptCommandBuilderResult {
+  readonly changes: boolean[];
+  readonly hasOwnInstructionBar: boolean;
+  readonly isCheckedAfterPress: boolean;
+  readonly isCheckedOnOpen: boolean;
+  readonly purposeText: null | string;
+  readonly value: null | string;
+}
+
 interface PromptInvalidOutlineResult {
   readonly boxShadowAfterInput: string;
   readonly boxShadowOnOpen: string;
@@ -272,6 +281,83 @@ describe('prompt', () => {
     expect(result.errorColor).not.toBe('');
     expect(result.boxShadowOnOpen).not.toContain(result.errorColor);
     expect(result.boxShadowAfterInput).toContain(result.errorColor);
+    expect(result.value).toBeNull();
+  });
+
+  it('should render a command builder strip whose shortcut toggles the checkbox', async () => {
+    const result = await evalInObsidian({
+      async callback({ app, lib: { ModalCommandBuilder, pressKey, prompt, waitUntil } }): Promise<PromptCommandBuilderResult> {
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+        const changes: boolean[] = [];
+        const commandBuilder = new ModalCommandBuilder().addCheckbox({
+          key: '1',
+          modifiers: ['Alt'],
+          onChange: (isChecked: boolean) => {
+            changes.push(isChecked);
+          },
+          onInit: (checkboxEl: HTMLInputElement) => {
+            checkboxEl.checked = false;
+          },
+          purpose: 'Keep the old title as an alias'
+        });
+
+        const resultPromise = prompt({ app, commandBuilder });
+
+        try {
+          await waitUntil({
+            message: 'the prompt command strip renders its checkbox',
+            predicate: () => Boolean(getCheckboxEl()),
+            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+          });
+
+          // A `PromptModal` extends a plain `Modal`, which has NO `instructionsEl` — so a bar being here at
+          // All is the whole point of the test.
+          const hasOwnInstructionBar = Boolean(document.querySelector('.prompt-modal .prompt-instructions'));
+          const purposeText = document.querySelector('.prompt-modal .prompt-instruction > span:nth-child(2)')?.textContent ?? null;
+          const isCheckedOnOpen = getCheckboxEl()?.checked ?? false;
+
+          // The modal's scope reads the real key pipeline, so the press has to be trusted (G107). The
+          // Input already holds focus — `PromptModal` selects it on open.
+          pressKey({ key: '1', modifiers: ['Alt'] });
+          await waitUntil({
+            message: 'the checkbox toggles after alt+1',
+            predicate: () => getCheckboxEl()?.checked === true,
+            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+          });
+
+          const isCheckedAfterPress = getCheckboxEl()?.checked ?? false;
+
+          getCancelButton()?.click();
+          const value = await resultPromise;
+
+          return {
+            changes,
+            hasOwnInstructionBar,
+            isCheckedAfterPress,
+            isCheckedOnOpen,
+            purposeText,
+            value
+          };
+        } finally {
+          getCancelButton()?.click();
+        }
+
+        function getCancelButton(): HTMLButtonElement | undefined {
+          return [...document.querySelectorAll<HTMLButtonElement>('.prompt-modal .modal-content button')][1];
+        }
+
+        function getCheckboxEl(): HTMLInputElement | null {
+          return document.querySelector<HTMLInputElement>('.prompt-modal .prompt-instructions input[type="checkbox"]');
+        }
+      }
+    });
+
+    expect(result.hasOwnInstructionBar).toBe(true);
+    expect(result.purposeText).toBe('Keep the old title as an alias');
+    expect(result.isCheckedOnOpen).toBe(false);
+    expect(result.isCheckedAfterPress).toBe(true);
+    expect(result.changes).toEqual([true]);
     expect(result.value).toBeNull();
   });
 });

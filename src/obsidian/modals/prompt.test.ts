@@ -24,6 +24,10 @@ import {
 import { castTo } from '../../object-utils.ts';
 import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
+import {
+  ModalCommandBuilder,
+  ModalCommandsRenderMode
+} from './modal-command-builder.ts';
 import { prompt } from './prompt.ts';
 
 let app: AppOriginal;
@@ -42,7 +46,13 @@ vi.mock('../../async.ts', () => ({
 vi.mock('../css-class.ts', () => ({
   CssClass: {
     CancelButton: 'cancel-button',
+    IsActive: 'is-active',
+    ModalCommand: 'modal-command',
+    ModalCommandHotkey: 'modal-command-hotkey',
+    ModalCommands: 'modal-commands',
     OkButton: 'ok-button',
+    PromptInstruction: 'prompt-instruction',
+    PromptInstructions: 'prompt-instructions',
     PromptModal: 'prompt-modal',
     TextBox: 'text-box',
     Untouched: 'untouched'
@@ -364,5 +374,69 @@ describe('prompt', () => {
     const result = await resultPromise;
     expect(result).toBeNull();
     expect(reportValiditySpy).toHaveBeenCalled();
+  });
+
+  describe('commandBuilder', () => {
+    it('should render a supplied command builder into an instruction bar of its own', async () => {
+      let checkboxEl = null as HTMLInputElement | null;
+      const commandBuilder = new ModalCommandBuilder().addCheckbox({
+        key: '1',
+        modifiers: ['Alt'],
+        onChange: vi.fn(),
+        onInit: (element) => {
+          checkboxEl = element;
+        },
+        purpose: 'Keep the old title as an alias'
+      });
+
+      const result = await prompt({ app, commandBuilder });
+      expect(result).toBeNull();
+      // A `PromptModal` has no `instructionsEl`, so the strip has to be one the builder created itself.
+      expect(ensureNonNullable(checkboxEl).closest('.prompt-instructions')).toBeTruthy();
+    });
+
+    it('should let a rendered checkbox report its change', async () => {
+      const onChange = vi.fn();
+      let checkboxEl = null as HTMLInputElement | null;
+      const commandBuilder = new ModalCommandBuilder().addCheckbox({
+        key: '1',
+        onChange,
+        onInit: (element) => {
+          checkboxEl = element;
+        },
+        purpose: 'Update the first header'
+      });
+
+      const resultPromise = prompt({ app, commandBuilder });
+      queueMicrotask(() => {
+        const element = ensureNonNullable(checkboxEl);
+        element.checked = true;
+        element.dispatchEvent(new Event('change'));
+      });
+      const result = await resultPromise;
+      expect(result).toBeNull();
+      expect(onChange).toHaveBeenCalledWith(true);
+    });
+
+    it('should honour the requested render mode', async () => {
+      let checkboxEl = null as HTMLInputElement | null;
+      const commandBuilder = new ModalCommandBuilder().addCheckbox({
+        key: '1',
+        onChange: vi.fn(),
+        onInit: (element) => {
+          checkboxEl = element;
+        },
+        purpose: 'All files'
+      });
+
+      const result = await prompt({
+        app,
+        commandBuilder,
+        commandsRenderMode: ModalCommandsRenderMode.Buttons
+      });
+      expect(result).toBeNull();
+      // In `Buttons` mode the checkbox backs a button rather than being appended itself.
+      expect(ensureNonNullable(checkboxEl).isConnected).toBe(false);
+    });
   });
 });

@@ -15,6 +15,11 @@ import {
 
 import type { MaybeReturn } from '../../type.ts';
 import type {
+  ModalCommandBuilder,
+  ModalCommandBuilderBuildOptions,
+  ModalCommandsRenderMode
+} from './modal-command-builder.ts';
+import type {
   ModalBaseConstructorParams,
   ModalParamsBase
 } from './modal.ts';
@@ -24,6 +29,7 @@ import {
   invokeAsyncSafely
 } from '../../async.ts';
 import { noop } from '../../function.ts';
+import { normalizeOptionalProperties } from '../../object-utils.ts';
 import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
 import { isSpellcheckEnabled } from '../obsidian-settings.ts';
@@ -40,6 +46,22 @@ export interface PromptParams extends ModalParamsBase {
    * A text for the "Cancel" button.
    */
   readonly cancelButtonText?: string;
+
+  /**
+   * Extra controls — checkboxes, dropdowns and keyboard shortcuts — rendered as a strip along the bottom
+   * of the modal, so a caller gets a text input plus options with no bespoke modal of its own.
+   *
+   * Hand it a configured {@link ModalCommandBuilder}; the modal builds it. The strip is rendered after
+   * the buttons, so it sits along the bottom edge where a `SuggestModal`'s instruction bar sits.
+   */
+  readonly commandBuilder?: ModalCommandBuilder;
+
+  /**
+   * The way {@link PromptParams.commandBuilder}'s controls are rendered.
+   *
+   * @default `ModalCommandsRenderMode.Instructions`
+   */
+  readonly commandsRenderMode?: ModalCommandsRenderMode;
 
   /**
    * A default value to pre-fill the input field.
@@ -80,6 +102,8 @@ type PromptModalConstructorParams = ModalBaseConstructorParams<null | string> & 
 
 class PromptModal extends ModalBase<null | string> {
   private readonly cancelButtonText: string;
+  private readonly commandBuilder: ModalCommandBuilder | null;
+  private readonly commandsRenderMode: ModalCommandsRenderMode | undefined;
   private isOkClicked = false;
   private isTouched = false;
   private readonly okButtonText: string;
@@ -92,6 +116,8 @@ class PromptModal extends ModalBase<null | string> {
     super(params);
     this.addCssClasses(CssClass.PromptModal);
     this.cancelButtonText = params.cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel);
+    this.commandBuilder = params.commandBuilder ?? null;
+    this.commandsRenderMode = params.commandsRenderMode;
     this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
     this.placeholder = params.placeholder ?? '';
     this.title = params.title ?? '';
@@ -159,6 +185,10 @@ class PromptModal extends ModalBase<null | string> {
     cancelButton.setButtonText(this.cancelButtonText);
     cancelButton.onClick(this.close.bind(this));
     cancelButton.setClass(CssClass.CancelButton);
+
+    // Built last so the strip lands along the modal's bottom edge, where a `SuggestModal`'s instruction
+    // Bar sits.
+    this.commandBuilder?.build(this, normalizeOptionalProperties<ModalCommandBuilderBuildOptions>({ renderMode: this.commandsRenderMode }));
   }
 
   private handleOk(event: Event, textComponent: TextComponent): void {

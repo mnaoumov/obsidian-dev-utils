@@ -1,0 +1,65 @@
+.obsidian-dev-utils {
+  // The strip of commands along the bottom of a modal.
+  //
+  // In `Instructions` render mode it also carries Obsidian's own `.prompt-instructions`, so this rule only
+  // has to supply the separator and the wrapping that a self-created bar does not inherit; in `Buttons`
+  // mode it is the whole strip.
+  &.modal-commands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-2-2);
+    padding: var(--size-4-2) var(--size-4-3);
+    border-top: 1px solid var(--background-modifier-border);
+  }
+
+  // One command button. Replaces the instruction bar rather than supplementing it: the bar can only ever
+  // say which key to press, and on a phone there is no modifier key to press, so every control it names
+  // is unreachable there.
+  &.modal-command {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--size-2-2);
+
+    // Comfortably tappable on a phone, where this strip is the only way in.
+    min-height: var(--size-4-8);
+    padding: var(--size-2-1) var(--size-4-2);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    background-color: var(--background-secondary);
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    white-space: nowrap;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      background-color: var(--background-modifier-hover);
+      color: var(--text-normal);
+    }
+
+    // A toggle that is ON. An action never carries it — it does something and is done, so there is no
+    // state for it to show.
+    &.is-active {
+      border-color: var(--interactive-accent);
+      background-color: var(--interactive-accent);
+      color: var(--text-on-accent);
+    }
+
+    // Disabled rather than removed: a strip that lost buttons as modes change would reflow under the
+    // pointer, which on a phone means a mis-tap.
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+
+  &.modal-command-hotkey {
+    color: var(--text-faint);
+    font-size: var(--font-smallest);
+
+    // Faint against the surface is right; faint against the accent fill is invisible.
+    .modal-command.is-active & {
+      opacity: 0.7;
+      color: var(--text-on-accent);
+    }
+  }
+}
