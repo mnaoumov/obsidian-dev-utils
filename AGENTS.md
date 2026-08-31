@@ -1175,6 +1175,16 @@ examples.
   release simply re-runnable — the earlier order bumped `package.json` / `manifest.json` / `versions.json`
   first, and a stop at the editor then stranded a dirty tree that `assertGitRepoClean` refused to re-release
   (T731, hit cutting App Update Notifier 1.0.0).
+- **The GitHub release body is the changelog section delimited by LINES, terminating at the next `'## '`
+  heading or at end-of-file — never by a regex that requires a following heading.** `getReleaseNotes` used to match
+  `\n## <version>\n\n(…)\n\n##`, whose trailing `##` is mandatory. Sections are PREPENDED, so the newest one is
+  bounded by the previous release only once a previous release exists: on a **first release** the match was
+  `null` and the body silently shipped as nothing but the `**Full Changelog**` link. It reached the store on
+  five plugins' `1.0.0` — nested-properties, edit-link-alias, backlink-full-path, refresh-any-view,
+  app-update-notifier — i.e. exactly the release where notes matter most, and no warning was ever emitted
+  (T732). The same regex also truncated a section at its own `###` sub-heading, because it treated the
+  delimiter as if only version headings could produce it. `extractChangelogSection` now scans lines and stops
+  at `'## '` **with the trailing space** (so `###` stays inside the section) or at the end of the file.
 - **A release without a TTY refuses in the preflight, not after the gate.** `npm run version` checks
   `process.stdin.isTTY` right after the git/gh assertions and before the checks and build, so an agent- or
   CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release

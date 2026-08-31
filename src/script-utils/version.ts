@@ -439,15 +439,8 @@ export async function getNewVersion(versionUpdateType: string): Promise<string> 
 export async function getReleaseNotes(newVersion: string): Promise<string> {
   const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
   const content = await readFile(changelogPath, 'utf-8');
-  const newVersionEscaped = replaceAll({
-    $string: newVersion,
-    replacer: String.raw`\.`,
-    searchValue: '.'
-  });
-  const match = new RegExp(`\n## ${newVersionEscaped}\n\n((.|\n)+?)\n\n##`).exec(content);
-  /* v8 ignore start -- v8 tracks optional chaining and ternary as separate branches; both paths are tested. */
-  let releaseNotes = match?.[1] ? `${match[1]}\n\n` : '';
-  /* v8 ignore stop */
+  const section = extractChangelogSection(content, newVersion);
+  let releaseNotes = section ? `${section}\n\n` : '';
 
   const tagOutput = await execFromRoot('git tag --sort=-creatordate', { isQuiet: true });
   const tags = tagOutput.split(/\r?\n/);
@@ -786,6 +779,33 @@ function assertChangelogStepIsNonBlocking(changelogFilePath: string | undefined,
       + ' Pass `--changelog-file <path>` to supply prepared release notes, or `--no-changelog-editing` to accept the'
       + ' changelog generated from the commit messages as is.'
   );
+}
+
+/**
+ * Extracts the body of one version's `CHANGELOG.md` section — everything between its `## <version>` heading
+ * and whichever comes first, the next `## ` heading or the end of the file.
+ *
+ * Ending at the end of the file is not an edge case but the normal shape of a FIRST release: sections are
+ * prepended, so the newest one is bounded by the previous release only once a previous release exists. The
+ * regex this replaced required a trailing `\n\n##`, so every `1.0.0` silently published empty release notes.
+ * Terminating on `'## '` WITH its trailing space is what keeps an `###` sub-heading inside the section
+ * instead of truncating it there.
+ *
+ * @param changelogContent - The full contents of `CHANGELOG.md`.
+ * @param version - The version whose section to extract.
+ * @returns The section body, trimmed, or an empty string when the changelog has no section for that version.
+ */
+function extractChangelogSection(changelogContent: string, version: string): string {
+  const lines = changelogContent.split(/\r?\n/);
+  const headingIndex = lines.indexOf(`## ${version}`);
+  if (headingIndex === -1) {
+    return '';
+  }
+
+  const bodyStartIndex = headingIndex + 1;
+  const nextHeadingOffset = lines.slice(bodyStartIndex).findIndex((line) => line.startsWith('## '));
+  const bodyEndIndex = nextHeadingOffset === -1 ? lines.length : bodyStartIndex + nextHeadingOffset;
+  return lines.slice(bodyStartIndex, bodyEndIndex).join('\n').trim();
 }
 
 /**
