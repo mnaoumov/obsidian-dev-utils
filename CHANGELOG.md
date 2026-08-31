@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 96.6.0
+
+- feat(modals): let the command builder drive any modal, and prompt() take one
+
 ## 96.5.4
 
 - fix(templates): call parseVersionArguments, and type-check templates so a rename cannot ship broken
