@@ -214,15 +214,24 @@ The script stops at the GitHub release — it does not publish to NPM. An NPM pa
 
 #### Flags
 
-The version script accepts the following optional flags (pass them after the version update type). Each behavior is enabled by default; the corresponding `--no-*` flag turns it off. When invoking via `npm run`, separate the flags with `--`, e.g. `npm run version -- patch --no-release`:
+The version script accepts the following optional flags (pass them after the version update type). Most behaviors are enabled by default and the corresponding `--no-*` flag turns them off; `--changelog-file` and `--min-app-version` take a value instead and have no default. When invoking via `npm run`, separate the flags with `--`, e.g. `npm run version -- patch --no-release`:
 
-| Flag                       | Effect                                                                                                                                                                 |
-|----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `--no-build`               | Skips the build step. Use only when the build output is already known to match the current code; otherwise the release would publish stale artifacts.                  |
-| `--no-changelog-editing`   | Generates the changelog from commit messages but skips opening it for manual review.                                                                                   |
-| `--no-checks`              | Skips the clean-repo check, formatting, spellcheck, lint, over-exposure analysis, and tests. The build still runs. Useful when resuming a release whose code is green. |
-| `--no-commit-verification` | Passes `--no-verify` to the release commit, skipping the pre-commit hook.                                                                                              |
-| `--no-release`             | Runs all local steps (version bump, changelog, commit, tag) but skips the push and the GitHub release.                                                                 |
+| Flag                        | Effect                                                                                                                                                                 |
+|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `--changelog-file=<path>`   | Uses that file's contents as the new version's changelog section instead of the commit-derived bullets, and skips the interactive review entirely.                     |
+| `--min-app-version=<x.y.z>` | Writes this `minAppVersion` into the plugin's `manifest.json` and its new `versions.json` entry instead of tracking the latest Obsidian desktop version.               |
+| `--no-build`                | Skips the build step. Use only when the build output is already known to match the current code; otherwise the release would publish stale artifacts.                  |
+| `--no-changelog-editing`    | Generates the changelog from commit messages but skips opening it for manual review.                                                                                   |
+| `--no-checks`               | Skips the clean-repo check, formatting, spellcheck, lint, over-exposure analysis, and tests. The build still runs. Useful when resuming a release whose code is green. |
+| `--no-commit-verification`  | Passes `--no-verify` to the release commit, skipping the pre-commit hook.                                                                                              |
+| `--no-release`              | Runs all local steps (version bump, changelog, commit, tag) but skips the push and the GitHub release.                                                                 |
+
+#### The changelog step
+
+By default the script generates the changelog from the commit messages and opens it for review — in Visual Studio Code when `code` is on your `PATH`, otherwise by waiting at the console. Two things make that safe to interrupt and safe to automate:
+
+- **The review runs on a scratch copy in the temporary folder, and the version bump waits for it.** The repository's `CHANGELOG.md`, `package.json`, `manifest.json` and `versions.json` are all written only after the review is over, so interrupting the review leaves your working tree exactly as it was and the whole release can simply be re-run. (Previously the bump happened first, so an interrupt stranded a half-bumped tree that the clean-repo check then refused to release.)
+- **A run without an interactive terminal refuses immediately rather than blocking.** Because the review can only be answered by a human, `updateVersion` checks for a TTY in its preflight — before the checks and the build — and fails within seconds with a message naming the two ways out. For an automated release, pass `--changelog-file=<path>` to supply prepared release notes, or `--no-changelog-editing` to accept the generated changelog as is.
 
 If the release commit fails (for example, the pre-commit hook rejects a new word in the freshly generated changelog) and you are running in an interactive terminal, the script prints the error and prompts you to fix the issue (for example, add the missing word to `cspell.json`) and press Enter to retry. The retry re-stages all files and re-commits, so the fix is picked up without restarting the whole release lifecycle and without bumping the version again.
 

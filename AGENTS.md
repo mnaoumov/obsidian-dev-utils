@@ -1169,6 +1169,18 @@ examples.
   state that never shipped (done for `96.5.1` — two `fix(build)!` commits carrying a `BREAKING CHANGE:`
   footer for an abandoned barrel change were squashed into one `fix(obsidian):` commit and force-pushed).
 
+- **The changelog review is the only step that can block, and it is deliberately the last step before
+  anything is written.** `updateVersion` settles the changelog on a scratch copy under the OS temp folder
+  *before* `updateVersionInFiles`, so interrupting the review leaves the working tree pristine and the
+  release simply re-runnable — the earlier order bumped `package.json` / `manifest.json` / `versions.json`
+  first, and a stop at the editor then stranded a dirty tree that `assertGitRepoClean` refused to re-release
+  (T731, hit cutting App Update Notifier 1.0.0).
+- **A release without a TTY refuses in the preflight, not after the gate.** `npm run version` checks
+  `process.stdin.isTTY` right after the git/gh assertions and before the checks and build, so an agent- or
+  CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release
+  unattended with `--changelog-file <path>` (prepared release notes replace the commit-derived bullets) or
+  `--no-changelog-editing` (accept the generated bullets as is).
+
 A release is two stages, split across two machines on purpose:
 
 1. **Local** — `npm run version -- <patch|minor|…>` runs the checks and the build, bumps the version,
