@@ -1192,6 +1192,21 @@ examples.
   CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release
   unattended with `--changelog-file <path>` (prepared release notes replace the commit-derived bullets) or
   `--no-changelog-editing` (accept the generated bullets as is).
+- **On npm 12, pass those flags by invoking the script directly — `npm run version -- …` swallows them
+  (T811).** npm claims a `--no-*` flag as its own config even after the `--` separator, so
+  `npm run version -- minor --no-changelog-editing` dies with an unknown-config error naming
+  `--changelog-editing` before `scripts/version.ts` starts. The positional bump type forwards fine; only the
+  flags are lost, so the error reads like a bad flag name rather than a forwarding regression. Until T811
+  lands, use `npx jiti scripts/version.ts <type> --no-changelog-editing` — the npm script is only
+  `jiti scripts/version.ts`, so this is the same code path with no npm in the middle (verified cutting
+  96.6.0 on npm 12.0.2 / Node 26.5.0).
+- **Expect the release to half-fail at its LAST step on npm 12, and recover by hand (T806).**
+  `publishGitHubRelease` cannot parse `npm pack --json`'s npm-12 output shape and throws *after* the bump,
+  changelog, commit, tag and push have all landed — leaving a public tag with no GitHub release, and so
+  nothing on NPM. It is three for three. `npm pack` has already written the tarball, so recovery needs no
+  rebuild: `gh release create <version> dist/<tarball> dist/styles.css --title v<version> --notes-file
+  <notes>`, the notes being the CHANGELOG section plus the `**Full Changelog**: …/compare/<prev>...<new>`
+  line. `publish-npm.yml` fires on the manually-created release exactly as it would on a scripted one.
 
 A release is two stages, split across two machines on purpose:
 
