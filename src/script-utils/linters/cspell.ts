@@ -5,6 +5,7 @@
  * It reports any spelling issues found in the code and returns a {@link CliTaskResult} indicating whether the spellcheck was successful.
  */
 
+import { resolveToolCommand } from '../package-manager.ts';
 import {
   execFromRoot,
   getRootFolder
@@ -46,8 +47,7 @@ export async function spellcheck(options?: SpellcheckOptions): Promise<void> {
   /* v8 ignore stop */
   const rootFolder = getRootFolder();
   await execFromRoot([
-    'npx',
-    'cspell',
+    ...resolveToolCommand({ tool: 'cspell' }),
     '--no-progress',
     '--no-must-find-files',
     '--gitignore',

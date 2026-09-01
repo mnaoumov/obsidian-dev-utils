@@ -10,6 +10,7 @@ import type {
   CheckProjectTypesParams,
   ParsedTsConfig
 } from './check-project-types.ts';
+import type { ResolveToolCommandParams } from './package-manager.ts';
 import type { ResolvePathFromRootSafeParams } from './root.ts';
 
 import { noopAsync } from '../function.ts';
@@ -33,6 +34,7 @@ const {
   mockReaddirPosix,
   mockReadJson,
   mockResolvePathFromRootSafe,
+  mockResolveToolCommand,
   mockRm,
   mockToCanonical
 } = vi.hoisted(() => ({
@@ -46,6 +48,7 @@ const {
   mockReaddirPosix: vi.fn(),
   mockReadJson: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>(),
   mockRm: vi.fn(),
   mockToCanonical: vi.fn<(fileName: string) => string>()
 }));
@@ -54,6 +57,10 @@ vi.mock('../script-utils/root.ts', () => ({
   execFromRoot: mockExecFromRoot,
   getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('../script-utils/package-manager.ts', () => ({
+  resolveToolCommand: mockResolveToolCommand
 }));
 
 vi.mock('./check-project-types.ts', () => ({
@@ -99,6 +106,7 @@ beforeEach(() => {
   mockRm.mockResolvedValue(undefined);
   mockCp.mockResolvedValue(undefined);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
+  mockResolveToolCommand.mockImplementation((params: ResolveToolCommandParams) => [params.tool]);
   mockGetRootFolder.mockReturnValue('/root');
   mockToCanonical.mockImplementation((fileName: string) => fileName.toLowerCase());
   mockParseTsConfig.mockReturnValue({ fileNames: ['/root/src/a.ts'], options: {} });
@@ -129,14 +137,14 @@ describe('buildCompile', () => {
     await buildCompile();
     expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:svelte');
     expect(mockNpmRunOptional).toHaveBeenCalledWith('build:compile:typescript');
-    expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'tsc', '--build', '--force']);
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['tsc', '--build', '--force']);
   });
 });
 
 describe('buildCompileTypeScript', () => {
   it('should run tsc --build --force and validate the project types', async () => {
     await buildCompileTypeScript();
-    expect(mockExecFromRoot).toHaveBeenCalledWith(['npx', 'tsc', '--build', '--force']);
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['tsc', '--build', '--force']);
     expect(mockParseTsConfig).toHaveBeenCalledWith('/root/tsconfig.json');
     expect(mockCheckProjectTypes).toHaveBeenCalledWith(expect.objectContaining({
       options: {},
@@ -195,7 +203,7 @@ describe('buildCompileSvelte', () => {
     })());
     await buildCompileSvelte();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'svelte-check'])
+      expect.arrayContaining(['svelte-check'])
     );
   });
 });

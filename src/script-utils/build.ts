@@ -30,6 +30,7 @@ import {
   NpmRunOptionalResult
 } from './npm-run.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
+import { resolveToolCommand } from './package-manager.ts';
 import {
   execFromRoot,
   getRootFolder,
@@ -77,7 +78,7 @@ export async function buildCompileSvelte(): Promise<void> {
     return;
   }
 
-  await execFromRoot(['npx', 'svelte-check', '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
+  await execFromRoot([...resolveToolCommand({ tool: 'svelte-check' }), '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
 }
 
 /**
@@ -92,7 +93,7 @@ export async function buildCompileSvelte(): Promise<void> {
  * @throws If the project's own declarations fail validation.
  */
 export async function buildCompileTypeScript(): Promise<void> {
-  await execFromRoot(['npx', 'tsc', '--build', '--force']);
+  await execFromRoot([...resolveToolCommand({ tool: 'tsc' }), '--build', '--force']);
 
   if (!areProjectTypesValid()) {
     throw new Error('TypeScript declaration validation failed.');

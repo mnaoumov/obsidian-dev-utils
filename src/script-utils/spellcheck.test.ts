@@ -6,11 +6,14 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolveToolCommandParams } from './package-manager.ts';
+
 import { spellcheck } from './linters/cspell.ts';
 
-const { mockExecFromRoot, mockGetRootFolder } = vi.hoisted(() => ({
+const { mockExecFromRoot, mockGetRootFolder, mockResolveToolCommand } = vi.hoisted(() => ({
   mockExecFromRoot: vi.fn(),
-  mockGetRootFolder: vi.fn<(cwd?: string) => null | string>()
+  mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
+  mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
@@ -18,17 +21,21 @@ vi.mock('../script-utils/root.ts', () => ({
   getRootFolder: mockGetRootFolder
 }));
 
+vi.mock('../script-utils/package-manager.ts', () => ({
+  resolveToolCommand: mockResolveToolCommand
+}));
+
 beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
   mockGetRootFolder.mockReturnValue('/root');
+  mockResolveToolCommand.mockImplementation((params: ResolveToolCommandParams) => [params.tool]);
 });
 
 describe('spellcheck', () => {
   it('should run cspell via execFromRoot', async () => {
     await spellcheck();
     expect(mockExecFromRoot).toHaveBeenCalledWith([
-      'npx',
       'cspell',
       '--no-progress',
       '--no-must-find-files',
@@ -43,7 +50,6 @@ describe('spellcheck', () => {
     mockGetRootFolder.mockReturnValue(null);
     await spellcheck();
     expect(mockExecFromRoot).toHaveBeenCalledWith([
-      'npx',
       'cspell',
       '--no-progress',
       '--no-must-find-files',

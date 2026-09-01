@@ -21,6 +21,7 @@ import {
 import { assertNonNullable } from '../../type-guards.ts';
 import { getNonIgnoredFiles } from '../git.ts';
 import { ObsidianDevUtilsRepoPaths } from '../obsidian-dev-utils-repo-paths.ts';
+import { resolveToolCommand } from '../package-manager.ts';
 import {
   execFromRoot,
   getRootFolder,
@@ -86,7 +87,7 @@ export async function lint(options?: LintOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branches are only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
   /* v8 ignore stop */
-  await execFromRoot(['npx', 'markdownlint-cli2', ...(shouldFix ? ['--fix'] : []), { batchedArguments: targets }]);
+  await execFromRoot([...resolveToolCommand({ tool: 'markdownlint-cli2' }), ...(shouldFix ? ['--fix'] : []), { batchedArguments: targets }]);
 
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const rootFolder = getRootFolder() ?? process.cwd();
@@ -95,8 +96,7 @@ export async function lint(options?: LintOptions): Promise<void> {
     : await getMarkdownFiles();
   /* v8 ignore stop */
   await execFromRoot([
-    'npx',
-    'linkinator',
+    ...resolveToolCommand({ tool: 'linkinator' }),
     '--retry',
     '--retry-errors',
     '--retry-errors-count',

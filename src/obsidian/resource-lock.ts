@@ -293,139 +293,6 @@ class ResourceLockEventsComponent extends ComponentEx {
 }
 
 /**
- * Monkey-patches the vault-mutation choke points on `Vault`/`FileManager` so that any edit, delete,
- * rename, move, or (re)create of a mutation-blocked path throws a {@link ResourceLockedError}.
- * Installed lazily by {@link ResourceLockManager} on the first `shouldBlockMutations` lock and removed
- * when the last one is released; being a {@link MonkeyAroundComponent}, every patch is torn down on
- * `unload`. Rename/copy check both source and destination; the other methods check their single path.
- */
-class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
-  private readonly shouldBlockMutation: (path: string) => boolean;
-
-  public constructor(params: ResourceLockMutationBlockerComponentConstructorParams) {
-    super();
-    this.shouldBlockMutation = params.shouldBlockMutation;
-  }
-
-  public override onload(): void {
-    super.onload();
-
-    this.registerMethodPatch<Vault, 'append'>({
-      $object: Vault.prototype,
-      methodName: 'append',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'copy'>({
-      $object: Vault.prototype,
-      methodName: 'copy',
-      patchHandler: ({ fallback, originalArguments: [, newPath] }) => {
-        this.assertNotBlocked([newPath]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'create'>({
-      $object: Vault.prototype,
-      methodName: 'create',
-      patchHandler: ({ fallback, originalArguments: [path] }) => {
-        this.assertNotBlocked([path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'createBinary'>({
-      $object: Vault.prototype,
-      methodName: 'createBinary',
-      patchHandler: ({ fallback, originalArguments: [path] }) => {
-        this.assertNotBlocked([path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'createFolder'>({
-      $object: Vault.prototype,
-      methodName: 'createFolder',
-      patchHandler: ({ fallback, originalArguments: [path] }) => {
-        this.assertNotBlocked([path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'delete'>({
-      $object: Vault.prototype,
-      methodName: 'delete',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'modify'>({
-      $object: Vault.prototype,
-      methodName: 'modify',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'modifyBinary'>({
-      $object: Vault.prototype,
-      methodName: 'modifyBinary',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'process'>({
-      $object: Vault.prototype,
-      methodName: 'process',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'rename'>({
-      $object: Vault.prototype,
-      methodName: 'rename',
-      patchHandler: ({ fallback, originalArguments: [file, newPath] }) => {
-        this.assertNotBlocked([file.path, newPath]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<Vault, 'trash'>({
-      $object: Vault.prototype,
-      methodName: 'trash',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<FileManager, 'renameFile'>({
-      $object: FileManager.prototype,
-      methodName: 'renameFile',
-      patchHandler: ({ fallback, originalArguments: [file, newPath] }) => {
-        this.assertNotBlocked([file.path, newPath]);
-        return fallback();
-      }
-    });
-    this.registerMethodPatch<FileManager, 'trashFile'>({
-      $object: FileManager.prototype,
-      methodName: 'trashFile',
-      patchHandler: ({ fallback, originalArguments: [file] }) => {
-        this.assertNotBlocked([file.path]);
-        return fallback();
-      }
-    });
-  }
-
-  private assertNotBlocked(paths: string[]): void {
-    for (const path of paths) {
-      if (this.shouldBlockMutation(path)) {
-        throw new ResourceLockedError(path);
-      }
-    }
-  }
-}
-
-/**
  * Tracks path-scoped editor locks and keeps every open {@link MarkdownView} in sync with the locked
  * set. A single instance lives on the shared `obsidian-dev-utils` state. Each lock is one
  * {@link LockEntry} in a per-path list, so a path can be held by several plugins (or several times by
@@ -1110,6 +977,139 @@ class ResourceLockManager {
       }
       onUnlockRequested?.();
     }, { once: true });
+  }
+}
+
+/**
+ * Monkey-patches the vault-mutation choke points on `Vault`/`FileManager` so that any edit, delete,
+ * rename, move, or (re)create of a mutation-blocked path throws a {@link ResourceLockedError}.
+ * Installed lazily by {@link ResourceLockManager} on the first `shouldBlockMutations` lock and removed
+ * when the last one is released; being a {@link MonkeyAroundComponent}, every patch is torn down on
+ * `unload`. Rename/copy check both source and destination; the other methods check their single path.
+ */
+class ResourceLockMutationBlockerComponent extends MonkeyAroundComponent {
+  private readonly shouldBlockMutation: (path: string) => boolean;
+
+  public constructor(params: ResourceLockMutationBlockerComponentConstructorParams) {
+    super();
+    this.shouldBlockMutation = params.shouldBlockMutation;
+  }
+
+  public override onload(): void {
+    super.onload();
+
+    this.registerMethodPatch<Vault, 'append'>({
+      $object: Vault.prototype,
+      methodName: 'append',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'copy'>({
+      $object: Vault.prototype,
+      methodName: 'copy',
+      patchHandler: ({ fallback, originalArguments: [, newPath] }) => {
+        this.assertNotBlocked([newPath]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'create'>({
+      $object: Vault.prototype,
+      methodName: 'create',
+      patchHandler: ({ fallback, originalArguments: [path] }) => {
+        this.assertNotBlocked([path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'createBinary'>({
+      $object: Vault.prototype,
+      methodName: 'createBinary',
+      patchHandler: ({ fallback, originalArguments: [path] }) => {
+        this.assertNotBlocked([path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'createFolder'>({
+      $object: Vault.prototype,
+      methodName: 'createFolder',
+      patchHandler: ({ fallback, originalArguments: [path] }) => {
+        this.assertNotBlocked([path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'delete'>({
+      $object: Vault.prototype,
+      methodName: 'delete',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'modify'>({
+      $object: Vault.prototype,
+      methodName: 'modify',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'modifyBinary'>({
+      $object: Vault.prototype,
+      methodName: 'modifyBinary',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'process'>({
+      $object: Vault.prototype,
+      methodName: 'process',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'rename'>({
+      $object: Vault.prototype,
+      methodName: 'rename',
+      patchHandler: ({ fallback, originalArguments: [file, newPath] }) => {
+        this.assertNotBlocked([file.path, newPath]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<Vault, 'trash'>({
+      $object: Vault.prototype,
+      methodName: 'trash',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<FileManager, 'renameFile'>({
+      $object: FileManager.prototype,
+      methodName: 'renameFile',
+      patchHandler: ({ fallback, originalArguments: [file, newPath] }) => {
+        this.assertNotBlocked([file.path, newPath]);
+        return fallback();
+      }
+    });
+    this.registerMethodPatch<FileManager, 'trashFile'>({
+      $object: FileManager.prototype,
+      methodName: 'trashFile',
+      patchHandler: ({ fallback, originalArguments: [file] }) => {
+        this.assertNotBlocked([file.path]);
+        return fallback();
+      }
+    });
+  }
+
+  private assertNotBlocked(paths: string[]): void {
+    for (const path of paths) {
+      if (this.shouldBlockMutation(path)) {
+        throw new ResourceLockedError(path);
+      }
+    }
   }
 }
 

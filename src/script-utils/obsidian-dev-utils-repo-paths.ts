@@ -56,6 +56,26 @@ export enum ObsidianDevUtilsRepoPaths {
   AstroConfigTs = 'astro.config.ts',
 
   /**
+  Windows batch file extension.
+   */
+  BatExtension = '.bat',
+
+  /**
+  Folder holding the executable shims of locally-installed packages.
+   */
+  Bin = '.bin',
+
+  /**
+  Bun lockfile.
+   */
+  BunLock = 'bun.lock',
+
+  /**
+  Binary bun lockfile, written by bun before v1.2.
+   */
+  BunLockb = 'bun.lockb',
+
+  /**
   CommonJS folder.
    */
   Cjs = 'cjs',
@@ -64,6 +84,11 @@ export enum ObsidianDevUtilsRepoPaths {
   CommonJS file extension.
    */
   CjsExtension = '.cjs',
+
+  /**
+  Windows command script extension.
+   */
+  CommandExtension = '.cmd',
 
   /**
   Current folder.
@@ -156,6 +181,11 @@ export enum ObsidianDevUtilsRepoPaths {
   Esm = 'esm',
 
   /**
+  Windows executable extension.
+   */
+  ExeExtension = '.exe',
+
+  /**
   Generated-during-build CommonJS file.
    */
   GeneratedDuringBuildCjs = 'generated-during-build.cjs',
@@ -236,9 +266,19 @@ export enum ObsidianDevUtilsRepoPaths {
   PackageJson = 'package.json',
 
   /**
+  NPM lockfile.
+   */
+  PackageLockJson = 'package-lock.json',
+
+  /**
   Folder holding hand-written patched copies of third-party packages.
    */
   Patches = 'patches',
+
+  /**
+  Pnpm lockfile.
+   */
+  PnpmLockYaml = 'pnpm-lock.yaml',
 
   /**
   Root folder.
@@ -303,5 +343,10 @@ export enum ObsidianDevUtilsRepoPaths {
   /**
   Types folder.
    */
-  Types = '@types'
+  Types = '@types',
+
+  /**
+  Yarn lockfile.
+   */
+  YarnLock = 'yarn.lock'
 }

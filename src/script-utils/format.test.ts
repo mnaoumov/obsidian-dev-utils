@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolveToolCommandParams } from './package-manager.ts';
 import type { ResolvePathFromRootSafeParams } from './root.ts';
 
 import { format } from './formatters/dprint.ts';
@@ -14,18 +15,24 @@ const {
   mockExecFromRoot,
   mockExistsSync,
   mockGetRootFolder,
-  mockResolvePathFromRootSafe
+  mockResolvePathFromRootSafe,
+  mockResolveToolCommand
 } = vi.hoisted(() => ({
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
-  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>()
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
   execFromRoot: mockExecFromRoot,
   getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('../script-utils/package-manager.ts', () => ({
+  resolveToolCommand: mockResolveToolCommand
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -41,6 +48,7 @@ beforeEach(() => {
   mockExecFromRoot.mockResolvedValue('');
   mockGetRootFolder.mockReturnValue('/root');
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
+  mockResolveToolCommand.mockImplementation((params: ResolveToolCommandParams) => [params.tool]);
 });
 
 describe('format', () => {
@@ -53,7 +61,7 @@ describe('format', () => {
     mockExistsSync.mockReturnValue(true);
     await format();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'dprint', 'fmt'])
+      expect.arrayContaining(['dprint', 'fmt'])
     );
   });
 
@@ -61,7 +69,7 @@ describe('format', () => {
     mockExistsSync.mockReturnValue(true);
     await format({ rewrite: false });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'dprint', 'check'])
+      expect.arrayContaining(['dprint', 'check'])
     );
   });
 
