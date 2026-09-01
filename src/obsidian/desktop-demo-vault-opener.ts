@@ -16,14 +16,17 @@
  * `<plugin-id>-<version>.demo-vault` so it reads nicely in Obsidian's vault switcher. Orphaned
  * extracted folders left over from earlier sessions are cleaned up (best-effort) on each open.
  *
- * **`adm-zip` is loaded lazily, and must stay that way.** The `node:` imports below are safe to merely
- * evaluate on mobile — `require` hands back `undefined` there and nothing reads it at load time — but
- * `adm-zip`'s zip-crypto method opens with a top-level `const { randomFillSync } = require('crypto')`,
- * which throws the moment the module is initialized. Because the generated barrels re-export this module,
- * a static `import AdmZip from 'adm-zip'` therefore killed the whole library's load on Android (see the
- * mobile-load check in `scripts/helpers/assert-mobile-loadable-bundle.ts`, which fails the build on
- * exactly that). Any future dependency that touches a platform-only API while initializing has to be
- * deferred the same way.
+ * **Nothing here may touch a platform-only API while the module INITIALIZES.** The `node:` imports below
+ * are safe to merely evaluate on mobile — `require` hands back `undefined` there and nothing reads it at
+ * load time — and because the generated barrels re-export this module, that is a load-bearing property of
+ * the whole library rather than a detail of this file. It was learned the hard way: this module once
+ * imported `adm-zip`, whose zip-crypto method opens with a top-level
+ * `const { randomFillSync } = require('crypto')`, and a static `import AdmZip from 'adm-zip'` therefore
+ * killed the library's load on Android (see the mobile-load check in
+ * `scripts/helpers/assert-mobile-loadable-bundle.ts`, which fails the build on exactly that). Extraction
+ * now goes through `desktop-zip-extractor.ts`, which needs no dependency at all — but any future
+ * dependency that initializes against a platform-only API still has to be deferred behind a call-time
+ * `import()`.
  */
 
 import type { App } from 'obsidian';
@@ -50,6 +53,7 @@ import type {
   PluginNoticeComponentDelayedNotice
 } from './components/plugin-notice-component.ts';
 
+import { extractZipArchive } from '../desktop-zip-extractor.ts';
 import { join } from '../path.ts';
 import {
   getCommunityPluginRepo,
@@ -199,7 +203,7 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
 
   progressNotice.setContent(`Extracting demo vault for ${pluginName} v${versionToOpen}…`);
   cleanupOrphanedExtractedVaults();
-  const vaultDirectory = await extractDemoVaultToFreshFolder({
+  const vaultDirectory = extractDemoVaultToFreshFolder({
     archive,
     pluginId,
     version: versionToOpen
@@ -241,27 +245,26 @@ function cleanupOrphanedExtractedVaults(): void {
 /**
  * Extracts a downloaded demo-vault archive to disk.
  *
- * Electron's asar layer intercepts `fs` operations on any path containing `.asar` and throws `ENOENT`
- * when `chmod`-ing an `.asar` file (it treats it as an archive root rather than a plain file). A demo
- * vault may ship such a file (e.g. `_assets/CodeScriptToolkit/module.asar` demonstrating the ASAR
- * require feature), and adm-zip `chmod`s every extracted file, so extraction would otherwise crash.
- * Hand adm-zip Electron's `original-fs` — the real `fs` with asar interception disabled — so the
- * `.asar` file is treated as a plain file and `chmod` succeeds. It is a desktop-only Electron module
- * with no bundled types, so it is loaded via `window.require` and typed as `node:fs`'s shape.
- *
- * `adm-zip` is imported here rather than at the top of the module: it initializes a Node-only dependency
- * (`require('crypto')`), so a static import would break the library's load on mobile even though this
- * function only ever runs on desktop. See the module's `@file` note.
+ * Extraction is written with Electron's `original-fs` — the real `fs` with asar interception disabled —
+ * rather than with `node:fs`. A demo vault may ship a file that merely LOOKS like an Electron archive
+ * (e.g. `_assets/CodeScriptToolkit/module.asar` demonstrating the ASAR require feature), and Electron's
+ * asar layer intercepts `fs` operations on any path containing `.asar`, treating it as an archive root
+ * rather than a plain file. That already cost one production bug when the extractor `chmod`-ed such a
+ * file and got `ENOENT`; nothing `chmod`s any more, but writing those bytes through the copy that has no
+ * asar layer costs nothing and keeps the whole class of failure off this path. `original-fs` is a desktop-only
+ * Electron module with no bundled types, so it is loaded via `window.require` and typed as `node:fs`'s
+ * shape.
  *
  * @param archive - The raw zip archive bytes.
  * @param targetDirectory - The directory to extract into.
- * @returns A {@link Promise} that resolves once the archive has been extracted.
  */
-async function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): Promise<void> {
-  const { default: AdmZip } = await import('adm-zip');
+function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): void {
   const originalFs = window.require('node:original-fs') as typeof import('node:fs');
-  const zip = new AdmZip(archive, { fs: originalFs });
-  zip.extractAllTo(targetDirectory, true);
+  extractZipArchive({
+    archive,
+    fileSystem: originalFs,
+    targetDirectory
+  });
 }
 
 /**
@@ -273,15 +276,15 @@ async function extractDemoVaultArchive(archive: Buffer, targetDirectory: string)
  * basename) rather than the random temp id.
  *
  * @param params - The {@link ExtractDemoVaultToFreshFolderParams}.
- * @returns A {@link Promise} resolving to the absolute path of the freshly extracted vault folder.
+ * @returns The absolute path of the freshly extracted vault folder.
  */
-async function extractDemoVaultToFreshFolder(params: ExtractDemoVaultToFreshFolderParams): Promise<string> {
+function extractDemoVaultToFreshFolder(params: ExtractDemoVaultToFreshFolderParams): string {
   const { archive, pluginId, version } = params;
   const extractedVaultsRoot = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, EXTRACTED_VAULTS_SUBFOLDER);
   mkdirSync(extractedVaultsRoot, { recursive: true });
   const uniqueParentDirectory = mkdtempSync(join(extractedVaultsRoot, `${pluginId}-${version}-`));
   const vaultDirectory = join(uniqueParentDirectory, `${pluginId}-${version}.demo-vault`);
-  await extractDemoVaultArchive(archive, vaultDirectory);
+  extractDemoVaultArchive(archive, vaultDirectory);
   return vaultDirectory;
 }
 

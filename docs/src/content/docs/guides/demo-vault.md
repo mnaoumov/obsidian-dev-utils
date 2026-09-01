@@ -134,6 +134,14 @@ A progress notice is shown from the moment the command is invoked (`Opening demo
 
 If the plugin is not in the community registry, or no archive exists for the chosen version, a notice is shown and nothing is opened.
 
+### What registering the command costs your bundle
+
+Registering `OpenDemoVaultCommandHandler` puts the opener into your plugin's `main.js`, and with it a `require('node:fs')` and a `window.electron.ipcRenderer.sendSync('vault-open', …)` — extracting the archive writes files outside the vault, and opening a folder as a vault has no non-Electron API. The dynamic `import()` behind the command does **not** change that: an Obsidian plugin ships a single CJS `main.js`, esbuild has no code splitting to put a chunk behind, and `import()` defers evaluation rather than excluding the code.
+
+So the Community directory's automated review reports two `Behavior` warnings — *Direct Filesystem Access* and *Electron IPC* — on any listing whose plugin registers this command. Both are accurate: settle them with the review's override, naming the demo-vault opener as the reason. If you would rather not carry them, do not register the handler; the archive is still attached to every release and users can download and open it by hand.
+
+Extraction itself is dependency-free — `extractZipArchive` reads the archive with Node's `zlib`, which esbuild already treats as external — so the feature costs a few KB rather than the ~34 KB an `adm-zip` on the runtime path used to add to every plugin built with this library.
+
 ### The sandbox notice
 
 Because every open extracts a fresh copy, a user who writes their own notes in a demo vault will not find them in the next one. So once the vault is open, `demo-vault-helper` raises a notice — modelled on Obsidian's own sandbox-vault notice, staying up until it is clicked — that names the plugin the vault demonstrates, gives the folder it was extracted to, says the folder is cleaned up automatically about a day after its last use, and explains that re-running the command creates a new copy.
