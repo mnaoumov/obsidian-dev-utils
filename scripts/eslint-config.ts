@@ -120,6 +120,15 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
          * deleting the placeholder and re-triggering `require-jsdoc`.
          */
         'jsdoc/no-blank-blocks': ['error', { enableFixer: false }],
+        /*
+         * Inherited from `flat/recommended-typescript-error`, restated here to record that it is kept deliberately
+         * (T721): it forbids a valued `@default` and a `@param foo=5` default in function-shaped contexts, which is
+         * exactly the boundary G10q draws — the tag documents a type member, whose declaration cannot show its
+         * default, and never a parameter, whose initializer already does. Both checks share the rule's single
+         * `contexts` list, so keeping either means keeping both. Note the autofix STRIPS the tag's value rather than
+         * reporting it, so `--fix` would silently delete such a doc.
+         */
+        'jsdoc/no-defaults': 'error',
         'jsdoc/require-description': 'error',
         'jsdoc/require-file-overview': [
           'error',
