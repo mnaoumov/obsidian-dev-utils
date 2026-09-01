@@ -14,14 +14,20 @@ import {
 
 const {
   mockExecFromRoot,
+  mockGetPackageManagerRunCommand,
   mockReadPackageJson
 } = vi.hoisted(() => ({
   mockExecFromRoot: vi.fn(),
+  mockGetPackageManagerRunCommand: vi.fn<() => string[]>(),
   mockReadPackageJson: vi.fn()
 }));
 
 vi.mock('../script-utils/npm.ts', () => ({
   readPackageJson: mockReadPackageJson
+}));
+
+vi.mock('../script-utils/package-manager.ts', () => ({
+  getPackageManagerRunCommand: mockGetPackageManagerRunCommand
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
@@ -31,6 +37,7 @@ vi.mock('../script-utils/root.ts', () => ({
 beforeEach(() => {
   vi.resetAllMocks();
   mockExecFromRoot.mockResolvedValue('');
+  mockGetPackageManagerRunCommand.mockReturnValue(['npm', 'run']);
 });
 
 describe('npmRun', () => {

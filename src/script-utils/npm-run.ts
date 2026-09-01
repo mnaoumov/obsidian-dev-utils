@@ -6,6 +6,7 @@
 
 import { getLibDebugger } from '../debug.ts';
 import { readPackageJson } from './npm.ts';
+import { getPackageManagerRunCommand } from './package-manager.ts';
 import { execFromRoot } from './root.ts';
 
 /**
@@ -32,7 +33,7 @@ export async function npmRun(command: string): Promise<void> {
   const packageJson = await readPackageJson();
   const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
   if (isKnownCommand) {
-    await execFromRoot(['npm', 'run', command]);
+    await execFromRoot([...getPackageManagerRunCommand(), command]);
   } else {
     throw new Error(`Command ${command} is not defined in the package.json`);
   }
@@ -50,7 +51,7 @@ export async function npmRunOptional(command: string): Promise<NpmRunOptionalRes
   const packageJson = await readPackageJson();
   const isKnownCommand = Object.keys(packageJson.scripts ?? {}).includes(command);
   if (isKnownCommand) {
-    await execFromRoot(['npm', 'run', command]);
+    await execFromRoot([...getPackageManagerRunCommand(), command]);
     return NpmRunOptionalResult.Success;
   }
   getLibDebugger('npmRunOptional')(`Command ${command} is not defined in the package.json, skipping`);

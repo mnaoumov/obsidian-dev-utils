@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolveToolCommandParams } from './package-manager.ts';
 import type { ResolvePathFromRootSafeParams } from './root.ts';
 
 import { noopAsync } from '../function.ts';
@@ -18,7 +19,8 @@ const {
   mockGetNonIgnoredFiles,
   mockGetRootFolder,
   mockGlob,
-  mockResolvePathFromRootSafe
+  mockResolvePathFromRootSafe,
+  mockResolveToolCommand
 } = vi.hoisted(() => ({
   mockCp: vi.fn(),
   mockExecFromRoot: vi.fn(),
@@ -26,13 +28,18 @@ const {
   mockGetNonIgnoredFiles: vi.fn<() => Promise<null | string[]>>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
   mockGlob: vi.fn(),
-  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>()
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
   execFromRoot: mockExecFromRoot,
   getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('../script-utils/package-manager.ts', () => ({
+  resolveToolCommand: mockResolveToolCommand
 }));
 
 vi.mock('../script-utils/git.ts', () => ({
@@ -67,6 +74,7 @@ beforeEach(() => {
   // Default to "git cannot answer" so the existing cases keep exercising the glob fallback they assert on.
   mockGetNonIgnoredFiles.mockResolvedValue(null);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
+  mockResolveToolCommand.mockImplementation((params: ResolveToolCommandParams) => [params.tool]);
   mockGlob.mockReturnValue((async function* generateMdFiles(): AsyncGenerator<string, void> {
     await noopAsync();
     yield 'README.md';
@@ -79,10 +87,10 @@ describe('lint', () => {
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledTimes(2);
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', { batchedArguments: ['.'] }])
+      expect.arrayContaining(['markdownlint-cli2', { batchedArguments: ['.'] }])
     );
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md'] }])
+      expect.arrayContaining(['linkinator', { batchedArguments: ['README.md'] }])
     );
   });
 
@@ -90,7 +98,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'markdownlint-cli2', '--fix', { batchedArguments: ['.'] }])
+      expect.arrayContaining(['markdownlint-cli2', '--fix', { batchedArguments: ['.'] }])
     );
   });
 
@@ -125,7 +133,7 @@ describe('lint', () => {
     await lint();
     expect(mockGetNonIgnoredFiles).toHaveBeenCalledWith({ patterns: ['*.md'] });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md', 'docs/guide.md'] }])
+      expect.arrayContaining(['linkinator', { batchedArguments: ['README.md', 'docs/guide.md'] }])
     );
   });
 
@@ -142,7 +150,7 @@ describe('lint', () => {
     ]);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md', 'docs/guide.md'] }])
+      expect.arrayContaining(['linkinator', { batchedArguments: ['README.md', 'docs/guide.md'] }])
     );
   });
 
@@ -151,7 +159,7 @@ describe('lint', () => {
     mockGetNonIgnoredFiles.mockResolvedValue(['docs/node_modules-migration.md']);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['docs/node_modules-migration.md'] }])
+      expect.arrayContaining(['linkinator', { batchedArguments: ['docs/node_modules-migration.md'] }])
     );
   });
 
@@ -168,7 +176,7 @@ describe('lint', () => {
     await lint();
     expect(mockGlob).toHaveBeenCalledOnce();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md'] }])
+      expect.arrayContaining(['linkinator', { batchedArguments: ['README.md'] }])
     );
   });
 
@@ -182,7 +190,7 @@ describe('lint', () => {
     })());
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'linkinator', { batchedArguments: ['README.md', 'CHANGELOG.md', 'docs/guide.md'] }])
+      expect.arrayContaining(['linkinator', { batchedArguments: ['README.md', 'CHANGELOG.md', 'docs/guide.md'] }])
     );
   });
 });

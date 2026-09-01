@@ -6,6 +6,7 @@ import {
   vi
 } from 'vitest';
 
+import type { ResolveToolCommandParams } from './package-manager.ts';
 import type { ResolvePathFromRootSafeParams } from './root.ts';
 
 import { lint } from './linters/eslint.ts';
@@ -15,19 +16,25 @@ const {
   mockExecFromRoot,
   mockExistsSync,
   mockGetRootFolder,
-  mockResolvePathFromRootSafe
+  mockResolvePathFromRootSafe,
+  mockResolveToolCommand
 } = vi.hoisted(() => ({
   mockCp: vi.fn(),
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
   mockGetRootFolder: vi.fn<(cwd?: string) => null | string>(),
-  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>()
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>()
 }));
 
 vi.mock('../script-utils/root.ts', () => ({
   execFromRoot: mockExecFromRoot,
   getRootFolder: mockGetRootFolder,
   resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('../script-utils/package-manager.ts', () => ({
+  resolveToolCommand: mockResolveToolCommand
 }));
 
 vi.mock('node:fs', async (importOriginal) => {
@@ -55,6 +62,7 @@ beforeEach(() => {
   mockExecFromRoot.mockResolvedValue('');
   mockCp.mockResolvedValue(undefined);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
+  mockResolveToolCommand.mockImplementation((params: ResolveToolCommandParams) => [params.tool]);
 });
 
 describe('lint', () => {
@@ -62,7 +70,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint();
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', { batchedArguments: ['.'] }])
+      expect.arrayContaining(['eslint', { batchedArguments: ['.'] }])
     );
     expect(mockCp).not.toHaveBeenCalled();
   });
@@ -71,7 +79,7 @@ describe('lint', () => {
     mockExistsSync.mockReturnValue(true);
     await lint({ shouldFix: true });
     expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['npx', 'eslint', '--fix', { batchedArguments: ['.'] }])
+      expect.arrayContaining(['eslint', '--fix', { batchedArguments: ['.'] }])
     );
   });
 

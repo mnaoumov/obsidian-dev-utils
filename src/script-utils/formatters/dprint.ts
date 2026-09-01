@@ -12,6 +12,7 @@ import {
 } from '../../path.ts';
 import { assertNonNullable } from '../../type-guards.ts';
 import { ObsidianDevUtilsRepoPaths } from '../obsidian-dev-utils-repo-paths.ts';
+import { resolveToolCommand } from '../package-manager.ts';
 import {
   execFromRoot,
   getRootFolder,
@@ -60,5 +61,5 @@ export async function format(options?: FormatOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : ['**/*'];
   /* v8 ignore stop */
-  await execFromRoot(['npx', 'dprint', command, '--config', dprintJsonPath, { batchedArguments: targets }]);
+  await execFromRoot([...resolveToolCommand({ tool: 'dprint' }), command, '--config', dprintJsonPath, { batchedArguments: targets }]);
 }

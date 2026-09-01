@@ -419,16 +419,17 @@ const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
  * Characters held back from the Windows command-line budget when sizing an {@link ExecArgument} batch, to
  * cover expansions that happen INSIDE the command we spawn and are therefore invisible from here.
  *
- * A `npx <tool> <args…>` invocation is not one `cmd.exe` command line but a chain of them: `npx.cmd`
- * re-expands `%*` into a fresh `node … npx-cli.js <args…>` line, the tool's own `.bin/<tool>.cmd` shim does
- * it again, and each hop re-quotes what it forwards. Every one of those lines is subject to the same 8191
- * limit, and every one is longer than the line we assembled — but by how much is the child's business, not
- * ours, so no formula can be right. Only the deliberate slack below can.
+ * A shimmed `<tool> <args…>` invocation is not one `cmd.exe` command line but a chain of them: the
+ * `.bin/<tool>.cmd` shim re-expands `%*` into a fresh `node … <tool>-cli.js <args…>` line, and each hop
+ * re-quotes what it forwards. Every one of those lines is subject to the same 8191 limit, and every one is
+ * longer than the line we assembled — but by how much is the child's business, not ours, so no formula can
+ * be right. Only the deliberate slack below can.
  *
- * `2048` is roughly double the overhead measured when this was found (T635). Over a repository's 187
- * markdown paths, a `npx markdownlint-cli2 …` line **assembled at 7051 chars** — 1140 under the limit —
+ * `2048` is roughly double the overhead measured when this was found (T635), back when every tool was
+ * additionally fronted by `npx` and so paid one more re-expansion hop than it does now. Over a repository's
+ * 187 markdown paths, a `markdownlint-cli2 …` line **assembled at 7051 chars** — 1140 under the limit —
  * still died with `The command line is too long.`; the same payload split in two runs clean. Note the tool:
- * this is not specific to `linkinator`, it is the shape of every `npx`-fronted invocation.
+ * this is not specific to `linkinator`, it is the shape of every shim-fronted invocation.
  *
  * Over-reserving costs one extra sequential invocation of a command that was already going to be batched;
  * under-reserving costs a lint failure that names nothing wrong with the content. Raise it, never lower it,
