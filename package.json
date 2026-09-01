@@ -691,6 +691,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.2",
     "@eslint/config-helpers": "^0.7.0",
     "@eslint/js": "^10.0.1",
+    "@eslint/json": "^0.14.0",
     "@lezer/common": "1.5.2",
     "@obsidian-typings/obsidian-public-latest": "^6.36.0",
     "@standard-schema/spec": "^1.1.0",

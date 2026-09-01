@@ -25,6 +25,7 @@ import { flatConfigs as eslintPluginImportXFlatConfigs } from 'eslint-plugin-imp
 import nodePlugin from 'eslint-plugin-n';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `plugin` is too confusing.
 import obsidianmd from 'eslint-plugin-obsidianmd';
+import { PlainTextParser } from 'eslint-plugin-obsidianmd/dist/lib/plainTextParser.js';
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `index` is too confusing.
 import unicorn from 'eslint-plugin-unicorn';
@@ -37,6 +38,7 @@ import { ObsidianPluginRepoPaths } from '../../obsidian/plugin/obsidian-plugin-r
 import { join } from '../../path.ts';
 import { getRootFolder } from '../root.ts';
 import { noRestrictedSyntaxRuleEntries } from './eslint-no-restricted-syntax.ts';
+import { jsonPlugin } from './eslint-rules/manifest-helpers.ts';
 import { obsidianDevUtilsPlugin } from './eslint-rules/obsidian-dev-utils-plugin.ts';
 
 /**
@@ -142,6 +144,8 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
     ...getObsidianDevUtilsPluginConfigs(context),
     ...getNodeCompatConfigs(context),
     ...getIntegrationTestConfigs(),
+    ...getManifestConfigs(),
+    ...getLicenseConfigs(),
     ...customConfigs
   );
 }
@@ -430,6 +434,66 @@ function getIntegrationTestConfigs(): Linter.Config[] {
       ],
       rules: {
         'obsidian-dev-utils/no-untrusted-input-events': 'error'
+      }
+    }
+  ]);
+}
+
+/*
+ * The Community directory requires a root `LICENSE`, and `obsidianmd/validate-license` is the only check
+ * on what it says: the copyright holder must not still be the sample plugin's, and the year must be
+ * current. Both need `PlainTextParser`, which the plugin does not export, so it is reached through its
+ * build output -- the package declares no `exports` map and ships a declaration beside the module, so the
+ * deep path resolves, but it is the one import here that a patch release upstream could break.
+ *
+ * The rule compares the year against `new Date().getFullYear()` at lint time, so a repo goes red at the
+ * turn of the year until its LICENSE is bumped. `.github/workflows/update-license-year.yml` does that on
+ * 1 January; a repo adopting this config needs the same workflow, or the year check will fail its CI.
+ */
+function getLicenseConfigs(): Linter.Config[] {
+  return defineConfig([
+    {
+      files: [ObsidianPluginRepoPaths.License],
+      languageOptions: {
+        parser: PlainTextParser
+      },
+      plugins: {
+        obsidianmd
+      },
+      rules: {
+        'obsidianmd/validate-license': 'error'
+      }
+    }
+  ]);
+}
+
+/*
+ * The root `manifest.json` is what the Community directory's automated review actually reads, and until
+ * this config existed no linter read it at all: `obsidianmd/validate-manifest` registers a `Program`
+ * visitor and expects an ESTree `ObjectExpression`, while every JSON parser that ships produces something
+ * else -- `@eslint/json` produces Momoa (`Document`), `jsonc-eslint-parser` produces
+ * `JSONObjectExpression` -- so the rule silently matches nothing no matter which files it is scoped to.
+ * The in-house rules below visit the Momoa AST instead.
+ *
+ * `manifest.json` is strict JSON, so an `eslint-disable` comment in it is a parse error AND would stop
+ * Obsidian loading the plugin. That makes the config the only place a check can be waived, which is why
+ * these are four rules rather than one: a repo with a grandfathered `id` can turn off `manifest-id` alone
+ * and keep the rest.
+ */
+function getManifestConfigs(): Linter.Config[] {
+  return defineConfig([
+    {
+      files: [ObsidianPluginRepoPaths.ManifestJson],
+      language: 'json/json',
+      plugins: {
+        'json': jsonPlugin,
+        'obsidian-dev-utils': obsidianDevUtilsPlugin
+      },
+      rules: {
+        'obsidian-dev-utils/manifest-description': 'error',
+        'obsidian-dev-utils/manifest-id': 'error',
+        'obsidian-dev-utils/manifest-name': 'error',
+        'obsidian-dev-utils/manifest-schema': 'error'
       }
     }
   ]);

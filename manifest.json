@@ -1,7 +1,7 @@
 {
   "author": "mnaoumov",
   "authorUrl": "https://github.com/mnaoumov/",
-  "description": "A collection of essential functions and CLI tools designed to streamline your Obsidian plugin development process.",
+  "description": "A collection of essential functions and CLI tools designed to streamline your plugin development process.",
   "fundingUrl": "https://www.buymeacoffee.com/mnaoumov",
   "id": "dev-utils",
   "isDesktopOnly": true,

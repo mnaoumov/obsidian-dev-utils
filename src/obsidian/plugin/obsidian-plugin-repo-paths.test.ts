@@ -14,6 +14,7 @@ import { ObsidianPluginRepoPaths } from './obsidian-plugin-repo-paths.ts';
 
 describe('ObsidianPluginRepoPaths', () => {
   it('should have expected path values', () => {
+    expect(ObsidianPluginRepoPaths.License).toBe('LICENSE');
     expect(ObsidianPluginRepoPaths.MainJs).toBe('main.js');
     expect(ObsidianPluginRepoPaths.ManifestJson).toBe('manifest.json');
     expect(ObsidianPluginRepoPaths.PackageJson).toBe('package.json');

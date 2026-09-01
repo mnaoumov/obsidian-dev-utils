@@ -213,11 +213,40 @@ export function myFunction(param: Type): ReturnType {
 - Use `assertNonNullable()` from `src/type-guards.ts` in tests instead of `!`
 - Custom ESLint rule `obsidian-dev-utils/no-unused-params-members` flags `*Params`/`*Options` interface members never read by the receiving function; spreading, rest-destructuring, forwarding, returning, or storing the whole object counts as using all members.
 - The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by
-  `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts` driven by `rule-tester-helper.ts`:
-  `no-async-callback-to-unsafe-return`, `no-unused-params-members`,
+  `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts`: `manifest-description`, `manifest-id`,
+  `manifest-name`, `manifest-schema`, `no-async-callback-to-unsafe-return`,
+  `no-untrusted-input-events`, `no-unused-params-members`,
   `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`,
   `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`,
-  `require-super-call`.
+  `require-super-call`. The TypeScript rules use `@typescript-eslint/rule-tester` via
+  `rule-tester-helper.ts`; the four `manifest-*` rules use ESLint's own `RuleTester` with
+  `{ language: 'json/json', plugins: { json: jsonPlugin } }`.
+- **ESLint covers the root `manifest.json` and `LICENSE`** (`getManifestConfigs` / `getLicenseConfigs` in
+  `src/script-utils/linters/eslint-config.ts`), which nothing linted before. Three things about that are
+  worth not rediscovering:
+  - **`obsidianmd/validate-manifest` can never fire, whatever it is scoped to.** It registers a `Program`
+    visitor and expects an ESTree `ObjectExpression`; `@eslint/json`'s `json/json` language produces a
+    Momoa `Document`, and `jsonc-eslint-parser` produces `JSONObjectExpression`. Measured on
+    `eslint-plugin-obsidianmd@0.4.2` against a manifest violating nearly every check: zero messages. The
+    four in-house `manifest-*` rules exist because of this, not to duplicate it.
+  - **`manifest.json` is strict JSON, so a check can only be waived in the config.** A comment there is a
+    parse error and would stop Obsidian loading the plugin; an ignore *key* would ship to users and is
+    itself reported as a disallowed key. That is why the checks are split across four rules — a repo with
+    a grandfathered `id` turns off `manifest-id` alone. ESLint 10's `eslint-suppressions.json` is the
+    other option, but the config has room for the written justification the directory review needs.
+  - **`obsidianmd/validate-license` needs the LICENSE line in its own shape.** Its regex wants
+    `Copyright (C) <year>[-<year>] by <holder>`; a conventional `Copyright (c) 2024 <holder>` matches
+    nothing, so the rule silently passes. Its year check runs against `new Date().getFullYear()` at lint
+    time, so `.github/workflows/update-license-year.yml` bumps the end year on 1 January — a repo
+    adopting this config needs that workflow too, or its CI fails at the turn of the year. It also needs
+    the plugin's unexported `PlainTextParser`, reached through `dist/`.
+- **ODU's own root `manifest.json` is a stub kept for `eslint-plugin-obsidianmd`, not a plugin manifest.**
+  It arrived with the plugin in `7858d3c3`, its `version` is frozen at `1.0.0`, and `version.ts` already
+  decides `isObsidianPlugin = packageJson.name !== 'obsidian-dev-utils'`. Do not delete it: the plugin's
+  `no-nodejs-modules` rule is configured as `manifest && manifest.isDesktopOnly ? 'off' : 'warn'`, so
+  removing the manifest turns it on across every `node:*` import under `src/script-utils/**` (and adds a
+  `Failed to load JSON file:` line to every lint run). It is linted like any other manifest so the rules
+  are exercised end to end here.
 - The shared config extends **`eslint-plugin-unicorn`'s `recommended`** preset
   (`getUnicornConfigs()` in `src/script-utils/linters/eslint-config.ts`), adopted repo-wide in
   `7808eeb1`. It is a curated adoption, not a blanket one: a long explicit off-list turns off the rules

@@ -140,6 +140,11 @@ export enum ObsidianPluginRepoPaths {
   HotReload = '.hotreload',
 
   /**
+  License file.
+   */
+  License = 'LICENSE',
+
+  /**
   Main CSS file.
    */
   MainCss = 'main.css',
