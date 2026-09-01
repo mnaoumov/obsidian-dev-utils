@@ -292,7 +292,15 @@ export function myFunction(param: Type): ReturnType {
   not. `adm-zip` opens with `const { randomFillSync } = require('crypto')`, so a static
   `import AdmZip from 'adm-zip'` in `desktop-demo-vault-opener.ts` threw during barrel initialization and
   killed the harness plugin's load on Android — every test in its `integration-tests:android` project
-  failed behind an opaque "plugin failed to load". It is now loaded inside the one function that extracts.
+  failed behind an opaque "plugin failed to load". That opener no longer depends on it at all:
+  extraction moved to `desktop-zip-extractor.ts`, which needs only `node:zlib`. The rule stands for the
+  next such dependency — defer it behind a call-time `import()`, or do without it.
+- **A dependency on the plugin-runtime path costs every consumer's bundle, and a dynamic `import()` does
+  NOT buy it back.** An Obsidian plugin ships one CJS `main.js`, esbuild has no code splitting to put a
+  chunk behind, and `await import()` only defers EVALUATION — the module body is inlined either way.
+  Measured 2026-08-31 in `obsidian-fix-tab-size`'s 247 KB bundle: the demo-vault opener and the `adm-zip`
+  it then imported took ~41 KB of it, ~17%, in a plugin that opens no archives of its own. Prefer a Node
+  builtin (already `external`, so free) over a dependency for anything reachable from `src/obsidian/`.
 - No `mobile-` example exists yet; the rule is stated for symmetry.
 - (the naming half cannot be forced by ESLint — a custom check could flag `node:`/`window.electron` usage
   in a non-`desktop-` file. The **import-safety** half IS enforced, by the mobile-load check on the
