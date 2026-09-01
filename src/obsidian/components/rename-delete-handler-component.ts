@@ -277,55 +277,6 @@ interface RenameDeleteHandlerComponentConstructorParams {
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
 }
 
-class SettingsManager {
-  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
-
-  public constructor() {
-    this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
-  }
-
-  public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = [...this.renameDeleteHandlersMap.values()].reverse();
-
-    const settings: Partial<RenameDeleteHandlerSettings> = {};
-    // eslint-disable-next-line unicorn/no-immediate-mutation -- Folding these into the object literal keeps them optional under `Partial<>`, losing the narrowing that makes them callable below without a nullish check.
-    settings.isNote = (path: string): boolean => isNote(path);
-    settings.isPathIgnored = (): boolean => false;
-
-    for (const settingsBuilder of settingsBuilders) {
-      const newSettings = settingsBuilder();
-      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-      if (newSettings.emptyFolderBehavior) {
-        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
-      }
-      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
-      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
-      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
-      if (newSettings.getRescuePath) {
-        /*
-         * First plugin to answer owns the destination, mirroring `emptyFolderBehavior`. Left `undefined`
-         * when nobody implements it, so the rescue never runs for consumers that did not opt in.
-         */
-        settings.getRescuePath ??= newSettings.getRescuePath;
-      }
-      const isPathIgnored = settings.isPathIgnored;
-      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
-      const currentIsNote = settings.isNote;
-      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
-    }
-
-    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
-    return settings;
-  }
-
-  public isNoteEx(path: string): boolean {
-    const settings = this.getSettings();
-    return settings.isNote?.(path) ?? false;
-  }
-}
-
 class DeleteHandler {
   private readonly abortSignal: AbortSignal;
   private readonly app: App;
@@ -1366,6 +1317,55 @@ class RenameMap {
       context: AttachmentPathContext.RenameNote,
       notePathOrFile: this.oldPath
     });
+  }
+}
+
+class SettingsManager {
+  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
+
+  public constructor() {
+    this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+  }
+
+  public getSettings(): Partial<RenameDeleteHandlerSettings> {
+    const settingsBuilders = [...this.renameDeleteHandlersMap.values()].reverse();
+
+    const settings: Partial<RenameDeleteHandlerSettings> = {};
+    // eslint-disable-next-line unicorn/no-immediate-mutation -- Folding these into the object literal keeps them optional under `Partial<>`, losing the narrowing that makes them callable below without a nullish check.
+    settings.isNote = (path: string): boolean => isNote(path);
+    settings.isPathIgnored = (): boolean => false;
+
+    for (const settingsBuilder of settingsBuilders) {
+      const newSettings = settingsBuilder();
+      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
+      if (newSettings.emptyFolderBehavior) {
+        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
+      }
+      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
+      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
+      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
+      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
+      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
+      if (newSettings.getRescuePath) {
+        /*
+         * First plugin to answer owns the destination, mirroring `emptyFolderBehavior`. Left `undefined`
+         * when nobody implements it, so the rescue never runs for consumers that did not opt in.
+         */
+        settings.getRescuePath ??= newSettings.getRescuePath;
+      }
+      const isPathIgnored = settings.isPathIgnored;
+      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
+      const currentIsNote = settings.isNote;
+      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
+    }
+
+    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
+    return settings;
+  }
+
+  public isNoteEx(path: string): boolean {
+    const settings = this.getSettings();
+    return settings.isNote?.(path) ?? false;
   }
 }
 
