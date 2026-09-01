@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 97.0.0
+
+- feat(zip-extractor)!: read demo-vault archives with node:zlib, dropping adm-zip from the bundle
+- docs(agents): record the two npm 12 regressions on the release path, and how to get past each
+
 ## 96.6.0
 
 - feat(modals): let the command builder drive any modal, and prompt() take one
