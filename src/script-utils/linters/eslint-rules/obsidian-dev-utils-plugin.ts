@@ -5,6 +5,10 @@
  */
 import type { ESLint } from 'eslint';
 
+import { manifestDescription } from './manifest-description.ts';
+import { manifestId } from './manifest-id.ts';
+import { manifestName } from './manifest-name.ts';
+import { manifestSchema } from './manifest-schema.ts';
 import { noAsyncCallbackToUnsafeReturn } from './no-async-callback-to-unsafe-return.ts';
 import { noUntrustedInputEvents } from './no-untrusted-input-events.ts';
 import { noUnusedParamsMembers } from './no-unused-params-members.ts';
@@ -21,6 +25,10 @@ import { requireSuperCall } from './require-super-call.ts';
  */
 export const obsidianDevUtilsPlugin: ESLint.Plugin = {
   rules: {
+    'manifest-description': manifestDescription,
+    'manifest-id': manifestId,
+    'manifest-name': manifestName,
+    'manifest-schema': manifestSchema,
     'no-async-callback-to-unsafe-return': noAsyncCallbackToUnsafeReturn,
     'no-untrusted-input-events': noUntrustedInputEvents,
     'no-unused-params-members': noUnusedParamsMembers,
