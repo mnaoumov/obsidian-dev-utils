@@ -5,6 +5,7 @@ import type {
   RequestUrlParam
 } from 'obsidian';
 
+import AdmZip from 'adm-zip';
 import {
   afterEach,
   beforeEach,
@@ -24,31 +25,20 @@ import type { SelectOptionParams } from './modals/select-option.ts';
 
 import { basename } from '../path.ts';
 import { strictProxy } from '../strict-proxy.ts';
-// The opener loads Electron's `node:original-fs` via `window.require`.
-// `beforeEach` stubs that global to return this `chmodSync` — the exact reference handed to adm-zip.
-import { chmodSync as originalFsStubChmodSync } from '../test-helpers/original-fs-stub.ts';
 import { PluginNoticeMode } from './components/plugin-notice-component.ts';
 import { openDemoVault } from './desktop-demo-vault-opener.ts';
-
-interface AdmZipInitOptionsLike {
-  readonly fs?: ExtractionFs;
-}
 
 interface ExtractionFolderStats {
   readonly mtimeMs: number;
 }
 
-interface ExtractionFs {
-  chmodSync(path: string, mode: number): void;
-}
-
 const {
-  mockAdmZipInit,
   mockExistsSync,
-  mockExtractAllTo,
   mockGetCommunityPluginRepo,
   mockMkdirSync,
   mockMkdtempSync,
+  mockOriginalFsMkdirSync,
+  mockOriginalFsWriteFileSync,
   mockReaddirSync,
   mockReadFileSync,
   mockRequestUrl,
@@ -61,12 +51,12 @@ const {
   mockStatSync,
   mockWriteFileSync
 } = vi.hoisted(() => ({
-  mockAdmZipInit: vi.fn<(options?: AdmZipInitOptionsLike) => void>(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
-  mockExtractAllTo: vi.fn(),
   mockGetCommunityPluginRepo: vi.fn<(pluginId: string) => Promise<null | string>>(),
   mockMkdirSync: vi.fn(),
   mockMkdtempSync: vi.fn<(prefix: string) => string>(),
+  mockOriginalFsMkdirSync: vi.fn<(path: string) => undefined>(),
+  mockOriginalFsWriteFileSync: vi.fn<(path: string, data: Buffer) => void>(),
   mockReaddirSync: vi.fn<(path: string) => string[]>(),
   mockReadFileSync: vi.fn<(path: string) => Buffer>(),
   mockRequestUrl: vi.fn(),
@@ -110,15 +100,6 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-vi.mock('adm-zip', () => ({
-  default: class {
-    public extractAllTo = mockExtractAllTo;
-    public constructor(_input: unknown, options?: AdmZipInitOptionsLike) {
-      mockAdmZipInit(options);
-    }
-  }
-}));
-
 vi.mock('./community-plugins.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./community-plugins.ts')>();
   return {
@@ -155,8 +136,19 @@ function buildParams(version = CURRENT_VERSION): OpenDemoVaultParams {
 const HTTP_STATUS_OK = 200;
 const HTTP_STATUS_NOT_FOUND = 404;
 
+const DEMO_VAULT_NOTE_PATH = 'Notes/Welcome.md';
+const DEMO_VAULT_NOTE_CONTENT = '# Welcome to the demo vault';
+
 function archiveFileName(version: string): string {
   return `${PLUGIN_ID}-${version}.zip`;
+}
+
+// A REAL archive, written by the same `adm-zip` the release path uses, so the opener runs the real
+// Extractor end to end rather than a stand-in that could not fail the way extraction does.
+function buildDemoVaultArchive(): Buffer {
+  const zip = new AdmZip();
+  zip.addFile(DEMO_VAULT_NOTE_PATH, Buffer.from(DEMO_VAULT_NOTE_CONTENT, 'utf-8'));
+  return zip.toBuffer();
 }
 
 function demoVaultFolderName(version: string): string {
@@ -180,7 +172,7 @@ function setLatestReleaseVersion(latestVersion: string, assetStatus = HTTP_STATU
       return Promise.resolve(latestReleaseResponse(latestVersion));
     }
     return Promise.resolve({
-      arrayBuffer: new ArrayBuffer(0),
+      arrayBuffer: new Uint8Array(buildDemoVaultArchive()).buffer,
       status: assetStatus
     });
   });
@@ -199,7 +191,7 @@ beforeEach(() => {
   mockGetCommunityPluginRepo.mockResolvedValue(REPO);
   mockExistsSync.mockReturnValue(false);
   mockReaddirSync.mockReturnValue([]);
-  mockReadFileSync.mockReturnValue(Buffer.from('cached-archive'));
+  mockReadFileSync.mockReturnValue(buildDemoVaultArchive());
   // `mkdtempSync` appends a random suffix to its prefix; emulate a deterministic unique parent folder.
   mockMkdtempSync.mockImplementation((prefix: string) => `${prefix}abc123`);
   mockShowNoticeAfterDelay.mockReturnValue({
@@ -216,7 +208,12 @@ beforeEach(() => {
       configurable: true,
       value: (id: string): unknown => {
         if (id === 'node:original-fs') {
-          return { chmodSync: originalFsStubChmodSync };
+          // Deliberately NOT the mocked `node:fs`: the assertions below distinguish the two, which is
+          // The whole point of loading `original-fs` for extraction.
+          return {
+            mkdirSync: mockOriginalFsMkdirSync,
+            writeFileSync: mockOriginalFsWriteFileSync
+          };
         }
         throw new Error(`Unexpected require of '${id}'`);
       }
@@ -285,7 +282,7 @@ describe('openDemoVault', () => {
     mockSelectOption.mockResolvedValue(null);
     await openDemoVault(buildParams());
     expect(mockSendSync).not.toHaveBeenCalled();
-    expect(mockExtractAllTo).not.toHaveBeenCalled();
+    expect(mockOriginalFsWriteFileSync).not.toHaveBeenCalled();
   });
 
   it('should download and cache the archive when it is not cached', async () => {
@@ -295,7 +292,7 @@ describe('openDemoVault', () => {
       url: `https://github.com/${REPO}/releases/download/${CURRENT_VERSION}/${PLUGIN_ID}-demo-vault-${CURRENT_VERSION}.zip`
     });
     expect(mockWriteFileSync).toHaveBeenCalledWith(expect.stringContaining(archiveFileName(CURRENT_VERSION)), expect.any(Buffer));
-    expect(mockExtractAllTo).toHaveBeenCalledTimes(1);
+    expect(mockOriginalFsWriteFileSync).toHaveBeenCalledTimes(1);
     expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
   });
 
@@ -306,14 +303,14 @@ describe('openDemoVault', () => {
     expect(wasAssetDownloaded()).toBe(false);
     expect(mockReadFileSync).toHaveBeenCalledWith(expect.stringContaining(archiveFileName(CURRENT_VERSION)));
     expect(mockWriteFileSync).not.toHaveBeenCalled();
-    expect(mockExtractAllTo).toHaveBeenCalledTimes(1);
+    expect(mockOriginalFsWriteFileSync).toHaveBeenCalledTimes(1);
   });
 
   it('should extract into a fresh unique folder on every open (never reuse an extraction)', async () => {
     await openDemoVault(buildParams());
     await openDemoVault(buildParams());
     expect(mockMkdtempSync).toHaveBeenCalledTimes(2);
-    expect(mockExtractAllTo).toHaveBeenCalledTimes(2);
+    expect(mockOriginalFsWriteFileSync).toHaveBeenCalledTimes(2);
   });
 
   it('should remove orphaned extracted vaults older than the max age', async () => {
@@ -342,14 +339,24 @@ describe('openDemoVault', () => {
     expect(basename(getOpenedVaultDirectory())).toBe(demoVaultFolderName(CURRENT_VERSION));
   });
 
-  it('should hand adm-zip Electron original-fs so chmod-ing an extracted .asar file cannot crash', async () => {
-    // Electron's asar layer intercepts fs operations on any path containing `.asar` and throws
-    // ENOENT when chmod-ing an `.asar` file (it treats it as an archive root, not a plain file).
-    // The demo vault ships `_assets/CodeScriptToolkit/module.asar`, so the opener must extract with
-    // `original-fs` (asar interception disabled) rather than the intercepted `node:fs`.
+  it('should write the extracted vault with Electron original-fs, not the asar-intercepted node:fs', async () => {
+    // Electron's asar layer intercepts fs operations on any path containing `.asar`, treating it as an
+    // Archive root rather than a plain file. A demo vault may ship exactly such a file
+    // (`_assets/CodeScriptToolkit/module.asar`), so extraction goes through `original-fs`.
     await openDemoVault(buildParams());
-    const options = mockAdmZipInit.mock.calls.at(-1)?.[0];
-    expect(options?.fs?.chmodSync).toBe(originalFsStubChmodSync);
+    const vaultDirectory = getOpenedVaultDirectory();
+
+    expect(mockOriginalFsWriteFileSync).toHaveBeenCalledWith(`${vaultDirectory}/${DEMO_VAULT_NOTE_PATH}`, expect.anything());
+    expect(mockWriteFileSync).not.toHaveBeenCalledWith(expect.stringContaining(demoVaultFolderName(CURRENT_VERSION)), expect.anything());
+  });
+
+  it('should extract the archive contents into the fresh vault folder', async () => {
+    await openDemoVault(buildParams());
+    const vaultDirectory = getOpenedVaultDirectory();
+    const writtenContent = mockOriginalFsWriteFileSync.mock.calls.at(-1)?.[1];
+
+    expect(mockOriginalFsMkdirSync).toHaveBeenCalledWith(`${vaultDirectory}/Notes`, { recursive: true });
+    expect(writtenContent?.toString('utf-8')).toBe(DEMO_VAULT_NOTE_CONTENT);
   });
 
   it('should show a notice and not open when the archive is missing', async () => {
