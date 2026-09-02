@@ -293,7 +293,9 @@ export function myFunction(param: Type): ReturnType {
 ### L4. Trusted-input & layout helpers are hand-synced with `obsidian-integration-testing`
 
 - `src/obsidian/desktop-trusted-input.ts` (`typeIntoEditor`, `pressKey`, `moveMouse`, `clickMouse`, `hoverElement`, `unhoverElement`, `clickElement`) and `ensureLayoutReady` (`src/obsidian/workspace.ts`) are importable-module **twins** of helpers the `obsidian-integration-testing` harness seeds into its `evalInObsidian` `lib` bag (its `namespace-bootstrap.ts`). `errorToString` (`src/error.ts`) is likewise mirrored by the harness's own error-to-string helper. The harness must never depend on this library, so each is an intentional **duplicate kept in sync by hand — there is no automated drift check.** Any behavior change to one of these helpers must be mirrored in the harness in the same coordinated cross-repo change (and vice-versa); the harness carries the counterpart rule.
-- The copies are deliberately **not byte-identical** (a serialized closure vs a real module): here they call the ambient global `sleep(ms)`, read `Platform.isMacOS` via `import { Platform } from 'obsidian'`, and `moveMouse` / `pressKey` are **synchronous** (`void`) with the pointer primitive folded into `moveMouse` (no separate `moveMouseTo`); the harness closure instead uses its runtime `sleep` / `ns.obsidianModule` and types these `Promise<void>` as of its `12.0.0` (harmless: `() => Promise<void>` is assignable to the `() => void` base, so the `Lib` augmentation compiles either way). So the sync obligation is **behavioral**, not textual. That assignability is one-directional, and it is what lets `peerDependencies` admit `^11.0.0 || ^12.0.0`: OIT 11 types them `void`, OIT 12 types them `Promise<void>`, and both satisfy this library's `void` base. Flipping the copies here to `Promise<void>` first would invert it — an installed OIT still typing them `void` would fail with TS2430 — so the harness majors first and this library follows.
+- **The mobile twin is the exception that proves the rule: it delegates instead of duplicating.** `src/obsidian/mobile-trusted-input.ts` calls `window.__obsidianIntegrationTesting.trustedInput.*` — the seam the harness publishes on its namespace (`namespace-bootstrap.ts`), holding the very function objects it seeds into a closure's `lib` bag. A phone has no in-renderer route to a trusted event, so the injection is a round-trip to the host over the harness's Appium-transport channel; duplicating that wire format here would make the library monkey-patch the harness, inverting this rule's own "the harness must never depend on this library". Delegating keeps the mobile semantics (tap, long-press for `button: 'right'`, a throw for `'middle'`, the accepted `pressKey` key set, and the throws for the `:hover` helpers) identical for free. **The namespace shape is declared LOCALLY in that module** — the harness is not a dependency in either direction, at runtime or in types, and the harness deliberately publishes no exported mirror of its namespace shape for anyone to import.
+- The copies are deliberately **not byte-identical** (a serialized closure vs a real module): here they call the ambient global `sleep(ms)`, read `Platform.isMacOS` via `import { Platform } from 'obsidian'`, and the pointer primitive is folded into `moveMouse` (no separate `moveMouseTo`); the harness closure instead uses its runtime `sleep` / `ns.obsidianModule`. So the sync obligation is **behavioral**, not textual.
+- **All seven are `Promise<void>` on both sides, and the peer range is `^12.0.0` — a floor, not a preference.** The harness majored first (OIT `12.0.0`) and this library followed, which is the only order that compiles: `interface Lib extends MergedLib` makes this library's signatures the derived ones, `() => Promise<void>` is assignable to a `() => void` base but not the reverse, so a new `Promise<void>` copy here against an installed OIT 11 still typing them `void` is **TS2430**. Admitting `^11.0.0` would also be a claim the mobile arm cannot honour — it calls a namespace seam only 12 has. Nothing about the desktop arm needs to await anything; the `async` is the cross-platform **contract**, so a suite growing a mobile lane never rewrites its `await`s (hence the `@typescript-eslint/require-await` disables).
 - (cannot be forced by ESLint — a cross-repo hand-sync convention)
 
 ### L5. Platform-only modules carry a `desktop-` / `mobile-` filename prefix
@@ -331,7 +333,10 @@ export function myFunction(param: Type): ReturnType {
   Measured 2026-08-31 in `obsidian-fix-tab-size`'s 247 KB bundle: the demo-vault opener and the `adm-zip`
   it then imported took ~41 KB of it, ~17%, in a plugin that opens no archives of its own. Prefer a Node
   builtin (already `external`, so free) over a dependency for anything reachable from `src/obsidian/`.
-- No `mobile-` example exists yet; the rule is stated for symmetry.
+- `mobile-trusted-input.ts` is the `mobile-` example: it reads `window.__obsidianIntegrationTesting`, a
+  global only the integration-testing harness installs, and calling it anywhere else throws. Like its
+  `desktop-` twin it names that global only *inside* its functions, so importing it on desktop is inert —
+  which it has to be, since the barrels put it on every consumer's load path.
 - (the naming half cannot be forced by ESLint — a custom check could flag `node:`/`window.electron` usage
   in a non-`desktop-` file. The **import-safety** half IS enforced, by the mobile-load check on the
   harness plugin bundle described under **Build** — that bundle imports the entire library, so it stands
@@ -358,6 +363,24 @@ export function myFunction(param: Type): ReturnType {
   opener (static `node:fs` imports) is never on the mobile load path, yet the consumer writes no platform
   guard. The dynamic `import()` needs no `eslint-disable` (the `no-restricted-syntax` `ImportExpression`
   ban was removed from the shared config — see R2 G10a); keep the literal path so esbuild can bundle it.
+- **Second reference — a facade over BOTH arms, and the flat-barrel rule it needs.** `trusted-input.ts`
+  (no prefix) exports the same seven helper names as `desktop-trusted-input.ts` and
+  `mobile-trusted-input.ts`, and each one dispatches through a `Platform.isDesktopApp`-gated call-time
+  `import()` of the arm that fits. Unlike the demo-vault case there is no `canExecute` to hide the
+  command on the wrong platform, so the dispatch happens per call, in the helper itself.
+  - **That trio is a name collision in the flat barrel**, which is one namespace — and L5 forbids the
+    obvious escape ("the prefix marks the file, not its exports", so no `desktopPressKey`). So
+    `scripts/build-generate-merged.ts` **supersedes**: when an unprefixed module has a `desktop-` /
+    `mobile-` prefixed sibling of the same name in the same directory, the barrel exports the facade and
+    skips the twins. `lib.pressKey` inside an `evalInObsidian` closure is then platform-correct, both
+    published subpaths stay importable, and no export is renamed. The per-directory `index.ts` barrels
+    need none of this — they re-export namespaced (`export * as 'desktop-trusted-input'`), so a
+    same-named sibling never collides there.
+  - **A facade may supersede its twins only if it exports every value name they do**, and the generator
+    throws otherwise (`scripts/helpers/module-supersession.ts`). Without that invariant a twin that later
+    grows an export the facade lacks would silently vanish from the flat bag instead of failing the
+    build. A prefixed module with no facade — `desktop-demo-vault-opener.ts` — supersedes nothing and
+    reaches the barrel on its own.
 - The rule constrains what the library **forces**, not what a consumer **may** import. A consumer is
   free to import a `desktop-*` / `mobile-*` module directly — that is a **deliberate platform
   commitment**: correct for a desktop-only plugin (or a G80 facade), and a knowingly-wrong choice for a
