@@ -254,7 +254,7 @@ describe('unhoverElement', () => {
     await promise;
   });
 
-  it('should stop polling after the timeout when the element never unhovers', async () => {
+  it('should stop polling after the timeout when the element keeps matching :hover', async () => {
     const element = createElement(createRect({ height: 10, left: 5, right: 15, top: 0 }), () => true);
     const promise = unhoverElement({ element });
     await vi.advanceTimersByTimeAsync(INPUT_TIMEOUT_IN_MILLISECONDS);

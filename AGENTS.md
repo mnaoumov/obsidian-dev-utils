@@ -22,7 +22,11 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run build:compile:typescript` — type-check with tsc
 - `npm run build:templates` — copy consumer templates
 - `npm run build:validate-templates` — type-check the copied consumer templates (needs `dist/lib` built)
-- `npm run spellcheck` — spell check with cspell
+- `npm run spellcheck` — spell check with cspell. **A `words` entry in `cspell.json` covers only that exact
+  word — it carries no affix flags, so its inflections are separate unknown words.** `unhover` was listed and
+  its `-s` form still failed the check (2026-09-01, T876). Prefer rewording over adding the inflection: the
+  list is for domain terms, not for coinages a rewrite avoids. Note this bullet cannot spell out the example
+  without failing the very check it documents.
 - `npm run find-overexposed` / `find-overexposed:fix` — report (or narrow) declarations exposed more broadly
   than their references require. **It is NOT part of `lint` / `test` / `format` / `spellcheck`, but it IS one
   of `npm run version`'s preflight checks** — so a fully green branch gate can still fail at release time on
