@@ -3,18 +3,20 @@
  *
  * Downloads and opens a plugin's shipped demo vault in a new Obsidian window (desktop only).
  *
- * A plugin can attach a `<plugin-id>-demo-vault-<version>.zip` archive to each GitHub release (see
- * `archivePluginDemoVault` in `script-utils/demo-vault.ts`). This resolves the plugin's repository
- * from Obsidian's community registry, downloads the archive for the chosen version, and opens it as a
- * vault in a new window. When the installed plugin version is behind the latest release, the user is
- * offered a choice between the two versions.
+ * A plugin can attach a `<plugin-id>-demo-vault.zip` archive to each GitHub release (see
+ * `archivePluginDemoVault` in `script-utils/demo-vault.ts`; every name shared with it comes from
+ * `demo-vault-naming.ts`). This resolves the plugin's repository from Obsidian's community registry,
+ * downloads the archive for the chosen version, and opens it as a vault in a new window. When the
+ * installed plugin version is behind the latest release, the user is offered a choice between the two
+ * versions.
  *
  * A progress notice is shown immediately (download + extraction can take a while, so the user must see
  * something is happening right away). Only the downloaded ARCHIVE is cached (under the OS temp
  * directory); every invocation extracts a FRESH copy into its own temporary folder and opens that, so a
- * previous session's edits never leak into a new one. The extracted vault folder is named
- * `<plugin-id>-<version>.demo-vault` so it reads nicely in Obsidian's vault switcher. Orphaned
- * extracted folders left over from earlier sessions are cleaned up (best-effort) on each open.
+ * previous session's edits never leak into a new one. The vault folder is the archive's own single
+ * top-level folder, `<plugin-id>-demo-vault-<version>`, which reads nicely in Obsidian's vault switcher
+ * and is the same name a hand-unzipped archive produces. Orphaned extracted folders left over from
+ * earlier sessions are cleaned up (best-effort) on each open.
  *
  * **Nothing here may touch a platform-only API while the module INITIALIZES.** The `node:` imports below
  * are safe to merely evaluate on mobile — `require` hands back `undefined` there and nothing reads it at
@@ -60,6 +62,10 @@ import {
   getLatestReleaseVersion
 } from './community-plugins.ts';
 import { PluginNoticeMode } from './components/plugin-notice-component.ts';
+import {
+  getDemoVaultArchiveFileName,
+  getDemoVaultFolderName
+} from './demo-vault-naming.ts';
 import { selectOption } from './modals/select-option.ts';
 
 /**
@@ -271,9 +277,14 @@ function extractDemoVaultArchive(archive: Buffer, targetDirectory: string): void
  * Extracts the archive into a fresh, uniquely-named temporary folder and returns the vault path.
  *
  * A unique parent folder (`mkdtempSync`) guarantees a brand-new extraction every time — the demo vault
- * is never reused across opens, so a previous session's edits never leak in. Inside it, the vault folder
- * is named `<plugin-id>-<version>.demo-vault` so Obsidian's vault switcher shows a friendly name (its
- * basename) rather than the random temp id.
+ * is never reused across opens, so a previous session's edits never leak in. The archive is extracted
+ * into that parent and the vault is the single `<plugin-id>-demo-vault-<version>` folder it contains, so
+ * Obsidian's vault switcher shows a friendly name (its basename) rather than the random temp id.
+ *
+ * That folder is not searched for: {@link getDemoVaultFolderName} names it on both sides, so the path is
+ * known before a byte is written. Which keeps the extractor free of any read — deliberate, because
+ * Electron's asar layer intercepts `fs` reads on any path containing `.asar`, and a demo vault may
+ * legitimately ship such a file.
  *
  * @param params - The {@link ExtractDemoVaultToFreshFolderParams}.
  * @returns The absolute path of the freshly extracted vault folder.
@@ -283,9 +294,14 @@ function extractDemoVaultToFreshFolder(params: ExtractDemoVaultToFreshFolderPara
   const extractedVaultsRoot = join(tmpdir(), DEMO_VAULTS_CACHE_FOLDER, EXTRACTED_VAULTS_SUBFOLDER);
   mkdirSync(extractedVaultsRoot, { recursive: true });
   const uniqueParentDirectory = mkdtempSync(join(extractedVaultsRoot, `${pluginId}-${version}-`));
-  const vaultDirectory = join(uniqueParentDirectory, `${pluginId}-${version}.demo-vault`);
-  extractDemoVaultArchive(archive, vaultDirectory);
-  return vaultDirectory;
+  extractDemoVaultArchive(archive, uniqueParentDirectory);
+  return join(
+    uniqueParentDirectory,
+    getDemoVaultFolderName({
+      pluginId,
+      version
+    })
+  );
 }
 
 /**
@@ -316,7 +332,7 @@ async function resolveDemoVaultArchive(params: ResolveDemoVaultArchiveParams): P
   }
 
   progressNotice.setContent(`Downloading demo vault for ${pluginName} v${version}…`);
-  const assetUrl = `https://github.com/${repo}/releases/download/${version}/${pluginId}-demo-vault-${version}.zip`;
+  const assetUrl = `https://github.com/${repo}/releases/download/${version}/${getDemoVaultArchiveFileName(pluginId)}`;
   const response = await requestUrl({
     throw: false,
     url: assetUrl
