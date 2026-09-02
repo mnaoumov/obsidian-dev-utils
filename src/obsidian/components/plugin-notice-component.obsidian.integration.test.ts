@@ -19,12 +19,21 @@ import {
 describe('PluginNoticeComponent styling', () => {
   it('should render the plugin name with the accent color and bold weight, distinct from the body', async () => {
     const result = await evalInObsidian({
-      callback({ app, lib: { PluginNoticeComponent } }) {
+      callback({ app, lib: { PluginNoticeComponent, PluginNoticeMode } }) {
+        // A decoy notice raised first, carrying the same classes under a different plugin name. It
+        // Stands in for whatever another test in this shared Obsidian instance happens to leave on
+        // Screen, so the lookup below is proven to read THIS test's notice rather than the first
+        // Match in the document — deterministically, instead of depending on the file order.
+        const decoyComponent = new PluginNoticeComponent({ app, pluginName: 'Contaminating Plugin' });
+        const decoyNotice = decoyComponent.showNotice('Decoy body', { mode: PluginNoticeMode.Separate });
+
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         const notice = component.showNotice('Body text');
 
         try {
-          const nameEl = activeDocument.querySelector('.obsidian-dev-utils.plugin-notice-name');
+          // Scoped to the notice under test: `activeDocument.querySelector` would return the decoy's
+          // Name element (and, in the full pooled run, any other plugin's notice still fading out).
+          const nameEl = notice.messageEl.querySelector('.obsidian-dev-utils.plugin-notice-name');
           if (!nameEl) {
             throw new Error('plugin name element not found in the rendered notice');
           }
@@ -56,6 +65,7 @@ describe('PluginNoticeComponent styling', () => {
           return measurement;
         } finally {
           notice.hide();
+          decoyNotice.hide();
         }
       }
     });
@@ -137,7 +147,14 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           const isShownAfterOtherNotice = findLockedContentEl() !== null;
           ordinaryNotice.hide();
 
-          // Clicking the close button hides the notice directly — no confirmation modal.
+          // Clicking the close button hides the notice directly — no confirmation modal. Counted as a
+          // Before/after delta rather than read absolutely: a confirm modal another test in this shared
+          // Instance left up would otherwise fail this for a reason unrelated to the close button.
+          function getConfirmModalCount(): number {
+            return activeDocument.querySelectorAll('.obsidian-dev-utils.confirm-modal').length;
+          }
+
+          const confirmModalCountBeforeClose = getConfirmModalCount();
           closeButtonEl?.click();
           await waitUntil({
             message: 'the notice should be gone after clicking the close button',
@@ -145,7 +162,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
             timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
           const isShownAfterClose = findLockedContentEl() !== null;
-          const hasConfirmModal = activeDocument.querySelector('.obsidian-dev-utils.confirm-modal') !== null;
+          const hasConfirmModal = getConfirmModalCount() > confirmModalCountBeforeClose;
           // Let the fire-and-forget onHide callback settle after the notice was hidden.
           await sleep(SETTLE_IN_MILLISECONDS);
 
