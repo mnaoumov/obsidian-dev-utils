@@ -20,7 +20,16 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run build` — full build pipeline
 - `npm run build:clean` — clean build output
 - `npm run build:compile` — compile: fans out to the svelte and TypeScript passes below
-- `npm run build:compile:svelte` — type-check Svelte components with svelte-check
+- `npm run build:compile:svelte` — type-check Svelte components with svelte-check. **The gate globs the
+  Svelte extensions (`**/*.svelte`, `**/*.svelte.js`, `**/*.svelte.ts`) directly — never the tsconfig
+  `include` patterns.** Globbing `include` and filtering the result for Svelte extensions is empty *by
+  construction* (a tsconfig `include` lists `.ts` globs), so the step silently skipped in every consumer
+  until 2026-09-02, T817. `node_modules`/`dist` are excluded explicitly because a tsconfig that sets
+  `exclude` at all replaces TypeScript's default `node_modules` exclusion. A project that has Svelte files
+  but does not declare `svelte-check` in its `package.json` now **fails** with an error naming it, rather
+  than falling through to the package manager's exec form and downloading the tool mid-build. The
+  declaration is read from `package.json`, not probed in `node_modules/.bin`, because a locally installed
+  tool has no bin shim under yarn PnP.
 - `npm run build:compile:typescript` — type-check with tsc
 - `npm run build:templates` — copy consumer templates
 - `npm run build:validate-templates` — type-check the copied consumer templates (needs `dist/lib` built)

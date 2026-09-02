@@ -1,3 +1,5 @@
+import type { PackageJson } from 'type-fest';
+
 import {
   beforeEach,
   describe,
@@ -33,6 +35,7 @@ const {
   mockParseTsConfig,
   mockReaddirPosix,
   mockReadJson,
+  mockReadPackageJson,
   mockResolvePathFromRootSafe,
   mockResolveToolCommand,
   mockRm,
@@ -47,6 +50,7 @@ const {
   mockParseTsConfig: vi.fn<(tsConfigPath: string) => ParsedTsConfig>(),
   mockReaddirPosix: vi.fn(),
   mockReadJson: vi.fn(),
+  mockReadPackageJson: vi.fn<() => Promise<PackageJson>>(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
   mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>(),
   mockRm: vi.fn(),
@@ -95,6 +99,10 @@ vi.mock('../script-utils/fs.ts', () => ({
   readdirPosix: mockReaddirPosix
 }));
 
+vi.mock('../script-utils/npm.ts', () => ({
+  readPackageJson: mockReadPackageJson
+}));
+
 vi.mock('../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
 }));
@@ -111,6 +119,7 @@ beforeEach(() => {
   mockToCanonical.mockImplementation((fileName: string) => fileName.toLowerCase());
   mockParseTsConfig.mockReturnValue({ fileNames: ['/root/src/a.ts'], options: {} });
   mockCheckProjectTypes.mockReturnValue(true);
+  mockReadPackageJson.mockResolvedValue({ devDependencies: { 'svelte-check': '^4.0.0' } });
 });
 
 describe('buildClean', () => {
@@ -176,35 +185,88 @@ describe('buildCompileTypeScript', () => {
 });
 
 describe('buildCompileSvelte', () => {
-  it('should skip when no svelte files found', async () => {
-    mockReadJson.mockResolvedValue({ include: ['src/**/*.ts'] });
-    mockGlob.mockReturnValue((async function* generateTsFiles(): AsyncGenerator<string, void> {
+  function mockGlobResult(...files: string[]): void {
+    mockGlob.mockReturnValue((async function* generateFiles(): AsyncGenerator<string, void> {
       await noopAsync();
-      yield 'src/main.ts';
+      yield* files;
     })());
+  }
+
+  it('should glob svelte extensions rather than the tsconfig include patterns', async () => {
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts', './scripts/**/*.ts'] });
+    mockGlobResult();
+    await buildCompileSvelte();
+    expect(mockGlob).toHaveBeenCalledWith(
+      ['**/*.svelte', '**/*.svelte.js', '**/*.svelte.ts'],
+      expect.anything()
+    );
+  });
+
+  it('should exclude node_modules and dist on top of the tsconfig exclude patterns', async () => {
+    mockReadJson.mockResolvedValue({ exclude: ['./scripts/docs-gen/**/*.ts'], include: ['./src/**/*.ts'] });
+    mockGlobResult();
+    await buildCompileSvelte();
+    expect(mockGlob).toHaveBeenCalledWith(
+      expect.anything(),
+      { cwd: '/root/.', exclude: ['**/node_modules/**', '**/dist/**', './scripts/docs-gen/**/*.ts'] }
+    );
+  });
+
+  it('should skip when no svelte files found', async () => {
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts'] });
+    mockGlobResult();
     await buildCompileSvelte();
     expect(mockExecFromRoot).not.toHaveBeenCalled();
   });
 
-  it('should handle missing include and exclude in tsconfig', async () => {
+  it('should handle missing exclude in tsconfig', async () => {
     mockReadJson.mockResolvedValue({});
-    mockGlob.mockReturnValue((async function* generateEmpty(): AsyncGenerator<string, void> {
-      // Empty generator
-    })());
+    mockGlobResult();
     await buildCompileSvelte();
-    expect(mockExecFromRoot).not.toHaveBeenCalled();
+    expect(mockGlob).toHaveBeenCalledWith(
+      expect.anything(),
+      { cwd: '/root/.', exclude: ['**/node_modules/**', '**/dist/**'] }
+    );
   });
 
   it('should run svelte-check when svelte files exist', async () => {
-    mockReadJson.mockResolvedValue({ exclude: ['node_modules/**'], include: ['src/**/*'] });
-    mockGlob.mockReturnValue((async function* generateSvelteFiles(): AsyncGenerator<string, void> {
-      await noopAsync();
-      yield 'src/Component.svelte';
-    })());
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts'] });
+    mockGlobResult('src/svelte-components/sample-svelte-component.svelte');
     await buildCompileSvelte();
-    expect(mockExecFromRoot).toHaveBeenCalledWith(
-      expect.arrayContaining(['svelte-check'])
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['svelte-check', '--tsconfig', 'tsconfig.json']);
+  });
+
+  it('should run svelte-check when svelte-check is declared as a regular dependency', async () => {
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts'] });
+    mockGlobResult('src/Component.svelte');
+    mockReadPackageJson.mockResolvedValue({ dependencies: { 'svelte-check': '^4.0.0' } });
+    await buildCompileSvelte();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['svelte-check', '--tsconfig', 'tsconfig.json']);
+  });
+
+  it('should run svelte-check when svelte-check is declared as a peer dependency', async () => {
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts'] });
+    mockGlobResult('src/Component.svelte');
+    mockReadPackageJson.mockResolvedValue({ peerDependencies: { 'svelte-check': '^4.0.0' } });
+    await buildCompileSvelte();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['svelte-check', '--tsconfig', 'tsconfig.json']);
+  });
+
+  it('should throw when svelte files exist but svelte-check is not declared', async () => {
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts'] });
+    mockGlobResult('src/Component.svelte');
+    mockReadPackageJson.mockResolvedValue({ devDependencies: { svelte: '^5.0.0' } });
+    await expect(buildCompileSvelte()).rejects.toThrow(
+      'Found Svelte file(s) in the project (e.g. src/Component.svelte), but `svelte-check` is not declared in package.json. Add `svelte-check` as a devDependency to type-check the Svelte code.'
     );
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
+  });
+
+  it('should not read package.json when there are no svelte files', async () => {
+    mockReadJson.mockResolvedValue({ include: ['./src/**/*.ts'] });
+    mockGlobResult();
+    await buildCompileSvelte();
+    expect(mockReadPackageJson).not.toHaveBeenCalled();
   });
 });
 
