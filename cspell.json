@@ -65,6 +65,7 @@
     "ENOTEMPTY",
     "errorbox",
     "etags",
+    "EUNKNOWNCONFIG",
     "Excalidraw",
     "exif",
     "extname",

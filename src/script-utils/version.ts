@@ -561,15 +561,10 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     const fileNames = await readdirPosix(buildFolder);
     filePaths = fileNames.map((fileName) => join(buildFolder, fileName));
   } else {
-    let resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
-    const index = resultOutput.indexOf('[\n  {');
-    if (index === -1) {
-      throw new Error('Failed to find the start of the JSON array in the result output');
-    }
-    resultOutput = resultOutput.slice(index);
-    const result = JSON.parse(resultOutput) as [NpmPackResult];
+    const resultOutput = await execFromRoot(['npm', 'pack', '--pack-destination', ObsidianDevUtilsRepoPaths.Dist, '--json'], { isQuiet: true });
+    const result = parseNpmPackOutput(resultOutput);
     filePaths = [
-      join(ObsidianDevUtilsRepoPaths.Dist, result[0].filename),
+      join(ObsidianDevUtilsRepoPaths.Dist, result.filename),
       join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.StylesCss)
     ];
   }
@@ -828,6 +823,43 @@ async function getLatestObsidianVersion(): Promise<string> {
 
 function isPreRelease(version: string): boolean {
   return prerelease(version) !== null;
+}
+
+/**
+ * Extracts the single pack result from the output of `npm pack --json`.
+ *
+ * Two things make this more than a `JSON.parse()`. The payload is PRECEDED on stdout by whatever the
+ * `prepare` script printed (the `npm notice` lines go to stderr, not here), so its start has to be found —
+ * and it is found by parsing from each candidate start rather than by matching a literal, because the
+ * prefix may itself contain a brace. And the payload's SHAPE depends on the npm major: npm 11 and earlier
+ * emit an array of pack results, npm 12 emits an object keyed by package name. Both are accepted; scanning
+ * for the array's literal opening is what broke every release on npm 12 (T806).
+ *
+ * @param output - The stdout of `npm pack --json`.
+ * @returns The {@link NpmPackResult} describing the packed tarball.
+ * @throws If the output holds no parsable JSON payload, or the payload holds no pack result.
+ */
+function parseNpmPackOutput(output: string): NpmPackResult {
+  for (const match of output.matchAll(/[[{]/g)) {
+    let payload: unknown;
+
+    try {
+      payload = JSON.parse(output.slice(match.index));
+    } catch {
+      continue;
+    }
+
+    const results = Array.isArray(payload) ? payload as NpmPackResult[] : Object.values(payload as Record<string, NpmPackResult>);
+    const result = results[0];
+
+    if (!result) {
+      throw new Error('Found no pack result in the `npm pack --json` output');
+    }
+
+    return result;
+  }
+
+  throw new Error('Failed to find the JSON payload in the `npm pack --json` output');
 }
 
 /**
