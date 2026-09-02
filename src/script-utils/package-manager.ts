@@ -10,6 +10,8 @@
  * ourselves sidesteps the whole shim-format question, because every package manager writes one there.
  */
 
+import type { PackageJson } from 'type-fest';
+
 import { existsSync } from 'node:fs';
 import process from 'node:process';
 
@@ -20,6 +22,7 @@ import {
 } from '../path.ts';
 import { getMandatoryNamedGroup } from '../reg-exp.ts';
 import { assertNever } from '../type-guards.ts';
+import { readJsonSync } from './json.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import { getRootFolder } from './root.ts';
 
@@ -66,37 +69,55 @@ export interface ResolveToolCommandParams {
 /**
  * Determines which package manager owns the project's dependency tree.
  *
- * The lockfile is the primary signal, because it describes the tree itself rather than whichever manager
- * happens to have launched the current process. When no lockfile is present, the manager that launched us
- * is the next best answer, and every manager reports itself in `npm_config_user_agent` as a leading
- * `<name>/<version>` token.
+ * Every signal is collected before any of them is believed, because a repo carrying two lockfiles used to
+ * resolve to whichever sat earlier in a fixed list — silently reassigning every package script and every
+ * tool invocation to a manager that never installed the tree.
+ *
+ * The order is:
+ *
+ * 1. The `packageManager` field of `package.json`. It is a deliberate declaration by the repo's author
+ *    rather than an artifact left behind by whatever ran last, so it outranks every lockfile — and it is
+ *    the only signal that helps at all before the first install, when no lockfile exists yet.
+ * 2. The sole lockfile, when exactly one manager claims the tree.
+ * 3. Among several lockfiles, the manager that launched us (`npm_config_user_agent`), when it owns one of
+ *    them — a live signal beats a file that may have been abandoned mid-migration. Otherwise the
+ *    documented fallback order in {@link LOCKFILES} decides. Note this is deliberately NOT "the most
+ *    recently modified lockfile": a stray lockfile is typically the newest file, so mtime picks precisely
+ *    the wrong one.
+ * 4. `npm_config_user_agent` on its own, when there is no lockfile.
+ * 5. {@link PackageManager.Npm}.
+ *
+ * Whenever more than one manager claims the tree, the disagreement is reported once per project through
+ * {@link warnAboutSeveralClaimants} — the resolution stays deterministic, but it stops being silent.
  *
  * @param cwd - The current working folder to resolve from.
  * @returns The detected package manager, or {@link PackageManager.Npm} when nothing indicates otherwise.
  */
 export function getPackageManager(cwd?: string): PackageManager {
   const root = getStartFolder(cwd);
+  const declaredPackageManager = detectPackageManagerFromPackageJson(root);
+  const lockfiles = LOCKFILES.filter((lockfile) => existsSync(join(root, lockfile.fileName)));
+  const claimants = new Set(lockfiles.map((lockfile) => lockfile.packageManager));
 
-  if (
-    existsSync(join(root, ObsidianDevUtilsRepoPaths.BunLock))
-    || existsSync(join(root, ObsidianDevUtilsRepoPaths.BunLockb))
-  ) {
-    return PackageManager.Bun;
+  if (declaredPackageManager !== null) {
+    claimants.add(declaredPackageManager);
   }
 
-  if (existsSync(join(root, ObsidianDevUtilsRepoPaths.PnpmLockYaml))) {
-    return PackageManager.Pnpm;
+  const packageManager = resolvePackageManager({
+    claimants,
+    declaredPackageManager
+  });
+
+  if (claimants.size > 1) {
+    warnAboutSeveralClaimants({
+      declaredPackageManager,
+      lockfiles,
+      packageManager,
+      root
+    });
   }
 
-  if (existsSync(join(root, ObsidianDevUtilsRepoPaths.YarnLock))) {
-    return PackageManager.Yarn;
-  }
-
-  if (existsSync(join(root, ObsidianDevUtilsRepoPaths.PackageLockJson))) {
-    return PackageManager.Npm;
-  }
-
-  return detectPackageManagerFromUserAgent() ?? PackageManager.Npm;
+  return packageManager;
 }
 
 /**
@@ -132,9 +153,36 @@ export function resolveToolCommand(params: ResolveToolCommandParams): string[] {
 }
 
 /**
+ * Matches the leading `<name>@` token of a `package.json` `packageManager` value.
+ *
+ * The `@` is required, because corepack's format is `<name>@<version>` — a bare name is a malformed
+ * declaration rather than a shorthand, and is ignored instead of guessed at.
+ */
+const DECLARATION_NAME_REG_EXP = /^(?<name>[^@\s]+)@/;
+
+/**
+ * The lockfiles that identify a package manager, in the order they decide a tie no other signal settles.
+ *
+ * Both bun lockfile formats map to the same manager, so a repo holding both is one claimant, not two.
+ */
+const LOCKFILES: LockfileClaim[] = [
+  { fileName: ObsidianDevUtilsRepoPaths.BunLock, packageManager: PackageManager.Bun },
+  { fileName: ObsidianDevUtilsRepoPaths.BunLockb, packageManager: PackageManager.Bun },
+  { fileName: ObsidianDevUtilsRepoPaths.PnpmLockYaml, packageManager: PackageManager.Pnpm },
+  { fileName: ObsidianDevUtilsRepoPaths.YarnLock, packageManager: PackageManager.Yarn },
+  { fileName: ObsidianDevUtilsRepoPaths.PackageLockJson, packageManager: PackageManager.Npm }
+];
+
+/**
  * Matches the leading `<name>/` token of an `npm_config_user_agent` value.
  */
 const USER_AGENT_NAME_REG_EXP = /^(?<name>[^/\s]+)\//;
+
+/**
+ * The disagreements already reported, so a build that resolves the manager once per script hop and once
+ * per tool invocation still says it only once.
+ */
+const reportedDisagreements = new Set<string>();
 
 /**
  * Parameters for {@link findBinShim}.
@@ -149,6 +197,101 @@ interface FindBinShimParams {
    * The name of the locally-installed tool.
    */
   readonly tool: string;
+}
+
+/**
+ * A lockfile and the package manager whose presence it proves.
+ */
+interface LockfileClaim {
+  /**
+   * The lockfile name, as it appears at the project root.
+   */
+  readonly fileName: string;
+
+  /**
+   * The package manager that writes this lockfile.
+   */
+  readonly packageManager: PackageManager;
+}
+
+/**
+ * Parameters for {@link resolvePackageManager}.
+ */
+interface ResolvePackageManagerParams {
+  /**
+   * Every package manager claiming the tree — the lockfile owners in {@link LOCKFILES} order, plus the
+   * declared one. Only consulted when nothing is declared, in which case it holds exactly the lockfile
+   * owners.
+   */
+  readonly claimants: ReadonlySet<PackageManager>;
+
+  /**
+   * The package manager declared in `package.json`, or `null` when none is.
+   */
+  readonly declaredPackageManager: null | PackageManager;
+}
+
+/**
+ * Parameters for {@link warnAboutSeveralClaimants}.
+ */
+interface WarnAboutSeveralClaimantsParams {
+  /**
+   * The package manager declared in `package.json`, or `null` when none is.
+   */
+  readonly declaredPackageManager: null | PackageManager;
+
+  /**
+   * The lockfiles actually found at the project root.
+   */
+  readonly lockfiles: readonly LockfileClaim[];
+
+  /**
+   * The package manager that won.
+   */
+  readonly packageManager: PackageManager;
+
+  /**
+   * The project root the lockfiles were found in.
+   */
+  readonly root: string;
+}
+
+/**
+ * Reads the package manager out of the `packageManager` field of the project's `package.json`, which is
+ * corepack's `<name>@<version>` declaration.
+ *
+ * @param root - The project root to read `package.json` from.
+ * @returns The declared package manager, or `null` when there is no `package.json`, it cannot be parsed,
+ * the field is absent or malformed, or it names a manager we do not handle.
+ */
+function detectPackageManagerFromPackageJson(root: string): null | PackageManager {
+  const packageJsonPath = join(root, ObsidianDevUtilsRepoPaths.PackageJson);
+
+  if (!existsSync(packageJsonPath)) {
+    return null;
+  }
+
+  let packageJson: PackageJson;
+
+  try {
+    packageJson = readJsonSync<PackageJson>(packageJsonPath);
+  } catch {
+    return null;
+  }
+
+  const declaration = packageJson.packageManager;
+
+  if (!declaration) {
+    return null;
+  }
+
+  const match = DECLARATION_NAME_REG_EXP.exec(declaration);
+
+  if (!match) {
+    return null;
+  }
+
+  return parsePackageManagerName(getMandatoryNamedGroup(match, 'name'));
 }
 
 /**
@@ -171,25 +314,7 @@ function detectPackageManagerFromUserAgent(): null | PackageManager {
     return null;
   }
 
-  const name = getMandatoryNamedGroup(match, 'name');
-
-  switch (name) {
-    case PackageManager.Bun as string: {
-      return PackageManager.Bun;
-    }
-    case PackageManager.Npm as string: {
-      return PackageManager.Npm;
-    }
-    case PackageManager.Pnpm as string: {
-      return PackageManager.Pnpm;
-    }
-    case PackageManager.Yarn as string: {
-      return PackageManager.Yarn;
-    }
-    default: {
-      return null;
-    }
-  }
+  return parsePackageManagerName(getMandatoryNamedGroup(match, 'name'));
 }
 
 /**
@@ -280,4 +405,105 @@ function getShimCandidates(tool: string): string[] {
  */
 function getStartFolder(cwd?: string): string {
   return getRootFolder(cwd) ?? toPosixPath(cwd ?? process.cwd());
+}
+
+/**
+ * Maps the bare name a lockfile declaration or a user agent reports onto the package manager it names.
+ *
+ * @param name - The reported name.
+ * @returns The matching package manager, or `null` for a runtime we do not handle.
+ */
+function parsePackageManagerName(name: string): null | PackageManager {
+  switch (name) {
+    case PackageManager.Bun as string: {
+      return PackageManager.Bun;
+    }
+    case PackageManager.Npm as string: {
+      return PackageManager.Npm;
+    }
+    case PackageManager.Pnpm as string: {
+      return PackageManager.Pnpm;
+    }
+    case PackageManager.Yarn as string: {
+      return PackageManager.Yarn;
+    }
+    default: {
+      return null;
+    }
+  }
+}
+
+/**
+ * Picks the winner out of the collected signals, per the order documented on {@link getPackageManager}.
+ *
+ * @param params - The parameters for the resolution.
+ * @returns The package manager that owns the tree.
+ */
+function resolvePackageManager(params: ResolvePackageManagerParams): PackageManager {
+  const {
+    claimants,
+    declaredPackageManager
+  } = params;
+
+  if (declaredPackageManager !== null) {
+    return declaredPackageManager;
+  }
+
+  const lockfileOwners = [...claimants];
+  const [firstLockfileOwner] = lockfileOwners;
+
+  if (firstLockfileOwner === undefined) {
+    return detectPackageManagerFromUserAgent() ?? PackageManager.Npm;
+  }
+
+  if (lockfileOwners.length === 1) {
+    return firstLockfileOwner;
+  }
+
+  const launchedBy = detectPackageManagerFromUserAgent();
+
+  if (launchedBy !== null && claimants.has(launchedBy)) {
+    return launchedBy;
+  }
+
+  return firstLockfileOwner;
+}
+
+/**
+ * Reports that several package managers claim the same tree, naming each lockfile found, what
+ * `package.json` declares, and which manager won.
+ *
+ * `console.warn` rather than a debug channel: this runs in the build's own terminal, and a message nobody
+ * sees unless they already suspect the problem leaves the failure exactly as silent as it was. Each
+ * distinct message is printed once, because the manager is resolved once per package-script hop and once
+ * per tool invocation.
+ *
+ * @param params - The parameters for the report.
+ */
+function warnAboutSeveralClaimants(params: WarnAboutSeveralClaimantsParams): void {
+  const {
+    declaredPackageManager,
+    lockfiles,
+    packageManager,
+    root
+  } = params;
+
+  const lockfileNames = lockfiles.map((lockfile) => lockfile.fileName).join(', ');
+  const advice = declaredPackageManager === null
+    ? 'Delete the stale lockfile, or declare "packageManager" in package.json, to settle it.'
+    : 'Delete the stale lockfile to settle it.';
+  const message = [
+    `obsidian-dev-utils: more than one package manager claims ${root}.`,
+    `Lockfiles: ${lockfileNames}.`,
+    `package.json "packageManager": ${declaredPackageManager ?? 'not set'}.`,
+    `Using ${packageManager}.`,
+    advice
+  ].join(' ');
+
+  if (reportedDisagreements.has(message)) {
+    return;
+  }
+
+  reportedDisagreements.add(message);
+  console.warn(message);
 }
