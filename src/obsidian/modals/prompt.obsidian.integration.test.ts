@@ -319,7 +319,7 @@ describe('prompt', () => {
 
           // The modal's scope reads the real key pipeline, so the press has to be trusted (G107). The
           // Input already holds focus — `PromptModal` selects it on open.
-          pressKey({ key: '1', modifiers: ['Alt'] });
+          await pressKey({ key: '1', modifiers: ['Alt'] });
           await waitUntil({
             message: 'the checkbox toggles after alt+1',
             predicate: () => getCheckboxEl()?.checked === true,

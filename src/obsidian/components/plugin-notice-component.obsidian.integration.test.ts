@@ -127,7 +127,7 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           // Guarded content and NOT dismiss it. It is a genuine trusted click at that point, so the
           // Renderer hit-tests it exactly as it would a user's.
           const rect = containerEl.getBoundingClientRect();
-          clickMouse({ x: rect.left + 2, y: rect.top + 2 });
+          await clickMouse({ x: rect.left + 2, y: rect.top + 2 });
           await sleep(SETTLE_IN_MILLISECONDS);
           const isShownAfterPaddingClick = findLockedContentEl() !== null;
 

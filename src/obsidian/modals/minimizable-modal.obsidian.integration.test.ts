@@ -272,7 +272,7 @@ describe('MinimizableModal', () => {
           if (!titleEl) {
             throw new Error('minimized bar title not found');
           }
-          clickElement({ element: titleEl });
+          await clickElement({ element: titleEl });
           const wasRestoredByTitleClick = await didRestore();
           const isBarGoneAfterTitleClick = document.body.querySelector(BAR_SELECTOR) === null;
 
@@ -287,7 +287,7 @@ describe('MinimizableModal', () => {
           // Child sits there (the title, or the restore button this case must avoid). Find a point the
           // Bar itself actually owns and click that.
           const barPoint = findOwnPoint(barEl);
-          clickMouse({ x: barPoint.x, y: barPoint.y });
+          await clickMouse({ x: barPoint.x, y: barPoint.y });
           const wasRestoredByBarClick = await didRestore();
           const isBarGoneAfterBarClick = document.body.querySelector(BAR_SELECTOR) === null;
 
@@ -371,7 +371,7 @@ describe('MinimizableModal', () => {
             throw new Error('minimized bar cancel button not found');
           }
           // Clicking Cancel must close the wrapped modal, not trigger the bar-level restore handler.
-          clickElement({ element: cancelButtonEl });
+          await clickElement({ element: cancelButtonEl });
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           return {
@@ -413,7 +413,7 @@ describe('MinimizableModal', () => {
           // Constructor. Without the wrapper's capture-phase guard on `containerEl`, this click closes
           // The modal — cancelling whatever operation it was running — instead of minimizing it.
           const backgroundPoint = findOwnPoint(backgroundEl);
-          clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
+          await clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           const outcome: BackgroundClickResult = {
@@ -476,7 +476,7 @@ describe('MinimizableModal', () => {
           }
 
           const backgroundPoint = findOwnPoint(backgroundEl);
-          clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
+          await clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           return {

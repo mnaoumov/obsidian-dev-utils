@@ -68,22 +68,22 @@ describe('clickMouse', () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
   });
 
-  it('should send a trusted mouseMove -> mouseDown -> mouseUp with rounded coordinates', () => {
-    clickMouse({ x: 10.7, y: 20.2 });
+  it('should send a trusted mouseMove -> mouseDown -> mouseUp with rounded coordinates', async () => {
+    await clickMouse({ x: 10.7, y: 20.2 });
     expect(sendInputEvent).toHaveBeenCalledTimes(3);
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: [], type: 'mouseMove', x: 11, y: 20 });
     expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'left', clickCount: 1, modifiers: [], type: 'mouseDown', x: 11, y: 20 });
     expect(sendInputEvent).toHaveBeenNthCalledWith(3, { button: 'left', clickCount: 1, modifiers: [], type: 'mouseUp', x: 11, y: 20 });
   });
 
-  it('should press the requested button', () => {
-    clickMouse({ button: 'right', x: 1, y: 2 });
+  it('should press the requested button', async () => {
+    await clickMouse({ button: 'right', x: 1, y: 2 });
     expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'right', clickCount: 1, modifiers: [], type: 'mouseDown', x: 1, y: 2 });
     expect(sendInputEvent).toHaveBeenNthCalledWith(3, { button: 'right', clickCount: 1, modifiers: [], type: 'mouseUp', x: 1, y: 2 });
   });
 
-  it('should map modifiers the same way pressKey does', () => {
-    clickMouse({ modifiers: ['Mod', 'Shift'], x: 1, y: 2 });
+  it('should map modifiers the same way pressKey does', async () => {
+    await clickMouse({ modifiers: ['Mod', 'Shift'], x: 1, y: 2 });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: ['control', 'shift'], type: 'mouseMove', x: 1, y: 2 });
   });
 });
@@ -93,72 +93,70 @@ describe('clickElement', () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
   });
 
-  it('should click the center of the element with the left button by default', () => {
+  it('should click the center of the element with the left button by default', async () => {
     const element = createElement(createRect({ height: 10, left: 0, top: 0, width: 10 }), () => false);
-    clickElement({ element });
+    await clickElement({ element });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: [], type: 'mouseMove', x: 5, y: 5 });
     expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'left', clickCount: 1, modifiers: [], type: 'mouseDown', x: 5, y: 5 });
   });
 
-  it('should forward the button and the modifiers', () => {
+  it('should forward the button and the modifiers', async () => {
     const element = createElement(createRect({ height: 4, left: 20, top: 30, width: 6 }), () => false);
-    clickElement({ button: 'middle', element, modifiers: ['Alt'] });
+    await clickElement({ button: 'middle', element, modifiers: ['Alt'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(2, { button: 'middle', clickCount: 1, modifiers: ['alt'], type: 'mouseDown', x: 23, y: 32 });
   });
 });
 
 describe('moveMouse', () => {
-  it('should send a trusted mouseMove with rounded coordinates', () => {
-    moveMouse({ x: 10.7, y: 20.2 });
+  it('should send a trusted mouseMove with rounded coordinates', async () => {
+    await moveMouse({ x: 10.7, y: 20.2 });
     expect(sendInputEvent).toHaveBeenCalledExactlyOnceWith({ type: 'mouseMove', x: 11, y: 20 });
   });
 });
 
 describe('pressKey', () => {
-  it('should inject a trusted keyDown -> char -> keyUp sequence with no modifiers', () => {
+  it('should inject a trusted keyDown -> char -> keyUp sequence with no modifiers', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
-    pressKey({ key: 'a' });
+    await pressKey({ key: 'a' });
     expect(sendInputEvent).toHaveBeenCalledTimes(3);
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: [], type: 'keyDown' });
     expect(sendInputEvent).toHaveBeenNthCalledWith(2, { keyCode: 'a', modifiers: [], type: 'char' });
     expect(sendInputEvent).toHaveBeenNthCalledWith(3, { keyCode: 'a', modifiers: [], type: 'keyUp' });
   });
 
-  it('should map Mod to meta on macOS', () => {
+  it('should map Mod to meta on macOS', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(true);
-    pressKey({ key: 'a', modifiers: ['Mod'] });
+    await pressKey({ key: 'a', modifiers: ['Mod'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['meta'], type: 'keyDown' });
   });
 
-  it('should map Mod to control off macOS', () => {
+  it('should map Mod to control off macOS', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
-    pressKey({ key: 'a', modifiers: ['Mod'] });
+    await pressKey({ key: 'a', modifiers: ['Mod'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['control'], type: 'keyDown' });
   });
 
-  it('should map Ctrl to control', () => {
+  it('should map Ctrl to control', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
-    pressKey({ key: 'a', modifiers: ['Ctrl'] });
+    await pressKey({ key: 'a', modifiers: ['Ctrl'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['control'], type: 'keyDown' });
   });
 
-  it('should lowercase other modifier names', () => {
+  it('should lowercase other modifier names', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
-    pressKey({ key: 'a', modifiers: ['Shift', 'Alt'] });
+    await pressKey({ key: 'a', modifiers: ['Shift', 'Alt'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['shift', 'alt'], type: 'keyDown' });
   });
 
-  it('should map Meta to meta', () => {
+  it('should map Meta to meta', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
-    pressKey({ key: 'a', modifiers: ['Meta'] });
+    await pressKey({ key: 'a', modifiers: ['Meta'] });
     expect(sendInputEvent).toHaveBeenNthCalledWith(1, { keyCode: 'a', modifiers: ['meta'], type: 'keyDown' });
   });
 
-  it('should throw for an unknown modifier', () => {
+  it('should throw for an unknown modifier', async () => {
     vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
-    expect(() => {
-      pressKey({ key: 'a', modifiers: [castTo<Modifier>('Unknown')] });
-    }).toThrow();
+    await expect(pressKey({ key: 'a', modifiers: [castTo<Modifier>('Unknown')] })).rejects.toThrow();
   });
 });
 
@@ -254,5 +252,15 @@ describe('unhoverElement', () => {
     expect(sendInputEvent).toHaveBeenCalledExactlyOnceWith({ type: 'mouseMove', x: 11, y: 5 });
     await vi.advanceTimersByTimeAsync(INPUT_POLL_INTERVAL_IN_MILLISECONDS);
     await promise;
+  });
+
+  it('should stop polling after the timeout when the element never unhovers', async () => {
+    const element = createElement(createRect({ height: 10, left: 5, right: 15, top: 0 }), () => true);
+    const promise = unhoverElement({ element });
+    await vi.advanceTimersByTimeAsync(INPUT_TIMEOUT_IN_MILLISECONDS);
+    await promise;
+
+    // The move is injected once; only the `:hover` check is polled.
+    expect(sendInputEvent).toHaveBeenCalledExactlyOnceWith({ type: 'mouseMove', x: 4, y: 5 });
   });
 });

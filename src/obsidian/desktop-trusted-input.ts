@@ -9,6 +9,10 @@
  * These are the importable-module twins of the base helpers the `obsidian-integration-testing` harness
  * seeds into the `lib` bag; the two copies are kept behaviorally in sync by hand (see the project
  * `CLAUDE.md`). Desktop-only: they depend on `window.electron`.
+ *
+ * This is the **desktop arm**. Import it directly only as a deliberate platform commitment; the
+ * cross-platform entry point is the {@link ./trusted-input.ts | trusted-input} facade, which dispatches
+ * to this module or to {@link ./mobile-trusted-input.ts | mobile-trusted-input} per call.
  */
 
 import type {
@@ -196,14 +200,20 @@ const SINGLE_CLICK_COUNT = 1;
  * element's center — the markdown editor's margin, for instance, lies inside `cm.scrollDOM` but outside
  * `.cm-sizer`, so no element's center lands on it.
  *
+ * **Must be awaited.** Nothing here needs to wait, but the cross-platform twins do — on mobile the
+ * injection is a round-trip to the host, because the renderer cannot produce a trusted event itself — so
+ * the signature is the same on both platforms and a caller never rewrites its `await`s when it grows a
+ * mobile lane.
+ *
  * @param params - The element to click, the button to press and any modifiers to hold.
+ * @returns A {@link Promise} that resolves once the click has been injected.
  */
-export function clickElement(params: ClickElementParams): void {
+export async function clickElement(params: ClickElementParams): Promise<void> {
   const { button = 'left', element, modifiers = [] } = params;
 
   // Viewport coords equal web-contents DIP coords for the full-window `BrowserWindow`.
   const rect = element.getBoundingClientRect();
-  clickMouse({
+  await clickMouse({
     button,
     modifiers,
     x: rect.left + rect.width / CENTER_DIVISOR,
@@ -226,10 +236,14 @@ export function clickElement(params: ClickElementParams): void {
  * the pointer over the hit-test target before the button goes down. Prefer {@link clickElement} for
  * element-relative clicks.
  *
+ * **Must be awaited** — see {@link clickElement}.
+ *
  * @param params - The web-contents DIP coordinates to click at, the button to press and any modifiers to
  * hold.
+ * @returns A {@link Promise} that resolves once the click has been injected.
  */
-export function clickMouse(params: ClickMouseParams): void {
+// eslint-disable-next-line @typescript-eslint/require-await -- The `async` is the cross-platform contract, not an implementation need: the mobile twin awaits a host round-trip, this one has nothing to await.
+export async function clickMouse(params: ClickMouseParams): Promise<void> {
   const { button = 'left', modifiers = [], x, y } = params;
 
   const electronModifiers = toElectronModifiers(modifiers);
@@ -272,7 +286,7 @@ export async function hoverElement(params: HoverElementParams): Promise<void> {
 
   // Viewport coords equal web-contents DIP coords for the full-window `BrowserWindow`.
   const rect = element.getBoundingClientRect();
-  moveMouse({ x: rect.left + rect.width / CENTER_DIVISOR, y: rect.top + rect.height / CENTER_DIVISOR });
+  await moveMouse({ x: rect.left + rect.width / CENTER_DIVISOR, y: rect.top + rect.height / CENTER_DIVISOR });
 
   // Poll until the real `:hover` state has actually taken, instead of a fixed settle.
   const startTime = Date.now();
@@ -289,9 +303,13 @@ export async function hoverElement(params: HoverElementParams): Promise<void> {
  * (callers poll their own readiness signal). Prefer {@link hoverElement} / {@link unhoverElement} for
  * element-relative moves.
  *
+ * **Must be awaited** — see {@link clickElement}.
+ *
  * @param params - The web-contents DIP coordinates to move to.
+ * @returns A {@link Promise} that resolves once the move has been injected.
  */
-export function moveMouse(params: MoveMouseParams): void {
+// eslint-disable-next-line @typescript-eslint/require-await -- The `async` is the cross-platform contract, not an implementation need: the mobile twin awaits a host round-trip, this one has nothing to await.
+export async function moveMouse(params: MoveMouseParams): Promise<void> {
   getWebContents().sendInputEvent({ type: 'mouseMove', x: Math.round(params.x), y: Math.round(params.y) });
 }
 
@@ -304,9 +322,13 @@ export function moveMouse(params: MoveMouseParams): void {
  * Use it for special keys (`'Enter'`, `'Escape'`, `'Tab'`, arrow keys) and modifier combinations. It does
  * **not** poll for any effect; the caller focuses the target first, then awaits the expected effect.
  *
+ * **Must be awaited** — see {@link clickElement}.
+ *
  * @param params - The key to press and any modifiers to hold.
+ * @returns A {@link Promise} that resolves once the key press has been injected.
  */
-export function pressKey(params: PressKeyParams): void {
+// eslint-disable-next-line @typescript-eslint/require-await -- The `async` is the cross-platform contract, not an implementation need: the mobile twin awaits a host round-trip, this one has nothing to await.
+export async function pressKey(params: PressKeyParams): Promise<void> {
   const { key, modifiers = [] } = params;
 
   const electronModifiers = toElectronModifiers(modifiers);
@@ -345,7 +367,7 @@ export async function typeIntoEditor(params: TypeIntoEditorParams): Promise<void
 
   // Typing is pressing each character key in turn.
   for (const char of text) {
-    pressKey({ key: char });
+    await pressKey({ key: char });
   }
 
   // Poll until the document reflects the input or the timeout elapses, instead of a fixed settle.
@@ -375,7 +397,7 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
   const rect = element.getBoundingClientRect();
   const x = rect.left >= OUTSIDE_OFFSET_IN_PIXELS ? rect.left - OUTSIDE_OFFSET_IN_PIXELS : rect.right + OUTSIDE_OFFSET_IN_PIXELS;
   const y = rect.top + rect.height / CENTER_DIVISOR;
-  moveMouse({ x, y });
+  await moveMouse({ x, y });
 
   // Poll until the real `:hover` state has actually cleared, instead of a fixed settle.
   const startTime = Date.now();

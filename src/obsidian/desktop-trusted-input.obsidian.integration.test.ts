@@ -54,7 +54,7 @@ describe('trusted click helpers', () => {
         });
 
         try {
-          clickElement({ element: target });
+          await clickElement({ element: target });
           await waitUntil({
             message: 'a trusted click to reach the target element',
             predicate: () => capture.value !== null,
@@ -100,7 +100,7 @@ describe('trusted click helpers', () => {
         });
 
         try {
-          clickMouse({ button: 'right', x: TARGET_X, y: TARGET_Y });
+          await clickMouse({ button: 'right', x: TARGET_X, y: TARGET_Y });
           await waitUntil({
             message: 'a trusted right click to reach the target element',
             predicate: () => capture.value !== null,
