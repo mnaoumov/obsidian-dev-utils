@@ -576,38 +576,40 @@ describe('canvas changes via applyFileChanges', () => {
     expect(firstNode['file']).toBe('new.md');
   });
 
-  it('should return null for canvas file node change with content mismatch', async () => {
+  it('should leave the content unchanged for canvas file node change with content mismatch', async () => {
     const canvasData = {
       edges: [],
       nodes: [{ file: 'different.md', id: '1', type: 'file' }]
     };
+    const canvasContent = JSON.stringify(canvasData);
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
-    let resultContent: null | string = null;
+    let resultContent: null | string = 'sentinel';
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
-      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
     await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
-    expect(resultContent).toBeNull();
+    expect(resultContent).toBe(canvasContent);
   });
 
-  it('should return null when canvas node index is out of bounds', async () => {
+  it('should leave the content unchanged when canvas node index is out of bounds', async () => {
     const canvasData = {
       edges: [],
       nodes: [{ file: 'old.md', id: '1', type: 'file' }]
     };
+    const canvasContent = JSON.stringify(canvasData);
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 5)];
-    let resultContent: null | string = null;
+    let resultContent: null | string = 'sentinel';
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
-      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
     await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
-    expect(resultContent).toBeNull();
+    expect(resultContent).toBe(canvasContent);
   });
 
   it('should return null when changesProvider returns null for canvas', async () => {
@@ -721,42 +723,47 @@ describe('canvas changes via applyFileChanges', () => {
     expect(firstNode['text']).toBe(String.raw`| ![[new.png\|500]] |`);
   });
 
-  it('should skip the rewrite (return null) for invalid JSON canvas content instead of throwing', async () => {
+  it('should skip the rewrite for invalid JSON canvas content instead of throwing', async () => {
+    const canvasContent = 'not valid json';
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = 'sentinel';
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
-      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'not valid json' });
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
     // Invalid JSON parses to `{}` (no `nodes`/`edges` arrays); the guard skips the rewrite so the
     // Malformed object is never written back to disk (previously this threw a TypeError).
     await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
-    expect(resultContent).toBeNull();
+    expect(resultContent).toBe(canvasContent);
   });
 
-  it('should skip the rewrite (return null) when the canvas has no edges array', async () => {
+  it('should skip the rewrite when the canvas has no edges array', async () => {
+    // `nodes` is an array but `edges` is missing (a partial canvas still being initialized).
+    const canvasContent = JSON.stringify({ nodes: [{ file: 'old.md', id: '1', type: 'file' }] });
     const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
     let resultContent: null | string = 'sentinel';
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
-      // `nodes` is an array but `edges` is missing (a partial canvas still being initialized).
-      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify({ nodes: [{ file: 'old.md', id: '1', type: 'file' }] }) });
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
     await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
-    expect(resultContent).toBeNull();
+    // The original content, returned unchanged: nothing is written, and the operation is NOT retried.
+    // A `null` here would spin forever, as the refusal is permanent for this content.
+    expect(resultContent).toBe(canvasContent);
   });
 
-  it('should return null when canvas text node text is not a string', async () => {
+  it('should leave the content unchanged when canvas text node text is not a string', async () => {
     const canvasData = {
       edges: [],
       nodes: [{ id: '1', text: 123, type: 'text' }]
     };
+    const canvasContent = JSON.stringify(canvasData);
     const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0)];
-    let resultContent: null | string = null;
+    let resultContent: null | string = 'sentinel';
 
     vi.spyOn(console, 'error').mockImplementation(() => {
       noop();
@@ -764,11 +771,11 @@ describe('canvas changes via applyFileChanges', () => {
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       const controller = new AbortController();
-      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
     });
 
     await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
-    expect(resultContent).toBeNull();
+    expect(resultContent).toBe(canvasContent);
     expect(vi.mocked(console.error)).toHaveBeenCalled();
     vi.mocked(console.error).mockRestore();
   });
