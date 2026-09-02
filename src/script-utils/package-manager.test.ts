@@ -230,6 +230,11 @@ describe('getPackageManager', () => {
     setExistingPaths(['/project/package.json']);
     expect(getPackageManager('/project')).toBe(PackageManager.Npm);
   });
+
+  it('should fall back to the working folder when no cwd is given and no project root exists', () => {
+    setExistingPaths([]);
+    expect(getPackageManager()).toBe(PackageManager.Npm);
+  });
 });
 
 describe('getPackageManagerRunCommand', () => {

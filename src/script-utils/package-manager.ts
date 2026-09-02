@@ -242,9 +242,11 @@ function getPackageManagerExecCommand(cwd?: string): string[] {
     case PackageManager.Yarn: {
       return ['yarn', 'exec'];
     }
+    /* v8 ignore start -- Exhaustive switch guard; default branch is unreachable. */
     default: {
       return assertNever(packageManager);
     }
+      /* v8 ignore stop */
   }
 }
 
