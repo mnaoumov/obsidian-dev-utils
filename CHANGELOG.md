@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 98.0.0
+
+- feat(deps)!: require obsidian-integration-testing ^12 as a peer, so OIT 11 no longer resolves
+- feat(demo-vault)!: move the version out of the archive name and into the archive
+- feat(obsidian)!: mirror the mobile trusted-input path into the library
+- feat(script-utils): lint the root manifest.json and LICENSE, which nothing linted before
+- fix(build): glob svelte extensions, so svelte-check can actually run
+- fix(build): run the buildCompile orchestrator instead of the typescript leaf
+- fix(script-utils): make the release run end to end on npm 12
+- fix(script-utils): resolve tool binaries from node_modules/.bin instead of npx
+- test(script-utils): restore 100% coverage on package-manager
+- test(plugin-notice): scope the styling lookup to the notice under test
+- docs(deps): record that the OIT peer is at 12.x, not 11.x
+- docs(eslint-config): record that jsdoc/no-defaults is kept deliberately
+- chore: clear the spellcheck preflight blocker
+- chore: update libs
+
 ## 97.0.0
 
 - feat(zip-extractor)!: read demo-vault archives with node:zlib, dropping adm-zip from the bundle
