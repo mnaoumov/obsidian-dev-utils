@@ -8,8 +8,11 @@ import {
 import {
   getOsAndObsidianUnsafePathCharsRegExp,
   getOsUnsafePathCharsRegExp,
+  hasWindowsTrailingChars,
   isValidationMessageHolder,
+  isWindowsReservedName,
   OBSIDIAN_UNSAFE_FILENAME_CHARS,
+  trimWindowsTrailingChars,
   UNIX_UNSAFE_PATH_CHARS,
   WINDOWS_UNSAFE_PATH_CHARS
 } from './validation.ts';
@@ -141,5 +144,71 @@ describe('getOsAndObsidianUnsafePathCharsRegExp', () => {
   it('should not match safe characters on Unix', () => {
     const regexUnix = getOsAndObsidianUnsafePathCharsRegExp(false);
     expect('abcABC123.- '.match(regexUnix)).toBeNull();
+  });
+});
+
+describe('isWindowsReservedName', () => {
+  it.each(['CON', 'NUL', 'PRN', 'AUX', 'COM1', 'COM9', 'LPT1', 'LPT9', 'con', 'CoN'])('should reserve the bare device name "%s"', (name) => {
+    expect(isWindowsReservedName(name)).toBe(true);
+  });
+
+  it.each(['con.md', 'COM1.md', 'LPT9.txt', 'NUL.png'])('should reserve "%s" despite its extension', (name) => {
+    expect(isWindowsReservedName(name)).toBe(true);
+  });
+
+  // Windows strips trailing dots and spaces before deciding, so these spellings are reserved too.
+  it.each(['CON ', 'CON.', 'nul. ', 'COM1.md ', 'CON   '])('should reserve "%s" despite its trailing dots and spaces', (name) => {
+    expect(isWindowsReservedName(name)).toBe(true);
+  });
+
+  it.each(['contract.md', 'CONtract', 'my CON', 'CON1', 'COM0', 'COM10', 'LPT0', 'ordinary note.md', ''])('should not reserve "%s"', (name) => {
+    expect(isWindowsReservedName(name)).toBe(false);
+  });
+
+  // Accepted by every Windows version that runs Obsidian, so matching them would rename files that work.
+  it.each(['CONIN$', 'CONOUT$', 'CONOUT$.md', 'COM¹', 'COM²', 'COM³'])('should not reserve "%s"', (name) => {
+    expect(isWindowsReservedName(name)).toBe(false);
+  });
+
+  // Only the last extension is dropped, so the device name is no longer the whole of what remains.
+  it('should not reserve a device name carrying two extensions', () => {
+    expect(isWindowsReservedName('CON.x.md')).toBe(false);
+  });
+
+  it('should not reserve a dotfile, which has no extension to drop', () => {
+    expect(isWindowsReservedName('.hidden')).toBe(false);
+  });
+
+  it('should answer the same on consecutive calls', () => {
+    expect(isWindowsReservedName('CON')).toBe(true);
+    expect(isWindowsReservedName('CON')).toBe(true);
+  });
+});
+
+describe('hasWindowsTrailingChars', () => {
+  it.each(['draft ', 'draft.', 'draft. ', 'draft .', ' ', '.', '...'])('should report "%s" as ending with a dot or a space', (name) => {
+    expect(hasWindowsTrailingChars(name)).toBe(true);
+  });
+
+  it.each(['draft', 'a.b', ' draft', '.hidden', ''])('should not report "%s"', (name) => {
+    expect(hasWindowsTrailingChars(name)).toBe(false);
+  });
+
+  it('should answer the same on consecutive calls', () => {
+    expect(hasWindowsTrailingChars('draft ')).toBe(true);
+    expect(hasWindowsTrailingChars('draft ')).toBe(true);
+  });
+});
+
+describe('trimWindowsTrailingChars', () => {
+  it.each([
+    { expected: 'draft', name: 'draft. ' },
+    { expected: 'draft', name: 'draft' },
+    { expected: 'a.b', name: 'a.b.' },
+    { expected: ' draft', name: ' draft ' },
+    { expected: '', name: '...' },
+    { expected: '', name: '' }
+  ])('should trim "$name" to "$expected"', ({ expected, name }) => {
+    expect(trimWindowsTrailingChars(name)).toBe(expected);
   });
 });
