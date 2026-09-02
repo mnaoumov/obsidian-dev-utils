@@ -5,15 +5,19 @@
  *
  * A plugin can ship a curated demo vault at `demo-vault/` in its repo root. At release time this
  * module installs the freshly built plugin into that vault's `.obsidian/plugins/<id>/` folder and
- * zips the whole vault into `dist/build/<plugin-id>-demo-vault-<version>.zip`, so the existing
- * GitHub-release step (which uploads every file in `dist/build/`) attaches it automatically. The
- * archive name carries the plugin id (so several plugins' demo vaults never collide) and the version
- * (so each release ships its own distinctly named artifact).
+ * zips the whole vault into `dist/build/<plugin-id>-demo-vault.zip`, so the existing GitHub-release
+ * step (which uploads every file in `dist/build/`) attaches it automatically.
+ *
+ * The version is deliberately absent from that name and lives INSIDE the archive instead — see
+ * `obsidian/demo-vault-naming.ts` for why — in the two places a person actually meets it: the vault
+ * sits under a single `<plugin-id>-demo-vault-<version>/` folder, so unzipping several releases by hand
+ * into one folder neither collides nor produces anonymous directories, and the vault's `README.md`
+ * heading gains the version it demonstrates.
  *
  * The archived copy also carries the `.obsidian/app.json` settings this package owns (see
- * `demo-vault-app-json.ts`). They are written into the ZIP ENTRY and never into the repo folder: the
- * committed `app.json` is a tracked file, and `updateVersion` archives after it has already pushed, so
- * an in-place write would leave an uncommitted change behind a published release.
+ * `demo-vault-app-json.ts`). Those settings and the README heading are written into the ZIP ENTRY and
+ * never into the repo folder: both files are tracked, and `updateVersion` archives after it has already
+ * pushed, so an in-place write would leave an uncommitted change behind a published release.
  */
 
 import AdmZip from 'adm-zip';
@@ -28,6 +32,10 @@ import {
 import type { DemoVaultHelperSettings } from '../obsidian/demo-vault-helper-settings.ts';
 import type { DemoVaultAppJson } from './demo-vault-app-json.ts';
 
+import {
+  getDemoVaultArchiveFileName,
+  getDemoVaultFolderName
+} from '../obsidian/demo-vault-naming.ts';
 import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import {
   getFolderName,
@@ -47,6 +55,11 @@ import {
 const DEMO_VAULT_HELPER_PLUGIN_ID = 'demo-vault-helper';
 const DATA_JSON_FILE_NAME = 'data.json';
 const DATA_JSON_INDENT = 2;
+const README_FILE_NAME = 'README.md';
+
+// The README's opening `# H1`, and only that one: without the `m` flag the match is anchored to the start
+// Of the file, and `.` stops at the newline that ends the line.
+const OPENING_HEADING_REG_EXP = /^# .*/;
 
 /**
  * The minimal shape of a plugin `manifest.json` read by {@link archivePluginDemoVault}.
@@ -58,7 +71,7 @@ interface PluginManifest {
   readonly id: string;
 
   /**
-   * The plugin version, embedded in the archive file name.
+   * The plugin version, embedded in the archive's top-level folder name and its README heading.
    */
   readonly version: string;
 }
@@ -68,7 +81,7 @@ interface PluginManifest {
  *
  * Installs the freshly built plugin from `dist/build/` into the vault's
  * `.obsidian/plugins/<id>/` folder, then zips the whole vault to
- * `dist/build/<plugin-id>-demo-vault-<version>.zip`.
+ * `dist/build/<plugin-id>-demo-vault.zip`, under a single `<plugin-id>-demo-vault-<version>/` folder.
  *
  * @returns A {@link Promise} that resolves to the absolute path of the created zip archive, or
  * `null` if the repo has no `demo-vault/` folder.
@@ -97,21 +110,25 @@ export async function archivePluginDemoVault(): Promise<null | string> {
 
   await injectDemoVaultHelper(manifest.id);
 
-  // Archive name is hand-synced with the runtime `openDemoVault` opener, which downloads this exact asset name.
   const zipPath = resolvePathFromRootSafe({
-    path: join(ObsidianPluginRepoPaths.DistBuild, `${manifest.id}-demo-vault-${manifest.version}.zip`)
+    path: join(ObsidianPluginRepoPaths.DistBuild, getDemoVaultArchiveFileName(manifest.id))
+  });
+  const rootFolderName = getDemoVaultFolderName({
+    pluginId: manifest.id,
+    version: manifest.version
   });
   const zip = new AdmZip();
-  zip.addLocalFolder(demoVaultPath);
-  injectAppJson(zip, await readCommittedAppJson());
+  zip.addLocalFolder(demoVaultPath, rootFolderName);
+  injectAppJson(zip, await readCommittedAppJson(), rootFolderName);
+  injectReadmeVersion(zip, rootFolderName, manifest.version);
   await zip.writeZipPromise(zipPath);
   return zipPath;
 }
 
 // Stores the archived vault's `.obsidian/app.json` — the committed settings with the owned ones merged
 // Over them. The entry is replaced rather than the file, so the repo folder is left exactly as it was.
-function injectAppJson(zip: AdmZip, appJson: DemoVaultAppJson): void {
-  const entryName = join(ObsidianPluginRepoPaths.DotObsidian, ObsidianPluginRepoPaths.AppJson);
+function injectAppJson(zip: AdmZip, appJson: DemoVaultAppJson, rootFolderName: string): void {
+  const entryName = join(rootFolderName, ObsidianPluginRepoPaths.DotObsidian, ObsidianPluginRepoPaths.AppJson);
   const content = Buffer.from(buildArchivedDemoVaultAppJsonContent({ appJson }), 'utf-8');
   const entry = zip.getEntry(entryName);
   if (entry) {
@@ -149,6 +166,30 @@ async function injectDemoVaultHelper(demoedPluginId: string): Promise<void> {
 
   const settings: DemoVaultHelperSettings = { demoedPluginId };
   await writeFile(join(helperFolder, DATA_JSON_FILE_NAME), `${JSON.stringify(settings, null, DATA_JSON_INDENT)}\n`, 'utf-8');
+}
+
+// Names the version on the archived `README.md`'s heading, so the vault says which release it demonstrates
+// However far it travels from the release page it was downloaded from.
+//
+// Entry-only, for the same reason `injectAppJson` is: the committed README is a tracked, hand-authored
+// File and `updateVersion` archives after it has already pushed.
+//
+// A vault that ships no README, or one opening on something other than an `# H1`, is left alone rather
+// Than corrected. The demo-vault coverage suite exempts `README.md` from its H1 check, so neither shape
+// Is a defect — and a release is the wrong moment to start failing on one.
+function injectReadmeVersion(zip: AdmZip, rootFolderName: string, version: string): void {
+  const entry = zip.getEntry(join(rootFolderName, README_FILE_NAME));
+  if (!entry) {
+    return;
+  }
+
+  const content = entry.getData().toString('utf-8');
+  const versionedContent = content.replace(OPENING_HEADING_REG_EXP, (heading) => `${heading} v${version}`);
+  if (versionedContent === content) {
+    return;
+  }
+
+  zip.updateFile(entry, Buffer.from(versionedContent, 'utf-8'));
 }
 
 // Reads the demo vault's committed `.obsidian/app.json`, refusing the settings this package owns.

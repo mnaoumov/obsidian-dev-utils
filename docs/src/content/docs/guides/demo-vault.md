@@ -14,11 +14,25 @@ Put a curated vault at `demo-vault/` in your plugin repo root (a normal vault, i
 
 1. The freshly built plugin (from `dist/build/`) is installed into `demo-vault/.obsidian/plugins/<plugin-id>/`.
 2. The bundled `demo-vault-helper` bootstrap plugin (shipped inside `obsidian-dev-utils`) is injected into `demo-vault/.obsidian/plugins/demo-vault-helper/` — see [The `demo-vault-helper` bootstrap plugin](#the-demo-vault-helper-bootstrap-plugin).
-3. The whole `demo-vault/` folder is zipped to `dist/build/<plugin-id>-demo-vault-<version>.zip` (named by plugin id so several plugins' demo vaults never collide, and by version so each release ships its own distinctly named artifact).
+3. The whole `demo-vault/` folder is zipped to `dist/build/<plugin-id>-demo-vault.zip`, under a single top-level `<plugin-id>-demo-vault-<version>/` folder — see [Where the version lives](#where-the-version-lives).
 4. The archive's `.obsidian/app.json` gets the [demo-vault settings `obsidian-dev-utils` owns](#the-appjson-settings-obsidian-dev-utils-owns) merged into it.
-5. Because the GitHub-release step uploads every file in `dist/build/`, the archive is attached to the release automatically.
+5. The archived `README.md`'s opening `# heading` gains the version, e.g. `# My Plugin demo vault v1.2.3`. Like the `app.json` settings above, this reaches the archive **entry** only — your committed `demo-vault/README.md` is a tracked file and `updateVersion` archives after it has already pushed, so an in-place write would leave an uncommitted change behind a published release. A vault that ships no `README.md`, or whose README opens on something other than a heading, is left alone.
+6. Because the GitHub-release step uploads every file in `dist/build/`, the archive is attached to the release automatically.
 
 If the repo has no `demo-vault/` folder, the step is silently skipped.
+
+### Where the version lives
+
+The archive name carries the plugin id, so several plugins' demo vaults never collide — and deliberately **not** the version. A release asset is already namespaced by its release tag (`…/releases/download/<version>/…`), so the version bought no disambiguation there, while making the asset name change on every single release. That is what breaks the Obsidian Community directory's automated-review overrides: the `Release contains extra unsupported files` finding quotes the asset name in its message, and the message is part of the fingerprint the override matches on, so a settled finding came back on every release.
+
+The version instead rides **inside** the archive, in the two places someone actually meets it:
+
+- The vault sits under one `<plugin-id>-demo-vault-<version>/` folder, so unzipping several releases by hand into one folder neither collides nor leaves you with anonymous directories. It is also the folder name Obsidian's vault switcher shows when the `Open demo vault` command opens it, so both routes agree.
+- The `README.md` heading names it, so a vault that has been moved or renamed still says which release it demonstrates.
+
+Nothing else depended on the version being in the name: the opener's local archive cache and its extracted folder are both named from the version it resolved, never parsed out of the asset name.
+
+**One-time break for users on an older build.** The name changed and the opener has no fallback to the old one, so a user still running a build of your plugin from *before* you bumped to this `obsidian-dev-utils` asks for the old asset name, does not find it on your new release, and gets `No demo vault is available…`. Updating the plugin fixes it. Nothing breaks in the other direction: the command only ever fetches the installed version (which is the code running it) or a later one, so a build carrying this change never asks for an old-named asset.
 
 ### Opting out
 
@@ -56,6 +70,7 @@ virtue of these shipping, and no setting under `.obsidian/` can fix a GitHub-ren
 - Create `demo-vault/` with the curated notes and an `.obsidian/` config. The config directory must be the default `.obsidian` — the tooling resolves it by name.
 - Commit `demo-vault/.obsidian/community-plugins.json` containing **both** ids: `["demo-vault-helper", "<plugin-id>"]`. Listing only the helper is a silent failure: the helper installs, configures and enables **CodeScript Toolkit only**, so the vault would bootstrap and run `startup.ts` while the plugin the vault exists to demonstrate stays disabled.
 - Do not commit the four [`app.json` settings above](#the-appjson-settings-obsidian-dev-utils-owns) — they are injected at release time.
+- If `demo-vault/README.md` tells the reader which file to download, name `<plugin-id>-demo-vault.zip` — not a versioned one. Leave its `# heading` unversioned too; the version is [added to the archived copy](#where-the-version-lives) at release time, and a hand-typed one would go stale the moment you release again.
 - Commit no plugin `data.json` for any plugin: the helper writes CodeScript Toolkit's config at runtime, before enabling it.
 - Gitignore the injected plugins and the workspace state that rewrites itself on every session:
 
@@ -127,8 +142,8 @@ The command is **desktop only** — it hides itself on mobile (its `canExecute` 
 
 1. Resolves the plugin's GitHub repository from Obsidian's community registry (see [`getCommunityPluginRepo`](#getcommunitypluginrepo)).
 2. Reads the latest release version. If the installed version is the latest (or newer), its demo vault opens directly; otherwise the user is offered a choice between the latest and the currently-installed version via a [Select Option](/obsidian-dev-utils/guides/modals/#select-option) dialog.
-3. Downloads the chosen version's `<plugin-id>-demo-vault-<version>.zip`. Only the **archive** is cached (under the OS temp directory, keyed by plugin id and version); every open extracts a **fresh** copy into its own folder, so a previous session's edits never leak into a new one. Extracted folders left over from earlier sessions are removed, best-effort, about a day after their last use.
-4. Opens that folder as a vault in a new window.
+3. Downloads the chosen release's `<plugin-id>-demo-vault.zip`. Only the **archive** is cached (under the OS temp directory, keyed by plugin id and version); every open extracts a **fresh** copy into its own folder, so a previous session's edits never leak into a new one. Extracted folders left over from earlier sessions are removed, best-effort, about a day after their last use.
+4. Opens the archive's own `<plugin-id>-demo-vault-<version>` folder as a vault in a new window — the same name a hand-unzipped archive produces, and what the vault switcher then shows.
 
 A progress notice is shown from the moment the command is invoked (`Opening demo vault for …`, then `Downloading …`, then `Extracting …`), because resolving the release and downloading the archive can take a while and a silent command invites a second click — which would produce a second extracted vault.
 
