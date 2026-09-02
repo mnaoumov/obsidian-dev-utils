@@ -1334,6 +1334,10 @@ generated automatically. Consequences worth knowing before touching any of this:
     (cross-platform, mirrors husky's own `HUSKY=0`); the `.env` is read by `getNanoStagedConfig()` in
     `src/script-utils/nano-staged-config.ts`, which the thin `scripts/nano-staged-config.ts` entry calls.
     The commit-msg/commitlint hook still runs.
+  - The tasks run through the package manager that owns the tree — `bun run lint:fix --` on a bun tree,
+    not `npm run lint:fix --`. The prefix comes from `getPackageManagerRunCommand()` and is resolved once
+    when `nano-staged-config.ts` is first imported, so a lockfile change needs a fresh process to take
+    effect (2026-09-02, T830).
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
   - `npm run spellcheck`

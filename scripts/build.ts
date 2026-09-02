@@ -2,7 +2,7 @@ import {
   CliTaskResult,
   wrapCliTask
 } from '../src/script-utils/cli-utils.ts';
-import { execFromRoot } from '../src/script-utils/root.ts';
+import { npmRun } from '../src/script-utils/npm-run.ts';
 
 const BUILD_STEPS = [
   'build:clean',
@@ -31,7 +31,7 @@ const BUILD_STEPS = [
 await wrapCliTask(async () => {
   for (const step of BUILD_STEPS) {
     await wrapCliTask(async () => {
-      await execFromRoot(['npm', 'run', step]);
+      await npmRun(step);
       return CliTaskResult.DoNotExit();
     });
   }
