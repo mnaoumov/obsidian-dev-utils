@@ -139,8 +139,10 @@ describe('offset range', () => {
       }
     });
 
-    // The offsets are the BUFFER's, 7 past the on-disk ones — applying them to the stale disk content
-    // would have matched no link at all.
+    /*
+     * The offsets are the BUFFER's, 7 past the on-disk ones — applying them to the stale disk content
+     * would have matched no link at all.
+     */
     expect(result.selectedStartOffset).toBe(17);
     expect(result.selectedEndOffset).toBe(26);
     expect(result.diskAfterEdit).toBe('# T883\n[[alpha]] [[new-bravo]] [[charlie]]\n');
