@@ -10,6 +10,15 @@ import {
   isEnvVariableOff,
   loadEnvFileIfExists
 } from './env-toggle.ts';
+import { getPackageManagerRunCommand } from './package-manager.ts';
+
+/**
+ * The `<manager> run` prefix every task below is built on, resolved once for the process.
+ *
+ * Detection probes for a lockfile beside `package.json`, so it is a handful of `existsSync` calls and
+ * nothing more — no `.env` read and no `process.exit`, which is what lets it sit at module scope.
+ */
+const PACKAGE_MANAGER_RUN_COMMAND = getPackageManagerRunCommand().join(' ');
 
 /**
  * Nano-staged configuration that runs file-based lint, format, and spellcheck on staged files.
@@ -17,7 +26,8 @@ import {
  * Only includes tools that can operate on individual files. Whole-project checks
  * (TypeScript compilation, unit tests) are left to CI.
  *
- * Commands use `npm run ... --` so nano-staged file paths are forwarded as CLI arguments.
+ * Commands run through the package manager that owns the tree — `npm run ... --`, `bun run ... --`, and
+ * so on — so nano-staged file paths are forwarded as CLI arguments.
  */
 export const obsidianDevUtilsConfig: Record<string, string[]> = {
   /*
@@ -27,16 +37,16 @@ export const obsidianDevUtilsConfig: Record<string, string[]> = {
    * `templates`. Formatting and spellchecking still cover `templates/` via the entries above and below.
    */
   '!(templates)*.{ts,tsx,mts}': [
-    'npm run lint:fix --'
+    `${PACKAGE_MANAGER_RUN_COMMAND} lint:fix --`
   ],
   '*': [
-    'npm run spellcheck --'
+    `${PACKAGE_MANAGER_RUN_COMMAND} spellcheck --`
   ],
   '*.{ts,tsx,mts}': [
-    'npm run format --'
+    `${PACKAGE_MANAGER_RUN_COMMAND} format --`
   ],
   '*.md': [
-    'npm run lint:md:fix --'
+    `${PACKAGE_MANAGER_RUN_COMMAND} lint:md:fix --`
   ]
 };
 
@@ -54,7 +64,9 @@ const NANO_STAGED_ENV_VARIABLE = 'NANO_STAGED';
  * every npm script gets — but both share the same notion of an off value, via {@link isEnvVariableOff}.
  *
  * This is a function rather than module-level code so importing the package barrel never triggers the
- * `.env` read or the process exit; call it from the thin `scripts/nano-staged-config.ts` entry.
+ * `.env` read or the process exit; call it from the thin `scripts/nano-staged-config.ts` entry. Resolving the
+ * package manager is the one thing that does run at module scope, and it does neither of those two
+ * things — it only probes for a lockfile.
  *
  * @returns The nano-staged task configuration. Does not return when the opt-out is active.
  */
