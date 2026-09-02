@@ -179,7 +179,7 @@ describe('editFieldsInPopover', () => {
         });
 
         try {
-          clickElement({ element: overlayEl });
+          await clickElement({ element: overlayEl });
 
           const resolved = await resultPromise;
           return {

@@ -320,7 +320,7 @@ describe('resource-lock', () => {
           // Obsidian binds Shift+Enter to a handler that dispatches a change transaction directly.
           // It slips past the CodeMirror `readOnly` facet, so the lock's change filter must still drop it.
           const lockedBefore = readValue(lockedLeaf);
-          pressShiftEnter(lockedLeaf);
+          await pressShiftEnter(lockedLeaf);
           await settle();
           const didLockedNoteRejectShiftEnter = readValue(lockedLeaf) === lockedBefore;
 
@@ -329,7 +329,7 @@ describe('resource-lock', () => {
           await settle();
           await reconcile();
           const unlockedBefore = readValue(lockedLeaf);
-          pressShiftEnter(lockedLeaf);
+          await pressShiftEnter(lockedLeaf);
           await waitUntil({
             message: 'locked note to accept Shift+Enter after unlock',
             predicate: () => readValue(lockedLeaf) !== unlockedBefore
@@ -349,10 +349,10 @@ describe('resource-lock', () => {
             return editor;
           }
 
-          function pressShiftEnter(leaf: unknown): void {
+          async function pressShiftEnter(leaf: unknown): Promise<void> {
             // `pressKey` targets the globally-focused element, so focus the editor before pressing.
             getEditor(leaf).focus();
-            pressKey({ key: 'Enter', modifiers: ['Shift'] });
+            await pressKey({ key: 'Enter', modifiers: ['Shift'] });
           }
 
           function readValue(leaf: unknown): string {

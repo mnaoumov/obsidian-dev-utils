@@ -12,15 +12,26 @@
  * to `lib` and are skipped. Every flat name must be unique — the generator throws (failing the build)
  * if two distinct symbols are exported under the same name, so a genuine clash must be resolved by
  * renaming one side at the source rather than silently shadowing.
+ *
+ * The one clash that is NOT a genuine one is a cross-platform facade over its own `desktop-` / `mobile-`
+ * twins (`trusted-input.ts` over `desktop-trusted-input.ts` + `mobile-trusted-input.ts`): the twins are
+ * implementations of the facade, exporting the same names by design. Those are **superseded** — the
+ * barrel takes the facade and skips them, so `lib.pressKey` is platform-correct — under a superset
+ * invariant that keeps the supersession from losing an export. See `helpers/module-supersession.ts`.
  */
 
-import type { Symbol as TsSymbol } from 'typescript';
+import type {
+  Symbol as TsSymbol,
+  TypeChecker
+} from 'typescript';
 
 import {
   createProgram,
   isExportSpecifier,
   SymbolFlags
 } from 'typescript';
+
+import type { ModuleSupersession } from './helpers/module-supersession.ts';
 
 import {
   basename,
@@ -36,6 +47,12 @@ import {
   findExportNameCollisions,
   formatExportNameCollisions
 } from './helpers/export-name-collisions.ts';
+import {
+  findIncompleteFacades,
+  findModuleSupersessions,
+  formatIncompleteFacades,
+  toSupersededModules
+} from './helpers/module-supersession.ts';
 
 const SKIP_DIRS = new Set<string>([
   ObsidianDevUtilsRepoPaths.ScriptUtils,
@@ -62,6 +79,26 @@ await wrapCliTask(async () => {
 
   await generateMerged(leafFiles);
 });
+
+function appendName(namesByModule: Map<string, string[]>, moduleSpecifier: string, name: string): void {
+  const names = namesByModule.get(moduleSpecifier) ?? [];
+  names.push(name);
+  namesByModule.set(moduleSpecifier, names);
+}
+
+function assertFacadesSupersedeTwinsCompletely(supersessions: ModuleSupersession[], valueExportsByModule: Map<string, string[]>): void {
+  const incompleteFacades = findIncompleteFacades(supersessions, valueExportsByModule);
+  if (incompleteFacades.length === 0) {
+    return;
+  }
+
+  throw new Error(
+    'A cross-platform facade supersedes its platform twins in the flat barrel, so an export only the twin '
+      + 'has would be silently dropped from it:\n'
+      + `${formatIncompleteFacades(incompleteFacades)}\n`
+      + 'Re-export the missing names from the facade, or rename them at the source.'
+  );
+}
 
 function assertNoCaseInsensitiveExportCollisions(exportNamesByModule: Map<string, string[]>): void {
   const nameCollisions = findExportNameCollisions(exportNamesByModule);
@@ -123,6 +160,14 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
   const originByName = new Map<string, ExportOrigin>();
   const collisionMessages: string[] = [];
 
+  // A facade over its own `desktop-` / `mobile-` twins takes their place in the flat bag. Worked out up
+  // Front from the filenames alone, because it decides which modules the walk below may contribute.
+  const supersessions = findModuleSupersessions(leafFiles.map((file) => toModuleSpecifier(file)));
+  const supersededModules = toSupersededModules(supersessions);
+  // Every module's value exports, superseded ones included — the superset invariant needs what the twins
+  // Export, which is exactly what does NOT reach `valueExportsByModule`.
+  const allValueExportsByModule = new Map<string, string[]>();
+
   for (const file of leafFiles) {
     const sourceFile = program.getSourceFile(file);
     if (!sourceFile) {
@@ -143,20 +188,19 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
       // Track EVERY export (types included) for the case-collision guard below — each documented
       // Export becomes a filesystem directory on the docs site, so a case-only clash within a module
       // Breaks the site on a case-insensitive filesystem even when only one side is a runtime value.
-      const moduleExportNames = exportNamesByModule.get(moduleSpecifier) ?? [];
-      moduleExportNames.push(name);
-      exportNamesByModule.set(moduleSpecifier, moduleExportNames);
+      appendName(exportNamesByModule, moduleSpecifier, name);
 
-      // Type-only re-exports (`export type { … }`) carry no runtime value, so they never belong in the flat
-      // `lib` bag — `typeof import('…/__merged')` only sees value exports anyway.
-      if (isTypeOnlyExport(exportSymbol)) {
+      const resolved = toResolvedValueSymbol(checker, exportSymbol);
+      if (!resolved) {
         continue;
       }
 
-      // eslint-disable-next-line no-bitwise -- Bitwise flag test is the TypeScript API idiom for symbol flags.
-      const resolved = exportSymbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(exportSymbol) : exportSymbol;
-      // eslint-disable-next-line no-bitwise -- Bitwise flag test is the TypeScript API idiom for symbol flags.
-      if (!(resolved.getFlags() & SymbolFlags.Value)) {
+      appendName(allValueExportsByModule, moduleSpecifier, name);
+
+      // A superseded twin contributes nothing to the flat bag — its facade carries the same names, and
+      // Dispatches to the right twin at call time. It is still tracked just above, so the superset
+      // Invariant below can see what it exports.
+      if (supersededModules.has(moduleSpecifier)) {
         continue;
       }
 
@@ -178,6 +222,7 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
   }
 
   assertNoCaseInsensitiveExportCollisions(exportNamesByModule);
+  assertFacadesSupersedeTwinsCompletely(supersessions, allValueExportsByModule);
 
   if (collisionMessages.length > 0) {
     throw new Error(
@@ -240,4 +285,21 @@ function isTypeOnlyExport(exportSymbol: TsSymbol): boolean {
 function toModuleSpecifier(file: string): string {
   const relativePath = relative(SRC_DIR, file).replaceAll('\\', '/');
   return `./${relativePath}`;
+}
+
+function toResolvedValueSymbol(checker: TypeChecker, exportSymbol: TsSymbol): null | TsSymbol {
+  // Type-only re-exports (`export type { … }`) carry no runtime value, so they never belong in the flat
+  // `lib` bag — `typeof import('…/__merged')` only sees value exports anyway.
+  if (isTypeOnlyExport(exportSymbol)) {
+    return null;
+  }
+
+  // eslint-disable-next-line no-bitwise -- Bitwise flag test is the TypeScript API idiom for symbol flags.
+  const resolved = exportSymbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(exportSymbol) : exportSymbol;
+  // eslint-disable-next-line no-bitwise -- Bitwise flag test is the TypeScript API idiom for symbol flags.
+  if (!(resolved.getFlags() & SymbolFlags.Value)) {
+    return null;
+  }
+
+  return resolved;
 }
