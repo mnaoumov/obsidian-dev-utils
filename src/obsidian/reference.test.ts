@@ -17,9 +17,14 @@ import {
   isCanvasFileNodeReference,
   isCanvasReference,
   isCanvasTextNodeReference,
+  isReferenceInOffsetRange,
   referenceToFileChange,
   sortReferences
 } from './reference.ts';
+
+interface CanvasReferenceEx extends CanvasReference {
+  position?: undefined;
+}
 
 interface FrontmatterLinkCacheEx extends FrontmatterLinkCache {
   endOffset?: undefined;
@@ -33,13 +38,14 @@ interface FrontmatterLinkCacheWithOffsetsEx extends FrontmatterLinkCacheWithOffs
 }
 
 function makeCanvasReference(type: 'file' | 'text', key: string): Reference {
-  return strictProxy<CanvasReference>({
+  return strictProxy<CanvasReferenceEx>({
     displayText: 'link',
     isCanvas: true,
     key,
     link: 'link',
     nodeIndex: 0,
     original: 'link',
+    position: undefined,
     type
   });
 }
@@ -128,6 +134,58 @@ describe('isCanvasTextNodeReference', () => {
   it('should return false for a regular reference', () => {
     const reference = makeReferenceCache('[[link]]', 0);
     expect(isCanvasTextNodeReference(reference)).toBe(false);
+  });
+});
+
+describe('isReferenceInOffsetRange', () => {
+  it('should return true for a reference fully contained in the range', () => {
+    const reference = makeReferenceCache('[[link]]', 10);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 30, startOffset: 5 })).toBe(true);
+  });
+
+  it('should return true for a reference whose bounds coincide with the range', () => {
+    const reference = makeReferenceCache('[[link]]', 10);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 18, startOffset: 10 })).toBe(true);
+  });
+
+  it('should return false for a reference straddling the range start', () => {
+    const reference = makeReferenceCache('[[link]]', 10);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 30, startOffset: 11 })).toBe(false);
+  });
+
+  it('should return false for a reference straddling the range end', () => {
+    const reference = makeReferenceCache('[[link]]', 10);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 17, startOffset: 5 })).toBe(false);
+  });
+
+  it('should return false for a reference entirely before the range', () => {
+    const reference = makeReferenceCache('[[link]]', 0);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 30, startOffset: 20 })).toBe(false);
+  });
+
+  it('should return false for a reference entirely after the range', () => {
+    const reference = makeReferenceCache('[[link]]', 40);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 30, startOffset: 20 })).toBe(false);
+  });
+
+  it('should return false for every reference when the range is empty', () => {
+    const reference = makeReferenceCache('[[link]]', 10);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 10, startOffset: 10 })).toBe(false);
+  });
+
+  it('should return false for a frontmatter link, which carries no file position', () => {
+    const reference = makeFrontmatterLink('link', 'aliases');
+    expect(isReferenceInOffsetRange(reference, { endOffset: 1000, startOffset: 0 })).toBe(false);
+  });
+
+  it('should return false for a frontmatter link whose value-relative offsets fall inside the range', () => {
+    const reference = makeFrontmatterLinkWithOffsets('hello world', 'aliases', 6, 11);
+    expect(isReferenceInOffsetRange(reference, { endOffset: 20, startOffset: 0 })).toBe(false);
+  });
+
+  it('should return false for a canvas reference', () => {
+    const reference = makeCanvasReference('file', 'k');
+    expect(isReferenceInOffsetRange(reference, { endOffset: 1000, startOffset: 0 })).toBe(false);
   });
 });
 

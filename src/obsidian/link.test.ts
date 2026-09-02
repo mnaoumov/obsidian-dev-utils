@@ -1862,6 +1862,273 @@ describe('app-dependent functions', () => {
     });
   });
 
+  describe('offset range filtering', () => {
+    const CONTENT = '# Note\n[[target]]';
+
+    function createBodyLink(name: string, startOffset: number): Reference {
+      const original = `[[${name}]]`;
+      const endOffset = startOffset + original.length;
+      return castTo<Reference>({
+        displayText: name,
+        link: name,
+        original,
+        position: {
+          end: { col: endOffset, line: 0, offset: endOffset },
+          start: { col: startOffset, line: 0, offset: startOffset }
+        }
+      });
+    }
+
+    function createLinkConverter(): ReturnType<typeof vi.fn<(link: Reference) => string>> {
+      return vi.fn((link: Reference) => `[[new-${link.link}]]`);
+    }
+
+    /**
+     * Three body links laid out as `[[a]] [[b]] [[c]]`, so `a` spans 0-5, `b` spans 6-11 and `c` spans
+     * 12-17.
+     */
+    function createThreeLinkCache(): CachedMetadataEx {
+      return castTo<CachedMetadataEx>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [
+          createBodyLink('a', 0),
+          createBodyLink('b', 6),
+          createBodyLink('c', 12)
+        ],
+        sections: undefined
+      });
+    }
+
+    function mockApplyFileChangesToInvokeProvider(): void {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async ({ changesProvider }) => {
+          if (typeof changesProvider !== 'function') {
+            return;
+          }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          await resolveValue(changesProvider, { abortSignal, content: CONTENT });
+        }
+      );
+    }
+
+    describe('editLinksInContent', () => {
+      it('should visit every link when the offset range is omitted', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['a', 'b', 'c']);
+      });
+
+      it('should visit a link whose bounds coincide with the offset range', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 11, startOffset: 6 }
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['b']);
+      });
+
+      it('should visit only the link fully contained in the offset range', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 12, startOffset: 5 }
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['b']);
+      });
+
+      it('should skip a link straddling the offset range start', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 17, startOffset: 7 }
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['c']);
+      });
+
+      it('should skip a link straddling the offset range end', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 10, startOffset: 0 }
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['a']);
+      });
+
+      it('should visit no link when the offset range is empty', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 6, startOffset: 6 }
+        });
+
+        expect(linkConverter).not.toHaveBeenCalled();
+      });
+
+      it('should skip a frontmatter link, which carries no file position', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+          embeds: undefined,
+          frontmatterLinks: [{
+            key: 'aliases',
+            link: 'fm',
+            original: 'fm'
+          }],
+          links: [createBodyLink('a', 0)],
+          sections: undefined
+        }));
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 1000, startOffset: 0 }
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['a']);
+      });
+
+      it('should skip a frontmatter link whose value-relative offsets fall inside the offset range', async () => {
+        vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+          embeds: undefined,
+          frontmatterLinks: [{
+            endOffset: 11,
+            key: 'aliases',
+            link: 'fm',
+            original: 'hello world',
+            startOffset: 6
+          }],
+          links: undefined,
+          sections: undefined
+        }));
+        const linkConverter = createLinkConverter();
+
+        await editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter,
+          offsetRange: { endOffset: 20, startOffset: 0 }
+        });
+
+        expect(linkConverter).not.toHaveBeenCalled();
+      });
+
+      it('should reject a negative start offset', async () => {
+        await expect(editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter: createLinkConverter(),
+          offsetRange: { endOffset: 10, startOffset: -1 }
+        })).rejects.toThrow('must not be negative');
+      });
+
+      it('should reject an end offset below the start offset', async () => {
+        await expect(editLinksInContent({
+          app,
+          content: CONTENT,
+          linkConverter: createLinkConverter(),
+          offsetRange: { endOffset: 5, startOffset: 10 }
+        })).rejects.toThrow('must not be less than the start offset');
+      });
+    });
+
+    describe('editLinks', () => {
+      it('should visit only the link fully contained in the offset range', async () => {
+        mockApplyFileChangesToInvokeProvider();
+        vi.mocked(getCacheSafe).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinks({
+          app,
+          linkConverter,
+          offsetRange: { endOffset: 11, startOffset: 6 },
+          pathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['b']);
+      });
+
+      it('should visit every link when the offset range is omitted', async () => {
+        mockApplyFileChangesToInvokeProvider();
+        vi.mocked(getCacheSafe).mockResolvedValue(createThreeLinkCache());
+        const linkConverter = createLinkConverter();
+
+        await editLinks({
+          app,
+          linkConverter,
+          pathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(linkConverter.mock.calls.map((call) => call[0].link)).toEqual(['a', 'b', 'c']);
+      });
+
+      it('should not forward the offset range to applyFileChanges', async () => {
+        mockApplyFileChangesToInvokeProvider();
+        vi.mocked(getCacheSafe).mockResolvedValue(createThreeLinkCache());
+
+        await editLinks({
+          app,
+          linkConverter: createLinkConverter(),
+          offsetRange: { endOffset: 11, startOffset: 6 },
+          pathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(ensureNonNullable(vi.mocked(applyFileChanges).mock.calls[0])[0]).not.toHaveProperty('offsetRange');
+      });
+
+      it('should reject an invalid offset range before touching the file', async () => {
+        await expect(editLinks({
+          app,
+          linkConverter: createLinkConverter(),
+          offsetRange: { endOffset: 5, startOffset: 10 },
+          pathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        })).rejects.toThrow('must not be less than the start offset');
+
+        expect(applyFileChanges).not.toHaveBeenCalled();
+      });
+    });
+  });
+
   describe('editBacklinks', () => {
     it('should process backlinks and invoke linkConverter for matching links', async () => {
       const backlinkRef = {

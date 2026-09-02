@@ -13,7 +13,10 @@ import type {
 } from 'obsidian';
 import type { Promisable } from 'type-fest';
 
-import { InternalPluginName } from '@obsidian-typings/obsidian-public-latest/implementations';
+import {
+  InternalPluginName,
+  isReferenceCache
+} from '@obsidian-typings/obsidian-public-latest/implementations';
 import {
   normalizePath,
   parseLinktext
@@ -27,9 +30,11 @@ import type {
   PathOrFile
 } from './file-system.ts';
 import type { LinkUpdateProgressReporter } from './link-update-progress.ts';
+import type { OffsetRange } from './reference.ts';
 import type { ProcessOptions } from './vault.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
+import { getLibDebugger } from '../debug.ts';
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import {
@@ -85,6 +90,7 @@ import {
 } from './parse-link.ts';
 import {
   isCanvasFileNodeReference,
+  isReferenceInOffsetRange,
   referenceToFileChange
 } from './reference.ts';
 
@@ -255,6 +261,21 @@ export interface EditLinksInContentParams {
   linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
 
   /**
+   * A range within {@link EditLinksInContentParams.content}, in character offsets, restricting the pass to
+   * the links inside it. When omitted, every link is visited.
+   *
+   * A link is edited only when it is **fully contained** in the range; one that merely overlaps it is left
+   * alone, because rewriting part of a link corrupts it. Both bounds are inclusive, so a range whose
+   * offsets coincide exactly with a link's does include that link.
+   *
+   * A reference that carries no position within the content — a frontmatter link, a multi-link frontmatter
+   * value entry, or any canvas reference — is never in range and is skipped whenever a range is supplied.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
+
+  /**
    * Whether to also edit external links parsed from the note body. When `true`, the converter also
    * receives references for external links.
    *
@@ -298,6 +319,27 @@ export interface EditLinksParams extends EditLinksOptions {
    * The function that converts each link.
    */
   linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+
+  /**
+   * A range within the file's content, in character offsets, restricting the pass to the links inside it.
+   * When omitted, every link is visited.
+   *
+   * A link is edited only when it is **fully contained** in the range; one that merely overlaps it is left
+   * alone, because rewriting part of a link corrupts it. Both bounds are inclusive, so a range whose
+   * offsets coincide exactly with a link's does include that link.
+   *
+   * A reference that carries no position within the file's content — a frontmatter link, a multi-link
+   * frontmatter value entry, or any canvas reference — is never in range and is skipped whenever a range is
+   * supplied.
+   *
+   * The offsets are into the content this function reads from the vault. Before reading, it saves any
+   * unsaved editor buffer for the file, so a range taken from an open editor via `Editor.posToOffset` is
+   * valid. The caller owns only the case where the buffer changes between computing the range and this
+   * call.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
 
   /**
    * The path or file to edit the links for.
@@ -885,6 +927,14 @@ interface GetFileChangesParams {
   linkConverter(this: void, link: Reference, abortSignal: AbortSignal): Promisable<MaybeReturn<string>>;
 
   /**
+   * A range within the content, in character offsets, restricting the changes to the links fully contained
+   * in it. When omitted, every link is visited.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
+
+  /**
    * Whether to include external links (parsed from the note body) in the changes.
    *
    * @default `false`
@@ -1062,12 +1112,18 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
   const {
     app,
     linkConverter,
+    offsetRange,
     pathOrFile,
     shouldEditExternalLinks = false,
     shouldEditFrontmatterExternalLinks = false,
     shouldEditMultiValueFrontmatterExternalLinks = false,
     ...options
   } = params;
+
+  if (offsetRange !== undefined) {
+    validateOffsetRange(offsetRange);
+  }
+
   await applyFileChanges({
     app,
     changesProvider: async ({ abortSignal, content }) => {
@@ -1084,15 +1140,16 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
         return null;
       }
 
-      return await getFileChanges({
+      return await getFileChanges(normalizeOptionalProperties<GetFileChangesParams>({
         abortSignal,
         cache,
         isCanvasFileCache: isCanvasFile(pathOrFile),
         linkConverter,
+        offsetRange,
         shouldIncludeExternalLinks: shouldEditExternalLinks,
         shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
         shouldIncludeMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
-      });
+      }));
     },
     pathOrFile,
     ...options
@@ -1106,10 +1163,14 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
  * @returns The promise that resolves to the updated content.
  */
 export async function editLinksInContent(params: EditLinksInContentParams): Promise<string> {
-  const { app, content, linkConverter, shouldEditExternalLinks = false, shouldEditFrontmatterExternalLinks = false, shouldEditMultiValueFrontmatterExternalLinks = false } = params;
+  const { app, content, linkConverter, offsetRange, shouldEditExternalLinks = false, shouldEditFrontmatterExternalLinks = false, shouldEditMultiValueFrontmatterExternalLinks = false } = params;
   let { abortSignal } = params;
   abortSignal ??= abortSignalNever();
   abortSignal.throwIfAborted();
+
+  if (offsetRange !== undefined) {
+    validateOffsetRange(offsetRange);
+  }
 
   const newContent = await applyContentChanges({
     abortSignal,
@@ -1120,15 +1181,16 @@ export async function editLinksInContent(params: EditLinksInContentParams): Prom
         shouldParseMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
       });
       abortSignal.throwIfAborted();
-      const changes = await getFileChanges({
+      const changes = await getFileChanges(normalizeOptionalProperties<GetFileChangesParams>({
         abortSignal,
         cache,
         isCanvasFileCache: false,
         linkConverter,
+        offsetRange,
         shouldIncludeExternalLinks: shouldEditExternalLinks,
         shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
         shouldIncludeMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
-      });
+      }));
       abortSignal.throwIfAborted();
       return changes;
     },
@@ -1774,6 +1836,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     cache,
     isCanvasFileCache,
     linkConverter,
+    offsetRange,
     shouldIncludeExternalLinks = false,
     shouldIncludeFrontmatterExternalLinks = false,
     shouldIncludeMultiValueFrontmatterExternalLinks = false
@@ -1793,8 +1856,21 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
     start: section.position.start.offset
   }));
 
+  const getFileChangesDebugger = getLibDebugger('Link:getFileChanges');
+
   for (const link of getLinks({ cache, shouldIncludeExternalLinks, shouldIncludeFrontmatterExternalLinks, shouldIncludeMultiValueFrontmatterExternalLinks })) {
     abortSignal.throwIfAborted();
+
+    if (offsetRange !== undefined && !isReferenceInOffsetRange(link, offsetRange)) {
+      getFileChangesDebugger(
+        isReferenceCache(link)
+          ? 'Skipping a link that is not fully contained in the offset range'
+          : 'Skipping a link that carries no position within the content, so it can never be in the offset range',
+        { link: link.original, offsetRange }
+      );
+      continue;
+    }
+
     const newContent = await linkConverter(link, abortSignal);
     abortSignal.throwIfAborted();
     if (newContent === undefined) {
@@ -1939,5 +2015,15 @@ function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {
     default: {
       assertNever(resolvedStyle);
     }
+  }
+}
+
+function validateOffsetRange(offsetRange: OffsetRange): void {
+  if (offsetRange.startOffset < 0) {
+    throw new Error(`Invalid offset range: the start offset ${String(offsetRange.startOffset)} must not be negative.`);
+  }
+
+  if (offsetRange.endOffset < offsetRange.startOffset) {
+    throw new Error(`Invalid offset range: the end offset ${String(offsetRange.endOffset)} must not be less than the start offset ${String(offsetRange.startOffset)}.`);
   }
 }

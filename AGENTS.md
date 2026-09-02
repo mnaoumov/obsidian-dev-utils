@@ -804,6 +804,34 @@ export function myFunction(param: Type): ReturnType {
   reflex re-fires on the next reader.
 - (cannot be forced by ESLint — an idempotence judgment about the patch body)
 
+### L21. A `Reference` is a union — `position` is not universal, and a frontmatter offset is not a file offset
+
+- **`Reference` is `ReferenceCache | FrontmatterLinkCache`, and only the first half has a `position`.**
+  `ReferenceCache` (body links, embeds, body external links) carries `position.{start,end}.{line,col,offset}`;
+  `FrontmatterLinkCache` — frontmatter links, multi-link frontmatter value entries, and **every canvas
+  reference** (`CanvasReference extends FrontmatterLinkCache`) — carries only a `key`. `getLinks` mixes both
+  kinds into one `Reference[]` and includes frontmatter links by DEFAULT, so any code that walks the
+  converter's input and reads `link.position` is reading `undefined` on a routine input, not an exotic one.
+  A design written against "every `Reference` has a `Pos`" is wrong before it is typed — that premise is
+  what the offset-range work was specified on, and the union is why the filter excludes position-less
+  references rather than comparing something.
+- **`FrontmatterLinkCacheWithOffsets.startOffset` / `.endOffset` are the trap, because they LOOK like the
+  missing position.** They are offsets **within the link's own property value string** — that is exactly how
+  `referenceToFileChange` uses them, `reference.original.slice(startOffset, endOffset)`. Comparing them
+  against a file offset silently addresses a different coordinate space: a frontmatter link at value-offset
+  6-11 would test as "inside" a file range of 0-20 and be rewritten, though nothing about the file range
+  covers it. The failure is a wrong link rewritten, not an error.
+- **Narrow with `isReferenceCache`, never with a `position` truthiness check.** `isReferenceCache` is the
+  published guard (`@obsidian-typings/obsidian-public-latest/implementations`), it reads as the intent, and
+  it keeps the two coordinate spaces from ever meeting. `isReferenceInOffsetRange` (`src/obsidian/reference.ts`)
+  is the shared predicate; use it rather than open-coding the comparison.
+- **A test double must declare `position: undefined` explicitly.** `strictProxy` throws on an unmocked
+  property, and `isReferenceCache` probes `position` — so a frontmatter/canvas double built without it fails
+  with `Unmocked property "position" was accessed` the moment any guard runs over it. `reference.test.ts`
+  carries `FrontmatterLinkCacheEx` / `CanvasReferenceEx` interfaces for exactly this.
+- (cannot be forced by ESLint — a rule could flag `.position` on a value typed `Reference` outside an
+  `isReferenceCache` guard, but not the coordinate-space confusion that makes the offsets wrong)
+
 ## Testing
 
 ### Goals
