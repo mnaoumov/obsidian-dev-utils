@@ -584,7 +584,14 @@ describe('getReleaseNotes', () => {
 });
 
 describe('publishGitHubRelease', () => {
-  function setupReleaseNotesMocks(): void {
+  /**
+   * The `npm pack --json` payload as npm 12 emits it: an object keyed by package name, preceded on stdout
+   * by whatever the `prepare` script printed. npm 11 emitted an array instead, and mocking only that array
+   * is what let T806 reach four failed releases with coverage still at 100%, so both shapes are covered.
+   */
+  const NPM_12_PACK_OUTPUT = `> library@1.0.0 prepare\n${JSON.stringify({ library: { filename: 'library-1.0.0.tgz' } }, null, 2)}`;
+
+  function setupReleaseNotesMocks(packOutput = NPM_12_PACK_OUTPUT): void {
     mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
     mockExecFromRoot.mockImplementation((command: string | string[]) => {
       const commandString = Array.isArray(command) ? command.join(' ') : command;
@@ -595,10 +602,17 @@ describe('publishGitHubRelease', () => {
         return Promise.resolve('https://github.com/user/repo');
       }
       if (commandString.includes('npm pack')) {
-        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.0.tgz' }], null, 2));
+        return Promise.resolve(packOutput);
       }
       return Promise.resolve('');
     });
+  }
+
+  function getGhReleaseArguments(): string[] | undefined {
+    const ghReleaseCall = mockExecFromRoot.mock.calls.find(
+      (call: unknown[]) => Array.isArray(call[0]) && (call[0] as string[]).includes('release')
+    ) as [string[], unknown] | undefined;
+    return ghReleaseCall?.[0];
   }
 
   it('should publish release for obsidian plugin with dist/build files', async () => {
@@ -620,19 +634,33 @@ describe('publishGitHubRelease', () => {
       expect.arrayContaining(['npm', 'pack', '--pack-destination', 'dist', '--json']),
       expect.any(Object)
     );
+    expect(getGhReleaseArguments()).toContain('dist/library-1.0.0.tgz');
+  });
+
+  it('should resolve the tarball from the npm 11 array-shaped pack output', async () => {
+    setupReleaseNotesMocks(JSON.stringify([{ filename: 'library-1.0.0.tgz' }], null, 2));
+    mockExistsSync.mockReturnValue(true);
+    await publishGitHubRelease('1.0.0', false);
+    expect(getGhReleaseArguments()).toContain('dist/library-1.0.0.tgz');
+  });
+
+  it('should resolve the tarball when the prepare script printed a brace before the pack JSON', async () => {
+    setupReleaseNotesMocks(`husky - { not json }\n${JSON.stringify({ library: { filename: 'library-1.0.0.tgz' } })}`);
+    mockExistsSync.mockReturnValue(true);
+    await publishGitHubRelease('1.0.0', false);
+    expect(getGhReleaseArguments()).toContain('dist/library-1.0.0.tgz');
   });
 
   it('should throw when npm pack output does not contain expected JSON', async () => {
-    mockReadFile.mockResolvedValue('# CHANGELOG\n\n');
-    mockExecFromRoot.mockImplementation((command: string | string[]) => {
-      const commandString = Array.isArray(command) ? command.join(' ') : command;
-      if (commandString.includes('npm pack')) {
-        return Promise.resolve('some unexpected output without json');
-      }
-      return Promise.resolve('');
-    });
+    setupReleaseNotesMocks('some unexpected output without json');
     mockExistsSync.mockReturnValue(true);
-    await expect(publishGitHubRelease('1.0.0', false)).rejects.toThrow('Failed to find the start of the JSON array in the result output');
+    await expect(publishGitHubRelease('1.0.0', false)).rejects.toThrow('Failed to find the JSON payload in the `npm pack --json` output');
+  });
+
+  it('should throw when npm pack output holds no pack result', async () => {
+    setupReleaseNotesMocks('{}');
+    mockExistsSync.mockReturnValue(true);
+    await expect(publishGitHubRelease('1.0.0', false)).rejects.toThrow('Found no pack result in the `npm pack --json` output');
   });
 
   it('should filter out non-existent files', async () => {
