@@ -246,7 +246,7 @@ To use these commands in your `package.json`, create script entry points using [
   "scripts": {
     "build": "jiti scripts/build.ts",
     "build:clean": "jiti scripts/build-clean.ts",
-    "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
+    "build:compile": "jiti scripts/build-compile.ts",
     "build:templates": "jiti scripts/build-templates.ts",
     "dev": "jiti scripts/dev.ts",
     "find-overexposed": "jiti scripts/find-overexposed.ts",

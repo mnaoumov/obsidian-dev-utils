@@ -19,6 +19,8 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run format:check` — check formatting
 - `npm run build` — full build pipeline
 - `npm run build:clean` — clean build output
+- `npm run build:compile` — compile: fans out to the svelte and TypeScript passes below
+- `npm run build:compile:svelte` — type-check Svelte components with svelte-check
 - `npm run build:compile:typescript` — type-check with tsc
 - `npm run build:templates` — copy consumer templates
 - `npm run build:validate-templates` — type-check the copied consumer templates (needs `dist/lib` built)

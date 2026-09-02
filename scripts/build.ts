@@ -8,7 +8,10 @@ const BUILD_STEPS = [
   'build:clean',
   'build:generate-merged',
   'build:generate-index',
-  'build:compile:typescript',
+  // The orchestrator, not the `build:compile:typescript` leaf it fans out to.
+  // Naming a leaf here is exactly the mis-wire T804 swept out of the fleet and T816 out of this repo:
+  // It silently skips the sibling svelte pass. Both leaf scripts survive as the targets it npm-runs.
+  'build:compile',
   'build:types',
   'build:validate-declarations',
   'build:lib',
