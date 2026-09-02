@@ -64,6 +64,24 @@ export interface CanvasTextNodeReference extends CanvasReference {
 }
 
 /**
+ * A range within a file's content, expressed in character offsets.
+ *
+ * Both bounds are inclusive: a reference whose own offsets coincide exactly with
+ * {@link OffsetRange.startOffset} / {@link OffsetRange.endOffset} is inside the range.
+ */
+export interface OffsetRange {
+  /**
+   * An end offset of the range within the file's content.
+   */
+  readonly endOffset: number;
+
+  /**
+   * A start offset of the range within the file's content.
+   */
+  readonly startOffset: number;
+}
+
+/**
  * Checks if a reference is a canvas file node reference.
  *
  * @param reference - The reference to check.
@@ -91,6 +109,30 @@ export function isCanvasReference(reference: Reference): reference is CanvasRefe
  */
 export function isCanvasTextNodeReference(reference: Reference): reference is CanvasTextNodeReference {
   return isCanvasReference(reference) && reference.type === 'text';
+}
+
+/**
+ * Checks if a reference is fully contained within an offset range.
+ *
+ * Only a reference that carries a position within the file's content can be in a range. A
+ * {@link FrontmatterLinkCache} — a frontmatter link, a multi-link frontmatter value entry, or any canvas
+ * reference — carries no such position and is therefore never in range. Its `startOffset` / `endOffset`,
+ * where present, locate the link within its own property value rather than within the file, so they are
+ * deliberately not compared against the range.
+ *
+ * Containment is full and both bounds are inclusive: a reference that only partially overlaps the range is
+ * not in it, because rewriting part of a link corrupts it.
+ *
+ * @param reference - The reference to check.
+ * @param offsetRange - The offset range to check against.
+ * @returns Whether the reference is fully contained within the offset range.
+ */
+export function isReferenceInOffsetRange(reference: Reference, offsetRange: OffsetRange): boolean {
+  if (!isReferenceCache(reference)) {
+    return false;
+  }
+
+  return offsetRange.startOffset <= reference.position.start.offset && reference.position.end.offset <= offsetRange.endOffset;
 }
 
 /**
