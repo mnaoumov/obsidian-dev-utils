@@ -6,7 +6,10 @@
  * and to remove the existing build output.
  */
 
-import type { TsConfigJson } from 'type-fest';
+import type {
+  PackageJson,
+  TsConfigJson
+} from 'type-fest';
 
 import {
   cp,
@@ -29,6 +32,7 @@ import {
   npmRunOptional,
   NpmRunOptionalResult
 } from './npm-run.ts';
+import { readPackageJson } from './npm.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import { resolveToolCommand } from './package-manager.ts';
 import {
@@ -65,20 +69,38 @@ export async function buildCompile(): Promise<void> {
 /**
  * Compiles the Svelte code.
  *
+ * The project's Svelte files are found by globbing the Svelte extensions directly. Globbing the tsconfig
+ * `include` patterns and filtering that list would never match: `include` lists TypeScript globs
+ * (`./src/**\/*.ts`, …), so no `.svelte` path can ever appear in it and the check would always be skipped.
+ *
  * @returns A {@link Promise} that resolves when the code compiles successfully.
+ * @throws If the project has Svelte files but does not declare `svelte-check`.
  */
 export async function buildCompileSvelte(): Promise<void> {
   const tsConfigPath = resolvePathFromRootSafe({ path: ObsidianDevUtilsRepoPaths.TsConfigJson });
   const tsConfig = await readJson<TsConfigJson>(tsConfigPath);
-  const allFiles = await toArray(glob(tsConfig.include ?? [], { exclude: tsConfig.exclude ?? [] }));
-  const svelteFiles = allFiles.filter((file) => file.endsWith('.svelte') || file.endsWith('.svelte.js') || file.endsWith('.svelte.ts'));
+  const svelteFiles = await toArray(glob(SVELTE_FILE_PATTERNS, {
+    cwd: resolvePathFromRootSafe({ path: ObsidianDevUtilsRepoPaths.CurrentFolder }),
+    exclude: [...SVELTE_FILE_EXCLUDE_PATTERNS, ...tsConfig.exclude ?? []]
+  }));
 
-  if (svelteFiles.length === 0) {
+  const [firstSvelteFile] = svelteFiles;
+
+  if (firstSvelteFile === undefined) {
     getLibDebugger('build:buildCompileSvelte')('No Svelte files found in the project, skipping Svelte compilation');
     return;
   }
 
-  await execFromRoot([...resolveToolCommand({ tool: 'svelte-check' }), '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
+  const packageJson = await readPackageJson();
+
+  if (!checkSvelteCheckDeclared(packageJson)) {
+    throw new Error(
+      `Found Svelte file(s) in the project (e.g. ${firstSvelteFile}), but \`${SVELTE_CHECK_PACKAGE_NAME}\` is not declared in package.json.`
+        + ` Add \`${SVELTE_CHECK_PACKAGE_NAME}\` as a devDependency to type-check the Svelte code.`
+    );
+  }
+
+  await execFromRoot([...resolveToolCommand({ tool: SVELTE_CHECK_PACKAGE_NAME }), '--tsconfig', ObsidianDevUtilsRepoPaths.TsConfigJson]);
 }
 
 /**
@@ -132,6 +154,23 @@ const TEMPLATE_FILE_SUFFIX = '.template';
 
 const NODE_MODULES_SEGMENT = '/node_modules/';
 
+const SVELTE_CHECK_PACKAGE_NAME = 'svelte-check';
+
+const SVELTE_FILE_PATTERNS = [
+  `${ObsidianDevUtilsRepoPaths.AnyPath}/*.svelte`,
+  `${ObsidianDevUtilsRepoPaths.AnyPath}/*.svelte.js`,
+  `${ObsidianDevUtilsRepoPaths.AnyPath}/*.svelte.ts`
+];
+
+/**
+ * `node_modules` must be listed explicitly: a tsconfig that sets `exclude` at all **replaces** TypeScript's
+ * default `node_modules` exclusion, so it cannot be relied on to keep dependencies out of the glob.
+ */
+const SVELTE_FILE_EXCLUDE_PATTERNS = [
+  `${ObsidianDevUtilsRepoPaths.AnyPath}/${ObsidianDevUtilsRepoPaths.NodeModules}/${ObsidianDevUtilsRepoPaths.AnyPath}`,
+  `${ObsidianDevUtilsRepoPaths.AnyPath}/${ObsidianDevUtilsRepoPaths.Dist}/${ObsidianDevUtilsRepoPaths.AnyPath}`
+];
+
 /**
  * Parameters for {@link shouldKeepProjectFile}.
  */
@@ -169,6 +208,22 @@ function areProjectTypesValid(): boolean {
     rootNames: fileNames,
     shouldKeepFile: (fileName) => shouldKeepProjectFile({ fileName, rootCanonical })
   });
+}
+
+/**
+ * Determines whether the project declares `svelte-check`.
+ *
+ * The declaration is read from `package.json` rather than probed in `node_modules/.bin`, because
+ * {@link resolveToolCommand} deliberately falls back to the package manager's exec form for tools that have
+ * no bin shim — the only way a locally installed tool resolves under yarn PnP. Treating a missing shim as a
+ * missing tool would therefore break PnP projects.
+ *
+ * @param packageJson - The project's parsed `package.json`.
+ * @returns `true` when `svelte-check` is declared as a regular, dev, or peer dependency.
+ */
+function checkSvelteCheckDeclared(packageJson: PackageJson): boolean {
+  return [packageJson.dependencies, packageJson.devDependencies, packageJson.peerDependencies]
+    .some((dependencies) => dependencies?.[SVELTE_CHECK_PACKAGE_NAME] !== undefined);
 }
 
 /**

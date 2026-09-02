@@ -43,7 +43,12 @@ Checks if code compiles.
 import { buildCompileSvelte } from 'obsidian-dev-utils/script-utils/build';
 ```
 
-Checks if Svelte code compiles.
+Checks if Svelte code compiles, by running `svelte-check`.
+
+The project is scanned for `.svelte`, `.svelte.js` and `.svelte.ts` files (ignoring `node_modules`, `dist`,
+and whatever the `tsconfig.json` `exclude` lists). When there are none, the step is skipped. When there are
+some, the project must declare `svelte-check` as a dependency — otherwise the step fails with an error
+naming it, rather than silently skipping the check or pulling the tool from the registry mid-build.
 
 ### Compile TypeScript code
 
