@@ -1,7 +1,7 @@
 import process from 'node:process';
 
 import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { execFromRoot } from '../src/script-utils/root.ts';
+import { npmRun } from '../src/script-utils/npm-run.ts';
 import {
   parseVersionArguments,
   updateVersion
@@ -11,7 +11,7 @@ import { stampGeneratedDuringBuild } from './stamp-generated-during-build.ts';
 const [, , ...$arguments] = process.argv;
 
 await wrapCliTask(async () => {
-  await execFromRoot(['npm', 'run', 'build:templates']);
+  await npmRun('build:templates');
   const { options, versionUpdateType } = parseVersionArguments($arguments);
   // The NPM publish is deliberately NOT run from here.
   // It happens in `.github/workflows/publish-npm.yml`, triggered by the GitHub release this creates.
