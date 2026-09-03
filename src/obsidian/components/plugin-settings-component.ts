@@ -241,9 +241,12 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   private readonly asyncEvents = new AsyncEvents<PluginSettingsComponentBaseEventMap<PluginSettings>>();
   private currentState: PluginSettingsState<PluginSettings>;
 
+  private isLoadedFromFile = false;
+
   private lastSavedState: PluginSettingsState<PluginSettings>;
 
   private readonly legacySettingsConverters: ((record: GenericObject) => void)[] = [];
+  private readonly loadedFromFileResolvers: (() => void)[] = [];
   private readonly propertyNames: PropertyNames<PluginSettings>[];
 
   private readonly validators = new Map<PropertyNames<PluginSettings>, SettingsValidator<PluginSettings>>();
@@ -362,6 +365,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
         await this.saveToFileImpl();
       }
     } finally {
+      this.markLoadedFromFile();
       await this.asyncEvents.triggerAsync('loadSettings', this.currentState as ReadonlyPluginSettingsState<PluginSettings>, isInitialLoad);
     }
   }
@@ -575,6 +579,33 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   }
 
   /**
+   * Waits until the settings have been read from `data.json` at least once.
+   *
+   * Anything that reads a setting from outside this component has to wait for this, because until the first
+   * {@link loadFromFile} completes {@link settings} still holds the DEFAULTS — reading it earlier answers
+   * with a default rather than with what the user actually stored. That window is easy to miss, since it is
+   * empty on a cold start (the workspace layout is not ready yet, so nothing has run) but wide open on a
+   * runtime enable from the Community Plugins tab or a re-enable after an update, where a layout-ready
+   * handler fires immediately while this component's own async load is still in flight.
+   *
+   * Resolves immediately once the settings have loaded, so a caller that arrives late is not stranded
+   * waiting for an event that has already been raised. Later reloads (an external `data.json` change) do
+   * not reset it — the question it answers is whether the settings have EVER been read, not whether the
+   * most recent read has finished.
+   *
+   * @returns A {@link Promise} that resolves once the settings have been loaded from the file.
+   */
+  public whenLoadedFromFile(): Promise<void> {
+    if (this.isLoadedFromFile) {
+      return noopAsync();
+    }
+
+    return new Promise<void>((resolve) => {
+      this.loadedFromFileResolvers.push(resolve);
+    });
+  }
+
+  /**
    * Gets the transformer.
    *
    * @returns The transformer.
@@ -694,6 +725,15 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     }
 
     return (this.propertyNames as string[]).includes(property);
+  }
+
+  private markLoadedFromFile(): void {
+    this.isLoadedFromFile = true;
+    // Drained rather than iterated, so the list does not keep every past waiter alive across reloads.
+    const resolvers = this.loadedFromFileResolvers.splice(0);
+    for (const resolve of resolvers) {
+      resolve();
+    }
   }
 
   private async rawRecordToSettings(rawRecord: GenericObject): Promise<PluginSettings> {

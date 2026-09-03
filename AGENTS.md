@@ -856,6 +856,34 @@ export function myFunction(param: Type): ReturnType {
   `return shouldRetryOnInvalidChanges ? null : content`.
 - (cannot be forced by ESLint — a rule cannot tell a transient refusal from a permanent one)
 
+### L23. Layout-ready is not "everything has loaded" — a sibling component's async load is still in flight
+
+- **`LayoutReadyComponent` waits for the component's OWN load, and nothing else.** It awaits
+  `getInFlightLoadPromise()` — its `onloadAsync` plus its children — precisely so a handler does not observe
+  its own half-initialized state. A SIBLING under the same plugin is outside that promise, so a handler that
+  reads a sibling's state is racing it with no wait at all.
+- **The race is empty on a cold start and wide open on a runtime enable.** Cold start: the plugin loads long
+  before the workspace layout is ready, so every sibling has settled by the time the handler runs, and the
+  bug is invisible. Enable from the Community Plugins tab, or a re-enable after an update: the layout is
+  ALREADY ready, `onLayoutReady` fires its callback on the next macrotask, and `PluginBase.onload` is still
+  awaiting `onloadImpl` — so the sibling's `onloadAsync` has not finished. Test on a runtime enable, not
+  only on a restart.
+- **The settings component is almost always the sibling in question**, and reading it early does not throw —
+  it answers with the DEFAULTS, which is why the failure reads as "the user's stored answer was ignored"
+  rather than as a crash. Measured 2026-09-02 against a live Obsidian (`T921-P1`):
+  `PluginSuggestionComponent` re-asked a user whose decline was on disk and whose settings object held
+  `declined: true` at the moment the notice was already showing — the notice had been decided earlier,
+  against the default.
+- **Wait for the sibling explicitly.** `PluginSettingsComponentBase.whenLoadedFromFile()` is the signal for
+  the settings case; it resolves immediately once the first read has happened, so a late subscriber is not
+  stranded the way a one-shot `loadSettings` listener would be. Then re-check the component is still loaded
+  (`isUnloaded()`) before acting, because the wait spans an `await`.
+- **A component that needs the wait should TAKE the collaborator, not a readiness flag.** Requiring
+  `pluginSettingsComponent` in the constructor params makes the wait impossible for a host to forget;
+  handing the host a `whenReady`-style promise to pass in makes it one more thing to get right per consumer,
+  which is the same defect one layer up.
+- (cannot be forced by ESLint — a rule cannot tell which reads cross a component boundary)
+
 ## Testing
 
 ### Goals

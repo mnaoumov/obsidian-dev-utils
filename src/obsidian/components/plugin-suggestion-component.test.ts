@@ -22,7 +22,12 @@ import {
 } from 'vitest';
 
 import type { PluginNoticeComponent } from './plugin-notice-component.ts';
+import type { PluginSettingsComponentBase } from './plugin-settings-component.ts';
 
+import {
+  noop,
+  noopAsync
+} from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
@@ -34,6 +39,11 @@ import {
 interface ComponentContext {
   readonly app: AppOriginal;
   readonly component: PluginSuggestionComponent;
+  /**
+   * Completes the host's pending settings load, optionally with the declined flag the file turned out to
+   * hold. Only meaningful when the component was created with `isSettingsLoadPending`.
+   */
+  finishSettingsLoad(isDeclined?: boolean): void;
   readonly setSuggestionDeclined: SetSuggestionDeclinedMock;
   readonly showNotice: ReturnType<typeof vi.fn>;
   triggerLayoutReady(): void;
@@ -43,6 +53,11 @@ interface CreateComponentOptions {
   readonly isDeclined?: boolean;
   readonly isEnabled?: boolean;
   readonly isInstalled?: boolean;
+  /**
+   * Leaves the host's settings load in flight, as it is whenever this component loads onto a layout that
+   * is already ready.
+   */
+  readonly isSettingsLoadPending?: boolean;
 }
 
 type SetSuggestionDeclinedMock = ReturnType<typeof vi.fn<(isDeclined: boolean) => Promise<void>>>;
@@ -119,10 +134,22 @@ function createComponent(options: CreateComponentOptions = {}): ComponentContext
   const setSuggestionDeclined: SetSuggestionDeclinedMock = vi.fn<(isDeclined: boolean) => Promise<void>>().mockResolvedValue();
   let isDeclined = options.isDeclined ?? false;
 
+  // The host's settings load, as the component sees it: already settled on a cold start, still in flight
+  // Whenever the component loads onto a layout that is already ready.
+  let resolveSettingsLoad = noop;
+  const settingsLoadPromise = options.isSettingsLoadPending
+    ? new Promise<void>((resolve) => {
+      resolveSettingsLoad = resolve;
+    })
+    : noopAsync();
+
   const component = new PluginSuggestionComponent({
     app,
     isSuggestionDeclined: (): boolean => isDeclined,
     pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNotice }),
+    pluginSettingsComponent: strictProxy<PluginSettingsComponentBase<object>>({
+      whenLoadedFromFile: (): Promise<void> => settingsLoadPromise
+    }),
     reason: REASON,
     setSuggestionDeclined: async (isDeclinedNew: boolean): Promise<void> => {
       isDeclined = isDeclinedNew;
@@ -135,6 +162,12 @@ function createComponent(options: CreateComponentOptions = {}): ComponentContext
   return {
     app,
     component,
+    finishSettingsLoad: (isDeclinedFromFile?: boolean): void => {
+      if (isDeclinedFromFile !== undefined) {
+        isDeclined = isDeclinedFromFile;
+      }
+      resolveSettingsLoad();
+    },
     setSuggestionDeclined,
     showNotice,
     triggerLayoutReady: (): void => {
@@ -161,37 +194,100 @@ describe('getSuggestedPluginState', () => {
 });
 
 describe('onload', () => {
-  it('should show the suggestion notice once the layout is ready', () => {
+  it('should show the suggestion notice once the layout is ready', async () => {
     vi.useFakeTimers();
     const { component, showNotice, triggerLayoutReady } = createComponent();
 
     component.load();
     triggerLayoutReady();
-    vi.runAllTimers();
+    await vi.runAllTimersAsync();
 
     expect(showNotice).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });
 
-  it('should not show the notice when the suggested plugin is already enabled', () => {
+  it('should not show the notice when the suggested plugin is already enabled', async () => {
     vi.useFakeTimers();
     const { component, showNotice, triggerLayoutReady } = createComponent({ isEnabled: true });
 
     component.load();
     triggerLayoutReady();
-    vi.runAllTimers();
+    await vi.runAllTimersAsync();
 
     expect(showNotice).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
 
-  it('should not show the notice when the suggestion was declined', () => {
+  it('should not show the notice when the suggestion was declined', async () => {
     vi.useFakeTimers();
     const { component, showNotice, triggerLayoutReady } = createComponent({ isDeclined: true });
 
     component.load();
     triggerLayoutReady();
-    vi.runAllTimers();
+    await vi.runAllTimersAsync();
+
+    expect(showNotice).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('should not decide the notice while the host settings are still loading', async () => {
+    vi.useFakeTimers();
+    const { component, finishSettingsLoad, showNotice, triggerLayoutReady } = createComponent({ isSettingsLoadPending: true });
+
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    expect(showNotice).not.toHaveBeenCalled();
+
+    // The wait is a TRACKED async operation, so leaving it pending would hang the harness `afterEach` that
+    // Drains them — and take every later test in this file down with it.
+    finishSettingsLoad(true);
+    await vi.runAllTimersAsync();
+    vi.useRealTimers();
+  });
+
+  it('should not show the notice when the loading host settings turn out to hold a decline', async () => {
+    // The regression this component was built to fail: on a layout that is ALREADY ready (a runtime enable,
+    // Or a re-enable after an update) the layout-ready callback fires while the host's settings are still
+    // Being read, so deciding right then sees the default `false` and asks a user who already declined.
+    vi.useFakeTimers();
+    const { component, finishSettingsLoad, showNotice, triggerLayoutReady } = createComponent({ isSettingsLoadPending: true });
+
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+    finishSettingsLoad(true);
+    await vi.runAllTimersAsync();
+
+    expect(showNotice).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('should show the notice once the host settings arrive without a decline', async () => {
+    vi.useFakeTimers();
+    const { component, finishSettingsLoad, showNotice, triggerLayoutReady } = createComponent({ isSettingsLoadPending: true });
+
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+    finishSettingsLoad(false);
+    await vi.runAllTimersAsync();
+
+    expect(showNotice).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it('should not show the notice when the component is unloaded while the host settings are loading', async () => {
+    vi.useFakeTimers();
+    const { component, finishSettingsLoad, showNotice, triggerLayoutReady } = createComponent({ isSettingsLoadPending: true });
+
+    component.load();
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+    component.unload();
+    finishSettingsLoad();
+    await vi.runAllTimersAsync();
 
     expect(showNotice).not.toHaveBeenCalled();
     vi.useRealTimers();
@@ -203,7 +299,7 @@ describe('onload', () => {
 
     component.load();
     triggerLayoutReady();
-    vi.runAllTimers();
+    await vi.runAllTimersAsync();
     clickButton(0);
     await vi.runAllTimersAsync();
 
@@ -217,7 +313,7 @@ describe('onload', () => {
 
     component.load();
     triggerLayoutReady();
-    vi.runAllTimers();
+    await vi.runAllTimersAsync();
     clickButton(1);
     await vi.runAllTimersAsync();
 
