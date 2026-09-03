@@ -691,6 +691,16 @@ export function myFunction(param: Type): ReturnType {
   timeout does not help; the CDP ceiling is the binding one.
 - Prove the assertion is not vacuous with a **negative control**: comment out the `showNotice` call and
   confirm the case fails on the wait's own message.
+- **When the test OWNS the notice component, record at the source instead — a `MutationObserver` is the
+  fallback, not the goal.** The observer exists because the rescue cases assert on notices raised by
+  production code they do not own. A test that constructs its own `PluginNoticeComponent` can subclass it
+  and push each `showNotice` message into an array, which is both exact and *structurally* immune to
+  neighbors: an observer on `activeDocument.body` still sees a notice any other file raises during its
+  window, while nothing can push into a private array. `path-settings.obsidian.integration.test.ts` does
+  this, and also had to wire its own `AsyncErrorHandlerComponent` — the pooled instance's harness plugin
+  extends plain `Plugin`, not `PluginBase`, so **no unhandled-error notice is rendered there unless the
+  test renders it**. A "no notice was shown" assertion in that instance is vacuous until it owns that
+  wiring; the negative control above is what catches it.
 - (cannot be forced by ESLint — a rule could flag `querySelectorAll('…plugin-notice-content')` inside
   an `evalInObsidian` closure, but not the timing judgment)
 
