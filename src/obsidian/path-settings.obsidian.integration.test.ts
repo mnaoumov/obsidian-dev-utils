@@ -43,7 +43,7 @@ const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
 const REPORTED_REG_EXP = String.raw`/^Inbox\/[^\/]*$/`;
 const INVALID_REG_EXP = String.raw`/^Inbox\/`;
 // Distinctive on purpose: the notice component keys its permanent-notice slot by the plugin name.
-// A name no other file uses keeps this test's slot clear of every neighbour sharing the pooled instance.
+// A name no other file uses keeps this test's slot clear of every neighbor sharing the pooled instance.
 const NOTICE_PLUGIN_NAME = 'PathSettings integration test';
 
 describe('PathSettings', () => {
@@ -136,11 +136,11 @@ describe('PathSettings', () => {
 
         /*
          * A notice is transient by design (AGENTS.md L16), so it cannot be counted off the DOM: this file
-         * shares its Obsidian instance with every other pooled integration test, and a neighbour's leftover
+         * shares its Obsidian instance with every other pooled integration test, and a neighbor's leftover
          * notice expiring mid-run moved the count with nothing here doing anything wrong. Record notices as
          * they arrive instead. The RenameDeleteHandler tests observe the DOM for this because they assert on
          * notices production code raises; here the test owns the component, so intercepting `showNotice` is
-         * both exact and immune to neighbours — no other file can push into this array.
+         * both exact and immune to neighbors — no other file can push into this array.
          *
          * The component pair also has to exist at all for the assertion to mean anything: the unhandled-error
          * notice is rendered by `AsyncErrorHandlerComponent`, which only `PluginBase` wires up, and the pooled
