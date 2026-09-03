@@ -527,6 +527,44 @@ describe('PluginSettingsComponentBase', () => {
     expect(callback).toHaveBeenCalledOnce();
   });
 
+  describe('whenLoadedFromFile', () => {
+    it('should stay pending until the settings have been read from the file', async () => {
+      const component = createComponent(new MockDataHandler({ count: 5, name: 'loaded' }));
+
+      let isResolved = false;
+      const whenLoadedFromFilePromise = component.whenLoadedFromFile().then(() => {
+        isResolved = true;
+      });
+      await noopAsync();
+
+      expect(isResolved).toBe(false);
+
+      await component.loadWithPromises();
+      await whenLoadedFromFilePromise;
+
+      expect(isResolved).toBe(true);
+      expect(component.settings.name).toBe('loaded');
+    });
+
+    it('should resolve immediately once the settings have been read', async () => {
+      const component = createComponent(new MockDataHandler({}));
+      await component.loadWithPromises();
+
+      await expect(component.whenLoadedFromFile()).resolves.toBeUndefined();
+    });
+
+    it('should release every waiter and keep resolving across reloads', async () => {
+      const component = createComponent(new MockDataHandler({}));
+
+      const whenLoadedFromFilePromises = [component.whenLoadedFromFile(), component.whenLoadedFromFile()];
+      await component.loadWithPromises();
+      await Promise.all(whenLoadedFromFilePromises);
+      await component.loadFromFile(false);
+
+      await expect(component.whenLoadedFromFile()).resolves.toBeUndefined();
+    });
+  });
+
   describe('a component that knows no properties', () => {
     // `PluginBase` adds a placeholder `PluginSettingsComponentBase<object>` during `onload` and only
     // Replaces it in `onloadImpl`. Its `pluginSettingsClass` is `Object`, so it has no property names --

@@ -21,6 +21,7 @@ import type { Promisable } from 'type-fest';
 import { ButtonComponent } from 'obsidian';
 
 import type { PluginNoticeComponent } from './plugin-notice-component.ts';
+import type { PluginSettingsComponentBase } from './plugin-settings-component.ts';
 
 import { convertAsyncToSync } from '../../async.ts';
 import {
@@ -67,6 +68,9 @@ export interface PluginSuggestionComponentConstructorParams {
    * Storage belongs to the host plugin (typically one of its settings), because this component has no
    * `data.json` of its own and a decline has to outlive a reload.
    *
+   * Only ever called once {@link pluginSettingsComponent} reports its settings loaded, so an implementation
+   * reading a setting is guaranteed to read the stored value rather than its default.
+   *
    * @returns `true` when the suggestion has been declined.
    */
   isSuggestionDeclined(this: void): boolean;
@@ -76,6 +80,16 @@ export interface PluginSuggestionComponentConstructorParams {
    * outcome.
    */
   readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
+   * The settings component holding whatever {@link isSuggestionDeclined} reads.
+   *
+   * Taken as a whole component rather than as a bare "ready" flag so the host cannot forget to wire the
+   * wait: the notice is decided only after this component has read `data.json`. See
+   * {@link PluginSettingsComponentBase.whenLoadedFromFile} for why the read cannot simply happen at
+   * layout-ready.
+   */
+  readonly pluginSettingsComponent: PluginSettingsComponentBase<object>;
 
   /**
    * The localized sentence explaining what the host plugin cannot do without the suggested plugin. The
@@ -109,6 +123,7 @@ export class PluginSuggestionComponent extends ComponentEx {
   private readonly app: App;
   private readonly isSuggestionDeclined: () => boolean;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
+  private readonly pluginSettingsComponent: PluginSettingsComponentBase<object>;
   private readonly reason: string;
   private readonly setSuggestionDeclined: (isDeclined: boolean) => Promisable<void>;
   private readonly suggestedPluginId: string;
@@ -123,6 +138,7 @@ export class PluginSuggestionComponent extends ComponentEx {
     super();
     this.app = params.app;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
     this.reason = params.reason;
     this.suggestedPluginId = params.suggestedPluginId;
     this.suggestedPluginName = params.suggestedPluginName;
@@ -183,15 +199,28 @@ export class PluginSuggestionComponent extends ComponentEx {
   }
 
   /**
-   * Loads the component, showing the suggestion notice once the layout is ready.
+   * Loads the component, showing the suggestion notice once the layout is ready AND the host's settings
+   * have been read from disk.
    *
-   * The wait matters: plugins load in an unspecified order, so the suggested plugin may well be enabled
-   * a moment after this one. Checking before the layout is ready would suggest installing something the
-   * user already has.
+   * Both waits matter, and neither implies the other:
+   *
+   * - Layout-ready, because plugins load in an unspecified order, so the suggested plugin may well be
+   *   enabled a moment after this one. Checking earlier would suggest installing something the user
+   *   already has.
+   * - Settings-loaded, because {@link PluginSuggestionComponentConstructorParams.isSuggestionDeclined}
+   *   reads a setting of the host, and the host's settings component is a SIBLING whose own async load is
+   *   still in flight here. On a layout that is already ready — a runtime enable from the Community
+   *   Plugins tab, or a re-enable after an update — the layout-ready callback fires immediately, so the
+   *   read would see the default `false` and ask again a user who has already declined.
    */
   public override onload(): void {
     this.addChild(
-      new CallbackLayoutReadyComponent(this.app, () => {
+      new CallbackLayoutReadyComponent(this.app, async () => {
+        await this.pluginSettingsComponent.whenLoadedFromFile();
+        if (this.isUnloaded()) {
+          return;
+        }
+
         this.showSuggestionNotice();
       })
     );
