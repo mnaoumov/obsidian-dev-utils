@@ -832,6 +832,30 @@ export function myFunction(param: Type): ReturnType {
 - (cannot be forced by ESLint — a rule could flag `.position` on a value typed `Reference` outside an
   `isReferenceCache` guard, but not the coordinate-space confusion that makes the offsets wrong)
 
+### L22. A `newContentProvider` has THREE outcomes — returning `null` for a permanent refusal wedges the whole queue
+
+- **`process` (`src/obsidian/vault.ts`) reads its provider's return value as one of three things**, and the
+  middle one is easy to miss: `null` means "cannot produce the content YET, retry"; the **old content
+  returned unchanged** means "there is nothing to write, the operation is done", and `process` completes
+  without calling `app.vault.process` at all; any other string is written. Pick by whether the refusal can
+  ever resolve on its own, not by whether a write is wanted.
+- **`retryWithTimeoutNotice` never gives up.** Its `timeoutInMilliseconds` only decides when a notice
+  appears — the operation keeps retrying behind it, with a running-time counter and a `Cancel` button. So a
+  `null` returned for a condition that cannot change is an infinite loop by construction, and the notice is
+  the only sign of it.
+- **The blast radius is the whole plugin, not the one file.** Callers run these through a shared sequential
+  operation queue, so one spinning operation blocks every rename and delete after it for the rest of the
+  session. Measured 2026-09-02 in `obsidian-advanced-rename-and-delete-handler` (`T894-P1`): moving a canvas
+  with `nodes` but no `edges` left `flushQueue()` unresolved forever, and a later unrelated rename never
+  drained either; clicking the notice's `Cancel` released it.
+- **`applyCanvasChanges` is the worked example.** Its guards — a canvas whose `nodes`/`edges` are not both
+  arrays, a node index out of bounds, a file-node content mismatch, a text node whose `text` is not a
+  string — are all permanent for the `(content, changes)` pair they were handed, so each returns `content`.
+  Only the changes provider itself returning `null` stays `null`, because a later call really can produce
+  changes. `applyContentChanges` says the same thing as
+  `return shouldRetryOnInvalidChanges ? null : content`.
+- (cannot be forced by ESLint — a rule cannot tell a transient refusal from a permanent one)
+
 ## Testing
 
 ### Goals

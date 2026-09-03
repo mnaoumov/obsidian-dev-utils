@@ -320,7 +320,14 @@ export interface ProcessParams extends ProcessOptions {
   /**
    * A value provider that returns the new content based on the old content of the file.
    * It can be a string or a function that takes the old content as an argument and returns the new content.
-   * If function is provided, it should return `null` if the process should be retried.
+   *
+   * A function has three outcomes:
+   *
+   * - `null` — the new content cannot be produced YET; the process is retried.
+   * - the old content, returned unchanged — there is nothing to write; the process completes without
+   *   touching the file. Use this for a refusal that is permanent, as returning `null` for one retries
+   *   forever and holds the operation open.
+   * - any other string — the content to write.
    */
   readonly newContentProvider: ValueProvider<null | string, ContentArguments>;
 
@@ -878,6 +885,14 @@ export async function process(params: ProcessParams): Promise<void> {
 
       if (newContent === null) {
         return false;
+      }
+
+      // The provider handed back exactly what it was given: there is nothing to write, and the operation
+      // Is complete. Distinct from `null`, which asks for a retry — a provider whose refusal to rewrite is
+      // Permanent (see `applyCanvasChanges`) would otherwise spin forever and hold the shared operation
+      // Queue open behind it.
+      if (newContent === oldContent) {
+        return true;
       }
 
       let isSuccess = true;

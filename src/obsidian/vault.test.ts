@@ -1040,6 +1040,22 @@ describe('processFile', () => {
     expect(vi.mocked(app.vault.process)).toHaveBeenCalled();
   });
 
+  it('should complete without writing when the provider returns the old content', async () => {
+    let operationResult: boolean | undefined;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFunction = params.operationFunction;
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+      operationResult = await operationFunction(abortSignal);
+    });
+    vi.spyOn(app.vault, 'process');
+
+    // Returning what the provider was given means "nothing to write", not "retry": the operation
+    // Completes, so a file that must never be written cannot hold the shared operation queue open.
+    await processFile({ app, newContentProvider: ({ content }) => content, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
+    expect(operationResult).toBe(true);
+    expect(vi.mocked(app.vault.process)).not.toHaveBeenCalled();
+  });
+
   it('should return false when content changed between read and write', async () => {
     let operationResult: boolean | undefined;
     mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {

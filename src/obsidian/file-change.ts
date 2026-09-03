@@ -466,9 +466,11 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
   // This happens when another plugin is still initializing the file.
   // Skip the rewrite so no malformed object is written back and the renderer never crashes.
   // Mirrors the `{ edges: [], nodes: [] }` fallback in `getCanvasReferences`.
+  // Returning the content unchanged rather than `null` completes the operation without a write: the
+  // Refusal is permanent for this content, and `null` would ask `process()` to retry it forever.
   if (!Array.isArray(canvasData.nodes) || !Array.isArray(canvasData.edges)) {
     getLibDebugger('FileChange:applyCanvasChanges')('Not a valid canvas; skipping rewrite', { path });
-    return null;
+    return content;
   }
 
   const canvasTextChanges = new Map<number, CanvasTextNodeChange[]>();
@@ -490,7 +492,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
         nodeIndex: change.reference.nodeIndex,
         path
       });
-      return null;
+      return content;
     }
 
     if (isCanvasFileNodeChange(change)) {
@@ -503,7 +505,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
           type: 'file'
         });
 
-        return null;
+        return content;
       }
       node.file = change.newContent;
       /* v8 ignore start -- The false branch of the else-if is unreachable; only 'file' and 'text' canvas node types exist. */
@@ -529,7 +531,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
         path
       });
 
-      return null;
+      return content;
     }
     /* v8 ignore stop */
 
@@ -540,7 +542,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
         path
       });
 
-      return null;
+      return content;
     }
 
     const contentChanges = canvasTextChangesForNode.map((change) => {
