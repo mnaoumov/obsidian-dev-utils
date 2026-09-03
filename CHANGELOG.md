@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 99.0.0
+
+- fix(plugin-suggestion)!: decide the notice after the host settings load
+- fix(vault): complete the operation when there is nothing to write
+- feat(validation): own the Windows reserved-name and trailing-character rules
+- feat(link): scope link editing to an offset range
+- fix(package-manager): collect every signal before picking the manager
+- fix(script-utils): route the remaining npm run hops through the detected package manager
+
 ## 98.0.0
 
 - feat(deps)!: require obsidian-integration-testing ^12 as a peer, so OIT 11 no longer resolves
