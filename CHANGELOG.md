@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 101.1.1
+
+- fix(canvas): stop serializing a retry sentinel over a canvas text node
+
 ## 101.1.0
 
 - feat(link): accept a linkPathStyle on the bulk link-update path
