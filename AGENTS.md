@@ -1380,6 +1380,15 @@ examples.
   (T732). The same regex also truncated a section at its own `###` sub-heading, because it treated the
   delimiter as if only version headings could produce it. `extractChangelogSection` now scans lines and stops
   at `'## '` **with the trailing space** (so `###` stays inside the section) or at the end of the file.
+- **The first `##` heading in `CHANGELOG.md` is a HEADING, not a tag — `prepareChangelog` verifies it
+  resolves (`git rev-parse --verify --quiet refs/tags/<heading>`) before spending it as a git revision.** It
+  used to hand the heading straight to `git log <heading>..HEAD`, so a repo that had never been tagged died
+  on `fatal: ambiguous argument '0.0.0..HEAD'` — and died at the very END of the release, after the entire
+  preflight had been paid for. Two ways in: a hand-written `## 0.0.0` placeholder in a repo awaiting its
+  first release (hit cutting Advanced Markdown Export 1.0.0), or a tag deleted after the fact. An
+  unresolvable heading now falls back to the full history, with a `Version` debug line naming it — visible
+  where it matters, because the interactive review is right there to trim an over-included range, and the
+  debug line is all the non-interactive paths get (T951).
 - **A release without a TTY refuses in the preflight, not after the gate.** `npm run version` checks
   `process.stdin.isTTY` right after the git/gh assertions and before the checks and build, so an agent- or
   CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release
