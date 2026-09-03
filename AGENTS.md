@@ -1000,6 +1000,16 @@ export function myFunction(param: Type): ReturnType {
 - Vitest with explicit imports (globals: false) — always import `describe`, `it`, `expect`, etc. from `'vitest'`
 - Test environment: `node` by default; use `// @vitest-environment jsdom` directive for browser tests
 - Coverage provider: v8
+- **A `unit-tests:eslint-typecheck` case timing out at 60 s is machine load, not a broken rule — retry
+  rather than investigate.** That project runs `maxWorkers: 1` with `isolate: false`
+  (`scripts/vitest-config.ts`) and every `@typescript-eslint/rule-tester` case builds a type-aware
+  program, so it is the first thing in the suite to blow the per-test timeout when the box is busy — one
+  case was measured at 141 s under load. It fails as a bare `Error: Test timed out in 60000ms.` inside
+  `RuleTester.js` with no assertion message, which reads like a real regression. Confirm by running the
+  named file alone (`npx vitest run <file>`): if it passes there, nothing is wrong. Do not run
+  `find-overexposed` or another gate concurrently with `test:coverage` — that alone was enough to fail
+  two runs on 2026-09-02, and a failed run also wipes `coverage/`, so there is no lcov left to decode
+  afterwards.
 
 ### File Conventions
 
