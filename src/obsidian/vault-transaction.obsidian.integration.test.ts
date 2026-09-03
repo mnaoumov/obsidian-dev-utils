@@ -35,6 +35,13 @@ interface CommitResult {
   readonly isStagingFolderGoneAfterCommit: boolean;
 }
 
+interface CopyRollbackResult {
+  readonly areCopiesGoneAfterRollback: boolean;
+  readonly copiedBinaryBytes: readonly number[];
+  readonly copiedChildContent: null | string;
+  readonly originalBinaryBytesAfterRollback: readonly number[];
+}
+
 interface EditorClobberResult {
   readonly diskAfterRollbackAndSave: string;
   readonly editorAfterRollbackAndSave: string;
@@ -174,6 +181,57 @@ describe('VaultTransaction', () => {
 
     expect(result.areChildrenGoneAfterTrash).toBe(true);
     expect(result.restoredChildContents).toEqual(['content a', 'content c']);
+  });
+
+  it('should copy a binary file and a folder subtree, and remove only the copies on rollback', async () => {
+    const result = await evalInObsidian({
+      async callback({ app, lib: { VaultTransaction } }): Promise<CopyRollbackResult> {
+        const adapter = app.vault.adapter;
+        const binaryPath = 'vt-copy-source.bin';
+        const binaryCopyPath = 'vt-copy-target.bin';
+        const folderPath = 'vt-copy-subtree';
+        const folderCopyPath = 'vt-copy-subtree-copy';
+        const copiedChildPath = `${folderCopyPath}/nested/c.md`;
+        const bytes = [0, 1, 2, 253, 254, 255];
+        const buffer = new ArrayBuffer(bytes.length);
+        new Uint8Array(buffer).set(bytes);
+
+        await app.vault.createBinary(binaryPath, buffer);
+        await app.vault.createFolder(folderPath);
+        await app.vault.createFolder(`${folderPath}/nested`);
+        await app.vault.create(`${folderPath}/nested/c.md`, 'content c');
+
+        const vaultTransaction = new VaultTransaction({ app });
+        try {
+          await vaultTransaction.copy(binaryPath, binaryCopyPath);
+          await vaultTransaction.copy(folderPath, folderCopyPath);
+          const copiedBinaryBytes = [...new Uint8Array(await adapter.readBinary(binaryCopyPath))];
+          const copiedChildContent = await adapter.exists(copiedChildPath) ? await adapter.read(copiedChildPath) : null;
+
+          await vaultTransaction.rollback();
+          const areCopiesGoneAfterRollback = !await adapter.exists(binaryCopyPath) && !await adapter.exists(folderCopyPath);
+          const originalBinaryBytesAfterRollback = [...new Uint8Array(await adapter.readBinary(binaryPath))];
+
+          return {
+            areCopiesGoneAfterRollback,
+            copiedBinaryBytes,
+            copiedChildContent,
+            originalBinaryBytesAfterRollback
+          };
+        } finally {
+          for (const path of [binaryPath, binaryCopyPath, folderPath, folderCopyPath]) {
+            if (await adapter.exists(path)) {
+              await adapter.trashLocal(path);
+            }
+          }
+        }
+      }
+    });
+
+    expect(result.copiedBinaryBytes).toEqual([0, 1, 2, 253, 254, 255]);
+    expect(result.copiedChildContent).toBe('content c');
+    expect(result.areCopiesGoneAfterRollback).toBe(true);
+    expect(result.originalBinaryBytesAfterRollback).toEqual([0, 1, 2, 253, 254, 255]);
   });
 
   it('should mutate and roll back a mutation-blocked file when given an openMutationBypass', async () => {

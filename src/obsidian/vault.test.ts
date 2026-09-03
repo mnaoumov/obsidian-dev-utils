@@ -330,6 +330,44 @@ describe('copySafe', () => {
     const result = await copySafe({ app, newPath: 'dest/copy.md', oldPathOrFile: file });
     expect(typeof result).toBe('string');
   });
+
+  it('should copy a folder subtree, preserving nested and empty folders', async () => {
+    await app.vault.createFolder('subtree');
+    await app.vault.createFolder('subtree/nested');
+    await app.vault.createFolder('subtree/empty');
+    await app.vault.create('subtree/a.md', 'A');
+    await app.vault.create('subtree/nested/b.md', 'B');
+
+    const result = await copySafe({ app, newPath: 'dest', oldPathOrFile: 'subtree' });
+
+    expect(result).toBe('dest');
+    expect(await app.vault.adapter.read('dest/a.md')).toBe('A');
+    expect(await app.vault.adapter.read('dest/nested/b.md')).toBe('B');
+    expect(await app.vault.adapter.exists('dest/empty')).toBe(true);
+  });
+
+  it('should pick an available path when the destination folder is taken', async () => {
+    await app.vault.createFolder('subtree');
+    await app.vault.create('subtree/a.md', 'A');
+    await app.vault.createFolder('dest');
+
+    const result = await copySafe({ app, newPath: 'dest', oldPathOrFile: 'subtree' });
+
+    expect(result).toBe('dest 1');
+    expect(await app.vault.adapter.read('dest 1/a.md')).toBe('A');
+  });
+
+  it('should throw when the destination is inside the source folder', async () => {
+    await app.vault.createFolder('subtree');
+    await expect(copySafe({ app, newPath: 'subtree/inner', oldPathOrFile: 'subtree' }))
+      .rejects.toThrow('Cannot copy folder \'subtree\' into its own subtree \'subtree/inner\'');
+  });
+
+  it('should return the same path when a folder is copied onto itself', async () => {
+    await app.vault.createFolder('subtree');
+    const result = await copySafe({ app, newPath: 'subtree', oldPathOrFile: 'subtree' });
+    expect(result).toBe('subtree');
+  });
 });
 
 describe('readSafe', () => {

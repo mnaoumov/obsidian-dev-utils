@@ -144,14 +144,14 @@ export interface CopySafeParams {
   readonly app: App;
 
   /**
-   * The new path to copy the file to.
+   * The new path to copy the file or folder to.
    */
   readonly newPath: string;
 
   /**
-   * The old path or file to copy.
+   * The old path, file or folder to copy. A folder is copied with its whole subtree.
    */
-  readonly oldPathOrFile: PathOrFile;
+  readonly oldPathOrFile: PathOrAbstractFile;
 }
 
 /**
@@ -357,6 +357,23 @@ export interface RenameSafeParams {
   readonly oldPathOrAbstractFile: PathOrAbstractFile;
 }
 
+interface CopyFolderSafeParams {
+  /**
+   * The application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The folder to copy.
+   */
+  readonly folder: TFolder;
+
+  /**
+   * The new path to copy the folder to.
+   */
+  readonly newPath: string;
+}
+
 interface InvokeFileActionSafeParams {
   /**
    * The application instance.
@@ -410,10 +427,12 @@ export async function cleanupEmptyFolders(params: CleanupEmptyFoldersParams): Pr
 }
 
 /**
- * Copies a file safely in the vault.
+ * Copies a file or folder safely in the vault. A folder is copied with its whole subtree, empty
+ * subfolders included.
  *
- * @param params - The parameters for copying the file.
- * @returns A {@link Promise} that resolves to the new path of the copied file.
+ * @param params - The parameters for copying the file or folder.
+ * @returns A {@link Promise} that resolves to the new path of the copy.
+ * @throws Error if the destination resolves inside the source folder.
  */
 export async function copySafe(params: CopySafeParams): Promise<string> {
   const {
@@ -421,10 +440,14 @@ export async function copySafe(params: CopySafeParams): Promise<string> {
     newPath,
     oldPathOrFile
   } = params;
-  const file = getFile({ app, pathOrFile: oldPathOrFile });
+  const abstractFile = getAbstractFile({ app, pathOrFile: oldPathOrFile });
 
-  if (file.path === newPath) {
+  if (abstractFile.path === newPath) {
     return newPath;
+  }
+
+  if (!isFile(abstractFile)) {
+    return await copyFolderSafe({ app, folder: asFolder(abstractFile), newPath });
   }
 
   const newFolderPath = parentFolderPath(newPath);
@@ -433,7 +456,7 @@ export async function copySafe(params: CopySafeParams): Promise<string> {
   const newAvailablePath = getAvailablePath(app, newPath);
 
   try {
-    await app.vault.copy(file, newAvailablePath);
+    await app.vault.copy(abstractFile, newAvailablePath);
   } catch (error) {
     if (!await app.vault.exists(newAvailablePath)) {
       throw error;
@@ -1044,6 +1067,31 @@ export async function trashSafe(app: App, pathOrFile: PathOrAbstractFile): Promi
 
     getLibDebugger('Vault:trashSafe')(`An error occurred while trashing ${file.path}, but the file no longer exists.`, { error, path: file.path });
   }
+}
+
+async function copyFolderSafe(params: CopyFolderSafeParams): Promise<string> {
+  const {
+    app,
+    folder,
+    newPath
+  } = params;
+  const newAvailablePath = getAvailablePath(app, newPath);
+
+  // Copying a folder into its own subtree makes the walk below grow the source tree as it reads it.
+  // Refusing is the only faithful answer: there is no finite copy to make.
+  if (isChildOrSelf({ app, childPathOrFile: newAvailablePath, parentPathOrFile: folder })) {
+    throw new Error(`Cannot copy folder '${folder.path}' into its own subtree '${newAvailablePath}'`);
+  }
+
+  // Creating the destination first is what preserves an EMPTY source subfolder.
+  // A files-only walk would silently drop it.
+  await createFolderSafe(app, newAvailablePath);
+
+  for (const child of folder.children) {
+    await copySafe({ app, newPath: join(newAvailablePath, child.name), oldPathOrFile: child });
+  }
+
+  return newAvailablePath;
 }
 
 async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise<InvokeFileActionSafeResult> {
