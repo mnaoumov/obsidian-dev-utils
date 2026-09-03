@@ -21,7 +21,12 @@ import {
 } from 'vitest';
 
 import type { FileChange } from './file-change.ts';
-import type { GenerateMarkdownLinkParams } from './link.ts';
+import type {
+  ConvertLinkParams,
+  GenerateMarkdownLinkParams,
+  UpdateLinkParams,
+  UpdateLinksInFileParams
+} from './link.ts';
 import type { CachedMetadataEx } from './metadata-cache.ts';
 import type { CanvasReference } from './reference.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
@@ -1341,6 +1346,22 @@ describe('app-dependent functions', () => {
       });
       expect(result).toContain('target');
     });
+
+    it('should forward linkPathStyle to the generated link', () => {
+      const link = {
+        displayText: 'target',
+        link: 'target',
+        original: '[[target]]'
+      } as Reference;
+      const params: ConvertLinkParams = {
+        app,
+        link,
+        newSourcePathOrFile: 'folder/other.md'
+      };
+
+      expect(convertLink(params)).toBe('[[target]]');
+      expect(convertLink({ ...params, linkPathStyle: LinkPathStyle.RelativePathToTheSource })).toBe('[[../target]]');
+    });
   });
 
   describe('updateLink', () => {
@@ -1551,6 +1572,23 @@ describe('app-dependent functions', () => {
         oldTargetPathOrFile: 'note.md'
       });
       expect(result).toContain('#heading');
+    });
+
+    it('should forward linkPathStyle to generateMarkdownLink', () => {
+      const link = {
+        displayText: 'same',
+        link: 'same',
+        original: '[[same]]'
+      } as Reference;
+      const params: UpdateLinkParams = {
+        app,
+        link,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/same.md'
+      };
+
+      expect(updateLink(params)).toBe('[[same]]');
+      expect(updateLink({ ...params, linkPathStyle: LinkPathStyle.AbsolutePathInVault })).toBe('[[folder/same]]');
     });
   });
 
@@ -2330,6 +2368,43 @@ describe('app-dependent functions', () => {
 
       expect(result).toBeDefined();
     });
+
+    it('should forward linkPathStyle to convertLink', async () => {
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
+        }],
+        sections: undefined
+      }));
+
+      let changes = null as FileChange[] | null;
+      vi.mocked(applyContentChanges).mockImplementation(
+        async ({ changesProvider, content }) => {
+          if (typeof changesProvider === 'function') {
+            changes = castTo<FileChange[]>(await (changesProvider as () => Promise<unknown>)());
+          }
+          return content;
+        }
+      );
+
+      // `UpdateLinksInContentParams` is module-private, so the params object is inferred rather than annotated.
+      const params = {
+        app,
+        content: '[[target]]',
+        newSourcePathOrFile: 'folder/other.md'
+      };
+
+      await updateLinksInContent(params);
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual(['[[target]]']);
+
+      await updateLinksInContent({ ...params, linkPathStyle: LinkPathStyle.RelativePathToTheSource });
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual(['[[../target]]']);
+    });
   });
 
   describe('updateLinksInFile', () => {
@@ -2435,6 +2510,45 @@ describe('app-dependent functions', () => {
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
+    });
+
+    it('should forward linkPathStyle to convertLink', async () => {
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [{
+          displayText: 'target',
+          link: 'target',
+          original: '[[target]]',
+          position: { end: { col: 10, line: 0, offset: 10 }, start: { col: 0, line: 0, offset: 0 } }
+        }],
+        sections: undefined
+      }));
+
+      let changes = null as FileChange[] | null;
+      vi.mocked(applyFileChanges).mockImplementation(
+        async ({ changesProvider }) => {
+          if (typeof changesProvider !== 'function') {
+            return;
+          }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          changes = castTo<FileChange[]>(await resolveValue(changesProvider, { abortSignal, content: '# Other' }));
+        }
+      );
+
+      const params: UpdateLinksInFileParams = {
+        app,
+        newSourcePathOrFile: 'folder/other.md',
+        pluginNoticeComponent: null,
+        resourceLockComponent
+      };
+
+      await updateLinksInFile(params);
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual(['[[target]]']);
+
+      await updateLinksInFile({ ...params, linkPathStyle: LinkPathStyle.RelativePathToTheSource });
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual(['[[../target]]']);
     });
   });
 

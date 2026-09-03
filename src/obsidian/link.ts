@@ -183,6 +183,11 @@ export interface ConvertLinkParams {
   readonly link: Reference;
 
   /**
+   * A style of the link path.
+   */
+  readonly linkPathStyle?: LinkPathStyle;
+
+  /**
    * A style of the link.
    */
   readonly linkStyle?: LinkStyle;
@@ -738,6 +743,11 @@ export interface UpdateLinkParams {
   readonly link: Reference;
 
   /**
+   * A style of the link path.
+   */
+  readonly linkPathStyle?: LinkPathStyle;
+
+  /**
    * Whether to force markdown links.
    */
   readonly linkStyle?: LinkStyle;
@@ -778,6 +788,11 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
    * An Obsidian app instance.
    */
   readonly app: App;
+
+  /**
+   * A style of the link path.
+   */
+  readonly linkPathStyle?: LinkPathStyle;
 
   /**
    * A style of the link.
@@ -1006,6 +1021,11 @@ interface UpdateLinksInContentParams {
   readonly content: string;
 
   /**
+   * A style of the link path.
+   */
+  readonly linkPathStyle?: LinkPathStyle;
+
+  /**
    * A style of the link.
    */
   readonly linkStyle?: LinkStyle;
@@ -1052,6 +1072,7 @@ export function convertLink(params: ConvertLinkParams): string {
   return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
     app: params.app,
     link: params.link,
+    linkPathStyle: params.linkPathStyle,
     linkStyle: params.linkStyle,
     newSourcePathOrFile: params.newSourcePathOrFile,
     newTargetPathOrFile: targetFile,
@@ -1512,6 +1533,7 @@ export function updateLink(params: UpdateLinkParams): string {
   const {
     app,
     link,
+    linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
     newTargetPathOrFile,
@@ -1575,6 +1597,7 @@ export function updateLink(params: UpdateLinkParams): string {
     alias,
     app,
     isSingleSubpathAllowed: oldSourcePath === oldTargetPath && !!parseLinkResult?.alias,
+    linkPathStyle,
     linkStyle,
     originalLink: link.original,
     sourcePathOrFile: newSourcePathOrFile,
@@ -1594,6 +1617,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
   const {
     app,
     content,
+    linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
     oldSourcePathOrFile,
@@ -1612,6 +1636,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
       return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
         app,
         link,
+        linkPathStyle,
         linkStyle,
         newSourcePathOrFile,
         oldSourcePathOrFile,
@@ -1630,6 +1655,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
 export async function updateLinksInFile(params: UpdateLinksInFileParams): Promise<void> {
   const {
     app,
+    linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
     oldSourcePathOrFile,
@@ -1651,6 +1677,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
       return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
         app,
         link,
+        linkPathStyle,
         linkStyle,
         newSourcePathOrFile,
         oldSourcePathOrFile,
