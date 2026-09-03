@@ -911,6 +911,29 @@ export function myFunction(param: Type): ReturnType {
   which is the same defect one layer up.
 - (cannot be forced by ESLint — a rule cannot tell which reads cross a component boundary)
 
+### L24. A `null` that means "retry" is a SENTINEL — check it at the call site, never assign it into data
+
+- **`applyContentChanges` returns `null | string`, and the `null` is a control signal, not a value.** It is
+  the same three-outcome vocabulary `L22` gives `newContentProvider`: `null` says "these changes are not
+  valid for this content, retry", and its only reachable source is
+  `return shouldRetryOnInvalidChanges ? null : content`. Anything that stores the return value instead of
+  branching on it has stored a signal where a value belongs.
+- **The failure is silent and destructive, not a crash.** `applyCanvasChanges` did
+  `node.text = await applyContentChanges(…)`, then fell through to `JSON.stringify`, so a canvas text node
+  whose change no longer matched was written back as `"text": null` — the node's content gone, and not even
+  the type the canvas schema declares (`T924-P1`, fixed 2026-09-03). Contrast `L22`'s bug, which wedged the
+  queue and announced itself with a standing notice; this one completes successfully and corrupts the file.
+- **The loose type is why the compiler stays quiet.** `GenericObject<CanvasData>` is
+  `Record<string | symbol, unknown> & CanvasData`, so `node.text = null` type-checks. Do not expect
+  `strict` to cover a nested call's sentinel — the index signature swallows it. The pattern to write is
+  always `const x = await f(); if (x === null) { …; } obj.prop = x;`.
+- **Which branch the check takes is `L22`'s question, asked one layer down.** In `applyCanvasChanges` a
+  text-node mismatch is permanent for the `(content, changes)` pair it was handed, exactly like the
+  file-node mismatch a few lines above, so it `return content`s and the operation completes with no write.
+  The sibling refusal already discards node mutations made earlier in the same pass, so returning early is
+  the established behavior there, not a new one.
+- (cannot be forced by ESLint — a rule cannot tell a sentinel `null` from a nullable value)
+
 ## Testing
 
 ### Goals
