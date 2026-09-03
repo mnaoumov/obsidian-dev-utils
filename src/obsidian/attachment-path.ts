@@ -131,6 +131,19 @@ export interface GetAvailablePathForAttachmentsExtendedFunctionParams {
  */
 export interface GetAvailablePathForAttachmentsFunctionExtended extends GetAvailablePathForAttachmentsFunction {
   /**
+   * Whether a folder path is designated as an attachment unit — a folder that must travel whole rather
+   * than have the linked file relocated out of it.
+   *
+   * Optional: an attachment-location plugin may own the resolution without designating anything, and an
+   * absent member is the same "nobody owns this policy" answer {@link GetAvailablePathForAttachmentsFunctionExtended.extended}
+   * itself gives.
+   *
+   * @param folderPath - The vault-relative path of the folder.
+   * @returns `true` if the folder is designated as an attachment unit, `false` otherwise.
+   */
+  checkIsAttachmentUnitFolder?(this: void, folderPath: string): boolean;
+
+  /**
    * Get available path for attachments with additional params.
    *
    * @param params - Parameters for the get available path for attachments.
@@ -520,6 +533,26 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
   }
 
   return getAvailablePathForAttachmentsSync(params);
+}
+
+/**
+ * Reads the attachment-unit-folder designation an attachment-location plugin published on the vault.
+ *
+ * The designation is one plugin's setting but every relocating plugin's business, so it rides the same seam
+ * that already carries that kind of answer: a member hung off the patched
+ * {@link Vault.getAvailablePathForAttachments}. Reading it here rather than consulting any one plugin's
+ * settings is the point — a folder kept whole by one plugin and torn apart by another is exactly the failure
+ * `findAttachmentUnitFolderPath` exists to prevent.
+ *
+ * `undefined` means nobody published a designation, the same "nobody owns this policy" answer the
+ * {@link GetAvailablePathForAttachmentsFunctionExtended.extended} member gives. It is distinct from a
+ * designation that answers `false` for every folder.
+ *
+ * @param app - An Obsidian application instance.
+ * @returns The designation predicate, or `undefined` when nobody published one.
+ */
+export function getCheckIsAttachmentUnitFolderFunction(app: App): GetAvailablePathForAttachmentsFunctionExtended['checkIsAttachmentUnitFolder'] {
+  return (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFunctionExtended>).checkIsAttachmentUnitFolder;
 }
 
 /**

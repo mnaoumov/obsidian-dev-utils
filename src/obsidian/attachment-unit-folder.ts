@@ -12,14 +12,46 @@
  * This lives in the shared library rather than in one plugin because more than one plugin relocates
  * attachments over the same vault. If they each decided separately what one attachment is, a user
  * with both installed would get a folder kept whole by one and torn apart by the other.
+ *
+ * Which is why the designation itself is read from the vault rather than supplied per caller: pass an
+ * {@link App} and {@link findAttachmentUnitFolderPath} walks with whatever an attachment-location
+ * plugin published on the patched `Vault.getAvailablePathForAttachments`, so every plugin decides from
+ * one answer. The explicit-predicate form remains for a caller that genuinely owns its own patterns.
  */
 
+import type { App } from 'obsidian';
+
 import { dirname } from '../path.ts';
+import { getCheckIsAttachmentUnitFolderFunction } from './attachment-path.ts';
+
+/**
+ * Parameters for {@link findAttachmentUnitFolderPath}, reading the designation published on the vault.
+ */
+export interface FindAttachmentUnitFolderPathFromAppParams {
+  /**
+   * An Obsidian application instance, whose patched `Vault.getAvailablePathForAttachments` carries the
+   * designation.
+   */
+  readonly app: App;
+
+  /**
+   * The vault-relative path of the attachment.
+   */
+  readonly attachmentPath: string;
+}
 
 /**
  * Parameters for {@link findAttachmentUnitFolderPath}.
+ *
+ * Prefer {@link FindAttachmentUnitFolderPathFromAppParams} — it is the form that makes every plugin
+ * decide from one published answer.
  */
-export interface FindAttachmentUnitFolderPathParams {
+export type FindAttachmentUnitFolderPathParams = FindAttachmentUnitFolderPathFromAppParams | FindAttachmentUnitFolderPathWithPredicateParams;
+
+/**
+ * Parameters for {@link findAttachmentUnitFolderPath}, walking with a predicate the caller owns.
+ */
+export interface FindAttachmentUnitFolderPathWithPredicateParams {
   /**
    * The vault-relative path of the attachment.
    */
@@ -31,7 +63,7 @@ export interface FindAttachmentUnitFolderPathParams {
    * @param folderPath - The vault-relative path of the folder.
    * @returns `true` if the folder is designated as an attachment unit, `false` otherwise.
    */
-  checkIsAttachmentUnitFolder(folderPath: string): boolean;
+  checkIsAttachmentUnitFolder(this: void, folderPath: string): boolean;
 }
 
 /**
@@ -64,6 +96,9 @@ export interface RebasePathOntoFolderParams {
  * The vault root is never a unit, however the patterns are written: designating it would make every
  * relocation a no-op at best and a vault-wide move at worst.
  *
+ * Passing an {@link App} walks with the designation an attachment-location plugin published on the vault;
+ * when nobody published one, nothing is designated and the answer is `null`.
+ *
  * @param params - The parameters for finding the attachment unit folder.
  * @returns The unit folder's path, or `null` when the attachment belongs to no unit.
  */
@@ -73,10 +108,18 @@ export function findAttachmentUnitFolderPath(params: FindAttachmentUnitFolderPat
     return null;
   }
 
+  const checkIsAttachmentUnitFolder = 'checkIsAttachmentUnitFolder' in params
+    ? params.checkIsAttachmentUnitFolder
+    : getCheckIsAttachmentUnitFolderFunction(params.app);
+
+  if (!checkIsAttachmentUnitFolder) {
+    return null;
+  }
+
   const segments = parentFolderPath.split('/').filter(Boolean);
   for (let count = 1; count <= segments.length; count++) {
     const candidate = segments.slice(0, count).join('/');
-    if (params.checkIsAttachmentUnitFolder(candidate)) {
+    if (checkIsAttachmentUnitFolder(candidate)) {
       return candidate;
     }
   }

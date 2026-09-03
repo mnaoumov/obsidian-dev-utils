@@ -1,13 +1,34 @@
+// @vitest-environment jsdom
+
+import type { App as AppOriginal } from 'obsidian';
+
+import { App } from 'obsidian-test-mocks/obsidian';
 import {
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
+import { castTo } from '../object-utils.ts';
 import {
   findAttachmentUnitFolderPath,
   rebasePathOntoFolder
 } from './attachment-unit-folder.ts';
+
+/**
+ * Models an attachment-location plugin publishing its designation on the patched vault method.
+ */
+function createApp(checkIsAttachmentUnitFolder?: (folderPath: string) => boolean): AppOriginal {
+  const app = App.createConfigured__().asOriginalType__();
+  if (checkIsAttachmentUnitFolder) {
+    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
+      Object.assign(vi.fn(), { checkIsAttachmentUnitFolder })
+    );
+  }
+
+  return app;
+}
 
 function matching(...unitFolderPaths: string[]): (folderPath: string) => boolean {
   return (folderPath) => unitFolderPaths.includes(folderPath);
@@ -71,6 +92,49 @@ describe('findAttachmentUnitFolderPath', () => {
       attachmentPath: 'page_files/img/logo.png',
       checkIsAttachmentUnitFolder: matching('page_files')
     })).toBe('page_files');
+  });
+});
+
+describe('findAttachmentUnitFolderPath with the published designation', () => {
+  it('should walk with the designation an attachment-location plugin published', () => {
+    const app = createApp(matching('notes/page_files'));
+    expect(findAttachmentUnitFolderPath({
+      app,
+      attachmentPath: 'notes/page_files/style.css'
+    })).toBe('notes/page_files');
+  });
+
+  it('should return the outermost designated ancestor', () => {
+    const app = createApp(matching('notes/page_files', 'notes/page_files/img'));
+    expect(findAttachmentUnitFolderPath({
+      app,
+      attachmentPath: 'notes/page_files/img/logo.png'
+    })).toBe('notes/page_files');
+  });
+
+  it('should return null when the published designation matches no ancestor', () => {
+    const app = createApp(matching('notes/page_files'));
+    expect(findAttachmentUnitFolderPath({
+      app,
+      attachmentPath: 'notes/assets/logo.png'
+    })).toBeNull();
+  });
+
+  it('should return null when nobody published a designation', () => {
+    // Absent is not the same as a designation answering `false` — it means no plugin owns the policy.
+    const app = createApp();
+    expect(findAttachmentUnitFolderPath({
+      app,
+      attachmentPath: 'notes/page_files/style.css'
+    })).toBeNull();
+  });
+
+  it('should never treat the vault root as a unit', () => {
+    const app = createApp(() => true);
+    expect(findAttachmentUnitFolderPath({
+      app,
+      attachmentPath: 'logo.png'
+    })).toBeNull();
   });
 });
 
