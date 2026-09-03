@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 100.0.0
+
+- feat(attachment-unit-folder)!: own the designation, not just the walker
+
 ## 99.0.0
 
 - fix(plugin-suggestion)!: decide the notice after the host settings load
