@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 101.4.0
+
+- feat(vault): add VaultTransaction.copy and folder support in copySafe
+
 ## 101.3.0
 
 - fix(modals): space the instruction strip's key hint and its injected control
