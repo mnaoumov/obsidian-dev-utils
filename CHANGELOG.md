@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 101.0.0
+
+- refactor(rename-delete-handler)!: reduce the component to a single owner
+- fix(version): fall back to the full history when the changelog heading is not a tag
+
 ## 100.2.0
 
 - docs(eslint-config): reword the comment coinage cspell rejects
