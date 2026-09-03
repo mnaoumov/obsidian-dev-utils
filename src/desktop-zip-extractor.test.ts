@@ -1,7 +1,5 @@
 import AdmZip from 'adm-zip';
-/* eslint-disable import-x/no-nodejs-modules -- The extractor reads raw archive bytes, so its tests have to build `Buffer`s. */
 import { Buffer } from 'node:buffer';
-/* eslint-enable import-x/no-nodejs-modules -- The extractor reads raw archive bytes, so its tests have to build `Buffer`s. */
 import {
   describe,
   expect,

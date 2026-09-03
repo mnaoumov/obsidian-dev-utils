@@ -21,11 +21,9 @@
  * breaking the library's load on Android. Only the calls are desktop-only.
  */
 
-/* eslint-disable import-x/no-nodejs-modules -- Desktop-only extraction; the only caller is gated by `Platform.isDesktopApp`, so these Node APIs are never reached on mobile. */
 import type { Buffer } from 'node:buffer';
 
 import { inflateRawSync } from 'node:zlib';
-/* eslint-enable import-x/no-nodejs-modules -- Desktop-only extraction; the only caller is gated by `Platform.isDesktopApp`, so these Node APIs are never reached on mobile. */
 
 import {
   dirname,

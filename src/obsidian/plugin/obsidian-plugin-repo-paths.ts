@@ -24,6 +24,11 @@ export enum ObsidianPluginRepoPaths {
   AnyCjs = '*.cjs',
 
   /**
+  Any desktop-only TypeScript module, identified by the `desktop-` filename prefix.
+   */
+  AnyDesktopTs = 'desktop-*.ts',
+
+  /**
   Any integration-test TypeScript file.
    */
   AnyIntegrationTestTs = '*.integration.test.ts',
