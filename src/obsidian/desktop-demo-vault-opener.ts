@@ -34,7 +34,6 @@
 import type { App } from 'obsidian';
 
 import { compareVersions } from 'compare-versions';
-/* eslint-disable import-x/no-nodejs-modules -- Desktop-only feature gated by `Platform.isDesktopApp`; the command is hidden on mobile so these Node APIs are never reached there. */
 import { Buffer } from 'node:buffer';
 import {
   existsSync,
@@ -47,7 +46,6 @@ import {
   writeFileSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-/* eslint-enable import-x/no-nodejs-modules -- Desktop-only feature gated by `Platform.isDesktopApp`; the command is hidden on mobile so these Node APIs are never reached there. */
 import { requestUrl } from 'obsidian';
 
 import type {

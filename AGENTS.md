@@ -318,6 +318,21 @@ export function myFunction(param: Type): ReturnType {
 - A module that only works on (or is only meant for) **desktop** must have a `desktop-` filename
   prefix; a **mobile**-only module must have a `mobile-` prefix. The prefix marks the file, not its
   exports — e.g. `desktop-trusted-input.ts` exports `typeIntoEditor`, not `desktopTypeIntoEditor`.
+- **The `desktop-` prefix is LOAD-BEARING, not advisory** — `getNodeBuiltinsConfigs` in
+  `src/script-utils/linters/eslint-config.ts` keys the Node-builtins exemption off
+  `src/**/desktop-*.ts`, fleet-wide. A desktop-only module that skips the prefix keeps reporting
+  `import-x/no-nodejs-modules` **and** `obsidianmd/no-nodejs-modules`, the second of which a consumer
+  cannot waive (the community-directory runner turns an inline `obsidianmd/*` disable into an error);
+  a cross-platform module that wrongly takes the prefix gets an exemption it should not have. The
+  exemption exists because the `Platform.isDesktopApp` gate lives one file up, in the caller, where
+  neither rule can see it — see **L6**.
+- **Tests group by SUT, so they take a dot segment, never the prefix.** A desktop-only test of a
+  cross-platform SUT is `<sut>.desktop.test.ts` / `<sut>.desktop.integration.test.ts` — the subject
+  first, the platform as a dot segment, matching `*.android.integration.test.ts`. A desktop-only
+  module's own co-located test just inherits the module's name (`desktop-zip-extractor.test.ts`), so
+  it is already grouped and already exempt. Both shapes are covered without a further glob: every
+  `*.integration.test.ts` and every `context.testFiles` unit test is exempt from the Node-builtins
+  bans anyway, since neither is ever bundled into `main.js`.
 - "Platform-only" means the module directly uses a platform-restricted API (Node builtins,
   `window.electron`, mobile-only APIs) at the **top level** (so importing the module loads that API).
   Examples: `desktop-trusted-input.ts` (`window.electron` trusted input), `desktop-demo-vault-opener.ts`
@@ -352,8 +367,10 @@ export function myFunction(param: Type): ReturnType {
   global only the integration-testing harness installs, and calling it anywhere else throws. Like its
   `desktop-` twin it names that global only *inside* its functions, so importing it on desktop is inert —
   which it has to be, since the barrels put it on every consumer's load path.
-- (the naming half cannot be forced by ESLint — a custom check could flag `node:`/`window.electron` usage
-  in a non-`desktop-` file. The **import-safety** half IS enforced, by the mobile-load check on the
+- (the naming half is enforced only in the negative — a non-`desktop-` file using `node:` reports, since
+  it gets no exemption, but a `desktop-` file that uses nothing platform-only is not flagged for taking a
+  prefix it does not need. A custom check could still flag `window.electron` usage in a non-`desktop-`
+  file, which no rule covers. The **import-safety** half IS enforced, by the mobile-load check on the
   harness plugin bundle described under **Build** — that bundle imports the entire library, so it stands
   in for the worst-case consumer.)
 

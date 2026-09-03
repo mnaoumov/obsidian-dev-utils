@@ -143,6 +143,7 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
     ...getEslintCommentsConfigs(context),
     ...getObsidianDevUtilsPluginConfigs(context),
     ...getNodeCompatConfigs(context),
+    ...getNodeBuiltinsConfigs(context),
     ...getIntegrationTestConfigs(),
     ...getManifestConfigs(),
     ...getLicenseConfigs(),
@@ -406,14 +407,6 @@ function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
 function getIntegrationTestConfigs(): Linter.Config[] {
   return defineConfig([
     {
-      // Integration tests run in a Node environment and legitimately read files / paths, so the Node-builtins bans do not apply to them.
-      files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyIntegrationTestTs)],
-      rules: {
-        'import-x/no-nodejs-modules': 'off',
-        'obsidianmd/no-nodejs-modules': 'off'
-      }
-    },
-    {
       /*
        * An integration test that drives the UI with `dispatchEvent(new KeyboardEvent(...))` produces an
        * UNTRUSTED event, and Obsidian and CodeMirror gate on `isTrusted` — so the test can exercise
@@ -494,6 +487,68 @@ function getManifestConfigs(): Linter.Config[] {
         'obsidian-dev-utils/manifest-id': 'error',
         'obsidian-dev-utils/manifest-name': 'error',
         'obsidian-dev-utils/manifest-schema': 'error'
+      }
+    }
+  ]);
+}
+
+/*
+ * Every file set that is exempt from the Node-builtins bans, in one place.
+ *
+ * Two rules ban Node builtins, and they are NOT interchangeable. `import-x/no-nodejs-modules` is ours, it is
+ * an error, and its waivers are tolerated by the community-directory review runner. `obsidianmd/no-nodejs-modules`
+ * arrives via `obsidianmd.configs.recommended` (see `getObsidianLintConfigs`) and is strictly weaker on static
+ * imports — its own source says "Static import declarations can never be guarded at runtime", so it reports every
+ * `ImportDeclaration` of a builtin unconditionally and only `import()` / `require()` get guard-awareness. It is
+ * also UNWAIVABLE by the consumer: the directory runner sets
+ * `eslint-comments/no-restricted-disable: ['error', 'obsidianmd/*', ...]`, whitelisting only
+ * `obsidianmd/ui/sentence-case`, so an inline disable of it trades a warning for an error in a review. That is why
+ * every exemption below has to live here in the shared config rather than as a comment at the call site.
+ *
+ * One further exemption deliberately lives elsewhere: `getImportXConfigs` turns off only `import-x/no-nodejs-modules`
+ * for `context.scriptFiles`. It needs no `obsidianmd` twin, because `getObsidianLintConfigs` scopes the obsidianmd
+ * rules to `context.sourceFiles`, so they never reach scripts in the first place.
+ */
+function getNodeBuiltinsConfigs(context: EslintConfigContext): Linter.Config[] {
+  return defineConfig([
+    {
+      // Integration tests run in a Node environment and legitimately read files / paths, so the Node-builtins bans do not apply to them.
+      files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyIntegrationTestTs)],
+      rules: {
+        'import-x/no-nodejs-modules': 'off',
+        'obsidianmd/no-nodejs-modules': 'off'
+      }
+    },
+    {
+      /*
+       * A `desktop-` prefixed module is desktop-only by convention (see L5 in `AGENTS.md`): it is reached only
+       * through a `Platform.isDesktopApp`-gated dynamic `import()` in its caller, so its static Node imports never
+       * load on mobile. Neither rule can see that gate, because it sits one file up — the correctly-written pattern
+       * reports anyway, and no author-side rewrite silences it.
+       *
+       * Exempting BY FILENAME rather than by a disable comment mirrors the `*.android.integration.test.ts` exemption
+       * in `getIntegrationTestConfigs`, and carries the same trade-off knowingly: the exemption keys off what
+       * the file is NAMED rather than what it does, so the prefix is load-bearing. A desktop-only module that skips
+       * the prefix keeps reporting, and a cross-platform module that wrongly takes it gets an exemption it should
+       * not have.
+       */
+      files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyDesktopTs)],
+      rules: {
+        'import-x/no-nodejs-modules': 'off',
+        'obsidianmd/no-nodejs-modules': 'off'
+      }
+    },
+    {
+      /*
+       * A unit test runs under vitest in Node and is never bundled into `main.js`, so the Node-builtins bans do not
+       * apply to it either — the identical argument the integration-test block above already accepts. This also
+       * covers the SUT-grouped `*.desktop.test.ts` shape, which names the platform as a dot segment after the
+       * subject under test rather than as a `desktop-` prefix.
+       */
+      files: context.testFiles,
+      rules: {
+        'import-x/no-nodejs-modules': 'off',
+        'obsidianmd/no-nodejs-modules': 'off'
       }
     }
   ]);
