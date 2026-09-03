@@ -327,7 +327,13 @@ export class ModalCommandBuilder {
           }
         };
       },
-      initInstruction: (purposeEl: HTMLSpanElement, scope: Scope): InstructionControl => initCheckbox(purposeEl.createEl('input', { type: 'checkbox' }), scope),
+      initInstruction: (purposeEl: HTMLSpanElement, scope: Scope): InstructionControl => {
+        const checkboxEl = purposeEl.createEl('input', { type: 'checkbox' });
+        // The gap goes on the control, not on the strip, so it lands on BOTH render paths: a
+        // `SuggestModal`'s native bar hosts the same checkbox, and ODU never touches that bar's element.
+        addPluginCssClasses(checkboxEl, CssClass.ModalCommandControl);
+        return initCheckbox(checkboxEl, scope);
+      },
       isDropDown: false,
       purpose: command.purpose,
       registerScope: null
@@ -365,8 +371,10 @@ export class ModalCommandBuilder {
       commandText: this.buildCommandText(command),
       initButton: null,
       initInstruction: (purposeEl: HTMLSpanElement, scope: Scope): InstructionControl => {
-        purposeEl.appendText(' ');
         const dropdownComponent = new DropdownComponent(purposeEl);
+        // The same gap the checkbox gets, so the two controls are separated from their label the same
+        // Way — a real rule rather than the literal space this used to append.
+        addPluginCssClasses(dropdownComponent.selectEl, CssClass.ModalCommandControl);
         command.onInit(dropdownComponent);
         dropdownComponent.onChange((value) => {
           command.onChange(value);
@@ -629,7 +637,11 @@ export class ModalCommandBuilder {
   /**
    * Renders an instruction bar of the builder's own, for a host that has none.
    *
-   * The markup mirrors what `setInstructions` produces, so Obsidian's own styling applies unchanged.
+   * The markup mirrors what `setInstructions` produces — including
+   * {@link CssClass.PromptInstructionCommand} on the key hint, which is not decoration: Obsidian's rule
+   * for that class is what supplies the hint's bold weight and the `margin-inline-end` separating it
+   * from the purpose text. Every class here is unscoped in the app's stylesheet, so all of it reaches a
+   * plain {@link Modal} as readily as it reaches the quick switcher.
    *
    * @param containerEl - The element to append the bar to.
    * @param instructions - The instructions to render.
@@ -641,7 +653,7 @@ export class ModalCommandBuilder {
 
     return instructions.map((instruction) => {
       const instructionEl = instructionsEl.createDiv(CssClass.PromptInstruction);
-      instructionEl.createSpan({ text: instruction.command });
+      instructionEl.createSpan({ cls: CssClass.PromptInstructionCommand, text: instruction.command });
       return instructionEl.createSpan({ text: instruction.purpose });
     });
   }

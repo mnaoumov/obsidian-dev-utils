@@ -116,6 +116,13 @@ export enum CssClass {
   ModalCommand = 'modal-command',
 
   /**
+   * A CSS class for a control injected into an instruction's purpose text — a checkbox, a dropdown.
+   * Obsidian's own instruction bar never contains one, so nothing upstream separates it from the label
+   * it belongs to.
+   */
+  ModalCommandControl = 'modal-command-control',
+
+  /**
    * A CSS class for the hotkey hint inside a modal command button.
    */
   ModalCommandHotkey = 'modal-command-hotkey',
@@ -218,6 +225,15 @@ export enum CssClass {
    * app's own instruction styling.
    */
   PromptInstruction = 'prompt-instruction',
+
+  /**
+   * Obsidian's class for the key-hint half of one instruction row. It is the only thing carrying that
+   * hint's bold weight and the `margin-inline-end` that separates it from the purpose text, so a
+   * self-created bar that omits it renders `alt 1Keep the old title` welded together. Reused rather
+   * than re-implemented: the app's rule for it is unscoped, so it reaches a plain `Modal` too, and
+   * sharing the class keeps the self-created bar and `setInstructions` from ever drifting apart.
+   */
+  PromptInstructionCommand = 'prompt-instruction-command',
 
   /**
    * Obsidian's class for its modal instruction bar, reused so a self-created bar inherits the app's own
