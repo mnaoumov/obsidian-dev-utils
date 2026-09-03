@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 100.2.0
+
+- docs(eslint-config): reword the comment coinage cspell rejects
+- feat(eslint-config): exempt desktop-only modules and unit tests from the Node-builtins bans
+- test(path-settings): record notices at the source instead of differencing a global count
+- docs(agents): name the eslint-typecheck timeout as load, not a broken rule
+
 ## 100.1.0
 
 - feat(note-priority): publish filterHighestPriorityNotePaths
