@@ -8,13 +8,17 @@
  * `bind` handler, `convertAsyncToSync`, `setProperty`, the `PathSettings` setter, and the debounced
  * `saveToFile` with its `cloneSettings` → `rawRecordToSettings` round trip. That chain is exactly what
  * turned a `SyntaxError` into an "unhandled error" notice and a settings file that stopped being saved,
- * and the async-error event asserted here is the very event that renders that notice.
+ * and the async-error event asserted here is the very event that renders that notice. The test wires up
+ * its own {@link AsyncErrorHandlerComponent} so that notice is genuinely rendered rather than merely
+ * implied — the pooled Obsidian instance carries no `PluginBase` plugin, so nothing else would render it.
  *
  * It also proves the `pathsValidator` message resolves through ODU's real i18n in a live Obsidian, not
  * just through the lazily initialized fallback a unit test sees.
  */
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
+
+import type { Notice } from 'obsidian';
 
 import { evalInObsidian } from 'obsidian-integration-testing';
 import {
@@ -23,14 +27,14 @@ import {
   it
 } from 'vitest';
 
+import type { PluginNoticeComponentShowNoticeOptions } from './components/plugin-notice-component.ts';
 import type { PluginEventMap } from './plugin/plugin-event-source.ts';
 
 interface TypingResult {
   readonly asyncErrors: string[];
-  readonly initialNoticeCount: number;
   readonly isInboxNoteIgnored: boolean;
-  readonly noticeCount: number;
   readonly savedExcludePaths: unknown;
+  readonly shownNoticeMessages: string[];
   readonly validationMessageForCompletedRegExp: string;
   readonly validationMessageForInvalidRegExp: string;
 }
@@ -38,6 +42,9 @@ interface TypingResult {
 const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
 const REPORTED_REG_EXP = String.raw`/^Inbox\/[^\/]*$/`;
 const INVALID_REG_EXP = String.raw`/^Inbox\/`;
+// Distinctive on purpose: the notice component keys its permanent-notice slot by the plugin name.
+// A name no other file uses keeps this test's slot clear of every neighbour sharing the pooled instance.
+const NOTICE_PLUGIN_NAME = 'PathSettings integration test';
 
 describe('PathSettings', () => {
   it('should keep a real settings tab working while an un-parseable regex is typed', async () => {
@@ -46,7 +53,22 @@ describe('PathSettings', () => {
         app,
         harnessPluginId,
         invalidRegExp,
-        lib: { AsyncEvents, ensureNonNullable, errorToString, noopAsync, PathSettings, pathsValidator, PluginSettingsComponentBase, PluginSettingsTabBase, registerAsyncErrorEventHandler, SettingEx, waitUntil },
+        lib: {
+          AsyncErrorHandlerComponent,
+          AsyncEvents,
+          ensureNonNullable,
+          errorToString,
+          noopAsync,
+          PathSettings,
+          pathsValidator,
+          PluginNoticeComponent,
+          PluginSettingsComponentBase,
+          PluginSettingsTabBase,
+          registerAsyncErrorEventHandler,
+          SettingEx,
+          waitUntil
+        },
+        noticePluginName,
         reportedRegExp
       }): Promise<TypingResult> {
         const SETTLE_TIMEOUT_IN_MILLISECONDS = 10_000;
@@ -111,7 +133,35 @@ describe('PathSettings', () => {
         const registration = registerAsyncErrorEventHandler((asyncError) => {
           asyncErrors.push(errorToString(asyncError));
         });
-        const initialNoticeCount = getNoticeCount();
+
+        /*
+         * A notice is transient by design (AGENTS.md L16), so it cannot be counted off the DOM: this file
+         * shares its Obsidian instance with every other pooled integration test, and a neighbour's leftover
+         * notice expiring mid-run moved the count with nothing here doing anything wrong. Record notices as
+         * they arrive instead. The RenameDeleteHandler tests observe the DOM for this because they assert on
+         * notices production code raises; here the test owns the component, so intercepting `showNotice` is
+         * both exact and immune to neighbours — no other file can push into this array.
+         *
+         * The component pair also has to exist at all for the assertion to mean anything: the unhandled-error
+         * notice is rendered by `AsyncErrorHandlerComponent`, which only `PluginBase` wires up, and the pooled
+         * instance's harness plugin extends plain `Plugin`.
+         */
+        class RecordingPluginNoticeComponent extends PluginNoticeComponent {
+          public readonly shownNoticeMessages: string[] = [];
+
+          public override showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
+            this.shownNoticeMessages.push(typeof message === 'string' ? message : message.textContent);
+            return super.showNotice(message, options);
+          }
+        }
+
+        const noticeComponent = new RecordingPluginNoticeComponent({
+          app,
+          pluginName: noticePluginName
+        });
+        noticeComponent.load();
+        const asyncErrorHandlerComponent = new AsyncErrorHandlerComponent(noticeComponent);
+        asyncErrorHandlerComponent.load();
 
         try {
           const textAreaEl = ensureNonNullable(tab.containerEl.querySelector<HTMLTextAreaElement>('textarea'), 'The multiple text component is missing');
@@ -130,21 +180,19 @@ describe('PathSettings', () => {
 
           return {
             asyncErrors,
-            initialNoticeCount,
             isInboxNoteIgnored,
-            noticeCount: getNoticeCount(),
             savedExcludePaths: (savedData as null | Record<string, unknown>)?.['excludePaths'],
+            shownNoticeMessages: noticeComponent.shownNoticeMessages,
             validationMessageForCompletedRegExp,
             validationMessageForInvalidRegExp: textAreaEl.validationMessage
           };
         } finally {
           registration[Symbol.dispose]();
+          // Unloaded here so the global async-error handler this component registers never outlives the test.
+          asyncErrorHandlerComponent.unload();
+          noticeComponent.unload();
           tab.containerEl.remove();
           settingsComponent.unload();
-        }
-
-        function getNoticeCount(): number {
-          return activeDocument.body.querySelectorAll('.notice').length;
         }
 
         async function type(textAreaEl: HTMLTextAreaElement, value: string): Promise<void> {
@@ -174,12 +222,13 @@ describe('PathSettings', () => {
       input: {
         harnessPluginId: HARNESS_PLUGIN_ID,
         invalidRegExp: INVALID_REG_EXP,
+        noticePluginName: NOTICE_PLUGIN_NAME,
         reportedRegExp: REPORTED_REG_EXP
       }
     });
 
     expect(result.asyncErrors).toStrictEqual([]);
-    expect(result.noticeCount).toBe(result.initialNoticeCount);
+    expect(result.shownNoticeMessages).toStrictEqual([]);
     expect(result.savedExcludePaths).toStrictEqual([REPORTED_REG_EXP]);
     expect(result.validationMessageForCompletedRegExp).toBe('');
     expect(result.isInboxNoteIgnored).toBe(true);
