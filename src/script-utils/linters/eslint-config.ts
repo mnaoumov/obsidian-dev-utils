@@ -500,7 +500,7 @@ function getManifestConfigs(): Linter.Config[] {
  * arrives via `obsidianmd.configs.recommended` (see `getObsidianLintConfigs`) and is strictly weaker on static
  * imports — its own source says "Static import declarations can never be guarded at runtime", so it reports every
  * `ImportDeclaration` of a builtin unconditionally and only `import()` / `require()` get guard-awareness. It is
- * also UNWAIVABLE by the consumer: the directory runner sets
+ * also one the consumer CANNOT WAIVE: the directory runner sets
  * `eslint-comments/no-restricted-disable: ['error', 'obsidianmd/*', ...]`, whitelisting only
  * `obsidianmd/ui/sentence-case`, so an inline disable of it trades a warning for an error in a review. That is why
  * every exemption below has to live here in the shared config rather than as a comment at the call site.
