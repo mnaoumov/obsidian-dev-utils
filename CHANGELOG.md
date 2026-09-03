@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 101.1.0
+
+- feat(link): accept a linkPathStyle on the bulk link-update path
+
 ## 101.0.0
 
 - refactor(rename-delete-handler)!: reduce the component to a single owner
