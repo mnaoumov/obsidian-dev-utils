@@ -766,6 +766,7 @@ describe('updateChangelog', () => {
     mockExistsSync.mockReturnValue(true);
     stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Old change\n');
     mockExecFromRoot
+      .mockResolvedValueOnce('0123456789abcdef')
       .mockResolvedValueOnce('New feature\0')
       .mockResolvedValueOnce('');
     mockCreateInterface.mockReturnValue({
@@ -898,6 +899,7 @@ describe('updateChangelog', () => {
     // No trailing \n — last element after split won't be ''
     stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Old change');
     mockExecFromRoot
+      .mockResolvedValueOnce('0123456789abcdef')
       .mockResolvedValueOnce('New feature\0')
       .mockResolvedValueOnce('');
     mockCreateInterface.mockReturnValue({
@@ -907,6 +909,50 @@ describe('updateChangelog', () => {
     expect(mockWriteFile).toHaveBeenCalledWith(
       '/root/CHANGELOG.md',
       expect.stringContaining('## 0.9.0'),
+      'utf-8'
+    );
+  });
+
+  it('should log only the commits since the previous release when its heading resolves to a tag', async () => {
+    mockExistsSync.mockReturnValue(true);
+    stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Old change\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('0123456789abcdef')
+      .mockResolvedValueOnce('New feature\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      ['git', 'rev-parse', '--verify', '--quiet', 'refs/tags/0.9.0'],
+      {
+        isQuiet: true,
+        shouldIgnoreExitCode: true
+      }
+    );
+    expect(mockExecFromRoot).toHaveBeenCalledWith('git log 0.9.0..HEAD --format=%B --first-parent -z', { isQuiet: true });
+  });
+
+  // A heading is not a tag: a never-tagged repo carrying a hand-written `## 0.0.0` placeholder used to spend
+  // It as a revision and die on `fatal: ambiguous argument`, at the very END of the release.
+  it('should fall back to the full history when the previous heading resolves to no tag', async () => {
+    mockExistsSync.mockReturnValue(true);
+    stubPassThroughReview('# CHANGELOG\n\n## 0.0.0\n\n- Initial scaffold. Not released.\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('')
+      .mockResolvedValueOnce('New feature\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockExecFromRoot).toHaveBeenCalledWith('git log HEAD --format=%B --first-parent -z', { isQuiet: true });
+    expect(mockExecFromRoot).not.toHaveBeenCalledWith('git log 0.0.0..HEAD --format=%B --first-parent -z', { isQuiet: true });
+    // The unresolvable heading is only skipped as a REVISION; its section is still carried forward.
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      expect.stringContaining('## 0.0.0'),
       'utf-8'
     );
   });

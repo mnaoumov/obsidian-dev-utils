@@ -897,7 +897,25 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
       replacer: '',
       searchValue: '## '
     });
-    const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
+    // A heading is not a tag. A hand-written `## 0.0.0` placeholder in a never-tagged repo, or a tag deleted
+    // After the fact, would otherwise reach `git log` as a revision it cannot resolve — and it reaches it at
+    // The very END of the release, after the whole preflight has already been paid for. Falling back to the
+    // Full history over-includes when a tag was deleted, but that is safe and visible: the review step just
+    // Below is exactly where it gets trimmed.
+    const resolvedLastTag = lastTag
+      ? await execFromRoot(['git', 'rev-parse', '--verify', '--quiet', `refs/tags/${lastTag}`], {
+        isQuiet: true,
+        shouldIgnoreExitCode: true
+      })
+      : '';
+
+    if (lastTag && !resolvedLastTag) {
+      getLibDebugger('Version')(
+        `${ObsidianPluginRepoPaths.ChangelogMd} starts at '## ${lastTag}', but no such tag exists. Generating the changelog from the full history instead.`
+      );
+    }
+
+    const commitRange = resolvedLastTag ? `${lastTag}..HEAD` : 'HEAD';
     const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
     const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toFirstLine(commitMessage));
 
