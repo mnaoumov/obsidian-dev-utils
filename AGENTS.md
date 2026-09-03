@@ -1357,20 +1357,29 @@ examples.
   correctly from bash, and the quoted form forwards correctly from PowerShell (verified both ways,
   2026-09-01). `npx jiti scripts/version.ts <type> --no-changelog-editing` also works from any shell —
   the npm script is only `jiti scripts/version.ts`, so it is the same code path with no separator to lose.
-- **`publishGitHubRelease` accepts both `npm pack --json` shapes, and must keep doing so (T806).** npm 11
-  emits an array of pack results; npm 12 emits an object keyed by package name. The old code found the
-  tarball name by scanning for the array's literal `'[\n  {'` opening, so every release on npm 12 threw at
-  the very LAST step — after the bump, changelog, commit, tag and push had all landed, leaving a public tag
-  with no GitHub release and therefore nothing on NPM (`publish-npm.yml` triggers on `release: published`).
-  It failed four for four before being fixed. `parseNpmPackOutput` now locates the payload by parsing from
-  each candidate start — the `npm notice` lines go to stderr, but the `prepare` script's own stdout precedes
-  the JSON and may contain braces — and normalizes both shapes. **Any test mocking that output must mock the
-  object shape**; mocking only the array is exactly what held coverage at 100% while the real command
-  diverged. If a release ever half-fails here again, `npm pack` has already written the tarball, so recovery
-  needs no rebuild: `gh release create <version> dist/<tarball> dist/styles.css --title v<version>
-  --notes-file <notes>`, the notes being the CHANGELOG section plus the
-  `**Full Changelog**: …/compare/<prev>...<new>` line. `publish-npm.yml` fires on a manually-created release
-  exactly as it would on a scripted one.
+- **`publishGitHubRelease` accepts both `npm pack --json` shapes, and must keep doing so — on the LIBRARY
+  path only (T806, scoped by T909).** `publishGitHubRelease` never packs on the plugin path: its
+  `if (isObsidianPlugin)` branch uploads whatever `dist/build/` contains, and only the `else` branch shells
+  out to `npm pack`. `isObsidianPlugin` is true for any repo that has a `manifest.json` and whose package
+  name is not `obsidian-dev-utils`, i.e. for the entire plugin fleet, and false for this repo — so the
+  `npm pack` branch is **ODU's own releases**, and nothing else in practice (every other non-plugin repo
+  here, OIT and OTM included, ships its own standalone `scripts/version.ts` per G37). **A plugin release on
+  a pre-98 ODU is unaffected and never needs an ODU bump on this account** — Advanced Rename and Delete
+  Handler `1.1.1` was cut on ODU `96.5.2` under npm 12.0.2 on 2026-08-31 and its GitHub release exists.
+  Say ODU, not "every release": the unscoped wording made T902 plan a mandatory ODU bump it did not need.
+  The defect itself: npm 11 emits an array of pack results; npm 12 emits an object keyed by package name.
+  The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every ODU
+  release on npm 12 threw at the very LAST step — after the bump, changelog, commit, tag and push had all
+  landed, leaving a public tag with no GitHub release and therefore nothing on NPM (`publish-npm.yml`
+  triggers on `release: published`). It failed four ODU releases for four before being fixed.
+  `parseNpmPackOutput` now locates the payload by parsing from each candidate start — the `npm notice` lines
+  go to stderr, but the `prepare` script's own stdout precedes the JSON and may contain braces — and
+  normalizes both shapes. **Any test mocking that output must mock the object shape**; mocking only the
+  array is exactly what held coverage at 100% while the real command diverged. If an ODU release ever
+  half-fails here again, `npm pack` has already written the tarball, so recovery needs no rebuild:
+  `gh release create <version> dist/<tarball> dist/styles.css --title v<version> --notes-file <notes>`, the
+  notes being the CHANGELOG section plus the `**Full Changelog**: …/compare/<prev>...<new>` line.
+  `publish-npm.yml` fires on a manually-created release exactly as it would on a scripted one.
 
 A release is two stages, split across two machines on purpose:
 
