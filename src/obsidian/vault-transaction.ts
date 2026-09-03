@@ -32,6 +32,7 @@ import {
   getPath
 } from './file-system.ts';
 import {
+  copySafe,
   createFolderSafe,
   CreateFolderSafeResult,
   process,
@@ -126,6 +127,33 @@ export class VaultTransaction {
     }
     await this.removeStagingFolder();
     this.disposeMutationBypass();
+  }
+
+  /**
+   * Copies a file or folder, recording the removal of the copy as the inverse. A folder is copied with
+   * its whole subtree, so the single recorded removal undoes the whole tree. Unlike
+   * {@link VaultTransaction.create}, the content is copied byte for byte, so a binary resource
+   * round-trips faithfully.
+   *
+   * Parent folders that had to be created for the destination are NOT undone individually, matching
+   * {@link VaultTransaction.create} and {@link VaultTransaction.rename}.
+   *
+   * @param oldPathOrFile - The path, file or folder to copy.
+   * @param newPath - The desired new path (an available path is chosen if it is taken).
+   * @returns A {@link Promise} resolving to the actual path of the copy.
+   */
+  public async copy(oldPathOrFile: PathOrAbstractFile, newPath: string): Promise<string> {
+    this.assertOpen();
+    const oldPath = getPath(this.app, oldPathOrFile);
+    const actualNewPath = await copySafe({ app: this.app, newPath, oldPathOrFile });
+    // When source and destination are identical, `copySafe` returns the source path and copies nothing.
+    // Recording an undo here would make `rollback` delete the caller's ORIGINAL resource.
+    if (actualNewPath !== oldPath) {
+      this.pushUndo(async () => {
+        await this.hardDelete(actualNewPath);
+      });
+    }
+    return actualNewPath;
   }
 
   /**

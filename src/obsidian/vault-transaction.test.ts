@@ -175,6 +175,77 @@ describe('VaultTransaction', () => {
     });
   });
 
+  describe('copy', () => {
+    it('should copy a file and delete only the copy on rollback', async () => {
+      await app.vault.create('a.md', 'A');
+      const vaultTransaction = new VaultTransaction({ app });
+
+      const actualNewPath = await vaultTransaction.copy('a.md', 'b.md');
+      expect(actualNewPath).toBe('b.md');
+      expect(await read('b.md')).toBe('A');
+
+      await vaultTransaction.rollback();
+      expect(await exists('b.md')).toBe(false);
+      expect(await read('a.md')).toBe('A');
+    });
+
+    it('should copy a binary file byte for byte', async () => {
+      const bytes = [0, 1, 2, 253, 254, 255];
+      const buffer = new ArrayBuffer(bytes.length);
+      new Uint8Array(buffer).set(bytes);
+      await app.vault.createBinary('a.bin', buffer);
+      const vaultTransaction = new VaultTransaction({ app });
+
+      await vaultTransaction.copy('a.bin', 'b.bin');
+
+      const copiedFile = app.vault.getFileByPath('b.bin');
+      assertNonNullable(copiedFile);
+      expect([...new Uint8Array(await app.vault.readBinary(copiedFile))]).toEqual(bytes);
+    });
+
+    it('should copy a folder subtree and remove the whole copied tree on rollback', async () => {
+      await app.vault.createFolder('sub');
+      await app.vault.createFolder('sub/nested');
+      await app.vault.create('sub/a.md', 'A');
+      await app.vault.create('sub/nested/c.md', 'C');
+      const vaultTransaction = new VaultTransaction({ app });
+
+      const actualNewPath = await vaultTransaction.copy('sub', 'dest');
+      expect(actualNewPath).toBe('dest');
+      expect(await read('dest/a.md')).toBe('A');
+      expect(await read('dest/nested/c.md')).toBe('C');
+
+      await vaultTransaction.rollback();
+      expect(await exists('dest')).toBe(false);
+      expect(await read('sub/a.md')).toBe('A');
+      expect(await read('sub/nested/c.md')).toBe('C');
+    });
+
+    it('should pick an available path when the destination is taken', async () => {
+      await app.vault.create('a.md', 'A');
+      await app.vault.create('b.md', 'B');
+      const vaultTransaction = new VaultTransaction({ app });
+
+      const actualNewPath = await vaultTransaction.copy('a.md', 'b.md');
+      expect(actualNewPath).toBe('b 1.md');
+
+      await vaultTransaction.rollback();
+      expect(await exists('b 1.md')).toBe(false);
+      expect(await read('b.md')).toBe('B');
+    });
+
+    it('should record no undo when the destination resolves to the source path', async () => {
+      await app.vault.create('a.md', 'A');
+      const vaultTransaction = new VaultTransaction({ app });
+
+      const actualNewPath = await vaultTransaction.copy('a.md', 'a.md');
+      expect(actualNewPath).toBe('a.md');
+
+      await vaultTransaction.rollback();
+      expect(await read('a.md')).toBe('A');
+    });
+  });
+
   describe('create', () => {
     it('should create a file and delete it on rollback', async () => {
       const vaultTransaction = new VaultTransaction({ app });
