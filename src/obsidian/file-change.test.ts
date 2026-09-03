@@ -779,6 +779,29 @@ describe('canvas changes via applyFileChanges', () => {
     expect(vi.mocked(console.error)).toHaveBeenCalled();
     vi.mocked(console.error).mockRestore();
   });
+
+  it('should leave the content unchanged when a canvas text node change no longer matches', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: 'Hello world', type: 'text' }]
+    };
+    const canvasContent = JSON.stringify(canvasData);
+    // `'Hello world'.slice(0, 7)` is `'Hello w'`, not `'[[old]]'`, so the inner `applyContentChanges`
+    // Rejects the change and returns its retry sentinel.
+    const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    // The original content, returned unchanged: nothing is written, and the operation is NOT retried.
+    expect(resultContent).toBe(canvasContent);
+    // The regression this guards: the sentinel used to be assigned onto the node and serialized.
+    expect(resultContent).not.toContain('"text": null');
+  });
 });
 
 // --- Validation edge cases ---

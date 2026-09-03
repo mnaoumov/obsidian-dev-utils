@@ -555,13 +555,23 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
         : change.newContent;
       return referenceToFileChange(change.reference.originalReference, newContent);
     });
-    node.text = await applyContentChanges({
+    const newNodeText = await applyContentChanges({
       abortSignal,
       changesProvider: contentChanges,
       content: node.text,
       path: `${path}.node${String(nodeIndex)}.VIRTUAL_FILE.md`,
       shouldRetryOnInvalidChanges
     });
+
+    // `null` is `applyContentChanges`'s retry sentinel, not a value. Assigning it would serialize
+    // `"text": null` over the node and destroy its content. The mismatch is permanent for this content —
+    // The same call the file-node mismatch above already makes — so return the content unchanged to
+    // Complete the operation without a write, rather than `null`, which would retry forever.
+    if (newNodeText === null) {
+      return content;
+    }
+
+    node.text = newNodeText;
   }
 
   return JSON.stringify(canvasData, null, '\t');
