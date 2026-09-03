@@ -27,6 +27,7 @@ import {
   getAttachmentFolderPath,
   getAttachmentFolderPathSyncOrNull,
   getAvailablePathForAttachments,
+  getCheckIsAttachmentUnitFolderFunction,
   hasOwnAttachmentFolder,
   isAtProperAttachmentPath
 } from './attachment-path.ts';
@@ -442,5 +443,21 @@ describe('isAtProperAttachmentPath', () => {
       oldAttachmentPathOrFile: 'attachments/img 1.png',
       shouldSkipDuplicateCheck: true
     }));
+  });
+});
+
+describe('getCheckIsAttachmentUnitFolderFunction', () => {
+  it('should read the designation an attachment-location plugin published', () => {
+    const app = createApp('Files');
+    const checkIsAttachmentUnitFolder = vi.fn((folderPath: string) => folderPath === 'notes/page_files');
+    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
+      Object.assign(vi.fn(), { checkIsAttachmentUnitFolder })
+    );
+    expect(getCheckIsAttachmentUnitFolderFunction(app)).toBe(checkIsAttachmentUnitFolder);
+  });
+
+  it('should answer undefined when nobody published a designation', () => {
+    // Absent is the same "nobody owns this policy" answer the `extended` member gives.
+    expect(getCheckIsAttachmentUnitFolderFunction(createApp('Files'))).toBeUndefined();
   });
 });
