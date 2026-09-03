@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 101.2.0
+
+- feat: add formatBytes and toArrayBuffer
+
 ## 101.1.1
 
 - fix(canvas): stop serializing a retry sentinel over a canvas text node
