@@ -22,6 +22,8 @@ import {
 
 interface PromptCommandBuilderResult {
   readonly changes: boolean[];
+  readonly checkboxMarginInlineStart: string;
+  readonly commandMarginInlineEnd: string;
   readonly hasOwnInstructionBar: boolean;
   readonly isCheckedAfterPress: boolean;
   readonly isCheckedOnOpen: boolean;
@@ -317,6 +319,15 @@ describe('prompt', () => {
           const purposeText = document.querySelector('.prompt-modal .prompt-instruction > span:nth-child(2)')?.textContent ?? null;
           const isCheckedOnOpen = getCheckboxEl()?.checked ?? false;
 
+          // The spacing INSIDE one instruction row, which only a real Obsidian can report: jsdom applies
+          // No stylesheet, so this is the sole layer that can tell a key hint welded to its purpose text
+          // From a spaced one. The key hint's margin comes from Obsidian's own
+          // `.prompt-instruction-command` rule, the checkbox's from the library's `.modal-command-control`.
+          const commandEl = document.querySelector<HTMLElement>('.prompt-modal .prompt-instruction > span:first-child');
+          const commandMarginInlineEnd = commandEl ? commandEl.win.getComputedStyle(commandEl).marginInlineEnd : '';
+          const checkboxEl = getCheckboxEl();
+          const checkboxMarginInlineStart = checkboxEl ? checkboxEl.win.getComputedStyle(checkboxEl).marginInlineStart : '';
+
           // The modal's scope reads the real key pipeline, so the press has to be trusted (G107). The
           // Input already holds focus — `PromptModal` selects it on open.
           await pressKey({ key: '1', modifiers: ['Alt'] });
@@ -333,6 +344,8 @@ describe('prompt', () => {
 
           return {
             changes,
+            checkboxMarginInlineStart,
+            commandMarginInlineEnd,
             hasOwnInstructionBar,
             isCheckedAfterPress,
             isCheckedOnOpen,
@@ -354,6 +367,10 @@ describe('prompt', () => {
     });
 
     expect(result.hasOwnInstructionBar).toBe(true);
+    // Greater than zero rather than an exact px: a theme is free to retune `--size-2-2`, but nothing may
+    // Take the gap away entirely.
+    expect(Number.parseFloat(result.commandMarginInlineEnd)).toBeGreaterThan(0);
+    expect(Number.parseFloat(result.checkboxMarginInlineStart)).toBeGreaterThan(0);
     expect(result.purposeText).toBe('Keep the old title as an alias');
     expect(result.isCheckedOnOpen).toBe(false);
     expect(result.isCheckedAfterPress).toBe(true);

@@ -1,15 +1,24 @@
 .obsidian-dev-utils {
   // The strip of commands along the bottom of a modal.
   //
-  // In `Instructions` render mode it also carries Obsidian's own `.prompt-instructions`, so this rule only
-  // has to supply the separator and the wrapping that a self-created bar does not inherit; in `Buttons`
-  // mode it is the whole strip.
+  // In `Instructions` render mode it also carries Obsidian's own `.prompt-instructions` — whose rule is
+  // unscoped, so it applies to a plain `Modal` too — and this one only re-tunes that rule's `gap` and
+  // `padding` and adds the separator; in `Buttons` mode it is the whole strip.
   &.modal-commands {
     display: flex;
     flex-wrap: wrap;
     gap: var(--size-2-2);
     padding: var(--size-4-2) var(--size-4-3);
     border-top: 1px solid var(--background-modifier-border);
+  }
+
+  // A control the `Instructions` renderer injects into an instruction's purpose text — a checkbox, a
+  // dropdown. Obsidian styles the instruction bar itself, but its own bar never contains a control, so
+  // nothing upstream separates one from the label it belongs to. Sits on the control rather than on the
+  // strip, so it reaches a `SuggestModal`'s native bar as well as a self-created one.
+  &.modal-command-control {
+    margin-inline-start: var(--size-2-2);
+    vertical-align: middle;
   }
 
   // One command button. Replaces the instruction bar rather than supplementing it: the bar can only ever

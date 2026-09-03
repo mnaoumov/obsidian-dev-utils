@@ -68,7 +68,10 @@ function createMockModal(): SuggestModal<unknown> {
       instructionsEl.empty();
       for (const instruction of instructions) {
         const promptInstruction = instructionsEl.createDiv('prompt-instruction');
-        promptInstruction.createSpan({ text: instruction.command });
+        // `prompt-instruction-command` is what the real `setInstructions` puts on the key hint, and it
+        // Is the class carrying that hint's spacing — a mock that omitted it would vouch for markup
+        // Obsidian never produces.
+        promptInstruction.createSpan({ cls: 'prompt-instruction-command', text: instruction.command });
         promptInstruction.createSpan({ text: instruction.purpose });
       }
     })
@@ -552,6 +555,27 @@ describe('ModalCommandBuilder', () => {
       expect(instructionsEl?.querySelector('input[type="checkbox"]')).toBeTruthy();
       expect([...instructionsEl?.querySelectorAll(`.${CssClass.PromptInstruction} > span:first-child`) ?? []].map((el) => el.textContent))
         .toEqual(['↵', 'alt 1']);
+      // Without this class the key hint has no `margin-inline-end`, so it renders welded to its purpose
+      // Text: `alt 1Fix footnotes`.
+      expect([...instructionsEl?.querySelectorAll(`.${CssClass.PromptInstruction} > span:first-child`) ?? []].every((el) => el.hasClass(CssClass.PromptInstructionCommand)))
+        .toBe(true);
+      expect(instructionsEl?.querySelector('input[type="checkbox"]')?.hasClass(CssClass.ModalCommandControl)).toBe(true);
+    });
+
+    it('should tag a natively rendered checkbox with the control class too', () => {
+      // The welded checkbox is not a self-rendered-bar defect: the class has to reach a `SuggestModal`'s
+      // Own instruction bar, which ODU never restyles.
+      builder.addCheckbox({ key: '1', onChange: vi.fn(), onInit: vi.fn(), purpose: 'Test' });
+      const modal = createMockModal();
+      builder.build(modal);
+      expect(modal.instructionsEl.querySelector('input[type="checkbox"]')?.hasClass(CssClass.ModalCommandControl)).toBe(true);
+    });
+
+    it('should tag a rendered dropdown with the control class', () => {
+      builder.addDropDown({ key: '2', onChange: vi.fn(), onInit: vi.fn(), purpose: 'Test' });
+      const modal = createMockModal();
+      builder.build(modal);
+      expect(modal.instructionsEl.querySelector('select')?.hasClass(CssClass.ModalCommandControl)).toBe(true);
     });
 
     it('should render its own instruction bar into a bare host', () => {
