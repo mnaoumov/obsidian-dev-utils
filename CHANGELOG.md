@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 101.3.0
+
+- fix(modals): space the instruction strip's key hint and its injected control
+- The fix adds two exported `CssClass` members, `ModalCommandControl` and `PromptInstructionCommand`, so
+  this is a minor rather than a patch.
+
 ## 101.2.0
 
 - feat: add formatBytes and toArrayBuffer
