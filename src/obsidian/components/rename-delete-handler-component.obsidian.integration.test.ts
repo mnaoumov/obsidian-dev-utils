@@ -155,7 +155,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             // Enable "Move attachments with note" but disable "Update links" — the two independent flags this fix decouples.
@@ -234,7 +233,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             // The Custom Attachment Location configuration from issue #146: move attachments with the note, do not update links.
@@ -324,7 +322,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             // The issue's settings combination: the handler still runs (it renames attachment files) but delegates every link rewrite to Obsidian.
@@ -399,7 +396,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
@@ -474,7 +470,6 @@ describe('rename-delete-handler', () => {
             const handlerComponent = new RenameDeleteHandlerComponent({
               abortSignalComponent,
               app,
-              pluginId: PLUGIN_ID,
               pluginNoticeComponent,
               resourceLockComponent: null,
               settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
@@ -581,7 +576,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
@@ -674,7 +668,6 @@ describe('rename-delete-handler', () => {
             const handlerComponent = new RenameDeleteHandlerComponent({
               abortSignalComponent,
               app,
-              pluginId: PLUGIN_ID,
               pluginNoticeComponent,
               resourceLockComponent: null,
               settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
@@ -840,7 +833,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({
@@ -976,7 +968,6 @@ describe('rename-delete-handler', () => {
           const handlerComponent = new RenameDeleteHandlerComponent({
             abortSignalComponent,
             app,
-            pluginId: PLUGIN_ID,
             pluginNoticeComponent,
             resourceLockComponent: null,
             settingsBuilder: (): Partial<RenameDeleteHandlerSettings> => ({

@@ -244,7 +244,6 @@ interface DeleteProtectionPatchComponentConstructorParams {
   readonly app: App;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly settingsManager: SettingsManager;
-  shouldInvokeHandler(this: void): boolean;
 }
 
 interface DidRescueStillUsedAttachmentParams {
@@ -271,7 +270,6 @@ interface RenameDeleteHandlerComponentConstructorParams {
   readonly abortSignalComponent: AbortSignalComponent;
   readonly app: App;
   readonly linkUpdateProgressReporter?: LinkUpdateProgressReporter;
-  readonly pluginId: string;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly resourceLockComponent: null | ResourceLockComponent;
   settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
@@ -433,14 +431,12 @@ class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
   private readonly replayedFolderPaths = new Set<string>();
 
   private readonly settingsManager: SettingsManager;
-  private readonly shouldInvokeHandler: () => boolean;
 
   public constructor(params: DeleteProtectionPatchComponentConstructorParams) {
     super();
     this.app = params.app;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsManager = params.settingsManager;
-    this.shouldInvokeHandler = params.shouldInvokeHandler;
   }
 
   public override onload(): void {
@@ -620,10 +616,6 @@ class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
       return false;
     }
 
-    if (!this.shouldInvokeHandler()) {
-      return false;
-    }
-
     const settings = this.settingsManager.getSettings();
     if (!settings.shouldHandleDeletions) {
       return false;
@@ -671,7 +663,22 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
 
         const newHandler: LinkUpdatesHandler = (linkUpdates) => this.wrapLinkUpdatesHandler(linkUpdates, linkUpdatesHandler);
         return originalMethodBound(newHandler);
-      }
+      },
+      /*
+       * Suppressing Obsidian's own link updates is NOT idempotent, so two live copies of this component
+       * would fight over the same method. `PATCH_TOKEN` is a `Symbol.for` and the token registry is
+       * `getObsidianDevUtilsState`-backed, so the arbitration spans independently bundled copies of this
+       * library: the first patcher stays live, a copy that patches afterwards sees the token on its own
+       * `originalMethod` and defers via the guard above, and it takes over on its next call once the
+       * leader unloads and the token is dropped.
+       *
+       * This arbitrates the PATCH only. The component's `vault.on('rename' | 'delete')` and
+       * `metadataCache.on('deleted')` listeners have no equivalent guard — the plugin-registry election
+       * that used to provide one went with the multi-plugin machinery — so two live copies would both
+       * handle an event. With one owner that cannot arise; a consumer that must guarantee it refuses to
+       * load beside a conflicting version, which is a plugin's job rather than a library's.
+       */
+      patchToken: PATCH_TOKEN
     });
   }
 
@@ -1320,47 +1327,32 @@ class RenameMap {
   }
 }
 
+/**
+ * Resolves the settings the handler runs with.
+ *
+ * There is exactly one contributor: the component's own `settingsBuilder`. Earlier versions aggregated a
+ * registry of contributors and OR-merged their answers, because several plugins could each register a
+ * handler against the one shared vault. They no longer do, so there is no longer any question of whose
+ * setting wins.
+ *
+ * What remains is defaulting: the builder returns a `Partial`, so the two predicates and the empty-folder
+ * behavior need a value when it does not supply one.
+ */
 class SettingsManager {
-  public readonly renameDeleteHandlersMap: Map<string, () => Partial<RenameDeleteHandlerSettings>>;
+  private readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
 
-  public constructor() {
-    this.renameDeleteHandlersMap = getObsidianDevUtilsState('renameDeleteHandlersMap', new Map<string, () => Partial<RenameDeleteHandlerSettings>>()).value;
+  public constructor(settingsBuilder: () => Partial<RenameDeleteHandlerSettings>) {
+    this.settingsBuilder = settingsBuilder;
   }
 
   public getSettings(): Partial<RenameDeleteHandlerSettings> {
-    const settingsBuilders = [...this.renameDeleteHandlersMap.values()].reverse();
-
-    const settings: Partial<RenameDeleteHandlerSettings> = {};
-    // eslint-disable-next-line unicorn/no-immediate-mutation -- Folding these into the object literal keeps them optional under `Partial<>`, losing the narrowing that makes them callable below without a nullish check.
-    settings.isNote = (path: string): boolean => isNote(path);
-    settings.isPathIgnored = (): boolean => false;
-
-    for (const settingsBuilder of settingsBuilders) {
-      const newSettings = settingsBuilder();
-      settings.shouldDeleteConflictingAttachments ||= newSettings.shouldDeleteConflictingAttachments ?? false;
-      if (newSettings.emptyFolderBehavior) {
-        settings.emptyFolderBehavior ??= newSettings.emptyFolderBehavior;
-      }
-      settings.shouldHandleDeletions ||= newSettings.shouldHandleDeletions ?? false;
-      settings.shouldHandleRenames ||= newSettings.shouldHandleRenames ?? false;
-      settings.shouldRenameAttachmentFiles ||= newSettings.shouldRenameAttachmentFiles ?? false;
-      settings.shouldRenameAttachmentFolder ||= newSettings.shouldRenameAttachmentFolder ?? false;
-      settings.shouldUpdateFileNameAliases ||= newSettings.shouldUpdateFileNameAliases ?? false;
-      if (newSettings.getRescuePath) {
-        /*
-         * First plugin to answer owns the destination, mirroring `emptyFolderBehavior`. Left `undefined`
-         * when nobody implements it, so the rescue never runs for consumers that did not opt in.
-         */
-        settings.getRescuePath ??= newSettings.getRescuePath;
-      }
-      const isPathIgnored = settings.isPathIgnored;
-      settings.isPathIgnored = (path: string): boolean => isPathIgnored(path) || (newSettings.isPathIgnored?.(path) ?? false);
-      const currentIsNote = settings.isNote;
-      settings.isNote = (path: string): boolean => currentIsNote(path) && (newSettings.isNote?.(path) ?? true);
-    }
-
-    settings.emptyFolderBehavior ??= EmptyFolderBehavior.Keep;
-    return settings;
+    const builtSettings = this.settingsBuilder();
+    return {
+      ...builtSettings,
+      emptyFolderBehavior: builtSettings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep,
+      isNote: (path: string): boolean => builtSettings.isNote?.(path) ?? isNote(path),
+      isPathIgnored: (path: string): boolean => builtSettings.isPathIgnored?.(path) ?? false
+    };
   }
 
   public isNoteEx(path: string): boolean {
@@ -1389,10 +1381,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
    * with the running count of processed files and the total. When `null`, no progress is reported.
    */
   protected readonly linkUpdateProgressReporter: LinkUpdateProgressReporter | null;
-  /**
-   * The plugin ID used to identify this handler among the registered rename/delete handlers.
-   */
-  protected readonly pluginId: string;
   /**
    * The notice component used to report updated links to the user.
    */
@@ -1429,26 +1417,15 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
     this.app = params.app;
     this.linkUpdateProgressReporter = params.linkUpdateProgressReporter ?? null;
     this.resourceLockComponent = params.resourceLockComponent;
-    this.pluginId = params.pluginId;
     this.pluginNoticeComponent = params.pluginNoticeComponent;
     this.settingsBuilder = params.settingsBuilder;
-    this.settingsManager = new SettingsManager();
+    this.settingsManager = new SettingsManager(this.settingsBuilder);
   }
 
   /**
    * Loads the component
    */
   public override onload(): void {
-    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-
-    renameDeleteHandlersMap.set(this.pluginId, this.settingsBuilder);
-    this.logRegisteredHandlers();
-
-    this.register(() => {
-      renameDeleteHandlersMap.delete(this.pluginId);
-      this.logRegisteredHandlers();
-    });
-
     this.registerEvent(this.app.vault.on('delete', this.handleDelete.bind(this)));
     this.registerEvent(this.app.vault.on('rename', this.handleRename.bind(this)));
     this.registerEvent(this.app.metadataCache.on('deleted', this.handleMetadataDeleted.bind(this)));
@@ -1465,16 +1442,12 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       new DeleteProtectionPatchComponent({
         app: this.app,
         pluginNoticeComponent: this.pluginNoticeComponent,
-        settingsManager: this.settingsManager,
-        shouldInvokeHandler: this.shouldInvokeHandler.bind(this)
+        settingsManager: this.settingsManager
       })
     );
   }
 
   private handleDelete(file: TAbstractFile): void {
-    if (!this.shouldInvokeHandler()) {
-      return;
-    }
     addToQueue({
       operationFunction: (abortSignal) =>
         new DeleteHandler({
@@ -1490,9 +1463,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private handleMetadataDeleted(file: TAbstractFile, previousCache: CachedMetadata | null): void {
-    if (!this.shouldInvokeHandler()) {
-      return;
-    }
     new MetadataDeletedHandler({
       deletedMetadataCacheMap: this.deletedMetadataCacheMap,
       file,
@@ -1502,10 +1472,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
   }
 
   private handleRename(file: TAbstractFile, oldPath: string): void {
-    if (!this.shouldInvokeHandler()) {
-      return;
-    }
-
     if (!isFile(file)) {
       return;
     }
@@ -1596,19 +1562,6 @@ export class RenameDeleteHandlerComponent extends ComponentEx {
       && !(settings.isNote?.(oldPath) ?? false)
       && !(settings.isNote?.(newPath) ?? false)
       && (settings.emptyFolderBehavior ?? EmptyFolderBehavior.Keep) === EmptyFolderBehavior.Keep;
-  }
-
-  private logRegisteredHandlers(): void {
-    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-    getLibDebugger('RenameDeleteHandler:logRegisteredHandlers')(
-      `Plugins with registered rename/delete handlers: ${JSON.stringify([...renameDeleteHandlersMap.keys()])}`
-    );
-  }
-
-  private shouldInvokeHandler(): boolean {
-    const renameDeleteHandlersMap = this.settingsManager.renameDeleteHandlersMap;
-    const mainPluginId = [...renameDeleteHandlersMap.keys()][0];
-    return mainPluginId === this.pluginId;
   }
 }
 
