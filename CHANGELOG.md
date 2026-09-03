@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 100.1.0
+
+- feat(note-priority): publish filterHighestPriorityNotePaths
+- docs(agents): scope the npm 12 npm pack breakage to the library release path
+
 ## 100.0.0
 
 - feat(attachment-unit-folder)!: own the designation, not just the walker
