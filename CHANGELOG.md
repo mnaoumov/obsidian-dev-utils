@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 101.4.1
+
+- fix(vitest-config): stop declaring a root-level include, which widens every project under vitest 5
+- test(test-mocks): drop the hand-rolled app.plugins stubs, and sweep the dependencies
+- refactor(test-mocks): move onto obsidian-test-mocks 5 and stop naming its deprecated setup file
+
 ## 101.4.0
 
 - feat(vault): add VaultTransaction.copy and folder support in copySafe
