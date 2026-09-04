@@ -43,6 +43,13 @@
       "expect": "^7.0.3",
       "manualCheck": "The check reads the range @wdio/utils declares, not a version, because that range is what forces the override. When it moves to ^8 or later the override and this entry can both go. Before lifting it, re-run the deepmergeCustom probe rather than trusting the range alone: @wdio/config passes a handler that reads `meta.key`, and that is precisely the API 8.0.0 renamed, so a regression there would be silent rather than a crash."
     },
+    "fflate": {
+      "section": "overrides",
+      "why": "Clears GHSA-px8p-9vwx-vf98 (fflate unzipSync infinite loop on malformed ZIP64 archives, 2 moderate advisories), which covers 0.7.0-0.7.4 and is fixed in 0.7.5. Reached only transitively: satori - a devDependency of the Astro docs site - pins fflate to the exact vulnerable 0.7.3, so nothing we declare can be bumped to fix it and satori itself is already latest. The override stays within 0.7.x rather than jumping to 0.8.x, so it is two patch releases off what satori was built against; it also dedupes, since another consumer already resolves 0.7.5 in this tree. NEVER take the `npm audit fix --force` remedy: it downgrades satori to 0.32.0 (rule G100). The docs build is what would catch a break here, since fflate is only reached through satori's OG-image path - lint and unit tests never touch it.",
+      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/satori/package.json','utf8')).dependencies.fflate)\"",
+      "expect": "0.7.3",
+      "manualCheck": "The check reads satori's own declared pin, not a version, because that exact pin is what makes the override necessary. When satori moves to 0.7.5 or later - or off fflate entirely - the override and this entry can both go. Verify a lift with `npm run docs:build`, not with the unit suite."
+    },
     "js-yaml": {
       "section": "overrides",
       "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x, which is the `v4-legacy` dist-tag: 4.3.1 backports the CVE-2026-59870 fix (GHSA-5p4m-2wfm-xmqj, quadratic CPU in !!omap resolution) that the vulnerable 4.0.0-4.3.0 range lacks, so this override is also what clears that advisory for astro, starlight, cosmiconfig, markdownlint-cli2 and @istanbuljs/load-nyc-config at once.",
