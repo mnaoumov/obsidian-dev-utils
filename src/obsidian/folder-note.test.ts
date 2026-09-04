@@ -11,12 +11,12 @@ import {
   it
 } from 'vitest';
 
-import type { GenericObject } from '../type-guards.ts';
 import type { FolderNoteConfig } from './folder-note.ts';
 
 import { castTo } from '../object-utils.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import {
+  FOLDER_NOTES_PLUGIN_ID,
   FolderNoteLocation,
   resolveFolderNote,
   resolveFolderNoteConfig
@@ -25,6 +25,9 @@ import {
 const DEFAULT_FILES = { 'alpha/bravo/charlie/charlie.md': '' };
 
 let app: AppOriginal;
+// Kept alongside `app` because `registerPlugin__` is a mock-only seam: `asOriginalType__()` hands back the
+// Same object typed as Obsidian's `App`, whose `plugins` does not declare it.
+let appMock: App;
 
 /**
  * Resolves a config against a vault that has the folder-notes plugin configured as given.
@@ -49,14 +52,13 @@ function getFolder(path: string): TFolder {
  * @param folderNotesSettings - That plugin's private settings, or `undefined` for "not installed".
  */
 function initApp(files: Record<string, string>, folderNotesSettings?: unknown): void {
-  app = App.createConfigured__({ files }).asOriginalType__();
-  // `app.plugins` always exists in Obsidian, so it is seeded unconditionally; what varies is whether the
-  // Folder-notes plugin is among the loaded ones. The registry is typed to return a `Plugin` and every
-  // Shape under test is deliberately NOT one — that is the point, since these are another plugin's
-  // Private settings.
-  castTo<GenericObject>(app)['plugins'] = {
-    getPlugin: (id: string): null | PluginOriginal => id === 'folder-notes' && folderNotesSettings !== undefined ? castTo<PluginOriginal>({ settings: folderNotesSettings }) : null
-  };
+  appMock = App.createConfigured__({ files });
+  if (folderNotesSettings !== undefined) {
+    // The registry is typed to return a `Plugin` and every shape under test is deliberately NOT one —
+    // That is the point, since these are another plugin's private settings.
+    appMock.plugins.registerPlugin__(FOLDER_NOTES_PLUGIN_ID, castTo<PluginOriginal>({ settings: folderNotesSettings }));
+  }
+  app = appMock.asOriginalType__();
 }
 
 /**
@@ -213,9 +215,9 @@ describe('resolveFolderNoteConfig', () => {
 
     it('should fall back when the installed plugin exposes no settings at all', () => {
       initApp(DEFAULT_FILES);
-      castTo<GenericObject>(app)['plugins'] = {
-        getPlugin: (): PluginOriginal => castTo<PluginOriginal>({})
-      };
+      // Registered directly rather than through `initApp`, which would give it a `settings` key: the case
+      // Under test is a plugin that exposes none at all.
+      appMock.plugins.registerPlugin__(FOLDER_NOTES_PLUGIN_ID, castTo<PluginOriginal>({}));
       expect(resolveFolderNoteConfig({ app }).location).toBe(FolderNoteLocation.InsideFolder);
     });
   });

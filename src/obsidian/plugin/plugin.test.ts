@@ -166,13 +166,6 @@ beforeEach(() => {
     callback();
   });
   app = appMock.asOriginalType__();
-
-  // `NotebookNavigatorMenuEventRegistrarComponent`, a default child, reads `app.plugins` once the layout
-  // Is ready. The strict App mock throws on any property nobody assigned, and that rejection used to
-  // Surface only as unattributed stderr because a registered async-error handler disarmed the harness.
-  app.plugins = strictProxy<AppOriginal['plugins']>({
-    getPlugin: (): null => null
-  });
 });
 
 describe('PluginBase', () => {

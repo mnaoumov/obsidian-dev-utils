@@ -61,6 +61,12 @@ let triggerLayoutReady: () => void;
 /**
  * Builds an app whose plugin registry holds the given Notebook Navigator.
  *
+ * Not a candidate for `obsidian-test-mocks`' `registerPlugin__`, despite looking like one: this builds a
+ * standalone fake rather than stubbing around `App.createConfigured__()`'s strict proxy, so there is no
+ * real registry here to seed. It also has to capture the `onLayoutReady` callback and fire it by hand,
+ * which is the whole point of the fake — a configured `App` would bring a vault and a workspace this test
+ * never exercises.
+ *
  * @param shouldInstallNotebookNavigator - Whether the app has Notebook Navigator.
  * @returns The app.
  */

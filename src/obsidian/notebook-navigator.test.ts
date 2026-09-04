@@ -35,6 +35,11 @@ const VALID_API = {
 /**
  * Builds an app whose plugin registry holds the given Notebook Navigator.
  *
+ * Not a candidate for `obsidian-test-mocks`' `registerPlugin__`: this builds a standalone fake rather than
+ * stubbing around `App.createConfigured__()`'s strict proxy, so there is no real registry here to seed. The
+ * function under test takes any app shape, and giving it a whole configured vault to reach one `getPlugin`
+ * would widen what the test isolates rather than narrow it.
+ *
  * @param notebookNavigator - What `getPlugin('notebook-navigator')` returns.
  * @returns The app.
  */

@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 
-import type { App as AppOriginal } from 'obsidian';
+import type {
+  App as AppOriginal,
+  Plugin as PluginOriginal
+} from 'obsidian';
 
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
@@ -20,10 +23,6 @@ import { applyFileChanges } from './file-change.ts';
 import { referenceToFileChange } from './reference.ts';
 import { readSafe } from './vault.ts';
 
-interface AppWithPlugins {
-  plugins: PluginsRegistry;
-}
-
 interface ParsedCanvas {
   nodes: ParsedCanvasNode[];
 }
@@ -33,20 +32,18 @@ interface ParsedCanvasNode {
   text?: string;
 }
 
-interface PluginsRegistry {
-  getPlugin(id: string): unknown;
-}
-
 const CANVAS_PATH = 'drawing.canvas';
 
 function createApp(canvasContent: string, installedPluginIds: string[] = []): AppOriginal {
-  const app = App.createConfigured__({
+  const appMock = App.createConfigured__({
     files: { [CANVAS_PATH]: canvasContent }
-  }).asOriginalType__();
-  castTo<AppWithPlugins>(app).plugins = {
-    getPlugin: (id: string): unknown => installedPluginIds.includes(id) ? {} : null
-  };
-  return app;
+  });
+  for (const id of installedPluginIds) {
+    // The code under test only asks whether the plugin is installed, so an empty stand-in carries every
+    // Member it reads.
+    appMock.plugins.registerPlugin__(id, castTo<PluginOriginal>({}));
+  }
+  return appMock.asOriginalType__();
 }
 
 function toCanvasJson(nodes: unknown[]): string {
