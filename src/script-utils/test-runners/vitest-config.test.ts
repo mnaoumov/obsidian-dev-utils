@@ -123,9 +123,13 @@ describe('defineObsidianPluginVitestConfig', () => {
       },
       exclude: ['node_modules', 'dist'],
       globals: false,
-      include: ['src/**/*.test.ts'],
       passWithNoTests: true
     });
+
+    // The root section deliberately declares no `include`, and this asserts the absence.
+    // Under vitest 5 a project's own glob no longer replaces a root one, so a root glob widens
+    // Every project to every test file, which `toMatchObject` above could never catch.
+    expect(config.test).not.toHaveProperty('include');
   });
 
   it('should reflect a context edit in the assembled configuration', () => {
