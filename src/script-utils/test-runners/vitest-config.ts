@@ -253,7 +253,17 @@ export function defineObsidianPluginVitestConfig(options: DefineObsidianPluginVi
       },
       exclude: [...SHARED_EXCLUDE],
       globals: false,
-      include: [UNIT_TEST_FILES],
+      /*
+       * There is deliberately NO root-level `include` here, and restoring one breaks every project.
+       * Under vitest 4 a project's own `include` replaced the root one, so a root
+       * `include: [UNIT_TEST_FILES]` was merely redundant — the `unit-tests` project already declares
+       * that same glob for itself. Under vitest 5 the project glob no longer replaces it, and
+       * `src/**\/*.test.ts` is a superset of every project glob, so EVERY project collected EVERY test
+       * file: unit suites ran in the CDP integration environment and died on `Failed to resolve entry
+       * for package "obsidian"`, the screenshot-capture suites ran and rewrote checked-in PNGs, and the
+       * android / demo-vault suites ran under the desktop transport. Measured in a consumer: the desktop
+       * project collected 227 files instead of its own 105, and deleting this one line restored 105.
+       */
       passWithNoTests: true,
       projects: [
         {
