@@ -124,7 +124,6 @@ export const config = defineConfig({
           server: SHARED_SERVER,
           setupFiles: [
             'obsidian-test-mocks/vitest-setup',
-            'obsidian-test-mocks/obsidian-typings/vitest-setup',
             './src/vitest-setup.ts'
           ]
         }

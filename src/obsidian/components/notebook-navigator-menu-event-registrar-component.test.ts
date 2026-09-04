@@ -15,7 +15,6 @@ import type { MenuItem } from 'obsidian-test-mocks/obsidian';
 
 import { Menu } from 'obsidian-test-mocks/obsidian';
 import {
-  afterEach,
   beforeEach,
   describe,
   expect,
@@ -52,39 +51,12 @@ type FileMenuCallback = (context: NotebookNavigatorFileMenuContext) => void;
 
 type FolderMenuCallback = (context: NotebookNavigatorFolderMenuContext) => void;
 
-/**
- * The mock menu's own item list, which the bridge below surfaces as `items`.
- */
-interface MenuWithItemsRecord {
-  items__: unknown[];
-}
-
 const PLUGIN_NAME = 'Test Plugin';
 const SUBMENU_ICON = 'wand';
 
 let app: AppOriginal;
 let notebookNavigator: FakeNotebookNavigator;
 let triggerLayoutReady: () => void;
-
-/**
- * Teaches the mock menu the one `obsidian-typings` member the component reads.
- *
- * `Menu.items` is how the component tells whether the handlers contributed anything, and
- * `obsidian-test-mocks` models it only as `items__` — it bridges `MenuItem.setSubmenu` / `.submenu`
- * but not this. The mock is a STRICT proxy, so an unmocked read throws rather than returning
- * `undefined`; defining the property on the prototype is the same shape as the library's own
- * `bridgeMenuItem`, applied one member further.
- *
- * TODO (T329-P35): drop this once `obsidian-test-mocks` bridges `Menu.items`.
- */
-function bridgeMenuItems(): void {
-  Object.defineProperty(Menu.prototype, 'items', {
-    configurable: true,
-    get(this: MenuWithItemsRecord): unknown[] {
-      return this.items__;
-    }
-  });
-}
 
 /**
  * Builds an app whose plugin registry holds the given Notebook Navigator.
@@ -244,17 +216,11 @@ function raiseFolderMenu(folder: TFolderOriginal): MenuItem[] {
  */
 function submenuTitles(items: MenuItem[]): unknown[] {
   const parentItem = ensureNonNullable(items[0]);
-  return ensureNonNullable(parentItem.submenu__).menuItems__.map((item) => item.title__);
+  return ensureNonNullable(parentItem.submenu).menuItems__.map((item) => item.title__);
 }
 
 beforeEach(() => {
-  bridgeMenuItems();
   notebookNavigator = createFakeNotebookNavigator();
-});
-
-afterEach(() => {
-  // The bridge is a prototype-level patch on a shared class; leave it as found.
-  delete castTo<Record<string, unknown>>(Menu.prototype)['items'];
 });
 
 describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
@@ -364,7 +330,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
         });
       }
 
-      expect(menu.items__).toHaveLength(0);
+      expect(menu.items).toHaveLength(0);
     });
   });
 
