@@ -66,6 +66,14 @@ vi.mock('./modals/confirm.ts', () => ({
   confirm: vi.fn()
 }));
 
+/**
+ * Survives the fleet-wide removal of the hand-rolled `app.plugins` stubs, deliberately.
+ *
+ * `obsidian-test-mocks` models the registry now, so the stubs that only made `getPlugin` answer `null` are
+ * gone — but it models only the honest core (`plugins`, `enabledPlugins`, `getPlugin`, `getPluginFolder`),
+ * and leaves `manifests` to throw through the strict proxy. These tests read `manifests` to name the
+ * locking plugin in a tooltip, so the assignment stays until the mock grows one.
+ */
 interface MockAppPlugins {
   plugins: MockPlugins;
 }

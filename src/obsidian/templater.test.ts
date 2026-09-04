@@ -18,7 +18,6 @@ import {
   it
 } from 'vitest';
 
-import type { GenericObject } from '../type-guards.ts';
 import type {
   TemplaterApi,
   TemplaterRunningConfig
@@ -104,6 +103,9 @@ interface TemplaterApiRecorder {
 }
 
 let app: AppOriginal;
+// Kept alongside `app` because `registerPlugin__` is a mock-only seam: `asOriginalType__()` hands back the
+// Same object typed as Obsidian's `App`, whose `plugins` does not declare it.
+let appMock: App;
 
 /**
  * Builds a fake Templater API that passes every check the guard makes, and records what it is asked to
@@ -170,16 +172,19 @@ function getFixtureFile(path: string): TFile {
  * @param plugin - What `getPlugin('templater-obsidian')` returns. `null` means Templater is not loaded.
  */
 function setTemplaterPlugin(plugin: unknown): void {
-  // `app.plugins` always exists in Obsidian, so it is seeded unconditionally; what varies is whether a
-  // Templater is among the loaded ones. The registry is typed to return a `Plugin` and most shapes under
-  // Test are deliberately NOT one — that is the point, since these are another plugin's internals.
-  castTo<GenericObject>(app)['plugins'] = {
-    getPlugin: (id: string): null | PluginOriginal => id === TEMPLATER_PLUGIN_ID ? castTo<null | PluginOriginal>(plugin) : null
-  };
+  if (plugin === null) {
+    appMock.plugins.unregisterPlugin__(TEMPLATER_PLUGIN_ID);
+    return;
+  }
+
+  // The registry is typed to return a `Plugin` and most shapes under test are deliberately NOT one — that
+  // Is the point, since these are another plugin's internals.
+  appMock.plugins.registerPlugin__(TEMPLATER_PLUGIN_ID, castTo<PluginOriginal>(plugin));
 }
 
 beforeEach(() => {
-  app = App.createConfigured__({ files: FILES }).asOriginalType__();
+  appMock = App.createConfigured__({ files: FILES });
+  app = appMock.asOriginalType__();
   setTemplaterPlugin(null);
 });
 
