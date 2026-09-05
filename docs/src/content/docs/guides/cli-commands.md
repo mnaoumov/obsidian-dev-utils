@@ -201,13 +201,41 @@ import { testWatch } from 'obsidian-dev-utils/script-utils/test-runners/vitest/v
 
 Runs the test suite in watch mode.
 
+### Branch Gate
+
+```typescript
+import { gate } from 'obsidian-dev-utils/script-utils/gate';
+```
+
+Runs the verification sequence that [Version Management](#version-management) runs as its preflight, as a command of its own — so you can find out in seconds, on the branch, what would otherwise fail the release fifteen minutes in.
+
+Four of those checks are reachable by no other routine command: `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`. None of them is part of `lint`, and `test` is not `test:coverage` (which is the one that enforces the coverage thresholds). A branch that is green on build, lint and test can therefore still abort the release.
+
+The steps run fastest-first, so a typo fails immediately rather than after the coverage run:
+
+`format:check` → `spellcheck` → `lint:md` → `build` → `lint` → `find-overexposed` → `test` → `test:coverage`
+
+Steps your project does not define are skipped, not fatal. Two steps of the preflight are deliberately left out:
+
+- **The clean-repo check.** The gate is meant to be run on a dirty tree — that is the point of running it before you commit.
+- **`test:integration`.** Integration suites usually have to be serialized across a machine, so a command run this casually must not start one. Pass `shouldRunIntegrationTests: true` if your project wants it anyway; the release path sets it.
+
+`gate` is not a second list of the same checks — `updateVersion` calls it, so a check added to one is reachable from both.
+
+#### Flags
+
+| Flag          | Effect                                                                                                     |
+|---------------|------------------------------------------------------------------------------------------------------------|
+| `--no-build`  | Skips the build. Use only when the build output already matches the current code — it is the only step that type-checks the project, and a green lint is not a type-check. |
+| `--no-checks` | Skips every verification check and runs only the build.                                                     |
+
 ### Version Management
 
 ```typescript
 import { updateVersion } from 'obsidian-dev-utils/script-utils/version';
 ```
 
-Runs preflight checks before updating the version and releases if all checks pass. The checks are the clean-repo check, formatting, spellcheck, lint, over-exposure analysis (when a `find-overexposed` script is defined), and tests. The build always runs as well — it is a publishing prerequisite, not a verification check, so even a fast release ships artifacts that match the current code (use `--no-build` only when the build output is already known to be current).
+Runs preflight checks before updating the version and releases if all checks pass. The checks are the clean-repo check followed by the [Branch Gate](#branch-gate) — formatting, spellcheck, lint, over-exposure analysis (when a `find-overexposed` script is defined), and tests, integration tests included. The build always runs as well — it is a publishing prerequisite, not a verification check, so even a fast release ships artifacts that match the current code (use `--no-build` only when the build output is already known to be current).
 
 If you use `beta` as version update type for your Obsidian plugin, the plugin will be deployed compatible to install with [BRAT](https://community.obsidian.md/plugins/obsidian42-brat).
 
@@ -258,6 +286,7 @@ To use these commands in your `package.json`, create script entry points using [
     "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",
     "format": "jiti scripts/format.ts",
     "format:check": "jiti scripts/format-check.ts",
+    "gate": "jiti scripts/gate.ts",
     "lint": "jiti scripts/lint.ts",
     "lint:fix": "jiti scripts/lint-fix.ts",
     "spellcheck": "jiti scripts/spellcheck.ts",
@@ -282,7 +311,7 @@ This setup allows you to run the commands using `npm run`, like `npm run build`.
 
 You do not have to write these script and config files by hand. Ready-made templates ship inside the installed package, so after `npm install obsidian-dev-utils` you can copy them out of `node_modules/obsidian-dev-utils/dist/templates`:
 
-- `dist/templates/scripts/` — the script entry points. The per-tool scripts are grouped by the module they use (`build/`, `bundlers/`, `formatters/`, `linters/`, `test-runners/`, `version/`), and the shared config logic files sit at the top level (`commitlint-config.ts`, `eslint-config.ts`, `vitest-config.ts`, `markdownlint-cli2-config.ts`, `nano-staged-config.ts`). Copy the files you need into your project's `scripts/` folder, naming each one to match the `package.json` script that runs it.
+- `dist/templates/scripts/` — the script entry points. The per-tool scripts are grouped by the module they use (`build/`, `bundlers/`, `formatters/`, `gate/`, `linters/`, `test-runners/`, `version/`), and the shared config logic files sit at the top level (`commitlint-config.ts`, `eslint-config.ts`, `vitest-config.ts`, `markdownlint-cli2-config.ts`, `nano-staged-config.ts`). Copy the files you need into your project's `scripts/` folder, naming each one to match the `package.json` script that runs it.
 - `dist/templates/` (top level) — the thin root config files a project keeps at its root: `commitlint.config.ts`, `eslint.config.mts`, `vitest.config.ts`, `dprint.json`, `.markdownlint-cli2.mjs`, and `.nano-staged.mjs`. Each one re-exports its matching `scripts/*-config.ts`, so copy both halves together.
 
 The `commitlint-config`, `markdownlint-cli2-config`, `nano-staged-config`, and `vitest-config` templates work as-is; `eslint-config` is a baseline you adapt to your plugin.
@@ -315,6 +344,7 @@ Every command above can be switched off the same way. The rule is mechanical, so
 | `find-overexposed:fix`     | `FIND_OVEREXPOSED_FIX=0`     |
 | `format`                   | `FORMAT=0`                   |
 | `format:check`             | `FORMAT_CHECK=0`             |
+| `gate`                     | `GATE=0`                     |
 | `lint`                     | `LINT=0`                     |
 | `lint:fix`                 | `LINT_FIX=0`                 |
 | `lint:md`                  | `LINT_MD=0`                  |
