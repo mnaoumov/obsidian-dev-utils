@@ -44,13 +44,19 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run gate` — **the branch gate: run this before committing.** It is the same code
   `npm run version` runs as its preflight (`gate()` in `src/script-utils/gate.ts`, which `updateVersion`
   calls), so the two cannot drift: `format:check` -> `spellcheck` -> `lint:md` -> `build` -> `lint` ->
-  `find-overexposed` -> `test` -> `test:coverage`, fastest first. **Four of those are reachable by no other
+  `find-overexposed` -> `test:coverage`, fastest first. **Four of those are reachable by no other
   routine command — `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`** (none is part of
-  `npm run lint`, and `npm test` is not `test:coverage`, which pins all four coverage thresholds at exactly
-  100). So a branch green on build + lint + test could still abort the release ~15 minutes in; T938 died
-  that way at `spellcheck`, on one coinage in a code comment. Two steps of the preflight are deliberately
+  `npm run lint`, and `test:coverage` is the only routine command pinning all four coverage thresholds at
+  exactly 100). So a branch green on build + lint could still abort the release ~15 minutes in; T938 died
+  that way at `spellcheck`, on one coinage in a code comment. **The tests run once**: `test:coverage` is
+  preferred and `npm test` runs only as its fallback, in a project that defines no `test:coverage`. Running
+  both — which this did until 2026-09-05 — was a duplicate, because a project scopes its two test
+  scripts to the same vitest projects (here both are `['unit-tests']`), so `test:coverage` is `test` plus
+  the thresholds over the identical files. One consequence: `TEST_COVERAGE=0` now switches off the gate's
+  whole test step. Two steps of the preflight are deliberately
   NOT in the gate: the clean-repo assertion (the gate is run on a dirty tree on purpose) and
-  `test:integration` (it has to run in sequence fleet-wide, so a casually-run command must not start it).
+  `test:integration` (it has to run in sequence fleet-wide, so a casually-run command must not start it;
+  when a caller does ask for it, it runs after the unit tests, so a broken unit test fails first).
   `npm run gate -- --no-build` skips the build when the output is already current; `GATE=0` skips the whole
   thing and each step keeps its own switch (`SPELLCHECK=0`, ...).
 - `npm run commit` — guided commit via Commitizen

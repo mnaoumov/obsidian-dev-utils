@@ -209,16 +209,18 @@ import { gate } from 'obsidian-dev-utils/script-utils/gate';
 
 Runs the verification sequence that [Version Management](#version-management) runs as its preflight, as a command of its own — so you can find out in seconds, on the branch, what would otherwise fail the release fifteen minutes in.
 
-Four of those checks are reachable by no other routine command: `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`. None of them is part of `lint`, and `test` is not `test:coverage` (which is the one that enforces the coverage thresholds). A branch that is green on build, lint and test can therefore still abort the release.
+Four of those checks are reachable by no other routine command: `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`. None of them is part of `lint`, and `test:coverage` is the only routine command that enforces the coverage thresholds. A branch that is green on build, lint and test can therefore still abort the release.
 
 The steps run fastest-first, so a typo fails immediately rather than after the coverage run:
 
-`format:check` → `spellcheck` → `lint:md` → `build` → `lint` → `find-overexposed` → `test` → `test:coverage`
+`format:check` → `spellcheck` → `lint:md` → `build` → `lint` → `find-overexposed` → `test:coverage`
+
+The tests run **once**. `test:coverage` is preferred, and `test` runs only as its fallback, in a project that defines no `test:coverage` — so a project that scopes both scripts to the same vitest projects, as most do, does not pay for the same suite twice. The consequence worth knowing is that `TEST_COVERAGE=0` switches off the gate's whole test step rather than demoting it to `test`.
 
 Steps your project does not define are skipped, not fatal. Two steps of the preflight are deliberately left out:
 
 - **The clean-repo check.** The gate is meant to be run on a dirty tree — that is the point of running it before you commit.
-- **`test:integration`.** Integration suites usually have to be serialized across a machine, so a command run this casually must not start one. Pass `shouldRunIntegrationTests: true` if your project wants it anyway; the release path sets it.
+- **`test:integration`.** Integration suites usually have to be serialized across a machine, so a command run this casually must not start one. Pass `shouldRunIntegrationTests: true` if your project wants it anyway; the release path sets it. It then runs last, after the unit tests, so a broken unit test fails before an integration suite is started.
 
 `gate` is not a second list of the same checks — `updateVersion` calls it, so a check added to one is reachable from both.
 
