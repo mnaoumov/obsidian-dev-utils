@@ -39,9 +39,20 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
   list is for domain terms, not for coinages a rewrite avoids. Note this bullet cannot spell out the example
   without failing the very check it documents.
 - `npm run find-overexposed` / `find-overexposed:fix` — report (or narrow) declarations exposed more broadly
-  than their references require. **It is NOT part of `lint` / `test` / `format` / `spellcheck`, but it IS one
-  of `npm run version`'s preflight checks** — so a fully green branch gate can still fail at release time on
-  it. Run it before releasing rather than discovering it there (2026-08-29, T677).
+  than their references require. It is one of the four preflight-only checks described under `npm run gate`
+  below (2026-08-29, T677).
+- `npm run gate` — **the branch gate: run this before committing.** It is the same code
+  `npm run version` runs as its preflight (`gate()` in `src/script-utils/gate.ts`, which `updateVersion`
+  calls), so the two cannot drift: `format:check` -> `spellcheck` -> `lint:md` -> `build` -> `lint` ->
+  `find-overexposed` -> `test` -> `test:coverage`, fastest first. **Four of those are reachable by no other
+  routine command — `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`** (none is part of
+  `npm run lint`, and `npm test` is not `test:coverage`, which pins all four coverage thresholds at exactly
+  100). So a branch green on build + lint + test could still abort the release ~15 minutes in; T938 died
+  that way at `spellcheck`, on one coinage in a code comment. Two steps of the preflight are deliberately
+  NOT in the gate: the clean-repo assertion (the gate is run on a dirty tree on purpose) and
+  `test:integration` (it has to run in sequence fleet-wide, so a casually-run command must not start it).
+  `npm run gate -- --no-build` skips the build when the output is already current; `GATE=0` skips the whole
+  thing and each step keeps its own switch (`SPELLCHECK=0`, ...).
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version
 - `npm run publish:npm` — publish the built package to NPM; runs in CI only (see [Releasing](#releasing))
@@ -1502,3 +1513,5 @@ generated automatically. Consequences worth knowing before touching any of this:
   - `npm run build:compile:typescript`
   - `npm run lint:fix`
   - `npm run format`
+- Before pushing a branch you intend to release from, run **`npm run gate`** — the four preflight-only
+  checks it adds on top of the list above are the ones a release otherwise fails on 15 minutes in.

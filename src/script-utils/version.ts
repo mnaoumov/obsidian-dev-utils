@@ -38,11 +38,8 @@ import {
 } from '../type-guards.ts';
 import { archivePluginDemoVault } from './demo-vault.ts';
 import { readdirPosix } from './fs.ts';
+import { gate } from './gate.ts';
 import { editJson } from './json.ts';
-import {
-  npmRun,
-  npmRunOptional
-} from './npm-run.ts';
 import {
   editNpmShrinkWrapJson,
   editPackageJson,
@@ -668,23 +665,17 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
 
   if (shouldRunChecks) {
     await assertGitRepoClean();
-    await npmRun('format:check');
-    await npmRun('spellcheck');
-    await npmRun('lint:md');
   }
 
+  // The rest of the preflight IS `npm run gate`, not a copy of it: a check added to the gate is reachable
+  // From the branch and from the release by construction, instead of by two lists happening to agree.
+  // The clean-repo assertion above stays here, because the gate is run on a dirty tree on purpose.
   // The build is a prerequisite for publishing, not a verification check, so it runs unless `shouldBuild` is `false` — this keeps the released artifacts in sync with the current code even on a fast release.
-  if (shouldBuild) {
-    await npmRun('build');
-  }
-
-  if (shouldRunChecks) {
-    await npmRun('lint');
-    await npmRunOptional('find-overexposed');
-    await npmRunOptional('test');
-    await npmRunOptional('test:integration');
-    await npmRunOptional('test:coverage');
-  }
+  await gate({
+    shouldBuild,
+    shouldRunChecks,
+    shouldRunIntegrationTests: true
+  });
 
   const newVersion = await getNewVersion(versionUpdateType);
 
