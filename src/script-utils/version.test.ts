@@ -125,10 +125,14 @@ vi.mock('../script-utils/json.ts', () => ({
   editJson: mockEditJson
 }));
 
-vi.mock('../script-utils/npm-run.ts', () => ({
-  npmRun: mockNpmRun,
-  npmRunOptional: mockNpmRunOptional
-}));
+vi.mock('../script-utils/npm-run.ts', async (importOriginal) => {
+  const $module = await importOriginal<typeof import('./npm-run.ts')>();
+  return {
+    ...$module,
+    npmRun: mockNpmRun,
+    npmRunOptional: mockNpmRunOptional
+  };
+});
 
 vi.mock('../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
@@ -1088,7 +1092,7 @@ describe('updateVersion', () => {
     expect(mockNpmRun).toHaveBeenCalledWith('build');
     expect(mockNpmRun).toHaveBeenCalledWith('lint');
     expect(mockNpmRunOptional).toHaveBeenCalledWith('find-overexposed');
-    expect(mockNpmRunOptional).toHaveBeenCalledWith('test');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('test:coverage');
     expect(mockEditPackageJson).toHaveBeenCalled();
   });
 

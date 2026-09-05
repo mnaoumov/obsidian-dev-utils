@@ -14,13 +14,22 @@
  * the release path is the clean-repo assertion — a branch gate is run on a dirty tree, which is the whole
  * point of running it before committing — and the integration suite, which has to run in sequence across
  * the whole fleet and so cannot be part of a command run casually.
+ *
+ * The tests run ONCE, through `test:coverage` where the project defines it and through `test` otherwise.
+ * Running both, as this did until 2026-09-05, was a duplicate everywhere it mattered: a project scopes its
+ * two test scripts to the same vitest projects — every repo in this workspace passes the same `projects`
+ * array to both — so `test:coverage` is `test` plus the threshold flags, over the identical files. It buys
+ * no fail-fast either, because the coverage run fails on exactly the failures the plain run would have
+ * caught. The one thing lost is the ability to switch off only the coverage half: `TEST_COVERAGE=0` now
+ * turns off the gate's whole test step rather than demoting it to `test`.
  */
 
 import { parseArgs } from 'node:util';
 
 import {
   npmRun,
-  npmRunOptional
+  npmRunOptional,
+  NpmRunOptionalResult
 } from './npm-run.ts';
 
 /**
@@ -62,7 +71,10 @@ export interface GateOptions {
  * step carries its own environment off switch.
  *
  * The steps that are run with {@link npmRunOptional} are skipped when the project does not define them; the
- * rest are required.
+ * rest are required. The test step is the one place that reads that skip: `test:coverage` is preferred, and
+ * `test` runs only as its fallback, so the suite is never run twice. The unit tests stay ahead of
+ * `test:integration` for the same fastest-first reason — a broken unit test should fail before an
+ * integration suite is started, not after.
  *
  * @param options - The {@link GateOptions} controlling which steps run.
  * @returns A {@link Promise} that resolves when every step has passed.
@@ -87,13 +99,14 @@ export async function gate(options: GateOptions = {}): Promise<void> {
   if (shouldRunChecks) {
     await npmRun('lint');
     await npmRunOptional('find-overexposed');
-    await npmRunOptional('test');
+
+    if (await npmRunOptional('test:coverage') === NpmRunOptionalResult.Skipped) {
+      await npmRunOptional('test');
+    }
 
     if (shouldRunIntegrationTests) {
       await npmRunOptional('test:integration');
     }
-
-    await npmRunOptional('test:coverage');
   }
 }
 

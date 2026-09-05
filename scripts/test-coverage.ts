@@ -5,6 +5,6 @@ await wrapCliTask(async () => {
   const FULL_COVERAGE_IN_PERCENTS = 100;
   await testCoverage({
     minCoverageInPercents: FULL_COVERAGE_IN_PERCENTS,
-    projects: ['unit-tests:*']
+    projects: ['unit-tests']
   });
 });
