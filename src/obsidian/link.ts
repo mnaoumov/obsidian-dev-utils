@@ -35,7 +35,10 @@ import type { ProcessOptions } from './vault.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
 import { getLibDebugger } from '../debug.ts';
-import { normalizeOptionalProperties } from '../object-utils.ts';
+import {
+  normalizeOptionalProperties,
+  removeUndefinedProperties
+} from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import {
   basename,
@@ -178,6 +181,19 @@ export interface ConvertLinkParams {
   readonly app: App;
 
   /**
+   * Whether to allow an empty alias for embeds.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `![](foo.png)`.
+   *
+   * If `false`: `![foo](foo.png)`.
+   *
+   * @default `true`
+   */
+  readonly isEmptyEmbedAliasAllowed?: boolean;
+
+  /**
    * A reference for the link.
    */
   readonly link: Reference;
@@ -203,11 +219,76 @@ export interface ConvertLinkParams {
   readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
+   * Whether to escape the alias.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[\*\*alias\*\*](link.md)`.
+   *
+   * If `false`: `[**alias**](link.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldEscapeAlias?: boolean;
+
+  /**
+   * Whether to include the attachment extension in the embed alias.
+   *
+   * Applicable only if {@link isEmptyEmbedAliasAllowed} is `false`.
+   *
+   * If `true`: `[foo.png](foo.png)`.
+   *
+   * If `false`: `[foo](foo.png)`.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
+
+  /**
    * Whether to update file name alias.
    *
    * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
+
+  /**
+   * Indicates if the link should use angle brackets.
+   *
+   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[alias](<path with spaces.md>)`.
+   *
+   * If `false`: `[alias](path%20with%20spaces.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+
+  /**
+   * Indicates if the link should use a leading dot.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheSource}.
+   *
+   * If `true`: `[[./relative/path/to/target]]`
+   *
+   * If `false`: `[[relative/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingDotForRelativePaths?: boolean;
+
+  /**
+   * Indicates if the link should use a leading slash.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.AbsolutePathInVault}.
+   *
+   * If `true`: `[[/absolute/path/to/target]]`
+   *
+   * If `false`: `[[absolute/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingSlashForAbsolutePaths?: boolean;
 }
 
 /**
@@ -532,7 +613,7 @@ export interface GenerateMarkdownLinkParams {
   /**
    * Indicates if the link should use a leading dot.
    *
-   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToSource}.
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheSource}.
    *
    * If `true`: `[[./relative/path/to/target]]`
    *
@@ -738,6 +819,19 @@ export interface UpdateLinkParams {
   readonly app: App;
 
   /**
+   * Whether to allow an empty alias for embeds.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `![](foo.png)`.
+   *
+   * If `false`: `![foo](foo.png)`.
+   *
+   * @default `true`
+   */
+  readonly isEmptyEmbedAliasAllowed?: boolean;
+
+  /**
    * A reference for the link.
    */
   readonly link: Reference;
@@ -773,11 +867,76 @@ export interface UpdateLinkParams {
   readonly oldTargetPathOrFile?: PathOrFile;
 
   /**
+   * Whether to escape the alias.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[\*\*alias\*\*](link.md)`.
+   *
+   * If `false`: `[**alias**](link.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldEscapeAlias?: boolean;
+
+  /**
+   * Whether to include the attachment extension in the embed alias.
+   *
+   * Applicable only if {@link isEmptyEmbedAliasAllowed} is `false`.
+   *
+   * If `true`: `[foo.png](foo.png)`.
+   *
+   * If `false`: `[foo](foo.png)`.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
+
+  /**
    * Whether to update file name alias.
    *
    * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
+
+  /**
+   * Indicates if the link should use angle brackets.
+   *
+   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[alias](<path with spaces.md>)`.
+   *
+   * If `false`: `[alias](path%20with%20spaces.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+
+  /**
+   * Indicates if the link should use a leading dot.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheSource}.
+   *
+   * If `true`: `[[./relative/path/to/target]]`
+   *
+   * If `false`: `[[relative/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingDotForRelativePaths?: boolean;
+
+  /**
+   * Indicates if the link should use a leading slash.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.AbsolutePathInVault}.
+   *
+   * If `true`: `[[/absolute/path/to/target]]`
+   *
+   * If `false`: `[[absolute/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingSlashForAbsolutePaths?: boolean;
 }
 
 /**
@@ -788,6 +947,19 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
    * An Obsidian app instance.
    */
   readonly app: App;
+
+  /**
+   * Whether to allow an empty alias for embeds.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `![](foo.png)`.
+   *
+   * If `false`: `![foo](foo.png)`.
+   *
+   * @default `true`
+   */
+  readonly isEmptyEmbedAliasAllowed?: boolean;
 
   /**
    * A style of the link path.
@@ -810,6 +982,32 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
   readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
+   * Whether to escape the alias.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[\*\*alias\*\*](link.md)`.
+   *
+   * If `false`: `[**alias**](link.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldEscapeAlias?: boolean;
+
+  /**
+   * Whether to include the attachment extension in the embed alias.
+   *
+   * Applicable only if {@link isEmptyEmbedAliasAllowed} is `false`.
+   *
+   * If `true`: `[foo.png](foo.png)`.
+   *
+   * If `false`: `[foo](foo.png)`.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
+
+  /**
    * Whether to update only embedded links.
    */
   readonly shouldUpdateEmbedOnlyLinks?: boolean;
@@ -820,6 +1018,45 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
    * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
+
+  /**
+   * Indicates if the link should use angle brackets.
+   *
+   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[alias](<path with spaces.md>)`.
+   *
+   * If `false`: `[alias](path%20with%20spaces.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+
+  /**
+   * Indicates if the link should use a leading dot.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheSource}.
+   *
+   * If `true`: `[[./relative/path/to/target]]`
+   *
+   * If `false`: `[[relative/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingDotForRelativePaths?: boolean;
+
+  /**
+   * Indicates if the link should use a leading slash.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.AbsolutePathInVault}.
+   *
+   * If `true`: `[[/absolute/path/to/target]]`
+   *
+   * If `false`: `[[absolute/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingSlashForAbsolutePaths?: boolean;
 }
 
 /**
@@ -1021,6 +1258,19 @@ interface UpdateLinksInContentParams {
   readonly content: string;
 
   /**
+   * Whether to allow an empty alias for embeds.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `![](foo.png)`.
+   *
+   * If `false`: `![foo](foo.png)`.
+   *
+   * @default `true`
+   */
+  readonly isEmptyEmbedAliasAllowed?: boolean;
+
+  /**
    * A style of the link path.
    */
   readonly linkPathStyle?: LinkPathStyle;
@@ -1041,6 +1291,32 @@ interface UpdateLinksInContentParams {
   readonly oldSourcePathOrFile?: PathOrFile;
 
   /**
+   * Whether to escape the alias.
+   *
+   * Applicable only if the result link style is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[\*\*alias\*\*](link.md)`.
+   *
+   * If `false`: `[**alias**](link.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldEscapeAlias?: boolean;
+
+  /**
+   * Whether to include the attachment extension in the embed alias.
+   *
+   * Applicable only if {@link isEmptyEmbedAliasAllowed} is `false`.
+   *
+   * If `true`: `[foo.png](foo.png)`.
+   *
+   * If `false`: `[foo](foo.png)`.
+   *
+   * @default `false`
+   */
+  readonly shouldIncludeAttachmentExtensionToEmbedAlias?: boolean;
+
+  /**
    * Whether to update only embedded links.
    */
   readonly shouldUpdateEmbedOnlyLinks?: boolean;
@@ -1051,6 +1327,45 @@ interface UpdateLinksInContentParams {
    * @default `true`
    */
   readonly shouldUpdateFileNameAlias?: boolean;
+
+  /**
+   * Indicates if the link should use angle brackets.
+   *
+   * Applicable only if {@link linkStyle} is {@link LinkStyle.Markdown}.
+   *
+   * If `true`: `[alias](<path with spaces.md>)`.
+   *
+   * If `false`: `[alias](path%20with%20spaces.md)`.
+   *
+   * @default `false`
+   */
+  readonly shouldUseAngleBrackets?: boolean;
+
+  /**
+   * Indicates if the link should use a leading dot.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.RelativePathToTheSource}.
+   *
+   * If `true`: `[[./relative/path/to/target]]`
+   *
+   * If `false`: `[[relative/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingDotForRelativePaths?: boolean;
+
+  /**
+   * Indicates if the link should use a leading slash.
+   *
+   * Applicable only if {@link linkPathStyle} is {@link LinkPathStyle.AbsolutePathInVault}.
+   *
+   * If `true`: `[[/absolute/path/to/target]]`
+   *
+   * If `false`: `[[absolute/path/to/target]]`
+   *
+   * @default `false`
+   */
+  readonly shouldUseLeadingSlashForAbsolutePaths?: boolean;
 }
 
 /**
@@ -1071,13 +1386,19 @@ export function convertLink(params: ConvertLinkParams): string {
 
   return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
     app: params.app,
+    isEmptyEmbedAliasAllowed: params.isEmptyEmbedAliasAllowed,
     link: params.link,
     linkPathStyle: params.linkPathStyle,
     linkStyle: params.linkStyle,
     newSourcePathOrFile: params.newSourcePathOrFile,
     newTargetPathOrFile: targetFile,
     oldSourcePathOrFile: params.oldSourcePathOrFile,
-    shouldUpdateFileNameAlias: params.shouldUpdateFileNameAlias
+    shouldEscapeAlias: params.shouldEscapeAlias,
+    shouldIncludeAttachmentExtensionToEmbedAlias: params.shouldIncludeAttachmentExtensionToEmbedAlias,
+    shouldUpdateFileNameAlias: params.shouldUpdateFileNameAlias,
+    shouldUseAngleBrackets: params.shouldUseAngleBrackets,
+    shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths,
+    shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
   }));
 }
 
@@ -1287,7 +1608,11 @@ export function generateMarkdownLink(params: GenerateMarkdownLinkParams): string
   };
 
   const customDefaultParams = getGenerateMarkdownLinkDefaultParamsFns().map((defaultParamsFunction) => defaultParamsFunction());
-  params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, params);
+  // Strip explicit `undefined`s first, on a copy so the caller's object is untouched.
+  // A caller forwarding every optional param sends own keys holding `undefined` for the ones it did not receive.
+  // Those are not removed by `normalizeOptionalProperties`, which is a type-level no-op.
+  // Without the strip, such a key overwrites a default with `undefined` instead of falling through to it.
+  params = Object.assign({}, DEFAULT_PARAMS, ...customDefaultParams, removeUndefinedProperties<GenerateMarkdownLinkParams>({ ...params }));
   const targetFile = getFile(normalizeOptionalProperties<GetFileParams>({ app, pathOrFile: params.targetPathOrFile, shouldIncludeNonExisting: params.isNonExistingFileAllowed }));
 
   using _registration = registerFiles(app, [targetFile]);
@@ -1532,6 +1857,7 @@ export async function updateFileUrlLinksInFile(params: UpdateFileUrlLinksInFileP
 export function updateLink(params: UpdateLinkParams): string {
   const {
     app,
+    isEmptyEmbedAliasAllowed,
     link,
     linkPathStyle,
     linkStyle,
@@ -1539,7 +1865,12 @@ export function updateLink(params: UpdateLinkParams): string {
     newTargetPathOrFile,
     oldSourcePathOrFile,
     oldTargetPathOrFile,
-    shouldUpdateFileNameAlias = true
+    shouldEscapeAlias,
+    shouldIncludeAttachmentExtensionToEmbedAlias,
+    shouldUpdateFileNameAlias = true,
+    shouldUseAngleBrackets,
+    shouldUseLeadingDotForRelativePaths,
+    shouldUseLeadingSlashForAbsolutePaths
   } = params;
   if (!newTargetPathOrFile) {
     return link.original;
@@ -1596,10 +1927,16 @@ export function updateLink(params: UpdateLinkParams): string {
   const newLink = generateMarkdownLink(normalizeOptionalProperties<GenerateMarkdownLinkParams>({
     alias,
     app,
+    isEmptyEmbedAliasAllowed,
     isSingleSubpathAllowed: oldSourcePath === oldTargetPath && !!parseLinkResult?.alias,
     linkPathStyle,
     linkStyle,
     originalLink: link.original,
+    shouldEscapeAlias,
+    shouldIncludeAttachmentExtensionToEmbedAlias,
+    shouldUseAngleBrackets,
+    shouldUseLeadingDotForRelativePaths,
+    shouldUseLeadingSlashForAbsolutePaths,
     sourcePathOrFile: newSourcePathOrFile,
     subpath,
     targetPathOrFile: newTargetFile
@@ -1617,12 +1954,18 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
   const {
     app,
     content,
+    isEmptyEmbedAliasAllowed,
     linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
     oldSourcePathOrFile,
+    shouldEscapeAlias,
+    shouldIncludeAttachmentExtensionToEmbedAlias,
     shouldUpdateEmbedOnlyLinks,
-    shouldUpdateFileNameAlias
+    shouldUpdateFileNameAlias,
+    shouldUseAngleBrackets,
+    shouldUseLeadingDotForRelativePaths,
+    shouldUseLeadingSlashForAbsolutePaths
   } = params;
 
   return await editLinksInContent({
@@ -1635,12 +1978,18 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
       }
       return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
         app,
+        isEmptyEmbedAliasAllowed,
         link,
         linkPathStyle,
         linkStyle,
         newSourcePathOrFile,
         oldSourcePathOrFile,
-        shouldUpdateFileNameAlias
+        shouldEscapeAlias,
+        shouldIncludeAttachmentExtensionToEmbedAlias,
+        shouldUpdateFileNameAlias,
+        shouldUseAngleBrackets,
+        shouldUseLeadingDotForRelativePaths,
+        shouldUseLeadingSlashForAbsolutePaths
       }));
     }
   });
@@ -1655,12 +2004,18 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
 export async function updateLinksInFile(params: UpdateLinksInFileParams): Promise<void> {
   const {
     app,
+    isEmptyEmbedAliasAllowed,
     linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
     oldSourcePathOrFile,
+    shouldEscapeAlias,
+    shouldIncludeAttachmentExtensionToEmbedAlias,
     shouldUpdateEmbedOnlyLinks,
-    shouldUpdateFileNameAlias
+    shouldUpdateFileNameAlias,
+    shouldUseAngleBrackets,
+    shouldUseLeadingDotForRelativePaths,
+    shouldUseLeadingSlashForAbsolutePaths
   } = params;
 
   if (isCanvasFile(newSourcePathOrFile) && !app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
@@ -1676,12 +2031,18 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
       }
       return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
         app,
+        isEmptyEmbedAliasAllowed,
         link,
         linkPathStyle,
         linkStyle,
         newSourcePathOrFile,
         oldSourcePathOrFile,
-        shouldUpdateFileNameAlias
+        shouldEscapeAlias,
+        shouldIncludeAttachmentExtensionToEmbedAlias,
+        shouldUpdateFileNameAlias,
+        shouldUseAngleBrackets,
+        shouldUseLeadingDotForRelativePaths,
+        shouldUseLeadingSlashForAbsolutePaths
       }));
     },
     pathOrFile: newSourcePathOrFile

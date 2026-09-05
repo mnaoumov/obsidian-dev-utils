@@ -782,6 +782,168 @@ describe('splitSubpath (additional edge cases)', () => {
   });
 });
 
+/**
+ * The subset of {@link UpdateLinksInFileParams} that shapes the emitted link, as opposed to naming what is linked.
+ */
+type ShapingParams = Pick<
+  UpdateLinksInFileParams,
+  | 'isEmptyEmbedAliasAllowed'
+  | 'linkPathStyle'
+  | 'shouldEscapeAlias'
+  | 'shouldIncludeAttachmentExtensionToEmbedAlias'
+  | 'shouldUseAngleBrackets'
+  | 'shouldUseLeadingDotForRelativePaths'
+  | 'shouldUseLeadingSlashForAbsolutePaths'
+>;
+
+/**
+ * One shaping param, and the smallest link that makes it observable.
+ *
+ * Each case is asserted at every hop of the bulk update path, in BOTH directions: passing
+ * {@link ShapingParamsCase.shapingParams} must reach the emitted link, and omitting them must reproduce today's
+ * output — the half that proves the forward keeps an absent value absent, so the `originalLink` inference in
+ * `getLinkConfig` and a registered {@link GenerateMarkdownLinkDefaultParamsComponent} default still win.
+ */
+interface ShapingParamsCase {
+  /**
+   * The shaping params every variant of the case passes, on top of the hop's own required params.
+   */
+  readonly baseParams: ShapingParams;
+
+  /**
+   * The link as emitted when {@link ShapingParamsCase.shapingParams} are passed.
+   */
+  readonly expectedForced: string;
+
+  /**
+   * The link as emitted when {@link ShapingParamsCase.shapingParams} are omitted.
+   */
+  readonly expectedOmitted: string;
+
+  /**
+   * The display text of the reference to convert.
+   */
+  readonly linkDisplayText: string;
+
+  /**
+   * The link path of the reference to convert.
+   */
+  readonly linkPath: string;
+
+  /**
+   * The original text of the reference to convert.
+   */
+  readonly originalLink: string;
+
+  /**
+   * The shaping params under test.
+   */
+  readonly shapingParams: ShapingParams;
+
+  /**
+   * The path of the note containing the reference.
+   */
+  readonly sourcePath: string;
+
+  /**
+   * The path the reference resolves to.
+   */
+  readonly targetPath: string;
+
+  /**
+   * The name of the shaping param under test, used as the test title.
+   */
+  readonly title: string;
+}
+
+const SHAPING_PARAMS_CASES: ShapingParamsCase[] = [
+  {
+    baseParams: { linkPathStyle: LinkPathStyle.RelativePathToTheSource },
+    expectedForced: '[[./folder/same]]',
+    expectedOmitted: '[[folder/same]]',
+    linkDisplayText: 'same',
+    linkPath: 'same',
+    originalLink: '[[same]]',
+    shapingParams: { shouldUseLeadingDotForRelativePaths: true },
+    sourcePath: 'note.md',
+    targetPath: 'folder/same.md',
+    title: 'shouldUseLeadingDotForRelativePaths'
+  },
+  {
+    baseParams: { linkPathStyle: LinkPathStyle.AbsolutePathInVault },
+    expectedForced: '[[/folder/same]]',
+    expectedOmitted: '[[folder/same]]',
+    linkDisplayText: 'same',
+    linkPath: 'same',
+    originalLink: '[[same]]',
+    shapingParams: { shouldUseLeadingSlashForAbsolutePaths: true },
+    sourcePath: 'note.md',
+    targetPath: 'folder/same.md',
+    title: 'shouldUseLeadingSlashForAbsolutePaths'
+  },
+  {
+    baseParams: {},
+    expectedForced: '[a](<a b.md>)',
+    expectedOmitted: '[a](a%20b.md)',
+    linkDisplayText: 'a',
+    linkPath: 'a b.md',
+    originalLink: '[a](a%20b.md)',
+    shapingParams: { shouldUseAngleBrackets: true },
+    sourcePath: 'note.md',
+    targetPath: 'a b.md',
+    title: 'shouldUseAngleBrackets'
+  },
+  {
+    baseParams: {},
+    expectedForced: '![image](image.png)',
+    expectedOmitted: '![](image.png)',
+    linkDisplayText: '',
+    linkPath: 'image.png',
+    originalLink: '![](image.png)',
+    shapingParams: { isEmptyEmbedAliasAllowed: false },
+    sourcePath: 'note.md',
+    targetPath: 'image.png',
+    title: 'isEmptyEmbedAliasAllowed'
+  },
+  {
+    baseParams: { isEmptyEmbedAliasAllowed: false },
+    expectedForced: '![image.png](image.png)',
+    expectedOmitted: '![image](image.png)',
+    linkDisplayText: '',
+    linkPath: 'image.png',
+    originalLink: '![](image.png)',
+    shapingParams: { shouldIncludeAttachmentExtensionToEmbedAlias: true },
+    sourcePath: 'note.md',
+    targetPath: 'image.png',
+    title: 'shouldIncludeAttachmentExtensionToEmbedAlias'
+  },
+  {
+    baseParams: {},
+    expectedForced: String.raw`[\*\*a\*\*](target.md)`,
+    expectedOmitted: '[**a**](target.md)',
+    linkDisplayText: '**a**',
+    linkPath: 'target.md',
+    originalLink: '[**a**](target.md)',
+    shapingParams: { shouldEscapeAlias: true },
+    sourcePath: 'note.md',
+    targetPath: 'target.md',
+    title: 'shouldEscapeAlias'
+  }
+];
+
+function createShapingParamsCaseLink(shapingParamsCase: ShapingParamsCase): Reference {
+  const { originalLink } = shapingParamsCase;
+  return castTo<Reference>({
+    displayText: shapingParamsCase.linkDisplayText,
+    link: shapingParamsCase.linkPath,
+    original: originalLink,
+    position: {
+      end: { col: originalLink.length, line: 0, offset: originalLink.length },
+      start: { col: 0, line: 0, offset: 0 }
+    }
+  });
+}
+
 describe('app-dependent functions', () => {
   let app: AppOriginal;
 
@@ -791,6 +953,8 @@ describe('app-dependent functions', () => {
     app = (
       App.createConfigured__({
         files: {
+          // The space is load-bearing: it is what makes `shouldUseAngleBrackets` observable.
+          'a b.md': '# A B',
           'folder/other.md': '# Other',
           'folder/same.md': '# Same',
           'image.png': '',
@@ -1362,6 +1526,18 @@ describe('app-dependent functions', () => {
       expect(convertLink(params)).toBe('[[target]]');
       expect(convertLink({ ...params, linkPathStyle: LinkPathStyle.RelativePathToTheSource })).toBe('[[../target]]');
     });
+
+    it.each(SHAPING_PARAMS_CASES)('should forward $title to updateLink', (shapingParamsCase) => {
+      const params: ConvertLinkParams = {
+        app,
+        link: createShapingParamsCaseLink(shapingParamsCase),
+        newSourcePathOrFile: shapingParamsCase.sourcePath,
+        ...shapingParamsCase.baseParams
+      };
+
+      expect(convertLink(params)).toBe(shapingParamsCase.expectedOmitted);
+      expect(convertLink({ ...params, ...shapingParamsCase.shapingParams })).toBe(shapingParamsCase.expectedForced);
+    });
   });
 
   describe('updateLink', () => {
@@ -1589,6 +1765,19 @@ describe('app-dependent functions', () => {
 
       expect(updateLink(params)).toBe('[[same]]');
       expect(updateLink({ ...params, linkPathStyle: LinkPathStyle.AbsolutePathInVault })).toBe('[[folder/same]]');
+    });
+
+    it.each(SHAPING_PARAMS_CASES)('should forward $title to generateMarkdownLink', (shapingParamsCase) => {
+      const params: UpdateLinkParams = {
+        app,
+        link: createShapingParamsCaseLink(shapingParamsCase),
+        newSourcePathOrFile: shapingParamsCase.sourcePath,
+        newTargetPathOrFile: shapingParamsCase.targetPath,
+        ...shapingParamsCase.baseParams
+      };
+
+      expect(updateLink(params)).toBe(shapingParamsCase.expectedOmitted);
+      expect(updateLink({ ...params, ...shapingParamsCase.shapingParams })).toBe(shapingParamsCase.expectedForced);
     });
   });
 
@@ -2405,6 +2594,39 @@ describe('app-dependent functions', () => {
       await updateLinksInContent({ ...params, linkPathStyle: LinkPathStyle.RelativePathToTheSource });
       expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual(['[[../target]]']);
     });
+
+    it.each(SHAPING_PARAMS_CASES)('should forward $title to convertLink', async (shapingParamsCase) => {
+      vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [createShapingParamsCaseLink(shapingParamsCase)],
+        sections: undefined
+      }));
+
+      let changes = null as FileChange[] | null;
+      vi.mocked(applyContentChanges).mockImplementation(
+        async ({ changesProvider, content }) => {
+          if (typeof changesProvider === 'function') {
+            changes = castTo<FileChange[]>(await (changesProvider as () => Promise<unknown>)());
+          }
+          return content;
+        }
+      );
+
+      // `UpdateLinksInContentParams` is module-private, so the params object is inferred rather than annotated.
+      const params = {
+        app,
+        content: shapingParamsCase.originalLink,
+        newSourcePathOrFile: shapingParamsCase.sourcePath,
+        ...shapingParamsCase.baseParams
+      };
+
+      await updateLinksInContent(params);
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual([shapingParamsCase.expectedOmitted]);
+
+      await updateLinksInContent({ ...params, ...shapingParamsCase.shapingParams });
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual([shapingParamsCase.expectedForced]);
+    });
   });
 
   describe('updateLinksInFile', () => {
@@ -2550,6 +2772,45 @@ describe('app-dependent functions', () => {
       await updateLinksInFile({ ...params, linkPathStyle: LinkPathStyle.RelativePathToTheSource });
       expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual(['[[../target]]']);
     });
+
+    it.each(SHAPING_PARAMS_CASES)('should forward $title to convertLink', async (shapingParamsCase) => {
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links: [createShapingParamsCaseLink(shapingParamsCase)],
+        sections: undefined
+      }));
+
+      // Here `editLinks` bails out unless the content handed to the provider matches what the vault holds.
+      // Read it back rather than passing the link text.
+      const sourceContent = await app.vault.cachedRead(ensureNonNullable(app.vault.getFileByPath(shapingParamsCase.sourcePath)));
+
+      let changes = null as FileChange[] | null;
+      vi.mocked(applyFileChanges).mockImplementation(
+        async ({ changesProvider }) => {
+          if (typeof changesProvider !== 'function') {
+            return;
+          }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          changes = castTo<FileChange[]>(await resolveValue(changesProvider, { abortSignal, content: sourceContent }));
+        }
+      );
+
+      const params: UpdateLinksInFileParams = {
+        app,
+        newSourcePathOrFile: shapingParamsCase.sourcePath,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        ...shapingParamsCase.baseParams
+      };
+
+      await updateLinksInFile(params);
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual([shapingParamsCase.expectedOmitted]);
+
+      await updateLinksInFile({ ...params, ...shapingParamsCase.shapingParams });
+      expect(ensureNonNullable(changes).map((change) => change.newContent)).toEqual([shapingParamsCase.expectedForced]);
+    });
   });
 
   describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
@@ -2582,6 +2843,30 @@ describe('app-dependent functions', () => {
         targetPathOrFile: 'target.md'
       });
       expect(result2).toBe('[[target]]');
+    });
+
+    it('should survive the bulk update path, which forwards every shaping param it did not receive', () => {
+      const component = new GenerateMarkdownLinkDefaultParamsComponent({
+        getDefaultParams(): Partial<GenerateMarkdownLinkParams> {
+          return {
+            shouldUseLeadingSlashForAbsolutePaths: true
+          };
+        }
+      });
+      component.load();
+
+      // Here `updateLink` names all six shaping params, so the ones the caller omitted arrive as own keys.
+      // Those keys hold `undefined` and must not overwrite the registered default.
+      const result = updateLink({
+        app,
+        link: castTo<Reference>({ displayText: 'same', link: 'same', original: '[[same]]' }),
+        linkPathStyle: LinkPathStyle.AbsolutePathInVault,
+        newSourcePathOrFile: 'note.md',
+        newTargetPathOrFile: 'folder/same.md'
+      });
+      expect(result).toBe('[[/folder/same]]');
+
+      component.unload();
     });
   });
 
