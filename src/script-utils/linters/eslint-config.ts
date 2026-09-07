@@ -413,18 +413,14 @@ function getIntegrationTestConfigs(): Linter.Config[] {
        * nothing while still passing. Only integration tests are covered: a unit test has no real input
        * pipeline to reach, so dispatching is the only thing it can do.
        *
-       * Android is exempt BY FILENAME rather than by a disable comment, because the exemption is a
-       * property of the platform rather than of any one call site: the trusted helpers are built on
-       * `window.electron`, which does not exist there, so every dispatch in such a file is legitimate and
-       * always will be. A `*.cross-platform.*` file is deliberately NOT exempt — it runs on desktop too,
-       * where the trusted path is available, so it should branch on `Platform.isDesktopApp` and disable
-       * the rule on the mobile arm alone.
+       * Android files used to be exempt BY FILENAME, on the grounds that the trusted helpers were built on
+       * `window.electron` and so could not be reached from a phone at all. That exemption is gone: the
+       * harness gained a mobile trusted-input path, and `clickElement`, `clickMouse`, `pressKey` and
+       * `typeIntoEditor` all work there. Only the hover helpers still throw, because `:hover` has no touch
+       * equivalent — a file reaching for those has to branch on `Platform.isDesktopApp`, which is the same
+       * thing a `*.cross-platform.*` file has always had to do.
        */
       files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyIntegrationTestTs)],
-      ignores: [
-        join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyAndroidIntegrationTestTs),
-        join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyAndroidCaptureIntegrationTestTs)
-      ],
       rules: {
         'obsidian-dev-utils/no-untrusted-input-events': 'error'
       }
