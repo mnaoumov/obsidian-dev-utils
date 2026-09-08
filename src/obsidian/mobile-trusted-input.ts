@@ -4,7 +4,9 @@
  * Mobile-only trusted input helpers. There is no in-renderer route to a trusted event on a phone —
  * `webContents.sendInputEvent` is Electron-only and a dispatched event is untrusted — so the injection
  * has to be a round-trip: the request goes to the host over the `obsidian-integration-testing` harness's
- * binding channel, and the host injects it into the WebView over CDP.
+ * binding channel, and the host injects it into the WebView over CDP — as `Input.dispatchTouchEvent` for
+ * a tap but `Input.synthesizeTapGesture` for a long-press, because `dispatchTouchEvent` injects past
+ * Android's gesture recognizer and so is classified as a tap at any dwell.
  *
  * That channel is installed by the harness's Appium transport, so these helpers **delegate** to the
  * harness rather than reimplementing the wire format: they call
@@ -68,8 +70,8 @@ interface TrustedInputSeam {
 }
 
 /**
- * Clicks the center of an element using **trusted** touch input — a CDP tap in the WebView, injected by
- * the host.
+ * Clicks the center of an element using **trusted** touch input, injected into the WebView by the host
+ * over CDP.
  *
  * The element-relative counterpart of {@link clickMouse}. `button: 'right'` is the long-press that opens
  * Obsidian Mobile's context menu; `'middle'` throws, because touch has no gesture for it and inventing
