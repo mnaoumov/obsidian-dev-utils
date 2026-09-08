@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 101.5.0
+
+- feat: let a call site choose whether a modal input is spell-checked
+- fix(script-utils): run the tests once in the gate, not once plain and once with coverage
+- feat(link): accept the remaining shaping params on the bulk link-update path
+- feat(script-utils): add a gate command that is the release preflight itself
+
 ## 101.4.1
 
 - fix(vitest-config): stop declaring a root-level include, which widens every project under vitest 5
