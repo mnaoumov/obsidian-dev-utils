@@ -31,8 +31,9 @@ import {
 import { noop } from '../../function.ts';
 import { normalizeOptionalProperties } from '../../object-utils.ts';
 import { CssClass } from '../css-class.ts';
+import { applySpellcheckMode } from '../html-element.ts';
 import { t } from '../i18n/i18n.ts';
-import { isSpellcheckEnabled } from '../obsidian-settings.ts';
+import { SpellcheckMode } from '../obsidian-settings.ts';
 import {
   ModalBase,
   showModal
@@ -83,6 +84,18 @@ export interface PromptParams extends ModalParamsBase {
   readonly placeholder?: string;
 
   /**
+   * The mode deciding whether the input is spell-checked.
+   *
+   * The default is what this modal has always done, so passing nothing changes nothing: the input follows
+   * `Editor > Spellcheck`, like Obsidian's own name-entry surfaces. Pass {@link SpellcheckMode.Off} for a
+   * box that is really a search field, or {@link SpellcheckMode.AlwaysOn} to spell-check it whatever the
+   * vault setting says.
+   *
+   * @default `SpellcheckMode.FollowObsidianSetting`
+   */
+  readonly spellcheckMode?: SpellcheckMode;
+
+  /**
    * A title of the modal.
    *
    * @default `''`
@@ -108,6 +121,7 @@ class PromptModal extends ModalBase<null | string> {
   private isTouched = false;
   private readonly okButtonText: string;
   private readonly placeholder: string;
+  private readonly spellcheckMode: SpellcheckMode;
   private readonly title: DocumentFragment | string;
   private value: string;
   private readonly valueValidator: (value: string) => Promisable<MaybeReturn<string>>;
@@ -120,6 +134,7 @@ class PromptModal extends ModalBase<null | string> {
     this.commandsRenderMode = params.commandsRenderMode;
     this.okButtonText = params.okButtonText ?? t(($) => $.obsidianDevUtils.buttons.ok);
     this.placeholder = params.placeholder ?? '';
+    this.spellcheckMode = params.spellcheckMode ?? SpellcheckMode.FollowObsidianSetting;
     this.title = params.title ?? '';
     this.valueValidator = params.valueValidator ?? noop;
     this.value = params.defaultValue ?? '';
@@ -133,9 +148,13 @@ class PromptModal extends ModalBase<null | string> {
     this.titleEl.setText(this.title);
     const textComponent = new TextComponent(this.contentEl);
     const inputEl = textComponent.inputEl;
-    // `AbstractTextComponent` forces `spellcheck="false"` on every text component, so the vault setting has to be re-applied here.
+    // `AbstractTextComponent` forces `spellcheck="false"` on every text component, so the mode has to be applied here.
     // Obsidian's own file explorer reads the same config when it starts an inline rename.
-    inputEl.setAttribute('spellcheck', String(isSpellcheckEnabled(this.app)));
+    applySpellcheckMode({
+      app: this.app,
+      element: inputEl,
+      spellcheckMode: this.spellcheckMode
+    });
 
     const validate = async (shouldReport: boolean): Promise<void> => {
       const errorMessage = await this.valueValidator(inputEl.value) as string | undefined;

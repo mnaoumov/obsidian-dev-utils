@@ -24,6 +24,7 @@ import {
 import { castTo } from '../../object-utils.ts';
 import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { ensureNonNullable } from '../../type-guards.ts';
+import { SpellcheckMode } from '../obsidian-settings.ts';
 import {
   ModalCommandBuilder,
   ModalCommandsRenderMode
@@ -362,6 +363,54 @@ describe('prompt', () => {
     const result = await resultPromise;
     expect(result).toBeNull();
     expect(spellcheckAttribute).toBe('false');
+  });
+
+  it('should disable spellcheck when the Off mode is passed, whatever the vault setting says', async () => {
+    app.vault.setConfig('spellcheck', true);
+    let spellcheckAttribute = null as null | string;
+    const resultPromise = prompt({
+      app,
+      spellcheckMode: SpellcheckMode.Off
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      spellcheckAttribute = textComp.inputEl.getAttribute('spellcheck');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(spellcheckAttribute).toBe('false');
+  });
+
+  it('should enable spellcheck when the AlwaysOn mode is passed, whatever the vault setting says', async () => {
+    app.vault.setConfig('spellcheck', false);
+    let spellcheckAttribute = null as null | string;
+    const resultPromise = prompt({
+      app,
+      spellcheckMode: SpellcheckMode.AlwaysOn
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      spellcheckAttribute = textComp.inputEl.getAttribute('spellcheck');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(spellcheckAttribute).toBe('true');
+  });
+
+  it('should follow the vault setting when the FollowObsidianSetting mode is passed explicitly', async () => {
+    app.vault.setConfig('spellcheck', true);
+    let spellcheckAttribute = null as null | string;
+    const resultPromise = prompt({
+      app,
+      spellcheckMode: SpellcheckMode.FollowObsidianSetting
+    });
+    queueMicrotask(() => {
+      const textComp = ensureNonNullable(textInstances[0]);
+      spellcheckAttribute = textComp.inputEl.getAttribute('spellcheck');
+    });
+    const result = await resultPromise;
+    expect(result).toBeNull();
+    expect(spellcheckAttribute).toBe('true');
   });
 
   it('should report validity and not submit when OK is clicked with an invalid value', async () => {
