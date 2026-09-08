@@ -16,9 +16,15 @@ import {
   vi
 } from 'vitest';
 
-import { castTo } from '../../object-utils.ts';
+import type { SelectItemParams } from './select-item.ts';
+
+import {
+  castTo,
+  normalizeOptionalProperties
+} from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { assertNonNullable } from '../../type-guards.ts';
+import { SpellcheckMode } from '../obsidian-settings.ts';
 import { selectItem } from './select-item.ts';
 
 let app: AppOriginal;
@@ -126,6 +132,50 @@ describe('selectItem', () => {
     vi.mocked(FuzzySuggestModal.prototype.open).mockRestore();
     vi.useRealTimers();
   });
+
+  it('should leave the box unchecked by default, whatever the vault setting says', async () => {
+    app.vault.setConfig('spellcheck', true);
+    expect(await readSpellcheckAttribute()).toBe('false');
+  });
+
+  it('should follow the vault setting when the FollowObsidianSetting mode is passed', async () => {
+    app.vault.setConfig('spellcheck', true);
+    expect(await readSpellcheckAttribute(SpellcheckMode.FollowObsidianSetting)).toBe('true');
+    app.vault.setConfig('spellcheck', false);
+    expect(await readSpellcheckAttribute(SpellcheckMode.FollowObsidianSetting)).toBe('false');
+  });
+
+  it('should check the box for the AlwaysOn mode even when the vault setting is disabled', async () => {
+    app.vault.setConfig('spellcheck', false);
+    expect(await readSpellcheckAttribute(SpellcheckMode.AlwaysOn)).toBe('true');
+  });
+
+  async function readSpellcheckAttribute(spellcheckMode?: SpellcheckMode): Promise<null | string> {
+    vi.useFakeTimers();
+    vi.spyOn(FuzzySuggestModal.prototype, 'open').mockImplementation(
+      function openOverride(this: FuzzySuggestModal<string>): void {
+        this.onOpen();
+      }
+    );
+
+    const promise = selectItem(normalizeOptionalProperties<SelectItemParams<string>>({
+      app,
+      items: ['a'],
+      itemTextFunction: (item: string) => item,
+      spellcheckMode
+    }));
+
+    const modal = vi.mocked(FuzzySuggestModal.prototype.open).mock.contexts[0] as FuzzySuggestModal<string> | undefined;
+    assertNonNullable(modal);
+    const spellcheckAttribute = modal.inputEl.getAttribute('spellcheck');
+
+    modal.close();
+    await promise;
+
+    vi.mocked(FuzzySuggestModal.prototype.open).mockRestore();
+    vi.useRealTimers();
+    return spellcheckAttribute;
+  }
 });
 
 afterEach(() => {

@@ -20,6 +20,10 @@ import {
   it
 } from 'vitest';
 
+// Imported under an alias because the callback pulls the enum VALUE out of `lib` under its own
+// Name, and that binding would otherwise shadow the type inside the closure.
+import type { SpellcheckMode as SpellcheckModeType } from '../obsidian-settings.ts';
+
 interface PromptCommandBuilderResult {
   readonly changes: boolean[];
   readonly checkboxMarginInlineStart: string;
@@ -36,6 +40,11 @@ interface PromptInvalidOutlineResult {
   readonly boxShadowOnOpen: string;
   readonly errorColor: string;
   readonly value: null | string;
+}
+
+interface PromptSpellcheckModeResult {
+  readonly spellcheckAttributeWhenAlwaysOn: null | string;
+  readonly spellcheckAttributeWhenOff: null | string;
 }
 
 interface PromptSpellcheckResult {
@@ -185,6 +194,61 @@ describe('prompt', () => {
     // `spellcheck="false"` on every text component and clearing it is the whole behavior under test.
     expect(result.spellcheckAttributeWhenEnabled).toBe('true');
     expect(result.spellcheckAttributeWhenDisabled).toBe('false');
+  });
+
+  it('should let the spellcheck mode override the vault setting in both directions', async () => {
+    const result = await evalInObsidian({
+      async callback({ app, lib: { prompt, SpellcheckMode, waitUntil } }): Promise<PromptSpellcheckModeResult> {
+        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+        const originalSpellcheck = app.vault.getConfig('spellcheck');
+
+        try {
+          app.vault.setConfig('spellcheck', true);
+          const spellcheckAttributeWhenOff = await readSpellcheckAttribute(SpellcheckMode.Off);
+
+          app.vault.setConfig('spellcheck', false);
+          const spellcheckAttributeWhenAlwaysOn = await readSpellcheckAttribute(SpellcheckMode.AlwaysOn);
+
+          return {
+            spellcheckAttributeWhenAlwaysOn,
+            spellcheckAttributeWhenOff
+          };
+        } finally {
+          app.vault.setConfig('spellcheck', originalSpellcheck);
+        }
+
+        function getCancelButton(): HTMLButtonElement | undefined {
+          return [...document.querySelectorAll<HTMLButtonElement>('.prompt-modal .modal-content button')][1];
+        }
+
+        function getInputEl(): HTMLInputElement | null {
+          return document.querySelector<HTMLInputElement>('.prompt-modal .modal-content input');
+        }
+
+        async function readSpellcheckAttribute(spellcheckMode: SpellcheckModeType): Promise<null | string> {
+          const resultPromise = prompt({ app, spellcheckMode });
+
+          try {
+            await waitUntil({
+              message: 'prompt modal input renders',
+              predicate: () => Boolean(getInputEl()),
+              timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            });
+
+            return getInputEl()?.getAttribute('spellcheck') ?? null;
+          } finally {
+            getCancelButton()?.click();
+            await resultPromise;
+          }
+        }
+      }
+    });
+
+    // Each direction is read against the CONTRARY vault setting, so a mode that was quietly ignored would
+    // Report the setting's own value instead and fail here.
+    expect(result.spellcheckAttributeWhenOff).toBe('false');
+    expect(result.spellcheckAttributeWhenAlwaysOn).toBe('true');
   });
 
   it('should paint the invalid outline only once the value is edited', async () => {
