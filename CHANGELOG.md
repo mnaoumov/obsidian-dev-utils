@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 101.6.0
+
+- feat(obsidian): add a reusable settings-migration component and its contract
+- chore(obsidian): silence the typescript-eslint 8.70 false positive on MethodKeys
+- docs(obsidian): name the two CDP commands behind a mobile tap and a long-press
+- chore: update libs
+
 ## 101.5.0
 
 - feat: let a call site choose whether a modal input is spell-checked
