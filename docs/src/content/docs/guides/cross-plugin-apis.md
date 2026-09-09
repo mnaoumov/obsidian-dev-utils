@@ -249,6 +249,73 @@ reaching through Standard Schema is meant to avoid.
 So the contract declares method **names**, checked with a plain `typeof`, and validates **payloads** per
 method.
 
+## Handing settings over
+
+When a feature moves from one plugin to another, the settings the user configured for it have to move too —
+otherwise taking the suggestion to install the new plugin means re-entering everything by hand. That handover
+is a whole little protocol, and `SettingsMigrationComponent` is it, ready-made.
+
+The envelope is generic, so both ends compile against one declaration:
+
+```typescript
+import type { SettingsMigrationApi } from 'obsidian-dev-utils/obsidian/plugin/settings-migration-api';
+
+// The provider publishes it. The payload type is yours; the envelope is not.
+publishPluginApi<SettingsMigrationApi<MyMigratableSettings>>({
+  api: this.settingsMigrationApi,
+  apiVersion: '1.0.0',
+  contract: { migrateSettings: {} },
+  plugin: this
+});
+```
+
+The consumer parks the values it no longer acts on in its own settings, and lets the component do the rest:
+
+```typescript
+import { SettingsMigrationComponent } from 'obsidian-dev-utils/obsidian/components/settings-migration-component';
+
+this.addChild(new SettingsMigrationComponent<MyMigratableSettings>({
+  apiVersionRange: '^1',
+  app: this.app,
+  contract: MIGRATION_CONTRACT,
+  getProposedSettings: () => {
+    const pending = this.settingsComponent.settings.proposedShouldHandleRenames;
+    return pending === null ? null : { shouldHandleRenames: pending };
+  },
+  pluginSettingsComponent: this.settingsComponent,
+  providerPluginId: 'their-plugin-id',
+  retireProposedSettings: async () => {
+    await this.settingsComponent.editAndSave((settings) => {
+      settings.proposedShouldHandleRenames = null;
+    });
+  },
+  sourcePluginId: this.manifest.id
+}));
+```
+
+Your plugin **proposes**; it never writes into another plugin's `data.json`. The provider owns the settings, so
+it owns the dialog, and the user approves, edits or declines.
+
+Four things the component gets right, each of which is a bug the first time you write this by hand:
+
+- **It gates on nothing during `onload`.** Your settings component is a sibling whose own read of `data.json` is
+  still in flight, so a pending value read there still looks like its default. Deciding then would lose the
+  migration permanently on exactly the vaults that have one. Both edges — the provider appearing, and your
+  settings arriving — are wired instead, in either order, and each re-reads the current state.
+- **It watches rather than waits.** `whenAvailable()` would block for ten seconds and then throw for every user
+  who simply does not have the provider installed. Watching costs nothing while it is absent and offers the
+  migration the moment it appears, including right after the user installs it from a
+  `PluginSuggestionComponent` banner.
+- **A cancel is not an answer.** `retireProposedSettings` is called only when `isApplied` comes back `true`, so
+  a declined offer comes back on the next load.
+- **The retirement has to be persisted.** Use `editAndSave`, not `setProperty` — the latter edits only the
+  in-memory state, so the retirement is forgotten on the next reload and the offer returns forever.
+
+Keep `contract` **narrow**. A migration usually needs one method that has existed since the provider's first
+contract version, while the same plugin may read other parts of that API through a much newer one. Declaring
+the wider expectation here would refuse the migration to a user on an older provider — precisely the user who
+still has settings to migrate.
+
 ## A note on library copies
 
 Every plugin bundles its own copy of `obsidian-dev-utils`, so a registry record travels between **different

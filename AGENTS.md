@@ -483,7 +483,16 @@ export function myFunction(param: Type): ReturnType {
   a `PluginApiUnavailabilityReason` that tells the five failure causes apart, and debug-gated Standard
   Schema payload validation. The live `PluginApiRef` is what replaces the layout-ready timing dance below:
   its `value` starts `null` and becomes correct on its own, so there is nothing to time. The rest of this
-  rule is the fallback for the (currently universal) case of a plugin that publishes nothing.
+  rule is the fallback for the (still common) case of a plugin that publishes nothing.
+- **One handover shape is already generic, so do NOT hand-declare it: settings.** When a feature moves from
+  one plugin to another, the settings the user configured have to move too, and that protocol is identical
+  for every pair — a `migrateSettings` call, who is proposing, and whether the user applied it.
+  `src/obsidian/plugin/settings-migration-api.ts` declares that ENVELOPE for both ends, and
+  `SettingsMigrationComponent` drives the consumer side of it. Only the payload type and the provider's
+  identity stay with the pair, because neither is this library's business. It exists because five plugins
+  each hand-declared the same contract with no compiler link between the copies, so drift was **silent** —
+  every copy still compiled and the handover failed at runtime (T1049). The prose fallback below still
+  governs everything that is not a settings handover.
 - **The registry record is a WIRE FORMAT between different `obsidian-dev-utils` copies**, since every plugin
   bundles its own. Nothing crossing it may be `instanceof`-checked — plain data and plain functions only,
   read structurally. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
@@ -922,6 +931,13 @@ export function myFunction(param: Type): ReturnType {
   the settings case; it resolves immediately once the first read has happened, so a late subscriber is not
   stranded the way a one-shot `loadSettings` listener would be. Then re-check the component is still loaded
   (`isUnloaded()`) before acting, because the wait spans an `await`.
+- **But `whenLoadedFromFile()` is the right signal only for a ONE-SHOT decision.** Where the thing being
+  decided can become possible again later, subscribe to the `loadSettings` EVENT instead and re-read the
+  state on every firing. `SettingsMigrationComponent` is the worked example: its offer needs the settings
+  AND the other plugin's API, either can arrive first, and the API can arrive minutes later when the user
+  installs that plugin — so it wires both edges plus an immediate check, and gates on nothing during
+  `onload`. A one-shot wait there would settle before the provider ever appeared. The bullet above still
+  applies to a decision made exactly once, which is what `PluginSuggestionComponent` does.
 - **A component that needs the wait should TAKE the collaborator, not a readiness flag.** Requiring
   `pluginSettingsComponent` in the constructor params makes the wait impossible for a host to forget;
   handing the host a `whenReady`-style promise to pass in makes it one more thing to get right per consumer,
