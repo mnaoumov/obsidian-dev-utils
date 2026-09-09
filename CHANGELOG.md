@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 101.7.0
+
+- feat(obsidian): let a plugin declare what it refuses to run beside
+- feat(obsidian): make plugin dependencies a first-class concept
+
 ## 101.6.0
 
 - feat(obsidian): add a reusable settings-migration component and its contract
