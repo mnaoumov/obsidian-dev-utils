@@ -14,7 +14,10 @@ import {
   vi
 } from 'vitest';
 
-import type { PluginDependency } from '../components/plugin-dependency-component.ts';
+import type {
+  PluginConflict,
+  PluginDependency
+} from '../components/plugin-gate-component.ts';
 import type { TranslationsMap } from '../i18n/i18n.ts';
 import type { PluginApiDeclaration } from './plugin-api.ts';
 import type { PluginLifecycleEventPayload } from './plugin-lifecycle-events.ts';
@@ -24,6 +27,7 @@ import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { FileCommandHandler } from '../command-handlers/file-command-handler.ts';
 import { ComponentEx } from '../components/component-ex.ts';
+import { PluginConflictSeverity } from '../components/plugin-gate-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 import { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 import { PluginDataHandler } from '../data-handler.ts';
@@ -54,6 +58,13 @@ vi.mock('../i18n/i18n.ts', () => ({
     $function({
       obsidianDevUtils: {
         notices: { unhandledError: 'error' },
+        pluginConflict: {
+          blockedNotice: 'conflict blocked',
+          conflictAppearedNotice: 'conflict appeared',
+          disable: 'disable',
+          settingsHeading: 'conflicting plugin',
+          warningNotice: 'conflict warning'
+        },
         pluginDependency: {
           blockedNotice: 'blocked',
           dependencyLostNotice: 'lost',
@@ -96,9 +107,16 @@ vi.mock('../css-class.ts', () => ({
   }
 }));
 
-vi.mock('compare-versions', () => ({
-  compareVersions: vi.fn(() => 1)
-}));
+// Only `compareVersions` is stubbed. `satisfies` is the real thing, because the conflict gate's whole
+// Job is deciding whether an installed version falls in a declared range — a stubbed answer would test
+// Nothing.
+vi.mock('compare-versions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('compare-versions')>();
+  return {
+    ...actual,
+    compareVersions: vi.fn(() => 1)
+  };
+});
 
 // The registry is reached through `getObsidianDevUtilsState`, which this file mocks to hand back a fresh
 // Bag per call — so a real publish and a real watch would never meet. Mocking the publish instead keeps
@@ -188,6 +206,10 @@ class TestPlugin extends PluginBase {
     return this.pluginContextComponent;
   }
 
+  public getPluginGateComponent(): typeof this.pluginGateComponent {
+    return this.pluginGateComponent;
+  }
+
   public getPluginSettingsComponent(): typeof this.pluginSettingsComponent {
     return this.pluginSettingsComponent;
   }
@@ -207,8 +229,8 @@ beforeEach(() => {
   appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
     callback();
   });
-  // The dependency gate registers a stand-in settings tab while a dependency is missing, which is the one
-  // Part of `app.setting` any of these tests reaches.
+  // The gate registers a stand-in settings tab while a dependency is missing or a conflict holds, which
+  // Is the one part of `app.setting` any of these tests reaches.
   castTo<AppSettingHolder>(appMock).setting = {
     addSettingTab: vi.fn(),
     removeSettingTab: vi.fn()
@@ -226,6 +248,7 @@ describe('PluginBase', () => {
     expect(plugin.getResourceLockComponent()).toBeDefined();
     expect(plugin.getNoticeComponent()).toBeDefined();
     expect(plugin.getPluginContextComponent()).toBeDefined();
+    expect(plugin.getPluginGateComponent()).toBeDefined();
     expect(plugin.getPluginSettingsComponent()).toBeDefined();
   });
 
@@ -582,6 +605,67 @@ describe('lifecycle broadcast', () => {
 
     expect(callback).not.toHaveBeenCalled();
   });
+});
+
+describe('the conflict gate', () => {
+  const CONFLICTING_PLUGIN_ID = 'conflicting-plugin';
+
+  class ConflictedPlugin extends TestPlugin {
+    public readonly featureComponent = new ComponentEx();
+
+    protected override getPluginConflicts(): PluginConflict[] {
+      return [{
+        conflictingVersionRange: '<2.0.0',
+        pluginId: CONFLICTING_PLUGIN_ID,
+        pluginName: 'Conflicting Plugin',
+        reason: 'Both would act on the same rename.',
+        severity: PluginConflictSeverity.Block
+      }];
+    }
+
+    protected override onloadImpl(): void {
+      this.addChild(this.featureComponent);
+    }
+  }
+
+  it('should not run onloadImpl while a conflicting plugin is enabled at a conflicting version', async () => {
+    installConflictingPlugin('1.9.0');
+    const plugin = new ConflictedPlugin(app, manifest);
+
+    await plugin.onload();
+
+    expect(plugin.featureComponent._loaded).toBe(false);
+  });
+
+  it('should load normally once the conflicting plugin is past the conflicting range', async () => {
+    installConflictingPlugin('2.0.0');
+    const plugin = new ConflictedPlugin(app, manifest);
+
+    await plugin.onload();
+
+    expect(plugin.featureComponent._loaded).toBe(true);
+  });
+
+  it('should load normally when the conflicting plugin is not installed at all', async () => {
+    const plugin = new ConflictedPlugin(app, manifest);
+
+    await plugin.onload();
+
+    expect(plugin.featureComponent._loaded).toBe(true);
+  });
+
+  // The mock refuses to read `manifests` until it has been assigned, so the whole record is supplied
+  // Rather than mutated in place.
+  function installConflictingPlugin(version: string): void {
+    app.plugins.enabledPlugins.add(CONFLICTING_PLUGIN_ID);
+    const manifests: AppOriginal['plugins']['manifests'] = {};
+    Object.setPrototypeOf(manifests, null);
+    manifests[CONFLICTING_PLUGIN_ID] = castTo<PluginManifest>({
+      id: CONFLICTING_PLUGIN_ID,
+      version
+    });
+    app.plugins.manifests = manifests;
+  }
 });
 
 describe('the dependency gate', () => {

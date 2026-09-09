@@ -988,6 +988,29 @@ export function myFunction(param: Type): ReturnType {
   the established behavior there, not a new one.
 - (cannot be forced by ESLint — a rule cannot tell a sentinel `null` from a nullable value)
 
+### L25. Obsidian raises no plugin enable/disable event — so read a version, and know what you cannot see
+
+- **There is no `app.plugins` event for another plugin being enabled or disabled.** `plugin-lifecycle-events.ts`
+  says so in its header, and it is the reason that file exists at all: the library broadcasts
+  `obsidian-dev-utils:plugin-loaded` / `-unloaded` on `app.workspace` because there was nothing else to
+  listen to. That broadcast covers plugins built on THIS library and nothing else.
+- **So a question about another plugin has two possible answers, and they are not equivalent.** What a
+  plugin has REGISTERED (a handler, an entry in a registry, a published API) depends on whether it has
+  loaded yet, so the same question answers differently depending on when it is asked — plugins load in an
+  unspecified order. What a plugin HAS — `app.plugins.manifests[id].version`, `enabledPlugins.has(id)` — is
+  populated for everything installed before any of them load, so it answers the same way at any point.
+  `getInstalledPluginVersion` (`obsidian/plugin/plugin-install-state.ts`) is the second kind, and
+  `PluginGateComponent`'s conflict half is built on it for exactly that reason.
+- **State the ceiling in the file rather than implying it away.** A conflict guard re-checks on the library
+  broadcast, so an ODU-built plugin toggled mid-session is caught immediately; a plugin by another author is
+  caught at the next load. That is a real limit, and a header that omits it reads as a guarantee the code
+  does not make. Do not paper over it with a poll — a timer that re-reads `enabledPlugins` trades a stated
+  limit for an unstated cost.
+- **Fail closed when the version cannot be parsed.** A conflict whose version comparison throws is treated
+  as holding. A false alarm costs a notice; a false all-clear costs whatever the two plugins were about to
+  do to the vault at once.
+- (cannot be forced by ESLint — a rule cannot tell which question about another plugin is being asked)
+
 ## Testing
 
 ### Goals

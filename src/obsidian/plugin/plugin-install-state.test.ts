@@ -25,6 +25,7 @@ import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import {
   getInstalledPluginState,
+  getInstalledPluginVersion,
   installAndEnablePlugin,
   InstalledPluginState
 } from './plugin-install-state.ts';
@@ -86,6 +87,34 @@ describe('getInstalledPluginState', () => {
     enabledPlugins.add(PLUGIN_ID);
 
     expect(getInstalledPluginState({ app, pluginId: PLUGIN_ID })).toBe(InstalledPluginState.Enabled);
+  });
+});
+
+describe('getInstalledPluginVersion', () => {
+  it('should report null when the plugin is not installed', () => {
+    expect(getInstalledPluginVersion({ app, pluginId: PLUGIN_ID })).toBeNull();
+  });
+
+  it('should report null when the plugin is installed but disabled, because it registers nothing', () => {
+    setInstalledVersion('1.2.3');
+
+    expect(getInstalledPluginVersion({ app, pluginId: PLUGIN_ID })).toBeNull();
+  });
+
+  it('should report the manifest version when the plugin is enabled', () => {
+    setInstalledVersion('1.2.3');
+    enabledPlugins.add(PLUGIN_ID);
+
+    expect(getInstalledPluginVersion({ app, pluginId: PLUGIN_ID })).toBe('1.2.3');
+  });
+
+  it('should report an empty string for an enabled plugin whose manifest carries no version, so it stays distinguishable from absent', () => {
+    // Cast rather than `strictProxy`: the point of this case is a manifest where `version` is genuinely
+    // Missing, which a strict proxy would turn into a throw instead of the `undefined` the code reads.
+    manifests[PLUGIN_ID] = castTo<PluginManifest>({ id: PLUGIN_ID });
+    enabledPlugins.add(PLUGIN_ID);
+
+    expect(getInstalledPluginVersion({ app, pluginId: PLUGIN_ID })).toBe('');
   });
 });
 
@@ -152,4 +181,11 @@ function expectNoticeText(expectedText: string): void {
 
 function setInstalled(): void {
   manifests[PLUGIN_ID] = strictProxy<PluginManifest>({ id: PLUGIN_ID });
+}
+
+function setInstalledVersion(version: string): void {
+  manifests[PLUGIN_ID] = strictProxy<PluginManifest>({
+    id: PLUGIN_ID,
+    version
+  });
 }

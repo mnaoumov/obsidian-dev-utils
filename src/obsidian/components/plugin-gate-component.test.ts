@@ -3,12 +3,13 @@
 /**
  * @file
  *
- * Tests for {@link PluginDependenciesComponent}.
+ * Tests for {@link PluginGateComponent}.
  */
 
 import type {
   App as AppOriginal,
   ButtonComponent as ButtonComponentOriginal,
+  EventRef,
   Plugin,
   PluginManifest,
   SettingTab
@@ -26,23 +27,36 @@ import {
 } from 'vitest';
 
 import type { PluginApiRef } from '../plugin/plugin-api.ts';
-import type { PluginDependency } from './plugin-dependency-component.ts';
+import type { PluginLifecycleEventPayload } from '../plugin/plugin-lifecycle-events.ts';
+import type {
+  PluginConflict,
+  PluginDependency
+} from './plugin-gate-component.ts';
 import type { PluginNoticeComponent } from './plugin-notice-component.ts';
 
+import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { mockImplementation } from '../../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../../type-guards.ts';
-import { PluginDependenciesComponent } from './plugin-dependency-component.ts';
+import {
+  PLUGIN_LOADED_EVENT_NAME,
+  PLUGIN_UNLOADED_EVENT_NAME
+} from '../plugin/plugin-lifecycle-events.ts';
+import {
+  PluginConflictSeverity,
+  PluginGateComponent
+} from './plugin-gate-component.ts';
 
 interface ComponentContext {
-  readonly component: PluginDependenciesComponent;
+  readonly component: PluginGateComponent;
   readonly loadFeatureSurface: ReturnType<typeof vi.fn>;
   readonly showNotice: ReturnType<typeof vi.fn>;
   readonly unloadFeatureSurface: ReturnType<typeof vi.fn>;
 }
 
 interface CreateComponentOptions {
+  readonly conflicts?: readonly PluginConflict[];
   readonly dependencies?: readonly PluginDependency[];
   readonly isSatisfied?: boolean;
 }
@@ -63,13 +77,33 @@ const DEPENDENCY: PluginDependency = {
   reason: 'Handles renames and deletes for you.'
 };
 
+const BLOCKING_CONFLICT: PluginConflict = {
+  conflictingVersionRange: '<12.0.0',
+  pluginId: 'conflicting-plugin',
+  pluginName: 'Conflicting Plugin',
+  reason: 'Both would handle the same rename, and two handlers corrupt links.',
+  severity: PluginConflictSeverity.Block
+};
+
+const HOST_PLUGIN_ID = 'host-plugin';
+
 const HOST_PLUGIN_NAME = 'Host Plugin';
 
+const WARNING_CONFLICT: PluginConflict = {
+  conflictingVersionRange: '>=0.0.0',
+  pluginId: 'overlapping-plugin',
+  pluginName: 'Overlapping Plugin',
+  reason: 'Both add a Collect attachments command, so you will see each one twice.',
+  severity: PluginConflictSeverity.Warn
+};
+
 const {
+  mockDisableCommunityPlugin,
   mockEnableCommunityPlugin,
   mockInstallConfigureEnableCommunityPlugin,
   mockWatchPluginApi
 } = vi.hoisted(() => ({
+  mockDisableCommunityPlugin: vi.fn(),
   mockEnableCommunityPlugin: vi.fn(),
   mockInstallConfigureEnableCommunityPlugin: vi.fn(),
   mockWatchPluginApi: vi.fn()
@@ -78,6 +112,7 @@ const {
 vi.mock('../plugin/plugin-api.ts', () => ({ watchPluginApi: mockWatchPluginApi }));
 
 vi.mock('../community-plugins.ts', () => ({
+  disableCommunityPlugin: mockDisableCommunityPlugin,
   enableCommunityPlugin: mockEnableCommunityPlugin,
   installConfigureEnableCommunityPlugin: mockInstallConfigureEnableCommunityPlugin
 }));
@@ -86,6 +121,7 @@ let addSettingTab: ReturnType<typeof vi.fn>;
 let apiRefValue: null | object;
 let enabledPlugins: Set<string>;
 let fireApiRefChange: () => Promise<void>;
+let lifecycleCallbacks: Map<string, ((payload: PluginLifecycleEventPayload) => unknown)[]>;
 let layoutReadyCallback: (() => void) | undefined;
 let manifests: AppOriginal['plugins']['manifests'];
 let openSetting: ReturnType<typeof vi.fn>;
@@ -101,6 +137,7 @@ beforeEach(() => {
   apiRefValue = {};
   enabledPlugins = new Set<string>();
   layoutReadyCallback = undefined;
+  lifecycleCallbacks = new Map();
   manifests = {};
   Object.setPrototypeOf(manifests, null);
   settingTabs = [];
@@ -108,6 +145,7 @@ beforeEach(() => {
     // Replaced when the component subscribes; a test that fires before that is asserting nothing.
   };
 
+  mockDisableCommunityPlugin.mockResolvedValue(undefined);
   mockEnableCommunityPlugin.mockResolvedValue(undefined);
   mockInstallConfigureEnableCommunityPlugin.mockResolvedValue(undefined);
   buttonInstances = [];
@@ -307,6 +345,16 @@ async function createLoadedComponent(options: CreateComponentOptions = {}): Prom
       removeSettingTab
     })),
     workspace: strictProxy<AppOriginal['workspace']>({
+      // Cast for the same reason `setting` is: `Workspace.on` is a large overload set, and a plain mock
+      // Cannot satisfy one.
+      on: castTo<AppOriginal['workspace']['on']>(
+        (name: string, callback: (payload: PluginLifecycleEventPayload) => unknown): EventRef => {
+          const callbacks = lifecycleCallbacks.get(name) ?? [];
+          callbacks.push(callback);
+          lifecycleCallbacks.set(name, callbacks);
+          return castTo<EventRef>({});
+        }
+      ),
       onLayoutReady: vi.fn((callback: () => void) => {
         layoutReadyCallback = callback;
       })
@@ -316,7 +364,7 @@ async function createLoadedComponent(options: CreateComponentOptions = {}): Prom
   const plugin = strictProxy<Plugin>({
     app,
     manifest: strictProxy<PluginManifest>({
-      id: 'host-plugin',
+      id: HOST_PLUGIN_ID,
       name: HOST_PLUGIN_NAME
     })
   });
@@ -325,7 +373,8 @@ async function createLoadedComponent(options: CreateComponentOptions = {}): Prom
   const showNotice = vi.fn();
   const unloadFeatureSurface = vi.fn();
 
-  const component = new PluginDependenciesComponent({
+  const component = new PluginGateComponent({
+    conflicts: options.conflicts ?? [],
     dependencies: options.dependencies ?? [DEPENDENCY],
     loadFeatureSurface,
     plugin,
@@ -428,4 +477,225 @@ function displayBlockedSettingTab(): HTMLElement {
   displayableSettingTab.containerEl = createDiv();
   displayableSettingTab.display();
   return displayableSettingTab.containerEl;
+}
+
+describe('with a blocking conflict', () => {
+  it('should not load the feature surface while the conflicting plugin is enabled at a conflicting version', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    expect(loadFeatureSurface).not.toHaveBeenCalled();
+  });
+
+  it('should load the feature surface once the conflicting plugin is new enough', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '12.0.0');
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
+  });
+
+  it('should ignore a conflicting plugin that is installed but disabled, because it registers nothing', async () => {
+    manifests[BLOCKING_CONFLICT.pluginId] = strictProxy<PluginManifest>({
+      id: BLOCKING_CONFLICT.pluginId,
+      version: '11.9.0'
+    });
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
+  });
+
+  it('should fail closed on a version it cannot parse, because a false all-clear is the expensive mistake', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, 'not-a-version');
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    expect(loadFeatureSurface).not.toHaveBeenCalled();
+  });
+
+  it('should announce itself and show a settings tab once the layout is ready', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    const { showNotice } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    await triggerLayoutReady();
+
+    expectNoticeText(
+      showNotice,
+      `${HOST_PLUGIN_NAME} does nothing while ${BLOCKING_CONFLICT.pluginName} is enabled. Update or disable it to continue.`
+    );
+    expect(addSettingTab).toHaveBeenCalledTimes(1);
+  });
+
+  it('should explain the conflict in its settings tab and offer to disable the other plugin', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+    await triggerLayoutReady();
+
+    const containerEl = displayBlockedSettingTab();
+
+    expect(containerEl.querySelector('h2')?.textContent).toBe('Conflicting plugin');
+    expect(containerEl.textContent).toContain(BLOCKING_CONFLICT.reason);
+    expect(buttonTexts(containerEl)).toEqual([
+      `Disable ${BLOCKING_CONFLICT.pluginName}`,
+      `Open ${BLOCKING_CONFLICT.pluginName} settings`
+    ]);
+  });
+
+  it('should disable the conflicting plugin and come back up when the button is clicked', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+    await triggerLayoutReady();
+
+    displayBlockedSettingTab();
+    mockDisableCommunityPlugin.mockImplementation(() => {
+      enabledPlugins.delete(BLOCKING_CONFLICT.pluginId);
+      return noopAsync();
+    });
+    clickButton(0);
+    await vi.runAllTimersAsync();
+
+    expect(mockDisableCommunityPlugin).toHaveBeenCalledTimes(1);
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
+    expect(settingTabs).toHaveLength(0);
+  });
+
+  it('should link out to the conflicting plugin settings', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+    await triggerLayoutReady();
+
+    displayBlockedSettingTab();
+    clickButton(1);
+
+    expect(openSetting).toHaveBeenCalledTimes(1);
+    expect(openTabById).toHaveBeenCalledWith(BLOCKING_CONFLICT.pluginId);
+  });
+});
+
+describe('when a conflict appears while the plugin is running', () => {
+  it('should tear the feature surface down and say so, on the library lifecycle broadcast', async () => {
+    const { showNotice, unloadFeatureSurface } = await createLoadedComponent({
+      conflicts: [BLOCKING_CONFLICT],
+      dependencies: []
+    });
+
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    await fireLifecycleEvent(PLUGIN_LOADED_EVENT_NAME, BLOCKING_CONFLICT.pluginId);
+
+    expect(unloadFeatureSurface).toHaveBeenCalledTimes(1);
+    expectNoticeText(
+      showNotice,
+      `${BLOCKING_CONFLICT.pluginName} is now enabled, so ${HOST_PLUGIN_NAME} has stopped working. Update or disable it to resume.`
+    );
+  });
+
+  it('should come back up when the conflicting plugin unloads', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    enabledPlugins.delete(BLOCKING_CONFLICT.pluginId);
+    await fireLifecycleEvent(PLUGIN_UNLOADED_EVENT_NAME, BLOCKING_CONFLICT.pluginId);
+
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
+  });
+
+  it('should ignore the host plugin\'s own broadcast, which would otherwise re-enter the gate', async () => {
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.9.0');
+    await fireLifecycleEvent(PLUGIN_LOADED_EVENT_NAME, HOST_PLUGIN_ID);
+
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('with a warning conflict', () => {
+  it('should keep running, because the overlap is annoying rather than destructive', async () => {
+    installPlugin(WARNING_CONFLICT.pluginId, '4.0.0');
+    const { loadFeatureSurface } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
+    expect(addSettingTab).not.toHaveBeenCalled();
+  });
+
+  it('should say so once the layout is ready, and only once', async () => {
+    installPlugin(WARNING_CONFLICT.pluginId, '4.0.0');
+    const { showNotice } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+
+    expect(showNotice).not.toHaveBeenCalled();
+
+    await triggerLayoutReady();
+    await fireLifecycleEvent(PLUGIN_LOADED_EVENT_NAME, WARNING_CONFLICT.pluginId);
+
+    expect(showNotice).toHaveBeenCalledTimes(1);
+    expectNoticeText(showNotice, `${HOST_PLUGIN_NAME} and ${WARNING_CONFLICT.pluginName} overlap, and both are running.`);
+  });
+
+  it('should stay silent while the plugin is blocked, since a warning describes two RUNNING plugins', async () => {
+    installPlugin(WARNING_CONFLICT.pluginId, '4.0.0');
+    const { showNotice } = await createLoadedComponent({
+      conflicts: [WARNING_CONFLICT],
+      isSatisfied: false
+    });
+
+    await triggerLayoutReady();
+
+    expect(showNotice).toHaveBeenCalledTimes(1);
+    expectNoticeText(showNotice, `${HOST_PLUGIN_NAME} does nothing until ${DEPENDENCY.pluginName} is installed and enabled.`);
+  });
+
+  it('should announce a warning conflict that only appears later', async () => {
+    const { showNotice } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+    await triggerLayoutReady();
+
+    expect(showNotice).not.toHaveBeenCalled();
+
+    installPlugin(WARNING_CONFLICT.pluginId, '4.0.0');
+    await fireLifecycleEvent(PLUGIN_LOADED_EVENT_NAME, WARNING_CONFLICT.pluginId);
+
+    expect(showNotice).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('renderConflictWarningBanner', () => {
+  it('should render nothing when no warning conflict holds', async () => {
+    const { component } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+
+    const containerEl = createDiv();
+    component.renderConflictWarningBanner(containerEl);
+
+    expect(containerEl.children).toHaveLength(0);
+  });
+
+  it('should explain the overlap and offer to disable the other plugin', async () => {
+    installPlugin(WARNING_CONFLICT.pluginId, '4.0.0');
+    const { component } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+
+    const containerEl = createDiv();
+    component.renderConflictWarningBanner(containerEl);
+
+    expect(containerEl.textContent).toContain(`${HOST_PLUGIN_NAME} and ${WARNING_CONFLICT.pluginName} overlap`);
+    expect(containerEl.textContent).toContain(WARNING_CONFLICT.reason);
+    expect(buttonTexts(containerEl)).toEqual([
+      `Disable ${WARNING_CONFLICT.pluginName}`,
+      `Open ${WARNING_CONFLICT.pluginName} settings`
+    ]);
+  });
+});
+
+// The library's lifecycle broadcast is the only signal a conflict can react to, so a test drives it
+// Directly rather than through a second plugin.
+async function fireLifecycleEvent(name: string, pluginId: string): Promise<void> {
+  const payload = castTo<PluginLifecycleEventPayload>({ pluginId });
+  for (const callback of lifecycleCallbacks.get(name) ?? []) {
+    callback(payload);
+  }
+
+  await vi.runAllTimersAsync();
+}
+
+function installPlugin(pluginId: string, version: string): void {
+  manifests[pluginId] = strictProxy<PluginManifest>({
+    id: pluginId,
+    version
+  });
+  enabledPlugins.add(pluginId);
 }
