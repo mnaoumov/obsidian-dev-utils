@@ -38,6 +38,7 @@ export type FunctionKeys<$Object extends object> = ConditionalKeys<$Object, Gene
  *
  * @typeParam $Object - The object whose keys are filtered.
  */
+// eslint-disable-next-line @typescript-eslint/no-generated-empty-object-type -- False positive. The rule reports the `MethodKeysMap<$Object>` reference, which has no members until `$Object` is known, so it reads as empty inside this generic declaration. Once instantiated it is a real key union, as the `MethodKeys` type tests assert.
 export type MethodKeys<$Object extends object> = MethodKeysMap<$Object>[FunctionKeys<$Object>];
 
 /**
