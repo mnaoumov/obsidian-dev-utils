@@ -4,7 +4,7 @@
  * How another plugin is present in this vault, and the one-click path to making it present.
  *
  * Shared by the two components that ask a user to bring another plugin in: `PluginSuggestionComponent`,
- * which OFFERS one and keeps working without it, and `PluginDependenciesComponent`, which REQUIRES one and
+ * which OFFERS one and keeps working without it, and `PluginGateComponent`, which REQUIRES one and
  * does nothing until it is there. The offer and the requirement differ in what they do about the answer,
  * not in how they read the state or how they install — so that part lives here rather than in both.
  */
@@ -59,6 +59,21 @@ export interface GetInstalledPluginStateParams {
 }
 
 /**
+ * Parameters for {@link getInstalledPluginVersion}.
+ */
+export interface GetInstalledPluginVersionParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * The `manifest.id` of the plugin to look for.
+   */
+  readonly pluginId: string;
+}
+
+/**
  * Parameters for {@link installAndEnablePlugin}.
  */
 export interface InstallAndEnablePluginParams {
@@ -99,6 +114,33 @@ export function getInstalledPluginState(params: GetInstalledPluginStateParams): 
   return Object.hasOwn(app.plugins.manifests, pluginId)
     ? InstalledPluginState.InstalledButDisabled
     : InstalledPluginState.NotInstalled;
+}
+
+/**
+ * Reads the version of another plugin as this vault has it installed, or `null` when it is not running.
+ *
+ * The version comes out of `app.plugins.manifests`, which is populated for every installed plugin at
+ * startup — so, unlike anything a plugin REGISTERS, it answers the same way no matter which plugin loaded
+ * first. That load-order independence is the whole reason a conflict is detected by version rather than by
+ * asking a registry.
+ *
+ * `null` for a plugin that is not installed OR is installed but disabled: a disabled plugin registers
+ * nothing, so for every question this answers the two cases are the same. An installed, enabled plugin
+ * whose manifest somehow carries no version reads as an empty string rather than `null`, which keeps
+ * "running, version unknown" distinguishable from "not running" — a caller comparing versions should fail
+ * closed on it rather than treat it as absent.
+ *
+ * @param params - The {@link GetInstalledPluginVersionParams}.
+ * @returns The installed version, or `null` when the plugin is not enabled.
+ */
+export function getInstalledPluginVersion(params: GetInstalledPluginVersionParams): null | string {
+  const { app, pluginId } = params;
+
+  if (!app.plugins.enabledPlugins.has(pluginId)) {
+    return null;
+  }
+
+  return app.plugins.manifests[pluginId]?.version ?? '';
 }
 
 /**

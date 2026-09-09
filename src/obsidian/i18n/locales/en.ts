@@ -44,6 +44,13 @@ export const en = {
     pathSettings: {
       invalidRegularExpression: 'Invalid regular expression: {{regExp}}'
     },
+    pluginConflict: {
+      blockedNotice: '{{pluginName}} does nothing while {{conflictingPluginName}} is enabled. Update or disable it to continue.',
+      conflictAppearedNotice: '{{conflictingPluginName}} is now enabled, so {{pluginName}} has stopped working. Update or disable it to resume.',
+      disable: 'Disable {{conflictingPluginName}}',
+      settingsHeading: 'Conflicting plugin',
+      warningNotice: '{{pluginName}} and {{conflictingPluginName}} overlap, and both are running.'
+    },
     pluginDependency: {
       blockedNotice: '{{pluginName}} does nothing until {{dependencyPluginName}} is installed and enabled.',
       dependencyLostNotice: '{{dependencyPluginName}} is no longer available, so {{pluginName}} has stopped working. Bring it back to resume.',

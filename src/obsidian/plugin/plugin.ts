@@ -14,7 +14,10 @@ import type { Promisable } from 'type-fest';
 
 import { Plugin } from 'obsidian';
 
-import type { PluginDependency } from '../components/plugin-dependency-component.ts';
+import type {
+  PluginConflict,
+  PluginDependency
+} from '../components/plugin-gate-component.ts';
 import type { TranslationsMap } from '../i18n/i18n.ts';
 import type { PluginApiDeclaration } from './plugin-api.ts';
 import type {
@@ -38,7 +41,7 @@ import { ConsoleDebugComponent } from '../components/console-debug-component.ts'
 import { MenuEventRegistrarComponent } from '../components/menu-event-registrar-component.ts';
 import { NotebookNavigatorMenuEventRegistrarComponent } from '../components/notebook-navigator-menu-event-registrar-component.ts';
 import { PluginContextComponent } from '../components/plugin-context-component.ts';
-import { PluginDependenciesComponent } from '../components/plugin-dependency-component.ts';
+import { PluginGateComponent } from '../components/plugin-gate-component.ts';
 import { PluginNoticeComponent } from '../components/plugin-notice-component.ts';
 import { PluginSettingsComponentBase } from '../components/plugin-settings-component.ts';
 import { PluginDataHandler } from '../data-handler.ts';
@@ -64,6 +67,7 @@ interface PluginBaseComponents {
   commandHandlerComponent?: CommandHandlerComponent;
   consoleDebugComponent?: ConsoleDebugComponent;
   pluginContextComponent?: PluginContextComponent;
+  pluginGateComponent?: PluginGateComponent;
   pluginNoticeComponent?: PluginNoticeComponent;
   pluginSettingsComponent?: PluginSettingsComponentBase<object>;
   resourceLockComponent?: ResourceLockComponent;
@@ -170,6 +174,28 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
   }
 
   /**
+   * Gets the gate holding the plugin's feature surface up or down.
+   *
+   * Reach for it from a settings tab to render the overlap banner for a
+   * {@link obsidian/components/plugin-gate-component!PluginConflictSeverity.Warn} conflict — the one
+   * banner the library cannot place itself, because a running plugin builds its own settings tab.
+   *
+   * @returns The plugin gate component.
+   */
+  protected get pluginGateComponent(): PluginGateComponent {
+    return ensureNonNullable(this.components.pluginGateComponent);
+  }
+
+  /**
+   * Sets the plugin gate component.
+   *
+   * @param value - The plugin gate component.
+   */
+  protected set pluginGateComponent(value: PluginGateComponent) {
+    this.setComponent('pluginGateComponent', value);
+  }
+
+  /**
    * Gets plugin notice component.
    *
    * @returns plugin notice component.
@@ -255,9 +281,10 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * creates and loads before calling {@link onloadImpl}. So a child added during {@link onloadImpl} is
    * loaded immediately, children-first, and is usable by the time this method returns.
    *
-   * That wrapper is torn down and rebuilt whenever a dependency declared by
-   * {@link getPluginDependencies} goes away and comes back, so a child added here lives exactly as long as
-   * the plugin's feature surface does. Adding one while the surface is down is still legitimate — it is
+   * That wrapper is torn down and rebuilt whenever the gate closes and opens again — a dependency declared
+   * by {@link getPluginDependencies} going away and coming back, or a conflict declared by
+   * {@link getPluginConflicts} appearing and being resolved — so a child added here lives exactly as long
+   * as the plugin's feature surface does. Adding one while the surface is down is still legitimate — it is
    * queued and loaded when the surface next comes up, the way {@link ComponentEx.addChild} already queues
    * a child added to a not-yet-loaded component.
    *
@@ -354,13 +381,15 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
         })
       );
 
-      // The gate. It loads the feature surface itself once every declared dependency is satisfied — which
-      // For a plugin declaring none is immediately, synchronously, before this line returns — and unloads
-      // It again if one is later disabled or uninstalled. A plugin that is blocked therefore reaches
-      // `loadWithPromises` below having registered nothing of its own, with only the universal components
-      // Above running to explain why and to offer the repair.
-      this.addUniversalChild(
-        new PluginDependenciesComponent({
+      // The gate. It loads the feature surface itself once every declared dependency is satisfied and no
+      // Declared conflict holds — which for a plugin declaring neither is immediately, synchronously,
+      // Before this line returns — and unloads it again if a dependency is later disabled or uninstalled,
+      // Or a conflicting plugin is enabled. A plugin that is blocked therefore reaches `loadWithPromises`
+      // Below having registered nothing of its own, with only the universal components above running to
+      // Explain why and to offer the repair.
+      this.pluginGateComponent = this.addUniversalChild(
+        new PluginGateComponent({
+          conflicts: this.getPluginConflicts(),
           dependencies: this.getPluginDependencies(),
           loadFeatureSurface: (): Promise<void> => this.loadFeatureSurface(),
           plugin: this,
@@ -453,6 +482,28 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * @returns The API declarations.
    */
   protected getPluginApis(): PluginApiDeclaration[] {
+    return [];
+  }
+
+  /**
+   * Provides the plugins this one refuses, or warns about, running beside.
+   *
+   * Override in subclass to declare an overlap. The default declares none.
+   *
+   * A `Block` conflict is the mirror image of a dependency: while a conflicting plugin is enabled at a
+   * conflicting version, {@link onloadImpl} does not run at all and the plugin registers nothing. Declare
+   * it when both plugins acting on the same operation damages the vault — there is no reliable way to win
+   * that race, because whichever plugin loaded first keeps a hand on the wheel, so refusing deterministically
+   * beats competing unpredictably. A `Warn` conflict declares an overlap that is merely annoying, such as a
+   * duplicated command: both plugins keep running and the user is told.
+   *
+   * Unlike a dependency, a conflicting plugin need not publish anything — it is detected by reading its
+   * installed version, which is the only thing about another plugin that reads the same regardless of load
+   * order.
+   *
+   * @returns The declared conflicts.
+   */
+  protected getPluginConflicts(): PluginConflict[] {
     return [];
   }
 
@@ -558,7 +609,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
   /**
    * Builds and loads the subclass's feature surface, then publishes its APIs and announces itself.
    *
-   * NOT idempotent, deliberately. `PluginDependenciesComponent` owns the up/down state machine and calls
+   * NOT idempotent, deliberately. `PluginGateComponent` owns the up/down state machine and calls
    * this only on a real transition; a second guard here would be a second copy of that state, which is the
    * kind of duplicate that drifts.
    *

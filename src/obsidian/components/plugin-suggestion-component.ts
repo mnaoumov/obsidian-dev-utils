@@ -7,7 +7,7 @@
  * A suggestion is not a dependency — but a dependency is now a thing this library HAS, so the choice
  * between them is a real one. Use a suggestion when the other plugin ADDS something: the host keeps
  * working without it, simply unable to offer whatever that plugin owns, and this component asks once
- * whether the user would like it installed. Use `PluginDependenciesComponent` when the host's advertised
+ * whether the user would like it installed. Use `PluginGateComponent` when the host's advertised
  * behavior is not there at all without the other plugin.
  *
  * This file used to argue the stronger position — that requiring another plugin should not exist, because

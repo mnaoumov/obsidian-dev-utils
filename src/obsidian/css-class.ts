@@ -184,6 +184,11 @@ export enum CssClass {
   PasswordComponent = 'password-component',
 
   /**
+   * A CSS class for the banner naming a plugin this one refuses, or warns about, running beside.
+   */
+  PluginConflictBanner = 'plugin-conflict-banner',
+
+  /**
    * A CSS class for the banner a blocked plugin renders in place of its settings, naming the mandatory
    * dependency it is waiting for.
    */
