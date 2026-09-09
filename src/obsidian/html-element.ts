@@ -17,6 +17,16 @@ import {
   SpellcheckMode
 } from './obsidian-settings.ts';
 
+// The first code point of the Basic Multilingual Plane's Private Use Area. Written as a code point and
+// Composed at runtime rather than as a string escape, so the constant below stays legible in the source
+// Instead of being an invisible character no reader can identify.
+const PRIVATE_USE_AREA_FIRST_CODE_POINT = 0xE0_00;
+
+// Wraps a value that should render as a code block. A private-use code point, so it cannot collide with
+// Anything a translator would legitimately write, and so a message that somehow reaches the user with
+// Its delimiters intact is visibly wrong rather than plausibly intentional.
+const CODE_BLOCK_DELIMITER = String.fromCodePoint(PRIVATE_USE_AREA_FIRST_CODE_POINT);
+
 /**
  * Options for {@link applySpellcheckMode}.
  */
@@ -80,4 +90,62 @@ export function applySpellcheckMode(params: ApplySpellcheckModeParams): void {
     spellcheckMode = SpellcheckMode.Off
   } = params;
   element.setAttribute('spellcheck', String(isSpellcheckEnabledForMode(app, spellcheckMode)));
+}
+
+/**
+ * Marks a value so that {@link createFragmentWithCodeBlocks} renders it as an inline code block.
+ *
+ * Wrap a value with this before handing it to `t()`, and the translated message comes back with the value
+ * already in place, delimited:
+ *
+ * ```ts
+ * createFragmentWithCodeBlocks(t(($) => $.obsidianDevUtils.pluginSuggestion.installed, {
+ *   pluginName: asCodeBlock(pluginName)
+ * }));
+ * ```
+ *
+ * The marker travels WITH the value rather than being a positional placeholder the caller matches up
+ * afterwards. That distinction is the whole point: a message naming two plugins is interpolated by name,
+ * and a translation is free to put them in either order, so anything that re-associated values with
+ * placeholders by position would silently swap them the moment a sentence read the other way round.
+ *
+ * @param value - The value to render as a code block.
+ * @returns The value, delimited for {@link createFragmentWithCodeBlocks}.
+ */
+export function asCodeBlock(value: string): string {
+  return `${CODE_BLOCK_DELIMITER}${value}${CODE_BLOCK_DELIMITER}`;
+}
+
+/**
+ * Builds a {@link DocumentFragment} from an already-translated message, rendering every value that was
+ * wrapped in {@link asCodeBlock} as an inline code block and the rest as plain text.
+ *
+ * The message stays ONE translatable unit. Splitting a sentence into a prefix and a suffix around the value
+ * is the obvious alternative and it does not survive translation: a language that reorders the clause, or
+ * that needs different case on the surrounding words, cannot express that through two fixed halves. Here
+ * the value sits wherever the translation puts it, and only its rendering is decided.
+ *
+ * A message with nothing marked comes back as plain text, so this is safe to apply to any message.
+ *
+ * @param message - The translated message, with its code values wrapped by {@link asCodeBlock}.
+ * @returns The fragment.
+ */
+export function createFragmentWithCodeBlocks(message: string): DocumentFragment {
+  const fragment = createFragment();
+
+  // Delimiters come in pairs, so the segments between them alternate: plain text, code value, plain text.
+  let isCodeSegment = false;
+  for (const segment of message.split(CODE_BLOCK_DELIMITER)) {
+    if (segment !== '') {
+      if (isCodeSegment) {
+        appendCodeBlock(fragment, segment);
+      } else {
+        fragment.appendText(segment);
+      }
+    }
+
+    isCodeSegment = !isCodeSegment;
+  }
+
+  return fragment;
 }

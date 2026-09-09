@@ -4,10 +4,21 @@
  * Component that suggests installing another community plugin the host plugin needs in order to offer
  * some of its behavior.
  *
- * A suggestion is not a dependency. Obsidian has no mechanism for one community plugin to require
- * another, and inventing one by refusing to load would punish the user for something they never agreed
- * to. So the host plugin keeps working without the suggested plugin — it simply cannot offer whatever
- * that plugin owns — and this component asks, once, whether the user would like it installed.
+ * A suggestion is not a dependency — but a dependency is now a thing this library HAS, so the choice
+ * between them is a real one. Use a suggestion when the other plugin ADDS something: the host keeps
+ * working without it, simply unable to offer whatever that plugin owns, and this component asks once
+ * whether the user would like it installed. Use `PluginDependenciesComponent` when the host's advertised
+ * behavior is not there at all without the other plugin.
+ *
+ * This file used to argue the stronger position — that requiring another plugin should not exist, because
+ * "inventing one by refusing to load would punish the user for something they never agreed to". That was
+ * wrong about which option punishes the user, and the counter-case is worth keeping rather than quietly
+ * deleting. A load-bearing plugin the user cannot identify is not a neutral outcome: months later they
+ * meet it in their plugin list, nothing in Obsidian's manifest format says anything depends on it, they
+ * remove it, and the damage surfaces weeks after that with no way to connect the two. Beside that, a
+ * mandatory dependency that stays enabled-but-inert, names what it is waiting for, installs it in one
+ * click and resumes without a restart is not a punishment — it is the same information, delivered while
+ * the user can still act on it.
  *
  * The ask is surfaced twice, deliberately, because the two placements answer different questions:
  * a notice on load ("you are missing something you probably want") and a settings-tab banner ("the
@@ -24,34 +35,24 @@ import type { PluginNoticeComponent } from './plugin-notice-component.ts';
 import type { PluginSettingsComponentBase } from './plugin-settings-component.ts';
 
 import { convertAsyncToSync } from '../../async.ts';
-import {
-  enableCommunityPlugin,
-  installConfigureEnableCommunityPlugin
-} from '../community-plugins.ts';
 import { CssClass } from '../css-class.ts';
 import { t } from '../i18n/i18n.ts';
+import {
+  getInstalledPluginState,
+  installAndEnablePlugin,
+  InstalledPluginState
+} from '../plugin/plugin-install-state.ts';
 import { ComponentEx } from './component-ex.ts';
 import { CallbackLayoutReadyComponent } from './layout-ready-component.ts';
 
 /**
  * How the suggested plugin is currently present in the vault.
+ *
+ * The same three states a mandatory dependency is in, so this is {@link InstalledPluginState} under the
+ * name this component has always used — one enum, so a caller holding a state from either component can
+ * compare it against either name.
  */
-export enum SuggestedPluginState {
-  /**
-   * Installed and enabled — there is nothing to suggest.
-   */
-  Enabled = 'enabled',
-
-  /**
-   * Installed but disabled. Only an enable is needed, so no download happens.
-   */
-  InstalledButDisabled = 'installedButDisabled',
-
-  /**
-   * Not installed at all.
-   */
-  NotInstalled = 'notInstalled'
-}
+export const SuggestedPluginState = InstalledPluginState;
 
 /**
  * Parameters for the {@link PluginSuggestionComponent} constructor.
@@ -117,6 +118,11 @@ export interface PluginSuggestionComponentConstructorParams {
 }
 
 /**
+ * How the suggested plugin is currently present in the vault.
+ */
+export type SuggestedPluginState = InstalledPluginState;
+
+/**
  * Suggests installing another community plugin, via a load-time notice and a settings-tab banner.
  */
 export class PluginSuggestionComponent extends ComponentEx {
@@ -152,13 +158,10 @@ export class PluginSuggestionComponent extends ComponentEx {
    * @returns The {@link SuggestedPluginState}.
    */
   public getSuggestedPluginState(): SuggestedPluginState {
-    if (this.app.plugins.enabledPlugins.has(this.suggestedPluginId)) {
-      return SuggestedPluginState.Enabled;
-    }
-
-    return Object.hasOwn(this.app.plugins.manifests, this.suggestedPluginId)
-      ? SuggestedPluginState.InstalledButDisabled
-      : SuggestedPluginState.NotInstalled;
+    return getInstalledPluginState({
+      app: this.app,
+      pluginId: this.suggestedPluginId
+    });
   }
 
   /**
@@ -168,34 +171,20 @@ export class PluginSuggestionComponent extends ComponentEx {
    * reported.
    */
   public async installAndEnableSuggestedPlugin(): Promise<void> {
-    const state = this.getSuggestedPluginState();
-    if (state === SuggestedPluginState.Enabled) {
+    if (this.getSuggestedPluginState() === SuggestedPluginState.Enabled) {
       return;
     }
 
-    try {
-      if (state === SuggestedPluginState.InstalledButDisabled) {
-        await enableCommunityPlugin({
-          app: this.app,
-          pluginId: this.suggestedPluginId
-        });
-      } else {
-        await installConfigureEnableCommunityPlugin({
-          app: this.app,
-          pluginId: this.suggestedPluginId
-        });
-      }
-    } catch (error) {
-      this.pluginNoticeComponent.showNotice(t(($) => $.obsidianDevUtils.pluginSuggestion.installFailed, {
-        pluginName: this.suggestedPluginName
-      }));
-      throw error;
-    }
+    await installAndEnablePlugin({
+      app: this.app,
+      pluginId: this.suggestedPluginId,
+      pluginName: this.suggestedPluginName,
+      pluginNoticeComponent: this.pluginNoticeComponent
+    });
 
+    // Only after the install actually succeeded — `installAndEnablePlugin` rethrows on failure, so a
+    // Failed attempt leaves a previous decline standing rather than silently clearing it.
     await this.setSuggestionDeclined(false);
-    this.pluginNoticeComponent.showNotice(t(($) => $.obsidianDevUtils.pluginSuggestion.installed, {
-      pluginName: this.suggestedPluginName
-    }));
   }
 
   /**

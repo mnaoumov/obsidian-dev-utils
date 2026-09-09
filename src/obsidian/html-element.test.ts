@@ -13,7 +13,9 @@ import {
 import { assertNonNullable } from '../type-guards.ts';
 import {
   appendCodeBlock,
-  applySpellcheckMode
+  applySpellcheckMode,
+  asCodeBlock,
+  createFragmentWithCodeBlocks
 } from './html-element.ts';
 import { SpellcheckMode } from './obsidian-settings.ts';
 
@@ -39,6 +41,51 @@ describe('appendCodeBlock', () => {
     const fragment = createFragment();
     appendCodeBlock(fragment, 'const x = 42;');
     expect(fragment.querySelector('code')?.textContent).toBe('const x = 42;');
+  });
+});
+
+describe('createFragmentWithCodeBlocks', () => {
+  it('should render each marked value as a code block, keeping the surrounding text', () => {
+    const fragment = createFragmentWithCodeBlocks(`${asCodeBlock('Host Plugin')} needs ${asCodeBlock('Required Plugin')} to work.`);
+
+    expect(fragment.textContent).toBe('Host Plugin needs Required Plugin to work.');
+    expect([...fragment.querySelectorAll('code')].map((code) => code.textContent)).toEqual([
+      'Host Plugin',
+      'Required Plugin'
+    ]);
+  });
+
+  it('should follow the order the translation puts the values in, not the order they were built in', () => {
+    // The same two values, in the opposite order — which is exactly what a translation reordering the
+    // Clause produces, and what a positional scheme would silently get wrong.
+    const fragment = createFragmentWithCodeBlocks(`${asCodeBlock('Required Plugin')} is required by ${asCodeBlock('Host Plugin')}.`);
+
+    expect(fragment.textContent).toBe('Required Plugin is required by Host Plugin.');
+    expect(fragment.querySelector('code')?.textContent).toBe('Required Plugin');
+  });
+
+  it('should render an unmarked message as plain text', () => {
+    const fragment = createFragmentWithCodeBlocks('Nothing to mark up.');
+
+    expect(fragment.textContent).toBe('Nothing to mark up.');
+    expect(fragment.querySelector('code')).toBeNull();
+  });
+
+  it('should handle a message that is nothing but a marked value', () => {
+    const fragment = createFragmentWithCodeBlocks(asCodeBlock('Alone'));
+
+    expect(fragment.textContent).toBe('Alone');
+    expect(fragment.querySelector('code')?.textContent).toBe('Alone');
+  });
+
+  it('should handle two marked values with nothing between them', () => {
+    const fragment = createFragmentWithCodeBlocks(`${asCodeBlock('First')}${asCodeBlock('Second')}`);
+
+    expect([...fragment.querySelectorAll('code')].map((code) => code.textContent)).toEqual(['First', 'Second']);
+  });
+
+  it('should render an empty message as an empty fragment', () => {
+    expect(createFragmentWithCodeBlocks('').textContent).toBe('');
   });
 });
 

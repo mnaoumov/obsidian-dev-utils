@@ -676,7 +676,12 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
        * `metadataCache.on('deleted')` listeners have no equivalent guard — the plugin-registry election
        * that used to provide one went with the multi-plugin machinery — so two live copies would both
        * handle an event. With one owner that cannot arise; a consumer that must guarantee it refuses to
-       * load beside a conflicting version, which is a plugin's job rather than a library's.
+       * load beside a conflicting version.
+       *
+       * That refusal used to be described here as "a plugin's job rather than a library's", which is no
+       * longer true — `PluginBase.getPluginDependencies` is where a consumer declares it, and the
+       * `apiVersionRange` it names is exactly the conflicting-version guard. The library owns the
+       * mechanism; the plugin still owns the decision to use it.
        */
       patchToken: PATCH_TOKEN
     });

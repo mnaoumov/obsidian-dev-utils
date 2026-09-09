@@ -369,6 +369,42 @@ describe('ComponentEx', () => {
     });
   });
 
+  describe('hasChild', () => {
+    it('should report a direct child', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+
+      expect(parent.hasChild(child)).toBe(true);
+    });
+
+    it('should not report a component that was never added', () => {
+      const parent = new SyncComponentEx();
+
+      expect(parent.hasChild(new SyncComponentEx())).toBe(false);
+    });
+
+    it('should stop reporting a child once it is removed', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+      parent.removeChild(child);
+
+      expect(parent.hasChild(child)).toBe(false);
+    });
+
+    it('should report only DIRECT children, so a caller can tell which of several parents owns one', () => {
+      const grandparent = new SyncComponentEx();
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      grandparent.addChild(parent);
+      parent.addChild(child);
+
+      expect(grandparent.hasChild(child)).toBe(false);
+      expect(parent.hasChild(child)).toBe(true);
+    });
+  });
+
   describe('removeChild', () => {
     it('should remove component from children and childrenSet', () => {
       const parent = new SyncComponentEx();

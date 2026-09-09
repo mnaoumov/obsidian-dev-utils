@@ -44,6 +44,13 @@ export const en = {
     pathSettings: {
       invalidRegularExpression: 'Invalid regular expression: {{regExp}}'
     },
+    pluginDependency: {
+      blockedNotice: '{{pluginName}} does nothing until {{dependencyPluginName}} is installed and enabled.',
+      dependencyLostNotice: '{{dependencyPluginName}} is no longer available, so {{pluginName}} has stopped working. Bring it back to resume.',
+      openDependencySettings: 'Open {{dependencyPluginName}} settings',
+      settingsHeading: 'Required plugin missing',
+      versionMismatchNotice: '{{pluginName}} needs a newer version of {{dependencyPluginName}}. Update it to resume.'
+    },
     pluginSuggestion: {
       enable: 'Enable',
       install: 'Install and enable',

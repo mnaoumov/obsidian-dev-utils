@@ -493,9 +493,30 @@ export function myFunction(param: Type): ReturnType {
   each hand-declared the same contract with no compiler link between the copies, so drift was **silent** —
   every copy still compiled and the handover failed at runtime (T1049). The prose fallback below still
   governs everything that is not a settings handover.
+- **A plugin that cannot work without another DECLARES it, and the library enforces it.** Override
+  `PluginBase.getPluginDependencies()` with a `PluginDependency` (`pluginId`, `pluginName`,
+  `apiVersionRange`, and a `reason` the user reads). While one is missing, disabled or out of range,
+  `onloadImpl` does NOT run — the plugin registers nothing at all, stays enabled in Obsidian's list rather
+  than disabling itself, explains itself through a notice and a stand-in settings tab, installs the
+  dependency in one click, and completes its load with no restart. This is the strict sibling of
+  `PluginSuggestionComponent`: use a suggestion when the other plugin ADDS something, a dependency when the
+  host's advertised behavior is not there without it. A dependency must publish an API, because that is
+  what makes presence, absence, version and departure observable through the one mechanism above.
+- **Where shared behavior belongs — the rule that decides every case of this shape.** A shared GLOBAL
+  patch (one prototype, one event source, one arbitration) belongs in a separate PLUGIN, because every
+  consumer bundles its own copy of this library and two copies at different versions both patch. That is
+  the reasoning behind extracting Advanced Rename and Delete Handler, and a runtime singleton does not
+  rescue it. PER-PLUGIN logic — a declaration, a gate, a component each plugin instantiates for itself —
+  belongs HERE, because there is no shared object for versions to fight over. The dependency mechanism is
+  the second kind, which is why it is a library feature rather than another plugin.
 - **The registry record is a WIRE FORMAT between different `obsidian-dev-utils` copies**, since every plugin
   bundles its own. Nothing crossing it may be `instanceof`-checked — plain data and plain functions only,
-  read structurally. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
+  read structurally. The same discipline governs the `obsidian-dev-utils:plugin-loaded` /
+  `-unloaded` broadcast every `PluginBase` makes on `app.workspace`
+  (`src/obsidian/plugin/plugin-lifecycle-events.ts`): its name and payload are a cross-version contract —
+  plain data, additive fields only. It is triggered only after every `getPluginApis()` declaration has been
+  published, so a listener may call those APIs immediately, and it carries `dependencyPluginIds` so a
+  provider can answer "which installed plugins need me", which the registry cannot. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
   actually catch a violation; a unit test cannot, because it has only one copy of the library.
 - A plugin whose surface this library integrates with (today: Notebook Navigator, see
   `src/obsidian/notebook-navigator.ts`; `folder-notes`, whose folder-note settings

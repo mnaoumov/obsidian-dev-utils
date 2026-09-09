@@ -170,6 +170,35 @@ export enum PluginApiUnavailabilityReason {
 export type PluginApiContract = Record<string, PluginApiMethodContract>;
 
 /**
+ * One API a plugin exposes: the object, the contract version it satisfies, and optionally the contract
+ * itself. This is {@link PublishPluginApiParams} without the publishing plugin, so a plugin can DECLARE what
+ * it exposes without also stating who is publishing it — which is what lets `PluginBase.getPluginApis` collect
+ * the declarations and do the publishing itself.
+ *
+ * @typeParam TApi - The API type being declared.
+ */
+export interface PluginApiDeclaration<TApi extends object = object> {
+  /**
+   * The API object to publish. Its methods are handed to consumers through a revocable handle, and they are
+   * always invoked with this object as their `this`, so an implementation using private class fields keeps
+   * working.
+   */
+  readonly api: TApi;
+
+  /**
+   * The CONTRACT version, in semver form — independent of the plugin's own version. Plugin `1.4.7` may
+   * perfectly well expose API `2.0.0`.
+   */
+  readonly apiVersion: string;
+
+  /**
+   * The contract this version of the API satisfies. Optional: when omitted, no shape check is performed on
+   * the provider's behalf and the consumer's own contract (if any) is used instead.
+   */
+  readonly contract?: PluginApiContract;
+}
+
+/**
  * The payload schemas for a single API method. Both halves are optional: a method may declare only its input,
  * only its output, neither (the entry then just declares that the method must exist), or both.
  */
@@ -279,25 +308,16 @@ export interface PluginApiValidationErrorConstructorParams {
  *
  * @typeParam TApi - The API type being published.
  */
-export interface PublishPluginApiParams<TApi extends object> {
+export interface PublishPluginApiParams<TApi extends object> extends PluginApiDeclaration<TApi> {
   /**
-   * The API object to publish. Its methods are handed to consumers through a revocable handle, and they are
-   * always invoked with this object as their `this`, so an implementation using private class fields keeps
-   * working.
+   * The component whose unload revokes the record. Defaults to {@link PublishPluginApiParams.plugin}, which is
+   * the right owner for an API published for as long as the plugin runs.
+   *
+   * Pass a narrower one when the API is only valid for part of the plugin's life — a plugin whose feature
+   * surface is torn down and rebuilt while the plugin itself stays loaded must revoke with the surface, or it
+   * leaves consumers holding handles into code that is no longer there.
    */
-  readonly api: TApi;
-
-  /**
-   * The CONTRACT version, in semver form — independent of the plugin's own version. Plugin `1.4.7` may
-   * perfectly well expose API `2.0.0`.
-   */
-  readonly apiVersion: string;
-
-  /**
-   * The contract this version of the API satisfies. Optional: when omitted, no shape check is performed on
-   * the provider's behalf and the consumer's own contract (if any) is used instead.
-   */
-  readonly contract?: PluginApiContract;
+  readonly component?: Component;
 
   /**
    * The publishing plugin. The record is keyed by its `manifest.id` and revoked automatically when the plugin
@@ -628,7 +648,7 @@ export function publishPluginApi<TApi extends object>(params: PublishPluginApiPa
   records.push(record);
   notifySubscribers();
 
-  params.plugin.register(() => {
+  (params.component ?? params.plugin).register(() => {
     revokeRecord(record);
   });
 }

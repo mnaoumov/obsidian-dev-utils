@@ -14,7 +14,10 @@ import {
   vi
 } from 'vitest';
 
+import type { PluginDependency } from '../components/plugin-dependency-component.ts';
 import type { TranslationsMap } from '../i18n/i18n.ts';
+import type { PluginApiDeclaration } from './plugin-api.ts';
+import type { PluginLifecycleEventPayload } from './plugin-lifecycle-events.ts';
 
 import { noopAsync } from '../../function.ts';
 import { castTo } from '../../object-utils.ts';
@@ -26,6 +29,10 @@ import { PluginSettingsComponentBase } from '../components/plugin-settings-compo
 import { PluginDataHandler } from '../data-handler.ts';
 import { initI18N } from '../i18n/i18n.ts';
 import { PluginEventSourceImpl } from './plugin-event-source.ts';
+import {
+  PLUGIN_LOADED_EVENT_NAME,
+  PLUGIN_UNLOADED_EVENT_NAME
+} from './plugin-lifecycle-events.ts';
 import {
   PluginBase,
   reloadPlugin,
@@ -45,7 +52,16 @@ vi.mock('../i18n/i18n.ts', () => ({
   initI18N: vi.fn(),
   t: vi.fn(($function: (t: unknown) => string) =>
     $function({
-      obsidianDevUtils: { notices: { unhandledError: 'error' } }
+      obsidianDevUtils: {
+        notices: { unhandledError: 'error' },
+        pluginDependency: {
+          blockedNotice: 'blocked',
+          dependencyLostNotice: 'lost',
+          openDependencySettings: 'open dependency settings',
+          settingsHeading: 'required plugin missing',
+          versionMismatchNotice: 'version mismatch'
+        }
+      }
     })
   )
 }));
@@ -84,6 +100,23 @@ vi.mock('compare-versions', () => ({
   compareVersions: vi.fn(() => 1)
 }));
 
+// The registry is reached through `getObsidianDevUtilsState`, which this file mocks to hand back a fresh
+// Bag per call — so a real publish and a real watch would never meet. Mocking the publish instead keeps
+// The assertions about WHAT gets published and WHEN, which is what this file is responsible for; the
+// Registry's own behavior is covered by `plugin-api.test.ts`.
+const {
+  mockPublishPluginApi,
+  mockWatchPluginApi
+} = vi.hoisted(() => ({
+  mockPublishPluginApi: vi.fn(),
+  mockWatchPluginApi: vi.fn()
+}));
+
+vi.mock('./plugin-api.ts', () => ({
+  publishPluginApi: mockPublishPluginApi,
+  watchPluginApi: mockWatchPluginApi
+}));
+
 vi.mock('../../async.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../async.ts')>();
   return {
@@ -105,6 +138,15 @@ vi.mock('../../async.ts', async (importOriginal) => {
     })
   };
 });
+
+interface AppSettingHolder {
+  setting: unknown;
+}
+
+interface PublishedPluginApiParams {
+  readonly apiVersion: string;
+  readonly component: unknown;
+}
 
 let app: AppOriginal;
 
@@ -165,6 +207,12 @@ beforeEach(() => {
   appMock.workspace.onLayoutReady = vi.fn((callback: () => void) => {
     callback();
   });
+  // The dependency gate registers a stand-in settings tab while a dependency is missing, which is the one
+  // Part of `app.setting` any of these tests reaches.
+  castTo<AppSettingHolder>(appMock).setting = {
+    addSettingTab: vi.fn(),
+    removeSettingTab: vi.fn()
+  };
   app = appMock.asOriginalType__();
 });
 
@@ -437,5 +485,217 @@ describe('showErrorAndDisablePlugin', () => {
     expect(showNoticeSpy).toHaveBeenCalledWith('Test error');
     expect(plugin.app.plugins.disablePlugin).toHaveBeenCalledWith('test-plugin');
     showNoticeSpy.mockRestore();
+  });
+});
+
+describe('lifecycle broadcast', () => {
+  class PublishingPlugin extends TestPlugin {
+    protected override getPluginApis(): PluginApiDeclaration[] {
+      return [{
+        api: { ping: (): string => 'pong' },
+        apiVersion: '1.2.3'
+      }];
+    }
+  }
+
+  it('should announce a completed load, describing the plugin', async () => {
+    const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();
+    app.workspace.on(PLUGIN_LOADED_EVENT_NAME, callback);
+
+    const plugin = new TestPlugin(app, manifest);
+    await plugin.onload();
+
+    expect(callback).toHaveBeenCalledWith({
+      apiVersions: [],
+      dependencyPluginIds: [],
+      pluginId: manifest.id,
+      pluginName: manifest.name,
+      pluginVersion: manifest.version
+    });
+  });
+
+  it('should list the published contract versions, so a listener knows what is on offer', async () => {
+    const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();
+    app.workspace.on(PLUGIN_LOADED_EVENT_NAME, callback);
+
+    const plugin = new PublishingPlugin(app, manifest);
+    await plugin.onload();
+
+    expect(callback.mock.calls[0]?.[0].apiVersions).toEqual(['1.2.3']);
+  });
+
+  it('should publish declared APIs BEFORE announcing, so a listener may call them straight away', async () => {
+    const order: string[] = [];
+    mockPublishPluginApi.mockImplementation(() => {
+      order.push('publish');
+    });
+    app.workspace.on(PLUGIN_LOADED_EVENT_NAME, () => {
+      order.push('announce');
+    });
+
+    await new PublishingPlugin(app, manifest).onload();
+
+    expect(order).toEqual(['publish', 'announce']);
+  });
+
+  it('should revoke a published API with the feature surface rather than with the plugin', async () => {
+    const plugin = new PublishingPlugin(app, manifest);
+    await plugin.onload();
+
+    const publishedParams: unknown = mockPublishPluginApi.mock.calls[0]?.[0];
+    expect(castTo<PublishedPluginApiParams>(publishedParams).apiVersion).toBe('1.2.3');
+
+    // The owner is the gated surface, not the plugin: a plugin whose dependency goes away keeps running
+    // Its universal components, and a consumer must not keep a handle into the half that was torn down.
+    expect(castTo<PublishedPluginApiParams>(publishedParams).component).not.toBe(plugin);
+    expect(castTo<PublishedPluginApiParams>(publishedParams).component).toBeInstanceOf(ComponentEx);
+  });
+
+  it('should announce the departure when the plugin unloads', async () => {
+    const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();
+    app.workspace.on(PLUGIN_UNLOADED_EVENT_NAME, callback);
+
+    const plugin = new TestPlugin(app, manifest);
+    await plugin.onload();
+    plugin.onunload();
+
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ pluginId: manifest.id }));
+  });
+
+  it('should announce a departure only once, so a second unload is silent', async () => {
+    const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();
+    app.workspace.on(PLUGIN_UNLOADED_EVENT_NAME, callback);
+
+    const plugin = new TestPlugin(app, manifest);
+    await plugin.onload();
+    plugin.onunload();
+    plugin.onunload();
+
+    expect(callback).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not announce a departure for a plugin that never announced a load', () => {
+    const callback = vi.fn<(payload: PluginLifecycleEventPayload) => void>();
+    app.workspace.on(PLUGIN_UNLOADED_EVENT_NAME, callback);
+
+    new TestPlugin(app, manifest).onunload();
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+});
+
+describe('the dependency gate', () => {
+  class DependentPlugin extends TestPlugin {
+    public readonly featureComponent = new ComponentEx();
+
+    protected override getPluginDependencies(): PluginDependency[] {
+      return [{
+        apiVersionRange: '^1',
+        pluginId: 'required-plugin',
+        pluginName: 'Required Plugin',
+        reason: 'Does the thing.'
+      }];
+    }
+
+    protected override onloadImpl(): void {
+      this.addChild(this.featureComponent);
+    }
+  }
+
+  let apiRefValue: null | object;
+  let fireApiRefChange: () => Promise<void>;
+
+  beforeEach(() => {
+    apiRefValue = {};
+    fireApiRefChange = noopAsync;
+
+    mockWatchPluginApi.mockImplementation(() => {
+      const changeCallbacks: (() => Promise<void>)[] = [];
+      fireApiRefChange = async (): Promise<void> => {
+        for (const callback of changeCallbacks) {
+          await callback();
+        }
+      };
+
+      return castTo<unknown>({
+        on: (_name: string, callback: () => Promise<void>) => {
+          changeCallbacks.push(callback);
+          return { asyncEventSource: { offref: vi.fn() } };
+        },
+        get value(): null | object {
+          return apiRefValue;
+        }
+      });
+    });
+  });
+
+  it('should not run onloadImpl while the dependency is missing, so the plugin registers nothing', async () => {
+    apiRefValue = null;
+    const plugin = new DependentPlugin(app, manifest);
+
+    await plugin.onload();
+
+    expect(plugin.featureComponent._loaded).toBe(false);
+  });
+
+  it('should not announce a load it never completed', async () => {
+    apiRefValue = null;
+    const callback = vi.fn();
+    app.workspace.on(PLUGIN_LOADED_EVENT_NAME, callback);
+
+    await new DependentPlugin(app, manifest).onload();
+
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it('should complete the load when the dependency arrives, with no restart', async () => {
+    apiRefValue = null;
+    const plugin = new DependentPlugin(app, manifest);
+    await plugin.onload();
+
+    apiRefValue = {};
+    await fireApiRefChange();
+
+    expect(plugin.featureComponent._loaded).toBe(true);
+  });
+
+  it('should tear the feature surface down when the dependency goes away, keeping the universal components', async () => {
+    const plugin = new DependentPlugin(app, manifest);
+    await plugin.onload();
+    expect(plugin.featureComponent._loaded).toBe(true);
+
+    apiRefValue = null;
+    await fireApiRefChange();
+
+    expect(plugin.featureComponent._loaded).toBe(false);
+
+    // The notice component is what has to say the dependency went away, so it must have survived.
+    expect(plugin.getNoticeComponent()._loaded).toBe(true);
+  });
+
+  it('should announce the departure when the dependency goes away', async () => {
+    const callback = vi.fn();
+    app.workspace.on(PLUGIN_UNLOADED_EVENT_NAME, callback);
+    const plugin = new DependentPlugin(app, manifest);
+    await plugin.onload();
+
+    apiRefValue = null;
+    await fireApiRefChange();
+
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ dependencyPluginIds: ['required-plugin'] }));
+  });
+
+  it('should rebuild the feature surface on a fresh wrapper when the dependency comes back', async () => {
+    const plugin = new DependentPlugin(app, manifest);
+    await plugin.onload();
+
+    apiRefValue = null;
+    await fireApiRefChange();
+    apiRefValue = {};
+    await fireApiRefChange();
+
+    // A once-unloaded `ComponentEx` refuses new children, so a surface that came back on the SAME wrapper
+    // Could not have re-run `onloadImpl` at all. Its child being loaded again proves the wrapper is new.
+    expect(plugin.featureComponent._loaded).toBe(true);
   });
 });
