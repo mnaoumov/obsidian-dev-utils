@@ -34,7 +34,7 @@ describe('selectItem', () => {
   it('should apply the spellcheck mode to the picker box', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { normalizeOptionalProperties, pressKey, selectItem, SpellcheckMode, waitUntil } }): Promise<SelectItemSpellcheckResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const originalSpellcheck = app.vault.getConfig('spellcheck');
 
@@ -74,7 +74,7 @@ describe('selectItem', () => {
             await waitUntil({
               message: 'select-item modal input renders',
               predicate: () => Boolean(getInputEl()),
-              timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
 
             return getInputEl()?.getAttribute('spellcheck') ?? null;
@@ -85,7 +85,7 @@ describe('selectItem', () => {
             await waitUntil({
               message: 'select-item modal closes',
               predicate: () => !getInputEl(),
-              timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
             await resultPromise;
           }

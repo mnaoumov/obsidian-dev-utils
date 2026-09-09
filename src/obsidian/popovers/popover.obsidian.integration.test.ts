@@ -42,7 +42,7 @@ describe('editFieldsInPopover', () => {
   it('should render an anchored popover and resolve the edited values', async () => {
     const result = await evalInObsidian({
       async callback({ anchorLeftInPixels, anchorTopInPixels, lib: { createAnchorFromElement, editFieldsInPopover, ensureNonNullable, waitUntil } }): Promise<EditFieldsResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
         const EXPECTED_FIELD_COUNT = 2;
 
         const anchorEl = activeDocument.body.createDiv({ text: 'anchor' });
@@ -66,7 +66,7 @@ describe('editFieldsInPopover', () => {
           await waitUntil({
             message: 'the popover renders its fields',
             predicate: () => getInputEls().length >= EXPECTED_FIELD_COUNT,
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const popoverEl = requirePopoverEl();
@@ -147,7 +147,7 @@ describe('editFieldsInPopover', () => {
   it('should dismiss with no value when a pointer gesture starts outside it', async () => {
     const result = await evalInObsidian({
       async callback({ lib: { clickElement, createAnchorFromPoint, editFieldsInPopover, waitUntil } }): Promise<DismissResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
         const ANCHOR_X_IN_PIXELS = 40;
         const ANCHOR_Y_IN_PIXELS = 40;
 
@@ -159,7 +159,7 @@ describe('editFieldsInPopover', () => {
         await waitUntil({
           message: 'the popover renders',
           predicate: () => Boolean(getPopoverEl()),
-          timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+          timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
         });
 
         /*

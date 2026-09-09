@@ -27,7 +27,7 @@ describe('selectOption', () => {
   it('should render one button per option and resolve the chosen value', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { selectOption, waitUntil } }): Promise<SelectOptionResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
         const EXPECTED_OPTION_COUNT = 3;
 
         const resultPromise = selectOption<string>({
@@ -44,7 +44,7 @@ describe('selectOption', () => {
         await waitUntil({
           message: 'select-option modal buttons render',
           predicate: () => getButtons().length >= EXPECTED_OPTION_COUNT,
-          timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+          timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
         });
 
         const buttons = getButtons();

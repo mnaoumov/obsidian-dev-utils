@@ -42,7 +42,7 @@ describe('modal header close button', () => {
   it('should dismiss an alert modal and resolve its promise', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { alert, waitUntil } }): Promise<AlertDismissalResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const alertPromise = alert({
           app,
@@ -55,7 +55,7 @@ describe('modal header close button', () => {
           await waitUntil({
             message: 'the alert modal header button renders',
             predicate: () => Boolean(getHeaderButton()),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           dismissalResult = {
@@ -68,7 +68,7 @@ describe('modal header close button', () => {
           await waitUntil({
             message: 'the alert modal is removed after its header button is clicked',
             predicate: () => !getContainerEl(),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
         } finally {
           getHeaderButton()?.click();
@@ -99,7 +99,7 @@ describe('modal header close button', () => {
   it('should dismiss a confirm modal and resolve it as not confirmed', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { confirm, waitUntil } }): Promise<ConfirmDismissalResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const confirmPromise = confirm({
           app,
@@ -113,7 +113,7 @@ describe('modal header close button', () => {
           await waitUntil({
             message: 'the confirm modal header button renders',
             predicate: () => Boolean(getHeaderButton()),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           headerButtonCount = document.querySelectorAll('.confirm-modal .modal-header-button').length;
@@ -124,7 +124,7 @@ describe('modal header close button', () => {
           await waitUntil({
             message: 'the confirm modal is removed after its header button is clicked',
             predicate: () => !getContainerEl(),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
         } finally {
           getHeaderButton()?.click();
@@ -156,7 +156,7 @@ describe('modal header close button', () => {
   it('should dismiss a prompt modal and resolve it as cancelled', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { prompt, waitUntil } }): Promise<PromptDismissalResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const promptPromise = prompt({ app });
 
@@ -167,7 +167,7 @@ describe('modal header close button', () => {
           await waitUntil({
             message: 'the prompt modal header button renders',
             predicate: () => Boolean(getHeaderButton()),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           headerButtonCount = document.querySelectorAll('.prompt-modal .modal-header-button').length;
@@ -178,7 +178,7 @@ describe('modal header close button', () => {
           await waitUntil({
             message: 'the prompt modal is removed after its header button is clicked',
             predicate: () => !getContainerEl(),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
         } finally {
           getHeaderButton()?.click();

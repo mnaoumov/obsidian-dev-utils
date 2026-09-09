@@ -144,7 +144,7 @@ describe('rename-delete-handler', () => {
           const DST_NOTE = `${DST_FOLDER}/note.md`;
           const SRC_ATTACHMENT = `${SRC_FOLDER}/attachments/img.png`;
           const DST_ATTACHMENT = `${DST_FOLDER}/attachments/img.png`;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           // Core "In subfolder under current folder" mode puts attachments in an `attachments` subfolder next to the note — the only mode in which the issue is observable.
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
@@ -223,7 +223,7 @@ describe('rename-delete-handler', () => {
           const DST_NOTE = `${DST_FOLDER}/note.md`;
           const SRC_ATTACHMENT = `${SRC_FOLDER}/attachments/img.png`;
           const DST_ATTACHMENT = `${DST_FOLDER}/attachments/img.png`;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
           app.vault.setConfig('attachmentFolderPath', './attachments');
@@ -309,7 +309,7 @@ describe('rename-delete-handler', () => {
           const NOTE = `${FOLDER}/note.md`;
           const OLD_ATTACHMENT = `${FOLDER}/attachments/img.png`;
           const NEW_ATTACHMENT = `${FOLDER}/attachments/renamed.png`;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
           app.vault.setConfig('attachmentFolderPath', './attachments');
@@ -384,7 +384,7 @@ describe('rename-delete-handler', () => {
           const NEW_NOTE = `${FOLDER}/renamed-note.md`;
           const REFERENCING_NOTE = `${FOLDER}/referencing-note.md`;
           const ATTACHMENT = `${FOLDER}/attachments/img.png`;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
           app.vault.setConfig('attachmentFolderPath', './attachments');
@@ -463,7 +463,7 @@ describe('rename-delete-handler', () => {
             const UNSHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/unshared.png`;
             const EXPECTED_SHARED_BACKLINK_COUNT = 2;
             const ATTACHMENT_BYTE_LENGTH = 8;
-            const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+            const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
             const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
             const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Folder Delete Test' });
@@ -569,7 +569,7 @@ describe('rename-delete-handler', () => {
           const SRC_NOTE = `${SRC_FOLDER}/note.md`;
           const UNSHARED_ATTACHMENT = `${ATTACHMENT_FOLDER}/unshared.png`;
           const ATTACHMENT_BYTE_LENGTH = 8;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           const abortSignalComponent = new AbortSignalComponent(PLUGIN_ID);
           const pluginNoticeComponent = new PluginNoticeComponent({ app, pluginName: 'RDH Folder Delete Control Test' });
@@ -953,7 +953,7 @@ describe('rename-delete-handler', () => {
           const RESCUE_PATH = `${OTHER_FOLDER}/attachments/shared.png`;
           const EXPECTED_SHARED_BACKLINK_COUNT = 2;
           const ATTACHMENT_BYTE_LENGTH = 8;
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
             const staleFolder = app.vault.getAbstractFileByPath(folderPath);

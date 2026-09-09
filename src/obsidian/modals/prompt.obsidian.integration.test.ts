@@ -63,7 +63,7 @@ describe('prompt', () => {
   it('should report validity only once the value is edited or submitted', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { prompt, waitUntil } }): Promise<PromptValidityResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         let reportCount = 0;
         const originalReportValidity = HTMLInputElement.prototype.reportValidity;
@@ -81,7 +81,7 @@ describe('prompt', () => {
           await waitUntil({
             message: 'prompt modal input renders and is computed invalid',
             predicate: () => getInputEl()?.validity.customError === true,
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const reportCountOnOpen = reportCount;
@@ -90,7 +90,7 @@ describe('prompt', () => {
           await waitUntil({
             message: 'validity is reported after the input event',
             predicate: () => reportCount > reportCountOnOpen,
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const reportCountAfterInput = reportCount;
@@ -146,7 +146,7 @@ describe('prompt', () => {
   it('should follow the vault spellcheck setting', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { prompt, waitUntil } }): Promise<PromptSpellcheckResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const originalSpellcheck = app.vault.getConfig('spellcheck');
 
@@ -178,7 +178,7 @@ describe('prompt', () => {
             await waitUntil({
               message: 'prompt modal input renders',
               predicate: () => Boolean(getInputEl()),
-              timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
 
             return getInputEl()?.getAttribute('spellcheck') ?? null;
@@ -199,7 +199,7 @@ describe('prompt', () => {
   it('should let the spellcheck mode override the vault setting in both directions', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { prompt, SpellcheckMode, waitUntil } }): Promise<PromptSpellcheckModeResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const originalSpellcheck = app.vault.getConfig('spellcheck');
 
@@ -233,7 +233,7 @@ describe('prompt', () => {
             await waitUntil({
               message: 'prompt modal input renders',
               predicate: () => Boolean(getInputEl()),
-              timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
             });
 
             return getInputEl()?.getAttribute('spellcheck') ?? null;
@@ -254,7 +254,12 @@ describe('prompt', () => {
   it('should paint the invalid outline only once the value is edited', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { prompt, waitUntil } }): Promise<PromptInvalidOutlineResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        /*
+         * Lower than the 12 s the other cases here use, because this closure runs THREE waits in a row and
+         * it is their SUM that has to stay inside the transport's ~30 s ceiling -- three 12 s ceilings would
+         * total 36 s, so a failure of the last one would be killed before it could report its message.
+         */
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 8000;
 
         const resultPromise = prompt({
           app,
@@ -268,7 +273,7 @@ describe('prompt', () => {
           await waitUntil({
             message: 'prompt modal input renders and is computed invalid',
             predicate: () => getInputEl()?.validity.customError === true,
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           // The box shadow is transitioned, so a single reading can catch an interpolated color.
@@ -282,7 +287,7 @@ describe('prompt', () => {
               previousBoxShadow = currentBoxShadow;
               return isSettled;
             },
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const errorColor = getErrorColor();
@@ -292,7 +297,7 @@ describe('prompt', () => {
           await waitUntil({
             message: 'the invalid outline is painted after the input event',
             predicate: () => getBoxShadow().includes(errorColor),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const boxShadowAfterInput = getBoxShadow();
@@ -353,7 +358,7 @@ describe('prompt', () => {
   it('should render a command builder strip whose shortcut toggles the checkbox', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { ModalCommandBuilder, pressKey, prompt, waitUntil } }): Promise<PromptCommandBuilderResult> {
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
         const changes: boolean[] = [];
         const commandBuilder = new ModalCommandBuilder().addCheckbox({
@@ -374,7 +379,7 @@ describe('prompt', () => {
           await waitUntil({
             message: 'the prompt command strip renders its checkbox',
             predicate: () => Boolean(getCheckboxEl()),
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           // A `PromptModal` extends a plain `Modal`, which has NO `instructionsEl` — so a bar being here at
@@ -398,7 +403,7 @@ describe('prompt', () => {
           await waitUntil({
             message: 'the checkbox toggles after alt+1',
             predicate: () => getCheckboxEl()?.checked === true,
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const isCheckedAfterPress = getCheckboxEl()?.checked ?? false;

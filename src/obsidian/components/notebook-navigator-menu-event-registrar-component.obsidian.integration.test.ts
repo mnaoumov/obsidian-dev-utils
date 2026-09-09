@@ -66,7 +66,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
         }
       ): Promise<NotebookNavigatorMenuResult> {
         const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
-        const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
         // Kept in step with the module-level constant the assertions below compare against; the
         // Closure is serialized, so it cannot read one.
         const COMMAND_NAME = 'Notebook Navigator bridge command';
@@ -195,7 +195,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
           await waitUntil({
             message: 'the bridge registered a file-menu contributor and collected the handler',
             predicate: (): boolean => fileMenuCallbacks.length > 0 && raiseFileMenu(matchingFile).items.length > 0,
-            timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
           });
 
           const matchingMenu = raiseFileMenu(matchingFile);

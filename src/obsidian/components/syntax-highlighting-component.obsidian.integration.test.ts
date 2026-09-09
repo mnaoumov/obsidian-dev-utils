@@ -44,8 +44,15 @@ describe('SyntaxHighlightingComponent', () => {
       async callback({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
         const LANGUAGE = 'odu-syntax-highlighting-editor-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
-        const WAIT_TIMEOUT_IN_MILLISECONDS = 10_000;
-        const SETTLE_IN_MILLISECONDS = 2000;
+        /*
+         * These are sized by the WORST CASE this closure can reach, not by any one wait: the whole closure
+         * runs in a single transport call capped at ~30 s, and `checkIsHighlightedAsync` is called three
+         * times, each rebuilding the view first. So the budget is 3 rebuilds + 1 highlight wait + 2 settles
+         * = 22 s. `no-over-cap-wait-in-eval-in-obsidian` cannot see that multiplication -- it sums each wait
+         * where it is WRITTEN -- so raising either number here has to be checked by hand against that sum.
+         */
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+        const SETTLE_IN_MILLISECONDS = 1000;
         const file = await app.vault.create(
           'syntax-highlighting-component-editor-integration.md',
           `\`\`\`${LANGUAGE}\n${CODE}\n\`\`\`\n`
@@ -145,8 +152,12 @@ describe('SyntaxHighlightingComponent', () => {
       async callback({ app, lib: { SyntaxHighlightingComponent, waitUntil } }) {
         const LANGUAGE = 'odu-syntax-highlighting-reading-view-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
-        const WAIT_TIMEOUT_IN_MILLISECONDS = 10_000;
-        const SETTLE_IN_MILLISECONDS = 2000;
+        /*
+         * Same worst-case sizing as the editor case above, over two `checkIsHighlightedAsync` calls rather
+         * than three: 2 rebuilds + 1 highlight wait + 1 settle = 16 s, inside the transport's ~30 s cap.
+         */
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+        const SETTLE_IN_MILLISECONDS = 1000;
         const file = await app.vault.create(
           'syntax-highlighting-component-reading-view-integration.md',
           `\`\`\`${LANGUAGE}\n${CODE}\n\`\`\`\n`

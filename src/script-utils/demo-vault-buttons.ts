@@ -80,7 +80,9 @@ export interface RegisterDemoVaultButtonSuiteOptions {
   /**
    * How long, in milliseconds, to wait for a clicked button to report a result.
    *
-   * @default `15000`
+   * Bounded by the same sum as {@link RegisterDemoVaultButtonSuiteOptions.settleTimeoutInMilliseconds}.
+   *
+   * @default `10000`
    */
   readonly buttonResultTimeoutInMilliseconds?: number;
 
@@ -101,7 +103,11 @@ export interface RegisterDemoVaultButtonSuiteOptions {
   /**
    * How long, in milliseconds, to wait for a note's preview and its buttons to mount.
    *
-   * @default `20000`
+   * Together with `buttonResultTimeoutInMilliseconds` this must stay well under the transport's ~30 s
+   * script timeout: one button click spends both inside a SINGLE evaluation, so a sum at or over the cap
+   * cannot be honoured and turns a real timeout into a bare `script timeout` naming only the transport.
+   *
+   * @default `12000`
    */
   readonly settleTimeoutInMilliseconds?: number;
 }
@@ -121,8 +127,17 @@ interface ClickButtonTimeouts {
   readonly settleTimeoutInMilliseconds: number;
 }
 
-const DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS = 15_000;
-const DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS = 20_000;
+/*
+ * These two are spent INSIDE ONE `evalInObsidian` closure by `clickButton`, which waits for the button to
+ * mount and then for its result, so it is their SUM that has to stay under the transport's ~30 s script
+ * timeout — not either one alone. The former 20 000 + 15 000 asked for 35 s, which the transport can never
+ * grant: a slow button did not report "never reported a result", it died as a bare `script timeout` naming
+ * only the transport. `no-over-cap-wait-in-eval-in-obsidian` cannot catch this one, because the budgets
+ * reach the closure from a caller two levels up rather than being written at the wait. Overriding them via
+ * `RegisterDemoVaultButtonSuiteOptions` is subject to the same sum.
+ */
+const DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS = 10_000;
+const DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS = 12_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 100;
 const OUTPUT_EXCERPT_LENGTH = 400;
 
