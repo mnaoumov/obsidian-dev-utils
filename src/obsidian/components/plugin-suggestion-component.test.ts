@@ -396,7 +396,7 @@ describe('installAndEnableSuggestedPlugin', () => {
       pluginId: SUGGESTED_PLUGIN_ID
     });
     expect(setSuggestionDeclined).toHaveBeenCalledWith(false);
-    expect(showNotice).toHaveBeenCalledWith(`${SUGGESTED_PLUGIN_NAME} is installed and enabled.`);
+    expectNoticeText(showNotice, `${SUGGESTED_PLUGIN_NAME} is installed and enabled.`);
   });
 
   it('should report a failed install and rethrow', async () => {
@@ -406,8 +406,15 @@ describe('installAndEnableSuggestedPlugin', () => {
 
     await expect(component.installAndEnableSuggestedPlugin()).rejects.toThrow(error);
 
-    expect(showNotice).toHaveBeenCalledWith(
-      `Failed to install ${SUGGESTED_PLUGIN_NAME}. Check the console for more information.`
-    );
+    expectNoticeText(showNotice, `Failed to install ${SUGGESTED_PLUGIN_NAME}. Check the console for more information.`);
   });
 });
+
+// The plugin name is rendered as an inline code block rather than interpolated as plain text, so the
+// Notice is a `DocumentFragment` and its text content is what the user actually reads. Asserting on
+// `textContent` keeps the test about the message and not about the markup carrying it.
+function expectNoticeText(showNotice: ReturnType<typeof vi.fn>, expectedText: string): void {
+  const message: unknown = showNotice.mock.calls[0]?.[0];
+  expect(message).toBeInstanceOf(DocumentFragment);
+  expect(castTo<DocumentFragment>(message).textContent).toBe(expectedText);
+}

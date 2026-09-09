@@ -63,6 +63,20 @@ export class ComponentEx extends Component implements Disposable {
   }
 
   /**
+   * Checks whether a component is a direct child of this one.
+   *
+   * Only DIRECT children are reported — this is an ownership question, not a containment one. The caller that
+   * needs it is one holding several parents and deciding which of them a component belongs to, and for that a
+   * grandchild is the wrong answer: removing it from the parent that merely contains its parent would fail.
+   *
+   * @param component - The component to look for.
+   * @returns Whether the component is a direct child of this one.
+   */
+  public hasChild(component: Component): boolean {
+    return this.childrenSet.has(component);
+  }
+
+  /**
    * Loads the component.
    *
    * @returns Despite the declared `void` return type, this method returns a {@link Promise} that resolves when the component is loaded or `null` if the component is fully synchronous.

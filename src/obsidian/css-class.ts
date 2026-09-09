@@ -184,6 +184,12 @@ export enum CssClass {
   PasswordComponent = 'password-component',
 
   /**
+   * A CSS class for the banner a blocked plugin renders in place of its settings, naming the mandatory
+   * dependency it is waiting for.
+   */
+  PluginDependencyBanner = 'plugin-dependency-banner',
+
+  /**
    * A CSS class for the close button of a notice that requires close confirmation.
    */
   PluginNoticeCloseButton = 'plugin-notice-close-button',

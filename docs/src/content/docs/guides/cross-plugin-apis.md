@@ -322,3 +322,79 @@ Every plugin bundles its own copy of `obsidian-dev-utils`, so a registry record 
 library versions**. The record therefore holds nothing but plain data and plain functions, and every read of it
 is structural — never `instanceof`. You do not have to do anything about this; it just means a provider on an
 old library version and a consumer on a new one keep working.
+
+## Requiring another plugin
+
+Everything above assumes your plugin keeps working when the other one is absent. Sometimes it cannot: the
+behavior it advertises simply is not there. Obsidian gives a manifest no dependency field, so the usual
+outcome is a plugin that half-works and a user who has no way to know why.
+
+Declare the dependency instead:
+
+```typescript
+import type { PluginDependency } from 'obsidian-dev-utils/obsidian/components/plugin-dependency-component';
+
+export class Plugin extends PluginBase {
+  protected override getPluginDependencies(): PluginDependency[] {
+    return [{
+      apiVersionRange: '^2',
+      pluginId: 'their-plugin-id',
+      pluginName: 'Their Plugin',
+      reason: 'Handles renames and deletes so links stay correct.'
+    }];
+  }
+}
+```
+
+While that dependency is missing, disabled, or outside `apiVersionRange`, your `onloadImpl` **does not run**.
+No command is registered, no handler installed, nothing patched. What the user gets instead is a notice
+naming the plugin, and a settings tab standing in for the one you never got to register — carrying your
+`reason`, a button that installs and enables the dependency, and, once it is there, a link straight into its
+settings.
+
+The moment the dependency arrives, your load completes. No restart, no toggle. And if it later goes away, the
+feature surface is torn down again and the user is told at that instant — which is the point. The failure this
+prevents is not "a plugin is missing"; it is a user removing an unfamiliar plugin months later and meeting the
+damage weeks after that, with nothing connecting the two.
+
+Three deliberate choices, each with an obvious-looking alternative:
+
+- **Blocked means enabled-but-inert, never self-disabled.** Calling `disablePluginAndSave` on yourself is the
+  literal reading of "refuses to load", and it rewrites a config that belongs to the user — who then has to
+  remember to re-enable you after fixing the dependency.
+- **Blocked is not an error.** Throwing from `onload` marks the plugin failed and hands the user a stack trace
+  where a sentence and a button belong.
+- **A dependency must publish an API.** That is what makes presence, absence, version and departure all
+  observable through one mechanism. A provider with nothing to expose can publish an empty API purely so it
+  can be depended upon — which is cheaper than a second, weaker detection path beside the registry.
+
+Reach for `PluginSuggestionComponent` instead whenever the other plugin merely **adds** something. The two are
+siblings, and the question that separates them is whether your plugin still does what it says on the tin.
+
+## Knowing when a plugin loads
+
+Every `PluginBase` announces itself on `app.workspace`:
+
+```typescript
+import {
+  PLUGIN_LOADED_EVENT_NAME,
+  PLUGIN_UNLOADED_EVENT_NAME
+} from 'obsidian-dev-utils/obsidian/plugin/plugin-lifecycle-events';
+
+this.registerEvent(this.app.workspace.on(PLUGIN_LOADED_EVENT_NAME, (payload) => {
+  console.log(payload.pluginId, payload.apiVersions);
+}));
+```
+
+`obsidian-dev-utils:plugin-loaded` fires only after every API that plugin declares has been published, so a
+listener may call them immediately. The payload carries `pluginId`, `pluginName`, `pluginVersion`,
+`apiVersions`, and `dependencyPluginIds` — the last of which is how a provider answers "which installed
+plugins depend on me", something the registry cannot tell it.
+
+It deliberately carries **no API handle**. A handle delivered by a one-shot event is a probe: it answers "now"
+and never says when "now" changed, and one that outlives its provider is exactly the stale handle the
+revocable handles exist to prevent. Hold a `PluginApiRef` for that.
+
+Because it rides Obsidian's own event source rather than anything belonging to this library, a plugin that
+does not use `obsidian-dev-utils` at all can still listen. A `trigger` has no replay, though, so a listener
+that starts late reads the current state from `app.plugins.plugins` and uses the events for the transitions.
