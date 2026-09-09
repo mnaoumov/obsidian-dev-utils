@@ -502,6 +502,14 @@ export function myFunction(param: Type): ReturnType {
   `PluginSuggestionComponent`: use a suggestion when the other plugin ADDS something, a dependency when the
   host's advertised behavior is not there without it. A dependency must publish an API, because that is
   what makes presence, absence, version and departure observable through the one mechanism above.
+- **A plugin that must NOT run beside another declares that too, through the same gate.**
+  `PluginBase.getPluginConflicts()` takes a `PluginConflict` (`pluginId`, `pluginName`,
+  `conflictingVersionRange`, `reason`, `severity`). `Block` behaves exactly like an unsatisfied dependency —
+  `onloadImpl` never runs — for an overlap where both plugins acting damages the vault; `Warn` keeps both
+  running and says so, for one that merely duplicates a command. One `PluginGateComponent` enforces both
+  kinds because it owns the surface's up/down state machine and the single blocked settings tab. The
+  detection differs from a dependency's on purpose (see `L25`): a conflicting plugin usually publishes
+  nothing, so its installed VERSION is read instead of a registry.
 - **Where shared behavior belongs — the rule that decides every case of this shape.** A shared GLOBAL
   patch (one prototype, one event source, one arbitration) belongs in a separate PLUGIN, because every
   consumer bundles its own copy of this library and two copies at different versions both patch. That is

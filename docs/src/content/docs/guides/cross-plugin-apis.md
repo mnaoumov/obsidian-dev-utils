@@ -332,7 +332,7 @@ outcome is a plugin that half-works and a user who has no way to know why.
 Declare the dependency instead:
 
 ```typescript
-import type { PluginDependency } from 'obsidian-dev-utils/obsidian/components/plugin-dependency-component';
+import type { PluginDependency } from 'obsidian-dev-utils/obsidian/components/plugin-gate-component';
 
 export class Plugin extends PluginBase {
   protected override getPluginDependencies(): PluginDependency[] {
@@ -370,6 +370,64 @@ Three deliberate choices, each with an obvious-looking alternative:
 
 Reach for `PluginSuggestionComponent` instead whenever the other plugin merely **adds** something. The two are
 siblings, and the question that separates them is whether your plugin still does what it says on the tin.
+
+## Refusing to run beside another plugin
+
+The mirror image of a dependency. Two plugins that took over the same behavior — an old release of another
+plugin that still owns a handler you now own, or two plugins registering the same command — collide, and
+there is usually no way to win that collision from inside: a handler is elected by registry order, but the
+patches doing the work sit outside that election, so whichever plugin loaded first keeps a hand on the
+wheel. Refusing deterministically beats competing unpredictably.
+
+Declare the overlap:
+
+```typescript
+import type { PluginConflict } from 'obsidian-dev-utils/obsidian/components/plugin-gate-component';
+
+import { PluginConflictSeverity } from 'obsidian-dev-utils/obsidian/components/plugin-gate-component';
+
+export class Plugin extends PluginBase {
+  protected override getPluginConflicts(): PluginConflict[] {
+    return [{
+      conflictingVersionRange: '<12.0.0',
+      pluginId: 'their-plugin-id',
+      pluginName: 'Their Plugin',
+      reason: 'Both would act on the same rename, and two handlers corrupt links.',
+      severity: PluginConflictSeverity.Block
+    }];
+  }
+}
+```
+
+`Block` behaves exactly like an unsatisfied dependency: `onloadImpl` does not run, and the user gets a
+notice plus a stand-in settings tab carrying your `reason`, a button that disables the other plugin, and a
+link into its settings. `Warn` is for an overlap that is annoying rather than destructive — a duplicated
+command, work done twice — where refusing to load would cost the user more than the overlap does. Both
+plugins keep running, the user is told once, and you can place the same explanation in your own settings
+tab:
+
+```typescript
+this.pluginGateComponent.renderConflictWarningBanner(containerEl);
+```
+
+Three things about the detection are worth knowing, because each has a plausible-looking alternative:
+
+- **It reads the other plugin's VERSION, not the registry.** A plugin that has not loaded yet has registered
+  nothing, so the registry answers differently depending on when it is asked, while
+  `app.plugins.manifests` is populated for everything installed before any of them load. Unlike a
+  dependency, a conflicting plugin need not publish anything at all.
+- **Only enabled plugins count, and an unparseable version counts as conflicting.** A disabled plugin
+  registers nothing, so refusing over it would be an alarm the user can only answer by uninstalling
+  something they already switched off. Failing closed on a version it cannot read is the other direction of
+  the same care: a false alarm costs a notice, a false all-clear costs a vault.
+- **Obsidian raises no event for another plugin being enabled or disabled.** A conflicting plugin built on
+  this library announces itself through the `obsidian-dev-utils:plugin-loaded` / `-unloaded` broadcast
+  below, so it is caught the moment it is toggled. Any other plugin is caught at your next load. That is a
+  real ceiling, not an oversight.
+
+`conflictingVersionRange` is a range rather than a minimum, so an overlap confined to one major is
+expressible as `'>=3 <4'`. Spell "every version conflicts" as `'>=0.0.0'` — `compare-versions` rejects a
+bare `*`.
 
 ## Knowing when a plugin loads
 
