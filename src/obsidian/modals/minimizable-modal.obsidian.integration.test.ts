@@ -195,6 +195,15 @@ describe('MinimizableModal', () => {
         async callback({ app, lib: { MinimizableModal }, obsidianModule }): Promise<SettingsPopoutBlockedResult> {
           const SETTLE_DELAY_MILLISECONDS = 300;
 
+          /*
+           * The harness writes `settingsPopoutWindow: false` into every vault it provisions, so Settings
+           * stays in the driven window and no popout is ever created. This test's SUBJECT is the popout —
+           * it asserts the peek-lock stops the window being created at all — so it has to opt back in.
+           * `obsidian-typings`' `ConfigItem` union does not list the key, so the bound setter is widened.
+           */
+          const setConfig = app.vault.setConfig.bind(app.vault) as (configKey: string, value: unknown) => void;
+          setConfig('settingsPopoutWindow', true);
+
           // Start from a clean state so a settings window a prior suite left open cannot skew the read.
           app.setting.close();
           await sleep(SETTLE_DELAY_MILLISECONDS);

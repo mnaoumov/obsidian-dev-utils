@@ -218,6 +218,15 @@ describe('demo-vault-helper bootstrap', () => {
       async callback({ app, helperPluginId, lib: { waitUntil } }): Promise<boolean> {
         const SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS = 15_000;
 
+        /*
+         * The harness writes `settingsPopoutWindow: false` into every vault it provisions, so Settings
+         * stays in the driven window and never becomes a separate active one. This test asserts the
+         * bootstrap CLOSES that settings window before raising its notice, so the window has to exist:
+         * opt back in. `obsidian-typings`' `ConfigItem` union does not list the key, so the setter is widened.
+         */
+        const setConfig = app.vault.setConfig.bind(app.vault) as (configKey: string, value: unknown) => void;
+        setConfig('settingsPopoutWindow', true);
+
         app.setting.open();
         // Obsidian creates and focuses the popout asynchronously, and that focus is what hands it the
         // Active window — the very condition the bootstrap has to survive.
