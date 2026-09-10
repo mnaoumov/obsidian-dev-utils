@@ -110,8 +110,8 @@ export function assertMobileLoadableBundle(params: AssertMobileLoadableBundlePar
         + `${formatMobileLoadFailure(error)}\n\n`
         + 'Something reached at bundle-init time evaluates a platform-only API. Every module the generated '
         + 'barrels re-export has to survive being IMPORTED on either platform (rule L5), so defer the '
-        + 'offending dependency to a call-time dynamic `import()` — the way `desktop-demo-vault-opener.ts` '
-        + 'loads `adm-zip` — and keep the platform-restricted work inside the function that needs it.',
+        + 'offending dependency to a call-time dynamic `import()` from inside the function that needs it, '
+        + 'and keep the platform-restricted work there.',
       { cause: error }
     );
   }

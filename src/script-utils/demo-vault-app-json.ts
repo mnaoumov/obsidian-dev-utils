@@ -20,7 +20,7 @@
  * All four are written explicitly, never left to an Obsidian default: a vault leaning on a default changes
  * behavior when that default does.
  *
- * Kept free of both `vitest` and `adm-zip` on purpose — the coverage suite pulls in the former and the
+ * Kept free of both `vitest` and `fflate` on purpose — the coverage suite pulls in the former and the
  * archiver the latter, and neither may reach the other's environment.
  */
 
