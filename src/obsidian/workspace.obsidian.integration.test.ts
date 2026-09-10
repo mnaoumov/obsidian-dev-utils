@@ -40,8 +40,8 @@ describe('switchToMainWindow', () => {
         /*
          * The harness writes `settingsPopoutWindow: false` into every vault it provisions, so Settings
          * stays in the driven window. A SECOND window is this test's entire premise — `switchToMainWindow`
-         * exists because Obsidian repoints `activeWindow` at the settings popout — so it has to opt back
-         * in. `obsidian-typings`' `ConfigItem` union does not list the key, so the bound setter is widened.
+         * exists because Obsidian moves `activeWindow` to the settings popout — so it has to opt back in.
+         * `obsidian-typings`' `ConfigItem` union does not list the key, so the bound setter is widened.
          */
         const setConfig = app.vault.setConfig.bind(app.vault) as (configKey: string, value: unknown) => void;
         setConfig('settingsPopoutWindow', true);
