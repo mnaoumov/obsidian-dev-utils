@@ -815,6 +815,14 @@ export function myFunction(param: Type): ReturnType {
   link and loses all of them, which is indistinguishable from a whole-file bail-out
   (`applyFileChanges` returning `null`). A middle insertion leaves a contiguous stale **tail**, which
   only a per-link key mismatch can produce.
+- **Both halves are now seams on the shared primitive, not per-caller code.** `editBacklinksSnapshot`
+  in `src/obsidian/link.ts` takes a `linkIdentityKeyProvider` (defaulting to `JSON.stringify`, which is
+  position-bearing and therefore only safe when nothing awaits between the capture and the rewrite) and a
+  `shouldVisitUnmatchedLinks` flag, which is what lets a caller see — and log — the links its snapshot does
+  not name. A caller whose window spans an `await` passes a text-only provider such as
+  `getLinkIdentityKey`; one that fetches and rewrites in the same breath uses `editBacklinks`, the
+  fetch-then-delegate wrapper, and gets the default. Choosing the provider IS choosing whether this rule
+  applies to you.
 - (cannot be forced by ESLint — a rule could flag `toJson()` on a value typed `Reference` used as a
   `Map` key, but not the lifetime that makes it wrong)
 

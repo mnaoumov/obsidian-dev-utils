@@ -30,6 +30,7 @@ import {
 
 import type { LinkUpdateProgressReporter } from '../link-update-progress.ts';
 import type {
+  EditBacklinksSnapshotParams,
   UpdateLinkParams,
   UpdateLinksInFileParams
 } from '../link.ts';
@@ -73,7 +74,8 @@ import {
   isNote
 } from '../file-system.ts';
 import {
-  editLinks,
+  buildBacklinksSnapshot,
+  editBacklinksSnapshot,
   extractLinkFile,
   updateLink,
   updateLinksInFile
@@ -948,56 +950,72 @@ class RenameHandler {
         return;
       }
 
-      const backlinkEntries = [...combinedBacklinksMap, ...this.interruptedCombinedBacklinksMap];
-      let processedBacklinkFiles = 0;
-      for (const [newBacklinkPath, linkKeyToPathMap] of backlinkEntries) {
-        let linkIndex = 0;
-        await editLinks({
-          app: this.app,
-          linkConverter: (link) => {
-            linkIndex++;
-            const oldAttachmentPath = linkKeyToPathMap.get(getLinkIdentityKey(link));
-            if (!oldAttachmentPath) {
-              /*
-               * A link that is not in the snapshot was either never ours to rewrite, or was already
-               * rewritten by someone else (leaving it correct). Either way there is nothing to do -
-               * but log it, because a silent skip here is exactly how
-               * https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60 stayed
-               * invisible: every skipped link left a broken embed and reported nothing.
-               */
-              getLibDebugger('RenameDeleteHandler:updateBacklinks')(
-                `No snapshot entry for link ${toJson(link)} in ${newBacklinkPath}; leaving it unchanged.`
-              );
-              return;
-            }
+      /*
+       * A resumed rename brings its own snapshot along. Merge it INTO the current one rather than
+       * concatenating the two: a file named by both would otherwise be opened and rewritten twice, which is
+       * the very thing a combined snapshot exists to avoid. The current rename's entry wins a key collision,
+       * because it describes where the target is now.
+       */
+      for (const [interruptedBacklinkPath, interruptedLinkKeyToPathMap] of this.interruptedCombinedBacklinksMap) {
+        const linkKeyToPathMap = combinedBacklinksMap.get(interruptedBacklinkPath);
+        if (!linkKeyToPathMap) {
+          combinedBacklinksMap.set(interruptedBacklinkPath, interruptedLinkKeyToPathMap);
+          continue;
+        }
 
-            const newAttachmentPath = renameMap.get(oldAttachmentPath) ?? oldAttachmentPath;
-
-            renamedFilePaths.add(newBacklinkPath);
-            renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
-
-            return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
-              app: this.app,
-              link,
-              newSourcePathOrFile: newBacklinkPath,
-              newTargetPathOrFile: newAttachmentPath,
-              oldTargetPathOrFile: oldAttachmentPath,
-              shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
-            }));
-          },
-          pathOrFile: newBacklinkPath,
-          pluginNoticeComponent,
-          resourceLockComponent: this.resourceLockComponent,
-          shouldFailOnMissingFile: false
-        });
-        this.abortSignal.throwIfAborted();
-        processedBacklinkFiles++;
-        this.linkUpdateProgressReporter?.({
-          currentPath: newBacklinkPath,
-          processed: processedBacklinkFiles,
-          total: backlinkEntries.length
-        });
+        for (const [linkKey, oldTargetPath] of interruptedLinkKeyToPathMap) {
+          if (!linkKeyToPathMap.has(linkKey)) {
+            linkKeyToPathMap.set(linkKey, oldTargetPath);
+          }
+        }
       }
+
+      const linkIndexes = new Map<string, number>();
+      await editBacklinksSnapshot(normalizeOptionalProperties<EditBacklinksSnapshotParams<string>>({
+        abortSignal: this.abortSignal,
+        app: this.app,
+        linkConverter: ({ link, payload: oldAttachmentPath, sourcePath: newBacklinkPath }) => {
+          const linkIndex = (linkIndexes.get(newBacklinkPath) ?? 0) + 1;
+          linkIndexes.set(newBacklinkPath, linkIndex);
+
+          if (!oldAttachmentPath) {
+            /*
+             * A link that is not in the snapshot was either never ours to rewrite, or was already
+             * rewritten by someone else (leaving it correct). Either way there is nothing to do -
+             * but log it, because a silent skip here is exactly how
+             * https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60 stayed
+             * invisible: every skipped link left a broken embed and reported nothing.
+             */
+            getLibDebugger('RenameDeleteHandler:updateBacklinks')(
+              `No snapshot entry for link ${toJson(link)} in ${newBacklinkPath}; leaving it unchanged.`
+            );
+            return;
+          }
+
+          const newAttachmentPath = renameMap.get(oldAttachmentPath) ?? oldAttachmentPath;
+
+          renamedFilePaths.add(newBacklinkPath);
+          renamedLinks.add(`${newBacklinkPath}//${String(linkIndex)}`);
+
+          return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
+            app: this.app,
+            link,
+            newSourcePathOrFile: newBacklinkPath,
+            newTargetPathOrFile: newAttachmentPath,
+            oldTargetPathOrFile: oldAttachmentPath,
+            shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
+          }));
+        },
+        linkIdentityKeyProvider: getLinkIdentityKey,
+        linkUpdateProgressReporter: this.linkUpdateProgressReporter ?? undefined,
+        pluginNoticeComponent,
+        resourceLockComponent: this.resourceLockComponent,
+        shouldFailOnMissingFile: false,
+        // The converter logs every link it declines, so it has to be shown the ones the snapshot does not name.
+        shouldVisitUnmatchedLinks: true,
+        snapshot: combinedBacklinksMap
+      }));
+      this.abortSignal.throwIfAborted();
 
       if (isNote(this.newPath)) {
         await updateLinksInFile(normalizeOptionalProperties<UpdateLinksInFileParams>({
@@ -1286,14 +1304,13 @@ class RenameMap {
       path,
       singleBacklinksMap
     } = params;
-    for (const [backlinkPath, links] of singleBacklinksMap) {
-      const newBacklinkPath = this.map.get(backlinkPath) ?? backlinkPath;
-      const linkKeyToPathMap = combinedBacklinksMap.get(newBacklinkPath) ?? new Map<string, string>();
-      combinedBacklinksMap.set(newBacklinkPath, linkKeyToPathMap);
-      for (const link of links) {
-        linkKeyToPathMap.set(getLinkIdentityKey(link), path);
-      }
-    }
+    buildBacklinksSnapshot<string>({
+      backlinks: singleBacklinksMap,
+      linkIdentityKeyProvider: getLinkIdentityKey,
+      pathRemapper: (backlinkPath) => this.map.get(backlinkPath) ?? backlinkPath,
+      payloadProvider: () => path,
+      target: combinedBacklinksMap
+    });
   }
 
   public initOriginalLinksMap(combinedBacklinksMap: Map<string, Map<string, string>>): void {
