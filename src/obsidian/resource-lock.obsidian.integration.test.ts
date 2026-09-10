@@ -445,7 +445,7 @@ describe('resource-lock', () => {
     it('should keep covering every rename of a folder swap that renames the locked folders themselves', async () => {
       const result = await evalInObsidian({
         async callback({ app, lib: { isResourceLockedForPathByAncestor, ResourceLockComponent, waitUntil } }): Promise<FolderSwapResult> {
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 30_000;
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
           const root = 'resource-lock-swap';
           const temporaryFolderPath = 'resource-lock-swap-temp';
 
@@ -712,7 +712,7 @@ describe('resource-lock', () => {
   describe('ResourceLockComponent external-change detection', () => {
     it('should abort the owning operation when a locked file is changed outside the blocker (raw adapter)', async () => {
       const result = await evalInObsidian({
-        async callback({ app, lib: { ResourceLockComponent } }): Promise<ExternalChangeResult> {
+        async callback({ app, lib: { ResourceLockComponent, waitUntil } }): Promise<ExternalChangeResult> {
           const path = 'resource-lock-detector-target.md';
           if (await app.vault.adapter.exists(path)) {
             await app.vault.adapter.remove(path);
@@ -726,11 +726,24 @@ describe('resource-lock', () => {
           try {
             // A change that bypasses the blocker patch entirely (raw adapter delete). Obsidian's file watcher then fires vault('delete'), which the detector reconciles into an abort.
             await app.vault.adapter.remove(path);
-            const MAX_WAIT_ITERATIONS = 50;
-            const WAIT_STEP_MILLISECONDS = 100;
-            for (let iteration = 0; iteration < MAX_WAIT_ITERATIONS && !abortController.signal.aborted; iteration++) {
-              await sleep(WAIT_STEP_MILLISECONDS);
+
+            /*
+             * A hand-rolled `sleep` loop hid its ceiling from both a reader and the lint rule that budgets
+             * this closure against the transport's ~30 s cap: the bound was 50 iterations times 100 ms,
+             * which only the arithmetic revealed. `waitUntil` DECLARES the same 5 s and reports what it was
+             * waiting for when it gives up, instead of falling out of the loop into a false assertion.
+             */
+            const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
+            try {
+              await waitUntil({
+                message: 'the external delete to abort the operation holding the lock',
+                predicate: (): boolean => abortController.signal.aborted,
+                timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+              });
+            } catch {
+              // The assertion below reports the miss; rethrowing here would replace it with a wait error.
             }
+
             return { wasAbortedOnExternalDelete: abortController.signal.aborted };
           } finally {
             lock[Symbol.dispose]();

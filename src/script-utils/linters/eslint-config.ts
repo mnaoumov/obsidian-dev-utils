@@ -609,6 +609,14 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
       },
       rules: {
         'obsidian-dev-utils/no-async-callback-to-unsafe-return': 'error',
+        /*
+         * Deliberately here, on `allFiles()`, rather than beside `no-untrusted-input-events` in
+         * `getIntegrationTestConfigs()` (owner, 2026-09-09). An `evalInObsidian` call is unmistakable, so a
+         * file that makes none is untouched and a broad glob costs nothing -- while script code that drives
+         * a real Obsidian outside a test (`demo-vault-buttons.ts`) is under the same transport cap and would
+         * otherwise be enforced nowhere.
+         */
+        'obsidian-dev-utils/no-over-cap-wait-in-eval-in-obsidian': 'error',
         'obsidian-dev-utils/no-unused-params-members': 'error',
         'obsidian-dev-utils/no-used-underscore-variables': 'error',
         'obsidian-dev-utils/params-options-name-match': 'error',

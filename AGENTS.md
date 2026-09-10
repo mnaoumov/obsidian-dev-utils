@@ -247,7 +247,7 @@ export function myFunction(param: Type): ReturnType {
 - The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by
   `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts`: `manifest-description`, `manifest-id`,
   `manifest-name`, `manifest-schema`, `no-async-callback-to-unsafe-return`,
-  `no-untrusted-input-events`, `no-unused-params-members`,
+  `no-over-cap-wait-in-eval-in-obsidian`, `no-untrusted-input-events`, `no-unused-params-members`,
   `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`,
   `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`,
   `require-super-call`. The TypeScript rules use `@typescript-eslint/rule-tester` via
@@ -761,6 +761,18 @@ export function myFunction(param: Type): ReturnType {
   fires at the same moment — so the message naming the unmet condition is replaced by a bare "Test
   timed out"/"CDP command timed out". The rescue cases use 12 s for this reason. Raising the vitest
   timeout does not help; the CDP ceiling is the binding one.
+  - **This is now ENFORCED, not remembered: `obsidian-dev-utils/no-over-cap-wait-in-eval-in-obsidian`.**
+    It sums the declared `waitUntil` / `sleep` budget inside every `evalInObsidian` / `pollInObsidian`
+    closure — counting the 5 s a `waitUntil` takes when it omits `timeoutInMilliseconds`, and resolving
+    an identifier through scope, including one threaded via the call's own `input` — and reports at or
+    over `capInMilliseconds` (default `30_000`). It is enabled on ALL files, not only integration tests,
+    because script code that drives a real Obsidian is under the same cap. A budget it cannot resolve
+    statically is silently ignored, so it under-reports rather than crying wolf; a site that genuinely
+    cannot become a `poll` / `until` pair disables it with a written reason. A note is what let this
+    reach thirty repos (T933), which is why it is a rule.
+  - **The fix for a wait that genuinely needs longer than the cap is `pollInObsidian`, not a bigger
+    number**: a short DOM-reading `poll` closure, `until` evaluated in Node, and the long budget in
+    `timeoutInMilliseconds`. `demo-vault-helper.obsidian.integration.test.ts` has three worked examples.
 - Prove the assertion is not vacuous with a **negative control**: comment out the `showNotice` call and
   confirm the case fails on the wait's own message.
 - **When the test OWNS the notice component, record at the source instead — a `MutationObserver` is the
