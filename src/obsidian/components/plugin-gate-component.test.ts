@@ -655,6 +655,30 @@ describe('with a warning conflict', () => {
   });
 });
 
+describe('hasActiveWarningConflicts', () => {
+  it('should be false when the conflicting plugin is not installed', async () => {
+    const { component } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+
+    expect(component.hasActiveWarningConflicts()).toBe(false);
+  });
+
+  it('should be true when the conflicting plugin is installed at a conflicting version', async () => {
+    installPlugin(WARNING_CONFLICT.pluginId, '4.0.0');
+    const { component } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
+
+    expect(component.hasActiveWarningConflicts()).toBe(true);
+  });
+
+  // A settings tab asks this to decide whether to show the overlap row, and a BLOCKING conflict never
+  // Reaches a settings tab the plugin builds — it never got to build one.
+  it('should be false when only a blocking conflict holds', async () => {
+    installPlugin(BLOCKING_CONFLICT.pluginId, '11.0.0');
+    const { component } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
+
+    expect(component.hasActiveWarningConflicts()).toBe(false);
+  });
+});
+
 describe('renderConflictWarningBanner', () => {
   it('should render nothing when no warning conflict holds', async () => {
     const { component } = await createLoadedComponent({ conflicts: [WARNING_CONFLICT], dependencies: [] });
