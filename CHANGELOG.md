@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 102.0.0
+
+- feat(script-utils)!: write demo-vault archives with fflate, dropping adm-zip from the package
+
 ## 101.8.0
 
 - feat(script-utils): enforce the transport's script-timeout cap on in-Obsidian closures
