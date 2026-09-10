@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 102.2.0
+
+- style(components): reword a comment the capitalized-comments rule rejected
+- feat(components): share the Templates language grammar across the fleet
+- feat(plugin-gate-component): expose whether a warning conflict is in force
+
 ## 102.1.0
 
 - test(integration): reword a comment so cspell accepts it
