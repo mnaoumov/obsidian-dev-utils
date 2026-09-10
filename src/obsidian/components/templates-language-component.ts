@@ -210,8 +210,8 @@ export class TemplatesLanguageComponent extends SyntaxHighlightingComponent {
         })
       };
 
-    // Merged rather than spread: spreading a `Grammar` widens every optional member of `GrammarRest` to
-    // include `undefined`, which `exactOptionalPropertyTypes` then refuses.
+    // Merged rather than spread, because spreading a `Grammar` widens every optional member of
+    // `GrammarRest` to admit `undefined`, which `exactOptionalPropertyTypes` then refuses.
     if (this.extraGrammar !== undefined) {
       Object.assign(grammar, this.extraGrammar);
     }
