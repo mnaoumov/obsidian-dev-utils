@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 101.8.0
+
+- feat(script-utils): enforce the transport's script-timeout cap on in-Obsidian closures
+
 ## 101.7.0
 
 - feat(obsidian): let a plugin declare what it refuses to run beside
