@@ -172,6 +172,122 @@ enum FinalLinkPathStyle {
 }
 
 /**
+ * Params passed to the link converter of {@link editBacklinksSnapshot}.
+ *
+ * @typeParam TPayload - The payload recorded for each link when the snapshot was built.
+ */
+export interface BacklinkConversionParams<TPayload> {
+  /**
+   * The link being converted.
+   */
+  readonly link: Reference;
+
+  /**
+   * The payload captured for the link when the snapshot was built.
+   *
+   * `undefined` when the link is not in the snapshot, which can only happen if
+   * {@link EditBacklinksSnapshotParams.shouldVisitUnmatchedLinks} is `true`.
+   */
+  readonly payload: TPayload | undefined;
+
+  /**
+   * The path of the note holding the link.
+   */
+  readonly sourcePath: string;
+}
+
+/**
+ * The minimal shape {@link buildBacklinksSnapshot} reads a set of backlinks from.
+ *
+ * Both a `CustomArrayDict<Reference>` — what
+ * {@link ../obsidian/metadata-cache!getBacklinksForFileSafe | getBacklinksForFileSafe} returns — and a plain
+ * `Map<string, Reference[]>` satisfy it, so a caller can pass either without converting first.
+ */
+export interface BacklinksLike {
+  /**
+   * Returns the links the note at `key` holds, or a nullish value when it holds none.
+   *
+   * @param key - The path of the backlink-holding note.
+   * @returns The links, or a nullish value.
+   */
+  get(key: string): null | readonly Reference[] | undefined;
+
+  /**
+   * Returns the paths of the backlink-holding notes.
+   *
+   * @returns The paths.
+   */
+  keys(): Iterable<string>;
+}
+
+/**
+ * A captured snapshot of a set of backlinks: the path of each backlink-holding note, mapped to the identity
+ * keys of that note's own links to the target(s), each mapped to the payload recorded for it.
+ *
+ * The snapshot exists so that the fetch and the rewrite can happen at different moments. A rename invalidates
+ * the metadata cache for the old path, so a caller that rewrites links **after** renaming has to capture the
+ * backlinks **before** — which is why {@link editBacklinksSnapshot} takes a snapshot rather than a path.
+ *
+ * The payload is whatever the caller needs to remember per link. It is `undefined` for a single-target
+ * rewrite (the target is implied), and the old target's path for a multi-target one, where one note's links
+ * may point at several files that all moved and each link has to be resolved to its own new path.
+ *
+ * @typeParam TPayload - The payload recorded for each link.
+ */
+export type BacklinksSnapshot<TPayload> = ReadonlyMap<string, ReadonlyMap<string, TPayload>>;
+
+/**
+ * Params for {@link buildBacklinksSnapshot}.
+ *
+ * @typeParam TPayload - The payload recorded for each link.
+ */
+export interface BuildBacklinksSnapshotParams<TPayload> {
+  /**
+   * The backlinks to record.
+   */
+  readonly backlinks: BacklinksLike;
+
+  /**
+   * Computes the identity key of a link.
+   *
+   * Must be the same function passed to {@link editBacklinksSnapshot}, or no link will ever match.
+   *
+   * @default `JSON.stringify`
+   */
+  linkIdentityKeyProvider?(this: void, link: Reference): string;
+
+  /**
+   * Rewrites the path of a backlink-holding note as it will be **after** the operation.
+   *
+   * A note that holds a backlink can itself be renamed or moved by the same operation — including the
+   * renamed note's own self-links. Remapping here keys the snapshot by the path the rewrite will actually
+   * open.
+   *
+   * @default the identity function
+   */
+  pathRemapper?(this: void, backlinkPath: string): string;
+
+  /**
+   * Produces the payload to record for a link. See {@link BacklinksSnapshot} for what a payload is for.
+   *
+   * @param link - The link being recorded.
+   * @returns The payload.
+   */
+  payloadProvider(this: void, link: Reference): TPayload;
+
+  /**
+   * An existing snapshot to merge into, so several sets of backlinks can be accumulated into one.
+   *
+   * Merging is what makes a single rewrite pass per note possible when a note links to several moved
+   * targets: without it, calling the rewrite once per target would open — and write — the same note
+   * repeatedly.
+   *
+   * When omitted, a new snapshot is created.
+   */
+  readonly target?: MutableBacklinksSnapshot<TPayload>;
+}
+
+/**
  * Params for {@link convertLink}.
  */
 export interface ConvertLinkParams {
@@ -320,6 +436,61 @@ export interface EditBacklinksParams extends EditBacklinksOptions {
    * The path or file to edit the backlinks for.
    */
   readonly pathOrFile: PathOrFile;
+}
+
+/**
+ * Options for {@link editBacklinksSnapshot}.
+ */
+export type EditBacklinksSnapshotOptions = ProcessOptions;
+
+/**
+ * Parameters for {@link editBacklinksSnapshot}.
+ *
+ * @typeParam TPayload - The payload recorded for each link when the snapshot was built.
+ */
+export interface EditBacklinksSnapshotParams<TPayload> extends EditBacklinksSnapshotOptions {
+  /**
+   * The Obsidian application instance.
+   */
+  readonly app: App;
+
+  /**
+   * The function that converts each link.
+   */
+  linkConverter(this: void, params: BacklinkConversionParams<TPayload>): Promisable<MaybeReturn<string>>;
+
+  /**
+   * Computes the identity key of a link.
+   *
+   * Must be the same function passed to {@link buildBacklinksSnapshot}, or no link will ever match.
+   *
+   * @default `JSON.stringify`
+   */
+  linkIdentityKeyProvider?(this: void, link: Reference): string;
+
+  /**
+   * An optional reporter invoked once per backlink file after its links are updated, with the running
+   * count of processed files and the total. When omitted, no progress is reported.
+   */
+  readonly linkUpdateProgressReporter?: LinkUpdateProgressReporter;
+
+  /**
+   * Whether the converter is also shown links that are **not** in the snapshot, with an `undefined`
+   * {@link BacklinkConversionParams.payload}.
+   *
+   * The default filters them out, which is what a plain rename wants: a link absent from the snapshot was
+   * either never the caller's to rewrite, or has already been rewritten by someone else. Set this to `true`
+   * only when the caller has its own reason to look at them — a widened match of its own, or logging a skip
+   * that would otherwise be silent.
+   *
+   * @default `false`
+   */
+  readonly shouldVisitUnmatchedLinks?: boolean;
+
+  /**
+   * The captured backlinks to edit.
+   */
+  readonly snapshot: BacklinksSnapshot<TPayload>;
 }
 
 /**
@@ -704,6 +875,13 @@ export interface GenerateRawMarkdownLinkParams {
    */
   readonly url: string;
 }
+
+/**
+ * A {@link BacklinksSnapshot} while it is still being accumulated by {@link buildBacklinksSnapshot}.
+ *
+ * @typeParam TPayload - The payload recorded for each link.
+ */
+export type MutableBacklinksSnapshot<TPayload> = Map<string, Map<string, TPayload>>;
 
 /**
  * Params for {@link shouldResetAlias}.
@@ -1369,6 +1547,44 @@ interface UpdateLinksInContentParams {
 }
 
 /**
+ * Records a set of backlinks into a snapshot that {@link editBacklinksSnapshot} can rewrite later.
+ *
+ * Call it once per target and pass {@link BuildBacklinksSnapshotParams.target} to accumulate several targets
+ * into one snapshot, so that a note linking to several of them is still rewritten exactly once.
+ *
+ * @typeParam TPayload - The payload recorded for each link.
+ * @param params - The parameters for building the snapshot.
+ * @returns The snapshot — {@link BuildBacklinksSnapshotParams.target} itself when one was passed.
+ */
+export function buildBacklinksSnapshot<TPayload>(params: BuildBacklinksSnapshotParams<TPayload>): MutableBacklinksSnapshot<TPayload> {
+  const {
+    backlinks,
+    linkIdentityKeyProvider = defaultLinkIdentityKeyProvider,
+    pathRemapper,
+    payloadProvider,
+    target
+  } = params;
+
+  const snapshot = target ?? new Map<string, Map<string, TPayload>>();
+
+  for (const backlinkPath of backlinks.keys()) {
+    const newBacklinkPath = pathRemapper?.(backlinkPath) ?? backlinkPath;
+    let payloads = snapshot.get(newBacklinkPath);
+    if (!payloads) {
+      payloads = new Map<string, TPayload>();
+      snapshot.set(newBacklinkPath, payloads);
+    }
+
+    /* v8 ignore next -- A key yielded by `keys()` always resolves; the `?? []` is defensive. */
+    for (const link of backlinks.get(backlinkPath) ?? []) {
+      payloads.set(linkIdentityKeyProvider(link), payloadProvider(link));
+    }
+  }
+
+  return snapshot;
+}
+
+/**
  * Converts a link to a new path.
  *
  * @param params - The parameters for converting the link.
@@ -1417,20 +1633,58 @@ export async function editBacklinks(params: EditBacklinksParams): Promise<void> 
     ...options
   } = params;
   const backlinks = await getBacklinksForFileSafe({ app, pathOrFile, ...options });
-  const backlinkNotePaths = [...backlinks.keys()];
+  const snapshot = buildBacklinksSnapshot<undefined>({
+    backlinks,
+    payloadProvider: getUndefinedPayload
+  });
+  await editBacklinksSnapshot(normalizeOptionalProperties<EditBacklinksSnapshotParams<undefined>>({
+    app,
+    linkConverter: ({ link }) => linkConverter(link),
+    linkUpdateProgressReporter,
+    snapshot,
+    ...options
+  }));
+}
+
+/**
+ * Edits a captured snapshot of backlinks, rewriting each backlink-holding note exactly once.
+ *
+ * The counterpart of {@link editBacklinks} for callers that cannot fetch the backlinks at rewrite time —
+ * because the rename that invalidated them has already happened — or that rewrite links to several targets
+ * at once. See {@link BacklinksSnapshot} for both cases.
+ *
+ * @typeParam TPayload - The payload recorded for each link when the snapshot was built.
+ * @param params - The parameters for editing the backlinks.
+ * @returns A {@link Promise} that resolves when the backlinks have been edited.
+ */
+export async function editBacklinksSnapshot<TPayload>(params: EditBacklinksSnapshotParams<TPayload>): Promise<void> {
+  const {
+    app,
+    linkConverter,
+    linkIdentityKeyProvider = defaultLinkIdentityKeyProvider,
+    linkUpdateProgressReporter,
+    shouldVisitUnmatchedLinks = false,
+    snapshot,
+    ...options
+  } = params;
+
+  const backlinkNotePaths = [...snapshot.keys()];
   let processed = 0;
   for (const backlinkNotePath of backlinkNotePaths) {
-    const currentLinks = ensureNonNullable(backlinks.get(backlinkNotePath));
-    const linkJsons = new Set<string>(currentLinks.map((link) => JSON.stringify(link)));
+    const payloads = ensureNonNullable(snapshot.get(backlinkNotePath));
     await editLinks({
       app,
       linkConverter: (link) => {
-        const linkJson = JSON.stringify(link);
-        if (!linkJsons.has(linkJson)) {
+        const linkIdentityKey = linkIdentityKeyProvider(link);
+        if (!payloads.has(linkIdentityKey) && !shouldVisitUnmatchedLinks) {
           return;
         }
 
-        return linkConverter(link);
+        return linkConverter({
+          link,
+          payload: payloads.get(linkIdentityKey),
+          sourcePath: backlinkNotePath
+        });
       },
       pathOrFile: backlinkNotePath,
       ...options
@@ -2049,6 +2303,10 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
   });
 }
 
+function defaultLinkIdentityKeyProvider(link: Reference): string {
+  return JSON.stringify(link);
+}
+
 // eslint-disable-next-line unicorn/consistent-boolean-name -- Mirrors the exported function it implements.
 function fixFrontmatterMarkdownLinksImpl(params: FixFrontmatterMarkdownLinksImplParams): boolean {
   const {
@@ -2322,6 +2580,10 @@ function getLinkConfig(params: GenerateMarkdownLinkParams): LinkConfig {
     shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
       ?? (params.originalLink ? hasLeadingSlash(params.originalLink) : undefined) ?? false
   };
+}
+
+function getUndefinedPayload(): undefined {
+  // A single-target rewrite has nothing to remember per link: the target is implied.
 }
 
 function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean): MaybeReturn<string> {

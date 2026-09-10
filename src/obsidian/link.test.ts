@@ -46,8 +46,10 @@ import {
   applyFileChanges
 } from './file-change.ts';
 import {
+  buildBacklinksSnapshot,
   convertLink,
   editBacklinks,
+  editBacklinksSnapshot,
   editLinks,
   editLinksInContent,
   extractLinkFile,
@@ -2497,6 +2499,224 @@ describe('app-dependent functions', () => {
       });
 
       expect(linkUpdateProgressReporter).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('buildBacklinksSnapshot', () => {
+    const linkToA = {
+      displayText: 'a',
+      link: 'a',
+      original: '[[a]]',
+      position: { end: { col: 5, line: 1, offset: 12 }, start: { col: 0, line: 1, offset: 7 } }
+    };
+    const linkToB = {
+      displayText: 'b',
+      link: 'b',
+      original: '[[b]]',
+      position: { end: { col: 10, line: 1, offset: 17 }, start: { col: 5, line: 1, offset: 12 } }
+    };
+
+    it('should key the snapshot by the holder path and the link identity', () => {
+      const snapshot = buildBacklinksSnapshot<string>({
+        backlinks: new Map([['note.md', [linkToA]]]),
+        payloadProvider: () => 'a.md'
+      });
+
+      expect([...snapshot.keys()]).toEqual(['note.md']);
+      expect(snapshot.get('note.md')?.get(JSON.stringify(linkToA))).toBe('a.md');
+    });
+
+    it('should key the snapshot by the remapped holder path', () => {
+      const snapshot = buildBacklinksSnapshot<undefined>({
+        backlinks: new Map([['old.md', [linkToA]]]),
+        pathRemapper: (backlinkPath) => backlinkPath === 'old.md' ? 'new.md' : backlinkPath,
+        payloadProvider: () => undefined
+      });
+
+      expect([...snapshot.keys()]).toEqual(['new.md']);
+    });
+
+    it('should merge several targets into one entry per holder', () => {
+      const snapshot = buildBacklinksSnapshot<string>({
+        backlinks: new Map([['note.md', [linkToA]]]),
+        payloadProvider: () => 'a.md'
+      });
+      buildBacklinksSnapshot<string>({
+        backlinks: new Map([['note.md', [linkToB]]]),
+        payloadProvider: () => 'b.md',
+        target: snapshot
+      });
+
+      expect(snapshot.size).toBe(1);
+      expect(snapshot.get('note.md')?.size).toBe(2);
+      expect(snapshot.get('note.md')?.get(JSON.stringify(linkToB))).toBe('b.md');
+    });
+
+    it('should honour a custom linkIdentityKeyProvider', () => {
+      const snapshot = buildBacklinksSnapshot<undefined>({
+        backlinks: new Map([['note.md', [linkToA]]]),
+        linkIdentityKeyProvider: (link) => link.original,
+        payloadProvider: () => undefined
+      });
+
+      expect([...(snapshot.get('note.md') ?? new Map<string, undefined>()).keys()]).toEqual(['[[a]]']);
+    });
+
+    it('should still record a holder that has no links', () => {
+      const snapshot = buildBacklinksSnapshot<undefined>({
+        backlinks: new Map<string, never[]>([['note.md', []]]),
+        payloadProvider: () => undefined
+      });
+
+      expect([...snapshot.keys()]).toEqual(['note.md']);
+      expect(snapshot.get('note.md')?.size).toBe(0);
+    });
+  });
+
+  describe('editBacklinksSnapshot', () => {
+    const linkToA = {
+      displayText: 'a',
+      link: 'a',
+      original: '[[a]]',
+      position: { end: { col: 5, line: 1, offset: 12 }, start: { col: 0, line: 1, offset: 7 } }
+    };
+    const linkToB = {
+      displayText: 'b',
+      link: 'b',
+      original: '[[b]]',
+      position: { end: { col: 10, line: 1, offset: 17 }, start: { col: 5, line: 1, offset: 12 } }
+    };
+
+    function mockFileWithLinks(links: typeof linkToA[]): void {
+      vi.mocked(applyFileChanges).mockImplementation(
+        async ({ changesProvider }) => {
+          if (typeof changesProvider !== 'function') {
+            return;
+          }
+
+          const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+          // Must equal the fixture content of `note.md`, or `editLinks` bails before reaching the converter.
+          await resolveValue(changesProvider, { abortSignal, content: '# Note\n[[target]]' });
+        }
+      );
+
+      vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
+        embeds: undefined,
+        frontmatterLinks: undefined,
+        links,
+        sections: undefined
+      }));
+    }
+
+    it('should hand the converter the payload captured for the link', async () => {
+      mockFileWithLinks([linkToA]);
+      const linkConverter = vi.fn(() => '[[a-new]]');
+
+      await editBacklinksSnapshot<string>({
+        app,
+        linkConverter,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot: buildBacklinksSnapshot<string>({
+          backlinks: new Map([['note.md', [linkToA]]]),
+          payloadProvider: () => 'a.md'
+        })
+      });
+
+      expect(linkConverter).toHaveBeenCalledWith({ link: linkToA, payload: 'a.md', sourcePath: 'note.md' });
+    });
+
+    it('should rewrite a holder that names several targets exactly once', async () => {
+      mockFileWithLinks([linkToA, linkToB]);
+      const snapshot = buildBacklinksSnapshot<string>({
+        backlinks: new Map([['note.md', [linkToA]]]),
+        payloadProvider: () => 'a.md'
+      });
+      buildBacklinksSnapshot<string>({
+        backlinks: new Map([['note.md', [linkToB]]]),
+        payloadProvider: () => 'b.md',
+        target: snapshot
+      });
+      const linkConverter = vi.fn(() => '[[new]]');
+
+      await editBacklinksSnapshot<string>({
+        app,
+        linkConverter,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot
+      });
+
+      // One `applyFileChanges` for the two targets is the whole point: the holder is opened once, not twice.
+      expect(applyFileChanges).toHaveBeenCalledTimes(1);
+      expect(linkConverter).toHaveBeenCalledTimes(2);
+      expect(linkConverter).toHaveBeenCalledWith({ link: linkToA, payload: 'a.md', sourcePath: 'note.md' });
+      expect(linkConverter).toHaveBeenCalledWith({ link: linkToB, payload: 'b.md', sourcePath: 'note.md' });
+    });
+
+    it('should skip links absent from the snapshot by default', async () => {
+      mockFileWithLinks([linkToA, linkToB]);
+      const linkConverter = vi.fn(() => '[[a-new]]');
+
+      await editBacklinksSnapshot<undefined>({
+        app,
+        linkConverter,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot: buildBacklinksSnapshot<undefined>({
+          backlinks: new Map([['note.md', [linkToA]]]),
+          payloadProvider: () => undefined
+        })
+      });
+
+      expect(linkConverter).toHaveBeenCalledTimes(1);
+      expect(linkConverter).toHaveBeenCalledWith({ link: linkToA, payload: undefined, sourcePath: 'note.md' });
+    });
+
+    it('should show the converter unmatched links when shouldVisitUnmatchedLinks is true', async () => {
+      mockFileWithLinks([linkToA, linkToB]);
+      const linkConverter = vi.fn(() => undefined);
+
+      await editBacklinksSnapshot<string>({
+        app,
+        linkConverter,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        shouldVisitUnmatchedLinks: true,
+        snapshot: buildBacklinksSnapshot<string>({
+          backlinks: new Map([['note.md', [linkToA]]]),
+          payloadProvider: () => 'a.md'
+        })
+      });
+
+      expect(linkConverter).toHaveBeenCalledTimes(2);
+      expect(linkConverter).toHaveBeenCalledWith({ link: linkToB, payload: undefined, sourcePath: 'note.md' });
+    });
+
+    it('should match links through a custom linkIdentityKeyProvider', async () => {
+      mockFileWithLinks([linkToA]);
+
+      function linkIdentityKeyProvider(link: Reference): string {
+        return link.original;
+      }
+
+      const linkConverter = vi.fn(() => '[[a-new]]');
+
+      await editBacklinksSnapshot<undefined>({
+        app,
+        linkConverter,
+        linkIdentityKeyProvider,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot: buildBacklinksSnapshot<undefined>({
+          // A DIFFERENT object with the same `original`: only the custom key provider can match it.
+          backlinks: new Map([['note.md', [{ ...linkToA, displayText: 'something else' }]]]),
+          linkIdentityKeyProvider,
+          payloadProvider: () => undefined
+        })
+      });
+
+      expect(linkConverter).toHaveBeenCalledTimes(1);
     });
   });
 
