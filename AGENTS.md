@@ -1258,7 +1258,8 @@ retired by anyone but its author — do not add one.**
 | `@codemirror/view` | `6.38.6` | Same — `obsidian` peer-pins it exactly. | Same as above. |
 | `@lezer/common` | `1.5.2` | Must match the copy Obsidian bundles at runtime — our copy is types-only, so a newer pin declares API the runtime lacks. Nothing else in the tree depends on it, so npm cannot detect or correct a mismatch. Verified against Obsidian `1.13.4` — see below. | A newer `@lezer/common` publishes — `npm view @lezer/common version` — which is the cue to re-derive what Obsidian bundles, not proof the pin is stale. `obsidian-api` still declares no `@lezer/*`, so there is no upstream manifest to ask. |
 | `typescript` | `6.0.3` | `@typescript-eslint` peer-requires `>=4.8.4 <6.1.0`, and its parser crashes on the TypeScript 7 (tsgo) native API, so type-aware ESLint cannot run on 7. TypeScript 7 was adopted in `db7c417c` (compile on 7, tooling on 6) and rolled back in `846d6c6a`; `3234c7d0` then made the pin exact so a dependency sweep could not drift it back. `6.0.3` is also the newest stable `6.x`. | `@typescript-eslint`'s peer range admits `7.x` — `node -e "console.log(require('typescript-eslint/package.json').peerDependencies.typescript)"` |
-| `js-yaml` (override) | `4.3.1` | `js-yaml@5` breaks `npm run docs:build` — see the next section. | `astro` accepts `js-yaml@5` — `node -e "console.log(require('astro/package.json').dependencies['js-yaml'])"` |
+| `js-yaml` (override) | `4.3.2` | `js-yaml@5` breaks `npm run docs:build` — see the next section. Held at the newest `4.x`, which is where the advisory fixes are backported. | A newer `v4-legacy` publishes — `npm view js-yaml dist-tags.v4-legacy` — which is the cue to move the pin onto it, not to retire it. It **retires** when `astro` accepts `js-yaml@5` — `node -e "console.log(require('astro/package.json').dependencies['js-yaml'])"` |
+| `smol-toml` (override) | `^1.8.0` | Not a pin but an advisory-driven override: it clears GHSA-7w5x-hrqm-74c2, which no direct bump reaches because `markdownlint-cli2` pins the vulnerable `1.7.0` exactly. See "Security overrides (`smol-toml`)" below. | `markdownlint-cli2` asks for `1.7.1` or later itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
 | `@puppeteer/browsers` (override) | `^3.2.0` | Not a pin but an advisory-driven override, tracked here for the same reason: it clears `extract-zip` GHSA-jmr9-qjv8-65gv, which nothing else in a sweep can reach. See "Security overrides (`extract-zip`)" below. | `@wdio/utils` asks for `@puppeteer/browsers@^3` itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
 
 **The CodeMirror pins are already due — the condition has fired upstream but not yet on npm.**
@@ -1309,7 +1310,7 @@ Not pinned, despite what this table used to claim: `@types/node` is `^26.1.2`. T
 `25.0.3` "matches the Node.js version used in the project"; it has since moved to a caret range and
 tracks the `26.x` line.
 
-### The `js-yaml` override is pinned to `4.3.1` — do NOT take it to `5.x`
+### The `js-yaml` override is pinned to `4.3.2` — do NOT take it to `5.x`
 
 `overrides.js-yaml` is an **exact pin**, deliberately: `update-npm-deps.ps1` upgrades every
 caret-ranged override it finds and has no exclusion list, so `^4.x` got carried to `^5.2.2` twice. An
@@ -1323,13 +1324,22 @@ exact pin is the only self-enforcing form — the script skips exact versions by
 The pin is a compromise, not a consensus: `astro` asks for `^4.3.0` (raised from `^4.1.1` in
 `astro@7.1.6`), `@astrojs/starlight` and `@astrojs/internal-helpers` for `^4.1.1`, `cosmiconfig` for
 `^4.1.0` and `@istanbuljs/load-nyc-config` for `^3`, but `markdownlint-cli2` pins `5.2.2` **exactly**
-and is force-downgraded to `4.3.1` by this override. That downgrade is verified green through
-`lint:md`. `4.3.1` is the newest `4.x` — it is what the `v4-legacy` dist-tag points at, and it backports
-the CVE-2026-59870 fix (GHSA-5p4m-2wfm-xmqj) that `4.0.0`–`4.3.0` lack, so this override is also what
-clears that advisory for `astro`, `starlight`, `cosmiconfig`, `markdownlint-cli2` and
-`@istanbuljs/load-nyc-config` at once. Astro's bump changed nothing but the recorded `expect` in
-[`pinned-versions.json`](pinned-versions.json). When Astro moves to `js-yaml@5`, the pin can be
-retired — until then, check `lint:md` as well as `docs:build` on any bump.
+and is force-downgraded to the pinned `4.x` by this override. That downgrade is verified green through
+`lint:md`. The pin always sits on the newest `4.x` — whatever the `v4-legacy` dist-tag points at — because
+that line is where the advisory fixes are backported, which makes this override what clears them for
+`astro`, `starlight`, `cosmiconfig`, `markdownlint-cli2` and `@istanbuljs/load-nyc-config` at once:
+`4.3.1` carried CVE-2026-59870 (GHSA-5p4m-2wfm-xmqj, quadratic CPU in `!!omap` resolution) and `4.3.2`
+carries GHSA-2883-xcg3-v3hh (`maxTotalMergeKeys` does not limit CPU use for empty merge sources). When
+Astro moves to `js-yaml@5`, the pin can be retired — until then, check `lint:md` as well as `docs:build`
+on any bump.
+
+**Being exact is what keeps the sweep off it, and also what lets it go stale — so the `check` watches the
+tag, not Astro.** `pinned-versions.json` used to test this pin by reading Astro's declared range, which
+answers "can the override be deleted yet?" and says nothing about "is the pinned version still the
+patched one?". On 2026-09-09 that gap surfaced exactly as predicted: `4.3.2` had published with the
+`maxTotalMergeKeys` fix, the pin sat on `4.3.1`, the sweep failed on ten high advisories, and the check
+had been green the whole time. The `check` is now `npm view js-yaml dist-tags.v4-legacy`; the Astro
+question moved to that entry's `manualCheck`, where it belongs — a deletion condition, not a safety one.
 
 Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yaml's `safeLoad` /
 `safeDump` at **module-load** time, and both were removed in js-yaml v4 — so merely *importing*
@@ -1378,6 +1388,26 @@ published `brace-expansion@1.1.17` flows in through a plain `npm update`, at whi
 `eslint-plugin-import` →
 `import-x` alias is separate and does **not** retire with it — that one lasts as long as
 `eslint-plugin-import` needs `minimatch@^3`.
+
+### Security overrides (`smol-toml` GHSA-7w5x-hrqm-74c2)
+
+`smol-toml` <= `1.7.0` denial-of-services on malformed TOML documents; the fix is in `1.7.1`. Nothing here
+depends on it directly, and no direct bump reaches it: `markdownlint-cli2` pins `1.7.0` **exactly** and is
+already at its latest, while `astro` and `@astrojs/internal-helpers` ask for `^1.6.0` but had deduped onto
+that same vulnerable copy. So the `overrides` block carries `smol-toml` → `^1.8.0`, which moves all three
+at once.
+
+The forced version was already proven in this tree before the override existed: `cspell-config-lib` requires
+`^1.8.0`, so `1.8.0` was installed side by side with the `1.7.0` copy — the override **collapses** the two
+rather than introducing anything, and `1.8.0` is a minor inside `1.x`. It is a **caret**, not an exact pin,
+because there is no upper bound to hold: it is an advisory floor, so `update-npm-deps.ps1` floats it like
+any other caret override.
+
+**Never take `npm audit fix --force` here.** Its remedy is `markdownlint-cli2@0.21.0`, a downgrade (rule
+G100).
+
+**Remove this override** when `markdownlint-cli2` asks for `1.7.1` or later itself, which is what
+[`pinned-versions.json`](pinned-versions.json) checks on every sweep.
 
 ### Security overrides (`extract-zip` GHSA-jmr9-qjv8-65gv)
 

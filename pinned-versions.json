@@ -52,9 +52,17 @@
     },
     "js-yaml": {
       "section": "overrides",
-      "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x, which is the `v4-legacy` dist-tag: 4.3.1 backports the CVE-2026-59870 fix (GHSA-5p4m-2wfm-xmqj, quadratic CPU in !!omap resolution) that the vulnerable 4.0.0-4.3.0 range lacks, so this override is also what clears that advisory for astro, starlight, cosmiconfig, markdownlint-cli2 and @istanbuljs/load-nyc-config at once.",
-      "check": "node -e \"process.stdout.write(require('astro/package.json').dependencies['js-yaml'])\"",
-      "expect": "^4.3.0"
+      "why": "js-yaml@5 drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'`. Lint and unit tests stay green, so only the docs build catches it. Held at the newest 4.x, which is the `v4-legacy` dist-tag - and that tag is where the advisory fixes are backported, so it is also what clears them for astro, starlight, cosmiconfig, markdownlint-cli2 and @istanbuljs/load-nyc-config at once: 4.3.1 carried CVE-2026-59870 (GHSA-5p4m-2wfm-xmqj, quadratic CPU in !!omap resolution) and 4.3.2 carries GHSA-2883-xcg3-v3hh (maxTotalMergeKeys does not limit CPU use for empty merge sources, >=4.0.0 <4.3.2). The check tracks that tag rather than astro's declared range because of how the second one surfaced: on 2026-09-09 the sweep failed on it, since 4.3.2 had shipped while this exact pin - invisible to the caret sweep by construction - sat on 4.3.1, and the old astro-range check stayed green the whole time. A check that cannot see the condition it guards is the silent pin rule G100 exists to stop.",
+      "check": "npm view js-yaml dist-tags.v4-legacy",
+      "expect": "4.3.2",
+      "manualCheck": "The check is a re-examination trigger, not proof: a newer v4-legacy publish means read its changelog and move this pin onto it, because while astro is on 4.x a backport is the only way an advisory leaves this tree. The override's DELETION condition is separate and has no mechanical test here - it can go once nothing needs js-yaml 4, i.e. when `node -e \"process.stdout.write(require('astro/package.json').dependencies['js-yaml'])\"` stops reporting ^4.3.0. Verify either change with `npm run docs:build`, the only gate that exercises Astro's default import."
+    },
+    "smol-toml": {
+      "section": "overrides",
+      "why": "Clears GHSA-7w5x-hrqm-74c2 (smol-toml denial of service via malformed TOML documents, <=1.7.0), fixed in 1.7.1. No direct bump reaches it: markdownlint-cli2 pins smol-toml at the exact vulnerable 1.7.0 and is itself already latest, while astro and @astrojs/internal-helpers declare ^1.6.0 but deduped onto that same 1.7.0 copy - so only an override moves all three at once. The forced version is not a hopeful one: cspell-config-lib requires ^1.8.0 and already had 1.8.0 installed alongside them in this tree, so the override collapses the two copies into one rather than introducing anything, and 1.8.0 is a minor inside 1.x. Caret rather than exact because nothing here needs an upper bound - it is an advisory floor, so the sweep floats it like any other caret. NEVER take the `npm audit fix --force` remedy: it downgrades markdownlint-cli2 to 0.21.0 (rule G100).",
+      "check": "node -e \"const fs=require('node:fs');process.stdout.write(JSON.parse(fs.readFileSync('node_modules/markdownlint-cli2/package.json','utf8')).dependencies['smol-toml'])\"",
+      "expect": "1.7.0",
+      "manualCheck": "The check reads markdownlint-cli2's own exact pin, not a version, because that pin is what makes the override necessary - the astro side would resolve fresh on its own. When it moves to 1.7.1 or later the override and this entry can both go. Two paths verify a change: `npm run lint:md` runs markdownlint-cli2, and `npm run docs:build` runs astro's config loading, which is where the other copy is read."
     },
     "typescript": {
       "section": "dependencies",
