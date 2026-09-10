@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 102.1.0
+
+- test(integration): reword a comment so cspell accepts it
+- test(integration): opt back into the settings popout the harness now switches off
+- chore(spellcheck): accept remapper, the pathRemapper seam's noun
+- feat(obsidian/link): add editBacklinksSnapshot, the primitive editBacklinks now wraps
+- chore: update libs
+
 ## 102.0.0
 
 - feat(script-utils)!: write demo-vault archives with fflate, dropping adm-zip from the package
