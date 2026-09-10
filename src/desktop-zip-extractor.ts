@@ -7,9 +7,10 @@
  * roughly 34 KB of minified JavaScript into EVERY Obsidian plugin built with this library: a plugin
  * ships a single CJS `main.js`, esbuild has no code splitting to put a dependency behind, and a
  * `await import()` only defers evaluation — the module body is inlined either way. `node:zlib` is
- * already an esbuild external, so the same work now costs a plugin bundle nothing at all. Archives
- * are still WRITTEN with `adm-zip` at release time (`script-utils/demo-vault.ts`), which is Node-side
- * tooling and never reaches a plugin bundle.
+ * already an esbuild external, so the same work now costs a plugin bundle nothing at all. Archives are
+ * WRITTEN with `fflate` at release time (`script-utils/demo-vault.ts`), which is Node-side tooling and
+ * never reaches a plugin bundle — a third-party writer there is also what keeps this reader checked
+ * against an implementation that is not its own.
  *
  * Deliberately narrow: it reads exactly what that writer produces — stored and deflated entries in an
  * unencrypted archive below the 4 GB / 65535-entry ZIP64 threshold — and raises a named error for

@@ -371,9 +371,10 @@ export function myFunction(param: Type): ReturnType {
   not. `adm-zip` opens with `const { randomFillSync } = require('crypto')`, so a static
   `import AdmZip from 'adm-zip'` in `desktop-demo-vault-opener.ts` threw during barrel initialization and
   killed the harness plugin's load on Android — every test in its `integration-tests:android` project
-  failed behind an opaque "plugin failed to load". That opener no longer depends on it at all:
-  extraction moved to `desktop-zip-extractor.ts`, which needs only `node:zlib`. The rule stands for the
-  next such dependency — defer it behind a call-time `import()`, or do without it.
+  failed behind an opaque "plugin failed to load". `adm-zip` has since left this package entirely, so
+  neither half of it is in the tree to inspect: extraction moved to `desktop-zip-extractor.ts`, which
+  needs only `node:zlib`, and the release-time archiver moved to `fflate`. The rule stands for the next
+  such dependency — defer it behind a call-time `import()`, or do without it.
 - **A dependency on the plugin-runtime path costs every consumer's bundle, and a dynamic `import()` does
   NOT buy it back.** An Obsidian plugin ships one CJS `main.js`, esbuild has no code splitting to put a
   chunk behind, and `await import()` only defers EVALUATION — the module body is inlined either way.

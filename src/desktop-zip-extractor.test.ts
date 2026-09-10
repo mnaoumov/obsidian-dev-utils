@@ -1,4 +1,6 @@
-import AdmZip from 'adm-zip';
+import type { Zippable } from 'fflate';
+
+import { zipSync } from 'fflate';
 import { Buffer } from 'node:buffer';
 import {
   describe,
@@ -32,7 +34,8 @@ const CENTRAL_DIRECTORY_COMPRESSION_METHOD_OFFSET = 10;
 const CENTRAL_DIRECTORY_COMPRESSED_SIZE_OFFSET = 20;
 const CENTRAL_DIRECTORY_LOCAL_HEADER_OFFSET_OFFSET = 42;
 
-const COMPRESSION_METHOD_STORED = 0;
+// `fflate`'s per-entry compression level, where `0` is the one that stores rather than deflates.
+const STORED_COMPRESSION_LEVEL = 0;
 const UNSUPPORTED_COMPRESSION_METHOD = 99;
 const SATURATED_UINT_16 = 65_535;
 const SATURATED_UINT_32 = 4_294_967_295;
@@ -159,25 +162,25 @@ describe('extractZipArchive', () => {
       .toThrow('entry \'note.md\' uses unsupported compression method 99');
   });
 
+  // Each hostile name below is written into the archive verbatim, which is what a real attack ships: the
+  // Names are legal ZIP entry names, and only the reader stands between them and a file outside the target.
   it('should refuse an absolute entry name', () => {
-    expect(() => extract(renameEntry(buildArchive([{ content: 'body', name: 'top/x.md' }]), 'top/x.md', '/note.md')))
+    expect(() => extract(buildArchive([{ content: 'body', name: '/note.md' }])))
       .toThrow('Refusing to extract the absolute archive entry \'/note.md\'.');
   });
 
   it('should refuse a drive-qualified entry name', () => {
-    // The one hostile shape `adm-zip` writes verbatim — it strips a leading `/` and a `..`, and rewrites
-    // A backslash, but a drive prefix passes straight through.
     expect(() => extract(buildArchive([{ content: 'body', name: 'C:note.md' }])))
       .toThrow('Refusing to extract the drive-qualified archive entry \'C:note.md\'.');
   });
 
   it('should refuse an entry name that uses a backslash separator', () => {
-    expect(() => extract(renameEntry(buildArchive([{ content: 'body', name: 'aaa/x.md' }]), 'aaa/x.md', String.raw`aaa\x.md`)))
+    expect(() => extract(buildArchive([{ content: 'body', name: String.raw`aaa\x.md` }])))
       .toThrow('which uses a backslash separator');
   });
 
   it('should refuse an entry name that climbs out of the target directory', () => {
-    expect(() => extract(renameEntry(buildArchive([{ content: 'body', name: 'aa/x.md' }]), 'aa/x.md', '../x.md')))
+    expect(() => extract(buildArchive([{ content: 'body', name: '../x.md' }])))
       .toThrow('which points outside the target directory');
   });
 });
@@ -186,23 +189,24 @@ describe('extractZipArchive', () => {
  * Builds a ZIP archive with the same writer the release path uses, so what is read back is what a demo
  * vault archive really contains rather than a test-shaped approximation.
  *
- * `adm-zip` deflates any entry with content and stores an empty one; setting the header's method before
- * the write is the only way to get a STORED entry that carries bytes.
+ * That writer is a THIRD-PARTY one, which is the point: the reader under test is our own, so an archive it
+ * accepts has been agreed on by two independent implementations rather than round-tripped through a single
+ * shared understanding of the format.
+ *
+ * `fflate` deflates every entry by default; `level: 0` is what asks for a STORED one that carries bytes.
+ * Entry names are written verbatim, hostile ones included, so a traversal case needs no patching.
  *
  * @param entryDefinitions - The entries to write.
  * @returns The archive bytes.
  */
 function buildArchive(entryDefinitions: readonly ArchiveEntryDefinition[]): Buffer {
-  const zip = new AdmZip();
+  const entries: Zippable = {};
   for (const entryDefinition of entryDefinitions) {
-    zip.addFile(entryDefinition.name, Buffer.from(entryDefinition.content, 'utf-8'));
-    const entry = zip.getEntry(entryDefinition.name);
-    if (entryDefinition.shouldStore && entry) {
-      entry.header.method = COMPRESSION_METHOD_STORED;
-    }
+    const content = Buffer.from(entryDefinition.content, 'utf-8');
+    entries[entryDefinition.name] = entryDefinition.shouldStore ? [content, { level: STORED_COMPRESSION_LEVEL }] : content;
   }
 
-  return zip.toBuffer();
+  return Buffer.from(zipSync(entries));
 }
 
 /**
@@ -290,20 +294,4 @@ function patchUInt32(archive: Buffer, offset: number, value: number): Buffer {
   const patched = Buffer.from(archive);
   patched.writeUInt32LE(value, offset);
   return patched;
-}
-
-/**
- * Renames an entry in place, in both its local and its central header.
- *
- * The two names must be the same length so every offset the archive records stays valid — which is what
- * lets a hostile name be planted in an otherwise well-formed archive, the shape a real attack takes.
- * `latin1` round-trips every byte, so the binary fields survive the string replacement untouched.
- *
- * @param archive - The archive bytes.
- * @param from - The name as written.
- * @param to - The name to plant, of the same length.
- * @returns The patched archive.
- */
-function renameEntry(archive: Buffer, from: string, to: string): Buffer {
-  return Buffer.from(archive.toString('latin1').split(from).join(to), 'latin1');
 }

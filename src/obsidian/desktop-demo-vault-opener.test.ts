@@ -5,7 +5,7 @@ import type {
   RequestUrlParam
 } from 'obsidian';
 
-import AdmZip from 'adm-zip';
+import { zipSync } from 'fflate';
 import {
   afterEach,
   beforeEach,
@@ -152,13 +152,13 @@ function archiveFileName(version: string): string {
   return `${PLUGIN_ID}-${version}.zip`;
 }
 
-// A REAL archive, written by the same `adm-zip` the release path uses, so the opener runs the real
+// A REAL archive, written by the same `fflate` the release path uses, so the opener runs the real
 // Extractor end to end rather than a stand-in that could not fail the way extraction does. Its entries
 // Sit under the same single top-level folder the release path writes.
 function buildDemoVaultArchive(version: string): Buffer {
-  const zip = new AdmZip();
-  zip.addFile(`${demoVaultFolderName(version)}/${DEMO_VAULT_NOTE_PATH}`, Buffer.from(DEMO_VAULT_NOTE_CONTENT, 'utf-8'));
-  return zip.toBuffer();
+  return Buffer.from(zipSync({
+    [`${demoVaultFolderName(version)}/${DEMO_VAULT_NOTE_PATH}`]: Buffer.from(DEMO_VAULT_NOTE_CONTENT, 'utf-8')
+  }));
 }
 
 function demoVaultFolderName(version: string): string {

@@ -20,7 +20,7 @@
  * pushed, so an in-place write would leave an uncommitted change behind a published release.
  */
 
-import AdmZip from 'adm-zip';
+import { zipSync } from 'fflate';
 import { existsSync } from 'node:fs';
 import {
   cp,
@@ -39,13 +39,15 @@ import {
 import { ObsidianPluginRepoPaths } from '../obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import {
   getFolderName,
-  join
+  join,
+  relative
 } from '../path.ts';
 import {
   buildArchivedDemoVaultAppJsonContent,
   findOwnedDemoVaultAppJsonSettings,
   parseDemoVaultAppJson
 } from './demo-vault-app-json.ts';
+import { readdirPosix } from './fs.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
 import {
   getRootFolder,
@@ -62,6 +64,54 @@ const README_FILE_NAME = 'README.md';
 const OPENING_HEADING_REG_EXP = /^# .*/;
 
 /**
+ * The archive's entries, keyed by the name each one takes inside the ZIP.
+ *
+ * The whole archive is assembled as this map and serialized once, so injecting an entry is an ordinary
+ * `set` rather than a mutation of a half-built archive object.
+ */
+type DemoVaultZipEntries = Map<string, Buffer>;
+
+/**
+ * Parameters for {@link injectAppJson}.
+ */
+interface InjectAppJsonParams {
+  /**
+   * The committed settings the owned ones are merged over.
+   */
+  readonly appJson: DemoVaultAppJson;
+
+  /**
+   * The archive's entries, edited in place.
+   */
+  readonly entries: DemoVaultZipEntries;
+
+  /**
+   * The archive's single top-level folder, which every entry name is relative to.
+   */
+  readonly rootFolderName: string;
+}
+
+/**
+ * Parameters for {@link injectReadmeVersion}.
+ */
+interface InjectReadmeVersionParams {
+  /**
+   * The archive's entries, edited in place.
+   */
+  readonly entries: DemoVaultZipEntries;
+
+  /**
+   * The archive's single top-level folder, which every entry name is relative to.
+   */
+  readonly rootFolderName: string;
+
+  /**
+   * The plugin version the vault demonstrates.
+   */
+  readonly version: string;
+}
+
+/**
  * The minimal shape of a plugin `manifest.json` read by {@link archivePluginDemoVault}.
  */
 interface PluginManifest {
@@ -74,6 +124,21 @@ interface PluginManifest {
    * The plugin version, embedded in the archive's top-level folder name and its README heading.
    */
   readonly version: string;
+}
+
+/**
+ * Parameters for {@link readDemoVaultEntries}.
+ */
+interface ReadDemoVaultEntriesParams {
+  /**
+   * The vault folder to read, as an absolute path.
+   */
+  readonly demoVaultPath: string;
+
+  /**
+   * The archive's single top-level folder, which every entry name is relative to.
+   */
+  readonly rootFolderName: string;
 }
 
 /**
@@ -117,27 +182,40 @@ export async function archivePluginDemoVault(): Promise<null | string> {
     pluginId: manifest.id,
     version: manifest.version
   });
-  const zip = new AdmZip();
-  zip.addLocalFolder(demoVaultPath, rootFolderName);
-  injectAppJson(zip, await readCommittedAppJson(), rootFolderName);
-  injectReadmeVersion(zip, rootFolderName, manifest.version);
-  await zip.writeZipPromise(zipPath);
+  const entries = await readDemoVaultEntries({
+    demoVaultPath,
+    rootFolderName
+  });
+  injectAppJson({
+    appJson: await readCommittedAppJson(),
+    entries,
+    rootFolderName
+  });
+  injectReadmeVersion({
+    entries,
+    rootFolderName,
+    version: manifest.version
+  });
+  // Every entry is stamped with the moment the archive is built rather than the file's own mtime, which is
+  // What the previous archiver wrote. A demo vault's committed timestamps are checkout artifacts of whoever
+  // Ran the release, so they carry nothing a reader could use; the build time at least describes the
+  // Archive.
+  await writeFile(zipPath, zipSync(Object.fromEntries(entries)));
   return zipPath;
 }
 
 // Stores the archived vault's `.obsidian/app.json` — the committed settings with the owned ones merged
-// Over them. The entry is replaced rather than the file, so the repo folder is left exactly as it was.
-function injectAppJson(zip: AdmZip, appJson: DemoVaultAppJson, rootFolderName: string): void {
-  const entryName = join(rootFolderName, ObsidianPluginRepoPaths.DotObsidian, ObsidianPluginRepoPaths.AppJson);
-  const content = Buffer.from(buildArchivedDemoVaultAppJsonContent({ appJson }), 'utf-8');
-  const entry = zip.getEntry(entryName);
-  if (entry) {
-    zip.updateFile(entry, content);
-    return;
-  }
+// Over them. The ENTRY is written rather than the file, so the repo folder is left exactly as it was, and
+// A vault with nothing else to configure — which commits no `app.json` at all — gets one here regardless.
+function injectAppJson(params: InjectAppJsonParams): void {
+  const {
+    appJson,
+    entries,
+    rootFolderName
+  } = params;
 
-  // A vault with nothing else to configure commits no `app.json` at all, which is the expected state.
-  zip.addFile(entryName, content);
+  const entryName = join(rootFolderName, ObsidianPluginRepoPaths.DotObsidian, ObsidianPluginRepoPaths.AppJson);
+  entries.set(entryName, Buffer.from(buildArchivedDemoVaultAppJsonContent({ appJson }), 'utf-8'));
 }
 
 // Injects the built, `obsidian-dev-utils`-owned `demo-vault-helper` bootstrap plugin (shipped in this package) into the demo vault, so no per-vault copy is committed and an `obsidian-dev-utils` bump propagates fixes.
@@ -177,19 +255,26 @@ async function injectDemoVaultHelper(demoedPluginId: string): Promise<void> {
 // A vault that ships no README, or one opening on something other than an `# H1`, is left alone rather
 // Than corrected. The demo-vault coverage suite exempts `README.md` from its H1 check, so neither shape
 // Is a defect — and a release is the wrong moment to start failing on one.
-function injectReadmeVersion(zip: AdmZip, rootFolderName: string, version: string): void {
-  const entry = zip.getEntry(join(rootFolderName, README_FILE_NAME));
+function injectReadmeVersion(params: InjectReadmeVersionParams): void {
+  const {
+    entries,
+    rootFolderName,
+    version
+  } = params;
+
+  const entryName = join(rootFolderName, README_FILE_NAME);
+  const entry = entries.get(entryName);
   if (!entry) {
     return;
   }
 
-  const content = entry.getData().toString('utf-8');
+  const content = entry.toString('utf-8');
   const versionedContent = content.replace(OPENING_HEADING_REG_EXP, (heading) => `${heading} v${version}`);
   if (versionedContent === content) {
     return;
   }
 
-  zip.updateFile(entry, Buffer.from(versionedContent, 'utf-8'));
+  entries.set(entryName, Buffer.from(versionedContent, 'utf-8'));
 }
 
 // Reads the demo vault's committed `.obsidian/app.json`, refusing the settings this package owns.
@@ -212,4 +297,29 @@ async function readCommittedAppJson(): Promise<DemoVaultAppJson> {
   }
 
   return appJson;
+}
+
+// Reads every file in the demo vault as an archive entry, under the single top-level folder the archive
+// Sits in.
+//
+// Only FILES become entries. Git cannot track an empty folder, so a committed demo vault has none — and
+// `extractZipArchive` creates an entry's parent folders whether or not the archive declared them, so a
+// Folder entry would earn nothing even if one could exist.
+async function readDemoVaultEntries(params: ReadDemoVaultEntriesParams): Promise<DemoVaultZipEntries> {
+  const {
+    demoVaultPath,
+    rootFolderName
+  } = params;
+
+  const entries: DemoVaultZipEntries = new Map<string, Buffer>();
+  for (const dirent of await readdirPosix(demoVaultPath, { recursive: true, withFileTypes: true })) {
+    if (!dirent.isFile()) {
+      continue;
+    }
+
+    const path = join(dirent.parentPath, dirent.name);
+    entries.set(join(rootFolderName, relative(demoVaultPath, path)), await readFile(path));
+  }
+
+  return entries;
 }
