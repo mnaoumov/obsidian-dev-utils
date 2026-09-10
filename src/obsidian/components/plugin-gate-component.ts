@@ -328,6 +328,21 @@ export class PluginGateComponent extends ComponentEx {
   }
 
   /**
+   * Says whether any warning conflict is in force right now.
+   *
+   * The predicate a declarative settings tab needs, and the counterpart to
+   * `PluginSuggestionComponent.getSuggestedPluginState`. Such a tab decides whether a row exists
+   * BEFORE it renders anything into it, so {@link renderConflictWarningBanner} writing nothing cannot
+   * answer the question for it — a row that renders empty is still a row, with the divider and padding
+   * every other setting has.
+   *
+   * @returns Whether at least one declared warning conflict holds.
+   */
+  public hasActiveWarningConflicts(): boolean {
+    return this.getActiveConflicts(PluginConflictSeverity.Warn).length > 0;
+  }
+
+  /**
    * Starts watching every declared dependency and conflict.
    */
   public override onload(): void {
