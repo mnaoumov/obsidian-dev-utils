@@ -522,11 +522,10 @@ function getNodeBuiltinsConfigs(context: EslintConfigContext): Linter.Config[] {
        * load on mobile. Neither rule can see that gate, because it sits one file up — the correctly-written pattern
        * reports anyway, and no author-side rewrite silences it.
        *
-       * Exempting BY FILENAME rather than by a disable comment mirrors the `*.android.integration.test.ts` exemption
-       * in `getIntegrationTestConfigs`, and carries the same trade-off knowingly: the exemption keys off what
-       * the file is NAMED rather than what it does, so the prefix is load-bearing. A desktop-only module that skips
-       * the prefix keeps reporting, and a cross-platform module that wrongly takes it gets an exemption it should
-       * not have.
+       * Exempting BY FILENAME rather than by a disable comment carries a trade-off knowingly: the exemption keys
+       * off what the file is NAMED rather than what it does, so the prefix is load-bearing. A desktop-only module
+       * that skips the prefix keeps reporting, and a cross-platform module that wrongly takes it gets an exemption
+       * it should not have.
        */
       files: [join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyDesktopTs)],
       rules: {
