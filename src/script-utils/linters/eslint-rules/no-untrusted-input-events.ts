@@ -14,7 +14,9 @@
  *
  * The trusted alternatives — `pressKey`, `clickElement`, `clickMouse`, `hoverElement`,
  * `typeIntoEditor` — are seeded into the `evalInObsidian` callback's `lib` bag, and are
- * also importable from `obsidian-dev-utils/obsidian/desktop-trusted-input`.
+ * also importable from `obsidian-dev-utils/obsidian/trusted-input`, which picks the
+ * desktop or mobile injector itself. All of them work on Android except the hover
+ * helpers, which throw there because `:hover` has no touch equivalent.
  *
  * NOTIFICATION events are deliberately NOT reported. `new Event('input')` after setting
  * an element's `.value` is telling the app about a change rather than pretending to be a
@@ -22,8 +24,8 @@
  *
  * Not every dispatch is wrong, so the rule is meant to be disabled — with a reason — at
  * the sites that have one: a drag sequence, which `sendInputEvent` cannot express at all;
- * an Android file, which has no `window.electron` to reach the helpers through; and a
- * listener that is the plugin's own and checks nothing but the key. `require-description`
+ * the mobile arm of a hover gesture, which has no touch equivalent; and a listener that
+ * is the plugin's own and checks nothing but the key. `require-description`
  * makes that reason mandatory, which is the point: the rule turns an invisible assumption
  * into a written one.
  */
