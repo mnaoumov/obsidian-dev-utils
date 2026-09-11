@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 103.0.0
+
+- feat(eslint-config)!: enforce no-untrusted-input-events on Android files too
+
 ## 102.2.0
 
 - style(components): reword a comment the capitalized-comments rule rejected
