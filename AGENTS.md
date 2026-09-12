@@ -191,6 +191,34 @@ validated. `buildCompileTypeScript()` (run by `build:compile:typescript`) does t
 `checkProjectTypes()` / `parseTsConfig()` / `toCanonical()` are exported as a reusable primitive, so
 consuming plugins inherit the same resilience through the shared `buildCompileTypeScript()`.
 
+### `PluginBase`: two component tiers, and what a consumer can observe
+
+`PluginBase` holds its children on TWO internal wrappers rather than one, because the two have opposite
+lifetimes. `universalWrapperComponent` carries the library's own components — the notice, the async error
+handler, the abort signal, the gate itself — and has to OUTLIVE a lost dependency, since it is what names
+the plugin that went away and renders the button that brings it back. `gatedWrapperComponent` carries
+everything the subclass owns, which is exactly what must stop running: the gate tears it down when a
+declared dependency disappears or a declared conflict appears, and rebuilds it as a fresh instance when the
+surface comes back up.
+
+Two consequences of that split are visible from OUTSIDE the library, and both broke a consumer's tests when
+the tiers landed, which is why they are written down here:
+
+- **`addChild` is the subclass's door, and only the subclass's.** The universal components take a private
+  `addUniversalChild` route onto the other wrapper, so anything observing the public `addChild` — a test
+  counting its calls, a patch wrapping it — sees exactly the children the subclass added and none of the
+  library's. A consumer counting the total of both tiers is the one thing the split could not keep working;
+  such a test asserts the subclass's own number.
+- **A load failure is an `AggregateError`, and it crosses two of them.** The feature surface's
+  `loadWithPromises` aggregates the failure, then the universal wrapper's aggregates that, so a single throw
+  from `onloadImpl` arrives nested two deep. It still leaves `onload()` — a plugin whose `onloadImpl` throws
+  still fails to load, unchanged — but the SHAPE moved, and a test written against the old one reads the
+  change as lost propagation rather than as extra nesting. Every aggregate the library builds now carries a
+  message naming the failure (`createAggregateError` in `src/error.ts`: a lone failure lends its own message
+  to every aggregate above it, several become a count), so `error.message` and `rejects.toThrow(message)`
+  find the real sentence at the top instead of an empty string. `errorToString` walks the whole tree either
+  way, which is why the console never showed the problem.
+
 ## Code Conventions
 
 ### File Structure

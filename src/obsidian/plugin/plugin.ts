@@ -288,6 +288,12 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * queued and loaded when the surface next comes up, the way {@link ComponentEx.addChild} already queues
    * a child added to a not-yet-loaded component.
    *
+   * This is the SUBCLASS's door, and the only one it has: the universal components {@link onload} registers
+   * take a private route onto a different wrapper. So anything observing this method — a test counting its
+   * calls, a patch wrapping it — sees exactly the children the subclass added, and none of the library's.
+   * Before the two tiers existed one door carried both, and a consumer counting the total is the one thing
+   * the split could not keep working.
+   *
    * @typeParam TComponent - The type of component to add.
    * @param component - The component instance to add.
    * @returns The added component.
