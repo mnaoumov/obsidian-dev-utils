@@ -11,6 +11,7 @@ import { Component } from 'obsidian';
 import { snapshot } from '../../array.ts';
 import { dispose } from '../../disposable.ts';
 import {
+  createAggregateError,
   ErrorWrapper,
   SilentError
 } from '../../error.ts';
@@ -114,6 +115,10 @@ export class ComponentEx extends Component implements Disposable {
    * or a child's load is collected, and once everything settles the returned {@link Promise} rejects with a single
    * {@link AggregateError} holding all of them. Non-`Error` throwables are normalized via {@link ErrorWrapper.create}.
    *
+   * The `AggregateError` is built by {@link createAggregateError}, so its own `message` names the failure rather
+   * than being empty: a lone failure lends its message to every aggregate above it, which is what lets a caller
+   * assert on the sentence that was actually thrown without walking `errors` to find it.
+   *
    * @returns A {@link Promise} that resolves when the component and its children finish loading, rejects with an {@link AggregateError} if any load step failed, or `null` if the component and its children don't use `async` logic and none failed synchronously.
    */
   public loadWithPromises(): null | Promise<void> {
@@ -122,14 +127,14 @@ export class ComponentEx extends Component implements Disposable {
     const loadPromise = this.loadPromise;
     if (!loadPromise) {
       if (this.loadErrors.length > 0) {
-        return Promise.reject(new AggregateError(this.loadErrors));
+        return Promise.reject(createAggregateError(this.loadErrors));
       }
       return null;
     }
 
     return loadPromise.then(() => {
       if (this.loadErrors.length > 0) {
-        throw new AggregateError(this.loadErrors);
+        throw createAggregateError(this.loadErrors);
       }
     });
   }

@@ -385,6 +385,26 @@ describe('PluginBase', () => {
     await expect(plugin.onload()).rejects.toThrow(AggregateError);
   });
 
+  it('should carry the failing child message out of onload, where a consumer can assert on it', async () => {
+    class FailingChildComponent extends ComponentEx {
+      public override onloadAsync(): Promise<void> {
+        return Promise.reject(new Error('child load failed'));
+      }
+    }
+
+    class FailingPlugin extends TestPlugin {
+      protected override onloadImpl(): void {
+        this.addChild(new FailingChildComponent());
+      }
+    }
+
+    // The throw crosses TWO aggregation points on its way out — the feature surface's, then the universal
+    // Wrapper's — and each one used to add a layer whose own message was empty, which reads exactly like
+    // Nothing having been thrown at all. This asserts the one thing those layers must not swallow.
+    const plugin = new FailingPlugin(app, manifest);
+    await expect(plugin.onload()).rejects.toThrow('child load failed');
+  });
+
   it('should delegate removeChild to wrapperComponent', () => {
     const plugin = new TestPlugin(app, manifest);
     plugin.load();

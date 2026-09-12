@@ -863,8 +863,15 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
         'unicorn/consistent-class-member-order': 'off',
         /*
          * Every report is `new Error().stack`, which captures a stack trace and never surfaces its message,
-         * or `new AggregateError(errors)`, whose message is optional precisely because the collected errors
-         * carry the detail. The rule cannot tell either from an error that is actually thrown at a user.
+         * or one of the two bare `new AggregateError(errors)` sites still in `disposable.ts`. The rule cannot
+         * tell either from an error that is actually thrown at a user.
+         *
+         * An aggregate's message is no longer held to be optional-by-design here, though, and the reason this
+         * comment used to give for it — that the collected errors carry the detail — is only true of a reader
+         * that walks them. `errorToString` does; `message` does not, and everything reading `message` instead
+         * saw an empty sentence with the real one buried two aggregation layers down. `createAggregateError`
+         * in `error.ts` is what every new site uses; the two in `disposable.ts` cannot reach it only because
+         * `error.ts` already imports `disposable.ts`.
          */
         'unicorn/error-message': 'off',
         /*
