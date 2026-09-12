@@ -91,10 +91,10 @@ describe('offset range', () => {
     const result = await evalInObsidian<Record<string, never>, OffsetRangeFromEditorResult>({
       async callback({ app, lib: { editLinks }, obsidianModule }) {
         const { MarkdownView } = obsidianModule;
-        const targetPath = 't883-offset-range.md';
+        const targetPath = 'offset-range.md';
         const diskContent = '[[alpha]] [[bravo]] [[charlie]]\n';
         // The buffer gains a heading, shifting every link 7 characters past its on-disk offset.
-        const bufferContent = `# T883\n${diskContent}`;
+        const bufferContent = `# note\n${diskContent}`;
 
         const file = await app.vault.create(targetPath, diskContent);
         const leaf = app.workspace.getLeaf(true);
@@ -145,6 +145,6 @@ describe('offset range', () => {
      */
     expect(result.selectedStartOffset).toBe(17);
     expect(result.selectedEndOffset).toBe(26);
-    expect(result.diskAfterEdit).toBe('# T883\n[[alpha]] [[new-bravo]] [[charlie]]\n');
+    expect(result.diskAfterEdit).toBe('# note\n[[alpha]] [[new-bravo]] [[charlie]]\n');
   });
 });

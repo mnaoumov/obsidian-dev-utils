@@ -6,7 +6,7 @@
  * Obsidian's base `Modal` renders an X in the modal header and wires it to `Modal.close()`. Its CSS class
  * changed in Obsidian 1.13.0 — `.modal-close-button` before, `.modal-header-button` since — which made
  * automation that clicks `.modal-close-button` silently select nothing and conclude that the X of an
- * `obsidian-dev-utils` modal was dead (T503).
+ * `obsidian-dev-utils` modal was dead.
  *
  * jsdom renders none of that chrome, so only a real Obsidian run can prove both halves of the behavior:
  * the X exists under the current class name, and clicking it settles the promise the helper returned.

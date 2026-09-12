@@ -24,7 +24,7 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
   Svelte extensions (`**/*.svelte`, `**/*.svelte.js`, `**/*.svelte.ts`) directly — never the tsconfig
   `include` patterns.** Globbing `include` and filtering the result for Svelte extensions is empty *by
   construction* (a tsconfig `include` lists `.ts` globs), so the step silently skipped in every consumer
-  until 2026-09-02, T817. `node_modules`/`dist` are excluded explicitly because a tsconfig that sets
+  until 2026-09-02. `node_modules`/`dist` are excluded explicitly because a tsconfig that sets
   `exclude` at all replaces TypeScript's default `node_modules` exclusion. A project that has Svelte files
   but does not declare `svelte-check` in its `package.json` now **fails** with an error naming it, rather
   than falling through to the package manager's exec form and downloading the tool mid-build. The
@@ -35,19 +35,19 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run build:validate-templates` — type-check the copied consumer templates (needs `dist/lib` built)
 - `npm run spellcheck` — spell check with cspell. **A `words` entry in `cspell.json` covers only that exact
   word — it carries no affix flags, so its inflections are separate unknown words.** `unhover` was listed and
-  its `-s` form still failed the check (2026-09-01, T876). Prefer rewording over adding the inflection: the
+  its `-s` form still failed the check (2026-09-01). Prefer rewording over adding the inflection: the
   list is for domain terms, not for coinages a rewrite avoids. Note this bullet cannot spell out the example
   without failing the very check it documents.
 - `npm run find-overexposed` / `find-overexposed:fix` — report (or narrow) declarations exposed more broadly
   than their references require. It is one of the four preflight-only checks described under `npm run gate`
-  below (2026-08-29, T677).
+  below (2026-08-29).
 - `npm run gate` — **the branch gate: run this before committing.** It is the same code
   `npm run version` runs as its preflight (`gate()` in `src/script-utils/gate.ts`, which `updateVersion`
   calls), so the two cannot drift: `format:check` -> `spellcheck` -> `lint:md` -> `build` -> `lint` ->
   `find-overexposed` -> `test:coverage`, fastest first. **Four of those are reachable by no other
   routine command — `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`** (none is part of
   `npm run lint`, and `test:coverage` is the only routine command pinning all four coverage thresholds at
-  exactly 100). So a branch green on build + lint could still abort the release ~15 minutes in; T938 died
+  exactly 100). So a branch green on build + lint could still abort the release ~15 minutes in; one release died
   that way at `spellcheck`, on one coinage in a code comment. **The tests run once**: `test:coverage` is
   preferred and `npm test` runs only as its fallback, in a project that defines no `test:coverage`. Running
   both — which this did until 2026-09-05 — was a duplicate, because a project scopes its two test
@@ -80,13 +80,13 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `src/script-utils/linters/cspell.ts` — spellchecking
 - `src/script-utils/formatters/dprint.ts` — dprint formatting
 - `src/script-utils/test-runners/vitest.ts` — Vitest test runner
-- `src/script-utils/package-manager.ts` — resolves how locally-installed tools and package scripts are invoked, so the library never assumes npm. `resolveToolCommand({ tool })` returns the `node_modules/.bin` shim (walking up to a hoisted workspace install), falling back to the owning manager's exec form (`npx` / `bun x` / `pnpm exec` / `yarn exec`) when no shim exists — the only path that works under yarn PnP. `getPackageManagerRunCommand()` does the same for package scripts. **Every tool invocation goes through it; do not add a bare `npx <tool>` call.** `npx` is npm-specific and does its *own* resolution rather than reading `node_modules/.bin`: under bun on Windows, where `bun install` writes `tsc.exe`/`tsc.bunx` and no `tsc.cmd`, `npx tsc` misses the local install entirely and downloads the `tsc` **decoy** package from the registry (`This is not the tsc command you are looking for`), which is why no ODU-based plugin could build under bun (T785). **Detection collects every signal before believing any of them, because a repo carrying two lockfiles used to resolve to whichever sat earlier in a fixed list — silently reassigning every package script and every tool invocation to a manager that never installed the tree (T831; one stray `pnpm exec` probe in this very repo was enough to flip ODU's own build to `pnpm run`).** The order is: (1) the `packageManager` field of `package.json` — a deliberate declaration outranks an artifact, and it is the only signal that helps before the first install; (2) the sole lockfile, when exactly one manager claims the tree; (3) among several lockfiles, `npm_config_user_agent` when it owns one of them, else the documented fallback order in `LOCKFILES` (`bun.lock`/`bun.lockb` → `pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`); (4) `npm_config_user_agent` alone when there is no lockfile; (5) `npm`. Deliberately **not** "the most recently modified lockfile" — a stray lockfile is typically the *newest* file, so mtime picks precisely the wrong one. Whenever more than one manager claims the tree, `getPackageManager()` prints a `console.warn` naming every lockfile found, what `package.json` declares and which manager won, deduplicated so a build that resolves once per script hop still says it once. The resolution stays deterministic; it just stops being silent. `npm publish` / `npm pack` deliberately stay literal npm — they talk to the npm registry.
+- `src/script-utils/package-manager.ts` — resolves how locally-installed tools and package scripts are invoked, so the library never assumes npm. `resolveToolCommand({ tool })` returns the `node_modules/.bin` shim (walking up to a hoisted workspace install), falling back to the owning manager's exec form (`npx` / `bun x` / `pnpm exec` / `yarn exec`) when no shim exists — the only path that works under yarn PnP. `getPackageManagerRunCommand()` does the same for package scripts. **Every tool invocation goes through it; do not add a bare `npx <tool>` call.** `npx` is npm-specific and does its *own* resolution rather than reading `node_modules/.bin`: under bun on Windows, where `bun install` writes `tsc.exe`/`tsc.bunx` and no `tsc.cmd`, `npx tsc` misses the local install entirely and downloads the `tsc` **decoy** package from the registry (`This is not the tsc command you are looking for`), which is why no ODU-based plugin could build under bun. **Detection collects every signal before believing any of them, because a repo carrying two lockfiles used to resolve to whichever sat earlier in a fixed list — silently reassigning every package script and every tool invocation to a manager that never installed the tree (one stray `pnpm exec` probe in this very repo was enough to flip ODU's own build to `pnpm run`).** The order is: (1) the `packageManager` field of `package.json` — a deliberate declaration outranks an artifact, and it is the only signal that helps before the first install; (2) the sole lockfile, when exactly one manager claims the tree; (3) among several lockfiles, `npm_config_user_agent` when it owns one of them, else the documented fallback order in `LOCKFILES` (`bun.lock`/`bun.lockb` → `pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`); (4) `npm_config_user_agent` alone when there is no lockfile; (5) `npm`. Deliberately **not** "the most recently modified lockfile" — a stray lockfile is typically the *newest* file, so mtime picks precisely the wrong one. Whenever more than one manager claims the tree, `getPackageManager()` prints a `console.warn` naming every lockfile found, what `package.json` declares and which manager won, deduplicated so a build that resolves once per script hop still says it once. The resolution stays deterministic; it just stops being silent. `npm publish` / `npm pack` deliberately stay literal npm — they talk to the npm registry.
 - `scripts/` — npm script entry points (executed via `jiti`), each wraps its call in `wrapCliTask()` for error handling and exit codes
 - `templates/` — consumer-facing templates copied verbatim into `dist/templates/` by `build:templates` (so they ship in the package, copyable from `node_modules/obsidian-dev-utils/dist/templates`). A trailing `.template` on a source file name is stripped during the copy (e.g. `templates/eslint.config.mts.template` → `dist/templates/eslint.config.mts`), so an active config template can live in the repo under a name the corresponding tool does not auto-discover (only `eslint.config.mts` currently needs this — ESLint treats any `eslint.config.*` as a flat config). Two kinds of file live here:
   - Root config templates (`templates/commitlint.config.ts`, `templates/eslint.config.mts.template`, `templates/vitest.config.ts`, `templates/.markdownlint-cli2.mjs`, `templates/.nano-staged.mjs`, `templates/dprint.json`) — thin re-exports a consumer drops at their project root.
   - `templates/scripts/` — the script entry points a consumer drops in their `scripts/` folder. This holds both the per-tool example scripts grouped by category (`bundlers/`, `formatters/`, `linters/`, `test-runners/`, `build/`, `version/`) and the flat `*-config.ts` logic files that the root config templates re-export (`commitlint-config.ts`, `eslint-config.ts`, `vitest-config.ts`, `markdownlint-cli2-config.ts`, `nano-staged-config.ts`).
   - `templates/` is kept self-contained: every root config template resolves to a real `templates/scripts/*-config.ts`, so the imports never dangle. `commitlint-config`/`markdownlint-cli2-config`/`nano-staged-config`/`vitest-config` are pure re-exports (identical for every plugin); `eslint-config` is a generic baseline a consumer customizes.
-  - **`templates/` is type-checked by `build:validate-templates`, and by nothing else.** It is outside `tsconfig.json`'s `include` and outside every ESLint `files` pattern (see `EslintConfigContext` in `src/script-utils/linters/eslint-config.ts` and the comment in `src/script-utils/nano-staged-config.ts`), because the templates import the library by its *published* specifier — `obsidian-dev-utils/…` — which cannot resolve in this repo. That gap is how 96.0.1 shipped a `templates/scripts/version/version.ts` calling `parseVersionArgs` after the library had renamed it to `parseVersionArguments`: the rename landed in the source but not in the template beside it, and the break surfaced only in a consumer's first release (2026-08-31, T754). `tsconfig.templates.json` closes it with a `paths` shim mapping `obsidian-dev-utils/*` onto the emitted `dist/lib/esm/*.d.mts` — the exact surface a consumer resolves, and self-contained by construction (that is what `build:validate-declarations` proves), so the templates program pulls in no `src/` file and no ambient augmentation. **Map the shim at the declarations, never at `src/*.ts`**: sources rely on global augmentations scattered across the main config's whole `include` list (`src/@types/**`, plus `Window` augmentations under `integration-test-plugin*/`), so a `src`-targeted shim reports errors that the main `tsc` pass does not. The step needs `dist/lib` built, hence its slot after `build:templates` in `scripts/build.ts`. Not covered: `templates/eslint.config.mts.template`, whose `.mts.template` suffix `tsc` will not treat as TypeScript.
+  - **`templates/` is type-checked by `build:validate-templates`, and by nothing else.** It is outside `tsconfig.json`'s `include` and outside every ESLint `files` pattern (see `EslintConfigContext` in `src/script-utils/linters/eslint-config.ts` and the comment in `src/script-utils/nano-staged-config.ts`), because the templates import the library by its *published* specifier — `obsidian-dev-utils/…` — which cannot resolve in this repo. That gap is how 96.0.1 shipped a `templates/scripts/version/version.ts` calling `parseVersionArgs` after the library had renamed it to `parseVersionArguments`: the rename landed in the source but not in the template beside it, and the break surfaced only in a consumer's first release (2026-08-31). `tsconfig.templates.json` closes it with a `paths` shim mapping `obsidian-dev-utils/*` onto the emitted `dist/lib/esm/*.d.mts` — the exact surface a consumer resolves, and self-contained by construction (that is what `build:validate-declarations` proves), so the templates program pulls in no `src/` file and no ambient augmentation. **Map the shim at the declarations, never at `src/*.ts`**: sources rely on global augmentations scattered across the main config's whole `include` list (`src/@types/**`, plus `Window` augmentations under `integration-test-plugin*/`), so a `src`-targeted shim reports errors that the main `tsc` pass does not. The step needs `dist/lib` built, hence its slot after `build:templates` in `scripts/build.ts`. Not covered: `templates/eslint.config.mts.template`, whose `.mts.template` suffix `tsc` will not treat as TypeScript.
 - `src/script-utils/commitlint-config.ts` — shared commitlint configuration
 - `src/script-utils/nano-staged-config.ts` — shared nano-staged pre-commit configuration
 - `src/script-utils/test-runners/vitest-config.ts` — shared vitest configuration for Obsidian plugins (`defineObsidianPluginVitestConfig`)
@@ -492,7 +492,7 @@ export function myFunction(param: Type): ReturnType {
   `SettingsMigrationComponent` drives the consumer side of it. Only the payload type and the provider's
   identity stay with the pair, because neither is this library's business. It exists because five plugins
   each hand-declared the same contract with no compiler link between the copies, so drift was **silent** —
-  every copy still compiled and the handover failed at runtime (T1049). The prose fallback below still
+  every copy still compiled and the handover failed at runtime. The prose fallback below still
   governs everything that is not a settings handover.
 - **A plugin that cannot work without another DECLARES it, and the library enforces it.** Override
   `PluginBase.getPluginDependencies()` with a `PluginDependency` (`pluginId`, `pluginName`,
@@ -541,7 +541,7 @@ export function myFunction(param: Type): ReturnType {
 - **Binding to UNDOCUMENTED internals is a further step, and it ships in two tiers or not at all.**
   Templater publishes nothing — not through this registry, not as a documented API — so
   `src/obsidian/templater.ts` reads `plugin.templater`, which no version guarantee covers. Where that
-  trade-off is taken deliberately (owner's call, T689), the module says so in its `@file` block, NAMES
+  trade-off is taken deliberately (owner's call), the module says so in its `@file` block, NAMES
   the Templater version its shapes were read from, and exposes BOTH a `resolve…Api` returning `null`
   (for an optional integration) and a `require…Api` throwing a named error carrying a
   `…UnavailabilityReason` (for a caller that cannot carry on without it). What is never acceptable is
@@ -716,7 +716,7 @@ export function myFunction(param: Type): ReturnType {
   `dist/lib/cjs/script-utils/bundlers/esbuild-impl/preprocess-plugin.cjs` — naming a binding the emitted
   bundle does not have. Only **same-module** references stay bare identifiers. That is why
   `ensureBrowserProcess` / `keepName` live beside `initCjs` / `initEsm` rather than in a tidy
-  `banner-shims.ts` (drafted for T581, then deleted for this reason), and why `makeBanner()` serializes
+  `banner-shims.ts` (drafted once, then deleted for this reason), and why `makeBanner()` serializes
   the shims alongside the `init` function that calls them.
 - **A helper that is referenced but not serialized fails silently**, degrading to whatever the consumer's global
   scope holds under that name. `globalThisRecord['__name'] ??= name;` shipped for years resolving `name`
@@ -770,7 +770,7 @@ export function myFunction(param: Type): ReturnType {
     because script code that drives a real Obsidian is under the same cap. A budget it cannot resolve
     statically is silently ignored, so it under-reports rather than crying wolf; a site that genuinely
     cannot become a `poll` / `until` pair disables it with a written reason. A note is what let this
-    reach thirty repos (T933), which is why it is a rule.
+    reach thirty repos, which is why it is a rule.
   - **The fix for a wait that genuinely needs longer than the cap is `pollInObsidian`, not a bigger
     number**: a short DOM-reading `poll` closure, `until` evaluated in Node, and the long budget in
     `timeoutInMilliseconds`. `demo-vault-helper.obsidian.integration.test.ts` has three worked examples.
@@ -841,7 +841,7 @@ export function myFunction(param: Type): ReturnType {
 - **A third cost is not computable and must be reserved for.** `npx <tool> <args…>` is a *chain* of
   `cmd.exe` lines: `npx.cmd` re-expands `%*`, the tool's `.bin/<tool>.cmd` shim does it again, and each
   hop re-quotes what it forwards. Every line in the chain faces the same 8191 limit and every one is
-  longer than ours. Measured on P36's 187-file list (T635): a `markdownlint-cli2` invocation **assembled
+  longer than ours. Measured on one repo's 187-file list: a `markdownlint-cli2` invocation **assembled
   at 7051 chars** — 1140 under the limit — died with `The command line is too long.`
 - **The symptom names nothing wrong with the content**, and it is size-dependent, so a repo passes until
   the day it adds a few files and does not. Both halves of `markdownlint.ts`' `lint()` are exposed, not
@@ -858,7 +858,7 @@ export function myFunction(param: Type): ReturnType {
   `fsPromises.rm(fullPath, { maxRetries: 5, recursive: t })`, and Node's `fs.rm` throws `ERR_FS_EISDIR` for
   **any** directory when `recursive` is `false` — so the non-recursive call **never succeeds, not even on an
   empty folder**. One is data loss, the other is a permanent failure, and no single-platform test can see both.
-- **Do not generalize a footgun from the platform you happen to run on.** T686 was opened describing the
+- **Do not generalize a footgun from the platform you happen to run on.** The first report described the
   mobile data loss as universal, because that is the half that gets noticed. The desktop half is invisible
   until something calls it — and then it looks like a bug in the caller.
 - **The fix for "the flag is ignored" is to establish the precondition yourself and then call the mode that
@@ -948,7 +948,7 @@ export function myFunction(param: Type): ReturnType {
   the only sign of it.
 - **The blast radius is the whole plugin, not the one file.** Callers run these through a shared sequential
   operation queue, so one spinning operation blocks every rename and delete after it for the rest of the
-  session. Measured 2026-09-02 in `obsidian-advanced-rename-and-delete-handler` (`T894-P1`): moving a canvas
+  session. Measured 2026-09-02 in `obsidian-advanced-rename-and-delete-handler`: moving a canvas
   with `nodes` but no `edges` left `flushQueue()` unresolved forever, and a later unrelated rename never
   drained either; clicking the notice's `Cancel` released it.
 - **`applyCanvasChanges` is the worked example.** Its guards — a canvas whose `nodes`/`edges` are not both
@@ -973,7 +973,7 @@ export function myFunction(param: Type): ReturnType {
   only on a restart.
 - **The settings component is almost always the sibling in question**, and reading it early does not throw —
   it answers with the DEFAULTS, which is why the failure reads as "the user's stored answer was ignored"
-  rather than as a crash. Measured 2026-09-02 against a live Obsidian (`T921-P1`):
+  rather than as a crash. Measured 2026-09-02 against a live Obsidian:
   `PluginSuggestionComponent` re-asked a user whose decline was on disk and whose settings object held
   `declined: true` at the moment the notice was already showing — the notice had been decided earlier,
   against the default.
@@ -1004,7 +1004,7 @@ export function myFunction(param: Type): ReturnType {
 - **The failure is silent and destructive, not a crash.** `applyCanvasChanges` did
   `node.text = await applyContentChanges(…)`, then fell through to `JSON.stringify`, so a canvas text node
   whose change no longer matched was written back as `"text": null` — the node's content gone, and not even
-  the type the canvas schema declares (`T924-P1`, fixed 2026-09-03). Contrast `L22`'s bug, which wedged the
+  the type the canvas schema declares (fixed 2026-09-03). Contrast `L22`'s bug, which wedged the
   queue and announced itself with a standing notice; this one completes successfully and corrupts the file.
 - **The loose type is why the compiler stays quiet.** `GenericObject<CanvasData>` is
   `Record<string | symbol, unknown> & CanvasData`, so `node.text = null` type-checks. Do not expect
@@ -1123,7 +1123,7 @@ export function myFunction(param: Type): ReturnType {
   via `waitForAllAsyncOperations()` (guarded by `isAsyncOperationTrackingEnabled()`, so a test that
   disabled tracking itself does not trip the drain), then throws an `AggregateError` of whatever
   `drainCollectedUnhandledAsyncErrors()` returns. It is forced, not opt-in.
-- **A registered consumer handler does NOT exempt an error** (changed by T655; it used to, via an
+- **A registered consumer handler does NOT exempt an error** (it used to, via an
   `asyncErrorHandlerCount === 0` gate mirroring Node's `unhandledRejection`). `PluginBase` adds
   `AsyncErrorHandlerComponent` during `onload`, which registers such a handler — so the old gate disarmed
   the harness for the whole of **every plugin's `plugin.test.ts`**, where it was needed most. In
@@ -1138,7 +1138,7 @@ export function myFunction(param: Type): ReturnType {
   turn over (`drainPendingMacrotasks()`, built on a `globalThis.setTimeout` captured at module load so
   `vi.useFakeTimers()` cannot hang teardown), and *drains* the window rather than closing it — an error
   emitted in the gap is reported by the next `beforeEach` ("after the previous test finished"), and one
-  emitted after the file's last test by `afterAll` ("after the last test finished"). Before T655 such an
+  emitted after the file's last test by `afterAll` ("after the last test finished"). Earlier, such an
   error hit a nulled bucket after `restoreConsole()` had run: it printed to a real console and failed
   nothing. The tell was a `stderr | <file>` block with **no test name** — i.e. emitted outside any running
   test.
@@ -1223,7 +1223,7 @@ describe('MyModule', () => {
 - **`ensureMetadataCacheReady` is NOT sufficient for a file you just created.** It awaits
   `onCleanCache`, which resolves as soon as the cache is clean *at that instant* — and right after
   `vault.create` the indexing work is not queued yet, so it returns before there is anything to wait
-  for. Measured under T236: it left 2 of 3 flakes in place. For a fresh file, wait on the concrete
+  for. Measured: it left 2 of 3 flakes in place. For a fresh file, wait on the concrete
   condition instead (e.g. the file's `resolvedLinks` entry appearing), not on cache cleanliness.
 - When there is no readiness event to await, poll with `retryWithTimeout` (bounded) rather than a
   single frame or fixed delay — e.g. `getDomEventsHandlersConstructor` retries until the constructor
@@ -1528,15 +1528,15 @@ examples.
   *before* `updateVersionInFiles`, so interrupting the review leaves the working tree pristine and the
   release simply re-runnable — the earlier order bumped `package.json` / `manifest.json` / `versions.json`
   first, and a stop at the editor then stranded a dirty tree that `assertGitRepoClean` refused to re-release
-  (T731, hit cutting App Update Notifier 1.0.0).
+  (hit cutting App Update Notifier 1.0.0).
 - **The GitHub release body is the changelog section delimited by LINES, terminating at the next `'## '`
   heading or at end-of-file — never by a regex that requires a following heading.** `getReleaseNotes` used to match
   `\n## <version>\n\n(…)\n\n##`, whose trailing `##` is mandatory. Sections are PREPENDED, so the newest one is
   bounded by the previous release only once a previous release exists: on a **first release** the match was
   `null` and the body silently shipped as nothing but the `**Full Changelog**` link. It reached the store on
   five plugins' `1.0.0` — nested-properties, edit-link-alias, backlink-full-path, refresh-any-view,
-  app-update-notifier — i.e. exactly the release where notes matter most, and no warning was ever emitted
-  (T732). The same regex also truncated a section at its own `###` sub-heading, because it treated the
+  app-update-notifier — i.e. exactly the release where notes matter most, and no warning was ever emitted.
+  The same regex also truncated a section at its own `###` sub-heading, because it treated the
   delimiter as if only version headings could produce it. `extractChangelogSection` now scans lines and stops
   at `'## '` **with the trailing space** (so `###` stays inside the section) or at the end of the file.
 - **The first `##` heading in `CHANGELOG.md` is a HEADING, not a tag — `prepareChangelog` verifies it
@@ -1547,13 +1547,13 @@ examples.
   first release (hit cutting Advanced Markdown Export 1.0.0), or a tag deleted after the fact. An
   unresolvable heading now falls back to the full history, with a `Version` debug line naming it — visible
   where it matters, because the interactive review is right there to trim an over-included range, and the
-  debug line is all the non-interactive paths get (T951).
+  debug line is all the non-interactive paths get.
 - **A release without a TTY refuses in the preflight, not after the gate.** `npm run version` checks
   `process.stdin.isTTY` right after the git/gh assertions and before the checks and build, so an agent- or
   CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release
   unattended with `--changelog-file <path>` (prepared release notes replace the commit-derived bullets) or
   `--no-changelog-editing` (accept the generated bullets as is).
-- **In PowerShell, QUOTE the `--` separator: `npm run version '--' <type> --no-changelog-editing` (T811).**
+- **In PowerShell, QUOTE the `--` separator: `npm run version '--' <type> --no-changelog-editing`.**
   PowerShell consumes a bare `--` as its own end-of-parameters token, so npm never receives the separator
   and parses the following flag as npm's own config — `npm run version -- minor --no-changelog-editing`
   dies with `EUNKNOWNCONFIG … Unknown cli flag: --changelog-editing` before `scripts/version.ts` starts.
@@ -1563,7 +1563,7 @@ examples.
   2026-09-01). `npx jiti scripts/version.ts <type> --no-changelog-editing` also works from any shell —
   the npm script is only `jiti scripts/version.ts`, so it is the same code path with no separator to lose.
 - **`publishGitHubRelease` accepts both `npm pack --json` shapes, and must keep doing so — on the LIBRARY
-  path only (T806, scoped by T909).** `publishGitHubRelease` never packs on the plugin path: its
+  path only.** `publishGitHubRelease` never packs on the plugin path: its
   `if (isObsidianPlugin)` branch uploads whatever `dist/build/` contains, and only the `else` branch shells
   out to `npm pack`. `isObsidianPlugin` is true for any repo that has a `manifest.json` and whose package
   name is not `obsidian-dev-utils`, i.e. for the entire plugin fleet, and false for this repo — so the
@@ -1571,7 +1571,7 @@ examples.
   here, OIT and OTM included, ships its own standalone `scripts/version.ts` per G37). **A plugin release on
   a pre-98 ODU is unaffected and never needs an ODU bump on this account** — Advanced Rename and Delete
   Handler `1.1.1` was cut on ODU `96.5.2` under npm 12.0.2 on 2026-08-31 and its GitHub release exists.
-  Say ODU, not "every release": the unscoped wording made T902 plan a mandatory ODU bump it did not need.
+  Say ODU, not "every release": the unscoped wording once led to a planned mandatory ODU bump that was not needed.
   The defect itself: npm 11 emits an array of pack results; npm 12 emits an object keyed by package name.
   The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every ODU
   release on npm 12 threw at the very LAST step — after the bump, changelog, commit, tag and push had all
@@ -1631,7 +1631,7 @@ generated automatically. Consequences worth knowing before touching any of this:
   - The tasks run through the package manager that owns the tree — `bun run lint:fix --` on a bun tree,
     not `npm run lint:fix --`. The prefix comes from `getPackageManagerRunCommand()` and is resolved once
     when `nano-staged-config.ts` is first imported, so a lockfile change needs a fresh process to take
-    effect (2026-09-02, T830).
+    effect (2026-09-02).
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
   - `npm run spellcheck`

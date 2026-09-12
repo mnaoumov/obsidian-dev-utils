@@ -10,7 +10,7 @@
  * roughly 30 seconds — Appium surfaces the cap as a bare `WebDriverError: script timeout`
  * naming only `AppiumTransport.evaluate`, CDP as a command timeout. Neither names the wait
  * that actually blew the budget, so the failure reads as a broken device rather than as a
- * closure asking for more time than exists. That misdiagnosis cost `T796` two days.
+ * closure asking for more time than exists. That misdiagnosis cost two days.
  *
  * A closure declaring a 30 000 ms `waitUntil`, or two 20 000 ms ones, therefore cannot
  * succeed on any machine slow enough to need the time it asks for. The fix is to move the
