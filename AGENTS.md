@@ -129,8 +129,16 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
   because ESLint does not discover that extension by default. Markdownlint excludes the whole docs sub-project
   because Starlight's MDX follows its own conventions, while `astro build` validates the site. cspell excludes
   the generated `docs/src/content/docs/api`, `docs/dist`/`.astro`, `docs/src/components`, `docs/src/styles`,
-  and `scripts/docs-gen`. `linkinator.config.json` skips the
-  `mnaoumov.dev/obsidian-dev-utils` links (the site is not reachable until the first Pages deploy).
+  and `scripts/docs-gen`. `linkinator.config.json` skips `guides`/`api` links on a `localhost` /
+  `127.0.0.1` origin — the local preview serves only what has been generated — and **nothing else**. In
+  particular the `mnaoumov.dev/obsidian-dev-utils` links ARE fetched live, which this file claimed the
+  opposite of until 2026-09-12.
+  - **So a brand-new guide cannot be announced in `README.md` by its site URL in the same commit that
+    adds it.** `lint:md` runs linkinator over the markdown, the page is not deployed yet, and the gate
+    fails on a 404 for a link that is perfectly correct — a release-ordering artifact, not a defect.
+    Link the new page by its repo-relative source path instead (`docs/src/content/docs/guides/<name>.md`),
+    which is valid immediately and renders inline on GitHub, where most people meet the README. Do NOT
+    add a `skip` entry for it: that is a temporary exception nothing would ever come back and remove.
 - `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`,
   which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages,
   `docs/src/generated-sidebar.json`, and OG images; the generator only skips regeneration when its cache
@@ -567,6 +575,16 @@ export function myFunction(param: Type): ReturnType {
   published, so a listener may call those APIs immediately, and it carries `dependencyPluginIds` so a
   provider can answer "which installed plugins need me", which the registry cannot. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
   actually catch a violation; a unit test cannot, because it has only one copy of the library.
+  - **That wire format is now PUBLISHED, and the guide is part of it.** `docs/.../guides/plugin-api-protocol.md`
+    tells third-party plugins that never install this library to hardcode the two event names, the payload
+    fields, the state key `pluginApiRegistry` under `globalThis.__obsidianDevUtils`, the five
+    `PublishedPluginApiRecord` field names, and "highest live record satisfying the range wins". **Publishing
+    added no constraint** — the cross-copy rule above already forbade every change an outsider could notice —
+    so the practical effect is one extra step, not one extra rule: a change to any of those names ships with
+    the guide updated in the same commit. Only `pluginApiRegistry` is public within the shared-state bag.
+    `PublishedPluginApiRecord` stays UNEXPORTED on purpose: no consumer of the library reads a record
+    (`watchPluginApi` is their whole surface), so exporting it would widen the package's API for an audience
+    that does not import the package — the guide reproduces it verbatim instead.
 - A plugin whose surface this library integrates with (today: Notebook Navigator, see
   `src/obsidian/notebook-navigator.ts`; `folder-notes`, whose folder-note settings
   `src/obsidian/folder-note.ts` reads; and Templater, whose UNDOCUMENTED internals
