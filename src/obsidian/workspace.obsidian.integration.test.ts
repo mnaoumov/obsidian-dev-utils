@@ -86,7 +86,7 @@ describe('switchToMainWindow', () => {
           // Globals on window FOCUS, and this owned test window is hidden off-screen — so nothing ever
           // Focuses it back and the globals stay pinned to the settings window that was just destroyed.
           // Every later test in this SHARED instance builds its UI in `activeDocument`, so leaving them
-          // There makes unrelated modal and popover files render into a dead window and time out (T600).
+          // There makes unrelated modal and popover files render into a dead window and time out.
           const mainWindow = getMainWindow(app);
           window.activeWindow = mainWindow;
           window.activeDocument = mainWindow.document;

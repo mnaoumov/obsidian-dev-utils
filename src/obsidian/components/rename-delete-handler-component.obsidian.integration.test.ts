@@ -447,7 +447,7 @@ describe('rename-delete-handler', () => {
     });
   });
 
-  describe('folder deletion does not destroy a still-referenced attachment (T558)', () => {
+  describe('folder deletion does not destroy a still-referenced attachment', () => {
     it.each<DeletionPrimitive>(['trashFile', 'vaultDelete', 'vaultTrash'])(
       'should keep an attachment referenced from outside the deleted folder — via %s',
       async (deletionPrimitive) => {
@@ -634,7 +634,7 @@ describe('rename-delete-handler', () => {
     });
   });
 
-  describe('a deletion relocates a still-referenced attachment via getRescuePath (T579)', () => {
+  describe('a deletion relocates a still-referenced attachment via getRescuePath', () => {
     it.each<DeletionPrimitive>(['trashFile', 'vaultDelete', 'vaultTrash'])(
       'should move the attachment to the rescue path when the folder holding it is deleted — via %s',
       async (deletionPrimitive) => {

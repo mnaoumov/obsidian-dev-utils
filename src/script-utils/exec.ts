@@ -425,7 +425,7 @@ const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
  * longer than the line we assembled — but by how much is the child's business, not ours, so no formula can
  * be right. Only the deliberate slack below can.
  *
- * `2048` is roughly double the overhead measured when this was found (T635), back when every tool was
+ * `2048` is roughly double the overhead measured when this was found, back when every tool was
  * additionally fronted by `npx` and so paid one more re-expansion hop than it does now. Over a repository's
  * 187 markdown paths, a `markdownlint-cli2 …` line **assembled at 7051 chars** — 1140 under the limit —
  * still died with `The command line is too long.`; the same payload split in two runs clean. Note the tool:

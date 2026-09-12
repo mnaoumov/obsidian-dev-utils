@@ -387,7 +387,7 @@ describe('exec', () => {
     try {
       mockSpawnSequence();
 
-      // 7004 chars assembled: under the raw 8191 (so the pre-T635 budget sent it as ONE `cmd.exe` command
+      // 7004 chars assembled: under the raw 8191 (so the earlier, unreserved budget sent it as ONE `cmd.exe` command
       // That then died with `The command line is too long.`), over the 8191 - 2048 batch budget.
       const $arguments = Array.from({ length: 70 }, () => 'a'.repeat(99));
       await exec(['echo', { batchedArguments: $arguments }], { isQuiet: true });

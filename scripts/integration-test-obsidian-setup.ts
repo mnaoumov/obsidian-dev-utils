@@ -51,7 +51,7 @@ beforeAll(async () => {
  * popout; and because the owned test window is hidden off-screen, closing the popout never focuses the
  * main window back, so the globals stay pinned to a window that no longer exists. Every later test then
  * renders into that dead window and waits for an element that can never appear — a flat 30 s timeout with
- * no assertion failure, in files that pass perfectly on their own (T600).
+ * no assertion failure, in files that pass perfectly on their own.
  *
  * A test that opens the popout is expected to point the globals home itself; this is the net that keeps
  * one that forgets from failing every unrelated file that happens to run after it.

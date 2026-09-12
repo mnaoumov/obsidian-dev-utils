@@ -15,7 +15,7 @@
  * `e.isTrusted`, so a dispatched `MouseEvent` is ignored - it is NOT that the click is untestable, but
  * that the trusted-input helpers (`desktop-trusted-input.ts` here, the `lib` bag in the harness) have
  * pointer MOVES and no CLICK. A trusted right-click via `webContents.sendInputEvent` was verified by hand
- * to raise this event; wiring it up as a reusable helper across both hand-synced copies is T599-P21.
+ * to raise this event; wiring it up as a reusable helper across both hand-synced copies is still to do.
  * Until then, that a margin right-click reaches THIS event (and not `editor-menu`) rests on reading
  * `obsidian-1.13.7.asar`, where the listener skips only when the target is inside `sizerEl` and not under
  * `.cm-gutters`.

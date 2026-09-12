@@ -824,7 +824,7 @@ function isPreRelease(version: string): boolean {
  * and it is found by parsing from each candidate start rather than by matching a literal, because the
  * prefix may itself contain a brace. And the payload's SHAPE depends on the npm major: npm 11 and earlier
  * emit an array of pack results, npm 12 emits an object keyed by package name. Both are accepted; scanning
- * for the array's literal opening is what broke every release on npm 12 (T806).
+ * for the array's literal opening is what broke every release on npm 12.
  *
  * @param output - The stdout of `npm pack --json`.
  * @returns The {@link NpmPackResult} describing the packed tarball.

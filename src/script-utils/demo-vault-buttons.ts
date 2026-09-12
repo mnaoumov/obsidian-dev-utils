@@ -142,7 +142,7 @@ const POLL_INTERVAL_IN_MILLISECONDS = 100;
 const OUTPUT_EXCERPT_LENGTH = 400;
 
 // `README.md` is the repo-facing page GitHub renders, not a walkthrough. `00 Start.md` is deliberately
-// NOT excluded: since T478 the landing notes carry buttons of their own.
+// NOT excluded: the landing notes carry buttons of their own.
 const DEFAULT_EXCLUDED_NOTES = ['README.md'];
 
 const CODE_BUTTON_FENCE_REG_EXP = /^\s*```code-button/gm;

@@ -46,7 +46,7 @@ const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 // Without a group order, three Electron apps therefore launch at once and compete for the machine.
 // That contention stays invisible until one of them gets heavier, and then it fails the innocent ones.
 // Adding one community-store install to the demo-vault-helper bootstrap starved the other two instances.
-// Six `evalInObsidian` calls that pass standalone timed out at 30 s in the aggregate (2026-08-12, T451).
+// Six `evalInObsidian` calls that pass standalone timed out at 30 s in the aggregate (2026-08-12).
 // Distinct group orders run these three one after another, ascending, so only one instance is ever busy.
 // Every other project stays in the default group and keeps running in parallel, so nothing else is held up.
 // Serializing them is also FASTER end to end here: the aggregate went from roughly four minutes to one.

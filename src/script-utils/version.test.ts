@@ -591,7 +591,7 @@ describe('publishGitHubRelease', () => {
   /**
    * The `npm pack --json` payload as npm 12 emits it: an object keyed by package name, preceded on stdout
    * by whatever the `prepare` script printed. npm 11 emitted an array instead, and mocking only that array
-   * is what let T806 reach four failed releases with coverage still at 100%, so both shapes are covered.
+   * is what let four releases fail in a row with coverage still at 100%, so both shapes are covered.
    */
   const NPM_12_PACK_OUTPUT = `> library@1.0.0 prepare\n${JSON.stringify({ library: { filename: 'library-1.0.0.tgz' } }, null, 2)}`;
 

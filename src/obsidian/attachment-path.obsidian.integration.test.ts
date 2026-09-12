@@ -50,18 +50,18 @@ describe('attachment-path', () => {
     it('should match what Obsidian itself resolves for every attachment folder mode', async () => {
       const results = await evalInObsidian<Record<string, never>, AttachmentFolderModeResult[]>({
         async callback({ app, lib: { AttachmentPathContext, getAttachmentFilePath, getAttachmentFolderPath, hasOwnAttachmentFolder } }) {
-          const ROOT_FOLDER = 't224-attachment-path';
+          const ROOT_FOLDER = 'attachment-path-modes';
           const NOTE_FOLDER = `${ROOT_FOLDER}/docs`;
           const NOTE_PATH = `${NOTE_FOLDER}/note.md`;
           const FIXED_FOLDER = `${ROOT_FOLDER}/files`;
-          const PROBE_BASE_NAME = 't224-probe';
+          const PROBE_BASE_NAME = 'probe';
 
           const originalAttachmentFolderPath = app.vault.getConfig('attachmentFolderPath');
 
           try {
             await app.vault.createFolder(NOTE_FOLDER);
             await app.vault.createFolder(FIXED_FOLDER);
-            const note = await app.vault.create(NOTE_PATH, '# T224\n');
+            const note = await app.vault.create(NOTE_PATH, '# Attachment path modes\n');
 
             const modeResults: AttachmentFolderModeResult[] = [];
 
@@ -101,9 +101,9 @@ describe('attachment-path', () => {
 
       expect(results.map((result) => result.libraryFolderPath)).toEqual([
         '/',
-        't224-attachment-path/files',
-        't224-attachment-path/docs',
-        't224-attachment-path/docs/assets'
+        'attachment-path-modes/files',
+        'attachment-path-modes/docs',
+        'attachment-path-modes/docs/assets'
       ]);
 
       // Every built-in mode is shared by all the notes of the folder, so none of them is the note's own.
@@ -115,7 +115,7 @@ describe('attachment-path', () => {
     it('should agree with the async twin for every attachment folder mode', async () => {
       const results = await evalInObsidian<Record<string, never>, SyncAttachmentFolderModeResult[]>({
         async callback({ app, lib: { getAttachmentFolderPath, getAttachmentFolderPathSyncOrNull } }) {
-          const ROOT_FOLDER = 't357-attachment-path-sync';
+          const ROOT_FOLDER = 'attachment-path-modes-sync';
           const NOTE_FOLDER = `${ROOT_FOLDER}/docs`;
           const NOTE_PATH = `${NOTE_FOLDER}/note.md`;
           const FIXED_FOLDER = `${ROOT_FOLDER}/files`;
@@ -125,7 +125,7 @@ describe('attachment-path', () => {
           try {
             await app.vault.createFolder(NOTE_FOLDER);
             await app.vault.createFolder(FIXED_FOLDER);
-            await app.vault.create(NOTE_PATH, '# T357\n');
+            await app.vault.create(NOTE_PATH, '# Attachment path modes, sync\n');
 
             const modeResults: SyncAttachmentFolderModeResult[] = [];
 
@@ -157,9 +157,9 @@ describe('attachment-path', () => {
 
       expect(results.map((result) => result.syncFolderPath)).toEqual([
         '/',
-        't357-attachment-path-sync/files',
-        't357-attachment-path-sync/docs',
-        't357-attachment-path-sync/docs/assets'
+        'attachment-path-modes-sync/files',
+        'attachment-path-modes-sync/docs',
+        'attachment-path-modes-sync/docs/assets'
       ]);
     });
   });
