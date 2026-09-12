@@ -1296,7 +1296,9 @@ retired by anyone but its author — do not add one.**
 | `typescript` | `6.0.3` | `@typescript-eslint` peer-requires `>=4.8.4 <6.1.0`, and its parser crashes on the TypeScript 7 (tsgo) native API, so type-aware ESLint cannot run on 7. TypeScript 7 was adopted in `db7c417c` (compile on 7, tooling on 6) and rolled back in `846d6c6a`; `3234c7d0` then made the pin exact so a dependency sweep could not drift it back. `6.0.3` is also the newest stable `6.x`. | `@typescript-eslint`'s peer range admits `7.x` — `node -e "console.log(require('typescript-eslint/package.json').peerDependencies.typescript)"` |
 | `js-yaml` (override) | `4.3.2` | `js-yaml@5` breaks `npm run docs:build` — see the next section. Held at the newest `4.x`, which is where the advisory fixes are backported. | A newer `v4-legacy` publishes — `npm view js-yaml dist-tags.v4-legacy` — which is the cue to move the pin onto it, not to retire it. It **retires** when `astro` accepts `js-yaml@5` — `node -e "console.log(require('astro/package.json').dependencies['js-yaml'])"` |
 | `smol-toml` (override) | `^1.8.0` | Not a pin but an advisory-driven override: it clears GHSA-7w5x-hrqm-74c2, which no direct bump reaches because `markdownlint-cli2` pins the vulnerable `1.7.0` exactly. See "Security overrides (`smol-toml`)" below. | `markdownlint-cli2` asks for `1.7.1` or later itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
-| `@puppeteer/browsers` (override) | `^3.2.0` | Not a pin but an advisory-driven override, tracked here for the same reason: it clears `extract-zip` GHSA-jmr9-qjv8-65gv, which nothing else in a sweep can reach. See "Security overrides (`extract-zip`)" below. | `@wdio/utils` asks for `@puppeteer/browsers@^3` itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
+| `@puppeteer/browsers` (override) | `^3.2.2` | Not a pin but an advisory-driven override, tracked here for the same reason: it clears `extract-zip` GHSA-jmr9-qjv8-65gv, which nothing else in a sweep can reach. See "Security overrides (`extract-zip`)" below. | `@wdio/utils` asks for `@puppeteer/browsers@^3` itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
+| `deepmerge-ts` (override) | `^8.0.2` | Not a pin but an advisory-driven override: it clears GHSA-ggr8-5vv4-36mx, which no direct bump reaches because every `@wdio/*` package still declares the vulnerable `^7.0.3`, its newest release included. See "Security overrides (`deepmerge-ts`)" below. | `@wdio/utils` asks for `deepmerge-ts@^8` or later itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
+| `fflate` (override) | `$fflate` | Not a pin but an advisory-driven override: it clears GHSA-px8p-9vwx-vf98, which no direct bump reaches because `satori` pins the vulnerable `0.7.3` exactly. `fflate` is a direct dependency too, so the override carries the `$fflate` shorthand and collapses the tree onto that one declared copy. See "Security overrides (`fflate`)" below. | `satori` asks for `0.7.5` or later, or drops `fflate` entirely — the `check` in [`pinned-versions.json`](pinned-versions.json) |
 
 **The CodeMirror pins are already due — the condition has fired upstream but not yet on npm.**
 `obsidian-api` master ([`package.json`](https://github.com/obsidianmd/obsidian-api/blob/master/package.json))
@@ -1458,15 +1460,15 @@ obsidian-integration-testing → webdriverio → @wdio/utils → @puppeteer/brow
 Upgrading the direct dependency does not help either: `obsidian-integration-testing` is already at its
 latest and pins `webdriverio` **exactly**, and even the newest `webdriverio` still declares
 `@puppeteer/browsers: ^2.2.0` under `@wdio/utils`. So the fix goes one level up the chain —
-`@puppeteer/browsers` → `^3.2.0`, whose `3.x` line replaced `extract-zip` with `modern-tar`. That drops
-the vulnerable subtree entirely (43 packages) and **dedupes**: `puppeteer-core` already pulls `3.2.0`
+`@puppeteer/browsers` → `^3.2.2`, whose `3.x` line replaced `extract-zip` with `modern-tar`. That drops
+the vulnerable subtree entirely (43 packages) and **dedupes**: `puppeteer-core` already pulls `3.2.2`
 into this tree, so the override collapses two copies into one rather than adding anything.
 
 The major bump is safe for `@wdio/utils`, the only consumer left on `2.x`. It imports exactly `install`,
 `canDownload`, `resolveBuildId`, `detectBrowserPlatform`, `Browser`, `ChromeReleaseChannel`,
 `computeExecutablePath` and the `InstallOptions` type — all still exported by `3.x` — and its
 `downloadProgressCallback: (downloaded, total) => …` call sites still satisfy `3.x`'s widened
-`'default' | fn` type. Both packages are ESM-only, so there is no CJS/ESM break. `3.2.0` wants
+`'default' | fn` type. Both packages are ESM-only, so there is no CJS/ESM break. `3.2.2` wants
 node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already imposed that.
 
 **Never take `npm audit fix --force` here.** Its remedy for this advisory is
@@ -1474,6 +1476,54 @@ node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already im
 
 **Remove this override** when `@wdio/utils` moves to `@puppeteer/browsers@^3` on its own, which is what
 [`pinned-versions.json`](pinned-versions.json) checks on every sweep.
+
+### Security overrides (`deepmerge-ts` GHSA-ggr8-5vv4-36mx)
+
+`deepmerge-ts` below `8.0.0` exhausts the stack when merging recursive object graphs; the fix is
+`8.0.0`. Nothing here depends on it directly — it arrives through one chain only:
+
+```text
+obsidian-integration-testing → webdriverio → @wdio/config / @wdio/utils / webdriver → deepmerge-ts@7.x
+```
+
+and no direct bump reaches it: every `@wdio/*` package still declares `deepmerge-ts: ^7.0.3`, its newest
+release included. So the `overrides` block carries `deepmerge-ts` → `^8.0.2`.
+
+The forced major is safe for those consumers, and that was settled at the call sites rather than from the
+changelog. `8.0.0` breaks by renaming the `mergeInfo` system and aligning the customization shorthand; a
+scan of the whole installed tree found exactly two bindings in use, `deepmerge` and `deepmergeCustom`.
+Both `deepmergeCustom` shapes present — `@wdio/config`'s `mergeArrays` handler, which reads `meta.key`
+and returns `utils.actions.defaultMerge`, and `webdriver`'s `deepmergeCustom({ mergeArrays: false })` —
+were run against `7.1.6` and `8.0.1` and produce identical output. The same override is carried for the
+same reason in `create-obsidian-plugin`'s `ADVISORY_OVERRIDES`.
+
+**Never take `npm audit fix --force` here.** Its remedy is `obsidian-integration-testing@1.1.2` — the same
+downgrade across eleven majors the `extract-zip` override refuses.
+
+**Remove this override** when `@wdio/utils` moves to `deepmerge-ts@^8` on its own, which is what
+[`pinned-versions.json`](pinned-versions.json) checks on every sweep. Re-run the `deepmergeCustom` probe
+before lifting it rather than trusting the range: `@wdio/config` passes a handler that reads `meta.key`,
+and that is precisely the API `8.0.0` renamed, so a regression there would be silent rather than a crash.
+
+### Security overrides (`fflate` GHSA-px8p-9vwx-vf98)
+
+`fflate` `0.7.0`–`0.7.4` loops forever in `unzipSync` on a malformed ZIP64 archive; the fix is in
+`0.7.5`. `satori` — a devDependency of the Astro docs site — pins the vulnerable `0.7.3` **exactly** and
+is itself already at its latest, so only an override reaches it.
+
+Unlike the other three, `fflate` is **also a direct dependency**: `src/script-utils/demo-vault.ts` writes
+release archives with its `zipSync`, and `src/desktop-zip-extractor.test.ts`,
+`src/obsidian/desktop-demo-vault-opener.test.ts` and `src/script-utils/demo-vault.test.ts` write their
+fixtures with it. That is why the override is the `$fflate` shorthand rather than a version: it holds the
+forced version equal to the declared one **by construction**, so `update-npm-deps.ps1` can float the direct
+caret without the override silently drifting behind it, and the whole tree collapses onto that one copy.
+
+**Never take `npm audit fix --force` here.** Its remedy is `satori@0.32.0`, a downgrade.
+
+**Remove this override** when `satori` moves to `0.7.5` or later, or off `fflate` entirely, which is what
+[`pinned-versions.json`](pinned-versions.json) checks on every sweep. The `fflate` line in `dependencies`
+stays either way. Two paths verify a change: `npm run test:coverage` covers the archiver and the ZIP
+fixtures, and `npm run docs:build` covers satori's OG-image path, which lint and unit tests never touch.
 
 ### Unused dependencies (`.depcheckrc.json`)
 
