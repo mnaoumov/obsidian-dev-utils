@@ -397,8 +397,9 @@ describe('prompt', () => {
           const checkboxEl = getCheckboxEl();
           const checkboxMarginInlineStart = checkboxEl ? checkboxEl.win.getComputedStyle(checkboxEl).marginInlineStart : '';
 
-          // The modal's scope reads the real key pipeline, so the press has to be trusted (G107). The
-          // Input already holds focus — `PromptModal` selects it on open.
+          // The modal's scope reads the real key pipeline, so the press has to be trusted; a dispatched
+          // Event would be ignored and prove nothing. The input already holds focus — `PromptModal`
+          // Selects it on open.
           await pressKey({ key: '1', modifiers: ['Alt'] });
           await waitUntil({
             message: 'the checkbox toggles after alt+1',

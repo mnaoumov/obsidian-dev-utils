@@ -22,7 +22,7 @@
  *
  * The types are DECLARED HERE rather than imported, and narrowed to the members actually called: Templater
  * ships no npm types package, and depending on it would turn an optional integration into a build-time
- * dependency (see rule L9).
+ * dependency.
  *
  * The second thing this module supplies is an active-file answer. While a template renders,
  * `app.workspace.getActiveFile()` still points at whatever the user happens to have open — NOT at the file

@@ -34,7 +34,7 @@ describe('assertMobileLoadableBundle', () => {
     }).not.toThrow();
   });
 
-  it('accepts a bundle that only reaches a Node builtin lazily, which is the shape rule L6 prescribes', () => {
+  it('accepts a bundle that only reaches a Node builtin lazily, which is the shape a cross-platform module has to take', () => {
     expect(() => {
       loadBundle('"use strict"; module.exports = { extract: function () { var { randomFillSync } = require("crypto"); return randomFillSync; } };');
     }).not.toThrow();

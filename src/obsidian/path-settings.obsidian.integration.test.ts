@@ -126,7 +126,7 @@ describe('PathSettings', () => {
           pluginSettingsComponent: settingsComponent
         });
         activeDocument.body.append(tab.containerEl);
-        // eslint-disable-next-line @typescript-eslint/no-deprecated -- The override clears the upstream deprecation, but the rule walks the inheritance chain (AGENTS.md L1).
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- The override clears the upstream deprecation, but the rule walks the inheritance chain and reports the base method anyway.
         tab.display();
 
         const asyncErrors: string[] = [];
@@ -135,9 +135,9 @@ describe('PathSettings', () => {
         });
 
         /*
-         * A notice is transient by design (AGENTS.md L16), so it cannot be counted off the DOM: this file
-         * shares its Obsidian instance with every other pooled integration test, and a neighbor's leftover
-         * notice expiring mid-run moved the count with nothing here doing anything wrong. Record notices as
+         * A notice is transient by design, so it cannot be counted off the DOM: this file shares its
+         * Obsidian instance with every other pooled integration test, and a neighbor's leftover notice
+         * expiring mid-run moved the count with nothing here doing anything wrong. Record notices as
          * they arrive instead. The RenameDeleteHandler tests observe the DOM for this because they assert on
          * notices production code raises; here the test owns the component, so intercepting `showNotice` is
          * both exact and immune to neighbors — no other file can push into this array.

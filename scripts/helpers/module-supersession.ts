@@ -3,12 +3,13 @@
  *
  * Works out which platform-prefixed modules a same-named facade supersedes in the flat barrel.
  *
- * `AGENTS.md` **L5** makes a platform-only module carry a `desktop-` / `mobile-` filename prefix, and it
- * marks the *file*, not its exports — `desktop-trusted-input.ts` exports `pressKey`, not
- * `desktopPressKey`. **L6** then asks for a cross-platform facade over such a pair, and a facade that
- * hides the split has to export those very same names. In the flat barrel (`src/__merged.ts`) all three
- * land in one namespace, so the three copies of `pressKey` read as a name collision and fail the build —
- * a structural dead end, since neither rule can bend without losing what it is for.
+ * A platform-only module carries a `desktop-` / `mobile-` filename prefix, and the prefix marks the
+ * *file*, not its exports — `desktop-trusted-input.ts` exports `pressKey`, not `desktopPressKey`. A
+ * public-facing API then has to stay cross-platform-loadable, which asks for a facade over such a pair,
+ * and a facade that hides the split has to export those very same names. In the flat barrel
+ * (`src/__merged.ts`) all three land in one namespace, so the three copies of `pressKey` read as a name
+ * collision and fail the build — a structural dead end, since neither rule can bend without losing what
+ * it is for.
  *
  * The way out is to notice that the collision is not real: the twins are *implementations* of the facade,
  * so the barrel should export the facade and skip them. `lib.pressKey` inside an `evalInObsidian` closure
@@ -56,7 +57,7 @@ export interface ModuleSupersession {
 }
 
 /**
- * The `AGENTS.md` L5 filename prefixes that mark a platform-only module.
+ * The filename prefixes that mark a platform-only module.
  */
 const PLATFORM_PREFIXES = [
   'desktop-',

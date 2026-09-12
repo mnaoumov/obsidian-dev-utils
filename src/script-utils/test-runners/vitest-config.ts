@@ -217,7 +217,7 @@ export class ObsidianPluginVitestConfigContext {
     const obsidianVersion = process.env[OBSIDIAN_VERSION_ENV_VARIABLE_NAME];
 
     /*
-     * Support is the range [latest public, latest catalyst] and BOTH ends must work (G99), so the version
+     * Support is the range [latest public, latest catalyst] and BOTH ends must work, so the version
      * is a knob rather than a constant. The key is added ONLY when the variable is set: an explicit
      * `obsidianVersion` makes the harness resolve a concrete version and swap the asar, which is not what
      * an unpinned run does, so seeding a default here would change the behavior of every plugin.

@@ -526,8 +526,8 @@ function getNodeBuiltinsConfigs(context: EslintConfigContext): Linter.Config[] {
     },
     {
       /*
-       * A `desktop-` prefixed module is desktop-only by convention (see L5 in `AGENTS.md`): it is reached only
-       * through a `Platform.isDesktopApp`-gated dynamic `import()` in its caller, so its static Node imports never
+       * A `desktop-` prefixed module is desktop-only by convention: it is reached only through a
+       * `Platform.isDesktopApp`-gated dynamic `import()` in its caller, so its static Node imports never
        * load on mobile. Neither rule can see that gate, because it sits one file up — the correctly-written pattern
        * reports anyway, and no author-side rewrite silences it.
        *

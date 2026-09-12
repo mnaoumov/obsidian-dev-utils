@@ -248,8 +248,8 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
       expect(isCodeScriptToolkitLoaded, 'CodeScript Toolkit did not load, so no button could render').toBe(true);
     });
 
-    // A vault whose notes declare no buttons is a real failure of G98's interactive half, not a reason
-    // To register nothing and report green.
+    // A demo vault has to demonstrate every headline feature, so a vault whose notes declare no buttons
+    // Is a real failure of its interactive half, not a reason to register nothing and report green.
     it('has at least one note with a code button', () => {
       expect(notes.length).toBeGreaterThan(0);
     });

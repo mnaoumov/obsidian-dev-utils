@@ -14,7 +14,7 @@
  * seeds into an `evalInObsidian` closure's `lib` bag. Delegating is what keeps the mobile semantics —
  * tap, long-press for `button: 'right'`, a throw for `'middle'`, the `pressKey` key set, and the throws
  * for the `:hover` helpers — identical to the harness's own copy for free, instead of a second
- * implementation to hand-sync (see the project `AGENTS.md` **L4**).
+ * implementation to hand-sync.
  *
  * The namespace shape is declared **locally**: the harness must never be a dependency of this library, in
  * either direction, at runtime or in types.
@@ -34,7 +34,8 @@ import type {
   TypeIntoEditorParams,
   UnhoverElementParams
   // The parameter contracts live with the desktop twin and are shared verbatim, so the two platforms
-  // Cannot drift apart on what a caller passes. A type-only import loads nothing (L5).
+  // Cannot drift apart on what a caller passes. A type-only import loads nothing at runtime, so this
+  // Import leaves the module mobile-safe.
 } from './desktop-trusted-input.ts';
 
 /**

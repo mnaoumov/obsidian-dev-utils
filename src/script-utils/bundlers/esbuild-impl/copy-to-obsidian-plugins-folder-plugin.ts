@@ -338,7 +338,7 @@ async function launchDevInstance(vaultPath: string): Promise<ObsidianTransport> 
  * at all, and no operating system kills the instance just for being our child — so that case is caught
  * from the other side, by the harness's parent-liveness watchdog: the instance's renderer holds a socket
  * back to this process and destroys its window when the kernel closes it. See `parent-liveness.ts` in
- * `obsidian-integration-testing` (its L33).
+ * `obsidian-integration-testing`.
  *
  * @param transport - The owned transport to dispose on shutdown.
  */
