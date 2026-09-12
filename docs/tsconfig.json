@@ -5,7 +5,7 @@
     "noEmit": true
   },
   "include": [
-    ".astro/types.d.ts",
+    "../.astro/types.d.ts",
     "src/**/*.astro",
     "src/**/*.ts"
   ]

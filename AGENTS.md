@@ -139,6 +139,28 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
     Link the new page by its repo-relative source path instead (`docs/src/content/docs/guides/<name>.md`),
     which is valid immediately and renders inline on GitHub, where most people meet the README. Do NOT
     add a `skip` entry for it: that is a temporary exception nothing would ever come back and remove.
+  - **Astro's generated types live at the REPO ROOT, not under `docs/`, and `npm run lint` generates them
+    when they are missing.** `docs/src/content.config.ts` imports from the `astro:content` virtual module
+    and `docs/src/route-data.ts` reads `import.meta.env`; nothing on disk declares either until Astro
+    writes `.astro/types.d.ts`. Astro writes that under its **root**, and the root is the repo root
+    because `astro.config.ts` sits there — `srcDir: './docs/src'` moves the sources, not the root. So
+    `docs/tsconfig.json` includes `../.astro/types.d.ts`; it included `.astro/types.d.ts` (i.e.
+    `docs/.astro/`, which Astro never writes) until 2026-09-12, and every use of `defineCollection` was
+    therefore `error`-typed on any checkout but one. The defect was invisible here because this tree
+    carried a stale `docs/.astro/` from an earlier layout — gitignored, so never cleaned and never
+    restored — and invisible everywhere else because no CI ran `lint`. It made `npm run lint`,
+    `npm run gate` and `npm run version`'s preflight red on every fresh clone. Both halves are fixed:
+    the `include` names the real path, and `scripts/helpers/sync-astro-types.ts` runs `astro sync` from
+    `lint`/`lint:fix` **only when `.astro/types.d.ts` is absent** — `lint:fix` is a pre-commit step, and
+    what these rules need is the `astro:content` / `astro/client` module declarations, which do not
+    change with the collection contents.
+- `.github/workflows/lint.yml` — runs `npm ci` -> `npm run build` -> `npm run lint` on every push to
+  `main` and every pull request. It exists because nothing in CI ran `lint` at all, so a check that was red
+  on every clean checkout could — and did — survive unseen. The build step is load-bearing: `lint` is
+  type-aware and the `src/**/index.ts` barrels and their `.d.ts` siblings are gitignored build outputs, so
+  a clone that has never been built lints with hundreds of "error typed value" failures that say nothing
+  about the source. `lint:md` is deliberately left out: its linkinator half fetches the site's links live
+  (see above), so it would make every pull request depend on the network and on what is already deployed.
 - `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`,
   which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages,
   `docs/src/generated-sidebar.json`, and OG images; the generator only skips regeneration when its cache

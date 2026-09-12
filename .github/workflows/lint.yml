@@ -1,0 +1,48 @@
+name: Lint
+
+# Runs ESLint on every push and pull request. Nothing in CI ran `lint` before this workflow, so a
+# defect that only shows up in a clean checkout could survive indefinitely: the maintainer's own tree
+# carries generated leftovers that mask it, and that is exactly how a wrongly-rooted `include` in
+# `docs/tsconfig.json` went unnoticed while `npm run lint` — and therefore `npm run gate` and
+# `npm run version`'s preflight — was red on every fresh clone.
+#
+# The build is not decoration. `lint` is type-aware, and part of the types it reads are generated: the
+# `src/**/index.ts` barrels and the `.d.ts` files beside them are gitignored build outputs, so linting a
+# clone that has never been built reports hundreds of "error typed value" failures that say nothing about
+# the source. Building first is the order `npm run gate` and the release preflight already use.
+#
+# `lint:md` is deliberately NOT here. Its linkinator half fetches the `mnaoumov.dev/obsidian-dev-utils`
+# links live, so it would make every pull request depend on the network and on the deployed site — and a
+# commit that adds a guide legitimately 404s on that guide's own URL until the next Pages deploy.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
