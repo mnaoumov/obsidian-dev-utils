@@ -38,8 +38,8 @@ describe('api-doc link rendering', () => {
     registerRouteSegments(types);
 
     // The two names lowercase to the same slug, so exactly one keeps the pretty case-preserved route
-    // While the other is suffixed. Otherwise `/AbortSignalAny/` and `/abortSignalAny/` would overwrite
-    // Each other when Astro writes to a case-insensitive filesystem (Windows/macOS), 404-ing links.
+    // while the other is suffixed. Otherwise `/AbortSignalAny/` and `/abortSignalAny/` would overwrite
+    // each other when Astro writes to a case-insensitive filesystem (Windows/macOS), 404-ing links.
     const routeSegments = new Set([toTypeRouteSegment('alpha', 'AbortSignalAny'), toTypeRouteSegment('alpha', 'abortSignalAny')]);
     expect(routeSegments).toEqual(new Set(['abortSignalAny', 'AbortSignalAny-2']));
     expect(new Set([...routeSegments].map((segment) => segment.toLowerCase()))).toEqual(new Set(['abortsignalany', 'abortsignalany-2']));

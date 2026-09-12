@@ -143,11 +143,11 @@ export async function openDemoVault(params: OpenDemoVaultParams): Promise<void> 
   } = params;
 
   // Shown immediately (`delayInMilliseconds: 0`): resolving the release, downloading and extracting can
-  // Each take a while, so the user must see progress the moment the command is invoked.
+  // each take a while, so the user must see progress the moment the command is invoked.
   //
   // Kept out of the shared slot (`Separate`), because this very function raises ordinary notices while
-  // The operation is still running — "not in the registry", "no demo vault for this version" — and a
-  // Slot notice would hide the progress notice rather than appear beside it.
+  // the operation is still running — "not in the registry", "no demo vault for this version" — and a
+  // slot notice would hide the progress notice rather than appear beside it.
   using progressNotice = pluginNoticeComponent.showNoticeAfterDelay({
     content: `Opening demo vault for ${pluginName}…`,
     delayInMilliseconds: 0,

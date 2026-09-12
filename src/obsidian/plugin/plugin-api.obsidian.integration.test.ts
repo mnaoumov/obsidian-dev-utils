@@ -69,7 +69,7 @@ describe('cross-copy plugin API registry', () => {
         }
 
         // The consuming plugin only re-reads the registry when it is notified, so wait on the value the test
-        // Actually depends on rather than on the enable call returning.
+        // actually depends on rather than on the enable call returning.
         await waitUntil({
           message: 'the provider API to be visible to the consumer',
           predicate: (): boolean => window.__pluginApiIntegrationTestProbe?.greetV2() !== null,
@@ -122,8 +122,8 @@ describe('cross-copy plugin API registry', () => {
 
         return {
           // The schema doing the rejecting was authored and published by the PROVIDER's copy of the library
-          // And traveled across in the registry record; the wrapper invoking it was built by the CONSUMER's
-          // Copy, and the debug gate it consulted is the consumer's too.
+          // and traveled across in the registry record; the wrapper invoking it was built by the CONSUMER's
+          // copy, and the debug gate it consulted is the consumer's too.
           invalidCallError: String(testProbe.callWithInvalidInputWhileValidating().error),
           // Validation is off again afterwards, and a well-typed call is unaffected either way.
           validCallGreeting: testProbe.greetV2()
@@ -158,7 +158,7 @@ describe('cross-copy plugin API registry', () => {
 
         const greetingWhileDisabled = testProbe.greetV2();
         // The class that threw lives in the PROVIDER-less consumer bundle, so this is compared by name, not
-        // By identity — no `instanceof` could ever span the two copies.
+        // by identity — no `instanceof` could ever span the two copies.
         const cachedAfterRevoke = String(testProbe.readCachedApi().error);
 
         await app.plugins.enablePlugin(providerPluginId);
@@ -172,7 +172,7 @@ describe('cross-copy plugin API registry', () => {
           cachedAfterRevoke,
           cachedBeforeRevoke,
           // A re-enable publishes a NEW record, so the OLD handle stays dead forever. This is precisely why
-          // The watch, and not a one-shot `require`, is the whole consumer surface.
+          // the watch, and not a one-shot `require`, is the whole consumer surface.
           cachedStillRevokedAfterReEnable: String(testProbe.readCachedApi().error),
           greetingAfterReEnable: testProbe.greetV2(),
           greetingWhileDisabled

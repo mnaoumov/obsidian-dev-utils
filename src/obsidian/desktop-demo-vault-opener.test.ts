@@ -143,18 +143,18 @@ const DEMO_VAULT_NOTE_PATH = 'Notes/Welcome.md';
 const DEMO_VAULT_NOTE_CONTENT = '# Welcome to the demo vault';
 
 // The release tag the asset URL is namespaced by — which is where the version lives now that the asset
-// Name itself carries none.
+// name itself carries none.
 const DOWNLOADED_VERSION_REG_EXP = /releases\/download\/(?<version>[^/]+)\//;
 
 // The LOCAL cache name, which the opener derives from the version it resolved rather than from the asset
-// Name — the reason dropping the version from the asset name costs the cache nothing.
+// name — the reason dropping the version from the asset name costs the cache nothing.
 function archiveFileName(version: string): string {
   return `${PLUGIN_ID}-${version}.zip`;
 }
 
 // A REAL archive, written by the same `fflate` the release path uses, so the opener runs the real
-// Extractor end to end rather than a stand-in that could not fail the way extraction does. Its entries
-// Sit under the same single top-level folder the release path writes.
+// extractor end to end rather than a stand-in that could not fail the way extraction does. Its entries
+// sit under the same single top-level folder the release path writes.
 function buildDemoVaultArchive(version: string): Buffer {
   return Buffer.from(zipSync({
     [`${demoVaultFolderName(version)}/${DEMO_VAULT_NOTE_PATH}`]: Buffer.from(DEMO_VAULT_NOTE_CONTENT, 'utf-8')
@@ -220,7 +220,7 @@ beforeEach(() => {
       value: (id: string): unknown => {
         if (id === 'node:original-fs') {
           // Deliberately NOT the mocked `node:fs`: the assertions below distinguish the two, which is
-          // The whole point of loading `original-fs` for extraction.
+          // the whole point of loading `original-fs` for extraction.
           return {
             mkdirSync: mockOriginalFsMkdirSync,
             writeFileSync: mockOriginalFsWriteFileSync
@@ -243,7 +243,7 @@ describe('openDemoVault', () => {
     expect(mockShowNoticeAfterDelay).toHaveBeenCalledTimes(1);
     expect(mockShowNoticeAfterDelay.mock.calls[0]?.[0]?.delayInMilliseconds).toBe(0);
     // Kept out of the shared slot: this flow raises ordinary notices ("not in the registry", "no demo
-    // Vault for this version") while the operation runs, and a slot notice would hide the progress one.
+    // vault for this version") while the operation runs, and a slot notice would hide the progress one.
     expect(mockShowNoticeAfterDelay.mock.calls[0]?.[0]?.mode).toBe(PluginNoticeMode.Separate);
   });
 
@@ -297,7 +297,7 @@ describe('openDemoVault', () => {
   });
 
   // The asset name carries no version: the release tag in the URL already namespaces it, and a name that
-  // Changed every release is what broke the Community directory's finding overrides.
+  // changed every release is what broke the Community directory's finding overrides.
   it('should download and cache the archive when it is not cached', async () => {
     await openDemoVault(buildParams());
     expect(mockRequestUrl).toHaveBeenCalledWith({
@@ -354,7 +354,7 @@ describe('openDemoVault', () => {
 
   it('should write the extracted vault with Electron original-fs, not the asar-intercepted node:fs', async () => {
     // Electron's asar layer intercepts fs operations on any path containing `.asar`, treating it as an
-    // Archive root rather than a plain file. A demo vault may ship exactly such a file
+    // archive root rather than a plain file. A demo vault may ship exactly such a file
     // (`_assets/CodeScriptToolkit/module.asar`), so extraction goes through `original-fs`.
     await openDemoVault(buildParams());
     const vaultDirectory = getOpenedVaultDirectory();
@@ -373,9 +373,9 @@ describe('openDemoVault', () => {
   });
 
   // The archive holds the vault under one top-level folder, so extraction targets the unique PARENT and
-  // The vault is that folder inside it. The name is known on both sides rather than searched for, which is
-  // What keeps extraction free of any filesystem read (Electron's asar layer intercepts reads on any path
-  // Containing `.asar`, which a demo vault may legitimately ship).
+  // the vault is that folder inside it. The name is known on both sides rather than searched for, which is
+  // what keeps extraction free of any filesystem read (Electron's asar layer intercepts reads on any path
+  // containing `.asar`, which a demo vault may legitimately ship).
   it('should open the archive own top-level folder, not the folder it extracted into', async () => {
     await openDemoVault(buildParams());
     const vaultDirectory = getOpenedVaultDirectory();

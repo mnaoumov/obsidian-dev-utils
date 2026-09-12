@@ -302,7 +302,7 @@ class ResourceLockEventsComponent extends ComponentEx {
 class ResourceLockManager {
   private readonly beeper = new Beeper();
   // The inner sets are mutable so a rename can re-key the paths of an in-flight bypass scope in place;
-  // The scope's `Disposable` deletes by set identity, so mutating the contents cannot orphan it.
+  // the scope's `Disposable` deletes by set identity, so mutating the contents cannot orphan it.
   private readonly bypassPathSets = new Set<Set<string>>();
   private eventsComponent: null | ResourceLockEventsComponent = null;
   private readonly indicatorsByView = new Map<MarkdownView, LockIndicators>();
@@ -501,7 +501,7 @@ class ResourceLockManager {
 
   private createIndicators(app: App, view: MarkdownView, tooltip: string): LockIndicators {
     // The indicators outlive a rename of the note (or of an enclosing locked folder), so they resolve
-    // The owner lock at CLICK time from the view's current file, exactly as the status-bar item does.
+    // the owner lock at CLICK time from the view's current file, exactly as the status-bar item does.
     // A captured owner path would go stale the moment the lock is re-keyed.
     const getOwnerPath = (): string | undefined => this.resolveViewOwnerPath(app, view);
 
@@ -817,7 +817,7 @@ class ResourceLockManager {
     // A click of ANY mouse button on a lock indicator opens the same unlock context menu:
     // `click` fires only for the primary (left) button, `contextmenu` for the right button, and
     // `auxclick` for the middle button (the browser fires no `click` for it). `auxclick` also fires for
-    // The right button, so it is guarded to the middle button to avoid double-opening alongside `contextmenu`.
+    // the right button, so it is guarded to the middle button to avoid double-opening alongside `contextmenu`.
     // A plain listener dies with the element when it is `.remove()`d on unlock, so it never leaks.
     const openUnlockMenu = ($event: MouseEvent): void => {
       $event.preventDefault();
@@ -840,7 +840,7 @@ class ResourceLockManager {
 
   private removeEntry(app: App, entry: LockEntry): void {
     // Read the entry's CURRENT path, not one captured when the lock was taken: a rename may have
-    // Re-keyed it since, and looking it up under the old path would silently leak the lock.
+    // re-keyed it since, and looking it up under the old path would silently leak the lock.
     const entries = this.lockEntriesByPath.get(entry.path);
     if (!entries) {
       return;
@@ -912,7 +912,7 @@ class ResourceLockManager {
     const fragment = createFragment();
     fragment.appendText(t(($) => $.obsidianDevUtils.resourceLock.unlockConfirmMessage));
     // A runtime-length list of the locks currently held: each plugin name as a code block followed by
-    // The operation it is running, one per line.
+    // the operation it is running, one per line.
     for (const descriptor of this.lockDescriptors(app, path)) {
       fragment.createEl('br');
       appendCodeBlock(fragment, descriptor.pluginName);

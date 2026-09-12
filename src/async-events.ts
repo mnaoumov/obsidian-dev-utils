@@ -749,13 +749,13 @@ export function subscribeAsyncDisposableEvent<Source extends GenericAsyncEventSo
   params: SubscribeAsyncDisposableEventParams<Source, EventName>
 ): AsyncDisposableEx {
   // `Source` is constrained only to the on-less `GenericAsyncEventSource` (so a typed source is accepted whatever
-  // Its event map's variance); every source is an `AsyncEventSource`, so it is narrowed to reach `on`, whose type
-  // Parameters then infer from the (already-typed) name and callback.
+  // its event map's variance); every source is an `AsyncEventSource`, so it is narrowed to reach `on`, whose type
+  // parameters then infer from the (already-typed) name and callback.
   return new AsyncEventRefDisposable(asAsyncEventSource(params.asyncEventSource).on(params.name, params.callback, params.thisArgument));
 }
 
 // Narrows a source to {@link AsyncEventSource} to reach `on`. A local equivalent of `castTo`: importing `castTo`
-// From `object-utils` here would create a module cycle (object-utils → error → async-events).
+// from `object-utils` here would create a module cycle (object-utils → error → async-events).
 function asAsyncEventSource(value: unknown): AsyncEventSource {
   return value as AsyncEventSource;
 }

@@ -39,7 +39,7 @@ interface StateWrapper {
 const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PLUGIN_NAME = 'My Plugin';
 // The component never dereferences the app, so a strict proxy over an empty object satisfies the
-// Constructor's type.
+// constructor's type.
 const app = strictProxy<AppOriginal>({});
 
 const mocks = vi.hoisted(() => {
@@ -53,7 +53,7 @@ const mocks = vi.hoisted(() => {
     this.containerEl.append(this.messageEl);
     // A freshly constructed notice IS on screen, and the component asks `isShown()` (as Obsidian's own
     // `hide` does) before appending to it. `isShown()` reads `offsetParent`, which jsdom never computes,
-    // So it is declared here — and cleared by `dismissNotice` for the notice-is-gone cases.
+    // so it is declared here — and cleared by `dismissNotice` for the notice-is-gone cases.
     Object.defineProperty(this.containerEl, 'offsetParent', { configurable: true, value: document.body });
     instances.push(this);
   });
@@ -406,7 +406,7 @@ describe('PluginNoticeComponent', () => {
     component.showNotice('bravo', { mode: PluginNoticeMode.Append });
 
     // Obsidian's own default duration, so the appended message is readable for a full duration rather
-    // Than inheriting what was left of the current one.
+    // than inheriting what was left of the current one.
     expect(currentNotice.setAutoHide).toHaveBeenCalledWith(4000);
   });
 
@@ -570,7 +570,7 @@ describe('PluginNoticeComponent', () => {
     const notice = ensureNonNullable(mocks.instances[0]);
 
     // Simulate Obsidian inserting the notice content into the container, so the close button becomes a
-    // Descendant of the container's capture-phase guard.
+    // descendant of the container's capture-phase guard.
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     notice.messageEl.append(fragment);
 
@@ -616,7 +616,7 @@ describe('PluginNoticeComponent', () => {
     const notice = ensureNonNullable(mocks.instances[0]);
 
     // Simulate Obsidian inserting the notice content into the container, so the button becomes a
-    // Descendant of the container's capture-phase guard.
+    // descendant of the container's capture-phase guard.
     const fragment = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     notice.messageEl.append(fragment);
 
@@ -942,7 +942,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
     await vi.advanceTimersByTimeAsync(DELAY_IN_MILLISECONDS);
 
     // The content handed to `Notice`. The real Obsidian moves it into the notice; the mock leaves it
-    // Here, and either way the handle's message element is the thing rewritten in place.
+    // here, and either way the handle's message element is the thing rewritten in place.
     const content = castTo<DocumentFragment>(mocks.NoticeMock.mock.calls[0]?.[0]);
     expect(content.textContent).toBe('My Plugin\nMerging 1/10');
 
@@ -950,12 +950,12 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
 
     expect(content.textContent).toBe('My Plugin\nMerging 7/10');
     // The message element is swapped rather than the whole notice message rewritten, so a notice this
-    // Handle merely joined keeps the messages that are not its own.
+    // handle merely joined keeps the messages that are not its own.
     expect(mocks.instances[0]?.setMessage).not.toHaveBeenCalled();
   });
 
   // A progress notice in the shared slot is hidden by any ordinary notice raised while the operation
-  // Runs — and it never comes back, because the handle then updates a notice that is no longer shown.
+  // runs — and it never comes back, because the handle then updates a notice that is no longer shown.
   it('should keep a separate delayed notice alive when another notice is shown', async () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();
@@ -1038,9 +1038,9 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
   });
 
   // Resolving the content is asynchronous, so an operation reporting progress can call `setContent`
-  // While the notice is still being built. There is no notice to rewrite at that point, so the update
-  // Would be lost and the notice would open showing the message it started with — the newer message
-  // Replaced by the older one.
+  // while the notice is still being built. There is no notice to rewrite at that point, so the update
+  // would be lost and the notice would open showing the message it started with — the newer message
+  // replaced by the older one.
   it('should open with the latest content when setContent lands while the content is resolving', async () => {
     const component = new PluginNoticeComponent({ app, pluginName: PLUGIN_NAME });
     component.load();

@@ -217,7 +217,7 @@ describe('MinimizableModal', () => {
           await sleep(SETTLE_DELAY_MILLISECONDS);
 
           // Opening Settings while minimized must be blocked BEFORE its popout window is created — the
-          // Whole point of the fix. Previously the window appeared but rendered empty (bad UX).
+          // whole point of the fix. Previously the window appeared but rendered empty (bad UX).
           app.setting.open();
           await sleep(SETTLE_DELAY_MILLISECONDS);
           const didOpenSettingsWhileMinimized = isSettingsOpen();
@@ -242,9 +242,9 @@ describe('MinimizableModal', () => {
 
           function isSettingsOpen(): boolean {
             // Obsidian's Settings opens in a separate popout window on desktop; `app.setting.popout` is
-            // Set only while that window exists. It is a 1.13 (catalyst) member absent from the public
-            // Typings this library targets, so read it reflectively — the peek-lock's win is that it
-            // Stays unset while minimized (no window is created).
+            // set only while that window exists. It is a 1.13 (catalyst) member absent from the public
+            // typings this library targets, so read it reflectively — the peek-lock's win is that it
+            // stays unset while minimized (no window is created).
             // TODO: Simplify to `app.setting.popout` once Obsidian 1.13 is public and
             // `obsidian-public-latest` typings model `AppSetting.popout`.
             return Boolean(Reflect.get(app.setting, 'popout'));
@@ -293,8 +293,8 @@ describe('MinimizableModal', () => {
             throw new Error('minimized bar not found');
           }
           // A trusted click hit-tests for real, so aiming at the bar's centre would land on whichever
-          // Child sits there (the title, or the restore button this case must avoid). Find a point the
-          // Bar itself actually owns and click that.
+          // child sits there (the title, or the restore button this case must avoid). Find a point the
+          // bar itself actually owns and click that.
           const barPoint = findOwnPoint(barEl);
           await clickMouse({ x: barPoint.x, y: barPoint.y });
           const wasRestoredByBarClick = await didRestore();
@@ -419,8 +419,8 @@ describe('MinimizableModal', () => {
           }
 
           // Obsidian dismisses a modal from a listener it registers on this very element in the `Modal`
-          // Constructor. Without the wrapper's capture-phase guard on `containerEl`, this click closes
-          // The modal — cancelling whatever operation it was running — instead of minimizing it.
+          // constructor. Without the wrapper's capture-phase guard on `containerEl`, this click closes
+          // the modal — cancelling whatever operation it was running — instead of minimizing it.
           const backgroundPoint = findOwnPoint(backgroundEl);
           await clickMouse({ x: backgroundPoint.x, y: backgroundPoint.y });
           await sleep(SETTLE_DELAY_MILLISECONDS);
@@ -518,7 +518,7 @@ describe('MinimizableModal', () => {
       });
 
       // Opting out leaves Obsidian's own dismissal intact — which is also what the test above proves the
-      // Default now suppresses: the very same click closes the modal when the wrapper stays out of the way.
+      // default now suppresses: the very same click closes the modal when the wrapper stays out of the way.
       expect(result.isModalConnected).toBe(false);
       expect(result.isMinimized).toBe(false);
       expect(result.barShown).toBe(false);
@@ -547,8 +547,8 @@ describe('MinimizableModal', () => {
           }
 
           // A trusted pointer move sets a genuine `:hover`, so real theme `var()` values resolve and
-          // Composite as they do for the user. `mouseover` events are untrusted (never set `:hover`),
-          // And `jsdom` resolves neither `var()` nor composites — so a real-Obsidian test is used.
+          // composite as they do for the user. `mouseover` events are untrusted (never set `:hover`),
+          // and `jsdom` resolves neither `var()` nor composites — so a real-Obsidian test is used.
           await hoverElement({ element: barEl });
           const backgroundColorWhileHovered = getComputedStyle(barEl).backgroundColor;
           const alphaWhileHovered = alphaOf(backgroundColorWhileHovered);
@@ -563,9 +563,9 @@ describe('MinimizableModal', () => {
 
           function alphaOf(color: string): number {
             // CSS Color 4 serialization (`oklch(l c h / a)`, `rgb(r g b / a)`) puts the alpha after the
-            // Slash. Obsidian's default theme resolves `--background-modifier-hover` to a `color-mix(...)`
-            // Computing to `oklch(0 0 none / 0.067)`, so a naive "count the numbers" parser breaks on the
-            // Non-numeric `none` hue. Read the slash-separated alpha token directly instead.
+            // slash. Obsidian's default theme resolves `--background-modifier-hover` to a `color-mix(...)`
+            // computing to `oklch(0 0 none / 0.067)`, so a naive "count the numbers" parser breaks on the
+            // non-numeric `none` hue. Read the slash-separated alpha token directly instead.
             const slashAlpha = /\/\s*(?<alpha>[\d.]+%?)\s*\)$/.exec(color)?.groups?.['alpha'];
             if (slashAlpha !== undefined) {
               const PERCENT_DIVISOR = 100;

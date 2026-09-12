@@ -27,7 +27,7 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       ignored_labels: [
         // GitHub's five alert types, all of which Obsidian renders as callouts. markdownlint reads the
-        // Bracketed marker opening one as a shortcut reference link, so each has to be ignored explicitly.
+        // bracketed marker opening one as a shortcut reference link, so each has to be ignored explicitly.
         '!caution',
         '!important',
         '!note',
@@ -45,7 +45,7 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
     relativeLinksRule
   ],
   // Every `.gitignore` in the tree, and up to the repository root — git's own default behavior. A path git
-  // Ignores is a path we do not lint, so `node_modules` (including the nested ones under test fixtures),
+  // ignores is a path we do not lint, so `node_modules` (including the nested ones under test fixtures),
   // `dist`, and every generated folder are skipped without anyone maintaining a list that can drift.
   gitignore: true,
   globs: [
@@ -53,10 +53,10 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
   ],
   // The residual, explicit list — everything `.gitignore` cannot express for us. Git never "ignores"
   // `.git` itself (it is simply outside the working tree), and a repository can deliberately TRACK a
-  // Vendored `node_modules` tree, whose third-party markdown is not ours to lint. See
+  // vendored `node_modules` tree, whose third-party markdown is not ours to lint. See
   // `markdownlint-ignores.ts`.
   // Claude Code's worktree folder is the third case, and a different one again: `gitignore: true` reads
-  // Only `.gitignore` files, while git excludes that folder through `.git/info/exclude`.
+  // only `.gitignore` files, while git excludes that folder through `.git/info/exclude`.
   // See `lint-ignores.ts`.
   ignores: [
     '.git/**',

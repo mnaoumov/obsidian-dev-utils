@@ -158,7 +158,7 @@ class PeekLockComponent extends MonkeyAroundComponent {
     super.onload();
 
     // Block opening any OTHER modal while a modal is minimized (the command palette, a re-fired
-    // Command, another plugin modal, …).
+    // command, another plugin modal, …).
     this.registerMethodPatch<Modal, 'open'>({
       $object: Modal.prototype,
       methodName: 'open',
@@ -168,9 +168,9 @@ class PeekLockComponent extends MonkeyAroundComponent {
     });
 
     // Obsidian's Settings is a *popout* modal: on desktop its own `open()` first creates a separate OS
-    // Window (via `shouldUsePopout()`/`getPopoutOptions()`) and only THEN delegates to
+    // window (via `shouldUsePopout()`/`getPopoutOptions()`) and only THEN delegates to
     // `Modal.prototype.open` to render the active tab into it. Guarding only `Modal.prototype.open`
-    // Therefore blocks the render but leaves an empty settings window behind — the reported bad UX.
+    // therefore blocks the render but leaves an empty settings window behind — the reported bad UX.
     // Guarding the settings modal's own `open()` blocks it *before* the window is created.
     this.registerMethodPatch<App['setting'], 'open'>({
       $object: this.app.setting,
@@ -181,10 +181,10 @@ class PeekLockComponent extends MonkeyAroundComponent {
     });
 
     // Suppress the keyboard, editor mutation, and the context menu across ALL windows — the main window
-    // And every existing/future popout — so the lock holds wherever the user's focus is, not only in
-    // The window that owns the minimized modal. Capture-phase listeners run before Obsidian's own
-    // Document/element handlers (including CodeMirror's), so `stopImmediatePropagation()` in the
-    // Suppressors keeps a blocked event from ever reaching them. `keydown` lets navigation keys through
+    // and every existing/future popout — so the lock holds wherever the user's focus is, not only in
+    // the window that owns the minimized modal. Capture-phase listeners run before Obsidian's own
+    // document/element handlers (including CodeMirror's), so `stopImmediatePropagation()` in the
+    // suppressors keeps a blocked event from ever reaching them. `keydown` lets navigation keys through
     // (see `isPeekAllowedKey`) but blocks command hotkeys; `beforeinput` blocks all editor mutation;
     // `contextmenu` blocks the right-click menu.
     const allWindowsEventComponent = this.addChild(new AllWindowsEventComponent(this.app));
@@ -258,10 +258,10 @@ export class MinimizableModal<TModal extends Modal> {
     this.minimizeButtonEl = this.createMinimizeButton();
     if (this.shouldMinimizeOnClickOutside) {
       // Obsidian dismisses a modal from a listener it registers on `bgEl` IN THE `Modal` CONSTRUCTOR —
-      // On macOS desktop that listener calls `close()` directly (no overridable method, no
+      // on macOS desktop that listener calls `close()` directly (no overridable method, no
       // `defaultPrevented` guard), so neither overriding `onClickOutside` nor `preventDefault()` alone can
-      // Stop it. At the target phase the DOM invokes listeners in registration order regardless of the
-      // Capture flag, and Obsidian registered first, so the only way to run earlier is to capture on the
+      // stop it. At the target phase the DOM invokes listeners in registration order regardless of the
+      // capture flag, and Obsidian registered first, so the only way to run earlier is to capture on the
       // PARENT element. Hence: capture-phase `click` on `containerEl`.
       modal.containerEl.addEventListener('click', ($event) => {
         this.handleContainerClick($event);
@@ -285,7 +285,7 @@ export class MinimizableModal<TModal extends Modal> {
     this.modal.containerEl.hide();
     // The modal stays open while minimized, so its keymap scope is popped to release the focus trap.
     // Restoring re-pushes it. An active trap would steal focus back to the hidden modal, blocking the
-    // Mouse-driven inspection (clicking notes, scrolling) that minimize exists to allow.
+    // mouse-driven inspection (clicking notes, scrolling) that minimize exists to allow.
     // Keyboard input remains blocked by the peek-only lock, so releasing the trap keeps the app inert.
     this.modal.app.keymap.popScope(this.modal.scope);
     this.minimizedBarEl = this.createMinimizedBar();
@@ -335,15 +335,15 @@ export class MinimizableModal<TModal extends Modal> {
       setTooltip(cancelButtonEl, 'Cancel');
       cancelButtonEl.addEventListener('click', ($event) => {
         // The whole bar restores on click; stop propagation so Cancel closes the modal instead of
-        // Restoring it. Closing runs the wrapped modal's onClose (peek lock lifted, bar removed), so
-        // The consumer's onClose decides what "cancel" means (e.g. releasing a held lock).
+        // restoring it. Closing runs the wrapped modal's onClose (peek lock lifted, bar removed), so
+        // the consumer's onClose decides what "cancel" means (e.g. releasing a held lock).
         $event.stopPropagation();
         this.modal.close();
       });
     }
     // The whole bar restores on click, not just the restore button — a larger, easier click target.
     // `restore()` guards against a double invocation, so the restore button's own click bubbling up
-    // Here is a no-op. The restore button stays purely as a visual affordance for the click target.
+    // here is a no-op. The restore button stays purely as a visual affordance for the click target.
     barEl.addEventListener('click', () => {
       this.restore();
     });
@@ -377,9 +377,9 @@ export class MinimizableModal<TModal extends Modal> {
     };
     peekLockEntries.add(this.peekLockEntry);
     // Install the `open` patches and input suppressors for as long as this modal is minimized. The
-    // Block LOGIC itself keys off the shared `peekLockEntries` (see `shouldBlockOpen`), so with several
-    // Modals minimized every one's patch reaches the same verdict; the lock lifts only once the last
-    // Modal restores/closes.
+    // block LOGIC itself keys off the shared `peekLockEntries` (see `shouldBlockOpen`), so with several
+    // modals minimized every one's patch reaches the same verdict; the lock lifts only once the last
+    // modal restores/closes.
     this.peekLockComponent = new PeekLockComponent(this.modal.app);
     this.peekLockComponent.load();
   }
@@ -399,27 +399,27 @@ export class MinimizableModal<TModal extends Modal> {
 
   private handleContainerClick($event: MouseEvent): void {
     // While minimized the container is hidden, so no click can reach it — but a synthetic one still can,
-    // And minimizing an already-minimized modal is meaningless.
+    // and minimizing an already-minimized modal is meaningless.
     if (this.isMinimizedValue) {
       return;
     }
 
     // A click that passed through the modal itself is ordinary interaction with its content.
     // `composedPath()` (rather than `modalEl.contains($event.target)`) needs no cast and stays correct
-    // Across windows, where an `instanceof HTMLElement` check against another realm's element would not.
+    // across windows, where an `instanceof HTMLElement` check against another realm's element would not.
     if ($event.composedPath().includes(this.modal.modalEl)) {
       return;
     }
 
     // A text selection dragged from inside the modal out onto the background makes the resulting
     // `click` fire on their common ancestor — `containerEl`. Obsidian does not dismiss on that gesture (its
-    // Own listener sits on `bgEl`, which is never the target here), so neither does this.
+    // own listener sits on `bgEl`, which is never the target here), so neither does this.
     if ($event.target === this.modal.containerEl) {
       return;
     }
 
     // What is left is a click on the dimmed background itself. `stopImmediatePropagation()` is what
-    // Actually keeps it from reaching Obsidian's `bgEl` listener on BOTH platform branches;
+    // actually keeps it from reaching Obsidian's `bgEl` listener on BOTH platform branches;
     // `preventDefault()` additionally satisfies the `defaultPrevented` guard in `onClickOutside`.
     $event.preventDefault();
     $event.stopImmediatePropagation();
@@ -476,7 +476,7 @@ function isMinimizedInnerModal(modal: Modal): boolean {
 
 function isPeekAllowedKey($event: KeyboardEvent): boolean {
   // Navigation moves the cursor/scrolls (allowed), but Shift+navigation extends the selection (not
-  // Needed for inspection), so it is blocked. Bare modifier presses pass through on their own.
+  // needed for inspection), so it is blocked. Bare modifier presses pass through on their own.
   if (NAVIGATION_KEYS.has($event.key)) {
     return !$event.shiftKey;
   }
@@ -498,7 +498,7 @@ function isPeekLocked(): boolean {
 
 function shouldBlockOpen(modal: Modal): boolean {
   // A modal's own re-open is never blocked — otherwise a minimized modal could not restore/re-open
-  // Itself. Every OTHER modal open is blocked while any modal is minimized (the peek-only lock).
+  // itself. Every OTHER modal open is blocked while any modal is minimized (the peek-only lock).
   return isPeekLocked() && !isMinimizedInnerModal(modal);
 }
 

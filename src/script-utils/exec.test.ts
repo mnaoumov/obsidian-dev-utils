@@ -388,7 +388,7 @@ describe('exec', () => {
       mockSpawnSequence();
 
       // 7004 chars assembled: under the raw 8191 (so the earlier, unreserved budget sent it as ONE `cmd.exe` command
-      // That then died with `The command line is too long.`), over the 8191 - 2048 batch budget.
+      // that then died with `The command line is too long.`), over the 8191 - 2048 batch budget.
       const $arguments = Array.from({ length: 70 }, () => 'a'.repeat(99));
       await exec(['echo', { batchedArguments: $arguments }], { isQuiet: true });
 
@@ -740,8 +740,8 @@ describe('exec', () => {
     mockSpawn.mockReturnValue(child);
 
     // `.env` is loaded by `wrapCliTask`, which necessarily runs after every import has been
-    // Evaluated. A child environment captured at module scope would predate that and drop the
-    // Variable, leaving every spawned gate blind to the repo's own `.env`.
+    // evaluated. A child environment captured at module scope would predate that and drop the
+    // variable, leaving every spawned gate blind to the repo's own `.env`.
     vi.stubEnv('SET_AFTER_IMPORT', 'late-value');
     try {
       const promise = exec('cmd', { isQuiet: true });

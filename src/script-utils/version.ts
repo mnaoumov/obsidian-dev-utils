@@ -659,8 +659,8 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   await assertGitInstalled();
   await assertGitHubCliInstalled();
   // Checked here, before the checks and the build, rather than at the changelog step itself: a non-interactive
-  // Caller learns in seconds instead of paying for the whole preflight and only then blocking on an editor
-  // Window nobody will ever close.
+  // caller learns in seconds instead of paying for the whole preflight and only then blocking on an editor
+  // window nobody will ever close.
   assertChangelogStepIsNonBlocking(changelogFilePath, shouldEditChangelog);
 
   if (shouldRunChecks) {
@@ -668,7 +668,7 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   }
 
   // The rest of the preflight IS `npm run gate`, not a copy of it: a check added to the gate is reachable
-  // From the branch and from the release by construction, instead of by two lists happening to agree.
+  // from the branch and from the release by construction, instead of by two lists happening to agree.
   // The clean-repo assertion above stays here, because the gate is run on a dirty tree on purpose.
   // The build is a prerequisite for publishing, not a verification check, so it runs unless `shouldBuild` is `false` — this keeps the released artifacts in sync with the current code even on a fast release.
   await gate({
@@ -680,8 +680,8 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   const newVersion = await getNewVersion(versionUpdateType);
 
   // The changelog is settled BEFORE anything is written, because this is the only step that can block on a
-  // Human. Interrupting it therefore leaves the working tree pristine and the whole release re-runnable,
-  // Instead of stranding a bumped-but-uncommitted tree that `assertGitRepoClean` then refuses to re-release.
+  // human. Interrupting it therefore leaves the working tree pristine and the whole release re-runnable,
+  // instead of stranding a bumped-but-uncommitted tree that `assertGitRepoClean` then refuses to re-release.
   const newChangeLog = await prepareChangelog(newVersion, {
     changelogFilePath,
     shouldEditChangelog
@@ -889,10 +889,10 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
       searchValue: '## '
     });
     // A heading is not a tag. A hand-written `## 0.0.0` placeholder in a never-tagged repo, or a tag deleted
-    // After the fact, would otherwise reach `git log` as a revision it cannot resolve — and it reaches it at
-    // The very END of the release, after the whole preflight has already been paid for. Falling back to the
-    // Full history over-includes when a tag was deleted, but that is safe and visible: the review step just
-    // Below is exactly where it gets trimmed.
+    // after the fact, would otherwise reach `git log` as a revision it cannot resolve — and it reaches it at
+    // the very END of the release, after the whole preflight has already been paid for. Falling back to the
+    // full history over-includes when a tag was deleted, but that is safe and visible: the review step just
+    // below is exactly where it gets trimmed.
     const resolvedLastTag = lastTag
       ? await execFromRoot(['git', 'rev-parse', '--verify', '--quiet', `refs/tags/${lastTag}`], {
         isQuiet: true,

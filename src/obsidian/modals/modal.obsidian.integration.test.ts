@@ -92,7 +92,7 @@ describe('modal header close button', () => {
     expect(result.headerButtonCount).toBe(1);
 
     // The pre-1.13.0 class name, asserted so a rename back is a failure here rather than a silent no-op in
-    // Every caller that clicks it.
+    // every caller that clicks it.
     expect(result.staleCloseButtonCount).toBe(0);
   });
 

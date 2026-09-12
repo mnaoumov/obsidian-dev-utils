@@ -85,8 +85,8 @@ export function initPluginContext(pluginId: string): void {
   showInitialDebugMessage(pluginId);
 
   // Nothing else in the library reaches for the shared abort controller -- only consumer plugins do. Create
-  // It here so `__obsidianDevUtils.sharedAbortController.value.abort()` always resolves in the devtools
-  // Console, instead of throwing until some plugin happens to start an abortable operation.
+  // it here so `__obsidianDevUtils.sharedAbortController.value.abort()` always resolves in the devtools
+  // console, instead of throwing until some plugin happens to start an abortable operation.
   getSharedAbortController();
 
   const lastLibraryVersionWrapper = getObsidianDevUtilsState('lastLibraryVersion', '0.0.0');

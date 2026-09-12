@@ -114,7 +114,7 @@ describe('defineObsidianPluginVitestConfig', () => {
     expect(config.test).toMatchObject({
       coverage: {
         // Declaration files are excluded by default: `include` below matches them, and they can never
-        // Be covered.
+        // be covered.
         exclude: ['src/**/*.test.ts', 'src/**/*.d.ts'],
         include: ['src/**/*.ts'],
         provider: 'v8',
@@ -128,7 +128,7 @@ describe('defineObsidianPluginVitestConfig', () => {
 
     // The root section deliberately declares no `include`, and this asserts the absence.
     // Under vitest 5 a project's own glob no longer replaces a root one, so a root glob widens
-    // Every project to every test file, which `toMatchObject` above could never catch.
+    // every project to every test file, which `toMatchObject` above could never catch.
     expect(config.test).not.toHaveProperty('include');
   });
 

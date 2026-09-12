@@ -110,7 +110,7 @@ describe('RmdirGuardComponent', () => {
           const doesChildSurviveRefusal = await adapter.exists(childPath);
 
           // The native call throws `ERR_FS_EISDIR` here; the guard proves the folder empty and forwards
-          // Recursively, so this is the case the guard FIXES rather than merely blocks.
+          // recursively, so this is the case the guard FIXES rather than merely blocks.
           await adapter.rmdir(emptyFolderPath, false);
           const isEmptyFolderGone = !await adapter.exists(emptyFolderPath);
 

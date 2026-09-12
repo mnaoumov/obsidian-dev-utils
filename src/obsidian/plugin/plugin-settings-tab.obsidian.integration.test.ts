@@ -99,7 +99,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         let isDependentDisabled = false;
         // Assigned only inside the `render` closure, so the annotation has to be widened at the initializer
-        // Or control-flow analysis narrows every read to `never`.
+        // or control-flow analysis narrows every read to `never`.
         let dependentComponent = null as DisabledProbe | null;
 
         class DependentTab extends PluginSettingsTabBase<ProbeSettings> {
@@ -138,7 +138,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         const isComponentDisabledBefore = dependentComponent?.disabled ?? false;
 
         // The pattern the plugins use: flip the state a dependent row's predicate reads, then ask Obsidian to
-        // Re-evaluate the predicates in place.
+        // re-evaluate the predicates in place.
         isDependentDisabled = true;
         tab.refreshDomState();
         await settle();
@@ -177,7 +177,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
     expect(result.isComponentDisabledBefore).toBe(false);
     expect(result.isRowDisabledAfter).toBe(true);
     // `Setting.setDisabled` propagates to every component registered on the row, so a single row-level
-    // Predicate covers the component-level `setDisabled` the plugins do today.
+    // predicate covers the component-level `setDisabled` the plugins do today.
     expect(result.isComponentDisabledAfter).toBe(true);
     // `refreshDomState` toggles the rendered DOM in place — the row is not rebuilt.
     expect(result.isSameRowElement).toBe(true);

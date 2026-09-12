@@ -37,8 +37,8 @@ const EXTERNAL_LINK_CONCURRENCY = 20;
 const HTML_FILE_EXTENSION = '.html';
 
 // The host serves this page as the fallback for any missing path (with a 404 status), so it is not a
-// Real navigable route: Starlight gives it a self-`rel="canonical"` of `/404/` that inherently cannot
-// Resolve, and its body links (nav, logo) are identical to every real page we already validate.
+// real navigable route: Starlight gives it a self-`rel="canonical"` of `/404/` that inherently cannot
+// resolve, and its body links (nav, logo) are identical to every real page we already validate.
 const FALLBACK_PAGE_RELATIVE_PATH = '404.html';
 
 await wrapCliTask(async () => {
@@ -93,7 +93,7 @@ async function fetchUrlStatus(url: string): Promise<number> {
     const response = await fetch(url, { signal: controller.signal });
     // Cancel the unread body so undici releases the connection immediately.
     // Without this the per-host connection pool stalls and same-host requests
-    // Serialize, turning a ~3s run into minutes.
+    // serialize, turning a ~3s run into minutes.
     await response.body?.cancel();
     return response.status;
   } catch {

@@ -350,7 +350,7 @@ describe('AsyncWithNotice', () => {
       });
 
       // No component means the silent handler is used, identical to the explicit no-notice path, so the
-      // Timeout is only logged and showNotice is never accessed.
+      // timeout is only logged and showNotice is never accessed.
       expect(capturedWithoutComponent).toBe(capturedSilent);
     });
   });
@@ -614,7 +614,7 @@ describe('AsyncWithNotice', () => {
       });
 
       // No component means the silent handler is used, identical to the explicit no-notice path, so the
-      // Timeout is only logged and showNotice is never accessed.
+      // timeout is only logged and showNotice is never accessed.
       expect(capturedWithoutComponent).toBe(capturedSilent);
     });
   });
@@ -672,7 +672,7 @@ describe('AsyncWithNotice', () => {
       onTimeout(context);
 
       // The fragment should NOT contain 'Operation' text for empty operationName
-      // Because the `if (ctx.operationName)` branch is skipped
+      // because the `if (ctx.operationName)` branch is skipped
       expect(t).toHaveBeenCalled();
 
       cleanup();

@@ -82,7 +82,7 @@ describe('buildArchivedDemoVaultAppJsonContent', () => {
   });
 
   // The archive is the copy a reader opens, so it is written correctly whatever the committed file says —
-  // Refusing a committed owned setting is the archiver's job, not this builder's.
+  // refusing a committed owned setting is the archiver's job, not this builder's.
   it('overrides a committed owned setting', () => {
     const content = buildArchivedDemoVaultAppJsonContent({ appJson: { livePreview: true } });
     expect((JSON.parse(content) as DemoVaultAppJson)['livePreview']).toBe(false);

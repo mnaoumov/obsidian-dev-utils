@@ -465,7 +465,7 @@ describe('applyContentChanges', () => {
   it('should handle content without frontmatter and frontmatter changes gracefully', async () => {
     // Content without frontmatter delimiters. getFrontMatterInfo returns exists: false.
     // ParseFrontmatter returns {}. The frontmatter change will fail validation because
-    // GetNestedPropertyValue({}, 'aliases') returns undefined, not matching 'old'.
+    // getNestedPropertyValue({}, 'aliases') returns undefined, not matching 'old'.
     const content = 'no frontmatter here';
     const changes = [makeFrontmatterChange('old', 'new', 'aliases')];
     const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
@@ -704,7 +704,7 @@ describe('canvas changes via applyFileChanges', () => {
       nodes: [{ id: '1', text: nodeText, type: 'text' }]
     };
     // The regenerated link uses an unescaped divider; the escaping must be restored so the table
-    // And the embed size survive.
+    // and the embed size survive.
     const changes = [makeCanvasTextNodeChange(String.raw`![[old.png\|500]]`, '![[new.png|500]]', 0, 2)];
     let resultContent: null | string = null;
 
@@ -734,7 +734,7 @@ describe('canvas changes via applyFileChanges', () => {
     });
 
     // Invalid JSON parses to `{}` (no `nodes`/`edges` arrays); the guard skips the rewrite so the
-    // Malformed object is never written back to disk (previously this threw a TypeError).
+    // malformed object is never written back to disk (previously this threw a TypeError).
     await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
     expect(resultContent).toBe(canvasContent);
   });
@@ -787,7 +787,7 @@ describe('canvas changes via applyFileChanges', () => {
     };
     const canvasContent = JSON.stringify(canvasData);
     // `'Hello world'.slice(0, 7)` is `'Hello w'`, not `'[[old]]'`, so the inner `applyContentChanges`
-    // Rejects the change and returns its retry sentinel.
+    // rejects the change and returns its retry sentinel.
     const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0)];
     let resultContent: null | string = 'sentinel';
 
@@ -908,8 +908,8 @@ describe('overlapping content changes', () => {
     const content = 'ABCDE';
     // Change 1: replace full "ABCDE" (0-5) with "XYCDE"
     // Change 2: replace "CDE" (2-5) with "ZZZ"
-    // After Change 1 is applied, the new content has "CDE" at positions 2-5,
-    // Which matches Change 2's oldContent → merge succeeds
+    // after Change 1 is applied, the new content has "CDE" at positions 2-5,
+    // which matches Change 2's oldContent → merge succeeds
     const changes = [
       makeContentChange('ABCDE', 'XYCDE', 0),
       makeContentChange('CDE', 'ZZZ', 2)
@@ -922,7 +922,7 @@ describe('overlapping content changes', () => {
     const content = 'ABCDE';
     // Change 1: replace "ABCDE" (0-5) with "VWXYZ"
     // Change 2: replace "CDE" (2-5) with "ZZZ"
-    // After Change 1, positions 2-5 contain "XYZ", not "CDE" → throws
+    // after Change 1, positions 2-5 contain "XYZ", not "CDE" → throws
     const changes = [
       makeContentChange('ABCDE', 'VWXYZ', 0),
       makeContentChange('CDE', 'ZZZ', 2)

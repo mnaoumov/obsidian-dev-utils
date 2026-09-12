@@ -21,7 +21,7 @@ import {
 } from 'vitest';
 
 // Imported under an alias because the callback pulls the enum VALUE out of `lib` under its own
-// Name, and that binding would otherwise shadow the type inside the closure.
+// name, and that binding would otherwise shadow the type inside the closure.
 import type { SpellcheckMode as SpellcheckModeType } from '../obsidian-settings.ts';
 
 interface PromptCommandBuilderResult {
@@ -77,7 +77,7 @@ describe('prompt', () => {
         try {
           // The initial validation is async.
           // Waiting for the computed custom error, rather than for the input alone, is what makes a zero
-          // Report count meaningful instead of merely proving we looked too early.
+          // report count meaningful instead of merely proving we looked too early.
           await waitUntil({
             message: 'prompt modal input renders and is computed invalid',
             predicate: () => getInputEl()?.validity.customError === true,
@@ -246,7 +246,7 @@ describe('prompt', () => {
     });
 
     // Each direction is read against the CONTRARY vault setting, so a mode that was quietly ignored would
-    // Report the setting's own value instead and fail here.
+    // report the setting's own value instead and fail here.
     expect(result.spellcheckAttributeWhenOff).toBe('false');
     expect(result.spellcheckAttributeWhenAlwaysOn).toBe('true');
   });
@@ -383,14 +383,14 @@ describe('prompt', () => {
           });
 
           // A `PromptModal` extends a plain `Modal`, which has NO `instructionsEl` — so a bar being here at
-          // All is the whole point of the test.
+          // all is the whole point of the test.
           const hasOwnInstructionBar = Boolean(document.querySelector('.prompt-modal .prompt-instructions'));
           const purposeText = document.querySelector('.prompt-modal .prompt-instruction > span:nth-child(2)')?.textContent ?? null;
           const isCheckedOnOpen = getCheckboxEl()?.checked ?? false;
 
           // The spacing INSIDE one instruction row, which only a real Obsidian can report: jsdom applies
-          // No stylesheet, so this is the sole layer that can tell a key hint welded to its purpose text
-          // From a spaced one. The key hint's margin comes from Obsidian's own
+          // no stylesheet, so this is the sole layer that can tell a key hint welded to its purpose text
+          // from a spaced one. The key hint's margin comes from Obsidian's own
           // `.prompt-instruction-command` rule, the checkbox's from the library's `.modal-command-control`.
           const commandEl = document.querySelector<HTMLElement>('.prompt-modal .prompt-instruction > span:first-child');
           const commandMarginInlineEnd = commandEl ? commandEl.win.getComputedStyle(commandEl).marginInlineEnd : '';
@@ -398,8 +398,8 @@ describe('prompt', () => {
           const checkboxMarginInlineStart = checkboxEl ? checkboxEl.win.getComputedStyle(checkboxEl).marginInlineStart : '';
 
           // The modal's scope reads the real key pipeline, so the press has to be trusted; a dispatched
-          // Event would be ignored and prove nothing. The input already holds focus — `PromptModal`
-          // Selects it on open.
+          // event would be ignored and prove nothing. The input already holds focus — `PromptModal`
+          // selects it on open.
           await pressKey({ key: '1', modifiers: ['Alt'] });
           await waitUntil({
             message: 'the checkbox toggles after alt+1',
@@ -438,7 +438,7 @@ describe('prompt', () => {
 
     expect(result.hasOwnInstructionBar).toBe(true);
     // Greater than zero rather than an exact px: a theme is free to retune `--size-2-2`, but nothing may
-    // Take the gap away entirely.
+    // take the gap away entirely.
     expect(Number.parseFloat(result.commandMarginInlineEnd)).toBeGreaterThan(0);
     expect(Number.parseFloat(result.checkboxMarginInlineStart)).toBeGreaterThan(0);
     expect(result.purposeText).toBe('Keep the old title as an alias');

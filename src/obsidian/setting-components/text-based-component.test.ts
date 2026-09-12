@@ -17,7 +17,7 @@ import { getTextBasedComponentValue } from './text-based-component.ts';
 
 // Allow duck-type check in getTextBasedComponentValue to work with strictMock.
 // StrictMock throws on access to unknown properties; setting this to undefined
-// Makes `typeof tc.setPlaceholderValue === 'function'` return false instead.
+// makes `typeof tc.setPlaceholderValue === 'function'` return false instead.
 (TextComponent.prototype as UndefinedOnPartialDeep<Partial<TextBasedComponent<unknown>>>).setPlaceholderValue = undefined;
 
 describe('getTextBasedComponentValue', () => {

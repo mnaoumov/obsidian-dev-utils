@@ -148,7 +148,7 @@ const DEFAULT_EXCLUDED_NOTES = ['README.md'];
 const CODE_BUTTON_FENCE_REG_EXP = /^\s*```code-button/gm;
 
 // The rendered-button selector is `:scope .block-language-code-button button.mod-cta`. It is written
-// Out at each use site rather than held in a constant here: every closure below is serialized with
+// out at each use site rather than held in a constant here: every closure below is serialized with
 // `toString()` and evaluated inside Obsidian, where nothing from this module's scope exists.
 
 /**
@@ -244,12 +244,12 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
     beforeAll(async () => {
       const isCodeScriptToolkitLoaded = await checkCodeScriptToolkitLoaded(settleTimeoutInMilliseconds);
       // Without it every `code-button` fence stays a plain code block, so every note below would report
-      // Zero buttons and pass vacuously. Fail here instead, once, with the reason.
+      // zero buttons and pass vacuously. Fail here instead, once, with the reason.
       expect(isCodeScriptToolkitLoaded, 'CodeScript Toolkit did not load, so no button could render').toBe(true);
     });
 
     // A demo vault has to demonstrate every headline feature, so a vault whose notes declare no buttons
-    // Is a real failure of its interactive half, not a reason to register nothing and report green.
+    // is a real failure of its interactive half, not a reason to register nothing and report green.
     it('has at least one note with a code button', () => {
       expect(notes.length).toBeGreaterThan(0);
     });
@@ -258,8 +258,8 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
       it(`runs every code button in ${note.name}`, async () => {
         const captions = await openNoteAndListButtonCaptions(note, settleTimeoutInMilliseconds);
         // Reading view mounts a note's leading sections more than once while it settles, so the DOM can
-        // Hold several elements per fence. The captions are deduplicated, and the assertion is that at
-        // Least as many DISTINCT buttons rendered as the source declares — a fence that silently stayed
+        // hold several elements per fence. The captions are deduplicated, and the assertion is that at
+        // least as many DISTINCT buttons rendered as the source declares — a fence that silently stayed
         // A plain code block is the failure this catches.
         expect(captions.length, `${note.name} declares ${String(note.buttonCount)} button(s) but only ${String(captions.length)} rendered`)
           .toBeGreaterThanOrEqual(note.buttonCount);
@@ -367,11 +367,11 @@ async function clickButton(
       }
 
       // Reading view mounts lazily and unmounts sections far off-screen, so NO single scroll position
-      // Holds a whole note's buttons. Advance a viewport at a time and wrap back to the top, remounting
-      // Every section in turn until the one being looked for appears. Pinning to the BOTTOM instead —
-      // What this did until 94.4.1 — only ever mounts the note's tail, so a button anywhere but at the
-      // End of its note was reported as never rendered (`status: 'timeout'`, empty output) however
-      // Healthy it was.
+      // holds a whole note's buttons. Advance a viewport at a time and wrap back to the top, remounting
+      // every section in turn until the one being looked for appears. Pinning to the BOTTOM instead —
+      // what this did until 94.4.1 — only ever mounts the note's tail, so a button anywhere but at the
+      // end of its note was reported as never rendered (`status: 'timeout'`, empty output) however
+      // healthy it was.
       const SCROLL_BOTTOM_TOLERANCE_IN_PIXELS = 4;
       const SCROLL_STEP_RATIO = 0.8;
       function advanceScroll(): void {
@@ -384,15 +384,15 @@ async function clickButton(
       }
 
       // Re-open the note before every click instead of assuming the previous button left the workspace
-      // Where it was found. Every helper above reads the ACTIVE view, and opening a note is one of the
-      // Most ordinary things a demo button does — so the first such button would otherwise send each
-      // Later button in its note to `status: 'timeout'` with an empty output, which is the shape of a
-      // Button that never rendered rather than one that was looked for in the wrong view.
+      // where it was found. Every helper above reads the ACTIVE view, and opening a note is one of the
+      // most ordinary things a demo button does — so the first such button would otherwise send each
+      // later button in its note to `status: 'timeout'` with an empty output, which is the shape of a
+      // button that never rendered rather than one that was looked for in the wrong view.
       await app.workspace.openLinkText(notePathToOpen.replace(/\.md$/, ''), '', false);
       await app.workspace.getLeaf(false).setViewState({ state: { file: notePathToOpen, mode: 'preview' }, type: 'markdown' });
 
       // Held from the predicate rather than re-queried after it: the walk above keeps moving the
-      // Viewport, so a button found on one poll can be unmounted again by the next.
+      // viewport, so a button found on one poll can be unmounted again by the next.
       let button: HTMLButtonElement | undefined;
       try {
         await waitUntil({
@@ -476,7 +476,7 @@ async function openNoteAndListButtonCaptions(note: DemoVaultNote, settleTimeoutI
         return view()?.containerEl.querySelector<HTMLElement>(':scope .markdown-preview-view') ?? null;
       }
       // Accumulated across the walk below, never read from one snapshot: with the viewport moving, any
-      // Single reading holds only the sections currently mounted.
+      // single reading holds only the sections currently mounted.
       const seenCaptions = new Set<string>();
       function captions(): string[] {
         for (const button of view()?.containerEl.querySelectorAll<HTMLButtonElement>(':scope .block-language-code-button button.mod-cta') ?? []) {
@@ -488,7 +488,7 @@ async function openNoteAndListButtonCaptions(note: DemoVaultNote, settleTimeoutI
       }
 
       // Same walk as `clickButton`, and for the same reason: a note whose buttons are in the MIDDLE
-      // Never mounts them if the preview is pinned to the bottom.
+      // never mounts them if the preview is pinned to the bottom.
       const SCROLL_BOTTOM_TOLERANCE_IN_PIXELS = 4;
       const SCROLL_STEP_RATIO = 0.8;
       function advanceScroll(): void {

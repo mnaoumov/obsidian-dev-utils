@@ -31,12 +31,12 @@ const PERMANENT_NOTICES_STATE_KEY = 'plugin-notice-component:permanent-notices';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
 const DEFAULT_DELAY_BEFORE_SHOW_IN_MILLISECONDS = 500;
 // Obsidian's own default notice duration, applied by the `Notice` constructor when none is given. It is
-// Repeated here because restarting the countdown on an append goes through `setAutoHide`, which takes an
-// Explicit duration and so cannot fall back to that default itself.
+// repeated here because restarting the countdown on an append goes through `setAutoHide`, which takes an
+// explicit duration and so cannot fall back to that default itself.
 const OBSIDIAN_DEFAULT_NOTICE_DURATION_IN_MILLISECONDS = 4000;
 
 // Elements a user clicks to act on them rather than to dismiss the notice. A click landing on (or
-// Inside) one of these is kept from bubbling to the notice, so the notice stays open.
+// inside) one of these is kept from bubbling to the notice, so the notice stays open.
 const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, select, textarea, label, [contenteditable="true"], [role="button"], [role="link"], [role="checkbox"], [role="tab"], [role="menuitem"]';
 
 /**
@@ -479,7 +479,7 @@ export class PluginNoticeComponent extends ComponentEx {
   public showNoticeAfterDelay(params: PluginNoticeComponentShowNoticeAfterDelayParams): PluginNoticeComponentDelayedNotice {
     const mode = params.mode ?? PluginNoticeMode.Replace;
     // Where this message ended up: a notice of its own, or a chunk inside one that was already up. It
-    // Decides what `setContent` rewrites and what disposing takes away.
+    // decides what `setContent` rewrites and what disposing takes away.
     let shown: null | PluginNoticeComponentShownNotice = null;
     let isDisposed = false;
     let timerId = 0;
@@ -501,9 +501,9 @@ export class PluginNoticeComponent extends ComponentEx {
       cancelPendingTimer();
       invokeAsyncSafely(async () => {
         // Resolving the content is asynchronous, and the operation the notice describes keeps running
-        // While it happens — so `setContent` can land in between. It cannot rewrite a notice that does
-        // Not exist yet, so resolve again whenever that happens: the notice must open with the message
-        // The caller last asked for, not the one that was current when resolution started.
+        // while it happens — so `setContent` can land in between. It cannot rewrite a notice that does
+        // not exist yet, so resolve again whenever that happens: the notice must open with the message
+        // the caller last asked for, not the one that was current when resolution started.
         let requestedContent: ValueProvider<DocumentFragment | string>;
         let resolvedContent: DocumentFragment | string;
         do {
@@ -538,7 +538,7 @@ export class PluginNoticeComponent extends ComponentEx {
         }
         // Swaps THIS message's element for a freshly built one, rather than rewriting the whole notice:
         // When the handle joined a notice that was already up, the other messages in it are not its to
-        // Overwrite. Rebuilding also re-applies the prefix, the interactive guard, and the Cancel button.
+        // overwrite. Rebuilding also re-applies the prefix, the interactive guard, and the Cancel button.
         const rebuilt = this.buildNoticeContent({
           message: buildDelayedMessage(content),
           shouldPrefixWithPluginName: shown.isNoticeOwned
@@ -553,7 +553,7 @@ export class PluginNoticeComponent extends ComponentEx {
           return;
         }
         // A notice this handle opened goes away with it; a notice it merely joined belongs to whoever
-        // Opened it, so only this message is taken out of it.
+        // opened it, so only this message is taken out of it.
         if (shown.isNoticeOwned) {
           shown.notice.hide();
           this.standaloneNotices.delete(shown.notice);
@@ -628,7 +628,7 @@ export class PluginNoticeComponent extends ComponentEx {
     const { durationInMilliseconds, message, onHide, shouldRegisterAsPermanent } = params;
     const currentNotice = this.notice;
     // `isShown` is the same check Obsidian's own `Notice.hide` makes before animating a notice away, so
-    // It is exactly "still on screen": a notice that expired or was dismissed has been detached.
+    // it is exactly "still on screen": a notice that expired or was dismissed has been detached.
     if (!currentNotice?.containerEl.isShown()) {
       return null;
     }
@@ -636,11 +636,11 @@ export class PluginNoticeComponent extends ComponentEx {
     const { contentEl, fragment } = this.buildNoticeContent({ message, shouldPrefixWithPluginName: false });
     currentNotice.messageEl.append(fragment);
     // A `null` duration means "Obsidian's own default", which only the constructor applies — so restart
-    // The countdown with that same default rather than leaving the current one running.
+    // the countdown with that same default rather than leaving the current one running.
     currentNotice.setAutoHide(durationInMilliseconds ?? OBSIDIAN_DEFAULT_NOTICE_DURATION_IN_MILLISECONDS);
     this.wireOnHide(currentNotice, onHide);
     // Only ever registers, never clears: the notice being appended to may already be this plugin's
-    // Permanent notice, and a later appended message is no reason to forget that.
+    // permanent notice, and a later appended message is no reason to forget that.
     if (shouldRegisterAsPermanent) {
       this.setPermanentNotice(currentNotice);
     }
@@ -665,13 +665,13 @@ export class PluginNoticeComponent extends ComponentEx {
 
     if (abortController) {
       // `ButtonComponent` requires an `HTMLElement` parent, so build it on a throwaway
-      // Detached element and move its `buttonEl` into the fragment.
+      // detached element and move its `buttonEl` into the fragment.
       const cancelButton = new ButtonComponent(createDiv());
       cancelButton.setButtonText(cancelButtonText ?? t(($) => $.obsidianDevUtils.buttons.cancel));
       addPluginCssClasses(cancelButton.buttonEl, CssClass.CancelButton);
       // The click is wired via `addEventListener` rather than `ButtonComponent.onClick` so it
-      // Bubbles through the interactive-element guard (keeping the notice open) and stays
-      // Directly exercisable via a dispatched DOM event in unit tests.
+      // bubbles through the interactive-element guard (keeping the notice open) and stays
+      // directly exercisable via a dispatched DOM event in unit tests.
       cancelButton.buttonEl.addEventListener('click', () => {
         abortController.abort();
       });
@@ -769,13 +769,13 @@ export class PluginNoticeComponent extends ComponentEx {
       return;
     }
     // The outer `.notice` element (`containerEl`) carries Obsidian's dismiss-on-click handler and the
-    // Padding a stray click could land on; mark it so the stylesheet drops that padding.
+    // padding a stray click could land on; mark it so the stylesheet drops that padding.
     addPluginCssClasses(notice.containerEl, CssClass.PluginNoticeRequiresExplicitClose);
     // Stop every click on the notice — except on an interactive element — from reaching Obsidian's
-    // Dismiss handler. Registered in the capture phase on the outermost element so it always runs first.
+    // dismiss handler. Registered in the capture phase on the outermost element so it always runs first.
     // Letting a click reach an interactive child (a button, link, the close button, etc.) is what keeps
-    // Its own handler working; the bubble-phase guard on the content wrapper then stops that click from
-    // Bubbling up to Obsidian's dismiss handler, so the notice still stays open.
+    // its own handler working; the bubble-phase guard on the content wrapper then stops that click from
+    // bubbling up to Obsidian's dismiss handler, so the notice still stays open.
     notice.containerEl.addEventListener('click', ($event) => {
       if ($event.target instanceof Element && $event.target.closest(INTERACTIVE_ELEMENT_SELECTOR)) {
         return;
@@ -796,8 +796,8 @@ export class PluginNoticeComponent extends ComponentEx {
   private installUserClickTracking(notice: Notice): void {
     notice.containerEl.addEventListener('click', () => {
       // Obsidian dismisses a dismissible notice synchronously during this click, so mark it now (before
-      // That hide runs) and clear it on the next microtask — after any synchronous dismiss, but before a
-      // Later programmatic hide, so that hide is not misattributed as a user action.
+      // that hide runs) and clear it on the next microtask — after any synchronous dismiss, but before a
+      // later programmatic hide, so that hide is not misattributed as a user action.
       this.userClickedNotices.add(notice);
       queueMicrotask(() => {
         this.userClickedNotices.delete(notice);
@@ -827,7 +827,7 @@ export class PluginNoticeComponent extends ComponentEx {
   private showNoticeWithDuration(params: PluginNoticeComponentShowNoticeWithDurationParams): PluginNoticeComponentShownNotice {
     const { durationInMilliseconds, message, mode, onCloseClick, onHide, requiresExplicitClose, shouldRegisterAsPermanent, shouldShowCloseButton } = params;
     // Obsidian's `Notice` treats an omitted duration as its default, so map the `null` "no explicit
-    // Duration" value to `undefined`.
+    // duration" value to `undefined`.
     const noticeDurationInMilliseconds = durationInMilliseconds ?? undefined;
 
     if (mode === PluginNoticeMode.Append) {
@@ -845,8 +845,8 @@ export class PluginNoticeComponent extends ComponentEx {
 
     const hasCloseButton = requiresExplicitClose && shouldShowCloseButton;
     // The close button's click handler needs the `Notice`, which does not exist until it is built from
-    // This content; capture it lazily via a holder resolved at click time. The getter is created only
-    // When a close button is shown.
+    // this content; capture it lazily via a holder resolved at click time. The getter is created only
+    // when a close button is shown.
     let builtNotice: Notice | null = null;
     const { contentEl, fragment } = this.buildNoticeContent(normalizeOptionalProperties<PluginNoticeComponentBuildNoticeContentParams>({
       getNotice: hasCloseButton ? (): Notice | null => builtNotice : undefined,
@@ -893,10 +893,10 @@ export class PluginNoticeComponent extends ComponentEx {
       return;
     }
     // Run `onHide` the first time the notice is hidden. A `once` patch on `hide` intercepts exactly one
-    // Call then uninstalls itself (unloading this dedicated component), so there is no manual
-    // Single-fire bookkeeping and no lingering patch on the transient notice. The user-close flags were
-    // Set before `hide()` was invoked (see `appendCloseButton` / `installUserClickTracking`), so they
-    // Still hold when read here after `fallback()`.
+    // call then uninstalls itself (unloading this dedicated component), so there is no manual
+    // single-fire bookkeeping and no lingering patch on the transient notice. The user-close flags were
+    // set before `hide()` was invoked (see `appendCloseButton` / `installUserClickTracking`), so they
+    // still hold when read here after `fallback()`.
     const patchComponent = new MonkeyAroundComponent();
     patchComponent.load();
     patchComponent.registerMethodPatch({

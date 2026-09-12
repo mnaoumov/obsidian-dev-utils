@@ -19,7 +19,7 @@ import {
 } from 'vitest';
 
 // Where each of the two notices was built, plus the settings-window state the answers only mean
-// Something against.
+// something against.
 interface NoticeWindowsResult {
   readonly isPinnedNoticeInMainWindow: boolean;
   readonly isPlainNoticeInSettingsWindow: boolean;
@@ -58,8 +58,8 @@ describe('switchToMainWindow', () => {
           const settingsWindow = activeWindow;
 
           // The control: a plain notice goes wherever Obsidian is pointing, which is what put the
-          // Demo-vault sandbox notice in the settings window. Without it a passing test could mean the
-          // Settings window was never active in the first place.
+          // demo-vault sandbox notice in the settings window. Without it a passing test could mean the
+          // settings window was never active in the first place.
           const plainNotice = new Notice('Plain probe', PERMANENT_NOTICE_DURATION_IN_MILLISECONDS);
           const plainNoticeDocument = plainNotice.containerEl.ownerDocument;
           plainNotice.hide();
@@ -83,10 +83,10 @@ describe('switchToMainWindow', () => {
         } finally {
           app.setting.close();
           // Closing the popout is NOT enough. Obsidian moves the `activeWindow` / `activeDocument`
-          // Globals on window FOCUS, and this owned test window is hidden off-screen — so nothing ever
-          // Focuses it back and the globals stay pinned to the settings window that was just destroyed.
+          // globals on window FOCUS, and this owned test window is hidden off-screen — so nothing ever
+          // focuses it back and the globals stay pinned to the settings window that was just destroyed.
           // Every later test in this SHARED instance builds its UI in `activeDocument`, so leaving them
-          // There makes unrelated modal and popover files render into a dead window and time out.
+          // there makes unrelated modal and popover files render into a dead window and time out.
           const mainWindow = getMainWindow(app);
           window.activeWindow = mainWindow;
           window.activeDocument = mainWindow.document;

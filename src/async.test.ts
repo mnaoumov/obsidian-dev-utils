@@ -652,7 +652,7 @@ describe('Async', () => {
   describe('marksAsTerminateRetry', () => {
     it('should mark an error for retry termination', () => {
       // MarksAsTerminateRetry is tested indirectly through retryWithTimeout
-      // But we can verify it does not throw
+      // but we can verify it does not throw
       const error = new Error('test');
       expect(() => {
         marksAsTerminateRetry(error);
@@ -704,8 +704,8 @@ describe('Async', () => {
 
     it('should reject even when operationFunction resolves after being terminated by the timeout', async () => {
       // OperationFn watches the abort signal and resolves (does NOT throw) once aborted, mirroring how
-      // RetryWithTimeout's loop exits on abort. The timeout terminated the run, so runWithTimeout must
-      // Reject rather than return the value produced after the deadline.
+      // retryWithTimeout's loop exits on abort. The timeout terminated the run, so runWithTimeout must
+      // reject rather than return the value produced after the deadline.
       await expect(runWithTimeout({
         async operationFunction(abortSignal) {
           await new Promise<void>((resolve) => {
@@ -1160,7 +1160,7 @@ describe('Async', () => {
       });
 
       // The addErrorHandler wraps the thrown error in CustomStackTraceError,
-      // So the chain is CustomStackTraceError -> Error -> SilentError
+      // so the chain is CustomStackTraceError -> Error -> SilentError
       expect(handler).not.toHaveBeenCalled();
     });
   });
@@ -1176,7 +1176,7 @@ describe('Async', () => {
 
     it('should not throw when the async function rejects', () => {
       // It should catch errors internally via addErrorHandler. The ignore context, captured at schedule
-      // Time, keeps the deferred rejection from being reported as unhandled — no manual drain needed.
+      // time, keeps the deferred rejection from being reported as unhandled — no manual drain needed.
       using _ignore = startAsyncErrorIgnoreContext();
       expect(() => {
         invokeAsyncSafely(async () => {
@@ -1330,7 +1330,7 @@ describe('Async', () => {
       }
 
       // The context has already exited, but the deferred rejection is still ignored because
-      // AddErrorHandler captured the active ignore context at schedule time.
+      // addErrorHandler captured the active ignore context at schedule time.
       await waitForAllAsyncOperations();
 
       expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([]);

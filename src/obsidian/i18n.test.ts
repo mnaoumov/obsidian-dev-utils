@@ -104,7 +104,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       });
 
       // The debug module must come from the SAME freshly-reset module registry as the reloaded i18n
-      // Module, so both share one debug instance and one shared-state bag.
+      // module, so both share one debug instance and one shared-state bag.
       const { enableLibraryDebuggers } = await import('../debug.ts');
       enableLibraryDebuggers();
       const { t: freshT } = await reloadI18N();
@@ -117,7 +117,7 @@ describe('i18n module', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
       // The debug library prefixes the namespace onto the message, so match on the message itself.
       expect(callArguments[0]).toContain('I18N was not initialized, initializing default obsidian-dev-utils translations');
       // The real invokeAsyncSafely runs the fire-and-forget initI18N synchronously up to its first
-      // Await, so the observable effect of auto-initialization is that init() was called once.
+      // await, so the observable effect of auto-initialization is that init() was called once.
       expect(mockInitFunction).toHaveBeenCalledTimes(1);
 
       // eslint-disable-next-line no-console -- Valid usage.

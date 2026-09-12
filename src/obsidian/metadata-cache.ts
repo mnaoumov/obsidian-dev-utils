@@ -474,7 +474,7 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, options: Ge
     }
 
     // Only the body-external parse needs the file content; frontmatter parsing uses the cached
-    // Frontmatter, so avoid reading the content unless it is actually needed.
+    // frontmatter, so avoid reading the content unless it is actually needed.
     const content = options.shouldParseExternalLinks ? await app.vault.cachedRead(file) : '';
     return toParsedCachedMetadataEx({ cache, content, options });
   } catch (error) {

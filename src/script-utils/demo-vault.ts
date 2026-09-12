@@ -60,7 +60,7 @@ const DATA_JSON_INDENT = 2;
 const README_FILE_NAME = 'README.md';
 
 // The README's opening `# H1`, and only that one: without the `m` flag the match is anchored to the start
-// Of the file, and `.` stops at the newline that ends the line.
+// of the file, and `.` stops at the newline that ends the line.
 const OPENING_HEADING_REG_EXP = /^# .*/;
 
 /**
@@ -197,15 +197,15 @@ export async function archivePluginDemoVault(): Promise<null | string> {
     version: manifest.version
   });
   // Every entry is stamped with the moment the archive is built rather than the file's own mtime, which is
-  // What the previous archiver wrote. A demo vault's committed timestamps are checkout artifacts of whoever
-  // Ran the release, so they carry nothing a reader could use; the build time at least describes the
-  // Archive.
+  // what the previous archiver wrote. A demo vault's committed timestamps are checkout artifacts of whoever
+  // ran the release, so they carry nothing a reader could use; the build time at least describes the
+  // archive.
   await writeFile(zipPath, zipSync(Object.fromEntries(entries)));
   return zipPath;
 }
 
 // Stores the archived vault's `.obsidian/app.json` — the committed settings with the owned ones merged
-// Over them. The ENTRY is written rather than the file, so the repo folder is left exactly as it was, and
+// over them. The ENTRY is written rather than the file, so the repo folder is left exactly as it was, and
 // A vault with nothing else to configure — which commits no `app.json` at all — gets one here regardless.
 function injectAppJson(params: InjectAppJsonParams): void {
   const {
@@ -221,8 +221,8 @@ function injectAppJson(params: InjectAppJsonParams): void {
 // Injects the built, `obsidian-dev-utils`-owned `demo-vault-helper` bootstrap plugin (shipped in this package) into the demo vault, so no per-vault copy is committed and an `obsidian-dev-utils` bump propagates fixes.
 //
 // Alongside the binaries it writes the helper's own `data.json` naming the demonstrated plugin. That is
-// The one moment the id is known for certain — it comes from the plugin's own manifest — whereas the
-// Opened vault only offers plugin folders to count, which the bootstrap itself adds to (see
+// the one moment the id is known for certain — it comes from the plugin's own manifest — whereas the
+// opened vault only offers plugin folders to count, which the bootstrap itself adds to (see
 // `DemoVaultHelperSettings`).
 async function injectDemoVaultHelper(demoedPluginId: string): Promise<void> {
   const packageFolder = getRootFolder(getFolderName(import.meta.url));
@@ -247,14 +247,14 @@ async function injectDemoVaultHelper(demoedPluginId: string): Promise<void> {
 }
 
 // Names the version on the archived `README.md`'s heading, so the vault says which release it demonstrates
-// However far it travels from the release page it was downloaded from.
+// however far it travels from the release page it was downloaded from.
 //
 // Entry-only, for the same reason `injectAppJson` is: the committed README is a tracked, hand-authored
-// File and `updateVersion` archives after it has already pushed.
+// file and `updateVersion` archives after it has already pushed.
 //
 // A vault that ships no README, or one opening on something other than an `# H1`, is left alone rather
-// Than corrected. The demo-vault coverage suite exempts `README.md` from its H1 check, so neither shape
-// Is a defect — and a release is the wrong moment to start failing on one.
+// than corrected. The demo-vault coverage suite exempts `README.md` from its H1 check, so neither shape
+// is a defect — and a release is the wrong moment to start failing on one.
 function injectReadmeVersion(params: InjectReadmeVersionParams): void {
   const {
     entries,
@@ -280,8 +280,8 @@ function injectReadmeVersion(params: InjectReadmeVersionParams): void {
 // Reads the demo vault's committed `.obsidian/app.json`, refusing the settings this package owns.
 //
 // Those settings are injected into the archive, so a committed one is a second source of truth that
-// Nothing keeps in step. The demo-vault coverage suite already fails on it, which means reaching here
-// Means that gate was skipped — so this refuses rather than overwriting a value somebody chose on purpose.
+// nothing keeps in step. The demo-vault coverage suite already fails on it, which means reaching here
+// means that gate was skipped — so this refuses rather than overwriting a value somebody chose on purpose.
 async function readCommittedAppJson(): Promise<DemoVaultAppJson> {
   const appJsonPath = resolvePathFromRootSafe({
     path: join(ObsidianPluginRepoPaths.DemoVault, ObsidianPluginRepoPaths.DotObsidian, ObsidianPluginRepoPaths.AppJson)
@@ -300,11 +300,11 @@ async function readCommittedAppJson(): Promise<DemoVaultAppJson> {
 }
 
 // Reads every file in the demo vault as an archive entry, under the single top-level folder the archive
-// Sits in.
+// sits in.
 //
 // Only FILES become entries. Git cannot track an empty folder, so a committed demo vault has none — and
 // `extractZipArchive` creates an entry's parent folders whether or not the archive declared them, so a
-// Folder entry would earn nothing even if one could exist.
+// folder entry would earn nothing even if one could exist.
 async function readDemoVaultEntries(params: ReadDemoVaultEntriesParams): Promise<DemoVaultZipEntries> {
   const {
     demoVaultPath,

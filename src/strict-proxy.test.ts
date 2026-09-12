@@ -62,7 +62,7 @@ describe('strictProxy', () => {
   it('should let a failing assertion render its diff instead of throwing while formatting', () => {
     // This is why the properties above must not throw.
     // `@vitest/pretty-format` probes them to pick a serializer, and it does so while rendering the
-    // Mismatch — so a throw there replaced the whole diff with the unmocked-property error.
+    // mismatch — so a throw there replaced the whole diff with the unmocked-property error.
     expect(() => {
       expect(strictProxy<TestObject>({ name: 'actual' })).toEqual(strictProxy<TestObject>({ name: 'expected' }));
     }).not.toThrow('was accessed on mock object');

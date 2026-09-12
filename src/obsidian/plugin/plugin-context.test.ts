@@ -204,9 +204,9 @@ describe('initPluginContext', () => {
 
   // The shared abort controller is documented as callable straight from the devtools console
   // (`__obsidianDevUtils.sharedAbortController.value.abort()`). Nothing else in the library touches it, so
-  // Without this eager call the key would be absent until a consumer plugin happened to start an operation,
-  // And the documented console line would throw instead of aborting. This asserts the console path itself,
-  // Reaching the global exactly as the console does.
+  // without this eager call the key would be absent until a consumer plugin happened to start an operation,
+  // and the documented console line would throw instead of aborting. This asserts the console path itself,
+  // reaching the global exactly as the console does.
   it('should create the shared abort controller so the console call always resolves', () => {
     // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
     delete castTo<Partial<GlobalThisWithState>>(globalThis).__obsidianDevUtils;

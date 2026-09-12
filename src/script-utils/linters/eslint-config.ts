@@ -182,7 +182,21 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
         'accessor-pairs': 'error',
         'array-callback-return': 'error',
         'camelcase': 'error',
-        'capitalized-comments': ['error', 'always', { block: { ignorePattern: 'v8' } }],
+        /*
+         * The rule reports per comment TOKEN, so every continuation line of a wrapped `//` comment is its own token
+         * that would have to start with a capital — which is how prose ends up with capitals mid-sentence.
+         * `ignoreConsecutiveComments` exempts a line comment that directly follows another one, which is exactly the
+         * shape of a wrapped block, while still holding its FIRST line to a capital. Block comments need no such
+         * option: a block comment is a single token however many lines it spans.
+         */
+        'capitalized-comments': [
+          'error',
+          'always',
+          {
+            block: { ignorePattern: 'v8' },
+            line: { ignoreConsecutiveComments: true }
+          }
+        ],
         'complexity': 'error',
         'consistent-this': 'error',
         'curly': 'error',

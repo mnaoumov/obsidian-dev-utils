@@ -119,7 +119,7 @@ describe('LayoutReadyComponent', () => {
 
     const component = new AsyncLoadLayoutReadyComponent(app);
     // Load first, then signal layout-ready: models a component loaded after the layout was already ready, so
-    // Its async load (onloadAsync) is still in flight when the layout-ready handler fires.
+    // its async load (onloadAsync) is still in flight when the layout-ready handler fires.
     component.load();
     triggerLayoutReady();
     await vi.runAllTimersAsync();
@@ -229,7 +229,7 @@ describe('LayoutReadyComponent', () => {
 
     const component = new AlreadyFailedLoadLayoutReadyComponent(app);
     // The rejection settles (recording the error and clearing the in-flight promise) before the setTimeout(0)
-    // Handler runs, so it takes the no-in-flight-promise branch with a recorded failure.
+    // handler runs, so it takes the no-in-flight-promise branch with a recorded failure.
     component.load();
     triggerLayoutReady();
     await vi.runAllTimersAsync();
@@ -276,7 +276,7 @@ describe('LayoutReadyComponent', () => {
     await vi.runAllTimersAsync();
 
     // The resumed body unwinds at addChild with a SilentError, so the registration never happens and no
-    // Unhandled async error is emitted — the shared setup fails the test if one were.
+    // unhandled async error is emitted — the shared setup fails the test if one were.
     expect(order).toEqual(['started', 'resumed']);
     vi.useRealTimers();
   });

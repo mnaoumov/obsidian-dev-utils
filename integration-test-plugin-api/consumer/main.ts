@@ -55,8 +55,8 @@ export default class PluginApiConsumerPlugin extends Plugin {
         debugController.enable(PLUGIN_API_DEBUG_NAMESPACE);
         try {
           // The cast is the point: a real consumer reaches this state by drifting out of step with the
-          // Provider, and the provider's own schema is what catches it — inside the CONSUMER's copy of the
-          // Library, which is the crossing under test.
+          // provider, and the provider's own schema is what catches it — inside the CONSUMER's copy of the
+          // library, which is the crossing under test.
           return callSafely(() => refV2.value?.greet(castTo<string>(WRONGLY_TYPED_ARGUMENT)) ?? null);
         } finally {
           debugController.set(savedNamespaces);

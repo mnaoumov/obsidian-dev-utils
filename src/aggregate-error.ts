@@ -28,8 +28,8 @@ export function createAggregateError(errors: readonly unknown[]): AggregateError
 function getAggregateErrorMessage(errors: readonly unknown[]): string {
   const [singleError] = errors;
   // A lone failure lends its own message, which is what makes a one-cause chain read identically at every
-  // Level of nesting. Anything else is a count, because picking one of several messages to promote would
-  // Describe the failure as if the others had not happened.
+  // level of nesting. Anything else is a count, because picking one of several messages to promote would
+  // describe the failure as if the others had not happened.
   if (errors.length === 1 && singleError instanceof Error && singleError.message !== '') {
     return singleError.message;
   }

@@ -620,7 +620,7 @@ describe('renderPaginated page navigation', () => {
     nextLink?.dispatchEvent(event);
 
     // The real convertAsyncToSync schedules the click handler as a tracked fire-and-forget
-    // Operation, so drain it before asserting.
+    // operation, so drain it before asserting.
     await waitForAllAsyncOperations();
 
     expect(dv.list).toHaveBeenCalledOnce();

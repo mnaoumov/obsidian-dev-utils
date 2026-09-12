@@ -602,7 +602,7 @@ describe('emitAsyncErrorEvent + registerAsyncErrorEventHandler', () => {
 describe('unhandled async error collection', () => {
   afterEach(() => {
     // Close any window a test left open so it cannot leak into the global per-test harness, which drains
-    // Its window rather than closing it.
+    // its window rather than closing it.
     stopCollectingUnhandledAsyncErrors();
   });
 

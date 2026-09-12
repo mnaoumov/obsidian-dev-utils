@@ -460,7 +460,7 @@ describe('PluginSettingsTabBase', () => {
     tab.displayLegacy();
 
     // Obsidian re-renders from `update()`: it refreshes the definitions and, for a tab that provides none,
-    // Falls back to `display()` -> `displayLegacy()`.
+    // falls back to `display()` -> `displayLegacy()`.
     const updateSpy = vi.spyOn(tab, 'update');
 
     const onCalls: EventListenerEntry[] = vi.mocked(pluginSettingsComponent.on).mock.calls;
@@ -666,7 +666,7 @@ describe('PluginSettingsTabBase', () => {
       mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => false));
 
       // When empty() is called (inside updateValidatorEl), it should trigger onChange
-      // Which should hit the shouldSkipOnChange early return
+      // which should hit the shouldSkipOnChange early return
       mockComponent.empty = castTo<typeof mockComponent.empty>(vi.fn(() => {
         // Simulate that empty() triggers onChange callback
         changeCallback?.('');
@@ -678,8 +678,8 @@ describe('PluginSettingsTabBase', () => {
       if (changeCallback) {
         changeCallback('default');
         // Advance timers to trigger debounced updateValidatorEl
-        // UpdateValidatorEl will see shouldEmptyOnBlur=true, call textBasedComponent.empty()
-        // Which triggers onChange with shouldSkipOnChange=true (lines 299-300)
+        // updateValidatorEl will see shouldEmptyOnBlur=true, call textBasedComponent.empty()
+        // which triggers onChange with shouldSkipOnChange=true (lines 299-300)
         vi.advanceTimersByTime(200);
         await vi.runAllTimersAsync();
       }
@@ -719,7 +719,7 @@ describe('PluginSettingsTabBase', () => {
         await vi.runAllTimersAsync();
 
         // At this point updateValidatorEl should have been called with shouldRevertToDefaultValueOnBlur=true
-        // And textBasedComponent.isEmpty() returns true, so it should call setValue with default
+        // and textBasedComponent.isEmpty() returns true, so it should call setValue with default
         expect(mockComponent.setValue).toHaveBeenCalled();
       }
     } finally {
@@ -744,7 +744,7 @@ describe('PluginSettingsTabBase', () => {
         return mockComponent;
       }));
       // During onChange: isEmpty=true at line 308 (triggers shouldRevertToDefaultValueOnBlur=true)
-      // During updateValidatorEl: isEmpty=false at line 365 (user has typed something, skip setValue)
+      // during updateValidatorEl: isEmpty=false at line 365 (user has typed something, skip setValue)
       let isInUpdateValidator = false;
       mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => {
         return !isInUpdateValidator;
@@ -857,12 +857,12 @@ describe('PluginSettingsTabBase', () => {
       }));
       // During onChange: isEmpty=false at lines 308 and 323
       // (shouldRevertToDefaultValueOnBlur=false, and shouldEmptyOnBlur gets set to true)
-      // During updateValidatorEl: isEmpty=true at line 358
+      // during updateValidatorEl: isEmpty=true at line 358
       // (text IS already empty, so skip calling empty())
       let isInUpdateValidator = false;
       mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => {
         // In updateValidatorEl context, return true (already empty)
-        // In onChange context, return false (not empty)
+        // in onChange context, return false (not empty)
         return isInUpdateValidator;
       }));
 
@@ -1254,7 +1254,7 @@ function isDisabled(): boolean {
  */
 function trackValidationListeners(tab: PluginSettingsTabBase<TestSettings>): () => number {
   // `validationMessageChanged` is the tab's only event, so every registration on the tab and every
-  // Cancellation on the source those registrations are released through belongs to it.
+  // cancellation on the source those registrations are released through belongs to it.
   const probeRef = tab.on('validationMessageChanged', noop);
   const { asyncEventSource } = probeRef;
   tab.offref(probeRef);

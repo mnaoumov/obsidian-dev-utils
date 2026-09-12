@@ -393,7 +393,7 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
   const { element } = params;
 
   // Move to a point just outside the element's box. When flush against the viewport's left edge, use just
-  // Past the right edge. A full-viewport-width element should use `moveMouse` directly instead.
+  // past the right edge. A full-viewport-width element should use `moveMouse` directly instead.
   const rect = element.getBoundingClientRect();
   const x = rect.left >= OUTSIDE_OFFSET_IN_PIXELS ? rect.left - OUTSIDE_OFFSET_IN_PIXELS : rect.right + OUTSIDE_OFFSET_IN_PIXELS;
   const y = rect.top + rect.height / CENTER_DIVISOR;

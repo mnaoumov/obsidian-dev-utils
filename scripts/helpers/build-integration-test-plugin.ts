@@ -83,8 +83,8 @@ export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPlu
   });
 
   // This plugin has to load on a phone — an Android integration run seeds this very bundle into its
-  // Vault — and a load-time reach for a platform-only API surfaces there as an opaque plugin-failed-to-load
-  // Error, with every test in the project failing behind it. Catch it here instead.
+  // vault — and a load-time reach for a platform-only API surfaces there as an opaque plugin-failed-to-load
+  // error, with every test in the project failing behind it. Catch it here instead.
   assertMobileLoadableBundle({
     bundlePath: mainJsPath,
     bundleSource: await readFile(mainJsPath, 'utf-8')

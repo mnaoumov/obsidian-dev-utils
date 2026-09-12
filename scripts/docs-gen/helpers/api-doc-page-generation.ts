@@ -100,7 +100,7 @@ export function buildBacklinksFromContent(
 ): Map<string, string[]> {
   const backlinks = new Map<string, string[]>();
   // Emitted URLs lowercase the type segment (see toRouteSegment), so map each lowercased route
-  // Identity back to its original qualified type key.
+  // identity back to its original qualified type key.
   const routeKeyToTypeKey = new Map<string, string>();
   for (const [typeKey, info] of allTypes) {
     routeKeyToTypeKey.set(`${getNamespaceDirectory(info.namespace)}#${toTypeRouteSegment(info.namespace, info.name)}`, typeKey);
@@ -629,7 +629,7 @@ export function sidebarTreeToEntries(node: SidebarTreeNode, label: string): Side
 
   // This module's own overview page + type/function pages (individual members are not listed).
   // Sidebar `link` fields must NOT embed BASE_PATH: Starlight prepends the config `base` to every
-  // Sidebar link itself, so including it here would double the base (e.g. `/base/base/api/...` → 404).
+  // sidebar link itself, so including it here would double the base (e.g. `/base/base/api/...` → 404).
   // This differs from in-content links, which are raw anchors that Starlight does not base-prepend.
   if (node.types.length > 0) {
     const namespace = node.types[0]?.namespace ?? '';

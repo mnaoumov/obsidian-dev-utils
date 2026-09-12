@@ -244,7 +244,7 @@ describe('setup', () => {
     await afterEachCallback();
 
     // AfterEach empties the collection window but deliberately leaves it open, so an error emitted in the
-    // Gap before the next test is still collected instead of vanishing.
+    // gap before the next test is still collected instead of vanishing.
     silenceConsole();
     const error = new Error('between tests');
     emitAsyncErrorEvent(error);

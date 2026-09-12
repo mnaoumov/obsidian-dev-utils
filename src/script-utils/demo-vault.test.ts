@@ -98,7 +98,7 @@ const INJECTED_APP_JSON_SETTINGS = {
 };
 
 // The vault as committed: every file the walk finds, keyed by its path relative to the vault folder. A test
-// That changes what the vault ships edits this map, and both the walk and the reads follow.
+// that changes what the vault ships edits this map, and both the walk and the reads follow.
 let committedVaultFiles: Map<string, string>;
 
 function findArchiveEntryText(entryName: string): string | undefined {
@@ -120,7 +120,7 @@ function getArchiveEntryText(entryName: string): string {
 }
 
 // Reads back the archive the run wrote, so every assertion below is made against REAL bytes rather than
-// Against bookkeeping calls on a mocked archiver.
+// against bookkeeping calls on a mocked archiver.
 function readArchive(): Unzipped {
   const call = mockWriteFile.mock.calls.find(([path]) => path === ARCHIVE_PATH);
   if (!call) {
@@ -140,7 +140,7 @@ function readInjectedAppJson(): unknown {
 }
 
 // A `Dirent` as the recursive walk hands it over: the containing folder, the base name, and the one
-// Question the archiver asks of it.
+// question the archiver asks of it.
 function vaultDirent(relativePath: string, isFile: boolean): Dirent {
   const path = join(DEMO_VAULT_PATH, relativePath);
   return strictProxy<Dirent>({
@@ -163,7 +163,7 @@ beforeEach(() => {
   mockMkdir.mockResolvedValue(undefined);
   mockExistsSync.mockImplementation((path: string) => path === DEMO_VAULT_PATH || committedVaultFiles.has(relative(DEMO_VAULT_PATH, path)));
   // A folder dirent rides along with the files: the walk reports one for every folder in the vault, and
-  // Only files become archive entries.
+  // only files become archive entries.
   mockReaddir.mockImplementation(() =>
     Promise.resolve([
       vaultDirent('Notes', false),
@@ -173,7 +173,7 @@ beforeEach(() => {
   mockReadFile.mockImplementation((path: string, encoding?: string) => {
     const content = readCommittedFile(path);
     // The manifest and the committed `app.json` are read as text; the vault's files are read as bytes to be
-    // Archived verbatim.
+    // archived verbatim.
     return Promise.resolve(encoding === undefined ? Buffer.from(content, 'utf-8') : content);
   });
   mockWriteFile.mockResolvedValue(undefined);
@@ -204,8 +204,8 @@ describe('archivePluginDemoVault', () => {
   });
 
   // The archive name carries no version — a release asset is already namespaced by its release tag, and a
-  // Name that changed every release is what broke the Community directory's finding overrides. The version
-  // Rides inside instead, on the single top-level folder the vault sits under.
+  // name that changed every release is what broke the Community directory's finding overrides. The version
+  // rides inside instead, on the single top-level folder the vault sits under.
   it('should install the built plugin, zip the vault under a versioned folder, and return the archive path', async () => {
     const result = await archivePluginDemoVault();
 
@@ -218,7 +218,7 @@ describe('archivePluginDemoVault', () => {
   });
 
   // Git cannot track an empty folder, so a vault has none — and the extractor creates an entry's parents
-  // Whether or not the archive declared them. A folder entry would be weight with nothing to carry.
+  // whether or not the archive declared them. A folder entry would be weight with nothing to carry.
   it('should archive files only, never the folders the walk reports', async () => {
     await archivePluginDemoVault();
 
@@ -234,8 +234,8 @@ describe('archivePluginDemoVault', () => {
   });
 
   // The one moment the demonstrated plugin's id is known for certain — it comes from that plugin's own
-  // Manifest. The opened vault can only offer plugin folders to count, and the bootstrap adds to those
-  // Itself, so it reads this marker instead of guessing.
+  // manifest. The opened vault can only offer plugin folders to count, and the bootstrap adds to those
+  // itself, so it reads this marker instead of guessing.
   it('should record the demonstrated plugin id in the helper settings', async () => {
     await archivePluginDemoVault();
 
@@ -247,7 +247,7 @@ describe('archivePluginDemoVault', () => {
   });
 
   // The settings belong to this package, so the archived copy carries them whatever the vault committed —
-  // But the repo folder is never written to: `updateVersion` archives after it has already pushed, and
+  // but the repo folder is never written to: `updateVersion` archives after it has already pushed, and
   // `app.json` is a tracked file, so an in-place write would leave a change behind a published release.
   it('should write the owned app.json settings into the archived vault, not into the repo folder', async () => {
     await archivePluginDemoVault();
@@ -268,7 +268,7 @@ describe('archivePluginDemoVault', () => {
   });
 
   // The version follows the vault wherever it is unzipped to, so a folder that has been renamed or moved
-  // Still says which release it demonstrates. Written into the archive ENTRY for the same reason the
+  // still says which release it demonstrates. Written into the archive ENTRY for the same reason the
   // `app.json` settings are: the committed README is tracked, and `updateVersion` archives after the push.
   it('should name the version on the archived README heading, not in the repo copy', async () => {
     await archivePluginDemoVault();
@@ -285,7 +285,7 @@ describe('archivePluginDemoVault', () => {
   });
 
   // The demo-vault coverage suite exempts `README.md` from its H1 check, so a README opening on something
-  // Else is a shape somebody chose, not a defect — and a release is the wrong moment to start failing on it.
+  // else is a shape somebody chose, not a defect — and a release is the wrong moment to start failing on it.
   it('should leave a README that does not open on a heading alone', async () => {
     const readme = 'Demonstrates the plugin.\n\n# Not the opening heading\n';
     committedVaultFiles.set(README_RELATIVE_PATH, readme);
@@ -295,7 +295,7 @@ describe('archivePluginDemoVault', () => {
   });
 
   // Reaching here means the coverage suite that already forbids this was skipped, so the committed value
-  // Is refused rather than silently discarded.
+  // is refused rather than silently discarded.
   it('should throw when the committed app.json sets an owned setting', async () => {
     committedVaultFiles.set(APP_JSON_RELATIVE_PATH, JSON.stringify({ livePreview: true, newLinkFormat: 'absolute' }));
 

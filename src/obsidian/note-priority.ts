@@ -286,7 +286,7 @@ function checkPropertyMatches(specifier: string, frontmatter: null | Readonly<Re
 
   const actualValue = frontmatter[propertyName];
   // Frontmatter values are whatever YAML produced, so compare their rendering rather than requiring a
-  // String. An array matches when any of its entries does, which is how tag-like properties read.
+  // string. An array matches when any of its entries does, which is how tag-like properties read.
   if (Array.isArray(actualValue)) {
     return actualValue.some((item) => String(item) === expectedValue);
   }

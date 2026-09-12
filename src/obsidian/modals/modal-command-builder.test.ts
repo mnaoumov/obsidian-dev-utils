@@ -69,7 +69,7 @@ function createMockModal(): SuggestModal<unknown> {
       for (const instruction of instructions) {
         const promptInstruction = instructionsEl.createDiv('prompt-instruction');
         // `prompt-instruction-command` is what the real `setInstructions` puts on the key hint, and it
-        // Is the class carrying that hint's spacing — a mock that omitted it would vouch for markup
+        // is the class carrying that hint's spacing — a mock that omitted it would vouch for markup
         // Obsidian never produces.
         promptInstruction.createSpan({ cls: 'prompt-instruction-command', text: instruction.command });
         promptInstruction.createSpan({ text: instruction.purpose });
@@ -556,7 +556,7 @@ describe('ModalCommandBuilder', () => {
       expect([...instructionsEl?.querySelectorAll(`.${CssClass.PromptInstruction} > span:first-child`) ?? []].map((el) => el.textContent))
         .toEqual(['↵', 'alt 1']);
       // Without this class the key hint has no `margin-inline-end`, so it renders welded to its purpose
-      // Text: `alt 1Fix footnotes`.
+      // text: `alt 1Fix footnotes`.
       expect([...instructionsEl?.querySelectorAll(`.${CssClass.PromptInstruction} > span:first-child`) ?? []].every((el) => el.hasClass(CssClass.PromptInstructionCommand)))
         .toBe(true);
       expect(instructionsEl?.querySelector('input[type="checkbox"]')?.hasClass(CssClass.ModalCommandControl)).toBe(true);
@@ -564,7 +564,7 @@ describe('ModalCommandBuilder', () => {
 
     it('should tag a natively rendered checkbox with the control class too', () => {
       // The welded checkbox is not a self-rendered-bar defect: the class has to reach a `SuggestModal`'s
-      // Own instruction bar, which this library never restyles.
+      // own instruction bar, which this library never restyles.
       builder.addCheckbox({ key: '1', onChange: vi.fn(), onInit: vi.fn(), purpose: 'Test' });
       const modal = createMockModal();
       builder.build(modal);
@@ -652,7 +652,7 @@ describe('ModalCommandBuilder', () => {
       builder.build(host, { renderMode: ModalCommandsRenderMode.Buttons });
       const buttonEl = commandButtons(host)[0];
       // Still rendered — a strip that lost buttons as modes change would reflow under the pointer. A
-      // Disabled button fires no click, so `disabled` IS the whole gate on `onActivate`.
+      // disabled button fires no click, so `disabled` IS the whole gate on `onActivate`.
       expect(buttonEl).toBeDefined();
       expect(buttonEl?.disabled).toBe(true);
       buttonEl?.click();

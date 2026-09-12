@@ -567,9 +567,9 @@ describe('PluginSettingsComponentBase', () => {
 
   describe('a component that knows no properties', () => {
     // `PluginBase` adds a placeholder `PluginSettingsComponentBase<object>` during `onload` and only
-    // Replaces it in `onloadImpl`. Its `pluginSettingsClass` is `Object`, so it has no property names --
-    // And it used to normalize `data.json` down to `{}` on load, erasing every real setting. Reported as
-    // Embed HTML #15 and CodeScript Toolkit #59.
+    // replaces it in `onloadImpl`. Its `pluginSettingsClass` is `Object`, so it has no property names --
+    // and it used to normalize `data.json` down to `{}` on load, erasing every real setting. Reported as
+    // embed HTML #15 and CodeScript Toolkit #59.
     function createEmptyComponent(dataHandler: MockDataHandler): PluginSettingsComponentBase<object> {
       return new PluginSettingsComponentBase<object>({
         dataHandler,

@@ -12,7 +12,7 @@ describe('SuggestModalCommandBuilder', () => {
   it('should be the very same class as ModalCommandBuilder, not a copy', () => {
     /* eslint-disable @typescript-eslint/no-deprecated, import-x/no-deprecated -- The deprecated alias IS the subject here. */
     // A copy would drift; a consumer still importing the old specifier has to get the class the rest of
-    // These tests cover.
+    // these tests cover.
     expect(SuggestModalCommandBuilder).toBe(ModalCommandBuilder);
     expect(new SuggestModalCommandBuilder()).toBeInstanceOf(ModalCommandBuilder);
     /* eslint-enable @typescript-eslint/no-deprecated, import-x/no-deprecated -- The deprecated alias IS the subject here. */

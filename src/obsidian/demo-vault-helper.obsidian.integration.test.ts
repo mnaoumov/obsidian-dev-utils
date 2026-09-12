@@ -13,7 +13,7 @@ import {
 
 const HELPER_PLUGIN_ID = 'demo-vault-helper';
 // Seeded (never enabled) by `scripts/demo-vault-helper-global-setup.ts` so the vault is a valid demo
-// Vault: exactly one plugin folder besides the helper. Its manifest name is what the notice must show.
+// vault: exactly one plugin folder besides the helper. Its manifest name is what the notice must show.
 const DEMOED_PLUGIN_NAME = 'My Demo Plugin';
 const CODE_SCRIPT_TOOLKIT_PLUGIN_ID = 'fix-require-modules';
 const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
@@ -25,18 +25,18 @@ const TEST_TIMEOUT_IN_MILLISECONDS = 150_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 2000;
 const POLL_TIMEOUT_IN_MILLISECONDS = 120_000;
 // The dismissal is local UI work — no network, no plugin install — so it needs a much tighter poll than
-// The bootstrap above; a slow answer here means the notice is NOT dismissing, which is the defect.
+// the bootstrap above; a slow answer here means the notice is NOT dismissing, which is the defect.
 const DISMISS_POLL_INTERVAL_IN_MILLISECONDS = 250;
 const DISMISS_POLL_TIMEOUT_IN_MILLISECONDS = 15_000;
 
 // The sandbox notice is the only notice that must OUTLIVE the bootstrap, so it is matched on its own
-// Wording. The vault it describes ships only the helper, so the notice names no plugin.
+// wording. The vault it describes ships only the helper, so the notice names no plugin.
 const SANDBOX_NOTICE_MARKER = 'temporary sandbox';
 
 // The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `codeScriptToolkitEnabled` +
 // `sandboxNoticeText` are the acceptance signal; the rest are asserted on success and reported on a flake
 // (the CodeScript Toolkit store install is network-dependent, so a timeout shows how far the bootstrap got instead of a
-// Bare `false`).
+// bare `false`).
 interface BootstrapStatus {
   readonly activeFilePath: null | string;
   readonly codeScriptToolkitEnabled: boolean;
@@ -54,7 +54,7 @@ interface BootstrapStatus {
 }
 
 // Whether the sandbox notice has left the DOM. Polled rather than read once, because Obsidian fades a
-// Dismissed notice out before removing its element.
+// dismissed notice out before removing its element.
 interface SandboxNoticeDismissal {
   readonly isGone: boolean;
 }
@@ -69,14 +69,14 @@ describe('demo-vault-helper bootstrap', () => {
   // This test runs in the DEDICATED `obsidian-integration-tests:demo-vault-helper` project (see
   // `scripts/vitest-config.ts`), which boots its own isolated Obsidian instance/vault via
   // `scripts/demo-vault-helper-global-setup.ts`. That global setup seeds the vault with the committed helper
-  // Plus the probe/startup scripts + start note, and enables the helper via the harness's
+  // plus the probe/startup scripts + start note, and enables the helper via the harness's
   // `enableCommunityPlugins` path, which kicks off the helper's on-layout-ready bootstrap that installs
   // CodeScript Toolkit from the store.
   //
   // NOTE: CodeScript Toolkit is installed FROM THE STORE and bundles its own copy of obsidian-dev-utils, so the
   // `startupRan`/`probeValue`/`activeFilePath` assertions (it runs its startup script when enabled AFTER
-  // Layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
-  // Store serves a release of it built against the fixed dev-utils (13.4.1+).
+  // layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
+  // store serves a release of it built against the fixed dev-utils (13.4.1+).
   it('should install, configure, enable CodeScript Toolkit and run startup with no reload', async () => {
     const vaultPath = getTemporaryVault().path;
 
@@ -84,7 +84,7 @@ describe('demo-vault-helper bootstrap', () => {
     let status: BootstrapStatus;
 
     // Poll from the Node side (each eval is quick): the real store install can outlast CDP's single-command
-    // Timeout, so the wait cannot live inside one closure.
+    // timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
         input: { codeScriptToolkitPluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID, folderNotesPluginId: FOLDER_NOTES_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID, sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
@@ -122,8 +122,8 @@ describe('demo-vault-helper bootstrap', () => {
         until(pollResult: BootstrapStatus): boolean {
           lastStatus = pollResult;
           // The sandbox notice is required in the SAME sample as `startupRan`: that is what proves it
-          // Survived CodeScript Toolkit's startup script opening the start note, rather than being
-          // Replaced or dismissed by it.
+          // survived CodeScript Toolkit's startup script opening the start note, rather than being
+          // replaced or dismissed by it.
           return pollResult.startupRan && pollResult.codeScriptToolkitEnabled && pollResult.folderNotesEnabled && pollResult.sandboxNoticeText !== '';
         },
         vaultPath
@@ -139,25 +139,25 @@ describe('demo-vault-helper bootstrap', () => {
     expect(status.activeFilePath).toBe(START_NOTE_PATH);
     expect(status.probeValue).toBe('ok');
     // Folder Notes comes from the same store install path as CodeScript Toolkit, pointed at `README` so a
-    // Grouped vault's folders describe themselves in the file explorer and on GitHub alike.
+    // grouped vault's folders describe themselves in the file explorer and on GitHub alike.
     expect(status.folderNotesInstalled).toBe(true);
     expect(status.folderNotesEnabled).toBe(true);
     expect(status.folderNotesDataJson).toContain(FOLDER_NOTE_NAME);
     // The notice names the plugin the vault demonstrates — read from the seeded plugin's manifest, not
-    // Its folder id — and says what the vault is, that it is temporary, and how long it lasts.
+    // its folder id — and says what the vault is, that it is temporary, and how long it lasts.
     expect(status.sandboxNoticeText).toContain(`This is a demo vault for ${DEMOED_PLUGIN_NAME}.`);
     expect(status.sandboxNoticeText).toContain('cleaned up automatically about a day after you last use it');
     expect(status.sandboxNoticeText).toContain(`${DEMOED_PLUGIN_NAME}: Open demo vault`);
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 
   // The requested duration (`0`) only says "do not expire on a timer"; it does not prove the notice can
-  // Still be got rid of. The accepted behavior is Obsidian's own sandbox-vault notice — it stays until
-  // The user clicks it — so the click is what has to be exercised, in a real Obsidian, against a real
+  // still be got rid of. The accepted behavior is Obsidian's own sandbox-vault notice — it stays until
+  // the user clicks it — so the click is what has to be exercised, in a real Obsidian, against a real
   // `Notice`. A unit test cannot: it sees the constructor arguments, not Obsidian's dismiss handler.
   //
   // Runs after the bootstrap test in the same instance (the project is serial, single-worker), so the
-  // Notice this dismisses is the one raised there. It waits for the notice itself rather than assuming
-  // The previous test left it up.
+  // notice this dismisses is the one raised there. It waits for the notice itself rather than assuming
+  // the previous test left it up.
   it('should dismiss the sandbox notice when the user clicks it', async () => {
     const vaultPath = getTemporaryVault().path;
 
@@ -177,7 +177,7 @@ describe('demo-vault-helper bootstrap', () => {
     expect(wasPresentBeforeClick).toBe(true);
 
     // Obsidian fades a dismissed notice out before removing its element, so the disappearance is polled
-    // Rather than read once.
+    // rather than read once.
     let lastDismissal: SandboxNoticeDismissal | undefined;
     try {
       await pollInObsidian({
@@ -204,13 +204,13 @@ describe('demo-vault-helper bootstrap', () => {
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 
   // Obsidian opens Settings in a POPOUT WINDOW that becomes the active one, and a `Notice` is built in
-  // Whatever window is active — so a sandbox notice raised with Settings open would be created inside
-  // The settings window and vanish with it. The bootstrap closes Settings first; only a real Obsidian
-  // Has that popout, so this cannot be a unit test.
+  // whatever window is active — so a sandbox notice raised with Settings open would be created inside
+  // the settings window and vanish with it. The bootstrap closes Settings first; only a real Obsidian
+  // has that popout, so this cannot be a unit test.
   //
   // Runs last, and re-triggers the bootstrap by reloading the helper plugin — which is only possible
-  // Because the demonstrated plugin is read from the helper's marker: CodeScript Toolkit is installed by
-  // Now, and counting plugin folders would make this second run ambiguous.
+  // because the demonstrated plugin is read from the helper's marker: CodeScript Toolkit is installed by
+  // now, and counting plugin folders would make this second run ambiguous.
   it('should close the settings window before raising the sandbox notice', async () => {
     const vaultPath = getTemporaryVault().path;
 
@@ -229,7 +229,7 @@ describe('demo-vault-helper bootstrap', () => {
 
         app.setting.open();
         // Obsidian creates and focuses the popout asynchronously, and that focus is what hands it the
-        // Active window — the very condition the bootstrap has to survive.
+        // active window — the very condition the bootstrap has to survive.
         await waitUntil({
           message: 'the settings window to become the active window',
           predicate: (): boolean => activeWindow !== window,
@@ -238,7 +238,7 @@ describe('demo-vault-helper bootstrap', () => {
         const isSettingsWindowActive = activeWindow !== window;
 
         // Fires the bootstrap and returns straight away, leaving the wait for the notice to the poll
-        // Below rather than holding a single CDP command open for it.
+        // below rather than holding a single CDP command open for it.
         await app.plugins.disablePlugin(helperPluginId);
         await app.plugins.enablePlugin(helperPluginId);
         return isSettingsWindowActive;
@@ -257,7 +257,7 @@ describe('demo-vault-helper bootstrap', () => {
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
         poll({ app, sandboxNoticeMarker }): SettingsWindowResult {
           // Counts only the notices in the MAIN window: the settings window has a notice container of
-          // Its own, and a notice raised into that one is exactly the defect under test.
+          // its own, and a notice raised into that one is exactly the defect under test.
           let mainWindowSandboxNoticeCount = 0;
           for (const noticeEl of document.querySelectorAll('.notice')) {
             if (noticeEl.textContent.includes(sandboxNoticeMarker)) {
@@ -266,7 +266,7 @@ describe('demo-vault-helper bootstrap', () => {
           }
           return {
             // Read reflectively: `popout` is set only while the settings window exists, and is a 1.13
-            // Member absent from the public typings this library targets.
+            // member absent from the public typings this library targets.
             // TODO: Simplify to `app.setting.popout` once Obsidian 1.13 is public and
             // `obsidian-public-latest` typings model `AppSetting.popout`.
             isSettingsWindowClosed: !Reflect.get(app.setting, 'popout'),

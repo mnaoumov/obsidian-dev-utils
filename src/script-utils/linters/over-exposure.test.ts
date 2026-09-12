@@ -136,8 +136,8 @@ describe('analyzeOverExposure', () => {
       `
     });
     // \`findReferences\` reports the name inside the link tag, but JSDoc is not in the AST walk, so nothing
-    // Resolves at that position. Before this was filtered out the whole run aborted on the missing node;
-    // Now the link is ignored and the only real reference — the in-class call — narrows the member.
+    // resolves at that position. Before this was filtered out the whole run aborted on the missing node;
+    // now the link is ignored and the only real reference — the in-class call — narrows the member.
     expect(findFinding(findings, 'helper').suggestedExposure).toBe('private');
   });
 

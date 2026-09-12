@@ -32,7 +32,7 @@ interface Mocks {
 }
 
 // A minimal typed event source: extends the base `Events` (one `on` overload) plus one concrete overload — small
-// Enough to avoid the deep-instantiation limit that the real `Workspace` (27 overloads) would hit.
+// enough to avoid the deep-instantiation limit that the real `Workspace` (27 overloads) would hit.
 interface TestEventSource extends EventsOriginal {
   on(name: 'my-event', callback: (value: number) => void): EventReferenceOriginal;
 }

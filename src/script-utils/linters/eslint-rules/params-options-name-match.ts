@@ -81,7 +81,7 @@ export const paramsOptionsNameMatch: Rule.RuleModule = {
           }
 
           // A required sole-argument bag → `*Params`. An optional bag (`?` or a default
-          // Value) or a bag supplementary to other parameters → `*Options`.
+          // value) or a bag supplementary to other parameters → `*Options`.
           const expectedSuffix = isSoleParameter && !isOptionalParameter(parameter) ? PARAMS_SUFFIX : OPTIONS_SUFFIX;
           const expectedName = `${expectedPrefix}${expectedSuffix}`;
 

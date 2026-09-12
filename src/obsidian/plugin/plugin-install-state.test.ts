@@ -55,7 +55,7 @@ beforeEach(() => {
   enabledPlugins = new Set<string>();
 
   // A null-prototype record so a missing key reads as `undefined` (plugin not installed) rather than
-  // Resolving up the prototype chain.
+  // resolving up the prototype chain.
   manifests = {};
   Object.setPrototypeOf(manifests, null);
 
@@ -110,7 +110,7 @@ describe('getInstalledPluginVersion', () => {
 
   it('should report an empty string for an enabled plugin whose manifest carries no version, so it stays distinguishable from absent', () => {
     // Cast rather than `strictProxy`: the point of this case is a manifest where `version` is genuinely
-    // Missing, which a strict proxy would turn into a throw instead of the `undefined` the code reads.
+    // missing, which a strict proxy would turn into a throw instead of the `undefined` the code reads.
     manifests[PLUGIN_ID] = castTo<PluginManifest>({ id: PLUGIN_ID });
     enabledPlugins.add(PLUGIN_ID);
 
@@ -171,7 +171,7 @@ function createParams(): Parameters<typeof installAndEnablePlugin>[0] {
 }
 
 // The plugin name is rendered as an inline code block, so the notice is a `DocumentFragment` and its text
-// Content is what the user reads. Asserting on that keeps the test about the message rather than markup.
+// content is what the user reads. Asserting on that keeps the test about the message rather than markup.
 function expectNoticeText(expectedText: string): void {
   const message: unknown = showNotice.mock.calls[0]?.[0];
   expect(message).toBeInstanceOf(DocumentFragment);

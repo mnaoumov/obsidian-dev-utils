@@ -631,7 +631,7 @@ export function unescapeAlias(escapedAlias: string): string {
 function decodeUrlSafely(params: DecodeUrlSafelyParams): string {
   const { hasAngleBrackets, isExternal, url } = params;
   // `file://` URLs are external, but their percent-encoding is purely cosmetic, so decode them like
-  // Internal links. Every other external URL is left untouched (its encoding may be significant).
+  // internal links. Every other external URL is left untouched (its encoding may be significant).
   if ((isExternal || hasAngleBrackets) && !isFileUrl(url)) {
     return url;
   }

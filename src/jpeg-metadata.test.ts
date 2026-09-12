@@ -279,7 +279,7 @@ describe('injectJpegMetadataSegments', () => {
 
   it('leaves the IFD entries that are not the orientation alone', () => {
     // A real IFD is mostly other tags; walking it must skip them rather than overwrite whatever sits
-    // At the value slot.
+    // at the value slot.
     const X_RESOLUTION_TAG_LOW_BYTE = 0x1A;
     const UNTOUCHED_VALUE = 3;
     const payload = exifPayload(UNTOUCHED_VALUE);

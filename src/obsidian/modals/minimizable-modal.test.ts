@@ -35,8 +35,8 @@ class SettingsPopoutModalDouble extends Modal {
 
   public override open(): void {
     // Mimic Obsidian's Settings popout modal: its own open() creates the (popout) window BEFORE
-    // Delegating to Modal.prototype.open to render into it. Blocking must happen here — guarding only
-    // The delegated Modal.prototype.open (the generic modal guard) would still create the empty window.
+    // delegating to Modal.prototype.open to render into it. Blocking must happen here — guarding only
+    // the delegated Modal.prototype.open (the generic modal guard) would still create the empty window.
     this.wasWindowCreated = true;
     super.open();
   }
@@ -56,7 +56,7 @@ let settingsModal: SettingsPopoutModalDouble;
 beforeEach(() => {
   app = App.createConfigured__().asOriginalType__();
   // The strict-proxy mock App does not model `app.setting`; wire a popout-mimicking settings modal so
-  // The peek-lock's settings guard has something real to patch (mirroring Obsidian's `app.setting`).
+  // the peek-lock's settings guard has something real to patch (mirroring Obsidian's `app.setting`).
   settingsModal = new SettingsPopoutModalDouble(app);
   castTo<AppWithSettingsModal>(app).setting = settingsModal;
 });
@@ -272,7 +272,7 @@ describe('MinimizableModal', () => {
       expect(modal.wasClosed).toBe(false);
       expect(getBar()).not.toBeNull();
       // Obsidian's own `bgEl` listener is stopped outright; the prevented default is what additionally
-      // Satisfies the `defaultPrevented` guard in `Modal.onClickOutside`.
+      // satisfies the `defaultPrevented` guard in `Modal.onClickOutside`.
       expect($event.defaultPrevented).toBe(true);
 
       minimizable.restore();
@@ -295,7 +295,7 @@ describe('MinimizableModal', () => {
       const minimizable = new MinimizableModal(modal);
 
       // Selecting text inside the modal and releasing over the background fires the `click` on their
-      // Common ancestor. Obsidian does not dismiss on that gesture, so it must not minimize either.
+      // common ancestor. Obsidian does not dismiss on that gesture, so it must not minimize either.
       const $event = clickOn(modal.containerEl);
 
       expect(minimizable.isMinimized).toBe(false);
@@ -415,8 +415,8 @@ describe('MinimizableModal', () => {
       const minimizable = new MinimizableModal(new Modal(app));
       minimizable.minimize();
       // The input suppressors stay installed until the peek-lock component unloads. Removing the bar
-      // Without restore()/close() leaves them installed while the lock self-heals (isPeekLocked() prunes
-      // The disconnected entry), so a suppressed event type must now pass through instead of blocking.
+      // without restore()/close() leaves them installed while the lock self-heals (isPeekLocked() prunes
+      // the disconnected entry), so a suppressed event type must now pass through instead of blocking.
       getBar()?.remove();
 
       const contextMenuEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });

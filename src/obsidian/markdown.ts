@@ -558,7 +558,7 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
         revealInFileExplorer(app, folderNoteFile && !config.isHidden ? folderNoteFile : abstractFile);
         if (folderNoteFile) {
           // A DOM listener cannot await, and the open has to outlive this handler: it settles first, for
-          // The click that lands right as an operation finishes writing.
+          // the click that lands right as an operation finishes writing.
           invokeAsyncSafely(() => openAfterSettling(app, folderNoteFile));
         }
       });
@@ -579,8 +579,8 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
   if (shouldRevealFile ?? false) {
     aEl.addEventListener('click', () => {
       // Layered ON TOP of Obsidian's own handler — no `preventDefault`, so the open is untouched. A path
-      // That resolves to nothing gets no reveal: an unresolved link has nothing to reveal, and clicking
-      // One CREATES the note it names.
+      // that resolves to nothing gets no reveal: an unresolved link has nothing to reveal, and clicking
+      // one CREATES the note it names.
       const file = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
       if (isFile(file)) {
         revealInFileExplorer(app, file);

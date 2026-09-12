@@ -136,7 +136,7 @@ describe('abortSignalTimeout', () => {
   // `globalThis.setTimeout`, not `window.setTimeout`, so it resolves where `window` is undefined.
   // Consumer integration-test projects run vitest under `environment: 'node'`.
   // Every other timing test here runs under jsdom, where `window` always exists, so without this case the
-  // Node-only path would escape coverage.
+  // node-only path would escape coverage.
   describe('without a DOM `window` (node environment)', () => {
     afterEach(() => {
       vi.unstubAllGlobals();

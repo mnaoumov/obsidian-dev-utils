@@ -40,7 +40,7 @@ function createApp(canvasContent: string, installedPluginIds: string[] = []): Ap
   });
   for (const id of installedPluginIds) {
     // The code under test only asks whether the plugin is installed, so an empty stand-in carries every
-    // Member it reads.
+    // member it reads.
     appMock.plugins.registerPlugin__(id, castTo<PluginOriginal>({}));
   }
   return appMock.asOriginalType__();
