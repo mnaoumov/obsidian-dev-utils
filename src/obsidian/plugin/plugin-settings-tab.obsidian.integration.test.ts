@@ -11,7 +11,7 @@
  *   that relies on Obsidian honouring `disabled` on a `render` row, which its own typings do not declare;
  * - rows added and removed across `refresh()`, the case that genuinely needs a full re-render;
  * - `settingGroupEx` headings plus a row whose `Setting` is adopted into a {@link SettingEx}, so the custom
- *   ODU components and {@link PluginSettingsTabBase.bind} keep working inside a declarative row;
+ *   components this library adds and {@link PluginSettingsTabBase.bind} keep working inside a declarative row;
  * - the legacy fallback, so a tab that has not migrated keeps rendering imperatively.
  */
 

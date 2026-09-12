@@ -12,7 +12,7 @@
  * its own {@link AsyncErrorHandlerComponent} so that notice is genuinely rendered rather than merely
  * implied — the pooled Obsidian instance carries no `PluginBase` plugin, so nothing else would render it.
  *
- * It also proves the `pathsValidator` message resolves through ODU's real i18n in a live Obsidian, not
+ * It also proves the `pathsValidator` message resolves through this library's real i18n in a live Obsidian, not
  * just through the lazily initialized fallback a unit test sees.
  */
 

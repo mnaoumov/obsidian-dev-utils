@@ -141,7 +141,7 @@ export class ObsidianPluginVitestConfigContext {
   /**
    * The `integration-tests:desktop-performance` project, running the at-scale suites. It is declared for
    * every plugin even when there is no such suite yet — `passWithNoTests` makes an empty project free,
-   * and the matching `test:integration:desktop:performance` script exists fleet-wide.
+   * and the matching `test:integration:desktop:performance` script exists in every plugin built on this library.
    *
    * A plugin's `test:integration` aggregate leaves this project out on purpose, and it stays out even on a
    * machine with a desktop Obsidian set up. Perf suites are expensive by design — 600 s timeouts, large

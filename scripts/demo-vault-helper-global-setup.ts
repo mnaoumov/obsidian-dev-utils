@@ -68,7 +68,7 @@ const DEMOED_PLUGIN_MANIFEST = `${
   )
 }\n`;
 
-// The CodeScript Toolkit startup script (run once CST loads via `startupScriptPath`): opens the start note and resolves a module under `modulesRoot` via CST's `require`, proving the plugin loaded already configured with no reload. Runs inside CST, so it uses plain runtime `require` (not linted here).
+// The CodeScript Toolkit startup script (run once that plugin loads via `startupScriptPath`): opens the start note and resolves a module under `modulesRoot` via its `require`, proving the plugin loaded already configured with no reload. Runs inside that plugin, so it uses plain runtime `require` (not linted here).
 const STARTUP_SCRIPT = `
 export async function invoke(app) {
   const startNote = app.vault.getFileByPath('${START_NOTE_PATH}');

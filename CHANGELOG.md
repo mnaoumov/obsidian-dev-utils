@@ -20,7 +20,7 @@
 ## 102.2.0
 
 - style(components): reword a comment the capitalized-comments rule rejected
-- feat(components): share the Templates language grammar across the fleet
+- feat(components): share the Templates language grammar across every plugin built on this library
 - feat(plugin-gate-component): expose whether a warning conflict is in force
 
 ## 102.1.0
@@ -118,7 +118,7 @@
 
 ## 98.0.0
 
-- feat(deps)!: require obsidian-integration-testing ^12 as a peer, so OIT 11 no longer resolves
+- feat(deps)!: require obsidian-integration-testing ^12 as a peer, so version 11 no longer resolves
 - feat(demo-vault)!: move the version out of the archive name and into the archive
 - feat(obsidian)!: mirror the mobile trusted-input path into the library
 - feat(script-utils): lint the root manifest.json and LICENSE, which nothing linted before
@@ -128,7 +128,7 @@
 - fix(script-utils): resolve tool binaries from node_modules/.bin instead of npx
 - test(script-utils): restore 100% coverage on package-manager
 - test(plugin-notice): scope the styling lookup to the notice under test
-- docs(deps): record that the OIT peer is at 12.x, not 11.x
+- docs(deps): record that the obsidian-integration-testing peer is at 12.x, not 11.x
 - docs(eslint-config): record that jsdoc/no-defaults is kept deliberately
 - chore: clear the spellcheck preflight blocker
 - chore: update libs
@@ -273,7 +273,7 @@
 
 ## 94.4.0
 
-- docs(demo-vault): document the button-clicking suite and make it the fleet mechanism
+- docs(demo-vault): document the button-clicking suite and make it the mechanism every plugin uses
 - chore: update libs
 - feat(script-utils): add a demo-vault button-clicking suite
 - fix(vitest-config): exclude declaration files from coverage by default
@@ -470,7 +470,7 @@
 
 ## 87.3.1
 
-- chore: bump OIT to 9.1.0 and skip flaky demo-vault-helper test
+- chore: bump obsidian-integration-testing to 9.1.0 and skip flaky demo-vault-helper test
 - fix(rename-delete-handler): move attachments regardless of update-links setting
 - chore: update libs
 - refactor: update endpoint

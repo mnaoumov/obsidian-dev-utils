@@ -330,7 +330,7 @@ export class ModalCommandBuilder {
       initInstruction: (purposeEl: HTMLSpanElement, scope: Scope): InstructionControl => {
         const checkboxEl = purposeEl.createEl('input', { type: 'checkbox' });
         // The gap goes on the control, not on the strip, so it lands on BOTH render paths: a
-        // `SuggestModal`'s native bar hosts the same checkbox, and ODU never touches that bar's element.
+        // `SuggestModal`'s native bar hosts the same checkbox, and this library never touches that bar's element.
         addPluginCssClasses(checkboxEl, CssClass.ModalCommandControl);
         return initCheckbox(checkboxEl, scope);
       },

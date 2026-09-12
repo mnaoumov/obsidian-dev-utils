@@ -564,7 +564,7 @@ describe('ModalCommandBuilder', () => {
 
     it('should tag a natively rendered checkbox with the control class too', () => {
       // The welded checkbox is not a self-rendered-bar defect: the class has to reach a `SuggestModal`'s
-      // Own instruction bar, which ODU never restyles.
+      // Own instruction bar, which this library never restyles.
       builder.addCheckbox({ key: '1', onChange: vi.fn(), onInit: vi.fn(), purpose: 'Test' });
       const modal = createMockModal();
       builder.build(modal);

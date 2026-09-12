@@ -811,7 +811,7 @@ export abstract class PluginSettingsTabBase<PluginSettings extends object> exten
   /**
    * Builds a search-indexable declarative row that is rendered imperatively.
    *
-   * The bridge between the declarative API and ODU's imperative building blocks: Obsidian owns the row (so it
+   * The bridge between the declarative API and this library's imperative building blocks: Obsidian owns the row (so it
    * indexes it for search and evaluates its {@link PluginSettingsTabBaseSettingExParams.visible} /
    * {@link PluginSettingsTabBaseSettingExParams.disabled} predicates on every
    * {@link refreshDomState}), while {@link PluginSettingsTabBaseSettingExParams.render} fills it in with

@@ -74,7 +74,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Load via the ODU tsconfig so inferred types resolve.
+  // Load via this repo's tsconfig so inferred types resolve.
   const project = new Project({
     skipAddingFilesFromTsConfig: true,
     tsConfigFilePath: join(rootDirectory, 'tsconfig.json')

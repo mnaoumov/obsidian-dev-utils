@@ -4,7 +4,7 @@
  * Contains class {@link TemplatesLanguageComponent} that registers a Prism language highlighting
  * `{{token}}` / `{{token:format}}` placeholders.
  *
- * **The language is Obsidian core's own, not a fleet invention.** `{{token:format}}` is the syntax core's
+ * **The language is Obsidian core's own, not an invention of this library.** `{{token:format}}` is the syntax core's
  * **Templates** plugin defines, verified in the shipped app rather than recalled — `obsidian.asar/i18n.js`,
  * the `templates:` block:
  *

@@ -67,7 +67,7 @@ vi.mock('./modals/confirm.ts', () => ({
 }));
 
 /**
- * Survives the fleet-wide removal of the hand-rolled `app.plugins` stubs, deliberately.
+ * Survives the removal of the hand-rolled `app.plugins` stubs from every repo that had them, deliberately.
  *
  * `obsidian-test-mocks` models the registry now, so the stubs that only made `getPlugin` answer `null` are
  * gone — but it models only the honest core (`plugins`, `enabledPlugins`, `getPlugin`, `getPluginFolder`),

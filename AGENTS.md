@@ -55,7 +55,7 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
   the thresholds over the identical files. One consequence: `TEST_COVERAGE=0` now switches off the gate's
   whole test step. Two steps of the preflight are deliberately
   NOT in the gate: the clean-repo assertion (the gate is run on a dirty tree on purpose) and
-  `test:integration` (it has to run in sequence fleet-wide, so a casually-run command must not start it;
+  `test:integration` (it has to run in sequence across every repo sharing the one Obsidian instance, so a casually-run command must not start it;
   when a caller does ask for it, it runs after the unit tests, so a broken unit test fails first).
   `npm run gate -- --no-build` skips the build when the output is already current; `GATE=0` skips the whole
   thing and each step keeps its own switch (`SPELLCHECK=0`, ...).
@@ -80,7 +80,7 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `src/script-utils/linters/cspell.ts` — spellchecking
 - `src/script-utils/formatters/dprint.ts` — dprint formatting
 - `src/script-utils/test-runners/vitest.ts` — Vitest test runner
-- `src/script-utils/package-manager.ts` — resolves how locally-installed tools and package scripts are invoked, so the library never assumes npm. `resolveToolCommand({ tool })` returns the `node_modules/.bin` shim (walking up to a hoisted workspace install), falling back to the owning manager's exec form (`npx` / `bun x` / `pnpm exec` / `yarn exec`) when no shim exists — the only path that works under yarn PnP. `getPackageManagerRunCommand()` does the same for package scripts. **Every tool invocation goes through it; do not add a bare `npx <tool>` call.** `npx` is npm-specific and does its *own* resolution rather than reading `node_modules/.bin`: under bun on Windows, where `bun install` writes `tsc.exe`/`tsc.bunx` and no `tsc.cmd`, `npx tsc` misses the local install entirely and downloads the `tsc` **decoy** package from the registry (`This is not the tsc command you are looking for`), which is why no ODU-based plugin could build under bun. **Detection collects every signal before believing any of them, because a repo carrying two lockfiles used to resolve to whichever sat earlier in a fixed list — silently reassigning every package script and every tool invocation to a manager that never installed the tree (one stray `pnpm exec` probe in this very repo was enough to flip ODU's own build to `pnpm run`).** The order is: (1) the `packageManager` field of `package.json` — a deliberate declaration outranks an artifact, and it is the only signal that helps before the first install; (2) the sole lockfile, when exactly one manager claims the tree; (3) among several lockfiles, `npm_config_user_agent` when it owns one of them, else the documented fallback order in `LOCKFILES` (`bun.lock`/`bun.lockb` → `pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`); (4) `npm_config_user_agent` alone when there is no lockfile; (5) `npm`. Deliberately **not** "the most recently modified lockfile" — a stray lockfile is typically the *newest* file, so mtime picks precisely the wrong one. Whenever more than one manager claims the tree, `getPackageManager()` prints a `console.warn` naming every lockfile found, what `package.json` declares and which manager won, deduplicated so a build that resolves once per script hop still says it once. The resolution stays deterministic; it just stops being silent. `npm publish` / `npm pack` deliberately stay literal npm — they talk to the npm registry.
+- `src/script-utils/package-manager.ts` — resolves how locally-installed tools and package scripts are invoked, so the library never assumes npm. `resolveToolCommand({ tool })` returns the `node_modules/.bin` shim (walking up to a hoisted workspace install), falling back to the owning manager's exec form (`npx` / `bun x` / `pnpm exec` / `yarn exec`) when no shim exists — the only path that works under yarn PnP. `getPackageManagerRunCommand()` does the same for package scripts. **Every tool invocation goes through it; do not add a bare `npx <tool>` call.** `npx` is npm-specific and does its *own* resolution rather than reading `node_modules/.bin`: under bun on Windows, where `bun install` writes `tsc.exe`/`tsc.bunx` and no `tsc.cmd`, `npx tsc` misses the local install entirely and downloads the `tsc` **decoy** package from the registry (`This is not the tsc command you are looking for`), which is why no plugin built on this library could build under bun. **Detection collects every signal before believing any of them, because a repo carrying two lockfiles used to resolve to whichever sat earlier in a fixed list — silently reassigning every package script and every tool invocation to a manager that never installed the tree (one stray `pnpm exec` probe in this very repo was enough to flip this library's own build to `pnpm run`).** The order is: (1) the `packageManager` field of `package.json` — a deliberate declaration outranks an artifact, and it is the only signal that helps before the first install; (2) the sole lockfile, when exactly one manager claims the tree; (3) among several lockfiles, `npm_config_user_agent` when it owns one of them, else the documented fallback order in `LOCKFILES` (`bun.lock`/`bun.lockb` → `pnpm-lock.yaml` → `yarn.lock` → `package-lock.json`); (4) `npm_config_user_agent` alone when there is no lockfile; (5) `npm`. Deliberately **not** "the most recently modified lockfile" — a stray lockfile is typically the *newest* file, so mtime picks precisely the wrong one. Whenever more than one manager claims the tree, `getPackageManager()` prints a `console.warn` naming every lockfile found, what `package.json` declares and which manager won, deduplicated so a build that resolves once per script hop still says it once. The resolution stays deterministic; it just stops being silent. `npm publish` / `npm pack` deliberately stay literal npm — they talk to the npm registry.
 - `scripts/` — npm script entry points (executed via `jiti`), each wraps its call in `wrapCliTask()` for error handling and exit codes
 - `templates/` — consumer-facing templates copied verbatim into `dist/templates/` by `build:templates` (so they ship in the package, copyable from `node_modules/obsidian-dev-utils/dist/templates`). A trailing `.template` on a source file name is stripped during the copy (e.g. `templates/eslint.config.mts.template` → `dist/templates/eslint.config.mts`), so an active config template can live in the repo under a name the corresponding tool does not auto-discover (only `eslint.config.mts` currently needs this — ESLint treats any `eslint.config.*` as a flat config). Two kinds of file live here:
   - Root config templates (`templates/commitlint.config.ts`, `templates/eslint.config.mts.template`, `templates/vitest.config.ts`, `templates/.markdownlint-cli2.mjs`, `templates/.nano-staged.mjs`, `templates/dprint.json`) — thin re-exports a consumer drops at their project root.
@@ -339,7 +339,7 @@ export function myFunction(param: Type): ReturnType {
     time, so `.github/workflows/update-license-year.yml` bumps the end year on 1 January — a repo
     adopting this config needs that workflow too, or its CI fails at the turn of the year. It also needs
     the plugin's unexported `PlainTextParser`, reached through `dist/`.
-- **ODU's own root `manifest.json` is a stub kept for `eslint-plugin-obsidianmd`, not a plugin manifest.**
+- **This repo's own root `manifest.json` is a stub kept for `eslint-plugin-obsidianmd`, not a plugin manifest.**
   It arrived with the plugin in `7858d3c3`, its `version` is frozen at `1.0.0`, and `version.ts` already
   decides `isObsidianPlugin = packageJson.name !== 'obsidian-dev-utils'`. Do not delete it: the plugin's
   `no-nodejs-modules` rule is configured as `manifest && manifest.isDesktopOnly ? 'off' : 'warn'`, so
@@ -394,7 +394,7 @@ export function myFunction(param: Type): ReturnType {
 - `src/obsidian/desktop-trusted-input.ts` (`typeIntoEditor`, `pressKey`, `moveMouse`, `clickMouse`, `hoverElement`, `unhoverElement`, `clickElement`) and `ensureLayoutReady` (`src/obsidian/workspace.ts`) are importable-module **twins** of helpers the `obsidian-integration-testing` harness seeds into its `evalInObsidian` `lib` bag (its `namespace-bootstrap.ts`). `errorToString` (`src/error.ts`) is likewise mirrored by the harness's own error-to-string helper. The harness must never depend on this library, so each is an intentional **duplicate kept in sync by hand — there is no automated drift check.** Any behavior change to one of these helpers must be mirrored in the harness in the same coordinated cross-repo change (and vice-versa); the harness carries the counterpart rule.
 - **The mobile twin is the exception that proves the rule: it delegates instead of duplicating.** `src/obsidian/mobile-trusted-input.ts` calls `window.__obsidianIntegrationTesting.trustedInput.*` — the seam the harness publishes on its namespace (`namespace-bootstrap.ts`), holding the very function objects it seeds into a closure's `lib` bag. A phone has no in-renderer route to a trusted event, so the injection is a round-trip to the host over the harness's Appium-transport channel; duplicating that wire format here would make the library monkey-patch the harness, inverting this rule's own "the harness must never depend on this library". Delegating keeps the mobile semantics (tap, long-press for `button: 'right'`, a throw for `'middle'`, the accepted `pressKey` key set, and the throws for the `:hover` helpers) identical for free. **The namespace shape is declared LOCALLY in that module** — the harness is not a dependency in either direction, at runtime or in types, and the harness deliberately publishes no exported mirror of its namespace shape for anyone to import.
 - The copies are deliberately **not byte-identical** (a serialized closure vs a real module): here they call the ambient global `sleep(ms)`, read `Platform.isMacOS` via `import { Platform } from 'obsidian'`, and the pointer primitive is folded into `moveMouse` (no separate `moveMouseTo`); the harness closure instead uses its runtime `sleep` / `ns.obsidianModule`. So the sync obligation is **behavioral**, not textual.
-- **All seven are `Promise<void>` on both sides, and the peer range is `^12.0.0` — a floor, not a preference.** The harness majored first (OIT `12.0.0`) and this library followed, which is the only order that compiles: `interface Lib extends MergedLib` makes this library's signatures the derived ones, `() => Promise<void>` is assignable to a `() => void` base but not the reverse, so a new `Promise<void>` copy here against an installed OIT 11 still typing them `void` is **TS2430**. Admitting `^11.0.0` would also be a claim the mobile arm cannot honour — it calls a namespace seam only 12 has. Nothing about the desktop arm needs to await anything; the `async` is the cross-platform **contract**, so a suite growing a mobile lane never rewrites its `await`s (hence the `@typescript-eslint/require-await` disables).
+- **All seven are `Promise<void>` on both sides, and the peer range is `^12.0.0` — a floor, not a preference.** The harness majored first (`obsidian-integration-testing` `12.0.0`) and this library followed, which is the only order that compiles: `interface Lib extends MergedLib` makes this library's signatures the derived ones, `() => Promise<void>` is assignable to a `() => void` base but not the reverse, so a new `Promise<void>` copy here against an installed harness 11 still typing them `void` is **TS2430**. Admitting `^11.0.0` would also be a claim the mobile arm cannot honour — it calls a namespace seam only 12 has. Nothing about the desktop arm needs to await anything; the `async` is the cross-platform **contract**, so a suite growing a mobile lane never rewrites its `await`s (hence the `@typescript-eslint/require-await` disables).
 - (cannot be forced by ESLint — a cross-repo hand-sync convention)
 
 ### L5. Platform-only modules carry a `desktop-` / `mobile-` filename prefix
@@ -404,7 +404,7 @@ export function myFunction(param: Type): ReturnType {
   exports — e.g. `desktop-trusted-input.ts` exports `typeIntoEditor`, not `desktopTypeIntoEditor`.
 - **The `desktop-` prefix is LOAD-BEARING, not advisory** — `getNodeBuiltinsConfigs` in
   `src/script-utils/linters/eslint-config.ts` keys the Node-builtins exemption off
-  `src/**/desktop-*.ts`, fleet-wide. A desktop-only module that skips the prefix keeps reporting
+  `src/**/desktop-*.ts`, in every plugin built on this library. A desktop-only module that skips the prefix keeps reporting
   `import-x/no-nodejs-modules` **and** `obsidianmd/no-nodejs-modules`, the second of which a consumer
   cannot waive (the community-directory runner turns an inline `obsidianmd/*` disable into an error);
   a cross-platform module that wrongly takes the prefix gets an exemption it should not have. The
@@ -821,7 +821,7 @@ export function myFunction(param: Type): ReturnType {
   follow-up notice makes that false.
 - Two mechanisms turn that into an unwinnable race. The rescue notice in
   `didRescueStillUsedAttachment` is followed by the `updatedLinks` notice the `RenameHandler` defers
-  through `addToQueue`, which takes the same slot; and OIT's `waitUntil` **polls immediately**, so a
+  through `addToQueue`, which takes the same slot; and the harness's `waitUntil` **polls immediately**, so a
   predicate whose condition is already met exits on the first poll and a latch riding along in that
   predicate never gets a second look.
 - **The tell is inverted timing: it fails when the run is FAST and passes under load.** `waitUntil`
@@ -1109,7 +1109,7 @@ export function myFunction(param: Type): ReturnType {
   `getInstalledPluginVersion` (`obsidian/plugin/plugin-install-state.ts`) is the second kind, and
   `PluginGateComponent`'s conflict half is built on it for exactly that reason.
 - **State the ceiling in the file rather than implying it away.** A conflict guard re-checks on the library
-  broadcast, so an ODU-built plugin toggled mid-session is caught immediately; a plugin by another author is
+  broadcast, so a plugin built on this library and toggled mid-session is caught immediately; a plugin by another author is
   caught at the next load. That is a real limit, and a header that omits it reads as a guarantee the code
   does not make. Do not paper over it with a poll — a timer that re-reads `enabledPlugins` trades a stated
   limit for an unstated cost.
@@ -1695,22 +1695,22 @@ examples.
   path only.** `publishGitHubRelease` never packs on the plugin path: its
   `if (isObsidianPlugin)` branch uploads whatever `dist/build/` contains, and only the `else` branch shells
   out to `npm pack`. `isObsidianPlugin` is true for any repo that has a `manifest.json` and whose package
-  name is not `obsidian-dev-utils`, i.e. for the entire plugin fleet, and false for this repo — so the
-  `npm pack` branch is **ODU's own releases**, and nothing else in practice (every other non-plugin repo
-  here, OIT and OTM included, ships its own standalone `scripts/version.ts`, since every repo has to
-  stand on its own). **A plugin release on a pre-98 ODU is unaffected and never needs an ODU bump on
-  this account** — Advanced Rename and Delete Handler `1.1.1` was cut on ODU `96.5.2` under npm 12.0.2
+  name is not `obsidian-dev-utils`, i.e. for every plugin built on this library, and false for this repo — so the
+  `npm pack` branch is **this library's own releases**, and nothing else in practice (every other non-plugin repo
+  here, `obsidian-integration-testing` and `obsidian-test-mocks` included, ships its own standalone `scripts/version.ts`, since every repo has to
+  stand on its own). **A plugin release on a pre-98 version of this library is unaffected and never needs a bump on
+  this account** — Advanced Rename and Delete Handler `1.1.1` was cut on version `96.5.2` of this library under npm 12.0.2
   on 2026-08-31 and its GitHub release exists.
-  Say ODU, not "every release": the unscoped wording once led to a planned mandatory ODU bump that was not needed.
+  Say this library, not "every release": the unscoped wording once led to a planned mandatory dependency bump that was not needed.
   The defect itself: npm 11 emits an array of pack results; npm 12 emits an object keyed by package name.
-  The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every ODU
-  release on npm 12 threw at the very LAST step — after the bump, changelog, commit, tag and push had all
+  The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every
+  release of this library on npm 12 threw at the very LAST step — after the bump, changelog, commit, tag and push had all
   landed, leaving a public tag with no GitHub release and therefore nothing on NPM (`publish-npm.yml`
-  triggers on `release: published`). It failed four ODU releases for four before being fixed.
+  triggers on `release: published`). It failed four releases of this library for four before being fixed.
   `parseNpmPackOutput` now locates the payload by parsing from each candidate start — the `npm notice` lines
   go to stderr, but the `prepare` script's own stdout precedes the JSON and may contain braces — and
   normalizes both shapes. **Any test mocking that output must mock the object shape**; mocking only the
-  array is exactly what held coverage at 100% while the real command diverged. If an ODU release ever
+  array is exactly what held coverage at 100% while the real command diverged. If a release of this library ever
   half-fails here again, `npm pack` has already written the tarball, so recovery needs no rebuild:
   `gh release create <version> dist/<tarball> dist/styles.css --title v<version> --notes-file <notes>`, the
   notes being the CHANGELOG section plus the `**Full Changelog**: …/compare/<prev>...<new>` line.

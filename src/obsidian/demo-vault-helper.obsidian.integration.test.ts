@@ -15,7 +15,7 @@ const HELPER_PLUGIN_ID = 'demo-vault-helper';
 // Seeded (never enabled) by `scripts/demo-vault-helper-global-setup.ts` so the vault is a valid demo
 // Vault: exactly one plugin folder besides the helper. Its manifest name is what the notice must show.
 const DEMOED_PLUGIN_NAME = 'My Demo Plugin';
-const CST_PLUGIN_ID = 'fix-require-modules';
+const CODE_SCRIPT_TOOLKIT_PLUGIN_ID = 'fix-require-modules';
 const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
 const FOLDER_NOTE_NAME = 'README';
 const START_NOTE_PATH = '00 Start.md';
@@ -33,14 +33,14 @@ const DISMISS_POLL_TIMEOUT_IN_MILLISECONDS = 15_000;
 // Wording. The vault it describes ships only the helper, so the notice names no plugin.
 const SANDBOX_NOTICE_MARKER = 'temporary sandbox';
 
-// The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `cstEnabled` +
+// The bootstrap progress snapshot the poll closure returns each attempt: `startupRan` + `codeScriptToolkitEnabled` +
 // `sandboxNoticeText` are the acceptance signal; the rest are asserted on success and reported on a flake
-// (the CST store install is network-dependent, so a timeout shows how far the bootstrap got instead of a
+// (the CodeScript Toolkit store install is network-dependent, so a timeout shows how far the bootstrap got instead of a
 // Bare `false`).
 interface BootstrapStatus {
   readonly activeFilePath: null | string;
-  readonly cstEnabled: boolean;
-  readonly cstInstalled: boolean;
+  readonly codeScriptToolkitEnabled: boolean;
+  readonly codeScriptToolkitInstalled: boolean;
   readonly dataJson: null | string;
   readonly folderNotesDataJson: null | string;
   readonly folderNotesEnabled: boolean;
@@ -73,10 +73,10 @@ describe('demo-vault-helper bootstrap', () => {
   // `enableCommunityPlugins` path, which kicks off the helper's on-layout-ready bootstrap that installs
   // CodeScript Toolkit from the store.
   //
-  // NOTE: CST is installed FROM THE STORE and bundles its own copy of obsidian-dev-utils, so the
-  // `startupRan`/`probeValue`/`activeFilePath` assertions (CST running its startup script when enabled AFTER
+  // NOTE: CodeScript Toolkit is installed FROM THE STORE and bundles its own copy of obsidian-dev-utils, so the
+  // `startupRan`/`probeValue`/`activeFilePath` assertions (it runs its startup script when enabled AFTER
   // Layout-ready — the `LayoutReadyComponent` load-vs-execute race fixed in this repo) only pass once the
-  // Store serves a CST release built against the fixed dev-utils (CST 13.4.1+).
+  // Store serves a release of it built against the fixed dev-utils (13.4.1+).
   it('should install, configure, enable CodeScript Toolkit and run startup with no reload', async () => {
     const vaultPath = getTemporaryVault().path;
 
@@ -87,10 +87,10 @@ describe('demo-vault-helper bootstrap', () => {
     // Timeout, so the wait cannot live inside one closure.
     try {
       status = await pollInObsidian({
-        input: { cstPluginId: CST_PLUGIN_ID, folderNotesPluginId: FOLDER_NOTES_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID, sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
+        input: { codeScriptToolkitPluginId: CODE_SCRIPT_TOOLKIT_PLUGIN_ID, folderNotesPluginId: FOLDER_NOTES_PLUGIN_ID, helperPluginId: HELPER_PLUGIN_ID, sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
         intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
-        async poll({ app, cstPluginId, folderNotesPluginId, helperPluginId, sandboxNoticeMarker }): Promise<BootstrapStatus> {
-          const isCstInstalled = Object.hasOwn(app.plugins.manifests, cstPluginId);
+        async poll({ app, codeScriptToolkitPluginId, folderNotesPluginId, helperPluginId, sandboxNoticeMarker }): Promise<BootstrapStatus> {
+          const isCodeScriptToolkitInstalled = Object.hasOwn(app.plugins.manifests, codeScriptToolkitPluginId);
           const isFolderNotesInstalled = Object.hasOwn(app.plugins.manifests, folderNotesPluginId);
           let noticeText = '';
           let sandboxNoticeText = '';
@@ -104,9 +104,9 @@ describe('demo-vault-helper bootstrap', () => {
           }
           return {
             activeFilePath: app.workspace.getActiveFile()?.path ?? null,
-            cstEnabled: app.plugins.enabledPlugins.has(cstPluginId),
-            cstInstalled: isCstInstalled,
-            dataJson: isCstInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${cstPluginId}/data.json`) : null,
+            codeScriptToolkitEnabled: app.plugins.enabledPlugins.has(codeScriptToolkitPluginId),
+            codeScriptToolkitInstalled: isCodeScriptToolkitInstalled,
+            dataJson: isCodeScriptToolkitInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${codeScriptToolkitPluginId}/data.json`) : null,
             folderNotesDataJson: isFolderNotesInstalled ? await app.vault.adapter.read(`${app.vault.configDir}/plugins/${folderNotesPluginId}/data.json`) : null,
             folderNotesEnabled: app.plugins.enabledPlugins.has(folderNotesPluginId),
             folderNotesInstalled: isFolderNotesInstalled,
@@ -124,7 +124,7 @@ describe('demo-vault-helper bootstrap', () => {
           // The sandbox notice is required in the SAME sample as `startupRan`: that is what proves it
           // Survived CodeScript Toolkit's startup script opening the start note, rather than being
           // Replaced or dismissed by it.
-          return pollResult.startupRan && pollResult.cstEnabled && pollResult.folderNotesEnabled && pollResult.sandboxNoticeText !== '';
+          return pollResult.startupRan && pollResult.codeScriptToolkitEnabled && pollResult.folderNotesEnabled && pollResult.sandboxNoticeText !== '';
         },
         vaultPath
       });
@@ -132,8 +132,8 @@ describe('demo-vault-helper bootstrap', () => {
       throw new Error(`demo-vault-helper bootstrap did not complete; last status: ${String(JSON.stringify(lastStatus))}`, { cause: error });
     }
 
-    expect(status.cstInstalled).toBe(true);
-    expect(status.cstEnabled).toBe(true);
+    expect(status.codeScriptToolkitInstalled).toBe(true);
+    expect(status.codeScriptToolkitEnabled).toBe(true);
     expect(status.dataJson).toContain(MODULES_ROOT);
     expect(status.dataJson).toContain('startupScriptPath');
     expect(status.activeFilePath).toBe(START_NOTE_PATH);
