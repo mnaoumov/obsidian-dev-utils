@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 103.1.0
+
+- feat(error): give every AggregateError a message naming the failure
+- docs: strip private tracker references from checked-in files
+- docs(script-utils): say the integration aggregate leaves desktop-performance out on purpose
+
 ## 103.0.0
 
 - feat(eslint-config)!: enforce no-untrusted-input-events on Android files too
