@@ -871,16 +871,15 @@ function getUnicornConfigs(context: EslintConfigContext): Linter.Config[] {
          */
         'unicorn/consistent-class-member-order': 'off',
         /*
-         * Every report is `new Error().stack`, which captures a stack trace and never surfaces its message,
-         * or one of the two bare `new AggregateError(errors)` sites still in `disposable.ts`. The rule cannot
-         * tell either from an error that is actually thrown at a user.
+         * Every report is `new Error().stack`, which captures a stack trace and never surfaces its message.
+         * The rule cannot tell that from an error that is actually thrown at a user.
          *
-         * An aggregate's message is no longer held to be optional-by-design here, though, and the reason this
-         * comment used to give for it — that the collected errors carry the detail — is only true of a reader
-         * that walks them. `errorToString` does; `message` does not, and everything reading `message` instead
-         * saw an empty sentence with the real one buried two aggregation layers down. `createAggregateError`
-         * in `error.ts` is what every new site uses; the two in `disposable.ts` cannot reach it only because
-         * `error.ts` already imports `disposable.ts`.
+         * No bare `new AggregateError(errors)` is left for it to catch: every site now builds its aggregate
+         * through `createAggregateError`, which gives it a message that names the failure. An empty one is
+         * lossy in a way that only shows up outside this library — `errorToString` walks `errors` and prints
+         * the whole tree, while everything reading `message` sees an empty sentence. The helper lives in its
+         * own leaf `aggregate-error.ts` rather than in `error.ts` precisely so that `disposable.ts` can reach
+         * it, which it could not while the only copy sat in a module importing it back.
          */
         'unicorn/error-message': 'off',
         /*
