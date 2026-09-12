@@ -29,7 +29,10 @@ import { PlainTextParser } from 'eslint-plugin-obsidianmd/dist/lib/plainTextPars
 import { configs as perfectionistConfigs } from 'eslint-plugin-perfectionist';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `index` is too confusing.
 import unicorn from 'eslint-plugin-unicorn';
-import { defineConfig } from 'eslint/config';
+import {
+  defineConfig,
+  globalIgnores
+} from 'eslint/config';
 import { existsSync } from 'node:fs';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `_default` is too confusing.
 import tseslint from 'typescript-eslint';
@@ -40,6 +43,7 @@ import { getRootFolder } from '../root.ts';
 import { noRestrictedSyntaxRuleEntries } from './eslint-no-restricted-syntax.ts';
 import { jsonPlugin } from './eslint-rules/manifest-helpers.ts';
 import { obsidianDevUtilsPlugin } from './eslint-rules/obsidian-dev-utils-plugin.ts';
+import { CLAUDE_WORKTREES_IGNORE_GLOB } from './lint-ignores.ts';
 
 /**
  * The parameters for defining ESLint configurations.
@@ -131,6 +135,11 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
 
   return defineConfig(
     ...getGitIgnoreConfigs(),
+    /*
+     * On top of `.gitignore`, not instead of it: git excludes Claude Code's worktree folder through
+     * `.git/info/exclude`, which `includeIgnoreFile` above does not read. See `lint-ignores.ts`.
+     */
+    globalIgnores([CLAUDE_WORKTREES_IGNORE_GLOB], 'obsidian-dev-utils/claude-worktrees'),
     // Obsidianmd configs run first so our stricter rules override their relaxed defaults
     ...getObsidianLintConfigs(context),
     ...getEslintConfigs(context),

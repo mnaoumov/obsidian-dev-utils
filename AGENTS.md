@@ -11,7 +11,7 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm test` — run tests (Vitest)
 - `npm run test:coverage` — run tests with v8 coverage
 - `npm run test:watch` — watch mode
-- `npm run lint` — run ESLint
+- `npm run lint` — run ESLint. **The ignore set is `.gitignore` PLUS an explicit `.claude/worktrees/**`, because the two do not overlap the way they look like they do.** ESLint's `includeIgnoreFile` and markdownlint's `gitignore: true` read only `.gitignore` files, while a `.claude/worktrees/<name>` tree — a second, complete checkout of the repository, inside the repository — is excluded through `.git/info/exclude`. So `git status` reads clean while both linters walk the copy, and ESLint does not report it: it dies with `FATAL ERROR: Ineffective mark-compacts near heap limit` after ~97 s at the default 4 GB heap, which reads as a broken toolchain rather than as a stray directory (measured with ONE worktree present, 2026-09-12). `cspell` and `dprint` need nothing — both honour `.git/info/exclude` as git does — and the `linkinator` half of `lint:md` is handed a `git ls-files` list. The shared entry lives in `src/script-utils/linters/lint-ignores.ts`, read by both configs.
 - `npm run lint:fix` — auto-fix lint issues
 - `npm run lint:md` — lint markdown with markdownlint
 - `npm run lint:md:fix` — auto-fix markdown lint issues
