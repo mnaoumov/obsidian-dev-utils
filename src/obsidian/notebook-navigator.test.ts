@@ -47,7 +47,7 @@ function createApp(notebookNavigator: unknown): AppOriginal {
   return strictProxy<AppOriginal>({
     plugins: {
       // The registry is typed to return a `Plugin`; every shape under test is deliberately NOT one,
-      // Which is the whole point — the guard has to survive whatever another plugin actually exposes.
+      // which is the whole point — the guard has to survive whatever another plugin actually exposes.
       getPlugin: (id: string): null | PluginOriginal => id === NOTEBOOK_NAVIGATOR_PLUGIN_ID ? castTo<null | PluginOriginal>(notebookNavigator) : null
     }
   });

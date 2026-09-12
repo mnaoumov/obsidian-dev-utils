@@ -477,8 +477,8 @@ describe('loop', () => {
     });
 
     // During processItem calls, value hasn't been incremented yet (it happens after processItem)
-    // After each iteration, value is incremented. The values captured during processItem
-    // Are 0, 1, 2 because value++ happens after processItem returns.
+    // after each iteration, value is incremented. The values captured during processItem
+    // are 0, 1, 2 because value++ happens after processItem returns.
     expect(values).toEqual([0, 1, 2]);
     assertNonNullable(capturedProgressEl);
     expect((capturedProgressEl as HTMLProgressElement).value).toBe(3);
@@ -599,8 +599,8 @@ describe('loop', () => {
     });
 
     // When shouldShowProgressBar is false, notice is created but setMessage with
-    // Fragment is NOT called (it returns early). setMessage is only called with
-    // The string message for each item.
+    // fragment is NOT called (it returns early). setMessage is only called with
+    // the string message for each item.
     for (const call of vi.mocked(Notice.prototype.setMessage).mock.calls) {
       expect(typeof call[0]).toBe('string');
     }

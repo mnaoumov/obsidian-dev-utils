@@ -51,7 +51,7 @@ describe('findAttachmentUnitFolderPath', () => {
 
   it('should return the outermost designated ancestor, not the nearest one', () => {
     // Moving the nearest would tear the outer tree in half, which is the failure the whole feature
-    // Exists to prevent.
+    // exists to prevent.
     expect(findAttachmentUnitFolderPath({
       attachmentPath: 'notes/page_files/img/logo.png',
       checkIsAttachmentUnitFolder: matching('notes/page_files', 'notes/page_files/img')

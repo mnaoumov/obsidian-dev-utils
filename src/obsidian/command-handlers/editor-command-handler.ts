@@ -365,14 +365,14 @@ export abstract class EditorCommandHandler extends CommandHandler {
     }
 
     // A `MarkdownView` IS a `MarkdownFileInfo`, so the existing editor-side gate and body serve this
-    // Menu unchanged, with no new abstract surface for subclasses to implement.
+    // menu unchanged, with no new abstract surface for subclasses to implement.
     const editor = view.editor;
     if (!this.canExecuteEditor(editor, view)) {
       return;
     }
 
     // The event's menu already declares sections `['view', '']`. An item in the handler's own section
-    // Therefore sorts below Obsidian's `Readable line length` / `Line numbers` / `Inline title` toggles.
+    // therefore sorts below Obsidian's `Readable line length` / `Line numbers` / `Inline title` toggles.
     this.addMenuItem(menu, editor, view);
   }
 }

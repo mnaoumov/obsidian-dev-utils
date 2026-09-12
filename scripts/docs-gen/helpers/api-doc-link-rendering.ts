@@ -141,7 +141,7 @@ export function markdownToHtml(text: string): string {
         return `<a href="${url}">${linkText}</a>`;
       }
       // A relative URL here is an illustrative example path in TSDoc (e.g. `[foo](foo.png)`), not a
-      // Real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
+      // real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
       return `<code>[${linkText}](${url})</code>`;
     })
     .replaceAll(/`(?<code>[^`]+)`/g, '<code>$<code></code>')
@@ -159,7 +159,7 @@ export function memberHref(memberSlugString: string, inheritedFrom: string, allT
   const parentInfo = findType(allTypes, inheritedFrom, currentNamespace);
   if (!parentInfo || !doesMemberPageExist(parentInfo.namespace, parentInfo.name, memberSlugString)) {
     // The declaring parent has no generated page for this member (it inherited the member too, or is
-    // Undocumented). Return no href so the caller renders plain text instead of a broken link.
+    // undocumented). Return no href so the caller renders plain text instead of a broken link.
     return '';
   }
   const parentNsDirectory = getNamespaceDirectory(parentInfo.namespace);
@@ -220,8 +220,8 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
       const routeBase = toRouteSegmentPreserveCase(info.name);
       // Disambiguate ROUTES case-INSENSITIVELY: the slug becomes Astro's on-disk output path, so
       // `TypeAsserter` and `typeAsserter` (same name modulo case) would collide when the site is built
-      // On a case-insensitive filesystem (Windows/macOS), silently overwriting one page so every link
-      // To it 404s. Comparing lowercased keys forces the second occurrence to take a `-2` suffix.
+      // on a case-insensitive filesystem (Windows/macOS), silently overwriting one page so every link
+      // to it 404s. Comparing lowercased keys forces the second occurrence to take a `-2` suffix.
       const routeSegment = disambiguate(routeBase, usedRouteSegments, (segment) => segment.toLowerCase());
       typeRouteSegments.set(`${namespace}#${info.name}`, routeSegment);
       if (routeSegment !== routeBase) {

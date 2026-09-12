@@ -34,8 +34,8 @@ import type {
   TypeIntoEditorParams,
   UnhoverElementParams
   // The parameter contracts live with the desktop twin and are shared verbatim, so the two platforms
-  // Cannot drift apart on what a caller passes. A type-only import loads nothing at runtime, so this
-  // Import leaves the module mobile-safe.
+  // cannot drift apart on what a caller passes. A type-only import loads nothing at runtime, so this
+  // import leaves the module mobile-safe.
 } from './desktop-trusted-input.ts';
 
 /**

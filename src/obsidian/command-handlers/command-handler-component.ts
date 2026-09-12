@@ -225,8 +225,8 @@ export class CommandHandlerComponent extends ComponentEx {
    */
   public async registerCommandHandlers(commandHandlerFactory: CommandHandlerFactory, options?: CommandHandlerComponentRegisterCommandHandlersOptions): Promise<DisposableEx> {
     // Resolved per call, never captured at construction: a provider's answer changes over the component's
-    // Life. `PluginBase` returns the wrapper holding the feature surface, and that wrapper is replaced
-    // Wholesale on every gate cycle — so this cycle's commands have to land on this cycle's wrapper.
+    // life. `PluginBase` returns the wrapper holding the feature surface, and that wrapper is replaced
+    // wholesale on every gate cycle — so this cycle's commands have to land on this cycle's wrapper.
     const lifetimeOwner = options?.lifetimeOwner ?? this.commandLifetimeOwnerProvider();
     const disposables: Disposable[] = [];
     for (const commandHandler of commandHandlerFactory()) {
@@ -238,7 +238,7 @@ export class CommandHandlerComponent extends ComponentEx {
       this.commandRegistrar.addCommand(command);
 
       // Each command gets its own registration context with a per-command menu-event scope, so disposing one
-      // Command tears down its own menu events without affecting the others.
+      // command tears down its own menu events without affecting the others.
       const menuEventScope = await this.registerMenuEventHandlers({ commandHandler, menuEventRegistrar: this.menuEventRegistrar });
 
       const disposable = new CallbackDisposable({
@@ -252,8 +252,8 @@ export class CommandHandlerComponent extends ComponentEx {
     }
 
     // Every additional surface gets its OWN handler instances — a handler carries per-registration
-    // State, so one instance cannot serve two surfaces — and takes them with the section submenu
-    // Forced off, because such a surface wraps everything in a plugin-titled parent entry of its own.
+    // state, so one instance cannot serve two surfaces — and takes them with the section submenu
+    // forced off, because such a surface wraps everything in a plugin-titled parent entry of its own.
     for (const additionalMenuEventRegistrar of this.additionalMenuEventRegistrars) {
       for (const commandHandler of commandHandlerFactory()) {
         disposables.push(lifetimeOwner.registerDisposable(await this.registerMenuEventHandlers({ commandHandler, menuEventRegistrar: additionalMenuEventRegistrar, shouldAddCommandToSubmenu: false })));

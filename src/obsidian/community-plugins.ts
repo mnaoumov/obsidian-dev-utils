@@ -473,7 +473,7 @@ export async function uninstallCommunityPlugin(params: UninstallCommunityPluginP
 
 // Whether a plugin's `pluginSettingsComponent` can configure itself in place. Structural rather than an
 // `instanceof`: the plugin was loaded from its own bundle, so even a plugin built on this very library
-// Carries its own copy of the class and would fail an identity check.
+// carries its own copy of the class and would fail an identity check.
 function checkHasEditAndSave(settingsComponent: unknown): settingsComponent is EditableSettingsComponent {
   return typeof settingsComponent === 'object'
     && settingsComponent !== null

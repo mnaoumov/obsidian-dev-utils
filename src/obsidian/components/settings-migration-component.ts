@@ -148,8 +148,8 @@ export class SettingsMigrationComponent<TMigratableSettings extends object> exte
    */
   public override onload(): void {
     // Nothing is gated on the pending values HERE. The settings component is a sibling whose own load is still
-    // In flight at this point, so it still holds the DEFAULTS — reading the pending values now would see
-    // Nothing on exactly the vaults that have something, register no watch, and lose the migration for good.
+    // in flight at this point, so it still holds the DEFAULTS — reading the pending values now would see
+    // nothing on exactly the vaults that have something, register no watch, and lose the migration for good.
     // Both edges are wired instead, and `propose` re-reads the values each time it runs.
     const ref = watchPluginApi<SettingsMigrationApi<TMigratableSettings>>(normalizeOptionalProperties<WatchPluginApiParams>({
       apiVersionRange: this.apiVersionRange,
@@ -160,10 +160,10 @@ export class SettingsMigrationComponent<TMigratableSettings extends object> exte
     }));
 
     // Driven by the ref's own event rather than by `whenAvailable()`, deliberately. That wait blocks for ten
-    // Seconds and then throws when the provider is simply not installed, which would stall this plugin's load
-    // For every user who declines the suggestion. Watching costs nothing while the provider is absent and
-    // Offers the migration the moment it appears — including right after the user installs it from the
-    // Suggestion banner.
+    // seconds and then throws when the provider is simply not installed, which would stall this plugin's load
+    // for every user who declines the suggestion. Watching costs nothing while the provider is absent and
+    // offers the migration the moment it appears — including right after the user installs it from the
+    // suggestion banner.
     registerAsyncEvent(
       this,
       ref.on('change', () => {
@@ -203,7 +203,7 @@ export class SettingsMigrationComponent<TMigratableSettings extends object> exte
       });
 
       // A cancel is not an answer, so the values stay pending and the offer comes back — on the next load, or
-      // As soon as the provider reloads. Only an applied migration retires them.
+      // as soon as the provider reloads. Only an applied migration retires them.
       if (result.isApplied) {
         await this.retireProposedSettings();
       }

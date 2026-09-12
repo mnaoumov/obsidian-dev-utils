@@ -140,7 +140,7 @@ describe('lint', () => {
   // Git only skips what the repository asked it to skip, and `obsidian-codescript-toolkit` deliberately
   // TRACKS a vendored `node_modules` tree so its demo vault can `require('uuid')` offline. Third-party
   // Markdown is not ours to link-check — the vendored README's relative link to an upstream-only file
-  // Failed the whole gate.
+  // failed the whole gate.
   it('should drop vendored node_modules markdown from the list git reports', async () => {
     mockExistsSync.mockReturnValue(true);
     mockGetNonIgnoredFiles.mockResolvedValue([

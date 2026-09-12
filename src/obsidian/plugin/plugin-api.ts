@@ -513,7 +513,7 @@ class PluginApiRefImpl<TApi extends object> extends mixinAsyncEvents<PluginApiRe
   private async waitForValue(abortSignal: AbortSignal): Promise<TApi> {
     return await new Promise<TApi>((resolve, reject) => {
       // The listener is registered FIRST and invoked through a thunk, so `eventRef` is already bound by the
-      // Time anything can reach it — which is what lets `cleanUp` be unconditional rather than null-guarded.
+      // time anything can reach it — which is what lets `cleanUp` be unconditional rather than null-guarded.
       const eventRef = this.on('change', () => {
         handleChange();
       });
@@ -732,7 +732,7 @@ function checkMatchesContractShape(record: PublishedPluginApiRecord, consumerCon
 function createMethodWrapper(params: CreateMethodWrapperParams): (...$arguments: unknown[]) => unknown {
   return function pluginApiMethod(...$arguments: unknown[]): unknown {
     // Read by the ORIGINAL key, not by the display name: `String(symbol)` is `'Symbol(x)'`, which is not a
-    // Key the API object has.
+    // key the API object has.
     const method = castTo<(...$innerArguments: unknown[]) => unknown>(getMember(params.target, params.propertyKey));
     const methodContract = params.methodContract;
 

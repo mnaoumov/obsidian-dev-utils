@@ -206,7 +206,7 @@ class PromptModal extends ModalBase<null | string> {
     cancelButton.setClass(CssClass.CancelButton);
 
     // Built last so the strip lands along the modal's bottom edge, where a `SuggestModal`'s instruction
-    // Bar sits.
+    // bar sits.
     this.commandBuilder?.build(this, normalizeOptionalProperties<ModalCommandBuilderBuildOptions>({ renderMode: this.commandsRenderMode }));
   }
 

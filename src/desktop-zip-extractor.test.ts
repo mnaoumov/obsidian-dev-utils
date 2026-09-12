@@ -53,7 +53,7 @@ describe('extractZipArchive', () => {
 
   it('should extract a stored entry verbatim', () => {
     // A stored entry's bytes are already the content — reading it as deflated would fail, and returning
-    // Its bytes without checking the method would corrupt every deflated one.
+    // its bytes without checking the method would corrupt every deflated one.
     const recorder = extract(buildArchive([{ content: 'Stored, not deflated.', name: 'stored.md', shouldStore: true }]));
 
     expect(recorder.writtenFiles.get(`${TARGET_DIRECTORY}/stored.md`)).toBe('Stored, not deflated.');
@@ -74,7 +74,7 @@ describe('extractZipArchive', () => {
 
   it('should extract a file that only looks like an Electron archive', () => {
     // A demo vault may ship `_assets/CodeScriptToolkit/module.asar` to demonstrate the ASAR require
-    // Feature. It is a plain file here, and extracting it must not be treated as writing into an archive.
+    // feature. It is a plain file here, and extracting it must not be treated as writing into an archive.
     const recorder = extract(buildArchive([{ content: 'not really an archive', name: '_assets/CodeScriptToolkit/module.asar' }]));
 
     expect(recorder.writtenFiles.get(`${TARGET_DIRECTORY}/_assets/CodeScriptToolkit/module.asar`)).toBe('not really an archive');
@@ -163,7 +163,7 @@ describe('extractZipArchive', () => {
   });
 
   // Each hostile name below is written into the archive verbatim, which is what a real attack ships: the
-  // Names are legal ZIP entry names, and only the reader stands between them and a file outside the target.
+  // names are legal ZIP entry names, and only the reader stands between them and a file outside the target.
   it('should refuse an absolute entry name', () => {
     expect(() => extract(buildArchive([{ content: 'body', name: '/note.md' }])))
       .toThrow('Refusing to extract the absolute archive entry \'/note.md\'.');

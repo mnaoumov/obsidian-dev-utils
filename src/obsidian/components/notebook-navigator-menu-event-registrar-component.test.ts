@@ -159,7 +159,7 @@ async function loadComponent(
   component.load();
   triggerLayoutReady();
   // `LayoutReadyComponent` defers through a `window.setTimeout` and then through `invokeAsyncSafely`,
-  // So both a macrotask and the async-operation drain are needed before the menus are bound.
+  // so both a macrotask and the async-operation drain are needed before the menus are bound.
   await sleep({ milliseconds: 0 });
   await waitForAllAsyncOperations();
   return component;
@@ -320,7 +320,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
       component.unload();
 
       // The contributor is gone from Notebook Navigator, but invoking the captured one must also
-      // Contribute nothing, so a stale reference cannot resurrect an unloaded plugin's items.
+      // contribute nothing, so a stale reference cannot resurrect an unloaded plugin's items.
       const menu = Menu.create2__();
       const file = createMockFile('note.md');
       for (const callback of fileMenuCallbacks) {

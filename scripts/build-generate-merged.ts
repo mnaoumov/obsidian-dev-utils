@@ -161,11 +161,11 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
   const collisionMessages: string[] = [];
 
   // A facade over its own `desktop-` / `mobile-` twins takes their place in the flat bag. Worked out up
-  // Front from the filenames alone, because it decides which modules the walk below may contribute.
+  // front from the filenames alone, because it decides which modules the walk below may contribute.
   const supersessions = findModuleSupersessions(leafFiles.map((file) => toModuleSpecifier(file)));
   const supersededModules = toSupersededModules(supersessions);
   // Every module's value exports, superseded ones included — the superset invariant needs what the twins
-  // Export, which is exactly what does NOT reach `valueExportsByModule`.
+  // export, which is exactly what does NOT reach `valueExportsByModule`.
   const allValueExportsByModule = new Map<string, string[]>();
 
   for (const file of leafFiles) {
@@ -186,8 +186,8 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
       }
 
       // Track EVERY export (types included) for the case-collision guard below — each documented
-      // Export becomes a filesystem directory on the docs site, so a case-only clash within a module
-      // Breaks the site on a case-insensitive filesystem even when only one side is a runtime value.
+      // export becomes a filesystem directory on the docs site, so a case-only clash within a module
+      // breaks the site on a case-insensitive filesystem even when only one side is a runtime value.
       appendName(exportNamesByModule, moduleSpecifier, name);
 
       const resolved = toResolvedValueSymbol(checker, exportSymbol);
@@ -198,8 +198,8 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
       appendName(allValueExportsByModule, moduleSpecifier, name);
 
       // A superseded twin contributes nothing to the flat bag — its facade carries the same names, and
-      // Dispatches to the right twin at call time. It is still tracked just above, so the superset
-      // Invariant below can see what it exports.
+      // dispatches to the right twin at call time. It is still tracked just above, so the superset
+      // invariant below can see what it exports.
       if (supersededModules.has(moduleSpecifier)) {
         continue;
       }
@@ -208,7 +208,7 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
       if (existing) {
         if (existing.symbol !== resolved) {
           // Two distinct symbols exported under the same name would silently shadow each other in the
-          // Flat bag. The library forbids duplicated public names — rename one at the source instead.
+          // flat bag. The library forbids duplicated public names — rename one at the source instead.
           collisionMessages.push(`  \`${name}\` — ${existing.moduleSpecifier} vs ${moduleSpecifier}`);
         }
         continue;
@@ -240,7 +240,7 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
     // Dprint sorts named specifiers case-insensitively.
     const names = [...(valueExportsByModule.get(moduleSpecifier) ?? [])].sort(compareCaseInsensitive);
     // Match dprint's `exportDeclaration.forceMultiLine: "whenMultiple"`: a single specifier stays on
-    // One line, multiple specifiers are forced multi-line (2-space indent, no trailing comma).
+    // one line, multiple specifiers are forced multi-line (2-space indent, no trailing comma).
     if (names.length === 1) {
       lines.push(`export { ${names[0] ?? ''} } from '${moduleSpecifier}';`);
       continue;

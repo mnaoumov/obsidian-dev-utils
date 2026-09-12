@@ -97,7 +97,7 @@ type ConsoleMethodName = (typeof CONSOLE_METHOD_NAMES)[number];
 const originalConsoleMethodDescriptors = new Map<ConsoleMethodName, PropertyDescriptor>();
 
 // Captured at module load, which is before any test can install fake timers. Draining teardown through a
-// Faked `setTimeout` would never resolve, hanging every test that left `vi.useFakeTimers()` on.
+// faked `setTimeout` would never resolve, hanging every test that left `vi.useFakeTimers()` on.
 // eslint-disable-next-line obsidianmd/no-global-this, unicorn/no-unnecessary-global-this -- Intentional: `globalThis.setTimeout` (not `window`) so teardown also works under `environment: 'node'`, where `window` is undefined; the specific window is irrelevant for a plain timer. The explicit `globalThis` is also what keeps the sibling `obsidianmd/prefer-window-timers` rule from rewriting it back to `window`.
 const scheduleMacrotask = globalThis.setTimeout.bind(globalThis);
 
@@ -156,7 +156,7 @@ export function silenceConsole(): void {
 
 async function afterAllHandler(): Promise<void> {
   // The last test's leftovers have no next `beforeEach` to report them, so drain once more and only then
-  // Close the window for the file.
+  // close the window for the file.
   await drainPendingMacrotasks();
   throwOnUnhandledAsyncErrors(stopCollectingUnhandledAsyncErrors(), 'after the last test finished');
 }
@@ -169,8 +169,8 @@ async function afterEachHandler(): Promise<void> {
   }
 
   // A `setTimeout(..., 0)` the test left pending is not a tracked operation, so the drain above does not
-  // Wait for it. Let the macrotask queue turn over — otherwise the error it emits lands in the gap between
-  // Tests and is attributed to the wrong test (or, after the file's last test, to none at all).
+  // wait for it. Let the macrotask queue turn over — otherwise the error it emits lands in the gap between
+  // tests and is attributed to the wrong test (or, after the file's last test, to none at all).
   await drainPendingMacrotasks();
   if (isAsyncOperationTrackingEnabled()) {
     await waitForAllAsyncOperations();
@@ -180,13 +180,13 @@ async function afterEachHandler(): Promise<void> {
   restoreConsole();
 
   // Deliberately NOT `stopCollectingUnhandledAsyncErrors()`: the window stays open across the gap to the
-  // Next test, so an error emitted there is still collected instead of vanishing.
+  // next test, so an error emitted there is still collected instead of vanishing.
   throwOnUnhandledAsyncErrors(drainCollectedUnhandledAsyncErrors(), 'during the test');
 }
 
 function beforeEachHandler(): void {
   // Anything collected before the window was reset below was emitted after the previous test's `afterEach`
-  // Drained it, i.e. between tests.
+  // drained it, i.e. between tests.
   const errorsBetweenTests = drainCollectedUnhandledAsyncErrors();
 
   resetObsidianDevUtilsState();

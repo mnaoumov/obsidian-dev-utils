@@ -37,8 +37,8 @@ export class LayoutReadyComponent extends ComponentEx {
         const inFlightLoadPromise = this.getInFlightLoadPromise();
         if (!inFlightLoadPromise) {
           // A failed load (e.g. a synchronously-throwing child, or an async load that already settled with an
-          // Error) leaves no in-flight promise but a recorded failure. Skip `onLayoutReady` — a failed load is
-          // Exactly the half-initialized state it must not observe.
+          // error) leaves no in-flight promise but a recorded failure. Skip `onLayoutReady` — a failed load is
+          // exactly the half-initialized state it must not observe.
           if (!this.hasLoadErrors()) {
             invokeAsyncSafely(this.onLayoutReady.bind(this));
           }
@@ -46,9 +46,9 @@ export class LayoutReadyComponent extends ComponentEx {
         }
 
         // Loaded after the layout was already ready: `onload` has run but the async load (`onloadAsync` and
-        // Children) may still be in flight. Wait for it before running `onLayoutReady`, otherwise the handler
-        // Races the load and can observe half-initialized state (e.g. a startup script that has not finished
-        // Loading yet). Skip if the component was unloaded during the wait, or if the load ultimately failed.
+        // children) may still be in flight. Wait for it before running `onLayoutReady`, otherwise the handler
+        // races the load and can observe half-initialized state (e.g. a startup script that has not finished
+        // loading yet). Skip if the component was unloaded during the wait, or if the load ultimately failed.
         invokeAsyncSafely(async () => {
           await inFlightLoadPromise;
           if (this._loaded && !this.hasLoadErrors()) {

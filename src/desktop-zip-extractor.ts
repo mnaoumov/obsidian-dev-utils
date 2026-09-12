@@ -110,7 +110,7 @@ const END_OF_CENTRAL_DIRECTORY_SIZE = 22;
 const MAX_ARCHIVE_COMMENT_LENGTH = 65_535;
 
 // A count or offset saturated to all-ones means the real value lives in a ZIP64 record this reader
-// Does not implement, so the field must never be read at face value.
+// does not implement, so the field must never be read at face value.
 const SATURATED_UINT_16 = 65_535;
 const SATURATED_UINT_32 = 4_294_967_295;
 
@@ -137,7 +137,7 @@ const COMPRESSION_METHOD_STORED = 0;
 const COMPRESSION_METHOD_DEFLATED = 8;
 
 // Bit 0 of the general-purpose flags marks an encrypted entry, and it is the lowest bit — so the
-// Remainder tests it without reaching for a bitwise operator.
+// remainder tests it without reaching for a bitwise operator.
 const ENCRYPTED_FLAG_DIVISOR = 2;
 
 const ENTRY_NAME_SEPARATOR = '/';

@@ -203,7 +203,7 @@ describe('AbstractFileCommandHandler', () => {
       await handler.onRegistered(context);
 
       // `super.onRegistered` runs first, so the guard throws before the active-file provider and the
-      // Submenu override are overwritten — the first registration's closures keep reading its context.
+      // submenu override are overwritten — the first registration's closures keep reading its context.
       const second = createMockContext();
       await expect(handler.onRegistered(second.context)).rejects.toThrow('is already registered');
 

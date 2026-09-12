@@ -51,7 +51,7 @@ function createMockContainer(win: Window): WorkspaceContainer {
 }
 
 // A stand-in for a window Obsidian could make active. Only `document` is reachable: that is all the
-// Window-switching helpers read, and the strict proxy turns any other access into a failure.
+// window-switching helpers read, and the strict proxy turns any other access into a failure.
 function createMockWindow(): Window {
   return strictProxy<Window>({ document: strictProxy<Document>({}) });
 }
@@ -170,7 +170,7 @@ describe('switchToWindow', () => {
   });
 
   // Each switch remembers the window that was active when IT was made, so unwinding nested switches in
-  // Reverse order walks back through them rather than jumping straight to the outermost one.
+  // reverse order walks back through them rather than jumping straight to the outermost one.
   it('should restore nested switches one level at a time', () => {
     const previousActiveWindow = activeWindow;
     const outerWindow = createMockWindow();
@@ -188,7 +188,7 @@ describe('switchToWindow', () => {
   });
 
   // A second dispose must not re-apply the restore: it would overwrite whatever window became active in
-  // The meantime with a stale one.
+  // the meantime with a stale one.
   it('should ignore a repeated dispose', () => {
     const windowSwitch = switchToWindow(createMockWindow());
     windowSwitch.dispose();

@@ -132,7 +132,7 @@ let settingTabs: SettingTab[];
 
 beforeEach(() => {
   // `LayoutReadyComponent` defers its callback through a `setTimeout(…, 0)`, so the layout-ready path is
-  // Only observable once the timers are drained.
+  // only observable once the timers are drained.
   vi.useFakeTimers();
   apiRefValue = {};
   enabledPlugins = new Set<string>();
@@ -214,7 +214,7 @@ describe('with a satisfied dependency', () => {
     const { loadFeatureSurface } = await createLoadedComponent();
 
     // A `change` fires whenever the ref's value is re-resolved, which includes a provider publishing a
-    // Second contract version. Nothing about the plugin's surface has changed, so it must stay up.
+    // second contract version. Nothing about the plugin's surface has changed, so it must stay up.
     await fireApiRefChange();
 
     expect(loadFeatureSurface).toHaveBeenCalledTimes(1);
@@ -337,7 +337,7 @@ async function createLoadedComponent(options: CreateComponentOptions = {}): Prom
       manifests
     }),
     // Cast rather than typed one member at a time: `openTabById` is overloaded (`'hotkeys'` returns a
-    // Narrower tab), and a plain mock cannot satisfy an overload set.
+    // narrower tab), and a plain mock cannot satisfy an overload set.
     setting: strictProxy<AppOriginal['setting']>(castTo<Partial<AppOriginal['setting']>>({
       addSettingTab,
       open: openSetting,
@@ -346,7 +346,7 @@ async function createLoadedComponent(options: CreateComponentOptions = {}): Prom
     })),
     workspace: strictProxy<AppOriginal['workspace']>({
       // Cast for the same reason `setting` is: `Workspace.on` is a large overload set, and a plain mock
-      // Cannot satisfy one.
+      // cannot satisfy one.
       on: castTo<AppOriginal['workspace']['on']>(
         (name: string, callback: (payload: PluginLifecycleEventPayload) => unknown): EventRef => {
           const callbacks = lifecycleCallbacks.get(name) ?? [];
@@ -394,7 +394,7 @@ async function createLoadedComponent(options: CreateComponentOptions = {}): Prom
 }
 
 // The plugin names are rendered as inline code blocks, so a notice is a `DocumentFragment` and its text
-// Content is what the user reads.
+// content is what the user reads.
 function expectNoticeText(showNotice: ReturnType<typeof vi.fn>, expectedText: string): void {
   const message: unknown = showNotice.mock.calls.at(-1)?.[0];
   expect(message).toBeInstanceOf(DocumentFragment);
@@ -461,7 +461,7 @@ function buttonTexts(containerEl: HTMLElement): string[] {
 }
 
 // The mock button component keeps its handler off the DOM node, so a native click does nothing; the
-// Instances are captured at construction and driven through the mock's own trigger.
+// instances are captured at construction and driven through the mock's own trigger.
 function clickButton(index: number): void {
   const button = buttonInstances[index];
   assertNonNullable(button);
@@ -469,7 +469,7 @@ function clickButton(index: number): void {
 }
 
 // Renders the tab the component registered, which is the only way its banner is reachable — a blocked
-// Plugin never got to register a settings tab of its own.
+// plugin never got to register a settings tab of its own.
 function displayBlockedSettingTab(): HTMLElement {
   const settingTab = settingTabs[0];
   assertNonNullable(settingTab);
@@ -670,7 +670,7 @@ describe('hasActiveWarningConflicts', () => {
   });
 
   // A settings tab asks this to decide whether to show the overlap row, and a BLOCKING conflict never
-  // Reaches a settings tab the plugin builds — it never got to build one.
+  // reaches a settings tab the plugin builds — it never got to build one.
   it('should be false when only a blocking conflict holds', async () => {
     installPlugin(BLOCKING_CONFLICT.pluginId, '11.0.0');
     const { component } = await createLoadedComponent({ conflicts: [BLOCKING_CONFLICT], dependencies: [] });
@@ -706,7 +706,7 @@ describe('renderConflictWarningBanner', () => {
 });
 
 // The library's lifecycle broadcast is the only signal a conflict can react to, so a test drives it
-// Directly rather than through a second plugin.
+// directly rather than through a second plugin.
 async function fireLifecycleEvent(name: string, pluginId: string): Promise<void> {
   const payload = castTo<PluginLifecycleEventPayload>({ pluginId });
   for (const callback of lifecycleCallbacks.get(name) ?? []) {

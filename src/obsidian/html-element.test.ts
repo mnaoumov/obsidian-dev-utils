@@ -57,7 +57,7 @@ describe('createFragmentWithCodeBlocks', () => {
 
   it('should follow the order the translation puts the values in, not the order they were built in', () => {
     // The same two values, in the opposite order — which is exactly what a translation reordering the
-    // Clause produces, and what a positional scheme would silently get wrong.
+    // clause produces, and what a positional scheme would silently get wrong.
     const fragment = createFragmentWithCodeBlocks(`${asCodeBlock('Required Plugin')} is required by ${asCodeBlock('Host Plugin')}.`);
 
     expect(fragment.textContent).toBe('Required Plugin is required by Host Plugin.');

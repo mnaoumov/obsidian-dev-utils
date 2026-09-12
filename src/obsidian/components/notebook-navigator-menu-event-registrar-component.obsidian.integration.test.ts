@@ -68,7 +68,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
         const HARNESS_PLUGIN_ID = 'obsidian-dev-utils-integration-test';
         const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
         // Kept in step with the module-level constant the assertions below compare against; the
-        // Closure is serialized, so it cannot read one.
+        // closure is serialized, so it cannot read one.
         const COMMAND_NAME = 'Notebook Navigator bridge command';
         const MATCHING_FILE_PATH = 'notebook-navigator-bridge-test.md';
         const GATED_OUT_FILE_PATH = 'notebook-navigator-bridge-test-gated-out.md';
@@ -208,7 +208,7 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
           }
 
           // Sorting the SUBMENU is what would materialize a nested plugin-titled entry, had the
-          // Handler's own section submenu survived.
+          // handler's own section submenu survived.
           submenu.sort();
           const submenuTitles = titlesOf(submenu);
           const hasNestedSubmenu = submenu.items.some((item) => 'submenu' in item && item.submenu !== null);
@@ -238,11 +238,11 @@ describe('NotebookNavigatorMenuEventRegistrarComponent', () => {
     // ONE entry, titled with the plugin name — not one per command, and not a second nested one.
     expect(result.parentItemTitles).toEqual([result.pluginName]);
     // The command sits directly in the submenu: the handler asked for a section submenu of its own and
-    // The bridging surface forced it off, so `Menu.sort()` had nothing to nest.
+    // the bridging surface forced it off, so `Menu.sort()` had nothing to nest.
     expect(result.submenuTitles).toEqual([COMMAND_ITEM_TITLE]);
     expect(result.hasNestedSubmenu).toBe(false);
     // A file the handler gates out gets nothing at all — Notebook Navigator's `addItem` cannot be
-    // Taken back, so the bridge has to stay out of the menu entirely.
+    // taken back, so the bridge has to stay out of the menu entirely.
     expect(result.titlesForGatedOutFile).toEqual([]);
   });
 });

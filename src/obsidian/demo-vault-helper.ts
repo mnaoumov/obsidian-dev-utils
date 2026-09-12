@@ -122,9 +122,9 @@ const CODE_SCRIPT_TOOLKIT_SETTINGS: CodeScriptToolkitSettings = {
 
 const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
 // `README` rather than Folder Notes' own `{{folder_name}}` default: the same file has to be the folder's
-// Note in Obsidian AND the page GitHub renders when the vault is browsed as a repository, and GitHub
-// Only does that for `README.md`. `insideFolder` keeps it with the notes it describes rather than beside
-// The folder, and hiding it lets the folder itself stand for the note instead of listing both.
+// note in Obsidian AND the page GitHub renders when the vault is browsed as a repository, and GitHub
+// only does that for `README.md`. `insideFolder` keeps it with the notes it describes rather than beside
+// the folder, and hiding it lets the folder itself stand for the note instead of listing both.
 const FOLDER_NOTES_SETTINGS: FolderNotesSettings = {
   folderNoteName: 'README',
   hideFolderNote: true,
@@ -137,7 +137,7 @@ const DATA_JSON_FILE_NAME = 'data.json';
 const INVALID_DEMO_VAULT_ERROR_MESSAGE = 'Invalid demo vault';
 const OPEN_DEMO_VAULT_COMMAND_NAME = 'Open demo vault';
 // `0` asks Obsidian to keep the notice up until the user clicks it — the same treatment Obsidian gives
-// Its own sandbox-vault notice, and what the demo-vault notice is modelled on.
+// its own sandbox-vault notice, and what the demo-vault notice is modelled on.
 const SANDBOX_NOTICE_DURATION_IN_MILLISECONDS = 0;
 
 /**
@@ -177,7 +177,7 @@ export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Prom
   }
 
   // After CodeScript Toolkit, so the vault's startup script has already opened the start note by the time
-  // The file explorer gains its folder-note behavior.
+  // the file explorer gains its folder-note behavior.
   await installConfigureEnableCommunityPlugin({
     app,
     pluginId: FOLDER_NOTES_PLUGIN_ID,
@@ -188,10 +188,10 @@ export async function bootstrapDemoVault(params: BootstrapDemoVaultParams): Prom
 }
 
 // Builds the sandbox notice content: what this vault is, where it lives, how long it lives, and why
-// Re-running the command produces a vault without the notes just written here.
+// re-running the command produces a vault without the notes just written here.
 //
 // Every claim has to stay true of the opener (`desktop-demo-vault-opener.ts`): it extracts a FRESH copy
-// Into its own folder on every open, and deletes extracted folders older than a day on each later open.
+// into its own folder on every open, and deletes extracted folders older than a day on each later open.
 // So the vault is a temporary sandbox — it must never be described as a place work can be left.
 function buildSandboxNoticeFragment(pluginName: string): DocumentFragment {
   return createFragment((fragment) => {
@@ -220,9 +220,9 @@ async function ensureInvocableScriptsFolder(app: App): Promise<void> {
 }
 
 // Reads the plugin the vault demonstrates out of this helper's own `data.json`, written by the
-// Packaging step (see `DemoVaultHelperSettings`). A vault without a readable marker was not produced by
-// That step — hand-assembled, or unpacked from something that is not a demo vault — so it is refused
-// Rather than bootstrapped against a guess.
+// packaging step (see `DemoVaultHelperSettings`). A vault without a readable marker was not produced by
+// that step — hand-assembled, or unpacked from something that is not a demo vault — so it is refused
+// rather than bootstrapped against a guess.
 async function getDemoedPluginId(app: App): Promise<string> {
   const settingsPath = join(app.vault.configDir, PLUGINS_FOLDER_NAME, DEMO_VAULT_HELPER_PLUGIN_ID, DATA_JSON_FILE_NAME);
   if (!await app.vault.adapter.exists(settingsPath)) {
@@ -244,15 +244,15 @@ async function getDemoedPluginId(app: App): Promise<string> {
 }
 
 // Tells the user this vault is a sandbox, using Obsidian's own sandbox-vault treatment: an infinite
-// Duration, dismissed by clicking it. Raised last, so it is the newest notice on screen once
+// duration, dismissed by clicking it. Raised last, so it is the newest notice on screen once
 // CodeScript Toolkit's startup script has done its own work.
 //
 // A `Notice` is built inside whatever window is active at that moment, and Settings is a POPOUT WINDOW
 // (verified on 1.13.6) that becomes the active one while it is open — so a notice raised then would be
-// Created in the settings window and vanish with it. Settings is therefore closed first: Obsidian hands
-// The main window back as the popout goes away (synchronously, before the notice is built), and a user
-// Who has just opened a demo vault wants to see the vault rather than a settings window anyway. Closing
-// An already-closed Settings is a no-op, so no open-state probe is needed.
+// created in the settings window and vanish with it. Settings is therefore closed first: Obsidian hands
+// the main window back as the popout goes away (synchronously, before the notice is built), and a user
+// who has just opened a demo vault wants to see the vault rather than a settings window anyway. Closing
+// an already-closed Settings is a no-op, so no open-state probe is needed.
 function showSandboxNotice(app: App, demoedPluginId: string): void {
   const pluginName = app.plugins.manifests[demoedPluginId]?.name ?? demoedPluginId;
   const fragment = buildSandboxNoticeFragment(pluginName);

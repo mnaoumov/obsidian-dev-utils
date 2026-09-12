@@ -104,7 +104,7 @@ interface TemplaterApiRecorder {
 
 let app: AppOriginal;
 // Kept alongside `app` because `registerPlugin__` is a mock-only seam: `asOriginalType__()` hands back the
-// Same object typed as Obsidian's `App`, whose `plugins` does not declare it.
+// same object typed as Obsidian's `App`, whose `plugins` does not declare it.
 let appMock: App;
 
 /**
@@ -178,7 +178,7 @@ function setTemplaterPlugin(plugin: unknown): void {
   }
 
   // The registry is typed to return a `Plugin` and most shapes under test are deliberately NOT one — that
-  // Is the point, since these are another plugin's internals.
+  // is the point, since these are another plugin's internals.
   appMock.plugins.registerPlugin__(TEMPLATER_PLUGIN_ID, castTo<PluginOriginal>(plugin));
 }
 

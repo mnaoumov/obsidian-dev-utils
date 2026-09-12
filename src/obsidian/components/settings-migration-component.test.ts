@@ -154,7 +154,7 @@ describe('SettingsMigrationComponent', () => {
 
     expect(harness.settingsComponent.settings.proposedShouldHandleRenames).toBeNull();
     // Retired through `editAndSave`, so the answer survives a reload. `setProperty` would leave `data.json`
-    // Untouched and the offer would come back forever.
+    // untouched and the offer would come back forever.
     expect(harness.storedData()).toEqual({ proposedShouldHandleRenames: null });
   });
 
@@ -187,7 +187,7 @@ describe('SettingsMigrationComponent', () => {
     const harness = createHarness({ storedProposedValue: true });
     harness.publish();
     // The real ordering on a cold start: this component's `onload` runs while its settings sibling is still
-    // Reading `data.json`, so the pending value is not visible yet.
+    // reading `data.json`, so the pending value is not visible yet.
     harness.migrationComponent.load();
     await waitForAllAsyncOperations();
     expect(harness.migrateSettings).not.toHaveBeenCalled();
@@ -236,8 +236,8 @@ describe('SettingsMigrationComponent', () => {
 
   it('should honor the consumer contract over the provider published one', async () => {
     // The provider publishes no contract at all, so a shape check made against ITS contract would accept
-    // Anything and the migration WOULD be offered. Only the consumer's own contract can refuse a provider
-    // Whose shipped shape is older than the one this plugin compiled against.
+    // anything and the migration WOULD be offered. Only the consumer's own contract can refuse a provider
+    // whose shipped shape is older than the one this plugin compiled against.
     const harness = createHarness({
       contract: {
         getSettings: {},
@@ -284,11 +284,11 @@ function createHarness(options: CreateHarnessOptions = {}): Harness {
       },
       // `PluginSettingsComponentBase` is INVARIANT in its settings type, and this repo's own
       // `test-helpers/mocks/obsidian-typings` augmentation exposes the `constructor__` pseudo-method, which
-      // Makes the private `propertyNames` structurally visible and turns that invariance into a hard TS2322.
+      // makes the private `propertyNames` structurally visible and turns that invariance into a hard TS2322.
       // A consuming plugin has no such augmentation and passes its concrete settings component with no cast —
-      // Which is exactly what the five consumers already do against `PluginSuggestionComponent`, whose
-      // Parameter is declared identically. So the cast is an artifact of testing HERE, not a rough edge in the
-      // Public surface.
+      // which is exactly what the five consumers already do against `PluginSuggestionComponent`, whose
+      // parameter is declared identically. So the cast is an artifact of testing HERE, not a rough edge in the
+      // public surface.
       pluginSettingsComponent: castTo<PluginSettingsComponentBase<object>>(settingsComponent),
       providerPluginId: PROVIDER_PLUGIN_ID,
       retireProposedSettings: async (): Promise<void> => {

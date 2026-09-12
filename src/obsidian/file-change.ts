@@ -467,7 +467,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
   // Skip the rewrite so no malformed object is written back and the renderer never crashes.
   // Mirrors the `{ edges: [], nodes: [] }` fallback in `getCanvasReferences`.
   // Returning the content unchanged rather than `null` completes the operation without a write: the
-  // Refusal is permanent for this content, and `null` would ask `process()` to retry it forever.
+  // refusal is permanent for this content, and `null` would ask `process()` to retry it forever.
   if (!Array.isArray(canvasData.nodes) || !Array.isArray(canvasData.edges)) {
     getLibDebugger('FileChange:applyCanvasChanges')('Not a valid canvas; skipping rewrite', { path });
     return content;
@@ -547,9 +547,9 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
 
     const contentChanges = canvasTextChangesForNode.map((change) => {
       // A canvas text node can hold a markdown table, where a sized embed escapes the wikilink
-      // Divider so the pipe does not terminate the table cell (`![[img.png\|500]]`). The regenerated
-      // Link uses an unescaped divider, so restore the escaping when the original reference had it,
-      // Keeping both the table and the embed size intact across the rewrite.
+      // divider so the pipe does not terminate the table cell (`![[img.png\|500]]`). The regenerated
+      // link uses an unescaped divider, so restore the escaping when the original reference had it,
+      // keeping both the table and the embed size intact across the rewrite.
       const newContent = change.reference.originalReference.original.includes(ESCAPED_WIKILINK_DIVIDER)
         ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER)
         : change.newContent;
@@ -565,8 +565,8 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
 
     // `null` is `applyContentChanges`'s retry sentinel, not a value. Assigning it would serialize
     // `"text": null` over the node and destroy its content. The mismatch is permanent for this content —
-    // The same call the file-node mismatch above already makes — so return the content unchanged to
-    // Complete the operation without a write, rather than `null`, which would retry forever.
+    // the same call the file-node mismatch above already makes — so return the content unchanged to
+    // complete the operation without a write, rather than `null`, which would retry forever.
     if (newNodeText === null) {
       return content;
     }

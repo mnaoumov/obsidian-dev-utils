@@ -106,7 +106,7 @@ More demo content.
 `;
 
 // The vault's own readme addresses someone browsing the repo, not a reader working through the vault, so
-// It is excluded from the authoring checks by default. It is written deliberately off-convention here, so
+// it is excluded from the authoring checks by default. It is written deliberately off-convention here, so
 // A regression in that exclusion fails loudly.
 const VAULT_README_NOTE = `[Docs](https://example.com/docs)
 
@@ -164,7 +164,7 @@ registerDemoVaultCoverageSuite({
 });
 
 // A second registration with a properties-kind interface and no docs exercises the remaining suite branches,
-// Plus the `authoring` tuning path (an explicit start note and an extra excluded note).
+// plus the `authoring` tuning path (an explicit start note and an extra excluded note).
 registerDemoVaultCoverageSuite({
   authoring: {
     excludedNotes: ['README.md', 'nested/More.md'],
@@ -199,8 +199,8 @@ registerDemoVaultCoverageSuite({
 });
 
 // A fourth registration passes nothing but `rootFolder` — the settings-less shape, where there is no
-// Config interface, no public API interface and nothing for the non-trivial guard to reflect. The
-// Authoring checks must still run, which is why every other member is optional.
+// config interface, no public API interface and nothing for the non-trivial guard to reflect. The
+// authoring checks must still run, which is why every other member is optional.
 registerDemoVaultCoverageSuite({ rootFolder: suiteRoot });
 
 afterAll(() => {
@@ -487,7 +487,7 @@ See [[Surface]] for more.
       'Wrong.md: an unknown rule "demo-vault-validation/no-wikilink" on line 5'
     ]);
     // `Open.md` is absent: its region never closes, so it does cover the wikilink — the unclosed region is
-    // Reported as the mistake it is, rather than counted twice.
+    // reported as the mistake it is, rather than counted twice.
     expect(checker.findNotesWithWikilinks()).toEqual(['Malformed.md', 'Silent.md', 'Wrong.md']);
   });
 

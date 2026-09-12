@@ -373,7 +373,7 @@ export class ModalCommandBuilder {
       initInstruction: (purposeEl: HTMLSpanElement, scope: Scope): InstructionControl => {
         const dropdownComponent = new DropdownComponent(purposeEl);
         // The same gap the checkbox gets, so the two controls are separated from their label the same
-        // Way — a real rule rather than the literal space this used to append.
+        // way — a real rule rather than the literal space this used to append.
         addPluginCssClasses(dropdownComponent.selectEl, CssClass.ModalCommandControl);
         command.onInit(dropdownComponent);
         dropdownComponent.onChange((value) => {
@@ -421,7 +421,7 @@ export class ModalCommandBuilder {
       commandText: this.buildCommandText(command),
       initButton: onActivate
         // No disabled guard on the listener: a disabled button fires no click at all, so `setDisabled`
-        // Below is the whole gate.
+        // below is the whole gate.
         ? (buttonEl: HTMLButtonElement): ButtonControl => {
           buttonEl.addEventListener('click', ($event) => {
             onActivate($event);
@@ -475,7 +475,7 @@ export class ModalCommandBuilder {
     }
 
     // Each renderer hands back one closure per control it actually drew, already bound to that control's
-    // Elements — so `refresh` never has to know which of the two shapes it is re-stating.
+    // elements — so `refresh` never has to know which of the two shapes it is re-stating.
     const refreshers = renderMode === ModalCommandsRenderMode.Buttons
       ? this.renderButtons(target, scope)
       : this.renderInstructions(target, scope);
@@ -552,7 +552,7 @@ export class ModalCommandBuilder {
 
       if (!entry.initButton) {
         // Hint-only and keyboard-only commands have no pointer route, and a button nobody can press is
-        // Worse than no button. Their scope handlers are already registered.
+        // worse than no button. Their scope handlers are already registered.
         continue;
       }
 
@@ -561,14 +561,14 @@ export class ModalCommandBuilder {
       buttonEl.createSpan({ text: entry.purpose });
 
       // The hotkey is shown only where one can be pressed. On a phone there is no modifier key to offer,
-      // And the button IS the only way in — which is why the strip exists.
+      // and the button IS the only way in — which is why the strip exists.
       if (!Platform.isMobile) {
         const hotkeyEl = buttonEl.createSpan({ text: entry.commandText });
         addPluginCssClasses(hotkeyEl, CssClass.ModalCommandHotkey);
       }
 
       // The input keeps focus: a modal that filters as you type would end its search mid-word if a click
-      // Stole focus.
+      // stole focus.
       buttonEl.addEventListener('mousedown', ($event) => {
         $event.preventDefault();
       });
@@ -610,7 +610,7 @@ export class ModalCommandBuilder {
       const instructionControl = instruction.entry.initInstruction?.(purposeEl, scope);
       const checkIsAvailable = instruction.entry.checkIsAvailable;
       // A control shows its own pressed state here, so availability is the only thing left to re-state —
-      // And a command that declares none needs no refresher at all.
+      // and a command that declares none needs no refresher at all.
       if (instructionControl && checkIsAvailable) {
         refreshers.push(() => {
           instructionControl.setDisabled(!checkIsAvailable());

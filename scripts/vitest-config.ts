@@ -169,8 +169,8 @@ export const config = defineConfig({
         test: {
           environment: 'node',
           // The demo-vault-helper bootstrap test runs in its OWN dedicated Obsidian instance/vault (isolated
-          // From the shared instance above) via its own global setup, so it does not pollute the shared vault
-          // The other `*.obsidian.integration.test.ts` files use. Serial single worker, same as above.
+          // from the shared instance above) via its own global setup, so it does not pollute the shared vault
+          // the other `*.obsidian.integration.test.ts` files use. Serial single worker, same as above.
           fileParallelism: false,
           globalSetup: ['./scripts/demo-vault-helper-global-setup.ts'],
           include: [DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE],
@@ -185,8 +185,8 @@ export const config = defineConfig({
         test: {
           environment: 'node',
           // Proves the CONSUMER wiring, which no other project can: its own Obsidian instance/vault has NO
-          // Plugin-under-test, and the harness plugin is seeded + enabled as a plain community plugin exactly
-          // As a consumer's would be. `setupFiles` names the PUBLISHED setup endpoint on purpose.
+          // plugin-under-test, and the harness plugin is seeded + enabled as a plain community plugin exactly
+          // as a consumer's would be. `setupFiles` names the PUBLISHED setup endpoint on purpose.
           fileParallelism: false,
           globalSetup: ['./scripts/integration-test-consumer-lib-global-setup.ts'],
           include: [CONSUMER_LIB_INTEGRATION_TEST_FILE],
@@ -204,9 +204,9 @@ export const config = defineConfig({
         test: {
           environment: 'node',
           // Proves the cross-COPY claim, which no other project can reach: its own Obsidian instance/vault
-          // Carries two separately bundled plugins, so two distinct copies of the library share one renderer.
+          // carries two separately bundled plugins, so two distinct copies of the library share one renderer.
           // That is the situation every real pair of plugins is in, and the only place where reading a
-          // Registry record by class identity instead of structurally would actually fail.
+          // registry record by class identity instead of structurally would actually fail.
           fileParallelism: false,
           globalSetup: ['./scripts/integration-test-plugin-api-global-setup.ts'],
           include: [PLUGIN_API_INTEGRATION_TEST_FILE],

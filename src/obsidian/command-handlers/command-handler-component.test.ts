@@ -290,7 +290,7 @@ describe('CommandHandlerComponent', () => {
     dispose(disposable);
 
     // A handler may keep its scope past `onRegistered` and register menu events later — a bridge
-    // Binding at layout-ready, say — so a post-dispose registration must be disposed immediately.
+    // binding at layout-ready, say — so a post-dispose registration must be disposed immediately.
     const registeredContext = commandHandler.registeredContext;
     assertNonNullable(registeredContext);
     registeredContext.menuEventRegistrar.registerFileMenuEventHandler(vi.fn());
@@ -325,7 +325,7 @@ describe('CommandHandlerComponent', () => {
     ])).rejects.toThrow('Command handler \'shared-cmd\' is already registered.');
 
     // The batch rejected, so the caller never got a disposable — the component's own unload is what
-    // Keeps the commands added before the failure from outliving it.
+    // keeps the commands added before the failure from outliving it.
     component.unload();
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('first-cmd');
     expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('shared-cmd');

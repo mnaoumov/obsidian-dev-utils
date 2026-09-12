@@ -92,7 +92,7 @@ export interface FolderNoteConfig {
    * @returns The note's name; an empty (or blank) name means the folder has no folder note.
    */
   // `this: void` because it is a standalone callback, never a method of the config — which is also what
-  // Lets it be destructured and handed on without tripping `unbound-method`.
+  // lets it be destructured and handed on without tripping `unbound-method`.
   resolveName(this: void, folder: TFolder): string;
 }
 
@@ -296,7 +296,7 @@ function normalizeExtensions(extensions: readonly string[]): readonly string[] {
 function readFolderNotesPluginConfig(app: App): FolderNoteConfig | null {
   const folderNotesPlugin = app.plugins.getPlugin(FOLDER_NOTES_PLUGIN_ID);
   // Narrowed with `in` rather than asserted into a shape: that keeps every value below typed `unknown`,
-  // Which is exactly what a foreign plugin's private settings are.
+  // which is exactly what a foreign plugin's private settings are.
   if (!folderNotesPlugin || !('settings' in folderNotesPlugin)) {
     return null;
   }
@@ -322,8 +322,8 @@ function readFolderNotesPluginConfig(app: App): FolderNoteConfig | null {
 
   return {
     // Its own resolver tries the primary type first and every other supported type after it, which is the
-    // Order reproduced here. An unusable pair leaves Markdown, the extension it cannot be configured
-    // Without.
+    // order reproduced here. An unusable pair leaves Markdown, the extension it cannot be configured
+    // without.
     extensions: normalizeExtensions([
       typeof folderNoteType === 'string' ? folderNoteType : MARKDOWN_FILE_EXTENSION,
       ...(Array.isArray(supportedFileTypes) ? supportedFileTypes.filter((type: unknown) => typeof type === 'string') : []),

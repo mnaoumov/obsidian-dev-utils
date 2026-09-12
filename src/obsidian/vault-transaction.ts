@@ -303,7 +303,7 @@ export class VaultTransaction {
     const stagedPath = await this.getAvailableStagedPath(file.name);
     const adapter = this.app.vault.adapter;
     // Move through the adapter, not `vault.rename`: the staging folder is dot-prefixed and therefore
-    // Untracked, so a `vault.*` move cannot target it (nor should it rewrite links to a soft-delete).
+    // untracked, so a `vault.*` move cannot target it (nor should it rewrite links to a soft-delete).
     await adapter.rename(originalPath, stagedPath);
     this.stagedTrashPaths.push(stagedPath);
     this.pushUndo(async () => {

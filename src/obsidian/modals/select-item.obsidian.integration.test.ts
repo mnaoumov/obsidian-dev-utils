@@ -80,7 +80,7 @@ describe('selectItem', () => {
             return getInputEl()?.getAttribute('spellcheck') ?? null;
           } finally {
             // Escape rather than detaching the container: the modal has to run its own close path so the
-            // Promise resolves.
+            // promise resolves.
             await pressKey({ key: 'Escape' });
             await waitUntil({
               message: 'select-item modal closes',

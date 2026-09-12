@@ -109,8 +109,8 @@ vi.mock('../css-class.ts', () => ({
 }));
 
 // Only `compareVersions` is stubbed. `satisfies` is the real thing, because the conflict gate's whole
-// Job is deciding whether an installed version falls in a declared range — a stubbed answer would test
-// Nothing.
+// job is deciding whether an installed version falls in a declared range — a stubbed answer would test
+// nothing.
 vi.mock('compare-versions', async (importOriginal) => {
   const actual = await importOriginal<typeof import('compare-versions')>();
   return {
@@ -120,9 +120,9 @@ vi.mock('compare-versions', async (importOriginal) => {
 });
 
 // The registry is reached through `getObsidianDevUtilsState`, which this file mocks to hand back a fresh
-// Bag per call — so a real publish and a real watch would never meet. Mocking the publish instead keeps
-// The assertions about WHAT gets published and WHEN, which is what this file is responsible for; the
-// Registry's own behavior is covered by `plugin-api.test.ts`.
+// bag per call — so a real publish and a real watch would never meet. Mocking the publish instead keeps
+// the assertions about WHAT gets published and WHEN, which is what this file is responsible for; the
+// registry's own behavior is covered by `plugin-api.test.ts`.
 const {
   mockPublishPluginApi,
   mockWatchPluginApi
@@ -231,7 +231,7 @@ beforeEach(() => {
     callback();
   });
   // The gate registers a stand-in settings tab while a dependency is missing or a conflict holds, which
-  // Is the one part of `app.setting` any of these tests reaches.
+  // is the one part of `app.setting` any of these tests reaches.
   castTo<AppSettingHolder>(appMock).setting = {
     addSettingTab: vi.fn(),
     removeSettingTab: vi.fn()
@@ -255,10 +255,10 @@ describe('PluginBase', () => {
 
   it('should let onloadImpl read the gate component, which a settings tab built there needs', async () => {
     // Adding the gate is what RUNS `onloadImpl` — it loads the feature surface as it is added, and does
-    // So synchronously for a plugin declaring no dependency and no conflict. A subclass reading
+    // so synchronously for a plugin declaring no dependency and no conflict. A subclass reading
     // `this.pluginGateComponent` there therefore reads it before the statement that adds the gate has
-    // Returned, which is exactly what a settings tab rendering the overlap banner does. It has to answer
-    // With the component rather than throw `Value is undefined` out of the getter's `ensureNonNullable`.
+    // returned, which is exactly what a settings tab rendering the overlap banner does. It has to answer
+    // with the component rather than throw `Value is undefined` out of the getter's `ensureNonNullable`.
     let capturedComponent = null as null | PluginGateComponent;
 
     class GateReadingPlugin extends TestPlugin {
@@ -419,8 +419,8 @@ describe('PluginBase', () => {
     }
 
     // The throw crosses TWO aggregation points on its way out — the feature surface's, then the universal
-    // Wrapper's — and each one used to add a layer whose own message was empty, which reads exactly like
-    // Nothing having been thrown at all. This asserts the one thing those layers must not swallow.
+    // wrapper's — and each one used to add a layer whose own message was empty, which reads exactly like
+    // nothing having been thrown at all. This asserts the one thing those layers must not swallow.
     const plugin = new FailingPlugin(app, manifest);
     await expect(plugin.onload()).rejects.toThrow('child load failed');
   });
@@ -445,10 +445,10 @@ describe('PluginBase', () => {
 
   it('should keep the saved settings when onloadImpl replaces the placeholder settings component', async () => {
     // The placeholder `PluginSettingsComponentBase<object>` added during `onload` knows no property
-    // Names, so it used to load every real setting, keep none of them, and save the difference back --
-    // Leaving `data.json` as `{}`. Reported as Embed HTML #15 and CodeScript Toolkit #59; whether the
-    // Wipe survived depended on which of the two components' saves landed last, which is why it read as
-    // Intermittent.
+    // names, so it used to load every real setting, keep none of them, and save the difference back --
+    // leaving `data.json` as `{}`. Reported as Embed HTML #15 and CodeScript Toolkit #59; whether the
+    // wipe survived depended on which of the two components' saves landed last, which is why it read as
+    // intermittent.
     const savedSettings = {
       defaultHeight: 'fit-content',
       shouldShowOpenInExternalBrowserButton: false
@@ -460,8 +460,8 @@ describe('PluginBase', () => {
     }
 
     // Subclassed rather than instantiated generically, because that is how a real plugin supplies its
-    // Settings component -- and `PluginSettingsComponentBase<RealPluginSettings>` is not assignable to
-    // The `<object>` the setter takes under `exactOptionalPropertyTypes`.
+    // settings component -- and `PluginSettingsComponentBase<RealPluginSettings>` is not assignable to
+    // the `<object>` the setter takes under `exactOptionalPropertyTypes`.
     class RealPluginSettingsComponent extends PluginSettingsComponentBase<RealPluginSettings> {}
 
     class SettingsPlugin extends TestPlugin {
@@ -482,7 +482,7 @@ describe('PluginBase', () => {
 
       protected override onloadImpl(): void {
         // `castTo` for the same reason a real plugin narrows this accessor pair: a component typed on the
-        // Plugin's own settings class is not assignable to the base's `<object>` under
+        // plugin's own settings class is not assignable to the base's `<object>` under
         // `exactOptionalPropertyTypes`.
         this.pluginSettingsComponent = castTo<PluginSettingsComponentBase<object>>(
           this.addChild(
@@ -609,7 +609,7 @@ describe('lifecycle broadcast', () => {
     expect(castTo<PublishedPluginApiParams>(publishedParams).apiVersion).toBe('1.2.3');
 
     // The owner is the gated surface, not the plugin: a plugin whose dependency goes away keeps running
-    // Its universal components, and a consumer must not keep a handle into the half that was torn down.
+    // its universal components, and a consumer must not keep a handle into the half that was torn down.
     expect(castTo<PublishedPluginApiParams>(publishedParams).component).not.toBe(plugin);
     expect(castTo<PublishedPluginApiParams>(publishedParams).component).toBeInstanceOf(ComponentEx);
   });
@@ -695,7 +695,7 @@ describe('the conflict gate', () => {
   });
 
   // The mock refuses to read `manifests` until it has been assigned, so the whole record is supplied
-  // Rather than mutated in place.
+  // rather than mutated in place.
   function installConflictingPlugin(version: string): void {
     app.plugins.enabledPlugins.add(CONFLICTING_PLUGIN_ID);
     const manifests: AppOriginal['plugins']['manifests'] = {};
@@ -850,7 +850,7 @@ describe('the dependency gate', () => {
     await fireApiRefChange();
 
     // A once-unloaded `ComponentEx` refuses new children, so a surface that came back on the SAME wrapper
-    // Could not have re-run `onloadImpl` at all. Its child being loaded again proves the wrapper is new.
+    // could not have re-run `onloadImpl` at all. Its child being loaded again proves the wrapper is new.
     expect(plugin.featureComponent._loaded).toBe(true);
   });
 
@@ -893,7 +893,7 @@ describe('the dependency gate', () => {
     await fireApiRefChange();
 
     // Two cycles up, two down. Were the disposables piling up on the universal command component, the
-    // Second teardown would fire the first cycle registration as well and the counts would diverge.
+    // second teardown would fire the first cycle registration as well and the counts would diverge.
     const gatedAddCount = addCommandSpy.mock.calls.filter(([command]) => command.id === 'gated-command').length;
     const gatedRemoveCount = removeCommandSpy.mock.calls.filter(([commandId]) => commandId === 'gated-command').length;
     expect(gatedAddCount).toBe(2);

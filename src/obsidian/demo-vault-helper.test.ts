@@ -86,7 +86,7 @@ const REGISTRY = [
 const PLUGINS_FOLDER_PATH = `${EMPTY}.obsidian/plugins`;
 const DATA_PATH = `${PLUGINS_FOLDER_PATH}/${CODE_SCRIPT_TOOLKIT_PLUGIN_ID}/data.json`;
 // The helper's own `data.json`, written by the packaging step: the vault's only statement of which
-// Plugin it demonstrates.
+// plugin it demonstrates.
 const HELPER_SETTINGS_PATH = `${PLUGINS_FOLDER_PATH}/${HELPER_PLUGIN_ID}/data.json`;
 const HELPER_SETTINGS_JSON = JSON.stringify({ demoedPluginId: DEMOED_PLUGIN_ID });
 const INVOCABLE_SCRIPTS_FOLDER_PATH = `${CODE_SCRIPT_TOOLKIT_SETTINGS.modulesRoot}/${CODE_SCRIPT_TOOLKIT_SETTINGS.invocableScriptsFolder}`;
@@ -112,10 +112,10 @@ interface AppMock {
 interface CreateAppOptions {
   readonly existingData?: string;
   // Folder Notes' own `data.json`, kept separate from `existingData` so a vault can be set up with one
-  // Plugin already configured and the other not.
+  // plugin already configured and the other not.
   readonly existingFolderNotesData?: string;
   // The content of the helper's `data.json`: `null` for a vault that has none at all, a string to hand
-  // Over exactly what the bootstrap will read. Omitted means a well-formed marker.
+  // over exactly what the bootstrap will read. Omitted means a well-formed marker.
   readonly helperSettingsJson?: null | string;
   readonly isCodeScriptToolkitEnabled?: boolean;
   readonly isCodeScriptToolkitInstalled?: boolean;
@@ -135,7 +135,7 @@ vi.mock('obsidian', async (importOriginal) => {
   return {
     ...actual,
     // The sandbox notice is the one thing here that reaches the real Obsidian UI, so the constructor is
-    // Recorded rather than run — the tests assert on the message and the duration it was asked for.
+    // recorded rather than run — the tests assert on the message and the duration it was asked for.
     Notice: class Notice {
       public constructor(message: DocumentFragment | string, durationInMilliseconds?: number) {
         mockNotice(message, durationInMilliseconds);
@@ -361,7 +361,7 @@ describe('bootstrapDemoVault folder notes', () => {
   });
 
   // `README` rather than Folder Notes' own `{{folder_name}}` default: the same file has to be the folder's
-  // Note in Obsidian and the page GitHub renders when the vault is browsed as a repository.
+  // note in Obsidian and the page GitHub renders when the vault is browsed as a repository.
   it('should point Folder Notes at README so one file serves Obsidian and GitHub', async () => {
     const { adapterWrite, app } = createApp();
     await bootstrapDemoVault({ app });
@@ -379,7 +379,7 @@ describe('bootstrapDemoVault folder notes', () => {
   });
 
   // CodeScript Toolkit's startup script opens the start note, so it is set up first; Folder Notes only
-  // Changes how the file explorer presents folders and has nothing to race with.
+  // changes how the file explorer presents folders and has nothing to race with.
   it('should set up Folder Notes after CodeScript Toolkit', async () => {
     const { app, enablePluginAndSave } = createApp();
     await bootstrapDemoVault({ app });
@@ -426,7 +426,7 @@ describe('bootstrapDemoVault sandbox notice', () => {
   });
 
   // The vault is deleted about a day after its last use, so the notice must never suggest work can be
-  // Left in it — see `cleanupOrphanedExtractedVaults` in `desktop-demo-vault-opener.ts`.
+  // left in it — see `cleanupOrphanedExtractedVaults` in `desktop-demo-vault-opener.ts`.
   it('should describe the vault as temporary rather than as somewhere work can be kept', async () => {
     const { app } = createApp();
     await bootstrapDemoVault({ app });
@@ -442,8 +442,8 @@ describe('bootstrapDemoVault sandbox notice', () => {
   });
 
   // The demonstrated plugin comes from the marker the packaging step wrote, so it survives everything
-  // The bootstrap itself installs — including CodeScript Toolkit, and anything a demo note's
-  // Prerequisites add — which counting plugin folders would not.
+  // the bootstrap itself installs — including CodeScript Toolkit, and anything a demo note's
+  // prerequisites add — which counting plugin folders would not.
   it('should name the plugin from the marker even once other plugins are installed', async () => {
     const { app } = createApp({ isCodeScriptToolkitEnabled: true, isCodeScriptToolkitInstalled: true });
     await bootstrapDemoVault({ app });
@@ -451,7 +451,7 @@ describe('bootstrapDemoVault sandbox notice', () => {
   });
 
   // A vault carrying no readable marker was not produced by the packaging step, so there is no honest
-  // Answer to "which plugin is this demonstrating?" — the bootstrap refuses it rather than guessing.
+  // answer to "which plugin is this demonstrating?" — the bootstrap refuses it rather than guessing.
   it('should refuse a vault with no marker', async () => {
     const { app } = createApp({ helperSettingsJson: null });
     await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
@@ -473,7 +473,7 @@ describe('bootstrapDemoVault sandbox notice', () => {
   });
 
   // The marker is read first, so a refused vault is left exactly as it was found: nothing installed,
-  // Nothing configured, no notice.
+  // nothing configured, no notice.
   it('should touch nothing when it refuses the vault', async () => {
     const { adapterWrite, app, enablePluginAndSave, installPlugin } = createApp({ helperSettingsJson: null });
     await expect(bootstrapDemoVault({ app })).rejects.toThrow(INVALID_DEMO_VAULT_ERROR_MESSAGE);
@@ -484,7 +484,7 @@ describe('bootstrapDemoVault sandbox notice', () => {
   });
 
   // Obsidian opens Settings in a POPOUT WINDOW that becomes the active one, and a `Notice` is built in
-  // Whatever window is active — so a notice raised while Settings is open would be created inside the
+  // whatever window is active — so a notice raised while Settings is open would be created inside the
   // Settings window and disappear with it, taking the description of the vault with it.
   it('should close the settings window before raising the notice', async () => {
     const { app, settingClose } = createApp();

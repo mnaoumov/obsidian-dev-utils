@@ -277,8 +277,8 @@ describe('blobToJpegArrayBuffer', () => {
     const blob = new Blob(['fake-image-data'], { type: 'image/png' });
 
     // The error is thrown inside an async callback within a Promise that only
-    // Uses resolve (no reject), so the throw becomes an uncaught exception
-    // Rather than a promise rejection.
+    // uses resolve (no reject), so the throw becomes an uncaught exception
+    // rather than a promise rejection.
     const errorPromise = new Promise<Error>((resolve) => {
       function handler(error: Error): void {
         process.removeListener('uncaughtException', handler);

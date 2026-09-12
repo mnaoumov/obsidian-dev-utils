@@ -651,7 +651,7 @@ describe('rename-delete-handler', () => {
             const EXPECTED_SHARED_BACKLINK_COUNT = 2;
             const ATTACHMENT_BYTE_LENGTH = 8;
             // Each wait has to give up INSIDE the harness's 30 s `Runtime.evaluate` ceiling, or the CDP command is
-            // Killed first and the message naming the unmet condition never makes it out of the vault.
+            // killed first and the message naming the unmet condition never makes it out of the vault.
             const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
             // A case that timed out earlier cannot run its own cleanup, so start from a known-empty slate.
@@ -701,7 +701,7 @@ describe('rename-delete-handler', () => {
                   }
 
                   // The content element sits inside the `.notice` container that is what actually gets added,
-                  // So sweep the added subtree as well as testing the added node itself.
+                  // so sweep the added subtree as well as testing the added node itself.
                   if (addedNode.matches('.obsidian-dev-utils.plugin-notice-content')) {
                     observedNoticeTexts.push(addedNode.textContent);
                   }
@@ -817,7 +817,7 @@ describe('rename-delete-handler', () => {
           const EXPECTED_SHARED_BACKLINK_COUNT = 2;
           const ATTACHMENT_BYTE_LENGTH = 8;
           // Each wait has to give up INSIDE the harness's 30 s `Runtime.evaluate` ceiling, or the CDP command is
-          // Killed first and the message naming the unmet condition never makes it out of the vault.
+          // killed first and the message naming the unmet condition never makes it out of the vault.
           const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
 
           for (const folderPath of [SRC_FOLDER, OTHER_FOLDER]) {
@@ -865,7 +865,7 @@ describe('rename-delete-handler', () => {
                 }
 
                 // The content element sits inside the `.notice` container that is what actually gets added,
-                // So sweep the added subtree as well as testing the added node itself.
+                // so sweep the added subtree as well as testing the added node itself.
                 if (addedNode.matches('.obsidian-dev-utils.plugin-notice-content')) {
                   observedNoticeTexts.push(addedNode.textContent);
                 }

@@ -363,8 +363,8 @@ export class PluginGateComponent extends ComponentEx {
     }
 
     // A conflict has no API to watch — it is read out of the manifests — so the trigger to re-read is the
-    // Library's own lifecycle broadcast. It covers every conflicting plugin built on this library; one
-    // That is not is caught at the next load, as the file header says.
+    // library's own lifecycle broadcast. It covers every conflicting plugin built on this library; one
+    // that is not is caught at the next load, as the file header says.
     const lifecycleEventNames: PluginLifecycleEventName[] = [PLUGIN_LOADED_EVENT_NAME, PLUGIN_UNLOADED_EVENT_NAME];
     for (const eventName of lifecycleEventNames) {
       this.registerEvent(this.app.workspace.on(
@@ -380,10 +380,10 @@ export class PluginGateComponent extends ComponentEx {
     }
 
     // Nothing is SAID about a missing dependency until the layout is ready. Plugins load in an unspecified
-    // Order, so a dependency that simply has not loaded yet is indistinguishable at this point from one
-    // That is not installed — announcing here would put a "missing plugin" notice on screen at every
-    // Startup and take it away a moment later. The gate itself does not wait: the surface loads the
-    // Instant the dependency is there, whenever that is.
+    // order, so a dependency that simply has not loaded yet is indistinguishable at this point from one
+    // that is not installed — announcing here would put a "missing plugin" notice on screen at every
+    // startup and take it away a moment later. The gate itself does not wait: the surface loads the
+    // instant the dependency is there, whenever that is.
     this.addChild(
       new CallbackLayoutReadyComponent(this.app, () => {
         this.isLayoutReady = true;
@@ -582,8 +582,8 @@ export class PluginGateComponent extends ComponentEx {
       this.unloadFeatureSurface();
 
       // A gate that closes while the plugin is RUNNING is the case worth being loud about: the user just
-      // Did something, and the consequence is immediate and invisible without this. Announced regardless
-      // Of layout readiness, because a running plugin means the layout is long since ready.
+      // did something, and the consequence is immediate and invisible without this. Announced regardless
+      // of layout readiness, because a running plugin means the layout is long since ready.
       for (const dependency of unsatisfiedDependencies) {
         this.pluginNoticeComponent.showNotice(this.createDependencyLostMessage(dependency));
       }
@@ -646,8 +646,8 @@ export class PluginGateComponent extends ComponentEx {
         }));
 
       // The link OUT to the dependency's own settings, shown only once it is installed and enabled — the
-      // Other half of the relationship being visible from both ends. It is what stops "configure one
-      // Operation across two plugins" from meaning "go and find the other plugin yourself".
+      // other half of the relationship being visible from both ends. It is what stops "configure one
+      // operation across two plugins" from meaning "go and find the other plugin yourself".
       if (state !== InstalledPluginState.Enabled) {
         continue;
       }
@@ -720,7 +720,7 @@ export class PluginGateComponent extends ComponentEx {
     // Added through `app.setting` rather than `plugin.addSettingTab`, because this tab has to come back
     // OFF again the moment the gate opens — otherwise the plugin's own settings tab, registered by
     // `onloadImpl`, would appear beside a stale "required plugin missing" one. `plugin.addSettingTab`
-    // Only ever removes at plugin unload.
+    // only ever removes at plugin unload.
     const blockedSettingTab = new BlockedPluginSettingTab({
       plugin: this.plugin,
       renderBanner: (containerEl): void => {

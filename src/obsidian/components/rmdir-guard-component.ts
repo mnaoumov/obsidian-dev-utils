@@ -106,7 +106,7 @@ export class RmdirGuardComponent extends MonkeyAroundComponent {
         }
 
         // The folder is proven empty, so a recursive removal is equivalent -- and, unlike the non-recursive
-        // One, it actually works on the desktop adapter.
+        // one, it actually works on the desktop adapter.
         await originalMethodBound(normalizedPath, true);
       }
     });

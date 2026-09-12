@@ -21,7 +21,7 @@ describe('checkIsInNodeModules', () => {
   });
 
   // The live case: `obsidian-codescript-toolkit` re-includes this tree in `.gitignore` on purpose, so
-  // Git reports it and only this filter can drop it.
+  // git reports it and only this filter can drop it.
   it('should match a vendored node_modules path nested several folders deep', () => {
     expect(checkIsInNodeModules('demo-vault/_assets/CodeScriptToolkit/node_modules/uuid/README.md')).toBe(true);
   });

@@ -26,7 +26,7 @@ const DEFAULT_FILES = { 'alpha/bravo/charlie/charlie.md': '' };
 
 let app: AppOriginal;
 // Kept alongside `app` because `registerPlugin__` is a mock-only seam: `asOriginalType__()` hands back the
-// Same object typed as Obsidian's `App`, whose `plugins` does not declare it.
+// same object typed as Obsidian's `App`, whose `plugins` does not declare it.
 let appMock: App;
 
 /**
@@ -55,7 +55,7 @@ function initApp(files: Record<string, string>, folderNotesSettings?: unknown): 
   appMock = App.createConfigured__({ files });
   if (folderNotesSettings !== undefined) {
     // The registry is typed to return a `Plugin` and every shape under test is deliberately NOT one —
-    // That is the point, since these are another plugin's private settings.
+    // that is the point, since these are another plugin's private settings.
     appMock.plugins.registerPlugin__(FOLDER_NOTES_PLUGIN_ID, castTo<PluginOriginal>({ settings: folderNotesSettings }));
   }
   app = appMock.asOriginalType__();
@@ -216,7 +216,7 @@ describe('resolveFolderNoteConfig', () => {
     it('should fall back when the installed plugin exposes no settings at all', () => {
       initApp(DEFAULT_FILES);
       // Registered directly rather than through `initApp`, which would give it a `settings` key: the case
-      // Under test is a plugin that exposes none at all.
+      // under test is a plugin that exposes none at all.
       appMock.plugins.registerPlugin__(FOLDER_NOTES_PLUGIN_ID, castTo<PluginOriginal>({}));
       expect(resolveFolderNoteConfig({ app }).location).toBe(FolderNoteLocation.InsideFolder);
     });

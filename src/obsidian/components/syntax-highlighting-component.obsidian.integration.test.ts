@@ -92,14 +92,14 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         // A highlighted fence splits into token spans (`cm-keyword`, `cm-def`, ...); an unhighlighted one
-        // Stays a single `cm-hmd-codeblock` span.
+        // stays a single `cm-hmd-codeblock` span.
         function hasKeywordToken(): boolean {
           return (readCodeLineEl()?.querySelector('.cm-keyword') ?? null) !== null;
         }
 
         // `isHighlightingExpected` decides HOW to wait, because the two directions need different waits:
         // Waiting for the token IS the assertion when highlighting is expected, while its ABSENCE can only
-        // Be asserted after a settle long enough for a late token to have shown up.
+        // be asserted after a settle long enough for a late token to have shown up.
         async function checkIsHighlightedAsync(isHighlightingExpected: boolean): Promise<boolean> {
           await rebuildViewAsync();
 
@@ -122,7 +122,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         // Rebuilds the view from scratch so the fence is tokenized against the CURRENT mode registry,
-        // Instead of relying on a live re-parse of an already-open editor.
+        // instead of relying on a live re-parse of an already-open editor.
         async function rebuildViewAsync(): Promise<void> {
           await leaf.setViewState({ type: 'empty' });
           await leaf.openFile(file, { state: { mode: 'source', source: false } });
@@ -196,7 +196,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         // Same asymmetry as the editor test: the wait IS the assertion when tokens are expected, while
-        // Their absence is only meaningful after a settle long enough for a late token to have shown up.
+        // their absence is only meaningful after a settle long enough for a late token to have shown up.
         async function checkIsHighlightedAsync(isHighlightingExpected: boolean): Promise<boolean> {
           await rebuildViewAsync();
 
@@ -219,7 +219,7 @@ describe('SyntaxHighlightingComponent', () => {
         }
 
         // Rebuilds the reading view from scratch so the fence is highlighted against the CURRENT Prism
-        // Registry, instead of relying on a live re-render of an already-rendered preview.
+        // registry, instead of relying on a live re-render of an already-rendered preview.
         async function rebuildViewAsync(): Promise<void> {
           await leaf.setViewState({ type: 'empty' });
           await leaf.openFile(file, { state: { mode: 'preview' } });

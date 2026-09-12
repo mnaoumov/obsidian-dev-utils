@@ -91,7 +91,7 @@ describe('CommandHandlerComponent menu-event teardown', () => {
           ]);
 
           // `registerCommandHandlers` awaits `onRegistered`, so the file-menu handler is live by now —
-          // No polling needed, a single trigger must already reach it.
+          // no polling needed, a single trigger must already reach it.
           app.workspace.trigger('file-menu', new obsidianModule.Menu(), file, 'integration-test');
           const countAfterFirstTrigger = fileMenuCallCount;
 
@@ -146,7 +146,7 @@ describe('CommandHandlerComponent menu-event teardown', () => {
         menuEventRegistrar.load();
 
         // Stands in for the wrapper `PluginBase` holds its feature surface in: a component with a SHORTER
-        // Life than the command component, which the dependency gate unloads and replaces underneath it.
+        // life than the command component, which the dependency gate unloads and replaces underneath it.
         const lifetimeOwner = new ComponentEx();
         lifetimeOwner.load();
 
@@ -185,7 +185,7 @@ describe('CommandHandlerComponent menu-event teardown', () => {
 
     expect(result.isRegisteredBeforeUnload).toBe(true);
     // The command left the palette with the surface, and the component that registered it is still running —
-    // Which is exactly the shape a blocked plugin needs: no dead commands, but the notice still live.
+    // which is exactly the shape a blocked plugin needs: no dead commands, but the notice still live.
     expect(result.isRegisteredAfterUnload).toBe(false);
     expect(result.isComponentStillLoadedAfterUnload).toBe(true);
   });

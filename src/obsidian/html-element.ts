@@ -18,13 +18,13 @@ import {
 } from './obsidian-settings.ts';
 
 // The first code point of the Basic Multilingual Plane's Private Use Area. Written as a code point and
-// Composed at runtime rather than as a string escape, so the constant below stays legible in the source
-// Instead of being an invisible character no reader can identify.
+// composed at runtime rather than as a string escape, so the constant below stays legible in the source
+// instead of being an invisible character no reader can identify.
 const PRIVATE_USE_AREA_FIRST_CODE_POINT = 0xE0_00;
 
 // Wraps a value that should render as a code block. A private-use code point, so it cannot collide with
-// Anything a translator would legitimately write, and so a message that somehow reaches the user with
-// Its delimiters intact is visibly wrong rather than plausibly intentional.
+// anything a translator would legitimately write, and so a message that somehow reaches the user with
+// its delimiters intact is visibly wrong rather than plausibly intentional.
 const CODE_BLOCK_DELIMITER = String.fromCodePoint(PRIVATE_USE_AREA_FIRST_CODE_POINT);
 
 /**

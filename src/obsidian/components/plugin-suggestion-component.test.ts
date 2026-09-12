@@ -111,7 +111,7 @@ function createComponent(options: CreateComponentOptions = {}): ComponentContext
   const enabledPlugins = new Set<string>(options.isEnabled ? [SUGGESTED_PLUGIN_ID] : []);
 
   // A null-prototype record so a missing key reads as `undefined` (plugin not installed) rather than
-  // Resolving up the prototype chain.
+  // resolving up the prototype chain.
   const manifests: AppOriginal['plugins']['manifests'] = {};
   Object.setPrototypeOf(manifests, null);
   if (options.isEnabled || options.isInstalled) {
@@ -135,7 +135,7 @@ function createComponent(options: CreateComponentOptions = {}): ComponentContext
   let isDeclined = options.isDeclined ?? false;
 
   // The host's settings load, as the component sees it: already settled on a cold start, still in flight
-  // Whenever the component loads onto a layout that is already ready.
+  // whenever the component loads onto a layout that is already ready.
   let resolveSettingsLoad = noop;
   const settingsLoadPromise = options.isSettingsLoadPending
     ? new Promise<void>((resolve) => {
@@ -241,7 +241,7 @@ describe('onload', () => {
     expect(showNotice).not.toHaveBeenCalled();
 
     // The wait is a TRACKED async operation, so leaving it pending would hang the harness `afterEach` that
-    // Drains them — and take every later test in this file down with it.
+    // drains them — and take every later test in this file down with it.
     finishSettingsLoad(true);
     await vi.runAllTimersAsync();
     vi.useRealTimers();
@@ -249,8 +249,8 @@ describe('onload', () => {
 
   it('should not show the notice when the loading host settings turn out to hold a decline', async () => {
     // The regression this component was built to fail: on a layout that is ALREADY ready (a runtime enable,
-    // Or a re-enable after an update) the layout-ready callback fires while the host's settings are still
-    // Being read, so deciding right then sees the default `false` and asks a user who already declined.
+    // or a re-enable after an update) the layout-ready callback fires while the host's settings are still
+    // being read, so deciding right then sees the default `false` and asks a user who already declined.
     vi.useFakeTimers();
     const { component, finishSettingsLoad, showNotice, triggerLayoutReady } = createComponent({ isSettingsLoadPending: true });
 
@@ -411,7 +411,7 @@ describe('installAndEnableSuggestedPlugin', () => {
 });
 
 // The plugin name is rendered as an inline code block rather than interpolated as plain text, so the
-// Notice is a `DocumentFragment` and its text content is what the user actually reads. Asserting on
+// notice is a `DocumentFragment` and its text content is what the user actually reads. Asserting on
 // `textContent` keeps the test about the message and not about the markup carrying it.
 function expectNoticeText(showNotice: ReturnType<typeof vi.fn>, expectedText: string): void {
   const message: unknown = showNotice.mock.calls[0]?.[0];

@@ -48,7 +48,7 @@ interface CreateAppOptions {
   readonly existingRawPluginData?: string;
   readonly installedIds?: string[];
   // The loaded plugin instances, keyed by id. A plugin only appears here once it is running, which is
-  // What lets `configureCommunityPlugin` tell a live plugin from a merely installed one.
+  // what lets `configureCommunityPlugin` tell a live plugin from a merely installed one.
   readonly loadedPlugins?: Record<string, unknown>;
 }
 
@@ -114,7 +114,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   }
 
   // Same null-prototype treatment as `manifests`: a plugin that is not running must read as `undefined`
-  // Rather than throw, since that is exactly the case the `data.json` fallback exists for.
+  // rather than throw, since that is exactly the case the `data.json` fallback exists for.
   const plugins = castTo<App['plugins']['plugins']>({});
   Object.setPrototypeOf(plugins, null);
   for (const [id, instance] of Object.entries(options.loadedPlugins ?? {})) {

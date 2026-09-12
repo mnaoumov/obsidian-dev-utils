@@ -241,10 +241,10 @@ export class MonkeyAroundComponent extends ComponentEx {
       }
 
       // A `once` patch unloads this component after the first invocation — running the registered
-      // Uninstaller and restoring the original. `unloadComponent` is an arrow so it captures the
-      // Component `this`; the nested `oncePatchedValue` must be a function to receive the call-time
+      // uninstaller and restoring the original. `unloadComponent` is an arrow so it captures the
+      // component `this`; the nested `oncePatchedValue` must be a function to receive the call-time
       // `this`. Own members (e.g. a `Debouncer`'s `cancel`/`run`) are copied onto it so function-like
-      // Values keep working.
+      // values keep working.
       const unloadComponent = (): void => {
         this.unload();
       };

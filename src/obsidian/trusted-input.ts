@@ -54,7 +54,7 @@ export type {
 } from './desktop-trusted-input.ts';
 
 // The seven helpers both arms export, with identical signatures. Typed off the mobile arm because it
-// Exports nothing else; the desktop arm additionally exports the parameter contracts both share.
+// exports nothing else; the desktop arm additionally exports the parameter contracts both share.
 type TrustedInputArm = typeof import('./mobile-trusted-input.ts');
 
 /**
@@ -179,6 +179,6 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
 
 async function loadArm(): Promise<TrustedInputArm> {
   // Conditional import of the platform-only arm, at call time: neither arm is on the other platform's
-  // Load path, and the specifiers stay literal so esbuild bundles both.
+  // load path, and the specifiers stay literal so esbuild bundles both.
   return Platform.isDesktopApp ? await import('./desktop-trusted-input.ts') : await import('./mobile-trusted-input.ts');
 }

@@ -911,9 +911,9 @@ export async function process(params: ProcessParams): Promise<void> {
       }
 
       // The provider handed back exactly what it was given: there is nothing to write, and the operation
-      // Is complete. Distinct from `null`, which asks for a retry — a provider whose refusal to rewrite is
-      // Permanent (see `applyCanvasChanges`) would otherwise spin forever and hold the shared operation
-      // Queue open behind it.
+      // is complete. Distinct from `null`, which asks for a retry — a provider whose refusal to rewrite is
+      // permanent (see `applyCanvasChanges`) would otherwise spin forever and hold the shared operation
+      // queue open behind it.
       if (newContent === oldContent) {
         return true;
       }

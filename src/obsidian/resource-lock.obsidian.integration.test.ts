@@ -530,7 +530,7 @@ describe('resource-lock', () => {
       });
 
       // Every rename of the transaction stays covered — including the three that follow the folder renames,
-      // Which is exactly where a path-keyed registry loses the lock and a bystander joins in.
+      // which is exactly where a path-keyed registry loses the lock and a bystander joins in.
       expect(result.steps.filter((step) => !step.wasCoveredByLock)).toStrictEqual([]);
       // The owner's own mutations keep passing the blocker: its bypass scope moved with the renamed folders.
       expect(result.steps.filter((step) => step.error !== '')).toStrictEqual([]);

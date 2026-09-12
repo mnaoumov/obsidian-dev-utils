@@ -21,9 +21,9 @@ describe('PluginNoticeComponent styling', () => {
     const result = await evalInObsidian({
       callback({ app, lib: { PluginNoticeComponent, PluginNoticeMode } }) {
         // A decoy notice raised first, carrying the same classes under a different plugin name. It
-        // Stands in for whatever another test in this shared Obsidian instance happens to leave on
-        // Screen, so the lookup below is proven to read THIS test's notice rather than the first
-        // Match in the document — deterministically, instead of depending on the file order.
+        // stands in for whatever another test in this shared Obsidian instance happens to leave on
+        // screen, so the lookup below is proven to read THIS test's notice rather than the first
+        // match in the document — deterministically, instead of depending on the file order.
         const decoyComponent = new PluginNoticeComponent({ app, pluginName: 'Contaminating Plugin' });
         const decoyNotice = decoyComponent.showNotice('Decoy body', { mode: PluginNoticeMode.Separate });
 
@@ -32,7 +32,7 @@ describe('PluginNoticeComponent styling', () => {
 
         try {
           // Scoped to the notice under test: `activeDocument.querySelector` would return the decoy's
-          // Name element (and, in the full pooled run, any other plugin's notice still fading out).
+          // name element (and, in the full pooled run, any other plugin's notice still fading out).
           const nameEl = notice.messageEl.querySelector('.obsidian-dev-utils.plugin-notice-name');
           if (!nameEl) {
             throw new Error('plugin name element not found in the rendered notice');
@@ -128,14 +128,14 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           const isShownAfterBodyClick = findLockedContentEl() !== null;
 
           // A click on the inner message element (a descendant) must NOT dismiss it — the capture-phase
-          // Guard on the container stops it before Obsidian's dismiss handler runs.
+          // guard on the container stops it before Obsidian's dismiss handler runs.
           messageEl.click();
           await sleep(SETTLE_IN_MILLISECONDS);
           const isShownAfterMessageClick = findLockedContentEl() !== null;
 
           // A real click at the notice's very corner (where the padding used to be) must land on the
-          // Guarded content and NOT dismiss it. It is a genuine trusted click at that point, so the
-          // Renderer hit-tests it exactly as it would a user's.
+          // guarded content and NOT dismiss it. It is a genuine trusted click at that point, so the
+          // renderer hit-tests it exactly as it would a user's.
           const rect = containerEl.getBoundingClientRect();
           await clickMouse({ x: rect.left + 2, y: rect.top + 2 });
           await sleep(SETTLE_IN_MILLISECONDS);
@@ -148,8 +148,8 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           ordinaryNotice.hide();
 
           // Clicking the close button hides the notice directly — no confirmation modal. Counted as a
-          // Before/after delta rather than read absolutely: a confirm modal another test in this shared
-          // Instance left up would otherwise fail this for a reason unrelated to the close button.
+          // before/after delta rather than read absolutely: a confirm modal another test in this shared
+          // instance left up would otherwise fail this for a reason unrelated to the close button.
           function getConfirmModalCount(): number {
             return activeDocument.querySelectorAll('.obsidian-dev-utils.confirm-modal').length;
           }
@@ -245,8 +245,8 @@ describe('PluginNoticeComponent hard-to-close notice', () => {
           const hasButton = renderedButtonEl !== null;
 
           // Clicking the action button must run its own handler AND leave the notice shown — the
-          // Capture-phase guard lets the click reach the button, and the content wrapper's bubble
-          // Guard then stops it from reaching Obsidian's dismiss handler.
+          // capture-phase guard lets the click reach the button, and the content wrapper's bubble
+          // guard then stops it from reaching Obsidian's dismiss handler.
           renderedButtonEl?.click();
           await sleep(SETTLE_IN_MILLISECONDS);
           const isShownAfterButtonClick = findActionContentEl() !== null;
@@ -313,7 +313,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
           const cancelButtonText = buttonEl?.textContent ?? '';
 
           // Clicking the Cancel button must abort the controller AND not dismiss the notice (the
-          // Interactive-click guard stops the click from reaching the notice's dismiss handler).
+          // interactive-click guard stops the click from reaching the notice's dismiss handler).
           buttonEl?.click();
           await wait(SETTLE_IN_MILLISECONDS);
           const isAbortedAfterCancel = abortController.signal.aborted;
@@ -357,7 +357,7 @@ describe('PluginNoticeComponent.showNoticeAfterDelay', () => {
 describe('PluginNoticeComponent notice modes', () => {
   // Raw `new Notice(...)` calls pile up; the component's slot exists so only the latest message shows.
   // Which of the three outcomes a message gets — replacing, joining, or standing alone — is a question
-  // About real notice ELEMENTS on screen, so it is answered here rather than against a mocked `Notice`.
+  // about real notice ELEMENTS on screen, so it is answered here rather than against a mocked `Notice`.
   it('should replace, append to, or stand alongside the current notice as asked', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { PluginNoticeComponent, PluginNoticeMode, waitUntil } }) {
@@ -371,8 +371,8 @@ describe('PluginNoticeComponent notice modes', () => {
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         // Loaded so the `unload` below actually runs: Obsidian's `Component.unload` returns early when
-        // The component was never loaded, which would leave these notices on screen for the suites that
-        // Run after this one — they overlay the corner of the window and swallow clicks.
+        // the component was never loaded, which would leave these notices on screen for the suites that
+        // run after this one — they overlay the corner of the window and swallow clicks.
         component.load();
         try {
           component.showNotice(`${MARKER} alpha`);
@@ -383,8 +383,8 @@ describe('PluginNoticeComponent notice modes', () => {
           });
 
           // Replace (the default): still one notice, and `alpha` is gone from it. Obsidian fades a
-          // Replaced notice out before detaching it, so the old element lingers for a moment — hence the
-          // Wait for the count to settle rather than a synchronous read.
+          // replaced notice out before detaching it, so the old element lingers for a moment — hence the
+          // wait for the count to settle rather than a synchronous read.
           component.showNotice(`${MARKER} bravo`);
           await waitUntil({
             message: 'the replaced notice should fade out, leaving a single notice',
@@ -427,7 +427,7 @@ describe('PluginNoticeComponent notice modes', () => {
     expect(result.afterReplace.text).not.toContain('alpha');
 
     // Append: still one notice, carrying both messages, with the plugin name shown once rather than
-    // Repeated on the appended line.
+    // repeated on the appended line.
     expect(result.afterAppend.noticeCount).toBe(1);
     expect(result.afterAppend.text).toContain('bravo');
     expect(result.afterAppend.text).toContain('charlie');
@@ -442,8 +442,8 @@ describe('PluginNoticeComponent notice modes', () => {
 
 describe('PluginNoticeComponent delayed notice modes', () => {
   // The delayed handle owns one message inside a notice, not the whole notice: it rewrites that message
-  // In place and, when it merely joined a notice, takes only that message away again. Both are DOM moves
-  // Inside a live notice element, so a mocked `Notice` cannot show they work.
+  // in place and, when it merely joined a notice, takes only that message away again. Both are DOM moves
+  // inside a live notice element, so a mocked `Notice` cannot show they work.
   it('should update and remove only its own message when appended to a notice', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { PluginNoticeComponent, PluginNoticeMode, waitUntil } }) {
@@ -456,7 +456,7 @@ describe('PluginNoticeComponent delayed notice modes', () => {
 
         const component = new PluginNoticeComponent({ app, pluginName: 'My Test Plugin' });
         // See the note on the other modes test: without `load`, the `unload` below is a no-op and these
-        // Notices outlive the test.
+        // notices outlive the test.
         component.load();
         try {
           component.showNotice(`${MARKER} host`);
@@ -496,7 +496,7 @@ describe('PluginNoticeComponent delayed notice modes', () => {
     expect(result.afterUpdate).not.toContain('working');
 
     // Disposing takes away only the handle's message: the notice it joined is still up, still showing
-    // The message that was there first.
+    // the message that was there first.
     expect(result.afterDispose).toContain('host');
     expect(result.afterDispose).not.toContain('finishing');
   });

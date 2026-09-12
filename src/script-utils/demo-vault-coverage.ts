@@ -722,7 +722,7 @@ export class DemoVaultCoverageChecker {
   }
 
   // The notes the authoring checks apply to: every note except the ones declared outside the learning
-  // Path (the vault's own `README.md` by default).
+  // path (the vault's own `README.md` by default).
   private collectCheckableNotes(): DemoVaultNote[] {
     return this.collectNotes().filter((note) => !this.excludedNotes.has(note.relativePath));
   }
@@ -826,8 +826,8 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
     });
 
     // With no notes to read, every authoring check above passes by having nothing to look at, so a vault
-    // That stopped being found would go on reporting itself clean. This is the half of the non-trivial
-    // Guard that still applies when the plugin exposes nothing to reflect.
+    // that stopped being found would go on reporting itself clean. This is the half of the non-trivial
+    // guard that still applies when the plugin exposes nothing to reflect.
     it('reads a non-empty demo vault', () => {
       expect(checker.collectDemoNoteRelativePaths().length).toBeGreaterThan(0);
     });
@@ -860,12 +860,12 @@ const MARKDOWN_LINK_REG_EXP = /\[[^\]]*]\((?<target>[^)]+)\)/g;
 // An Obsidian `%% … %%` comment would show up as literal text on GitHub, which is half the readership.
 const DIRECTIVE_REG_EXP = /^\s*<!--\s*obsidian-dev-utils-(?<action>disable-next-line|disable|enable)\s+(?<rule>[\w-]+\/[\w-]+)(?:\s+--\s+(?<reason>.*?))?\s*-->\s*$/;
 // Catches a directive that was MEANT to be one but is misspelled: it would otherwise read as an ordinary
-// Comment and silently do nothing, which is the failure mode a suppression syntax must never have.
+// comment and silently do nothing, which is the failure mode a suppression syntax must never have.
 const DIRECTIVE_PROBE_REG_EXP = /<!--\s*obsidian-dev-utils-/;
 const WIKILINK_RULE = 'demo-vault-validation/no-wikilinks';
 // The `obsidian-dev-utils > demo-vault-validation > allow-wikilinks` frontmatter path, at any indentation:
 // The keys must nest in that order, and any line between them has to stay indented, so a dedent to the
-// Document's own top level ends the match rather than reaching a same-named key under another parent.
+// document's own top level ends the match rather than reaching a same-named key under another parent.
 const WIKILINK_ALLOWANCE_REG_EXP = /^obsidian-dev-utils:[^\S\n]*\n(?:[^\S\n]+.*\n)*?[^\S\n]+demo-vault-validation:[^\S\n]*\n(?:[^\S\n]+.*\n)*?[^\S\n]+allow-wikilinks:(?<reason>.*)$/m;
 const WIKILINK_REG_EXP = /\[\[[^\]]+]]/;
 
@@ -908,7 +908,7 @@ function applyWikilinkDirective(state: WikilinkDirectiveScanState, lineIndex: nu
 }
 
 // Applies one ordinary line to the scan: an open region covers it, and a pending `disable-next-line`
-// Claims the first line with content on it — the directive and its target are usually a blank line apart.
+// claims the first line with content on it — the directive and its target are usually a blank line apart.
 function applyWikilinkScanLine(state: WikilinkDirectiveScanState, lineIndex: number, line: string): void {
   if (state.openRegion) {
     state.allowedLineIndexes.add(lineIndex);
@@ -934,12 +934,12 @@ function buildMembers(methods: string[], properties: string[]): InterfaceMembers
 }
 
 // Resolves the notes a note links to: every Markdown link outside a code fence whose target is a `.md`
-// File, made relative to the demo vault so it can be looked up in the note map. External URLs and
-// Non-note targets (images, scripts) are not part of the learning path and are skipped; a `#anchor` is
-// Dropped, since it addresses a place inside an already-resolved note.
+// file, made relative to the demo vault so it can be looked up in the note map. External URLs and
+// non-note targets (images, scripts) are not part of the learning path and are skipped; a `#anchor` is
+// dropped, since it addresses a place inside an already-resolved note.
 // Returns the note's lines with fenced code blocks removed (the fence lines included), paired with the
-// Line number each came from, so a check never mistakes sample code for prose — a `[[wikilink]]`
-// Demonstrated inside a fence is text, not navigation — and an inline directive can still name a line.
+// line number each came from, so a check never mistakes sample code for prose — a `[[wikilink]]`
+// demonstrated inside a fence is text, not navigation — and an inline directive can still name a line.
 function collectLinesOutsideFences(content: string): NoteLine[] {
   const noteLines: NoteLine[] = [];
   let isInsideFence = false;
@@ -1022,7 +1022,7 @@ function hasH1(content: string): boolean {
 }
 
 // Whether a plain prose line appears before the note's first code fence. Headings are not prose — a note
-// That goes straight from its title to a button is exactly the shape this check rejects.
+// that goes straight from its title to a button is exactly the shape this check rejects.
 function hasIntroProse(content: string): boolean {
   for (const line of stripFrontmatter(content).split('\n')) {
     if (CODE_FENCE_REG_EXP.test(line)) {
@@ -1038,7 +1038,7 @@ function hasIntroProse(content: string): boolean {
 }
 
 // Whether the note navigates with an Obsidian `[[wikilink]]`. Fenced blocks and inline code are sample
-// Text rather than navigation, so they are removed before looking.
+// text rather than navigation, so they are removed before looking.
 function hasWikilink(content: string): boolean {
   return findWikilinkLineIndexes(content).length > 0;
 }
@@ -1062,9 +1062,9 @@ function parseMembers(keyword: string, body: string): InterfaceMembers {
 }
 
 // Reads the note's `obsidian-dev-utils > demo-vault-validation > allow-wikilinks` declaration: the stated
-// Reason, `''` when the key is present with nothing after it, or `null` when the note declares nothing.
+// reason, `''` when the key is present with nothing after it, or `null` when the note declares nothing.
 // Read with a regular expression rather than a YAML parser: it is one known key path, and every plugin that
-// Installs this package would otherwise carry a YAML dependency for it.
+// installs this package would otherwise carry a YAML dependency for it.
 function readWikilinkAllowanceReason(content: string): null | string {
   const frontmatter = FRONTMATTER_REG_EXP.exec(content)?.[0];
   if (frontmatter === undefined) {
@@ -1078,9 +1078,9 @@ function readWikilinkAllowanceReason(content: string): null | string {
 }
 
 // Reads the note's inline `obsidian-dev-utils-disable…` directives, returning which lines they allow a
-// Wikilink on and everything wrong with them. A suppression that quietly does nothing is worse than none,
-// So a misspelled directive, one with no reason, an unclosed region and one covering no wikilink at all
-// Are each reported rather than ignored.
+// wikilink on and everything wrong with them. A suppression that quietly does nothing is worse than none,
+// so a misspelled directive, one with no reason, an unclosed region and one covering no wikilink at all
+// are each reported rather than ignored.
 function scanWikilinkDirectives(content: string): WikilinkDirectiveScan {
   const state: WikilinkDirectiveScanState = {
     allowedLineIndexes: new Set<number>(),

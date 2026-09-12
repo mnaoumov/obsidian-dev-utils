@@ -939,7 +939,7 @@ describe('updateChangelog', () => {
   });
 
   // A heading is not a tag: a never-tagged repo carrying a hand-written `## 0.0.0` placeholder used to spend
-  // It as a revision and die on `fatal: ambiguous argument`, at the very END of the release.
+  // it as a revision and die on `fatal: ambiguous argument`, at the very END of the release.
   it('should fall back to the full history when the previous heading resolves to no tag', async () => {
     mockExistsSync.mockReturnValue(true);
     stubPassThroughReview('# CHANGELOG\n\n## 0.0.0\n\n- Initial scaffold. Not released.\n');

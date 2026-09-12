@@ -259,20 +259,20 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
   // Everything the SUBCLASS owns: what `onloadImpl` adds, and what it adds later.
   //
   // A second wrapper rather than one, because the two tiers have opposite lifetimes. The universal
-  // Components have to OUTLIVE a lost dependency — they are what shows the notice naming the plugin that
-  // Went away and renders the button that brings it back — while the subclass's surface is exactly what
-  // Must stop running. Unloading one wrapper holding both would silence the plugin at the moment it most
-  // Needs to speak.
+  // components have to OUTLIVE a lost dependency — they are what shows the notice naming the plugin that
+  // went away and renders the button that brings it back — while the subclass's surface is exactly what
+  // must stop running. Unloading one wrapper holding both would silence the plugin at the moment it most
+  // needs to speak.
   //
   // Always present, never null, and REPLACED rather than emptied when the surface is torn down. That keeps
   // `addChild` callable at every point in the plugin's life, exactly as it was before the tiers existed:
   // A child added before the gate opens is queued and loaded when it does, which is what `ComponentEx`
-  // Already does for any child added to a not-yet-loaded component.
+  // already does for any child added to a not-yet-loaded component.
   private gatedWrapperComponent = new ComponentEx();
 
   // The payload broadcast when this plugin finished loading, kept so the matching unloaded broadcast
-  // Describes the same plugin without re-deriving it from a surface that has since been torn down. Null
-  // Whenever no loaded broadcast is outstanding, which is what keeps the two events paired.
+  // describes the same plugin without re-deriving it from a surface that has since been torn down. Null
+  // whenever no loaded broadcast is outstanding, which is what keeps the two events paired.
   private lifecycleEventPayload: null | PluginLifecycleEventPayload = null;
 
   // The library's own components, which outlive any dependency.
@@ -328,12 +328,12 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
   public override async onload(): Promise<void> {
     try {
       // The wrapper is attached and loaded before anything is wired up, so every `addChild` below
-      // Loads its child straight away rather than queuing it.
+      // loads its child straight away rather than queuing it.
       // That is what lets a command handler register its menu events from `onRegistered`, which
       // `registerCommandHandlers` awaits and which a registrar refuses while unloaded.
       // Attaching it up front also registers the wrapper for teardown before anything can throw.
       // The load is explicit rather than left to `addChild`, which loads the child only when the
-      // Plugin itself is loaded — true when Obsidian calls `load()`, but not when a caller invokes
+      // plugin itself is loaded — true when Obsidian calls `load()`, but not when a caller invokes
       // `onload()` directly.
       super.addChild(this.universalWrapperComponent);
       this.universalWrapperComponent.load();
@@ -357,7 +357,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       this.resourceLockComponent = this.addUniversalChild(new ResourceLockComponent(this.app, this.manifest.id));
       // Notebook Navigator draws its own file tree and never raises Obsidian's `file-menu` /
       // `files-menu` events, so every plugin's context-menu items would vanish for anyone browsing
-      // Through it. Wired here rather than per-plugin: the bridge stays dormant when Notebook
+      // through it. Wired here rather than per-plugin: the bridge stays dormant when Notebook
       // Navigator is not installed, and a plugin with no file/folder handlers contributes nothing.
       const notebookNavigatorMenuEventRegistrarComponent = this.addUniversalChild(
         new NotebookNavigatorMenuEventRegistrarComponent({
@@ -371,12 +371,12 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
           activeFileProvider: new AppActiveFileProvider(this.app),
           additionalMenuEventRegistrars: [notebookNavigatorMenuEventRegistrarComponent],
           // The component is universal; the commands registered THROUGH it are not. A subclass registers
-          // Its own from `onloadImpl`, closing over collaborators that belong to the feature surface — so
-          // Those commands must go down with the surface when the gate closes, or they sit in the palette
-          // Calling into torn-down objects, and are registered a second time when the gate reopens and
+          // its own from `onloadImpl`, closing over collaborators that belong to the feature surface — so
+          // those commands must go down with the surface when the gate closes, or they sit in the palette
+          // calling into torn-down objects, and are registered a second time when the gate reopens and
           // `onloadImpl` runs again.
           // Resolved on every call rather than captured here, because `unloadFeatureSurface` REPLACES the
-          // Wrapper instead of emptying it: each cycle's commands belong to that cycle's wrapper.
+          // wrapper instead of emptying it: each cycle's commands belong to that cycle's wrapper.
           commandLifetimeOwnerProvider: (): ComponentEx => this.gatedWrapperComponent,
           commandRegistrar: new PluginCommandRegistrar(this),
           menuEventRegistrar: this.addUniversalChild(new MenuEventRegistrarComponent(this.app)),
@@ -386,7 +386,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       // Always available; the command's own `canExecute` hides it unless the active note is locked.
       // The one command that names its owner explicitly, opting OUT of the surface-scoped default above:
       // It is the rescue for a note left locked, it closes over nothing but the universal resource-lock
-      // Component, and a blocked plugin is exactly when a user may need it.
+      // component, and a blocked plugin is exactly when a user may need it.
       await this.commandHandlerComponent.registerCommandHandlers(() => [
         new UnlockActiveNoteCommandHandler({
           app: this.app,
@@ -403,18 +403,18 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       );
 
       // The gate. It loads the feature surface itself once every declared dependency is satisfied and no
-      // Declared conflict holds — which for a plugin declaring neither is immediately, synchronously,
-      // Before this line returns — and unloads it again if a dependency is later disabled or uninstalled,
-      // Or a conflicting plugin is enabled. A plugin that is blocked therefore reaches `loadWithPromises`
-      // Below having registered nothing of its own, with only the universal components above running to
-      // Explain why and to offer the repair.
+      // declared conflict holds — which for a plugin declaring neither is immediately, synchronously,
+      // before this line returns — and unloads it again if a dependency is later disabled or uninstalled,
+      // or a conflicting plugin is enabled. A plugin that is blocked therefore reaches `loadWithPromises`
+      // below having registered nothing of its own, with only the universal components above running to
+      // explain why and to offer the repair.
       // Assigned BEFORE the add, unlike every universal component above, and that order is the whole
-      // Point. Adding this one is what runs `onloadImpl`, per the paragraph above, so the assignment
-      // Statement has not returned yet while the subclass is running — and a settings tab built there
-      // Reads `this.pluginGateComponent` to render the `Warn` banner. Assigning after the add would
-      // Make that read throw `Value is undefined` out of the getter, which is an opaque way to say
+      // point. Adding this one is what runs `onloadImpl`, per the paragraph above, so the assignment
+      // statement has not returned yet while the subclass is running — and a settings tab built there
+      // reads `this.pluginGateComponent` to render the `Warn` banner. Assigning after the add would
+      // make that read throw `Value is undefined` out of the getter, which is an opaque way to say
       // "too early". Nothing about child-add order moves: the sequence of `addUniversalChild` calls is
-      // Unchanged, and `setComponent` is a plain store.
+      // unchanged, and `setComponent` is a plain store.
       const pluginGateComponent = new PluginGateComponent({
         conflicts: this.getPluginConflicts(),
         dependencies: this.getPluginDependencies(),
@@ -429,7 +429,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       this.addUniversalChild(pluginGateComponent);
 
       // Every child has already loaded as it was added; this awaits their accumulated async tails and
-      // Reports any failure as a single `AggregateError`.
+      // reports any failure as a single `AggregateError`.
       await this.universalWrapperComponent.loadWithPromises();
     } catch (error) {
       printError(new Error(`Error loading plugin ${this.manifest.name} (${this.manifest.id})`, { cause: error }));
@@ -459,8 +459,8 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    */
   public override removeChild<TComponent extends Component>(component: TComponent): TComponent {
     // Routed by ownership rather than by which tier `addChild` would have chosen, because the two do not
-    // Always agree: a universal component is parented directly on the universal wrapper, yet a subclass
-    // Replacing one goes through the same public `removeChild` as it would for its own children.
+    // always agree: a universal component is parented directly on the universal wrapper, yet a subclass
+    // replacing one goes through the same public `removeChild` as it would for its own children.
     if (this.gatedWrapperComponent.hasChild(component)) {
       return this.gatedWrapperComponent.removeChild(component);
     }
@@ -645,7 +645,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    */
   private async loadFeatureSurface(): Promise<void> {
     // Loaded explicitly for the same reason the universal wrapper is: `addChild` loads a child only once
-    // Its parent is loaded, and the surface has to be live before `onloadImpl` starts adding to it.
+    // its parent is loaded, and the surface has to be live before `onloadImpl` starts adding to it.
     const gatedWrapperComponent = this.gatedWrapperComponent;
     this.universalWrapperComponent.addChild(gatedWrapperComponent);
     gatedWrapperComponent.load();
@@ -657,8 +657,8 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       publishPluginApi({
         ...declaration,
         // Revoked with the SURFACE, not with the plugin: a plugin whose dependency goes away keeps running
-        // Its universal components, and a consumer must not be left holding a handle into the half of it
-        // That was just torn down.
+        // its universal components, and a consumer must not be left holding a handle into the half of it
+        // that was just torn down.
         component: gatedWrapperComponent,
         plugin: this
       });
@@ -682,8 +682,8 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
     const gatedWrapperComponent = this.gatedWrapperComponent;
 
     // Replaced BEFORE the old one is unloaded, so anything that resumes mid-teardown and calls `addChild`
-    // Parks its child on the fresh surface rather than on the one being torn down — where `ComponentEx`
-    // Would refuse it outright, since it refuses children added to an already-unloaded component.
+    // parks its child on the fresh surface rather than on the one being torn down — where `ComponentEx`
+    // would refuse it outright, since it refuses children added to an already-unloaded component.
     this.gatedWrapperComponent = new ComponentEx();
     this.universalWrapperComponent.removeChild(gatedWrapperComponent);
 

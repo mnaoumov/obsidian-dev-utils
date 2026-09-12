@@ -706,8 +706,8 @@ describe('renameSafe', () => {
     vi.spyOn(app.fileManager, 'renameFile');
     const result = await renameSafe({ app, newPath: 'Source.md', oldPathOrAbstractFile: 'source.md' });
     // Source.md and Source.md differ in case, so lowercase compare matches
-    // GetSafeRenamePath returns getAvailablePath result
-    // Then oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase() is checked
+    // getSafeRenamePath returns getAvailablePath result
+    // then oldAbstractFile.path.toLowerCase() === newAvailablePath.toLowerCase() is checked
     expect(result).toBe('Source.md');
     expect(vi.mocked(app.fileManager.renameFile)).toHaveBeenCalled();
   });
@@ -1068,7 +1068,7 @@ describe('processFile', () => {
   it('should write new content when content matches', async () => {
     setupRetryToInvokeOperationFunction();
     // Vault.read returns 'old content', vault.process calls fn with '' by default
-    // We need vault.process to call fn with the same content readSafe returns
+    // we need vault.process to call fn with the same content readSafe returns
     vi.spyOn(app.vault, 'process').mockImplementation(async (_file, $function) => {
       await noopAsync();
       return $function('old content');
@@ -1088,7 +1088,7 @@ describe('processFile', () => {
     vi.spyOn(app.vault, 'process');
 
     // Returning what the provider was given means "nothing to write", not "retry": the operation
-    // Completes, so a file that must never be written cannot hold the shared operation queue open.
+    // completes, so a file that must never be written cannot hold the shared operation queue open.
     await processFile({ app, newContentProvider: ({ content }) => content, pathOrFile: 'note.md', pluginNoticeComponent: null, resourceLockComponent: defaultResourceLockComponent });
     expect(operationResult).toBe(true);
     expect(vi.mocked(app.vault.process)).not.toHaveBeenCalled();

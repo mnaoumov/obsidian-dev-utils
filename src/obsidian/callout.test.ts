@@ -389,7 +389,7 @@ describe('renderCallout', () => {
     });
 
     // Use a function that returns undefined so resolveValue returns undefined,
-    // Triggering the content ??= paragraph fallback path
+    // triggering the content ??= paragraph fallback path
     renderCallout({ contentProvider: () => undefined, dv: castTo<DataviewInlineApi>(dv) });
 
     const firstObserveCall3 = mockObserve.mock.calls[0];

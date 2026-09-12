@@ -30,7 +30,7 @@ describe('findNotePriorityRank', () => {
 
   it('should let the longest matching entry decide, so a nested extension can rank below a plain one', () => {
     // The example the request is built on. `drawing.excalidraw.md` also ends with `.md`, so without
-    // Most-specific-wins the two notes would tie and the priority would never resolve.
+    // most-specific-wins the two notes would tie and the priority would never resolve.
     const entries = ['.md', '.excalidraw.md'];
     expect(rankOf('note.md', entries)).toBe(0);
     expect(rankOf('drawing.excalidraw.md', entries)).toBe(1);
@@ -202,7 +202,7 @@ describe('pickHighestPriorityNotePath', () => {
 
   it('should return null when the best rank is shared', () => {
     // Two notes of equal priority is exactly what the multiple-notes mode setting is for, so this
-    // Must not silently pick one.
+    // must not silently pick one.
     expect(pick(['a.md', 'b.md'], { 'a.md': 0, 'b.md': 0 })).toBeNull();
   });
 

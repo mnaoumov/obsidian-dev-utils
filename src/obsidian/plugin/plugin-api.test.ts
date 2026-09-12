@@ -262,8 +262,8 @@ describe('plugin-api', () => {
     it('should read a record written by a different library copy', () => {
       const harness = createHarness();
       // Written by hand — exactly the bytes a FOREIGN `obsidian-dev-utils` copy would leave behind, never
-      // Through `publishPluginApi`. Nothing here is an instance of any class this copy owns, and the bag
-      // Deliberately omits `subscribers`, as an older copy's would.
+      // through `publishPluginApi`. Nothing here is an instance of any class this copy owns, and the bag
+      // deliberately omits `subscribers`, as an older copy's would.
       getObsidianDevUtilsState<object>(PLUGIN_API_REGISTRY_STATE_KEY, {}).value = {
         records: {
           [PROVIDER_ID]: [{
@@ -522,9 +522,9 @@ describe('plugin-api', () => {
       await waitForAllAsyncOperations();
 
       // `debug` decorates the call before it reaches `log`, and how it decorates depends on whether colors
-      // Are on: it always prepends the namespace, and in color mode also appends a `+0ms` argument. So the
-      // Format string is matched by substring and the values by containment, rather than the call by shape —
-      // Otherwise this passes standalone and fails under the full suite, where the two differ.
+      // are on: it always prepends the namespace, and in color mode also appends a `+0ms` argument. So the
+      // format string is matched by substring and the values by containment, rather than the call by shape —
+      // otherwise this passes standalone and fails under the full suite, where the two differ.
       expect(loggedCalls).toHaveLength(1);
       const [format, ...$arguments] = loggedCalls[0] ?? [];
       expect(String(format)).toContain('Asynchronous validation of the %s of "%s" API method "%s" failed: %s');

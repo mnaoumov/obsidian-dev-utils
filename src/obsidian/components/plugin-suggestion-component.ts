@@ -183,7 +183,7 @@ export class PluginSuggestionComponent extends ComponentEx {
     });
 
     // Only after the install actually succeeded — `installAndEnablePlugin` rethrows on failure, so a
-    // Failed attempt leaves a previous decline standing rather than silently clearing it.
+    // failed attempt leaves a previous decline standing rather than silently clearing it.
     await this.setSuggestionDeclined(false);
   }
 

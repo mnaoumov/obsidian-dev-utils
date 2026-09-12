@@ -136,8 +136,8 @@ function createMobileContext(): object {
     module: { exports: {} },
     navigator: createMobileStub(),
     // Obsidian mobile runs in a webview, so a dependency that branches on `process` at load time (such
-    // As `debug`) must take the same branch a renderer does. Leaving `process` out instead sends those
-    // Dependencies down their Node path and reports a failure no phone would ever see.
+    // as `debug`) must take the same branch a renderer does. Leaving `process` out instead sends those
+    // dependencies down their Node path and reports a failure no phone would ever see.
     process: {
       env: {},
       type: 'renderer'
@@ -151,7 +151,7 @@ function createMobileContext(): object {
   };
 
   // The four aliases every browser global goes by all point back at the sandbox, so they can only be
-  // Filled in once it exists.
+  // filled in once it exists.
   sandbox.global = sandbox;
   sandbox.globalThis = sandbox;
   sandbox.self = sandbox;
@@ -173,7 +173,7 @@ function createMobileStub(): unknown {
     apply: (): unknown => createMobileStub(),
     construct: (): object => createMobileStub() as object,
     // `then` must stay `undefined`: a stand-in that answers it looks like a thenable, so awaiting one
-    // Would hang instead of resolving.
+    // would hang instead of resolving.
     get: (_target, property): unknown => property === 'then' ? undefined : createMobileStub(),
     has: (): boolean => true
   });

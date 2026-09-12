@@ -187,7 +187,7 @@ describe('markdown', () => {
           nothingHappensTimeoutInMilliseconds
         }) {
           // Declared inside the closure, which is serialized whole — a module-scope helper would not
-          // Travel with it.
+          // travel with it.
           function countLeaves(): number {
             let count = 0;
             app.workspace.iterateAllLeaves(() => {
@@ -213,7 +213,7 @@ describe('markdown', () => {
             registerLinkHandlers({ app, el: createSpan() });
 
             // A negative assertion has no readiness signal to wait on — only a bound generous enough
-            // That the leaf-opening this replaced would have happened by now.
+            // that the leaf-opening this replaced would have happened by now.
             await sleep(nothingHappensTimeoutInMilliseconds);
 
             return {
@@ -254,7 +254,7 @@ describe('markdown', () => {
           const file = await app.vault.create('rlh-hover.md', '');
           const aEl = await renderInternalLink({ app, pathOrAbstractFile: file });
           // A trusted hover hit-tests for real, so the link has to genuinely be the topmost element at
-          // Its own coordinates — floated above the app rather than appended into the page flow, where
+          // its own coordinates — floated above the app rather than appended into the page flow, where
           // Obsidian's own absolutely-positioned containers would cover it.
           aEl.setCssStyles({
             left: '10px',
@@ -280,7 +280,7 @@ describe('markdown', () => {
           try {
             // A real pointer move over the link, so the `mouseover` that reaches the handler is the one
             // A user produces. `trigger` itself is synchronous, but the trusted event arrives on a later
-            // Task than the call that injected it, so the payload has to be awaited.
+            // task than the call that injected it, so the payload has to be awaited.
             await hoverElement({ element: aEl });
             await waitUntil({
               message: 'the hover-link event to fire for the hovered link',
@@ -308,7 +308,7 @@ describe('markdown', () => {
       expect(result.sourcePath).toBe('');
       expect(result.isTargetElTheLink).toBe(true);
       // The hover parent is the library's own info object — which is what applies the popover z-index
-      // Fix on top of a modal.
+      // fix on top of a modal.
       expect(result.hasHoverPopoverSlot).toBe(true);
     });
 
@@ -355,7 +355,7 @@ describe('markdown', () => {
           let query = null as null | string;
           const originalOpenGlobalSearch = globalSearch.openGlobalSearch.bind(globalSearch);
           // Deliberately NOT calling through: opening the search pane would mutate the shared
-          // Workspace every other case in this file measures.
+          // workspace every other case in this file measures.
           globalSearch.openGlobalSearch = (search: string): void => {
             query = search;
           };
@@ -441,7 +441,7 @@ describe('markdown', () => {
           nothingOpensTimeoutInMilliseconds
         }) {
           // Declared inside the closure, which is serialized whole — a module-scope helper would not
-          // Travel with it.
+          // travel with it.
           function recordReveals(): RevealRecorder {
             const fileExplorer = ensureNonNullable(app.internalPlugins.getEnabledPluginById('file-explorer'));
             const revealedPaths: string[] = [];
@@ -466,7 +466,7 @@ describe('markdown', () => {
             const aEl = await renderInternalLink({ app, pathOrAbstractFile: folder });
             aEl.click();
             // A negative assertion: nothing here is going to open, so there is no readiness signal to
-            // Wait on — only a bound generous enough that an open would have happened by now.
+            // wait on — only a bound generous enough that an open would have happened by now.
             await sleep(nothingOpensTimeoutInMilliseconds);
 
             return {
