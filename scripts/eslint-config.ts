@@ -123,7 +123,7 @@ function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
         /*
          * Inherited from `flat/recommended-typescript-error`, restated here to record that it is kept deliberately
          * and not disabled: it forbids a valued `@default` and a `@param foo=5` default in function-shaped contexts, which is
-         * exactly the boundary G10q draws — the tag documents a type member, whose declaration cannot show its
+         * exactly the boundary that is wanted — the tag documents a type member, whose declaration cannot show its
          * default, and never a parameter, whose initializer already does. Both checks share the rule's single
          * `contexts` list, so keeping either means keeping both. Note the autofix STRIPS the tag's value rather than
          * reporting it, so `--fix` would silently delete such a doc.

@@ -22,10 +22,10 @@
  * empty folder for it.
  *
  * It then installs the Folder Notes plugin, configured to treat `README.md` as a folder's own note. A
- * demo vault that has outgrown a flat note list groups its notes into folders (G95), and a group folder
- * only says what it is for if it has a note of its own — `README.md`, because that is also the file
- * GitHub renders under the file list when the same vault is browsed as a repository, so one file serves
- * both readers.
+ * demo vault that has outgrown a flat note list groups its notes into folders, and a group folder only
+ * says what it is for if it has a note of its own — `README.md`, because that is also the file GitHub
+ * renders under the file list when the same vault is browsed as a repository, so one file serves both
+ * readers.
  *
  * Finally it raises the sandbox notice explaining that the opened vault is a throwaway copy, so a user
  * who writes their own notes in it is never surprised by them being absent from the next copy. Settings

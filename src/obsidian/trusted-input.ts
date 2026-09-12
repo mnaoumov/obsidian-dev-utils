@@ -10,7 +10,7 @@
  * there is platform-specific: Electron's `webContents.sendInputEvent` on desktop, a CDP injection
  * round-tripped through the harness's host channel on mobile.
  *
- * This module **internalizes that split** (see the project `AGENTS.md` **L6**): it stays
+ * This module **internalizes that split**, as every public-facing API here must: it stays
  * cross-platform-loadable — no platform-only module is on its import graph — and each helper defers to a
  * `Platform`-gated call-time dynamic `import()` of the arm that fits. So a consumer writes
  * `await clickElement({ element })` once and never a platform check.

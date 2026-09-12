@@ -470,16 +470,16 @@ export function myFunction(param: Type): ReturnType {
 - The library **internalizes the platform split**: the public module keeps only cross-platform top-level
   imports, and defers the desktop-/mobile-only work to a `Platform`-gated **dynamic `import()`** of a
   `desktop-`/`mobile-` prefixed module (L5) at **call time** — inside a method that only runs on the
-  right platform. This is the library-owned counterpart to the consumer-side R1 rule (a dual-platform
-  plugin reaching a `desktop-*` module uses a dynamic import); here the library does it so the consumer
-  never has to.
+  right platform. This is the library-owned counterpart to the rule a consuming plugin follows (a
+  dual-platform plugin reaching a `desktop-*` module uses a dynamic import); here the library does it
+  so the consumer never has to.
 - Reference: `OpenDemoVaultCommandHandler` (`command-handlers/open-demo-vault-command-handler.ts`, no
   prefix) is registered directly by any plugin; its `canExecute` gates on `Platform.isDesktopApp` (so the
   command hides on mobile and `execute` runs only on desktop), and `execute` does
   `const { openDemoVault } = await import('../desktop-demo-vault-opener.ts')` — so the desktop-only
   opener (static `node:fs` imports) is never on the mobile load path, yet the consumer writes no platform
   guard. The dynamic `import()` needs no `eslint-disable` (the `no-restricted-syntax` `ImportExpression`
-  ban was removed from the shared config — see R2 G10a); keep the literal path so esbuild can bundle it.
+  ban was removed from the shared config); keep the literal path so esbuild can bundle it.
 - **Second reference — a facade over BOTH arms, and the flat-barrel rule it needs.** `trusted-input.ts`
   (no prefix) exports the same seven helper names as `desktop-trusted-input.ts` and
   `mobile-trusted-input.ts`, and each one dispatches through a `Platform.isDesktopApp`-gated call-time
@@ -500,12 +500,12 @@ export function myFunction(param: Type): ReturnType {
     reaches the barrel on its own.
 - The rule constrains what the library **forces**, not what a consumer **may** import. A consumer is
   free to import a `desktop-*` / `mobile-*` module directly — that is a **deliberate platform
-  commitment**: correct for a desktop-only plugin (or a G80 facade), and a knowingly-wrong choice for a
-  cross-platform plugin (it will break that plugin's load on the other platform). What L6 forbids is the
-  library shipping its **cross-platform-intended** public API as a `desktop-*`/`mobile-*` module, thereby
-  forcing every consumer into a platform guard. So: prefer a cross-platform facade as the primary,
-  documented entry point; still expose the `desktop-*`/`mobile-*` modules for consumers who deliberately
-  opt in.
+  commitment**: correct for a desktop-only plugin (or for a consumer wrapping both arms in a facade of
+  its own), and a knowingly-wrong choice for a cross-platform plugin (it will break that plugin's load
+  on the other platform). What L6 forbids is the library shipping its **cross-platform-intended** public
+  API as a `desktop-*`/`mobile-*` module, thereby forcing every consumer into a platform guard. So:
+  prefer a cross-platform facade as the primary, documented entry point; still expose the
+  `desktop-*`/`mobile-*` modules for consumers who deliberately opt in.
 - (cannot be forced by ESLint — an API-design convention)
 
 ### L7. Register/unregister commands by their pre-registration id (Obsidian mutates `command.id`)
@@ -613,8 +613,9 @@ export function myFunction(param: Type): ReturnType {
   turns an optional integration into a build requirement. This mirrors the vendored
   `src/obsidian/@types/dataview/**`, minus the vendored tree when the used slice is small.
 - The value arrives as `unknown`, so narrow it with a **runtime type-guard predicate**, never an `as`
-  cast (R1 G43). A version that predates the API, renames it, or breaks it then reads as "not there"
-  and the integration stays dormant, instead of throwing while the user's context menu is opening.
+  cast — a cast asserts a shape nothing checked. A version that predates the API, renames it, or
+  breaks it then reads as "not there" and the integration stays dormant, instead of throwing while the
+  user's context menu is opening.
 - **Binding to UNDOCUMENTED internals is a further step, and it ships in two tiers or not at all.**
   Templater publishes nothing — not through this registry, not as a documented API — so
   `src/obsidian/templater.ts` reads `plugin.templater`, which no version guarantee covers. Where that
@@ -695,8 +696,8 @@ export function myFunction(param: Type): ReturnType {
 - A member that only `@obsidian-typings` declares (`Modal.bgEl`, `App.setting`, …) type-checks fine here,
   but the objects this library is *handed* by a consumer are, in that consumer's unit tests,
   `obsidian-test-mocks` doubles — and every one is a `strictProxy` that **throws** on an unmocked string
-  read (R1 G90), not one that returns `undefined`. The mocks model the official surface; the unofficial
-  members are mostly absent. So reading one turns every consumer's unit test into a crash we caused.
+  read, not one that returns `undefined`. The mocks model the official surface; the unofficial members
+  are mostly absent. So reading one turns every consumer's unit test into a crash we caused.
 - The cost scales with how often the read runs. A read inside an **event handler** installed on a
   consumer's object is the worst case: it fires on interactions the consumer's tests already simulate,
   in tests that have nothing to do with the feature. `MinimizableModal`'s background-click guard was
@@ -1490,8 +1491,8 @@ rather than introducing anything, and `1.8.0` is a minor inside `1.x`. It is a *
 because there is no upper bound to hold: it is an advisory floor, so `update-npm-deps.ps1` floats it like
 any other caret override.
 
-**Never take `npm audit fix --force` here.** Its remedy is `markdownlint-cli2@0.21.0`, a downgrade (rule
-G100).
+**Never take `npm audit fix --force` here.** Its remedy is `markdownlint-cli2@0.21.0`, a downgrade — and
+a downgrade is never an acceptable way to clear an advisory.
 
 **Remove this override** when `markdownlint-cli2` asks for `1.7.1` or later itself, which is what
 [`pinned-versions.json`](pinned-versions.json) checks on every sweep.
@@ -1521,7 +1522,8 @@ The major bump is safe for `@wdio/utils`, the only consumer left on `2.x`. It im
 node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already imposed that.
 
 **Never take `npm audit fix --force` here.** Its remedy for this advisory is
-`obsidian-integration-testing@1.1.2` — a downgrade across eleven majors from the `12.x` in use (rule G100).
+`obsidian-integration-testing@1.1.2` — a downgrade across eleven majors from the `12.x` in use, and a
+downgrade is never an acceptable way to clear an advisory.
 
 **Remove this override** when `@wdio/utils` moves to `@puppeteer/browsers@^3` on its own, which is what
 [`pinned-versions.json`](pinned-versions.json) checks on every sweep.
@@ -1695,9 +1697,10 @@ examples.
   out to `npm pack`. `isObsidianPlugin` is true for any repo that has a `manifest.json` and whose package
   name is not `obsidian-dev-utils`, i.e. for the entire plugin fleet, and false for this repo — so the
   `npm pack` branch is **ODU's own releases**, and nothing else in practice (every other non-plugin repo
-  here, OIT and OTM included, ships its own standalone `scripts/version.ts` per G37). **A plugin release on
-  a pre-98 ODU is unaffected and never needs an ODU bump on this account** — Advanced Rename and Delete
-  Handler `1.1.1` was cut on ODU `96.5.2` under npm 12.0.2 on 2026-08-31 and its GitHub release exists.
+  here, OIT and OTM included, ships its own standalone `scripts/version.ts`, since every repo has to
+  stand on its own). **A plugin release on a pre-98 ODU is unaffected and never needs an ODU bump on
+  this account** — Advanced Rename and Delete Handler `1.1.1` was cut on ODU `96.5.2` under npm 12.0.2
+  on 2026-08-31 and its GitHub release exists.
   Say ODU, not "every release": the unscoped wording once led to a planned mandatory ODU bump that was not needed.
   The defect itself: npm 11 emits an array of pack results; npm 12 emits an object keyed by package name.
   The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every ODU

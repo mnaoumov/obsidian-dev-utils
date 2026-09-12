@@ -17,8 +17,8 @@
  * milliseconds, so this is a faithful model rather than a proxy for one.
  *
  * It asserts only that module INITIALIZATION survives — nothing is called, so a helper that reaches a
- * Node builtin from inside a function (rule L6's call-time dynamic `import()`) passes, which is the
- * whole point: platform-only work is allowed, evaluating it at load time is not.
+ * Node builtin from inside a function (a call-time dynamic `import()`) passes, which is the whole
+ * point: platform-only work is allowed, evaluating it at load time is not.
  */
 
 import { builtinModules } from 'node:module';
@@ -109,7 +109,7 @@ export function assertMobileLoadableBundle(params: AssertMobileLoadableBundlePar
         + 'Obsidian mobile hands back:\n'
         + `${formatMobileLoadFailure(error)}\n\n`
         + 'Something reached at bundle-init time evaluates a platform-only API. Every module the generated '
-        + 'barrels re-export has to survive being IMPORTED on either platform (rule L5), so defer the '
+        + 'barrels re-export has to survive being IMPORTED on either platform, so defer the '
         + 'offending dependency to a call-time dynamic `import()` from inside the function that needs it, '
         + 'and keep the platform-restricted work there.',
       { cause: error }
