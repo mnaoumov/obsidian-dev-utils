@@ -31,8 +31,16 @@ import {
 } from '../../disposable.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { assertNonNullable } from '../../type-guards.ts';
+import { ComponentEx } from '../components/component-ex.ts';
 import { CommandHandlerComponent } from './command-handler-component.ts';
 import { CommandHandler } from './command-handler.ts';
+
+interface CreateComponentOwnedByParams {
+  readonly additionalMenuEventRegistrars?: readonly MenuEventRegistrar[] | undefined;
+  commandLifetimeOwnerProvider(): ComponentEx;
+  readonly commandRegistrar: CommandRegistrar;
+  readonly menuEventRegistrar?: MenuEventRegistrar | undefined;
+}
 
 interface TrackedMenuEventRegistrar {
   menuDisposeSpies: ReturnType<typeof vi.fn>[];
@@ -96,6 +104,17 @@ function createComponent(commandRegistrar: CommandRegistrar): CommandHandlerComp
     activeFileProvider: createMockActiveFileProvider(),
     commandRegistrar,
     menuEventRegistrar: createMockMenuEventRegistrar(),
+    pluginName: 'Test Plugin'
+  });
+}
+
+function createComponentOwnedBy(params: CreateComponentOwnedByParams): CommandHandlerComponent {
+  return new CommandHandlerComponent({
+    activeFileProvider: createMockActiveFileProvider(),
+    additionalMenuEventRegistrars: params.additionalMenuEventRegistrars,
+    commandLifetimeOwnerProvider: params.commandLifetimeOwnerProvider,
+    commandRegistrar: params.commandRegistrar,
+    menuEventRegistrar: params.menuEventRegistrar ?? createMockMenuEventRegistrar(),
     pluginName: 'Test Plugin'
   });
 }
@@ -389,6 +408,96 @@ describe('CommandHandlerComponent', () => {
 
     const menuDisposeSpy = additional.menuDisposeSpies[0];
     assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should tie a command removal to the provider-supplied lifetime owner rather than to itself', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const lifetimeOwner = new ComponentEx();
+    lifetimeOwner.load();
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => lifetimeOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'owned-cmd' }))]);
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+
+    lifetimeOwner.unload();
+
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('owned-cmd');
+    // The registering component outlives the batch it registered — that asymmetry is the whole point.
+    expect(component._loaded).toBe(true);
+  });
+
+  it('should leave a command registered when the component unloads but its lifetime owner does not', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const lifetimeOwner = new ComponentEx();
+    lifetimeOwner.load();
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => lifetimeOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'owned-cmd' }))]);
+    component.unload();
+
+    // The owner is authoritative: naming one takes the registration OFF the component own unload.
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+  });
+
+  it('should re-resolve the lifetime owner on every call, so each batch lands on the owner current at the time', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const firstOwner = new ComponentEx();
+    const secondOwner = new ComponentEx();
+    firstOwner.load();
+    secondOwner.load();
+    let currentOwner = firstOwner;
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => currentOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'first-cmd' }))]);
+    currentOwner = secondOwner;
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'second-cmd' }))]);
+
+    firstOwner.unload();
+
+    // A provider answer captured once at construction would have taken both commands down together.
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('first-cmd');
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalledWith('second-cmd');
+  });
+
+  it('should let a call name its own lifetime owner, overriding the provider', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const providedOwner = new ComponentEx();
+    providedOwner.load();
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => providedOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'override-cmd' }))], { lifetimeOwner: component });
+
+    providedOwner.unload();
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+
+    component.unload();
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('override-cmd');
+  });
+
+  it('should tie the additional surface menu registrations to the lifetime owner too', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const lifetimeOwner = new ComponentEx();
+    lifetimeOwner.load();
+    const component = createComponentOwnedBy({
+      additionalMenuEventRegistrars: [additional.registrar],
+      commandLifetimeOwnerProvider: () => lifetimeOwner,
+      commandRegistrar: createMockCommandRegistrar(),
+      menuEventRegistrar: createTrackedMenuEventRegistrar().registrar
+    });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    const menuDisposeSpy = additional.menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).not.toHaveBeenCalled();
+
+    lifetimeOwner.unload();
+
     expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
   });
 });

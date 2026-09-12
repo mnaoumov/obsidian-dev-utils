@@ -709,6 +709,16 @@ describe('the conflict gate', () => {
 });
 
 describe('the dependency gate', () => {
+  class GatedCommandHandler extends FileCommandHandler {
+    protected override canExecuteFile(): boolean {
+      return true;
+    }
+
+    protected override async executeFile(): Promise<void> {
+      await noopAsync();
+    }
+  }
+
   class DependentPlugin extends TestPlugin {
     public readonly featureComponent = new ComponentEx();
 
@@ -723,6 +733,27 @@ describe('the dependency gate', () => {
 
     protected override onloadImpl(): void {
       this.addChild(this.featureComponent);
+    }
+  }
+
+  class CommandRegisteringPlugin extends TestPlugin {
+    protected override getPluginDependencies(): PluginDependency[] {
+      return [{
+        apiVersionRange: '^1',
+        pluginId: 'required-plugin',
+        pluginName: 'Required Plugin',
+        reason: 'Does the thing.'
+      }];
+    }
+
+    protected override async onloadImpl(): Promise<void> {
+      await this.commandHandlerComponent.registerCommandHandlers(() => [
+        new GatedCommandHandler({
+          icon: 'gated-icon',
+          id: 'gated-command',
+          name: 'Gated Command'
+        })
+      ]);
     }
   }
 
@@ -821,5 +852,51 @@ describe('the dependency gate', () => {
     // A once-unloaded `ComponentEx` refuses new children, so a surface that came back on the SAME wrapper
     // Could not have re-run `onloadImpl` at all. Its child being loaded again proves the wrapper is new.
     expect(plugin.featureComponent._loaded).toBe(true);
+  });
+
+  it('should remove a command registered from onloadImpl when the dependency goes away', async () => {
+    const plugin = new CommandRegisteringPlugin(app, manifest);
+    const removeCommandSpy = vi.spyOn(plugin, 'removeCommand');
+    await plugin.onload();
+    expect(removeCommandSpy).not.toHaveBeenCalled();
+
+    apiRefValue = null;
+    await fireApiRefChange();
+
+    // Without this the command sits in the palette bound to a handler whose collaborators are gone.
+    expect(removeCommandSpy).toHaveBeenCalledWith('gated-command');
+  });
+
+  it('should keep the unlock-active-note command while the surface is down, since it is universal', async () => {
+    const plugin = new CommandRegisteringPlugin(app, manifest);
+    const removeCommandSpy = vi.spyOn(plugin, 'removeCommand');
+    await plugin.onload();
+
+    apiRefValue = null;
+    await fireApiRefChange();
+
+    // The rescue for a note left locked is exactly what a blocked plugin must keep offering.
+    expect(removeCommandSpy).not.toHaveBeenCalledWith('unlock-active-note');
+  });
+
+  it('should pair every gate cycle add with exactly one removal, so nothing accumulates', async () => {
+    const plugin = new CommandRegisteringPlugin(app, manifest);
+    const addCommandSpy = vi.spyOn(plugin, 'addCommand');
+    const removeCommandSpy = vi.spyOn(plugin, 'removeCommand');
+    await plugin.onload();
+
+    apiRefValue = null;
+    await fireApiRefChange();
+    apiRefValue = {};
+    await fireApiRefChange();
+    apiRefValue = null;
+    await fireApiRefChange();
+
+    // Two cycles up, two down. Were the disposables piling up on the universal command component, the
+    // Second teardown would fire the first cycle registration as well and the counts would diverge.
+    const gatedAddCount = addCommandSpy.mock.calls.filter(([command]) => command.id === 'gated-command').length;
+    const gatedRemoveCount = removeCommandSpy.mock.calls.filter(([commandId]) => commandId === 'gated-command').length;
+    expect(gatedAddCount).toBe(2);
+    expect(gatedRemoveCount).toBe(2);
   });
 });
