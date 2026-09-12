@@ -56,6 +56,13 @@ export enum ObsidianDevUtilsRepoPaths {
   AstroConfigTs = 'astro.config.ts',
 
   /**
+  Astro's generated ambient types, which declare the `astro:content` virtual module and `import.meta.env`.
+  Written under the Astro root, which is the repo root because `astro.config.ts` sits there. Gitignored, and
+  produced only by `astro sync` / `astro build` / `astro dev`.
+   */
+  AstroGeneratedTypesDts = '.astro/types.d.ts',
+
+  /**
   Windows batch file extension.
    */
   BatExtension = '.bat',
