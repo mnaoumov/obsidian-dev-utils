@@ -239,6 +239,25 @@ accessor still works and is still the safer shape if a tab is ever built earlier
 is no longer required. Nothing about child-add ORDER moves for this — the sequence of `addUniversalChild`
 calls is untouched, and only the field store changed place.
 
+**A COMMAND belongs to the tier that registered it, not to the component that registered it.**
+`commandHandlerComponent` is universal — it has to be, since a blocked plugin still offers the unlock-locked-note
+rescue — but the commands a subclass registers through it from `onloadImpl` close over collaborators the gate
+tears down, so they go down with the surface. That is what
+`CommandHandlerComponent`'s `commandLifetimeOwnerProvider` is for: `PluginBase` constructs the component with
+`() => this.gatedWrapperComponent`, so a consumer's ordinary
+`await this.commandHandlerComponent.registerCommandHandlers(...)` needs no change at the call site and still
+gets surface-scoped teardown. The provider is resolved on EVERY call, never captured, because
+`unloadFeatureSurface` replaces the wrapper rather than emptying it — each gate cycle's commands must land on
+that cycle's wrapper. A batch that has to outlive the surface names its owner explicitly instead
+(`registerCommandHandlers(factory, { lifetimeOwner })`); `PluginBase` does exactly that, once, for
+`UnlockActiveNoteCommandHandler`.
+
+Before this, every command's removal was tied to the universal component's unload, so a plugin whose
+dependency went away kept a full palette of commands calling into torn-down objects, and gained a second set
+of disposables each time the dependency came back. Consumers papered over it by keeping the returned
+`DisposableEx` and disposing it from a child component added in `onloadImpl`; that workaround is no longer
+needed and should be deleted wherever it survives.
+
 ## Code Conventions
 
 ### File Structure

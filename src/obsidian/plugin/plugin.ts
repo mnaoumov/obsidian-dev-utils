@@ -370,18 +370,29 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
         new CommandHandlerComponent({
           activeFileProvider: new AppActiveFileProvider(this.app),
           additionalMenuEventRegistrars: [notebookNavigatorMenuEventRegistrarComponent],
+          // The component is universal; the commands registered THROUGH it are not. A subclass registers
+          // Its own from `onloadImpl`, closing over collaborators that belong to the feature surface — so
+          // Those commands must go down with the surface when the gate closes, or they sit in the palette
+          // Calling into torn-down objects, and are registered a second time when the gate reopens and
+          // `onloadImpl` runs again.
+          // Resolved on every call rather than captured here, because `unloadFeatureSurface` REPLACES the
+          // Wrapper instead of emptying it: each cycle's commands belong to that cycle's wrapper.
+          commandLifetimeOwnerProvider: (): ComponentEx => this.gatedWrapperComponent,
           commandRegistrar: new PluginCommandRegistrar(this),
           menuEventRegistrar: this.addUniversalChild(new MenuEventRegistrarComponent(this.app)),
           pluginName: this.manifest.name
         })
       );
       // Always available; the command's own `canExecute` hides it unless the active note is locked.
+      // The one command that names its owner explicitly, opting OUT of the surface-scoped default above:
+      // It is the rescue for a note left locked, it closes over nothing but the universal resource-lock
+      // Component, and a blocked plugin is exactly when a user may need it.
       await this.commandHandlerComponent.registerCommandHandlers(() => [
         new UnlockActiveNoteCommandHandler({
           app: this.app,
           resourceLockComponent: this.resourceLockComponent
         })
-      ]);
+      ], { lifetimeOwner: this.commandHandlerComponent });
 
       this.pluginSettingsComponent = this.addUniversalChild(
         new PluginSettingsComponentBase<object>({

@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Component that registers {@link CommandHandler}s with Obsidian and ties their removal to its lifecycle.
+ * Component that registers {@link CommandHandler}s with Obsidian and ties their removal to a chosen lifetime.
  */
 
 import type { DisposableEx } from '../../disposable.ts';
@@ -46,9 +46,30 @@ export type CommandHandlerFactory = () => CommandHandler[];
 interface CommandHandlerComponentConstructorParams {
   readonly activeFileProvider: ActiveFileProvider;
   readonly additionalMenuEventRegistrars?: readonly MenuEventRegistrar[] | undefined;
+
+  /**
+   * Resolves the lifetime owner for a registration that names none of its own.
+   *
+   * When omitted, every registration is owned by the component itself, so its unload removes every command
+   * it registered — the behavior a standalone component has always had. No `@default` tag, because the
+   * effective default is a closure over `this` rather than a literal or a linkable symbol.
+   */
+  readonly commandLifetimeOwnerProvider?: CommandLifetimeOwnerProvider | undefined;
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly pluginName: string;
+}
+
+interface CommandHandlerComponentRegisterCommandHandlersOptions {
+  /**
+   * The component whose unload removes the commands this call registers, overriding the component's
+   * {@link CommandLifetimeOwnerProvider} for this one call.
+   *
+   * Name one when the batch's lifetime differs from the default — the caller that needs it is one
+   * registering through a component whose default owner is some SHORTER-lived surface, and whose own
+   * commands have to outlive it.
+   */
+  readonly lifetimeOwner?: ComponentEx | undefined;
 }
 
 interface CommandHandlerComponentRegisterMenuEventHandlersParams {
@@ -56,6 +77,20 @@ interface CommandHandlerComponentRegisterMenuEventHandlersParams {
   readonly menuEventRegistrar: MenuEventRegistrar;
   readonly shouldAddCommandToSubmenu?: boolean;
 }
+
+/**
+ * Resolves the component that owns the teardown of the commands a {@link CommandHandlerComponent.registerCommandHandlers}
+ * call registers — the one whose unload removes them from the palette.
+ *
+ * A provider rather than a component, because the owner is not stable for the life of the registering
+ * component. `PluginBase` hands back the wrapper holding the plugin's feature surface, and that wrapper is
+ * REPLACED wholesale every time the surface goes down and comes back (a declared dependency lost and
+ * regained, a declared conflict appearing and being resolved). A value captured once would tie the second
+ * cycle's commands to the first cycle's dead wrapper, where nothing would ever dispose them.
+ *
+ * @returns The component that should own the registration's teardown.
+ */
+type CommandLifetimeOwnerProvider = () => ComponentEx;
 
 /**
  * A per-command {@link MenuEventRegistrar} that delegates to a shared registrar while collecting the
@@ -110,8 +145,15 @@ class CommandMenuEventScope extends DisposableBase implements MenuEventRegistrar
  *
  * Call {@link registerCommandHandlers} to register a batch of handlers on demand (as many times as
  * needed while the component is alive); dispose the returned {@link DisposableEx} to unregister exactly
- * those handlers — including any menu events they registered — or let the component unload to remove every
- * command still registered through it.
+ * those handlers — including any menu events they registered — or let the batch's LIFETIME OWNER unload to
+ * remove every command still registered through it.
+ *
+ * That owner is this component by default, which is why a standalone component removes its own commands
+ * when it unloads. It is overridable because the registering component and the registered commands do not
+ * always share a lifetime: `PluginBase` keeps ONE of these running for the whole life of the plugin — it is
+ * what the "your dependency went away" notice is built beside — while the commands a subclass registers from
+ * `onloadImpl` belong to the feature surface the gate tears down and rebuilds underneath it. So the owner is
+ * resolved per call, from a {@link CommandLifetimeOwnerProvider} or from the call's own `lifetimeOwner`.
  *
  * The same handlers are fed to every menu surface the component knows about: Obsidian's own workspace
  * events, plus each additional {@link MenuEventRegistrar} bridging another plugin's menus.
@@ -143,6 +185,8 @@ export class CommandHandlerComponent extends ComponentEx {
    */
   protected readonly pluginName: string;
 
+  private readonly commandLifetimeOwnerProvider: CommandLifetimeOwnerProvider;
+
   /**
    * Creates a new command handler component.
    *
@@ -155,6 +199,7 @@ export class CommandHandlerComponent extends ComponentEx {
     this.additionalMenuEventRegistrars = params.additionalMenuEventRegistrars ?? [];
     this.commandRegistrar = params.commandRegistrar;
     this.pluginName = params.pluginName;
+    this.commandLifetimeOwnerProvider = params.commandLifetimeOwnerProvider ?? ((): ComponentEx => this);
   }
 
   /**
@@ -168,10 +213,21 @@ export class CommandHandlerComponent extends ComponentEx {
    * handlers ONCE and all surfaces are fed. Those extra passes add no commands — the palette already
    * has every command from the first pass.
    *
+   * Which component's unload removes them is the caller's to choose: `options.lifetimeOwner` for this one
+   * batch, otherwise whatever this component's {@link CommandLifetimeOwnerProvider} resolves to, which
+   * defaults to the component itself. A command must never outlive the collaborators its handler closes
+   * over — left on a longer-lived owner it stays in the palette calling into torn-down objects — so the
+   * owner to name is the shortest-lived thing the batch depends on.
+   *
    * @param commandHandlerFactory - Builds a fresh set of command handlers, once per menu surface.
+   * @param options - The registration options.
    * @returns A {@link DisposableEx} that unregisters the handlers (commands + menu events) registered by this call.
    */
-  public async registerCommandHandlers(commandHandlerFactory: CommandHandlerFactory): Promise<DisposableEx> {
+  public async registerCommandHandlers(commandHandlerFactory: CommandHandlerFactory, options?: CommandHandlerComponentRegisterCommandHandlersOptions): Promise<DisposableEx> {
+    // Resolved per call, never captured at construction: a provider's answer changes over the component's
+    // Life. `PluginBase` returns the wrapper holding the feature surface, and that wrapper is replaced
+    // Wholesale on every gate cycle — so this cycle's commands have to land on this cycle's wrapper.
+    const lifetimeOwner = options?.lifetimeOwner ?? this.commandLifetimeOwnerProvider();
     const disposables: Disposable[] = [];
     for (const commandHandler of commandHandlerFactory()) {
       const command = commandHandler.buildCommand();
@@ -191,8 +247,8 @@ export class CommandHandlerComponent extends ComponentEx {
           menuEventScope.dispose();
         }
       });
-      // Tie removal to the component's unload, so a command never outlives the component.
-      disposables.push(this.registerDisposable(disposable));
+      // Tie removal to the lifetime owner's unload, so a command never outlives what it calls into.
+      disposables.push(lifetimeOwner.registerDisposable(disposable));
     }
 
     // Every additional surface gets its OWN handler instances — a handler carries per-registration
@@ -200,7 +256,7 @@ export class CommandHandlerComponent extends ComponentEx {
     // Forced off, because such a surface wraps everything in a plugin-titled parent entry of its own.
     for (const additionalMenuEventRegistrar of this.additionalMenuEventRegistrars) {
       for (const commandHandler of commandHandlerFactory()) {
-        disposables.push(this.registerDisposable(await this.registerMenuEventHandlers({ commandHandler, menuEventRegistrar: additionalMenuEventRegistrar, shouldAddCommandToSubmenu: false })));
+        disposables.push(lifetimeOwner.registerDisposable(await this.registerMenuEventHandlers({ commandHandler, menuEventRegistrar: additionalMenuEventRegistrar, shouldAddCommandToSubmenu: false })));
       }
     }
 
