@@ -377,6 +377,7 @@ describe('CombineDisposable', () => {
     expect(c).toHaveBeenCalledTimes(1);
     expect(caught).toBeInstanceOf(AggregateError);
     expect(castTo<AggregateError>(caught).errors).toHaveLength(2);
+    expect(castTo<AggregateError>(caught).message).toBe('2 error(s) occurred');
   });
 
   it('should fail fast on the first child error when configured', () => {
@@ -519,6 +520,7 @@ describe('CombineAsyncDisposable', () => {
     expect(c).toHaveBeenCalledTimes(1);
     expect(caught).toBeInstanceOf(AggregateError);
     expect(castTo<AggregateError>(caught).errors).toHaveLength(2);
+    expect(castTo<AggregateError>(caught).message).toBe('2 error(s) occurred');
   });
 
   it('should fail fast on the first child error when configured', async () => {

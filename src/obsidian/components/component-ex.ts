@@ -8,10 +8,10 @@ import type { Promisable } from 'type-fest';
 
 import { Component } from 'obsidian';
 
+import { createAggregateError } from '../../aggregate-error.ts';
 import { snapshot } from '../../array.ts';
 import { dispose } from '../../disposable.ts';
 import {
-  createAggregateError,
   ErrorWrapper,
   SilentError
 } from '../../error.ts';

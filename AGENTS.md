@@ -222,7 +222,7 @@ the tiers landed, which is why they are written down here:
   from `onloadImpl` arrives nested two deep. It still leaves `onload()` — a plugin whose `onloadImpl` throws
   still fails to load, unchanged — but the SHAPE moved, and a test written against the old one reads the
   change as lost propagation rather than as extra nesting. Every aggregate the library builds now carries a
-  message naming the failure (`createAggregateError` in `src/error.ts`: a lone failure lends its own message
+  message naming the failure (`createAggregateError` in `src/aggregate-error.ts`: a lone failure lends its own message
   to every aggregate above it, several become a count), so `error.message` and `rejects.toThrow(message)`
   find the real sentence at the top instead of an empty string. `errorToString` walks the whole tree either
   way, which is why the console never showed the problem.

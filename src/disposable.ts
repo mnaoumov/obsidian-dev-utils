@@ -6,6 +6,7 @@
 
 import type { Promisable } from 'type-fest';
 
+import { createAggregateError } from './aggregate-error.ts';
 import { assertNever } from './type-guards.ts';
 
 /**
@@ -407,7 +408,7 @@ export class CombineAsyncDisposable extends AsyncDisposableBase {
     }
 
     if (errors.length > 0) {
-      throw new AggregateError(errors);
+      throw createAggregateError(errors);
     }
   }
 
@@ -467,7 +468,7 @@ export class CombineDisposable extends DisposableBase {
     }
 
     if (errors.length > 0) {
-      throw new AggregateError(errors);
+      throw createAggregateError(errors);
     }
   }
 
