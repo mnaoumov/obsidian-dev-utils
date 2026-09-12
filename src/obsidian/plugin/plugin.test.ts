@@ -16,7 +16,8 @@ import {
 
 import type {
   PluginConflict,
-  PluginDependency
+  PluginDependency,
+  PluginGateComponent
 } from '../components/plugin-gate-component.ts';
 import type { TranslationsMap } from '../i18n/i18n.ts';
 import type { PluginApiDeclaration } from './plugin-api.ts';
@@ -250,6 +251,25 @@ describe('PluginBase', () => {
     expect(plugin.getPluginContextComponent()).toBeDefined();
     expect(plugin.getPluginGateComponent()).toBeDefined();
     expect(plugin.getPluginSettingsComponent()).toBeDefined();
+  });
+
+  it('should let onloadImpl read the gate component, which a settings tab built there needs', async () => {
+    // Adding the gate is what RUNS `onloadImpl` — it loads the feature surface as it is added, and does
+    // So synchronously for a plugin declaring no dependency and no conflict. A subclass reading
+    // `this.pluginGateComponent` there therefore reads it before the statement that adds the gate has
+    // Returned, which is exactly what a settings tab rendering the overlap banner does. It has to answer
+    // With the component rather than throw `Value is undefined` out of the getter's `ensureNonNullable`.
+    let capturedComponent = null as null | PluginGateComponent;
+
+    class GateReadingPlugin extends TestPlugin {
+      protected override onloadImpl(): void {
+        capturedComponent = this.getPluginGateComponent();
+      }
+    }
+
+    const plugin = new GateReadingPlugin(app, manifest);
+    await expect(plugin.onload()).resolves.toBeUndefined();
+    expect(capturedComponent).toBe(plugin.getPluginGateComponent());
   });
 
   it('should unload the component a setter replaces', async () => {
