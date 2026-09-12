@@ -180,6 +180,10 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
    * {@link obsidian/components/plugin-gate-component!PluginConflictSeverity.Warn} conflict — the one
    * banner the library cannot place itself, because a running plugin builds its own settings tab.
    *
+   * Readable throughout {@link onloadImpl}, including its synchronous prefix, which is where a settings
+   * tab is built. That is deliberate rather than incidental: adding the gate is what runs
+   * {@link onloadImpl}, so {@link onload} assigns this field before adding it.
+   *
    * @returns The plugin gate component.
    */
   protected get pluginGateComponent(): PluginGateComponent {
@@ -393,18 +397,25 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
       // Or a conflicting plugin is enabled. A plugin that is blocked therefore reaches `loadWithPromises`
       // Below having registered nothing of its own, with only the universal components above running to
       // Explain why and to offer the repair.
-      this.pluginGateComponent = this.addUniversalChild(
-        new PluginGateComponent({
-          conflicts: this.getPluginConflicts(),
-          dependencies: this.getPluginDependencies(),
-          loadFeatureSurface: (): Promise<void> => this.loadFeatureSurface(),
-          plugin: this,
-          pluginNoticeComponent: this.pluginNoticeComponent,
-          unloadFeatureSurface: (): void => {
-            this.unloadFeatureSurface();
-          }
-        })
-      );
+      // Assigned BEFORE the add, unlike every universal component above, and that order is the whole
+      // Point. Adding this one is what runs `onloadImpl`, per the paragraph above, so the assignment
+      // Statement has not returned yet while the subclass is running — and a settings tab built there
+      // Reads `this.pluginGateComponent` to render the `Warn` banner. Assigning after the add would
+      // Make that read throw `Value is undefined` out of the getter, which is an opaque way to say
+      // "too early". Nothing about child-add order moves: the sequence of `addUniversalChild` calls is
+      // Unchanged, and `setComponent` is a plain store.
+      const pluginGateComponent = new PluginGateComponent({
+        conflicts: this.getPluginConflicts(),
+        dependencies: this.getPluginDependencies(),
+        loadFeatureSurface: (): Promise<void> => this.loadFeatureSurface(),
+        plugin: this,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        unloadFeatureSurface: (): void => {
+          this.unloadFeatureSurface();
+        }
+      });
+      this.pluginGateComponent = pluginGateComponent;
+      this.addUniversalChild(pluginGateComponent);
 
       // Every child has already loaded as it was added; this awaits their accumulated async tails and
       // Reports any failure as a single `AggregateError`.

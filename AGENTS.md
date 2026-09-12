@@ -219,6 +219,18 @@ the tiers landed, which is why they are written down here:
   find the real sentence at the top instead of an empty string. `errorToString` walks the whole tree either
   way, which is why the console never showed the problem.
 
+A third thing follows from the split and is a GUARANTEE rather than a trap, because it was made one:
+**`this.pluginGateComponent` is readable throughout `onloadImpl`, synchronous prefix included.** Adding the
+gate is what runs `onloadImpl` — the gate loads the feature surface as it is added, synchronously for a
+plugin declaring neither a dependency nor a conflict — so the assignment statement in `onload` has not
+returned while the subclass is running. `onload` therefore assigns the field BEFORE adding the child, alone
+among the universal components, whose every sibling has already returned by then. Without that, a settings
+tab built in `onloadImpl` and reaching for the `Warn` overlap banner got `Value is undefined` out of the
+getter, and the workaround was to pass the tab a lazy `() => this.pluginGateComponent` accessor. That
+accessor still works and is still the safer shape if a tab is ever built earlier for some other reason; it
+is no longer required. Nothing about child-add ORDER moves for this — the sequence of `addUniversalChild`
+calls is untouched, and only the field store changed place.
+
 ## Code Conventions
 
 ### File Structure
