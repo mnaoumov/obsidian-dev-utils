@@ -1313,6 +1313,23 @@ describe('MyModule', () => {
   `npm run build:generate-merged` regenerates the gitignored `src/__merged.ts`; otherwise `tsc` fails with
   `Property '<name>' does not exist on type 'Lib'`. The runtime source is
   `window.__obsidianDevUtilsModule`, published by the harness plugin.
+- **The harness switches the settings POPOUT off, so a test whose subject is that window must opt back
+  in.** `obsidian-integration-testing` writes `settingsPopoutWindow: false` into every vault it provisions,
+  and says so in its run log (*"settingsPopoutWindow off: settings stay in the driven window"*). That is
+  right for most tests. It is wrong for the few whose premise IS the second Electron window: anything that
+  waits on `activeWindow !== window`, or asserts that a settings window was (or was not) created, then
+  never observes the thing it is asserting and simply times out — with no assertion failure to point at the
+  cause. Those opt back in at the top of their `evalInObsidian` callback, before `app.setting.open()`:
+
+  ```ts
+  const setConfig = app.vault.setConfig.bind(app.vault) as (configKey: string, value: unknown) => void;
+  setConfig('settingsPopoutWindow', true);
+  ```
+
+  The cast is there only because `obsidian-typings`' `ConfigItem` union omits the key. Three integration
+  files do this today, and none of them restores the setting, so it stays on for the rest of that
+  instance's run — which is survivable only because the bullet below already makes every popout test hand
+  the active window back.
 - **A test that opens the settings POPOUT must point the active window home before it ends.** Obsidian
   moves the `activeWindow` / `activeDocument` globals on window FOCUS, and the owned test instance is
   hidden by being moved OFF-SCREEN — so `app.setting.close()` alone leaves them pinned to the popout
