@@ -53,6 +53,14 @@
  * Every plugin bundles its OWN copy of `obsidian-dev-utils`, so a registry record is a wire format between
  * different library versions and must stay backward-compatible forever. Nothing crossing it may be
  * `instanceof`-checked — reads are structural, and only plain data objects and plain functions are stored.
+ *
+ * That wire format is also PUBLISHED, as of the `Plugin API protocol` guide: a plugin that does not use
+ * this library reaches an API by reading
+ * `globalThis.__obsidianDevUtils.pluginApiRegistry.value.records[pluginId]` and applying the selection rule
+ * {@link selectRecord} implements. So {@link PublishedPluginApiRecord}'s field names, the state key, and
+ * "highest live record satisfying the range wins" are a documented contract with an audience outside this
+ * repository, and the guide has to be updated in the same change as any of them. Only `pluginApiRegistry`
+ * is public within the shared-state bag; the rest of it stays internal.
  */
 
 import type { StandardSchemaV1 } from '@standard-schema/spec';
@@ -410,6 +418,12 @@ interface PluginApiRegistry {
  * @remarks
  * This is the WIRE FORMAT between different `obsidian-dev-utils` copies, so it holds nothing but plain data
  * and plain functions, and every read of it elsewhere in this file is structural.
+ *
+ * Unexported and nonetheless PUBLIC: the `Plugin API protocol` guide documents these five field names for
+ * third-party plugins that read the registry without this library, and reproduces the interface verbatim
+ * for them to paste. It stays unexported because no consumer OF this library ever touches a record —
+ * {@link watchPluginApi} is their whole surface — so exporting it would widen the package's API for an
+ * audience that does not import the package. Renaming a field here is a breaking change to the guide.
  */
 interface PublishedPluginApiRecord {
   api: object;

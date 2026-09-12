@@ -39,8 +39,11 @@ library's TSDoc — is published at
 - [Styling](https://mnaoumov.dev/obsidian-dev-utils/guides/styling/)
 - [Setting Components](https://mnaoumov.dev/obsidian-dev-utils/guides/setting-components/)
 - [Modals](https://mnaoumov.dev/obsidian-dev-utils/guides/modals/)
+- [Popovers](https://mnaoumov.dev/obsidian-dev-utils/guides/popovers/)
 - [Debugging](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/)
 - [Plugin Helpers](https://mnaoumov.dev/obsidian-dev-utils/guides/plugin-helpers/)
+- [Cross-plugin APIs](https://mnaoumov.dev/obsidian-dev-utils/guides/cross-plugin-apis/)
+- [Plugin API protocol](docs/src/content/docs/guides/plugin-api-protocol.md) — how to consume a plugin's API without using this library
 - [Demo Vault](https://mnaoumov.dev/obsidian-dev-utils/guides/demo-vault/)
 - [Testing](https://mnaoumov.dev/obsidian-dev-utils/guides/testing/)
 

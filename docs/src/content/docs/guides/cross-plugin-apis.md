@@ -24,6 +24,11 @@ import {
 } from 'obsidian-dev-utils/obsidian/plugin/plugin-api';
 ```
 
+Publishing an API here does not confine your consumers to this library. The events and the registry below
+are a documented wire protocol, reachable with nothing but the `obsidian` module — see
+[Plugin API protocol](/obsidian-dev-utils/guides/plugin-api-protocol/), which is the page to hand a
+developer who wants your API and not your framework.
+
 ## Declaring the contract
 
 A cross-plugin call is **RPC across a version boundary**: the code on the other side was compiled separately,
@@ -455,4 +460,9 @@ revocable handles exist to prevent. Hold a `PluginApiRef` for that.
 
 Because it rides Obsidian's own event source rather than anything belonging to this library, a plugin that
 does not use `obsidian-dev-utils` at all can still listen. A `trigger` has no replay, though, so a listener
-that starts late reads the current state from `app.plugins.plugins` and uses the events for the transitions.
+that starts late reads the current state once and uses the events for the transitions after that.
+
+Those two names, their payload, and the registry the APIs themselves sit in are a frozen, documented
+protocol. [Plugin API protocol](/obsidian-dev-utils/guides/plugin-api-protocol/) writes all of it down for
+a consumer who will never install this library — including the part `watchPluginApi` hides from you, which
+is how a published API is actually located and which version wins.

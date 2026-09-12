@@ -18,6 +18,14 @@
  * Both the event names and {@link PluginLifecycleEventPayload} are a CROSS-VERSION CONTRACT. Copies of
  * this library at different versions publish and consume them side by side in one vault, so neither may
  * change incompatibly: plain data only, and new payload fields only ever added.
+ *
+ * That contract is also PUBLISHED, as of the `Plugin API protocol` guide: third-party plugins that will
+ * never install this library are told to hardcode these two strings and this payload shape. Publishing it
+ * added no new constraint — the cross-copy one above already forbade every change an outsider could
+ * notice — but it does mean a rename is now doubly unavailable. The `obsidian-dev-utils:` prefix names the
+ * library rather than the subject, which is a wart, and a permanent one: a neutral alias would not retire
+ * the old name (already-released plugins emit only it), so it would leave every correct consumer listening
+ * for both, forever.
  */
 
 import type { App } from 'obsidian';
