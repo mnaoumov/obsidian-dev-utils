@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 103.2.0
+
+- fix(command-handlers): tie onloadImpl commands to the feature surface, not to the plugin
+- docs(plugin-api): document the protocol for plugins that do not use this library
+- Merge branch 'T1110'
+- docs: document the deepmerge-ts and fflate advisory overrides
+
 ## 103.1.0
 
 - feat(error): give every AggregateError a message naming the failure
