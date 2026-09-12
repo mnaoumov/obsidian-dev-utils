@@ -20,9 +20,9 @@ import { strictProxy } from '../strict-proxy.ts';
 import { EMPTY } from '../string.ts';
 import { bootstrapDemoVault } from './demo-vault-helper.ts';
 
-const CST_PLUGIN_ID = 'fix-require-modules';
-const CST_REPO = 'mnaoumov/obsidian-codescript-toolkit';
-const CST_VERSION = '1.0.0';
+const CODE_SCRIPT_TOOLKIT_PLUGIN_ID = 'fix-require-modules';
+const CODE_SCRIPT_TOOLKIT_REPO = 'mnaoumov/obsidian-codescript-toolkit';
+const CODE_SCRIPT_TOOLKIT_VERSION = '1.0.0';
 
 const FOLDER_NOTES_PLUGIN_ID = 'folder-notes';
 const FOLDER_NOTES_REPO = 'LostPaul/obsidian-folder-notes';
@@ -34,7 +34,7 @@ const DEMOED_PLUGIN_NAME = 'My Plugin';
 const PERMANENT_NOTICE_DURATION_IN_MILLISECONDS = 0;
 const INVALID_DEMO_VAULT_ERROR_MESSAGE = 'Invalid demo vault';
 
-const CST_SETTINGS = {
+const CODE_SCRIPT_TOOLKIT_SETTINGS = {
   defaultCodeButtonConfig: '---\nsourceVisibility: collapsed\n---',
   invocableScriptsFolder: 'Invocables',
   modulesRoot: '_assets/CodeScriptToolkit',
@@ -48,13 +48,13 @@ const FOLDER_NOTES_SETTINGS = {
   storageLocation: 'insideFolder'
 };
 
-const CST_MANIFEST: PluginManifest = {
+const CODE_SCRIPT_TOOLKIT_MANIFEST: PluginManifest = {
   author: 'mnaoumov',
   description: 'CodeScript Toolkit',
-  id: CST_PLUGIN_ID,
+  id: CODE_SCRIPT_TOOLKIT_PLUGIN_ID,
   minAppVersion: '1.0.0',
   name: 'CodeScript Toolkit',
-  version: CST_VERSION
+  version: CODE_SCRIPT_TOOLKIT_VERSION
 };
 
 const FOLDER_NOTES_MANIFEST: PluginManifest = {
@@ -70,9 +70,9 @@ const REGISTRY = [
   {
     author: 'mnaoumov',
     description: 'CodeScript Toolkit',
-    id: CST_PLUGIN_ID,
+    id: CODE_SCRIPT_TOOLKIT_PLUGIN_ID,
     name: 'CodeScript Toolkit',
-    repo: CST_REPO
+    repo: CODE_SCRIPT_TOOLKIT_REPO
   },
   {
     author: 'LostPaul',
@@ -84,12 +84,12 @@ const REGISTRY = [
 ];
 
 const PLUGINS_FOLDER_PATH = `${EMPTY}.obsidian/plugins`;
-const DATA_PATH = `${PLUGINS_FOLDER_PATH}/${CST_PLUGIN_ID}/data.json`;
+const DATA_PATH = `${PLUGINS_FOLDER_PATH}/${CODE_SCRIPT_TOOLKIT_PLUGIN_ID}/data.json`;
 // The helper's own `data.json`, written by the packaging step: the vault's only statement of which
 // Plugin it demonstrates.
 const HELPER_SETTINGS_PATH = `${PLUGINS_FOLDER_PATH}/${HELPER_PLUGIN_ID}/data.json`;
 const HELPER_SETTINGS_JSON = JSON.stringify({ demoedPluginId: DEMOED_PLUGIN_ID });
-const INVOCABLE_SCRIPTS_FOLDER_PATH = `${CST_SETTINGS.modulesRoot}/${CST_SETTINGS.invocableScriptsFolder}`;
+const INVOCABLE_SCRIPTS_FOLDER_PATH = `${CODE_SCRIPT_TOOLKIT_SETTINGS.modulesRoot}/${CODE_SCRIPT_TOOLKIT_SETTINGS.invocableScriptsFolder}`;
 const FOLDER_NOTES_DATA_PATH = `${PLUGINS_FOLDER_PATH}/${FOLDER_NOTES_PLUGIN_ID}/data.json`;
 
 interface AdapterMembers {
@@ -117,8 +117,8 @@ interface CreateAppOptions {
   // The content of the helper's `data.json`: `null` for a vault that has none at all, a string to hand
   // Over exactly what the bootstrap will read. Omitted means a well-formed marker.
   readonly helperSettingsJson?: null | string;
-  readonly isCstEnabled?: boolean;
-  readonly isCstInstalled?: boolean;
+  readonly isCodeScriptToolkitEnabled?: boolean;
+  readonly isCodeScriptToolkitInstalled?: boolean;
   readonly isDemoedPluginManifestPresent?: boolean;
   readonly isFolderNotesEnabled?: boolean;
   readonly isFolderNotesInstalled?: boolean;
@@ -154,7 +154,7 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   // A live set the enable/disable mocks mutate, so the real community-plugin helpers observe the change
   // (an already-enabled plugin is seen as enabled until disabled, and vice versa).
   const enabledPlugins = new Set<string>([
-    ...options.isCstEnabled ? [CST_PLUGIN_ID] : [],
+    ...options.isCodeScriptToolkitEnabled ? [CODE_SCRIPT_TOOLKIT_PLUGIN_ID] : [],
     ...options.isFolderNotesEnabled ? [FOLDER_NOTES_PLUGIN_ID] : []
   ]);
   const installPlugin = vi.fn<App['plugins']['installPlugin']>().mockResolvedValue();
@@ -205,8 +205,8 @@ function createApp(options: CreateAppOptions = {}): AppMock {
   // (plugin not installed) instead of throwing.
   const manifests: App['plugins']['manifests'] = {};
   Object.setPrototypeOf(manifests, null);
-  if (options.isCstInstalled) {
-    manifests[CST_PLUGIN_ID] = strictProxy<PluginManifest>({ id: CST_PLUGIN_ID });
+  if (options.isCodeScriptToolkitInstalled) {
+    manifests[CODE_SCRIPT_TOOLKIT_PLUGIN_ID] = strictProxy<PluginManifest>({ id: CODE_SCRIPT_TOOLKIT_PLUGIN_ID });
   }
   if (options.isFolderNotesInstalled) {
     manifests[FOLDER_NOTES_PLUGIN_ID] = strictProxy<PluginManifest>({ id: FOLDER_NOTES_PLUGIN_ID });
@@ -274,10 +274,10 @@ beforeEach(() => {
     const isFolderNotes = url.includes(FOLDER_NOTES_REPO);
     if (url.includes('releases/latest')) {
       // eslint-disable-next-line camelcase -- The field name is dictated by the GitHub API JSON.
-      return Promise.resolve({ json: { tag_name: isFolderNotes ? FOLDER_NOTES_VERSION : CST_VERSION } });
+      return Promise.resolve({ json: { tag_name: isFolderNotes ? FOLDER_NOTES_VERSION : CODE_SCRIPT_TOOLKIT_VERSION } });
     }
     if (url.includes('manifest.json')) {
-      return Promise.resolve({ json: isFolderNotes ? FOLDER_NOTES_MANIFEST : CST_MANIFEST });
+      return Promise.resolve({ json: isFolderNotes ? FOLDER_NOTES_MANIFEST : CODE_SCRIPT_TOOLKIT_MANIFEST });
     }
     return Promise.reject(new Error(`Unexpected URL: ${url}`));
   });
@@ -287,12 +287,12 @@ describe('bootstrapDemoVault', () => {
   it('should install CodeScript Toolkit from the store when it is not installed, then enable it', async () => {
     const { app, enablePluginAndSave, installPlugin } = createApp();
     await bootstrapDemoVault({ app });
-    expect(installPlugin).toHaveBeenCalledWith(CST_REPO, CST_VERSION, CST_MANIFEST);
-    expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+    expect(installPlugin).toHaveBeenCalledWith(CODE_SCRIPT_TOOLKIT_REPO, CODE_SCRIPT_TOOLKIT_VERSION, CODE_SCRIPT_TOOLKIT_MANIFEST);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(CODE_SCRIPT_TOOLKIT_PLUGIN_ID);
   });
 
   it('should not reinstall CodeScript Toolkit when it is already installed', async () => {
-    const { app, installPlugin } = createApp({ isCstInstalled: true, isFolderNotesInstalled: true });
+    const { app, installPlugin } = createApp({ isCodeScriptToolkitInstalled: true, isFolderNotesInstalled: true });
     await bootstrapDemoVault({ app });
     expect(installPlugin).not.toHaveBeenCalled();
     expect(mockRequestUrl).not.toHaveBeenCalled();
@@ -301,8 +301,8 @@ describe('bootstrapDemoVault', () => {
   it('should write CodeScript Toolkit settings before enabling it (fresh load, no reload)', async () => {
     const { adapterWrite, app, disablePluginAndSave, enablePluginAndSave } = createApp();
     await bootstrapDemoVault({ app });
-    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify(CST_SETTINGS, null, 2)}\n`);
-    expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+    expect(adapterWrite).toHaveBeenCalledWith(DATA_PATH, `${JSON.stringify(CODE_SCRIPT_TOOLKIT_SETTINGS, null, 2)}\n`);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(CODE_SCRIPT_TOOLKIT_PLUGIN_ID);
     expect(disablePluginAndSave).not.toHaveBeenCalled();
     const writeOrder = vi.mocked(adapterWrite).mock.invocationCallOrder[0] ?? 0;
     const enableOrder = vi.mocked(enablePluginAndSave).mock.invocationCallOrder[0] ?? 0;
@@ -313,15 +313,15 @@ describe('bootstrapDemoVault', () => {
     const { app, disablePluginAndSave, enablePluginAndSave, installPlugin } = createApp({
       existingData: JSON.stringify({ modulesRoot: 'stale' }),
       existingFolderNotesData: JSON.stringify(FOLDER_NOTES_SETTINGS),
-      isCstEnabled: true,
-      isCstInstalled: true,
+      isCodeScriptToolkitEnabled: true,
+      isCodeScriptToolkitInstalled: true,
       isFolderNotesEnabled: true,
       isFolderNotesInstalled: true
     });
     await bootstrapDemoVault({ app });
     expect(installPlugin).not.toHaveBeenCalled();
-    expect(disablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
-    expect(enablePluginAndSave).toHaveBeenCalledWith(CST_PLUGIN_ID);
+    expect(disablePluginAndSave).toHaveBeenCalledWith(CODE_SCRIPT_TOOLKIT_PLUGIN_ID);
+    expect(enablePluginAndSave).toHaveBeenCalledWith(CODE_SCRIPT_TOOLKIT_PLUGIN_ID);
   });
 
   it('should create the invocable scripts folder when it does not exist', async () => {
@@ -338,10 +338,10 @@ describe('bootstrapDemoVault', () => {
 
   it('should not reload CodeScript Toolkit when it is already enabled and the settings are unchanged', async () => {
     const { adapterWrite, app, disablePluginAndSave, enablePluginAndSave } = createApp({
-      existingData: JSON.stringify(CST_SETTINGS),
+      existingData: JSON.stringify(CODE_SCRIPT_TOOLKIT_SETTINGS),
       existingFolderNotesData: JSON.stringify(FOLDER_NOTES_SETTINGS),
-      isCstEnabled: true,
-      isCstInstalled: true,
+      isCodeScriptToolkitEnabled: true,
+      isCodeScriptToolkitInstalled: true,
       isFolderNotesEnabled: true,
       isFolderNotesInstalled: true
     });
@@ -384,7 +384,7 @@ describe('bootstrapDemoVault folder notes', () => {
     const { app, enablePluginAndSave } = createApp();
     await bootstrapDemoVault({ app });
     const enabledOrder = vi.mocked(enablePluginAndSave).mock.calls.map(([pluginId]) => pluginId);
-    expect(enabledOrder).toEqual([CST_PLUGIN_ID, FOLDER_NOTES_PLUGIN_ID]);
+    expect(enabledOrder).toEqual([CODE_SCRIPT_TOOLKIT_PLUGIN_ID, FOLDER_NOTES_PLUGIN_ID]);
   });
 
   it('should leave Folder Notes alone when it is already installed, enabled and configured', async () => {
@@ -445,7 +445,7 @@ describe('bootstrapDemoVault sandbox notice', () => {
   // The bootstrap itself installs — including CodeScript Toolkit, and anything a demo note's
   // Prerequisites add — which counting plugin folders would not.
   it('should name the plugin from the marker even once other plugins are installed', async () => {
-    const { app } = createApp({ isCstEnabled: true, isCstInstalled: true });
+    const { app } = createApp({ isCodeScriptToolkitEnabled: true, isCodeScriptToolkitInstalled: true });
     await bootstrapDemoVault({ app });
     expect(getSandboxNoticeText()).toContain(`This is a demo vault for ${DEMOED_PLUGIN_NAME}.`);
   });

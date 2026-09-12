@@ -37,7 +37,7 @@ ruleTester.run('no-over-cap-wait-in-eval-in-obsidian', toRuleTesterModule(noOver
     {
       code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { const BIG_TIMEOUT_IN_MILLISECONDS = 30000; await waitUntil({ timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS }); } });',
       errors: [{ messageId: MESSAGE_ID }],
-      name: 'a budget held in a const inside the closure, the dominant shape in the fleet'
+      name: 'a budget held in a const inside the closure, the dominant shape in real suites'
     },
     {
       code: 'const BIG_TIMEOUT_IN_MILLISECONDS = 30000; evalInObsidian({ async callback({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: BIG_TIMEOUT_IN_MILLISECONDS }); } });',

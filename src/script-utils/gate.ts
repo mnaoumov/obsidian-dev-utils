@@ -13,7 +13,7 @@
  * calls {@link gate}, and a check added here is reachable from both. What the gate deliberately leaves to
  * the release path is the clean-repo assertion — a branch gate is run on a dirty tree, which is the whole
  * point of running it before committing — and the integration suite, which has to run in sequence across
- * the whole fleet and so cannot be part of a command run casually.
+ * every repo sharing the one Obsidian instance and so cannot be part of a command run casually.
  *
  * The tests run ONCE, through `test:coverage` where the project defines it and through `test` otherwise.
  * Running both, as this did until 2026-09-05, was a duplicate everywhere it mattered: a project scopes its
