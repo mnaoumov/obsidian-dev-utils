@@ -10,6 +10,7 @@ import relativeLinksRule from 'markdownlint-rule-relative-links';
 
 import type { MarkdownlintCli2ConfigurationSchema as MarkdownlintCli2ConfigSchema } from './markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
 
+import { CLAUDE_WORKTREES_IGNORE_GLOB } from './lint-ignores.ts';
 import { NODE_MODULES_IGNORE_GLOB } from './markdownlint-ignores.ts';
 
 /**
@@ -54,8 +55,12 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
   // `.git` itself (it is simply outside the working tree), and a repository can deliberately TRACK a
   // Vendored `node_modules` tree, whose third-party markdown is not ours to lint. See
   // `markdownlint-ignores.ts`.
+  // Claude Code's worktree folder is the third case, and a different one again: `gitignore: true` reads
+  // Only `.gitignore` files, while git excludes that folder through `.git/info/exclude`.
+  // See `lint-ignores.ts`.
   ignores: [
     '.git/**',
+    CLAUDE_WORKTREES_IGNORE_GLOB,
     NODE_MODULES_IGNORE_GLOB
   ]
 };

@@ -74,6 +74,13 @@ export enum ObsidianPluginRepoPaths {
   ChangelogMd = 'CHANGELOG.md',
 
   /**
+  Claude Code's worktree folder. `git worktree add` puts a second, complete checkout of the repository
+  here, INSIDE the repository, which is the only reason a repo ever contains a copy of itself. Never
+  source, so every linter that walks the tree has to skip it.
+   */
+  ClaudeWorktrees = '.claude/worktrees',
+
+  /**
   Commitlint configuration file.
    */
   CommitlintConfigTs = 'commitlint.config.ts',
