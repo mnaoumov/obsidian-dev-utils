@@ -683,7 +683,6 @@
     "fflate": "$fflate",
     "glob": "^13.0.6",
     "js-yaml": "4.3.2",
-    "markdown-it": "^15.0.1",
     "readdir-glob": "^3.0.0",
     "smol-toml": "^1.8.0",
     "test-exclude": "^8.0.0",
