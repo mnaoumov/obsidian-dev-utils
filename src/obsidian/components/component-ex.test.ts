@@ -173,6 +173,52 @@ describe('ComponentEx', () => {
       }
     });
 
+    it('should name a lone failure in the AggregateError message, rather than leaving it empty', async () => {
+      const component = new TestComponentEx();
+      component.asyncLoadFunction.mockRejectedValue(new Error('load failed'));
+
+      const promise = component.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.message).toBe('load failed');
+      }
+    });
+
+    it('should carry a child failure message up through the grouping aggregate', async () => {
+      const parent = new ComponentEx();
+      const child = new TestComponentEx();
+      child.asyncLoadFunction.mockRejectedValue(new Error('child failed'));
+      parent.addChild(child);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.message).toBe('child failed');
+      }
+    });
+
+    it('should count several child failures rather than promote one of them', async () => {
+      const parent = new ComponentEx();
+      const child1 = new TestComponentEx();
+      child1.asyncLoadFunction.mockRejectedValue(new Error('error 1'));
+      const child2 = new TestComponentEx();
+      child2.asyncLoadFunction.mockRejectedValue(new Error('error 2'));
+      parent.addChild(child1);
+      parent.addChild(child2);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.message).toBe('2 error(s) occurred');
+      }
+    });
+
     it('should wrap a non-Error throwable via ErrorWrapper', async () => {
       const component = new TestComponentEx();
       component.asyncLoadFunction.mockRejectedValue('string failure');
