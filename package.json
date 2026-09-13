@@ -735,6 +735,7 @@
     "markdownlint-rule-relative-links": "^5.1.2",
     "monkey-around": "^3.0.0",
     "obsidian": "^1.13.1",
+    "obsidian-dev-utils": "^103.2.0",
     "path-browserify": "^1.0.1",
     "postcss": "^8.5.28",
     "postcss-modules": "^9.0.1",
