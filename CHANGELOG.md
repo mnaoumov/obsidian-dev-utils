@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 104.0.0
+
+- chore: update libs
+- fix(lint): stop capitalizing every continuation line of a wrapped comment
+- fix(lint): read Astro's generated types from where Astro writes them
+- docs(agents): say the harness switches the settings popout off, which the recipe below assumes
+- chore(deps): drop the dead markdown-it override, whose advisory every consumer now clears itself
+- fix(disposable)!: give both dispose-path aggregates a message that names the failure — BREAKING: `createAggregateError` moved to the `aggregate-error` subpath; import it from `obsidian-dev-utils/aggregate-error`.
+- refactor: replace internal shorthand with names a reader can resolve
+- docs: state what each convention says instead of citing it by id
+- fix(linters): ignore Claude Code's worktree folder in the ESLint and markdownlint configs
+
 ## 103.2.0
 
 - fix(command-handlers): tie onloadImpl commands to the feature surface, not to the plugin
