@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 104.0.1
+
+- fix(lint): let a comment open by naming a camelCase symbol
+- feat(eslint-rules): count a bounded retry helper once per call site
+- fix(version): stop a default merge subject reaching the published changelog
+- feat(markdownlint): unwrap this repo's markdown and turn no-soft-break-in-paragraph on
+- feat(markdownlint): add a no-soft-break-in-paragraph rule, registered but turned off
+- feat(gate): add --integration, and give the integration default a reason that is true
+- fix(integration): make an over-cap eval say so, and stop the hover helper lying
+- feat(demo-vault-buttons): refuse a budget pair the transport cannot honour
+- feat(eslint-rules): size deadline-bounded and counting loops in the wait-cap rule
+- docs(changelog): replace a raw merge subject with the change it shipped
+- docs(agents): land the provider side of the cross-plugin API rule
+- docs: correct the perf project's cost claim and name its weekly sweep
+- feat: require every custom vitest project to declare its own include
+- test: opt into the settings popout through the harness seam
+
 ## 104.0.0
 
 - chore: update libs
