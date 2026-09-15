@@ -179,6 +179,46 @@ ruleTester.run('no-over-cap-wait-in-eval-in-obsidian', toRuleTesterModule(noOver
       code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { for (let attempt = 0; attempt < 6; attempt++) { await waitUntil({ message: "a" }); } } });',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'an omitted timeout taking the helper default, multiplied by the loop that runs it'
+    },
+    {
+      code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { async function settle() { await waitUntil({ timeoutInMilliseconds: 10000 }); } await settle(); await settle(); await settle(); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'a helper called THREE times, whose waiting runs three times and is charged that way'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { const settle = async () => { await sleep(10000); }; await settle(); await settle(); await settle(); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'an ARROW helper called three times, bound by a const rather than declared'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function settle() { await sleep(5000); } for (let attempt = 0; attempt < 6; attempt++) { await settle(); } } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'a helper called inside a counting loop, so the call site carries the loop that runs it'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function waitForAsync() { for (let attempt = 0; attempt < 40; attempt++) { await sleep(250); } } await waitForAsync(); await waitForAsync(); await waitForAsync(); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'a bounded retry helper called three times, the exact shape a single attribution under-counted by two thirds'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function inner() { await sleep(5000); } async function outer() { await inner(); await inner(); } await outer(); await outer(); await outer(); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'a helper calling a helper, whose call counts multiply down the chain'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function retryAsync() { await sleep(30000); await retryAsync(); } await retryAsync(); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'DIRECT recursion, which must terminate rather than charge itself forever'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function ping() { await sleep(20000); await pong(); } async function pong() { await sleep(10000); await ping(); } await ping(); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'MUTUAL recursion, where re-entering a helper already being counted charges nothing'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function settle() { await sleep(30000); } } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      name: 'a helper NO call site reaches, which keeps the flat single charge a lexical attribution gave it'
     }
   ],
   valid: [
@@ -449,6 +489,26 @@ ruleTester.run('no-over-cap-wait-in-eval-in-obsidian', toRuleTesterModule(noOver
     {
       code: 'const deadline = Date.now() + 60000; while (Date.now() < deadline) { await sleep(1000); }',
       name: 'a deadline loop in no in-Obsidian closure at all, where the transport cap does not apply'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { async function settle() { await sleep(10000); } await settle(); await settle(); } });',
+      name: 'a helper called TWICE and staying under the cap, which is what makes the count a count rather than a flat charge'
+    },
+    {
+      code: 'async function settle() { await sleep(60000); } evalInObsidian({ async callback() { await settle(); await settle(); } });',
+      name: 'a helper declared OUTSIDE the closure, which would need analysis across call boundaries and stays silent'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { class Settle {} Settle(); await sleep(20000); } });',
+      name: 'a callee bound by a class declaration, which declares no function to count'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { let settle; settle(); await sleep(20000); } });',
+      name: 'a callee declared with no initializer'
+    },
+    {
+      code: 'evalInObsidian({ async callback() { const settle = 5; settle(); await sleep(20000); } });',
+      name: 'a callee bound to something that is not a function at all'
     }
   ]
 });
