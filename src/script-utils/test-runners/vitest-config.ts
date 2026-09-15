@@ -247,6 +247,7 @@ export function defineObsidianPluginVitestConfig(options: DefineObsidianPluginVi
   }
 
   const customProjects = options.customProjects?.(context) ?? [];
+  validateCustomProjects(customProjects);
 
   return defineConfig({
     test: {
@@ -288,4 +289,39 @@ export function defineObsidianPluginVitestConfig(options: DefineObsidianPluginVi
       ]
     }
   });
+}
+
+/**
+ * Refuses a custom project that declares no `include` glob of its own.
+ *
+ * The root section deliberately declares no `include` (see the comment on it above), so a project that
+ * declares none falls back to vitest's own default glob — which matches EVERY test file in the repo.
+ * That project then runs the unit suites in an Obsidian environment, the android suites under the
+ * desktop transport, and the `*-capture.` screenshot suites that open a window and rewrite checked-in
+ * PNGs. A widened project is silent: it passes, slowly, having done all of that.
+ *
+ * Only a plain inline configuration can be checked here. A project named by a glob string, built by a
+ * function, or awaited from a promise is resolved by vitest itself, out of this function's reach.
+ *
+ * @param customProjects - The projects returned by {@link DefineObsidianPluginVitestConfigOptions.customProjects}.
+ */
+function validateCustomProjects(customProjects: TestProjectConfiguration[]): void {
+  for (const [index, customProject] of customProjects.entries()) {
+    if (typeof customProject !== 'object' || 'then' in customProject) {
+      continue;
+    }
+
+    const include = customProject.test?.include;
+
+    if (include && include.length > 0) {
+      continue;
+    }
+
+    const name = customProject.test?.name;
+    const label = typeof name === 'string' ? name : name?.label ?? `at index ${String(index)}`;
+
+    throw new Error(
+      `The custom vitest project ${label} declares no \`test.include\`, so vitest falls back to its default glob and the project collects EVERY test file — including the \`*-capture.\` suites that rewrite checked-in screenshots. Declare an explicit \`include\`, or spread a standard project (\`...context.desktop\`) and override it.`
+    );
+  }
 }
