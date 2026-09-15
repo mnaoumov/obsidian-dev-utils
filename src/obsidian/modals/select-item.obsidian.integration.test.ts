@@ -34,7 +34,13 @@ describe('selectItem', () => {
   it('should apply the spellcheck mode to the picker box', async () => {
     const result = await evalInObsidian({
       async callback({ app, lib: { normalizeOptionalProperties, pressKey, selectItem, SpellcheckMode, waitUntil } }): Promise<SelectItemSpellcheckResult> {
-        const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
+        /*
+         * Sized by the WORST CASE this closure declares, not by one wait: `readSpellcheckAttribute` waits
+         * twice and is called four times, so the whole closure declares 8x this number inside a single
+         * transport call capped at ~30 s. 8 x 2 500 = 20 s leaves the closure its own headroom, and a
+         * `SuggestModal` that needs more than 2.5 s to render or to close is broken rather than slow.
+         */
+        const WAIT_TIMEOUT_IN_MILLISECONDS = 2500;
 
         const originalSpellcheck = app.vault.getConfig('spellcheck');
 
