@@ -38,6 +38,23 @@ const OBSIDIAN_INTEGRATION_TEST_FILES = 'src/**/*.obsidian.integration.test.ts';
 const DEMO_VAULT_HELPER_INTEGRATION_TEST_FILE = 'src/obsidian/demo-vault-helper.obsidian.integration.test.ts';
 const CONSUMER_LIB_INTEGRATION_TEST_FILE = 'src/integration-test-lib.obsidian.integration.test.ts';
 const PLUGIN_API_INTEGRATION_TEST_FILE = 'src/obsidian/plugin/plugin-api.obsidian.integration.test.ts';
+// The only files of the `unit-tests:obsidian` set that `vi.stubGlobal` a DOM global the VM pool below
+// cannot redefine. Under `pool: 'vmThreads'` the jsdom context's `window` and `document` are
+// NON-CONFIGURABLE accessors on the VM global (`window === globalThis` there), so `vi.stubGlobal`
+// throws `Cannot redefine property: window` outright. That is JS semantics, not a bug to route around:
+// a non-configurable property cannot be redefined or deleted by anything. Every OTHER global these
+// tests stub — `FileReader`, `Image`, `getComputedStyle`, `fetch`, `electron` — stays configurable and
+// works under the VM pool unchanged. So these four keep the default pool, in a sibling project, and
+// pay the per-file jsdom cost that the other 184 no longer do.
+// Adding a fifth is a one-line move: a test that stubs `window` or `document` belongs in this list.
+// It fails loudly rather than silently if it is left in the VM project — with the message quoted above.
+const GLOBAL_STUB_TEST_FILES = [
+  'src/abort-controller.test.ts',
+  'src/async.test.ts',
+  'src/blob.test.ts',
+  'src/obsidian/is-in-obsidian.test.ts'
+];
+
 const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
 const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
@@ -127,9 +144,38 @@ export const config = defineConfig({
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'jsdom',
-          exclude: [...SHARED_EXCLUDE, SCRIPT_UTILS_TEST_FILES, INTEGRATION_TEST_FILES],
+          exclude: [...SHARED_EXCLUDE, SCRIPT_UTILS_TEST_FILES, INTEGRATION_TEST_FILES, ...GLOBAL_STUB_TEST_FILES],
           include: ['src/**/*.test.ts'],
           name: 'unit-tests:obsidian',
+          // This project is the suite's whole cost centre, and it was PAID IN JSDOM CONSTRUCTION rather
+          // than in running tests: one jsdom per test file, 184 of them, which vitest's own advisory
+          // measured at 67% of the tracked time of a full `test:coverage`. A VM pool builds the jsdom
+          // ONCE PER WORKER and re-enters it per file, keeping per-file isolation via a fresh VM context.
+          // Measured on this suite (2026-09-15): `test:coverage` 149.79s -> 73.94s, and the project alone
+          // 36.06s -> 9.92s. Coverage stays exact — `coverage/lcov.info` came back BYTE-IDENTICAL to the
+          // default pool's over a six-file subset, which is the check that mattered: this repo gates on
+          // 100%, so a VM pool that merely LOOKED faster while under-counting would be worse than slow.
+          // The other remedy vitest suggests, `isolate: false`, was measured and REJECTED on both counts:
+          // 91.62s (SLOWER than the 36.06s baseline) and 68 tests failing from state shared across files.
+          // The one thing the VM pool costs is stubbing `window`/`document` — see GLOBAL_STUB_TEST_FILES.
+          pool: 'vmThreads',
+          server: SHARED_SERVER,
+          setupFiles: [
+            'obsidian-test-mocks/vitest-setup',
+            './src/vitest-setup.ts'
+          ]
+        }
+      },
+      {
+        resolve: SHARED_RESOLVE,
+        test: {
+          // Identical to `unit-tests:obsidian` except for the pool, which is the default one: these are
+          // exactly the files that `vi.stubGlobal` a DOM global the VM pool freezes. Keeping them as a
+          // sibling project rather than reverting the whole set costs four jsdom constructions.
+          environment: 'jsdom',
+          exclude: [...SHARED_EXCLUDE],
+          include: GLOBAL_STUB_TEST_FILES,
+          name: 'unit-tests:obsidian-global-stubs',
           server: SHARED_SERVER,
           setupFiles: [
             'obsidian-test-mocks/vitest-setup',
