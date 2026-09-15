@@ -281,7 +281,24 @@ export const configs: Linter.Config[] = defineEslintConfigs({
       join(ObsidianDevUtilsRepoPaths.Docs, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
     );
     context.testFiles.push(
-      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.TestHelpers, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs)
+      join(ObsidianDevUtilsRepoPaths.Src, ObsidianDevUtilsRepoPaths.TestHelpers, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTs),
+      /*
+       * A docs-site test is a TEST, and this convention puts it beside the module it covers, under `docs/` rather
+       * than under `src/`. The `sourceFiles` push above claims every TypeScript file under `docs/`, and the shared
+       * config's own test glob is rooted at `src/`, so without this line the one docs-site test -- collected by the
+       * `unit-tests:docs-generator` vitest project -- was linted as a source file, with `no-magic-numbers` and
+       * `unicorn/consistent-function-scoping` at `error`. That is the same defect the shared config's scripts glob
+       * fixed one level up, and it passed unnoticed only because that suite's subject is route strings.
+       *
+       * As there, the file now matches BOTH lists and that is deliberate. The two source-scoped families that turn
+       * rules ON and would otherwise reach it -- jsdoc/tsdoc and `n/no-unsupported-features` -- each already carry
+       * `ignores: context.testFiles`, so the promotion takes them off this file; the obsidianmd recommended rules
+       * stay, as they do on every test under `src/`, for the same both-lists reason. Losing
+       * `jsdoc/require-file-overview` is the one real behavior change, and it costs nothing: 72 of this repo's 292
+       * test files carry an `@file` block with that rule switched off for them, so the block on
+       * `docs/src/route-data.test.ts` is kept by convention rather than by enforcement.
+       */
+      join(ObsidianDevUtilsRepoPaths.Docs, ObsidianDevUtilsRepoPaths.AnyPath, ObsidianDevUtilsRepoPaths.AnyTestTs)
     );
     context.scriptFiles.push(
       ObsidianDevUtilsRepoPaths.AstroConfigTs,

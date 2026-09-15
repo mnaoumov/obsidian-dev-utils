@@ -46,6 +46,11 @@ export enum ObsidianDevUtilsRepoPaths {
   AnyPath = '**',
 
   /**
+  Any test TypeScript file.
+   */
+  AnyTestTs = '*.test.ts',
+
+  /**
   Any TypeScript file.
    */
   AnyTs = '*.ts',
