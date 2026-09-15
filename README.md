@@ -1,9 +1,6 @@
 # Obsidian Dev Utils
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov)
-[![NPM package](https://badge.fury.io/js/obsidian-dev-utils.svg)](https://www.npmjs.com/package/obsidian-dev-utils)
-[![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-dev-utils)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
-[![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-dev-utils/total)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![NPM package](https://badge.fury.io/js/obsidian-dev-utils.svg)](https://www.npmjs.com/package/obsidian-dev-utils) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-dev-utils)](https://github.com/mnaoumov/obsidian-dev-utils/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-dev-utils/total)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
 
 `Obsidian Dev Utils` is a collection of essential functions and utilities designed to streamline your Obsidian plugin development process. Whether you're building a plugin from scratch or enhancing an existing one, these utilities are here to simplify your workflow.
 
@@ -29,9 +26,7 @@ npm install obsidian-dev-utils
 
 ## Usage
 
-The full documentation — guides plus the complete, searchable **API reference** generated from the
-library's TSDoc — is published at
-[mnaoumov.dev/obsidian-dev-utils](https://mnaoumov.dev/obsidian-dev-utils/).
+The full documentation — guides plus the complete, searchable **API reference** generated from the library's TSDoc — is published at [mnaoumov.dev/obsidian-dev-utils](https://mnaoumov.dev/obsidian-dev-utils/).
 
 - [API reference](https://mnaoumov.dev/obsidian-dev-utils/api/)
 - [Commands](https://mnaoumov.dev/obsidian-dev-utils/guides/cli-commands/)
