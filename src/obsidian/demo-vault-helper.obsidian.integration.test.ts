@@ -2,7 +2,8 @@
 
 import {
   evalInObsidian,
-  pollInObsidian
+  pollInObsidian,
+  withAppConfig
 } from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
@@ -214,74 +215,80 @@ describe('demo-vault-helper bootstrap', () => {
   it('should close the settings window before raising the sandbox notice', async () => {
     const vaultPath = getTemporaryVault().path;
 
-    const wasSettingsWindowOpen = await evalInObsidian({
-      async callback({ app, helperPluginId, lib: { waitUntil } }): Promise<boolean> {
-        const SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS = 15_000;
+    /*
+     * The harness writes `settingsPopoutWindow: false` into every vault it provisions, so Settings stays in
+     * the driven window and never becomes a separate active one. This test asserts the bootstrap CLOSES
+     * that settings window before raising its notice, so the window has to exist — the popout is switched
+     * back on for the eval AND the poll below, whose premise is that the window is still there until the
+     * bootstrap closes it. `withAppConfig` puts the key back exactly as it found it (deleting it again
+     * where the vault never carried it) rather than leaving it on for the rest of the run.
+     */
+    await withAppConfig({
+      async callback(): Promise<void> {
+        const wasSettingsWindowOpen = await evalInObsidian({
+          async callback({ app, helperPluginId, lib: { waitUntil } }): Promise<boolean> {
+            const SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS = 15_000;
 
-        /*
-         * The harness writes `settingsPopoutWindow: false` into every vault it provisions, so Settings
-         * stays in the driven window and never becomes a separate active one. This test asserts the
-         * bootstrap CLOSES that settings window before raising its notice, so the window has to exist:
-         * opt back in. `obsidian-typings`' `ConfigItem` union does not list the key, so the setter is widened.
-         */
-        const setConfig = app.vault.setConfig.bind(app.vault) as (configKey: string, value: unknown) => void;
-        setConfig('settingsPopoutWindow', true);
+            app.setting.open();
+            // Obsidian creates and focuses the popout asynchronously, and that focus is what hands it the
+            // active window — the very condition the bootstrap has to survive.
+            await waitUntil({
+              message: 'the settings window to become the active window',
+              predicate: (): boolean => activeWindow !== window,
+              timeoutInMilliseconds: SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS
+            });
+            const isSettingsWindowActive = activeWindow !== window;
 
-        app.setting.open();
-        // Obsidian creates and focuses the popout asynchronously, and that focus is what hands it the
-        // active window — the very condition the bootstrap has to survive.
-        await waitUntil({
-          message: 'the settings window to become the active window',
-          predicate: (): boolean => activeWindow !== window,
-          timeoutInMilliseconds: SETTINGS_WINDOW_TIMEOUT_IN_MILLISECONDS
+            // Fires the bootstrap and returns straight away, leaving the wait for the notice to the poll
+            // below rather than holding a single CDP command open for it.
+            await app.plugins.disablePlugin(helperPluginId);
+            await app.plugins.enablePlugin(helperPluginId);
+            return isSettingsWindowActive;
+          },
+          input: { helperPluginId: HELPER_PLUGIN_ID },
+          vaultPath
         });
-        const isSettingsWindowActive = activeWindow !== window;
 
-        // Fires the bootstrap and returns straight away, leaving the wait for the notice to the poll
-        // below rather than holding a single CDP command open for it.
-        await app.plugins.disablePlugin(helperPluginId);
-        await app.plugins.enablePlugin(helperPluginId);
-        return isSettingsWindowActive;
+        // Without this the test could pass on an Obsidian that never opened a settings window at all.
+        expect(wasSettingsWindowOpen).toBe(true);
+
+        let lastState: SettingsWindowResult | undefined;
+        try {
+          await pollInObsidian({
+            input: { sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
+            intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
+            poll({ app, sandboxNoticeMarker }): SettingsWindowResult {
+              // Counts only the notices in the MAIN window: the settings window has a notice container of
+              // its own, and a notice raised into that one is exactly the defect under test.
+              let mainWindowSandboxNoticeCount = 0;
+              for (const noticeEl of document.querySelectorAll('.notice')) {
+                if (noticeEl.textContent.includes(sandboxNoticeMarker)) {
+                  mainWindowSandboxNoticeCount++;
+                }
+              }
+              return {
+                // Read reflectively: `popout` is set only while the settings window exists, and is a 1.13
+                // member absent from the public typings this library targets.
+                // TODO: Simplify to `app.setting.popout` once Obsidian 1.13 is public and
+                // `obsidian-public-latest` typings model `AppSetting.popout`.
+                isSettingsWindowClosed: !Reflect.get(app.setting, 'popout'),
+                mainWindowSandboxNoticeCount
+              };
+            },
+            timeoutInMilliseconds: POLL_TIMEOUT_IN_MILLISECONDS,
+            until(pollResult: SettingsWindowResult): boolean {
+              lastState = pollResult;
+              return pollResult.mainWindowSandboxNoticeCount > 0 && pollResult.isSettingsWindowClosed;
+            },
+            vaultPath
+          });
+        } catch (error) {
+          throw new Error(`the re-run bootstrap did not close the settings window and raise the notice in the main window; last state: ${String(JSON.stringify(lastState))}`, { cause: error });
+        }
       },
-      input: { helperPluginId: HELPER_PLUGIN_ID },
+      configKey: 'settingsPopoutWindow',
+      value: true,
       vaultPath
     });
-
-    // Without this the test could pass on an Obsidian that never opened a settings window at all.
-    expect(wasSettingsWindowOpen).toBe(true);
-
-    let lastState: SettingsWindowResult | undefined;
-    try {
-      await pollInObsidian({
-        input: { sandboxNoticeMarker: SANDBOX_NOTICE_MARKER },
-        intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
-        poll({ app, sandboxNoticeMarker }): SettingsWindowResult {
-          // Counts only the notices in the MAIN window: the settings window has a notice container of
-          // its own, and a notice raised into that one is exactly the defect under test.
-          let mainWindowSandboxNoticeCount = 0;
-          for (const noticeEl of document.querySelectorAll('.notice')) {
-            if (noticeEl.textContent.includes(sandboxNoticeMarker)) {
-              mainWindowSandboxNoticeCount++;
-            }
-          }
-          return {
-            // Read reflectively: `popout` is set only while the settings window exists, and is a 1.13
-            // member absent from the public typings this library targets.
-            // TODO: Simplify to `app.setting.popout` once Obsidian 1.13 is public and
-            // `obsidian-public-latest` typings model `AppSetting.popout`.
-            isSettingsWindowClosed: !Reflect.get(app.setting, 'popout'),
-            mainWindowSandboxNoticeCount
-          };
-        },
-        timeoutInMilliseconds: POLL_TIMEOUT_IN_MILLISECONDS,
-        until(pollResult: SettingsWindowResult): boolean {
-          lastState = pollResult;
-          return pollResult.mainWindowSandboxNoticeCount > 0 && pollResult.isSettingsWindowClosed;
-        },
-        vaultPath
-      });
-    } catch (error) {
-      throw new Error(`the re-run bootstrap did not close the settings window and raise the notice in the main window; last state: ${String(JSON.stringify(lastState))}`, { cause: error });
-    }
   }, TEST_TIMEOUT_IN_MILLISECONDS);
 });
