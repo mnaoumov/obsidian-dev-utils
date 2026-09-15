@@ -559,6 +559,26 @@
         "types": "./dist/lib/cjs/script-utils/linters/eslint-types/@types/*.d.cts"
       }
     },
+    "./script-utils/linters/markdownlint-rules": {
+      "import": {
+        "types": "./dist/lib/esm/script-utils/linters/markdownlint-rules/index.d.mts",
+        "default": "./dist/lib/esm/script-utils/linters/markdownlint-rules/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/index.d.cts",
+        "default": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/index.cjs"
+      }
+    },
+    "./script-utils/linters/markdownlint-rules/*": {
+      "import": {
+        "types": "./dist/lib/esm/script-utils/linters/markdownlint-rules/*.d.mts",
+        "default": "./dist/lib/esm/script-utils/linters/markdownlint-rules/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/*.d.cts",
+        "default": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/*.cjs"
+      }
+    },
     "./script-utils/linters/markdownlint-types/*": {
       "import": {
         "types": "./dist/lib/esm/script-utils/linters/markdownlint-types/*.d.mts",
