@@ -1,5 +1,22 @@
 # CHANGELOG
 
+## 105.0.0
+
+- refactor!: take method-signature-style back to its property default
+- docs: record the docs-site test glob beside its build-script sibling
+- fix(eslint-config): lint the docs-site test as a test, not as a source file
+- docs: record the VM pool's one cost where a test author will meet it
+- perf(vitest-config): build jsdom once per worker, not once per test file
+- fix(eslint-config): treat a build-script test as a test, not as a script
+- docs: record the changelog spellcheck and why that half shells out
+- feat(version): spellcheck the settled changelog section before it is written
+- chore(deps): drop the four dead brace-expansion overrides
+- fix(markdownlint): exempt a callout marker line from no-soft-break-in-paragraph
+- docs: stop crediting markdownlint-cli2 to the js-yaml backport
+- fix(version): lint the settled changelog before it is written
+- docs: record why the harness peer range is now a hard floor
+- refactor!: import the per-eval cap instead of restating it
+
 ## 104.0.1
 
 - fix(lint): let a comment open by naming a camelCase symbol
