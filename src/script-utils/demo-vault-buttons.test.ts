@@ -20,6 +20,7 @@ import {
 import type { DemoVaultButtonResult } from './demo-vault-buttons.ts';
 
 import {
+  assertClickBudgetsFitTransportCap,
   formatFailures,
   listNotesWithButtons
 } from './demo-vault-buttons.ts';
@@ -115,6 +116,53 @@ describe('listNotesWithButtons', () => {
     writeNote('01 One.md', button('Alpha'));
 
     expect(listNotesWithButtons(demoVaultPath, new Set()).map((note) => note.name)).toEqual(['01 One.md', '02 Two.md']);
+  });
+});
+
+describe('assertClickBudgetsFitTransportCap', () => {
+  it('accepts the defaults, which sum to 22 000 ms', () => {
+    expect(() => {
+      assertClickBudgetsFitTransportCap({
+        buttonResultTimeoutInMilliseconds: 10_000,
+        settleTimeoutInMilliseconds: 12_000
+      });
+    }).not.toThrow();
+  });
+
+  // One millisecond under the cap is the last pair a transport call can still honour.
+  it('accepts a pair one millisecond under the cap', () => {
+    expect(() => {
+      assertClickBudgetsFitTransportCap({
+        buttonResultTimeoutInMilliseconds: 10_000,
+        settleTimeoutInMilliseconds: 19_999
+      });
+    }).not.toThrow();
+  });
+
+  // The lint rule reports AT the cap as well as over it; the runtime bound draws the line in the same place.
+  it('refuses a pair exactly at the cap', () => {
+    expect(() => {
+      assertClickBudgetsFitTransportCap({
+        buttonResultTimeoutInMilliseconds: 10_000,
+        settleTimeoutInMilliseconds: 20_000
+      });
+    }).toThrow('30000 ms script timeout');
+  });
+
+  it('names both budgets and their sum, which the script timeout it replaces names neither of', () => {
+    let message = '';
+    try {
+      assertClickBudgetsFitTransportCap({
+        buttonResultTimeoutInMilliseconds: 15_000,
+        settleTimeoutInMilliseconds: 20_000
+      });
+    } catch (error) {
+      message = (error as Error).message;
+    }
+
+    expect(message).toContain('settleTimeoutInMilliseconds (20000 ms)');
+    expect(message).toContain('buttonResultTimeoutInMilliseconds (15000 ms)');
+    expect(message).toContain('sum of 35000 ms');
   });
 });
 

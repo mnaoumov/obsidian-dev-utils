@@ -282,17 +282,19 @@ Every option has a default worth knowing before overriding it:
 
 ```ts
 registerDemoVaultButtonSuite({
-  // How long a clicked button may take to report a result. Defaults to 15000.
-  buttonResultTimeoutInMilliseconds: 15_000,
+  // How long a clicked button may take to report a result. Defaults to 10000.
+  buttonResultTimeoutInMilliseconds: 10_000,
   // Notes to skip. Defaults to `['README.md']` — the repo-facing page GitHub renders, not a walkthrough.
   // `00 Start.md` is deliberately NOT excluded: landing notes carry buttons of their own.
   excludedNotes: ['README.md'],
   // The repo root holding `demo-vault/`. Defaults to the resolved repo root, falling back to `process.cwd()`.
   rootFolder: getRootFolder() ?? process.cwd(),
-  // How long a note's preview and its buttons may take to mount. Defaults to 20000.
-  settleTimeoutInMilliseconds: 20_000
+  // How long a note's preview and its buttons may take to mount. Defaults to 12000.
+  settleTimeoutInMilliseconds: 12_000
 });
 ```
+
+**The two timeouts are bounded as a SUM, not one at a time.** Clicking a button waits for it to mount and then for its result inside a single `evalInObsidian` closure, so both budgets are spent in one transport call and it is `settleTimeoutInMilliseconds + buttonResultTimeoutInMilliseconds` that has to stay under the 30-second script timeout. Raising one of them for a slow note is an ordinary thing to do and is what puts the pair over. `registerDemoVaultButtonSuite` therefore throws at registration on a sum that reaches the cap, naming both budgets — the alternative is a `WebDriverError: script timeout` raised mid-run against whichever button happened to be slowest, which names the transport and neither budget. An earlier 20000 + 15000 pair failed exactly that way.
 
 ### The global setup
 

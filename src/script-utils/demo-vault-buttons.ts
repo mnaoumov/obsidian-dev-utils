@@ -39,6 +39,24 @@ import { getRootFolder } from './root.ts';
 export const CODE_SCRIPT_TOOLKIT_PLUGIN_ID = 'fix-require-modules';
 
 /**
+ * The waiting budgets a single button click is allowed.
+ *
+ * Both are spent inside ONE transport call, so it is their SUM that
+ * {@link assertClickBudgetsFitTransportCap} bounds.
+ */
+export interface ClickButtonTimeouts {
+  /**
+   * How long to wait for the clicked button to report a result.
+   */
+  readonly buttonResultTimeoutInMilliseconds: number;
+
+  /**
+   * How long to wait for the button itself to mount.
+   */
+  readonly settleTimeoutInMilliseconds: number;
+}
+
+/**
  * The outcome of clicking one button.
  */
 export interface DemoVaultButtonResult {
@@ -80,7 +98,8 @@ export interface RegisterDemoVaultButtonSuiteOptions {
   /**
    * How long, in milliseconds, to wait for a clicked button to report a result.
    *
-   * Bounded by the same sum as {@link RegisterDemoVaultButtonSuiteOptions.settleTimeoutInMilliseconds}.
+   * Bounded by the same sum as {@link RegisterDemoVaultButtonSuiteOptions.settleTimeoutInMilliseconds},
+   * and refused by the same throw at registration.
    *
    * @default `10000`
    */
@@ -103,28 +122,14 @@ export interface RegisterDemoVaultButtonSuiteOptions {
   /**
    * How long, in milliseconds, to wait for a note's preview and its buttons to mount.
    *
-   * Together with `buttonResultTimeoutInMilliseconds` this must stay well under the transport's ~30 s
-   * script timeout: one button click spends both inside a SINGLE evaluation, so a sum at or over the cap
-   * cannot be honoured and turns a real timeout into a bare `script timeout` naming only the transport.
+   * Together with `buttonResultTimeoutInMilliseconds` this must stay under the transport's ~30 s script
+   * timeout: one button click spends both inside a SINGLE evaluation, so a sum at or over the cap cannot
+   * be honoured and turns a real timeout into a bare `script timeout` naming only the transport.
+   * {@link registerDemoVaultButtonSuite} throws on such a pair rather than registering it.
    *
    * @default `12000`
    */
   readonly settleTimeoutInMilliseconds?: number;
-}
-
-/**
- * The waiting budgets a single button click is allowed.
- */
-interface ClickButtonTimeouts {
-  /**
-   * How long to wait for the clicked button to report a result.
-   */
-  readonly buttonResultTimeoutInMilliseconds: number;
-
-  /**
-   * How long to wait for the button itself to mount.
-   */
-  readonly settleTimeoutInMilliseconds: number;
 }
 
 /*
@@ -133,11 +138,22 @@ interface ClickButtonTimeouts {
  * timeout — not either one alone. The former 20 000 + 15 000 asked for 35 s, which the transport can never
  * grant: a slow button did not report "never reported a result", it died as a bare `script timeout` naming
  * only the transport. `no-over-cap-wait-in-eval-in-obsidian` cannot catch this one, because the budgets
- * reach the closure from a caller two levels up rather than being written at the wait. Overriding them via
- * `RegisterDemoVaultButtonSuiteOptions` is subject to the same sum.
+ * reach the closure from a caller two levels up rather than being written at the wait — which is why
+ * `assertClickBudgetsFitTransportCap` below enforces at runtime what the rule cannot see. Overriding
+ * either default via `RegisterDemoVaultButtonSuiteOptions` is subject to the same sum.
  */
 const DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS = 10_000;
 const DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS = 12_000;
+
+/*
+ * The cap the sum above is measured against, restated here because NOTHING exports it: the desktop CDP
+ * transport holds it as a module-private `COMMAND_TIMEOUT_IN_MILLISECONDS`, and the Appium one exports
+ * `DEFAULT_SCRIPT_TIMEOUT_IN_MILLISECONDS` from its own module without re-exporting it from the package
+ * root. Both are this number, and this suite runs on desktop. `no-over-cap-wait-in-eval-in-obsidian`
+ * assumes the same number as its default cap and reports AT it as well as over it, which is why the
+ * assertion below refuses a sum that merely reaches it.
+ */
+const TRANSPORT_SCRIPT_TIMEOUT_IN_MILLISECONDS = 30_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 100;
 const OUTPUT_EXCERPT_LENGTH = 400;
 
@@ -150,6 +166,36 @@ const CODE_BUTTON_FENCE_REG_EXP = /^\s*```code-button/gm;
 // The rendered-button selector is `:scope .block-language-code-button button.mod-cta`. It is written
 // out at each use site rather than held in a constant here: every closure below is serialized with
 // `toString()` and evaluated inside Obsidian, where nothing from this module's scope exists.
+
+/**
+ * Refuses a settle/result budget pair that a single transport call could never honour.
+ *
+ * `clickButton` waits for the button to mount and then for its result INSIDE ONE `evalInObsidian`
+ * closure, so the transport's script timeout bounds their sum rather than either one alone — and
+ * `RegisterDemoVaultButtonSuiteOptions` lets a consumer raise each independently, with nothing summing
+ * them. Raising `settleTimeoutInMilliseconds` to 20 000 for one slow note is an ordinary thing to do and
+ * silently puts the pair at the cap.
+ *
+ * Throwing here, at suite registration, is the whole value: the failure it replaces is a
+ * `WebDriverError: script timeout` raised mid-run against whichever button happened to be slowest,
+ * naming the transport and neither budget.
+ *
+ * @param timeouts - The {@link ClickButtonTimeouts} to bound.
+ */
+export function assertClickBudgetsFitTransportCap(timeouts: ClickButtonTimeouts): void {
+  const totalInMilliseconds = timeouts.settleTimeoutInMilliseconds + timeouts.buttonResultTimeoutInMilliseconds;
+  if (totalInMilliseconds < TRANSPORT_SCRIPT_TIMEOUT_IN_MILLISECONDS) {
+    return;
+  }
+
+  throw new Error(
+    `One demo-vault button click spends settleTimeoutInMilliseconds (${String(timeouts.settleTimeoutInMilliseconds)} ms) and `
+      + `buttonResultTimeoutInMilliseconds (${String(timeouts.buttonResultTimeoutInMilliseconds)} ms) inside a single transport call, `
+      + `so their sum of ${String(totalInMilliseconds)} ms is at or over the transport's `
+      + `${String(TRANSPORT_SCRIPT_TIMEOUT_IN_MILLISECONDS)} ms script timeout and can never be honoured. `
+      + 'Lower either budget in RegisterDemoVaultButtonSuiteOptions.'
+  );
+}
 
 /**
  * Builds the assertion message for a note's failing buttons.
@@ -238,6 +284,14 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
   const settleTimeoutInMilliseconds = options.settleTimeoutInMilliseconds ?? DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS;
   const buttonResultTimeoutInMilliseconds = options.buttonResultTimeoutInMilliseconds ?? DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS;
 
+  // Resolved ONCE and handed to both the bound and the click, so the pair that is asserted and the pair
+  // that is spent cannot drift apart.
+  const clickButtonTimeouts: ClickButtonTimeouts = {
+    buttonResultTimeoutInMilliseconds,
+    settleTimeoutInMilliseconds
+  };
+  assertClickBudgetsFitTransportCap(clickButtonTimeouts);
+
   const notes = listNotesWithButtons(demoVaultPath, excludedNotes);
 
   describe('demo-vault buttons', () => {
@@ -266,10 +320,7 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
 
         const failures: DemoVaultButtonResult[] = [];
         for (const caption of captions) {
-          const result = await clickButton(note.name, caption, {
-            buttonResultTimeoutInMilliseconds,
-            settleTimeoutInMilliseconds
-          });
+          const result = await clickButton(note.name, caption, clickButtonTimeouts);
           if (result.status !== 'ok') {
             failures.push(result);
           }
