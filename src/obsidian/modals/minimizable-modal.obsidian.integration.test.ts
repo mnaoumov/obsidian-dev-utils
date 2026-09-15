@@ -556,6 +556,9 @@ describe('MinimizableModal', () => {
           // A trusted pointer move sets a genuine `:hover`, so real theme `var()` values resolve and
           // composite as they do for the user. `mouseover` events are untrusted (never set `:hover`),
           // and `jsdom` resolves neither `var()` nor composites — so a real-Obsidian test is used.
+          // `hoverElement` throws rather than resolving on a bar that never took the hover, which matters
+          // here more than usual: the bar's base background is opaque too, so a hover that never landed
+          // would satisfy the assertion below while proving nothing.
           await hoverElement({ element: barEl });
           const backgroundColorWhileHovered = getComputedStyle(barEl).backgroundColor;
           const alphaWhileHovered = alphaOf(backgroundColorWhileHovered);

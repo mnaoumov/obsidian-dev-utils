@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
+import { INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS } from '../src/script-utils/test-runners/vitest-config.ts';
+
 const SHARED_RESOLVE = {
   alias: {
     obsidian: 'obsidian-test-mocks/obsidian'
@@ -39,6 +41,13 @@ const PLUGIN_API_INTEGRATION_TEST_FILE = 'src/obsidian/plugin/plugin-api.obsidia
 const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
 const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
+
+/*
+ * The budget for the projects that run no Obsidian instance. The four that DO run one take
+ * `INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS` instead, which deliberately clears the transports' per-eval
+ * cap so that a closure outrunning the cap fails with the harness's own diagnosis rather than with
+ * vitest's anonymous timeout — see the shared config this repo publishes for the whole story.
+ */
 const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 
 // Each Obsidian project below owns a SEPARATE Obsidian instance, and Vitest runs projects in PARALLEL.
@@ -162,7 +171,7 @@ export const config = defineConfig({
             'obsidian-integration-testing/vitest-setup',
             './scripts/integration-test-obsidian-setup.ts'
           ],
-          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+          testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
         }
       },
       {
@@ -178,7 +187,7 @@ export const config = defineConfig({
           name: 'obsidian-integration-tests:demo-vault-helper',
           sequence: { groupOrder: OBSIDIAN_DEMO_VAULT_HELPER_GROUP_ORDER },
           setupFiles: ['obsidian-integration-testing/vitest-setup'],
-          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+          testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
         }
       },
       {
@@ -197,7 +206,7 @@ export const config = defineConfig({
             'obsidian-integration-testing/vitest-setup',
             './src/integration-test-setup.ts'
           ],
-          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+          testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
         }
       },
       {
@@ -214,7 +223,7 @@ export const config = defineConfig({
           name: 'obsidian-integration-tests:plugin-api',
           sequence: { groupOrder: OBSIDIAN_PLUGIN_API_GROUP_ORDER },
           setupFiles: ['obsidian-integration-testing/vitest-setup'],
-          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+          testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
         }
       }
     ]

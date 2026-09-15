@@ -28,8 +28,15 @@ import { createVitest } from 'vitest/node';
 
 import {
   defineObsidianPluginVitestConfig,
+  INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS,
   ObsidianPluginVitestConfigContext
 } from './vitest-config.ts';
+
+/**
+ * The per-eval cap both transports enforce, restated here so the assertion below reads as a comparison of
+ * two independent numbers rather than as a restatement of one.
+ */
+const TRANSPORT_EVAL_CAP_IN_MILLISECONDS = 30_000;
 
 const STANDARD_PROJECT_NAMES = [
   'unit-tests',
@@ -51,15 +58,30 @@ describe('ObsidianPluginVitestConfigContext', () => {
   it('should expose the documented timeout defaults', () => {
     const context = new ObsidianPluginVitestConfigContext();
     expect(context.androidTimeoutInMilliseconds).toBe(60_000);
-    expect(context.bigTimeoutInMilliseconds).toBe(30_000);
+    expect(context.bigTimeoutInMilliseconds).toBe(45_000);
     expect(context.hookTimeoutMultiplier).toBe(4);
     expect(context.performanceTimeoutInMilliseconds).toBe(600_000);
   });
 
+  /*
+   * A per-test budget EQUAL to the transports' per-eval cap makes the harness's `EvalCapExceededError`
+   * unreachable: vitest's clock starts at the top of the test and the transport's only once the eval is
+   * dispatched, so vitest always wins and reports its anonymous timeout instead. Every project that can
+   * run an `evalInObsidian` therefore has to clear the cap, which is what this pins — the desktop budget
+   * was exactly the cap until the release abort of 2026-09-13 showed what that costs.
+   */
+  it('should give every Obsidian-driving project more time than the transports per-eval cap', () => {
+    const context = new ObsidianPluginVitestConfigContext();
+    expect(context.desktop.testTimeout).toBeGreaterThan(TRANSPORT_EVAL_CAP_IN_MILLISECONDS);
+    expect(context.android.testTimeout).toBeGreaterThan(TRANSPORT_EVAL_CAP_IN_MILLISECONDS);
+    expect(context.desktopPerformance.testTimeout).toBeGreaterThan(TRANSPORT_EVAL_CAP_IN_MILLISECONDS);
+    expect(INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS).toBeGreaterThan(TRANSPORT_EVAL_CAP_IN_MILLISECONDS);
+  });
+
   it('should derive each hook timeout from the project budget', () => {
     const context = new ObsidianPluginVitestConfigContext();
-    expect(context.noApp.hookTimeout).toBe(120_000);
-    expect(context.desktop.hookTimeout).toBe(120_000);
+    expect(context.noApp.hookTimeout).toBe(180_000);
+    expect(context.desktop.hookTimeout).toBe(180_000);
     expect(context.android.hookTimeout).toBe(240_000);
     expect(context.desktopPerformance.hookTimeout).toBe(600_000);
   });
@@ -185,7 +207,7 @@ describe('defineObsidianPluginVitestConfig', () => {
     );
     expect(config.test?.projects?.[5]).toMatchObject({
       test: {
-        testTimeout: 30_000
+        testTimeout: 45_000
       }
     });
   });

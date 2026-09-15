@@ -221,11 +221,12 @@ describe('hoverElement', () => {
     await promise;
   });
 
-  it('should stop polling after the timeout when the element never hovers', async () => {
+  it('should throw after the timeout when the element never hovers', async () => {
     const element = createElement(createRect({ height: 10, left: 0, top: 0, width: 10 }), () => false);
     const promise = hoverElement({ element });
+    const rejection = expect(promise).rejects.toThrow('never matched `:hover`');
     await vi.advanceTimersByTimeAsync(INPUT_TIMEOUT_IN_MILLISECONDS);
-    await promise;
+    await rejection;
   });
 });
 
@@ -246,6 +247,17 @@ describe('unhoverElement', () => {
     await promise;
   });
 
+  /*
+   * A layout box rarely lands on a whole pixel, and `moveMouse` rounds — so an offset taken from the raw
+   * fractional edge rounds back onto the element's own pixel column and the pointer never leaves. Snapping
+   * the edge outward first is what makes the offset a whole pixel of real clearance.
+   */
+  it('should snap a fractional left edge outward before applying the offset', async () => {
+    const element = createElement(createRect({ height: 10, left: 859.796875, right: 1008, top: 704 }), () => false);
+    await unhoverElement({ element });
+    expect(sendInputEvent).toHaveBeenCalledExactlyOnceWith({ type: 'mouseMove', x: 858, y: 709 });
+  });
+
   it('should move just right of the box when flush against the left viewport edge', async () => {
     const element = createElement(createRect({ height: 10, left: 0, right: 10, top: 0 }), () => false);
     const promise = unhoverElement({ element });
@@ -254,11 +266,12 @@ describe('unhoverElement', () => {
     await promise;
   });
 
-  it('should stop polling after the timeout when the element keeps matching :hover', async () => {
+  it('should throw after the timeout when the element keeps matching :hover', async () => {
     const element = createElement(createRect({ height: 10, left: 5, right: 15, top: 0 }), () => true);
     const promise = unhoverElement({ element });
+    const rejection = expect(promise).rejects.toThrow('still matched `:hover`');
     await vi.advanceTimersByTimeAsync(INPUT_TIMEOUT_IN_MILLISECONDS);
-    await promise;
+    await rejection;
 
     // The move is injected once; only the `:hover` check is polled.
     expect(sendInputEvent).toHaveBeenCalledExactlyOnceWith({ type: 'mouseMove', x: 4, y: 5 });
