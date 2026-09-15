@@ -46,10 +46,11 @@ describe('SyntaxHighlightingComponent', () => {
         const CODE = 'const syntaxHighlightingTest = 1;';
         /*
          * These are sized by the WORST CASE this closure can reach, not by any one wait: the whole closure
-         * runs in a single transport call capped at ~30 s, and `checkIsHighlightedAsync` is called three
-         * times, each rebuilding the view first. So the budget is 3 rebuilds + 1 highlight wait + 2 settles
-         * = 22 s. `no-over-cap-wait-in-eval-in-obsidian` cannot see that multiplication -- it sums each wait
-         * where it is WRITTEN -- so raising either number here has to be checked by hand against that sum.
+         * runs in a single transport call capped at ~30 s, and a check rebuilds the view before waiting. So
+         * the budget is 3 rebuilds + 1 highlight wait + 2 settles = 22 s, which is the figure
+         * `no-over-cap-wait-in-eval-in-obsidian` now reads too, since it counts a helper once per CALL SITE.
+         * The two directions are SEPARATE helpers for that reason: one branchy helper's `if` and `else` are
+         * summed lexically, so both arms would be charged at all three call sites.
          */
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
         const SETTLE_IN_MILLISECONDS = 1000;
@@ -61,7 +62,7 @@ describe('SyntaxHighlightingComponent', () => {
         const leaf = app.workspace.getLeaf(false);
 
         try {
-          const isHighlightedBeforeRegistration = await checkIsHighlightedAsync(false);
+          const isHighlightedBeforeRegistration = await checkIsHighlightedAfterSettleAsync();
 
           component.load();
           await component.registerCodeBlockLanguage({
@@ -69,11 +70,11 @@ describe('SyntaxHighlightingComponent', () => {
             language: LANGUAGE
           });
           const hasModeWhileRegistered = Object.hasOwn(window.CodeMirror.modes, LANGUAGE);
-          const isHighlightedWhileRegistered = await checkIsHighlightedAsync(true);
+          const isHighlightedWhileRegistered = await checkIsHighlightedAfterWaitAsync();
 
           component.unload();
           const hasModeAfterUnload = Object.hasOwn(window.CodeMirror.modes, LANGUAGE);
-          const isHighlightedAfterUnload = await checkIsHighlightedAsync(false);
+          const isHighlightedAfterUnload = await checkIsHighlightedAfterSettleAsync();
           const textAfterUnload = readCodeLineEl()?.textContent ?? '';
 
           return {
@@ -97,22 +98,22 @@ describe('SyntaxHighlightingComponent', () => {
           return (readCodeLineEl()?.querySelector('.cm-keyword') ?? null) !== null;
         }
 
-        // `isHighlightingExpected` decides HOW to wait, because the two directions need different waits:
-        // Waiting for the token IS the assertion when highlighting is expected, while its ABSENCE can only
-        // be asserted after a settle long enough for a late token to have shown up.
-        async function checkIsHighlightedAsync(isHighlightingExpected: boolean): Promise<boolean> {
+        // The ABSENCE of highlighting is only meaningful after a settle long enough for a late token to
+        // have shown up, which is why this direction waits a flat interval rather than for a condition.
+        async function checkIsHighlightedAfterSettleAsync(): Promise<boolean> {
           await rebuildViewAsync();
+          await sleep(SETTLE_IN_MILLISECONDS);
+          return hasKeywordToken();
+        }
 
-          if (isHighlightingExpected) {
-            await waitUntil({
-              message: 'the fence should be tokenized by the registered editor mode',
-              predicate: hasKeywordToken,
-              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-            });
-          } else {
-            await sleep(SETTLE_IN_MILLISECONDS);
-          }
-
+        // When highlighting is expected, waiting for the token IS the assertion.
+        async function checkIsHighlightedAfterWaitAsync(): Promise<boolean> {
+          await rebuildViewAsync();
+          await waitUntil({
+            message: 'the fence should be tokenized by the registered editor mode',
+            predicate: hasKeywordToken,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
           return hasKeywordToken();
         }
 
@@ -153,8 +154,8 @@ describe('SyntaxHighlightingComponent', () => {
         const LANGUAGE = 'odu-syntax-highlighting-reading-view-test';
         const CODE = 'const syntaxHighlightingTest = 1;';
         /*
-         * Same worst-case sizing as the editor case above, over two `checkIsHighlightedAsync` calls rather
-         * than three: 2 rebuilds + 1 highlight wait + 1 settle = 16 s, inside the transport's ~30 s cap.
+         * Same worst-case sizing as the editor case above, over two checks rather than three: 2 rebuilds +
+         * 1 highlight wait + 1 settle = 16 s, inside the transport's ~30 s cap.
          */
         const WAIT_TIMEOUT_IN_MILLISECONDS = 5000;
         const SETTLE_IN_MILLISECONDS = 1000;
@@ -172,10 +173,10 @@ describe('SyntaxHighlightingComponent', () => {
             language: LANGUAGE,
             prismGrammar: 'typescript'
           });
-          const isHighlightedWhileRegistered = await checkIsHighlightedAsync(true);
+          const isHighlightedWhileRegistered = await checkIsHighlightedAfterWaitAsync();
 
           component.unload();
-          const isHighlightedAfterUnload = await checkIsHighlightedAsync(false);
+          const isHighlightedAfterUnload = await checkIsHighlightedAfterSettleAsync();
           const textAfterUnload = readCodeEl()?.textContent ?? '';
 
           return {
@@ -195,21 +196,22 @@ describe('SyntaxHighlightingComponent', () => {
           return (readCodeEl()?.querySelector('.token') ?? null) !== null;
         }
 
-        // Same asymmetry as the editor test: the wait IS the assertion when tokens are expected, while
-        // their absence is only meaningful after a settle long enough for a late token to have shown up.
-        async function checkIsHighlightedAsync(isHighlightingExpected: boolean): Promise<boolean> {
+        // Same asymmetry as the editor test: the absence of tokens is only meaningful after a settle long
+        // enough for a late one to have shown up.
+        async function checkIsHighlightedAfterSettleAsync(): Promise<boolean> {
           await rebuildViewAsync();
+          await sleep(SETTLE_IN_MILLISECONDS);
+          return hasPrismToken();
+        }
 
-          if (isHighlightingExpected) {
-            await waitUntil({
-              message: 'the fence should be tokenized by the registered Prism grammar',
-              predicate: hasPrismToken,
-              timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
-            });
-          } else {
-            await sleep(SETTLE_IN_MILLISECONDS);
-          }
-
+        // ... while the wait IS the assertion when tokens are expected.
+        async function checkIsHighlightedAfterWaitAsync(): Promise<boolean> {
+          await rebuildViewAsync();
+          await waitUntil({
+            message: 'the fence should be tokenized by the registered Prism grammar',
+            predicate: hasPrismToken,
+            timeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+          });
           return hasPrismToken();
         }
 

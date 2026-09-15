@@ -445,7 +445,13 @@ describe('resource-lock', () => {
     it('should keep covering every rename of a folder swap that renames the locked folders themselves', async () => {
       const result = await evalInObsidian({
         async callback({ app, lib: { isResourceLockedForPathByAncestor, ResourceLockComponent, waitUntil } }): Promise<FolderSwapResult> {
-          const WAIT_TIMEOUT_IN_MILLISECONDS = 12_000;
+          /*
+           * Sized by the WORST CASE this closure declares, not by one wait: `renameStep` waits once and is
+           * called five times, so the whole closure declares 5x this number inside a single transport call
+           * capped at ~30 s. 5 x 4 000 = 20 s leaves the closure its own headroom, and a rename that has
+           * not landed in a six-file vault after 4 s is a failure rather than a slow machine.
+           */
+          const WAIT_TIMEOUT_IN_MILLISECONDS = 4000;
           const root = 'resource-lock-swap';
           const temporaryFolderPath = 'resource-lock-swap-temp';
 
