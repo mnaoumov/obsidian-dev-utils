@@ -464,7 +464,7 @@ describe('applyContentChanges', () => {
 
   it('should handle content without frontmatter and frontmatter changes gracefully', async () => {
     // Content without frontmatter delimiters. getFrontMatterInfo returns exists: false.
-    // ParseFrontmatter returns {}. The frontmatter change will fail validation because
+    // parseFrontmatter returns {}. The frontmatter change will fail validation because
     // getNestedPropertyValue({}, 'aliases') returns undefined, not matching 'old'.
     const content = 'no frontmatter here';
     const changes = [makeFrontmatterChange('old', 'new', 'aliases')];
@@ -821,7 +821,7 @@ describe('validateChanges edge cases', () => {
   });
 
   it('should return null when frontmatter change with offsets targets non-string property', async () => {
-    // ParseFrontmatter will parse "count: 42" as number, not string
+    // parseFrontmatter will parse "count: 42" as number, not string
     const content = '---\ncount: 42\n---\nBody';
     const changes = [makeFrontmatterChangeWithOffsets('42', 'new', 'count', 0, 2)];
     const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });

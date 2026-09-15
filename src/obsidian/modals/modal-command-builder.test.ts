@@ -239,7 +239,7 @@ describe('ModalCommandBuilder', () => {
       const handler = registerCalls.find((c) => c.key === '1');
       expect(handler).toBeDefined();
       handler?.$function(new KeyboardEvent('keydown'), castTo<KeymapContext>({}));
-      // OnChange should NOT have been called since checkbox is disabled
+      // onChange should NOT have been called since checkbox is disabled
       expect(onChange).not.toHaveBeenCalled();
     });
 
@@ -390,7 +390,7 @@ describe('ModalCommandBuilder', () => {
         scope: new Scope(),
         setInstructions: vi.fn()
       });
-      // InstructionsEl is empty so no purpose els found — should not throw
+      // instructionsEl is empty so no purpose els found — should not throw
       expect(() => {
         builder.build(modal);
       }).not.toThrow();

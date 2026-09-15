@@ -408,7 +408,7 @@ describe('PluginSettingsComponentBase', () => {
     const params = new MockDataHandler({ count: 5, extraField: 'removed', name: 'test' });
     const component = createComponent(params);
     await component.loadWithPromises();
-    // SaveData should have been called because the normalized record differs from the raw one
+    // saveData should have been called because the normalized record differs from the raw one
     expect(params.saveData).toHaveBeenCalled();
   });
 

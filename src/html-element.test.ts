@@ -778,7 +778,7 @@ describe('onAncestorScrollOrResize', () => {
     node.dispatchEvent(new Event('scroll'));
     node.dispatchEvent(new Event('scroll'));
 
-    // RequestAnimationFrame should only be called once because isEventTriggered guards
+    // requestAnimationFrame should only be called once because isEventTriggered guards
     expect(vi.mocked(activeWindow.requestAnimationFrame)).toHaveBeenCalledTimes(1);
   });
 

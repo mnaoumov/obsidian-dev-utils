@@ -130,7 +130,7 @@ describe('LayoutReadyComponent', () => {
     openLoadGate();
     await vi.runAllTimersAsync();
 
-    // OnLayoutReady runs only after onloadAsync settles — never racing ahead of it.
+    // onLayoutReady runs only after onloadAsync settles — never racing ahead of it.
     expect(order).toEqual(['onloadAsync', 'onLayoutReady']);
     vi.useRealTimers();
   });
@@ -168,7 +168,7 @@ describe('LayoutReadyComponent', () => {
     openLoadGate();
     await vi.runAllTimersAsync();
 
-    // OnLayoutReady is skipped because the component was unloaded during the in-flight load.
+    // onLayoutReady is skipped because the component was unloaded during the in-flight load.
     expect(order).toEqual(['onloadAsync']);
     vi.useRealTimers();
   });
@@ -206,7 +206,7 @@ describe('LayoutReadyComponent', () => {
     openLoadGate();
     await vi.runAllTimersAsync();
 
-    // OnLayoutReady is skipped because the async load failed, not just because it is unfinished.
+    // onLayoutReady is skipped because the async load failed, not just because it is unfinished.
     expect(order).toEqual(['onloadAsync']);
     vi.useRealTimers();
   });
@@ -234,7 +234,7 @@ describe('LayoutReadyComponent', () => {
     triggerLayoutReady();
     await vi.runAllTimersAsync();
 
-    // OnLayoutReady is skipped: no in-flight load remains, but the load failed.
+    // onLayoutReady is skipped: no in-flight load remains, but the load failed.
     expect(order).toEqual(['onloadAsync']);
     vi.useRealTimers();
   });

@@ -651,7 +651,7 @@ describe('Async', () => {
 
   describe('marksAsTerminateRetry', () => {
     it('should mark an error for retry termination', () => {
-      // MarksAsTerminateRetry is tested indirectly through retryWithTimeout
+      // marksAsTerminateRetry is tested indirectly through retryWithTimeout
       // but we can verify it does not throw
       const error = new Error('test');
       expect(() => {

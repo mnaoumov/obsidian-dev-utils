@@ -329,7 +329,7 @@ describe('PluginSettingsTabBase', () => {
       await changeCallback('badValue');
     }
 
-    // SetProperty should NOT have been called since validation failed
+    // setProperty should NOT have been called since validation failed
     expect(pluginSettingsComponent.setProperty).not.toHaveBeenCalled();
   });
 
@@ -662,7 +662,7 @@ describe('PluginSettingsTabBase', () => {
         return mockComponent;
       }));
 
-      // IsEmpty returns false so that the empty-on-blur path triggers
+      // isEmpty returns false so that the empty-on-blur path triggers
       mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => false));
 
       // When empty() is called (inside updateValidatorEl), it should trigger onChange
@@ -707,7 +707,7 @@ describe('PluginSettingsTabBase', () => {
         return mockComponent;
       }));
 
-      // IsEmpty returns true during onChange (triggers shouldRevertToDefaultValueOnBlur)
+      // isEmpty returns true during onChange (triggers shouldRevertToDefaultValueOnBlur)
       mockComponent.isEmpty = castTo<typeof mockComponent.isEmpty>(vi.fn(() => true));
 
       tab.bind({ propertyName: 'name', valueComponent: mockComponent });
@@ -790,7 +790,7 @@ describe('PluginSettingsTabBase', () => {
 
       vi.mocked(pluginSettingsComponent.setProperty).mockResolvedValue('Error message');
 
-      // ShouldShowValidationMessage defaults to true
+      // shouldShowValidationMessage defaults to true
       tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
       if (changeCallback) {
@@ -815,7 +815,7 @@ describe('PluginSettingsTabBase', () => {
       const parentElement = createDiv();
       const validatorEl = createEl('input');
       parentElement.append(validatorEl);
-      // IsActiveElement returns true - should NOT trigger empty/revert logic
+      // isActiveElement returns true - should NOT trigger empty/revert logic
       validatorEl.isActiveElement = vi.fn(() => true);
 
       let changeCallback: ((value: string) => Promise<void>) | undefined;

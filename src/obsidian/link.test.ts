@@ -2388,7 +2388,7 @@ describe('app-dependent functions', () => {
         }
       );
 
-      // GetCacheSafe returns a cache whose links include the backlink reference
+      // getCacheSafe returns a cache whose links include the backlink reference
       vi.mocked(getCacheSafe).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
@@ -2450,7 +2450,7 @@ describe('app-dependent functions', () => {
       });
 
       expect(applyFileChanges).toHaveBeenCalled();
-      // LinkConverter should NOT be called because the link is not in the backlinks set
+      // linkConverter should NOT be called because the link is not in the backlinks set
       expect(linkConverter).not.toHaveBeenCalled();
     });
 
