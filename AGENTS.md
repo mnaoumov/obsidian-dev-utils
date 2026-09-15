@@ -1341,17 +1341,27 @@ describe('MyModule', () => {
   right for most tests. It is wrong for the few whose premise IS the second Electron window: anything that
   waits on `activeWindow !== window`, or asserts that a settings window was (or was not) created, then
   never observes the thing it is asserting and simply times out — with no assertion failure to point at the
-  cause. Those opt back in at the top of their `evalInObsidian` callback, before `app.setting.open()`:
+  cause. Those opt back in through the harness's own Node-side seam (`obsidian-integration-testing` 12.2.0
+  and later), which wraps whatever needs the popout — one `evalInObsidian`, or an eval plus the polls that
+  follow it:
 
   ```ts
-  const setConfig = app.vault.setConfig.bind(app.vault) as (configKey: string, value: unknown) => void;
-  setConfig('settingsPopoutWindow', true);
+  await withAppConfig({
+    async callback(): Promise<void> {
+      await evalInObsidian({ /* the settings window is a popout in here */ });
+    },
+    configKey: 'settingsPopoutWindow',
+    value: true
+  });
   ```
 
-  The cast is there only because `obsidian-typings`' `ConfigItem` union omits the key. Three integration
-  files do this today, and none of them restores the setting, so it stays on for the rest of that
-  instance's run — which is survivable only because the bullet below already makes every popout test hand
-  the active window back.
+  `vaultPath` and `transport` are optional and resolve from the test context; pass `vaultPath` where the
+  file already drives a named vault. The seam RESTORES the key on the way out — writing the previous value
+  back, or deleting the key again where the vault never carried it — which matters because the vault is
+  shared with every other test in that instance, and an inline `app.vault.setConfig` left the popout on for
+  all of them. It also owns the cast `obsidian-typings`' `ConfigItem` union forces (it omits the key), so no
+  test repeats it. `setAppConfig` / `restoreAppConfig` are the `beforeAll` / `afterAll` halves, and
+  `getAppConfig` reads. Three integration files use this today.
 - **A test that opens the settings POPOUT must point the active window home before it ends.** Obsidian
   moves the `activeWindow` / `activeDocument` globals on window FOCUS, and the owned test instance is
   hidden by being moved OFF-SCREEN — so `app.setting.close()` alone leaves them pinned to the popout
