@@ -11,7 +11,9 @@
  * The check is syntactic rather than heuristic — a `lineEnding` token that micromark places inside a
  * `paragraph` token — which is what makes it cheap and exact. The exemptions fall out of the token types
  * instead of being special-cased: fenced and indented code, math blocks, tables, headings and YAML front
- * matter are not `paragraph` tokens, so they are never reached.
+ * matter are not `paragraph` tokens, so they are never reached. The one exemption that does NOT fall out
+ * of a token type is the callout marker line, which CommonMark has no construct for — see
+ * `CALLOUT_MARKER_LINE_REG_EXP`.
  *
  * No built-in markdownlint rule covers this, and none can: the library ships nothing optional, everything
  * in it is on by default, and a rule requiring the long line contradicts `MD013`, which caps it.
@@ -33,6 +35,27 @@ export const NO_SOFT_BREAK_IN_PARAGRAPH_RULE_NAME = 'no-soft-break-in-paragraph'
  * Matches the `htmlText` token of an HTML line break, in each of the spellings CommonMark accepts.
  */
 const BR_HTML_TEXT_REG_EXP = /^<br\s*\/?>$/i;
+
+/**
+ * Matches the MARKER line of a callout / GitHub alert — `> [!NOTE]`, with an optional title after the
+ * marker, an optional foldable `-` / `+` suffix, and any depth of blockquote nesting.
+ *
+ * The break at the end of such a line is load-bearing, in the same class as `<br>` and a trailing `\`,
+ * and this is the one exemption the token types cannot supply. CommonMark has no callout construct, so
+ * micromark parses the marker and its body as ONE blockquote paragraph, indistinguishable from an
+ * ordinary wrapped one. Both renderers this library ships to implement an extension over that, and both
+ * BREAK when the marker's newline is joined: GitHub requires the `[!TYPE]` alone on its first line and
+ * otherwise renders a literal blockquote containing the text `[!NOTE] …`, while Obsidian reads
+ * everything after the marker as the callout's TITLE, so the whole body becomes one heading.
+ *
+ * Neither difference is visible to a CommonMark render comparison, which is the obvious way to verify an
+ * unwrap — so reporting the marker line is a false positive whose fix silently damages the document, and
+ * the damage survives the check most likely to be run against it.
+ *
+ * Only the marker line is protected. The callout's BODY lines wrap like any other paragraph and are
+ * reported as usual.
+ */
+const CALLOUT_MARKER_LINE_REG_EXP = /^[ \t]*>[ \t]*(?:>[ \t]*)*\[![A-Za-z][\w-]*\][-+]?/;
 
 /**
  * The tokens micromark emits for the two line breaks CommonMark makes EXPLICIT, each of which precedes a
@@ -92,6 +115,31 @@ const PARAGRAPH_TOKEN_TYPE = 'paragraph';
 const HTML_TEXT_TOKEN_TYPE = 'htmlText';
 
 /**
+ * The parameters of {@link reportSoftBreaks}.
+ */
+interface ReportSoftBreaksParams {
+  /**
+   * The line numbers of the document's callout marker lines, whose breaks are load-bearing.
+   */
+  readonly calloutMarkerLineNumbers: ReadonlySet<number>;
+
+  /**
+   * Whether these tokens are inside a `paragraph` token.
+   */
+  readonly isInParagraph: boolean;
+
+  /**
+   * The markdownlint error-reporting callback.
+   */
+  readonly onError: RuleOnError;
+
+  /**
+   * The sibling tokens to walk.
+   */
+  readonly tokens: readonly MicromarkToken[];
+}
+
+/**
  * Checks whether a `lineEnding` is preceded by one of the breaks CommonMark makes explicit, which this
  * rule deliberately permits.
  *
@@ -113,26 +161,56 @@ function checkIsExplicitBreak(previousToken: MicromarkToken | undefined): boolea
 }
 
 /**
+ * Collects the line numbers of every callout marker line in the document.
+ *
+ * Scanning the lines once up front is what keeps the exemption a set membership test at the report site,
+ * rather than a regex run against a re-derived line for every `lineEnding` in the file.
+ *
+ * @param lines - The document's lines, as markdownlint supplies them: front matter already stripped, so
+ * the numbers collected here index the same way a token's `startLine` does.
+ * @returns The 1-based numbers of the lines that are callout markers.
+ */
+function findCalloutMarkerLineNumbers(lines: readonly string[]): ReadonlySet<number> {
+  const calloutMarkerLineNumbers = new Set<number>();
+
+  for (const [index, line] of lines.entries()) {
+    if (CALLOUT_MARKER_LINE_REG_EXP.test(line)) {
+      calloutMarkerLineNumbers.add(index + 1);
+    }
+  }
+
+  return calloutMarkerLineNumbers;
+}
+
+/**
  * Walks a token list, reporting every soft line break that falls inside a paragraph.
  *
- * @param tokens - The sibling tokens to walk.
- * @param isInParagraph - Whether these tokens are inside a `paragraph` token.
- * @param onError - The markdownlint error-reporting callback.
+ * @param params - The walk's parameters.
  */
-function reportSoftBreaks(tokens: readonly MicromarkToken[], isInParagraph: boolean, onError: RuleOnError): void {
-  for (const [index, token] of tokens.entries()) {
+function reportSoftBreaks(params: ReportSoftBreaksParams): void {
+  for (const [index, token] of params.tokens.entries()) {
     if (LITERAL_FLOW_TOKEN_TYPES.has(token.type)) {
       continue;
     }
 
-    if (isInParagraph && token.type === LINE_ENDING_TOKEN_TYPE && !checkIsExplicitBreak(tokens[index - 1])) {
-      onError({
+    if (
+      params.isInParagraph
+      && token.type === LINE_ENDING_TOKEN_TYPE
+      && !checkIsExplicitBreak(params.tokens[index - 1])
+      && !params.calloutMarkerLineNumbers.has(token.startLine)
+    ) {
+      params.onError({
         detail: ERROR_DETAIL,
         lineNumber: token.startLine
       });
     }
 
-    reportSoftBreaks(token.children, isInParagraph || token.type === PARAGRAPH_TOKEN_TYPE, onError);
+    reportSoftBreaks({
+      calloutMarkerLineNumbers: params.calloutMarkerLineNumbers,
+      isInParagraph: params.isInParagraph || token.type === PARAGRAPH_TOKEN_TYPE,
+      onError: params.onError,
+      tokens: token.children
+    });
   }
 }
 
@@ -147,7 +225,12 @@ function reportSoftBreaks(tokens: readonly MicromarkToken[], isInParagraph: bool
 export const noSoftBreakInParagraphRule: Rule = {
   description: 'Paragraph is hard-wrapped (soft line break inside a paragraph)',
   function: (params: RuleParams, onError: RuleOnError): void => {
-    reportSoftBreaks(params.parsers.micromark.tokens, false, onError);
+    reportSoftBreaks({
+      calloutMarkerLineNumbers: findCalloutMarkerLineNumbers(params.lines),
+      isInParagraph: false,
+      onError,
+      tokens: params.parsers.micromark.tokens
+    });
   },
   names: [NO_SOFT_BREAK_IN_PARAGRAPH_RULE_NAME],
   parser: 'micromark',
