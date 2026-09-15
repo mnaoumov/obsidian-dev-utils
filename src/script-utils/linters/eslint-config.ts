@@ -124,7 +124,21 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
   context.testFiles.push(
     join(ObsidianPluginRepoPaths.Tests, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
     join(ObsidianPluginRepoPaths.Mocks, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTs),
-    join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTestTs)
+    join(ObsidianPluginRepoPaths.Src, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTestTs),
+    /*
+     * A build-script test is a TEST, and this convention puts it in a `*.test.ts` under `scripts/` -- beside the
+     * script it covers rather than under `src/`. Without this glob it matched `scriptFiles` alone, so every relaxation
+     * that keys on `context.testFiles` missed it: `no-magic-numbers` fired on a suite whose whole subject is recorded
+     * numbers, and `unicorn/consistent-function-scoping` on the per-suite fixture factories the block at the bottom
+     * of `getUnicornConfigs` says tests exist to allow.
+     *
+     * The file now matches BOTH lists, and that is deliberate rather than an overlap to resolve: everything scoped to
+     * `context.scriptFiles` only turns rules OFF (`import-x/no-nodejs-modules`, `unicorn/no-process-exit`), both of
+     * which a script test wants as much as the script does, so the two sets compose instead of competing. Keep it that
+     * way -- a rule turned ON for `scriptFiles` would land on these files too, and flat-config order, not intent,
+     * would decide which side won.
+     */
+    join(ObsidianPluginRepoPaths.Scripts, ObsidianPluginRepoPaths.AnyPath, ObsidianPluginRepoPaths.AnyTestTs)
   );
 
   if (options.editContext) {
