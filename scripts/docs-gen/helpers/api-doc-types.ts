@@ -61,8 +61,8 @@ export interface ParameterInfo {
 }
 
 export interface ReturnTypeProvider {
-  getReturnType(): TextProvider;
-  getReturnTypeNode?(): TextProvider | undefined;
+  getReturnType: () => TextProvider;
+  getReturnTypeNode?: () => TextProvider | undefined;
 }
 
 export interface SidebarEntry {
@@ -85,7 +85,7 @@ export interface SidebarTreeNode {
 }
 
 export interface TextProvider {
-  getText(): string;
+  getText: () => string;
 }
 
 export interface TypeInfo {

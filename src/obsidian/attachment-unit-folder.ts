@@ -63,7 +63,7 @@ export interface FindAttachmentUnitFolderPathWithPredicateParams {
    * @param folderPath - The vault-relative path of the folder.
    * @returns `true` if the folder is designated as an attachment unit, `false` otherwise.
    */
-  checkIsAttachmentUnitFolder(this: void, folderPath: string): boolean;
+  readonly checkIsAttachmentUnitFolder: (folderPath: string) => boolean;
 }
 
 /**

@@ -63,7 +63,7 @@ interface CreateComponentOptions {
 
 interface DisplayableSettingTab {
   containerEl: HTMLElement;
-  display(): void;
+  display: () => void;
 }
 
 interface InstallCommunityPluginParams {

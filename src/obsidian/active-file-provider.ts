@@ -18,7 +18,7 @@ export interface ActiveFileProvider {
    *
    * @returns The active file, or `null` if no file is active.
    */
-  getActiveFile(): null | TFile;
+  getActiveFile: () => null | TFile;
 }
 
 /**

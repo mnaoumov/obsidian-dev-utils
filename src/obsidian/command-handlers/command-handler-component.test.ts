@@ -37,7 +37,7 @@ import { CommandHandler } from './command-handler.ts';
 
 interface CreateComponentOwnedByParams {
   readonly additionalMenuEventRegistrars?: readonly MenuEventRegistrar[] | undefined;
-  commandLifetimeOwnerProvider(): ComponentEx;
+  readonly commandLifetimeOwnerProvider: () => ComponentEx;
   readonly commandRegistrar: CommandRegistrar;
   readonly menuEventRegistrar?: MenuEventRegistrar | undefined;
 }

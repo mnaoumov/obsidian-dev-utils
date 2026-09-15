@@ -210,14 +210,14 @@ export interface BacklinksLike {
    * @param key - The path of the backlink-holding note.
    * @returns The links, or a nullish value.
    */
-  get(key: string): null | readonly Reference[] | undefined;
+  get: (key: string) => null | readonly Reference[] | undefined;
 
   /**
    * Returns the paths of the backlink-holding notes.
    *
    * @returns The paths.
    */
-  keys(): Iterable<string>;
+  keys: () => Iterable<string>;
 }
 
 /**
@@ -254,7 +254,7 @@ export interface BuildBacklinksSnapshotParams<TPayload> {
    *
    * @default `JSON.stringify`
    */
-  linkIdentityKeyProvider?(this: void, link: Reference): string;
+  readonly linkIdentityKeyProvider?: (link: Reference) => string;
 
   /**
    * Rewrites the path of a backlink-holding note as it will be **after** the operation.
@@ -265,7 +265,7 @@ export interface BuildBacklinksSnapshotParams<TPayload> {
    *
    * @default the identity function
    */
-  pathRemapper?(this: void, backlinkPath: string): string;
+  readonly pathRemapper?: (backlinkPath: string) => string;
 
   /**
    * Produces the payload to record for a link. See {@link BacklinksSnapshot} for what a payload is for.
@@ -273,7 +273,7 @@ export interface BuildBacklinksSnapshotParams<TPayload> {
    * @param link - The link being recorded.
    * @returns The payload.
    */
-  payloadProvider(this: void, link: Reference): TPayload;
+  readonly payloadProvider: (link: Reference) => TPayload;
 
   /**
    * An existing snapshot to merge into, so several sets of backlinks can be accumulated into one.
@@ -424,7 +424,7 @@ export interface EditBacklinksParams extends EditBacklinksOptions {
   /**
    * The function that converts each link.
    */
-  linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+  readonly linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>;
 
   /**
    * An optional reporter invoked once per backlink file after its links are updated, with the running
@@ -457,7 +457,7 @@ export interface EditBacklinksSnapshotParams<TPayload> extends EditBacklinksSnap
   /**
    * The function that converts each link.
    */
-  linkConverter(this: void, params: BacklinkConversionParams<TPayload>): Promisable<MaybeReturn<string>>;
+  readonly linkConverter: (params: BacklinkConversionParams<TPayload>) => Promisable<MaybeReturn<string>>;
 
   /**
    * Computes the identity key of a link.
@@ -466,7 +466,7 @@ export interface EditBacklinksSnapshotParams<TPayload> extends EditBacklinksSnap
    *
    * @default `JSON.stringify`
    */
-  linkIdentityKeyProvider?(this: void, link: Reference): string;
+  readonly linkIdentityKeyProvider?: (link: Reference) => string;
 
   /**
    * An optional reporter invoked once per backlink file after its links are updated, with the running
@@ -515,7 +515,7 @@ export interface EditLinksInContentParams {
   /**
    * The function that converts each link.
    */
-  linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+  readonly linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>;
 
   /**
    * A range within {@link EditLinksInContentParams.content}, in character offsets, restricting the pass to
@@ -575,7 +575,7 @@ export interface EditLinksParams extends EditLinksOptions {
   /**
    * The function that converts each link.
    */
-  linkConverter(this: void, link: Reference): Promisable<MaybeReturn<string>>;
+  readonly linkConverter: (link: Reference) => Promisable<MaybeReturn<string>>;
 
   /**
    * A range within the file's content, in character offsets, restricting the pass to the links inside it.
@@ -1354,7 +1354,7 @@ interface GetFileChangesParams {
   /**
    * A function that converts each link.
    */
-  linkConverter(this: void, link: Reference, abortSignal: AbortSignal): Promisable<MaybeReturn<string>>;
+  readonly linkConverter: (link: Reference, abortSignal: AbortSignal) => Promisable<MaybeReturn<string>>;
 
   /**
    * A range within the content, in character offsets, restricting the changes to the links fully contained

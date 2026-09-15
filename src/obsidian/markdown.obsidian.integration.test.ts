@@ -75,7 +75,7 @@ interface RegisterLinkHandlersResult {
  * A live recording of what the file explorer was asked to reveal, and the undo for it.
  */
 interface RevealRecorder {
-  restore(): void;
+  restore: () => void;
   revealedPaths: string[];
 }
 

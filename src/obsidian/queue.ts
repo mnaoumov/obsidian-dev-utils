@@ -38,7 +38,7 @@ export interface AddToQueueAndWaitParams {
   /**
    * The function to add.
    */
-  operationFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<void>;
 
   /**
    * Optional name of the operation.
@@ -79,7 +79,7 @@ export interface AddToQueueParams {
   /**
    * The function to add.
    */
-  operationFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<void>;
 
   /**
    * Optional name of the operation.
@@ -115,7 +115,7 @@ interface Queue {
 
 interface QueueItem {
   abortSignal: AbortSignal;
-  operationFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
+  operationFunction: (abortSignal: AbortSignal) => Promisable<void>;
   operationName: string;
   shouldShowTimeoutNotice: boolean;
   stackTrace: string;

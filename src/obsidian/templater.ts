@@ -104,7 +104,7 @@ export interface TemplaterApi {
    * @param runMode - Which {@link TemplaterRunMode} the render is.
    * @returns The running config.
    */
-  create_running_config(templateFile: TFile | undefined, targetFile: TFile, runMode: TemplaterRunMode): TemplaterRunningConfig;
+  create_running_config: (templateFile: TFile | undefined, targetFile: TFile, runMode: TemplaterRunMode) => TemplaterRunningConfig;
 
   /**
    * The functions object (`tp`) of the render currently in flight, when there is one.
@@ -123,7 +123,7 @@ export interface TemplaterApi {
    * `template_file` is not a `TFile`.
    * @returns A {@link Promise} resolving to the rendered text.
    */
-  read_and_parse_template(config: TemplaterRunningConfig): Promise<string>;
+  read_and_parse_template: (config: TemplaterRunningConfig) => Promise<string>;
 }
 
 /**
@@ -136,7 +136,7 @@ export interface TemplaterFunctionsGenerator {
    * @param config - The {@link TemplaterRunningConfig} to build for.
    * @returns A {@link Promise} resolving to the functions object.
    */
-  generate_object(config: TemplaterRunningConfig): Promise<object>;
+  generate_object: (config: TemplaterRunningConfig) => Promise<object>;
 }
 
 /**

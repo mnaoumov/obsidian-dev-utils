@@ -72,7 +72,7 @@ export interface MenuEventRegistrar {
    * @param handler - The handler to register.
    * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerEditorMenuEventHandler(handler: EditorMenuEventHandler): DisposableEx;
+  registerEditorMenuEventHandler: (handler: EditorMenuEventHandler) => DisposableEx;
 
   /**
    * Registers a handler for the single-file context menu event.
@@ -80,7 +80,7 @@ export interface MenuEventRegistrar {
    * @param handler - The handler to register.
    * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerFileMenuEventHandler(handler: FileMenuEventHandler): DisposableEx;
+  registerFileMenuEventHandler: (handler: FileMenuEventHandler) => DisposableEx;
 
   /**
    * Registers a handler for the multi-file context menu event.
@@ -88,7 +88,7 @@ export interface MenuEventRegistrar {
    * @param handler - The handler to register.
    * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerFilesMenuEventHandler(handler: FilesMenuEventHandler): DisposableEx;
+  registerFilesMenuEventHandler: (handler: FilesMenuEventHandler) => DisposableEx;
 
   /**
    * Registers a handler for the markdown viewport (margin) context menu event.
@@ -96,5 +96,5 @@ export interface MenuEventRegistrar {
    * @param handler - The handler to register.
    * @returns A {@link DisposableEx} that unregisters the handler when disposed.
    */
-  registerMarkdownViewportMenuEventHandler(handler: MarkdownViewportMenuEventHandler): DisposableEx;
+  registerMarkdownViewportMenuEventHandler: (handler: MarkdownViewportMenuEventHandler) => DisposableEx;
 }

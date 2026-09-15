@@ -105,7 +105,7 @@ export interface ProcessFrontmatterParams<CustomFrontmatter = unknown> extends P
    * @param abortSignal - The abort signal to listen to.
    * @returns A value that may be `null` to abort the process.
    */
-  frontmatterFunction(this: void, frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal): Promisable<MaybeReturn<null>>;
+  readonly frontmatterFunction: (frontmatter: CombinedFrontmatter<CustomFrontmatter>, abortSignal: AbortSignal) => Promisable<MaybeReturn<null>>;
 
   /**
    * The path or TFile object representing the note.

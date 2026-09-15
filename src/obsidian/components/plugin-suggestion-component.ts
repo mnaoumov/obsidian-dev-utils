@@ -74,7 +74,7 @@ export interface PluginSuggestionComponentConstructorParams {
    *
    * @returns `true` when the suggestion has been declined.
    */
-  isSuggestionDeclined(this: void): boolean;
+  readonly isSuggestionDeclined: () => boolean;
 
   /**
    * The notice component of the plugin making the suggestion, used to show the suggestion and its
@@ -104,7 +104,7 @@ export interface PluginSuggestionComponentConstructorParams {
    * @param isDeclined - `true` when the user declined.
    * @returns A {@link Promise} that resolves once the answer is persisted.
    */
-  setSuggestionDeclined(this: void, isDeclined: boolean): Promisable<void>;
+  readonly setSuggestionDeclined: (isDeclined: boolean) => Promisable<void>;
 
   /**
    * The id of the suggested plugin, as listed in Obsidian's community plugin registry.

@@ -20,7 +20,7 @@ export interface MarkdownPostProcessorRegistrar {
    *
    * @param params - The parameters for the markdown post processor registration.
    */
-  registerMarkdownPostProcessor(params: MarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorParams): void;
+  registerMarkdownPostProcessor: (params: MarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorParams) => void;
 }
 
 /**
@@ -34,7 +34,7 @@ export interface MarkdownPostProcessorRegistrarRegisterMarkdownPostProcessorPara
    * @param context - The markdown post processor context.
    * @returns A promisable that resolves when the post processing is complete.
    */
-  postProcessor(element: HTMLElement, context: MarkdownPostProcessorContext): Promisable<void>;
+  readonly postProcessor: (element: HTMLElement, context: MarkdownPostProcessorContext) => Promisable<void>;
 
   /**
    * Optional sort order for the post processor. Lower numbers are processed first.

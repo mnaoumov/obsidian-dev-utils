@@ -15,7 +15,7 @@ export interface ExtensionsRegistrar {
    *
    * @param params - The parameters for the extensions registration.
    */
-  registerExtensions(params: ExtensionsRegistrarRegisterExtensionsParams): void;
+  registerExtensions: (params: ExtensionsRegistrarRegisterExtensionsParams) => void;
 }
 
 /**

@@ -40,7 +40,7 @@ export interface RetryWithTimeoutNoticeParams {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFunction(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<boolean>;
 
   /**
    * The name of the operation.
@@ -95,7 +95,7 @@ export interface RunWithTimeoutNoticeParams<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFunction(abortSignal: AbortSignal): Promisable<Result>;
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<Result>;
 
   /**
    * The name of the operation.

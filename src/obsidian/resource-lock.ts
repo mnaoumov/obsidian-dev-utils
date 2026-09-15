@@ -141,7 +141,7 @@ export interface ResourceLockComponentLockForPathParams {
    * or {@link handleExternalMutation}). Use it to clear consumer-side state that shadows the lock (e.g.
    * a pending-operation buffer or a notice) without hand-wiring an `abort` listener. Fires at most once.
    */
-  onUnlockRequested?(this: void): void;
+  readonly onUnlockRequested?: () => void;
 
   /**
    * A human-readable name of the operation that took the lock (e.g. `'Move selection'`, `'Merge
@@ -212,7 +212,7 @@ interface LockEntry {
 
 interface LockIndicators {
   readonly actionIconEl: HTMLElement;
-  disposeTypeListener(): void;
+  disposeTypeListener: () => void;
   readonly tabIconEl: HTMLElement | null;
 }
 
@@ -233,14 +233,14 @@ interface ManagerLockParams {
  */
 interface ResourceLockEventsComponentConstructorParams {
   readonly app: App;
-  onChange(this: void): void;
-  onExternalMutation(this: void, path: string): void;
-  onFileMenu(this: void, menu: Menu, file: TAbstractFile): void;
-  onRename(this: void, oldPath: string, newPath: string): void;
+  readonly onChange: () => void;
+  readonly onExternalMutation: (path: string) => void;
+  readonly onFileMenu: (menu: Menu, file: TAbstractFile) => void;
+  readonly onRename: (oldPath: string, newPath: string) => void;
 }
 
 interface ResourceLockMutationBlockerComponentConstructorParams {
-  shouldBlockMutation(this: void, path: string): boolean;
+  readonly shouldBlockMutation: (path: string) => boolean;
 }
 
 /**

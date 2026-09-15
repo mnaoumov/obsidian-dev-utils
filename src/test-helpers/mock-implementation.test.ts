@@ -9,8 +9,8 @@ import { mockImplementation } from './mock-implementation.ts';
 interface Target {
   // Optional method — its type is `((x: number) => number) | undefined`, mirroring how
   // `obsidian-typings` declares the constructor pseudo-methods (`constructor2__?`, etc.).
-  optionalMethod?(x: number): number;
-  requiredMethod(x: number): number;
+  optionalMethod?: (x: number) => number;
+  requiredMethod: (x: number) => number;
 }
 
 describe('mockImplementation', () => {

@@ -17,7 +17,7 @@ export interface BasesViewRegistrar {
    *
    * @param params - The parameters for the bases view registration.
    */
-  registerBasesView(params: BasesViewRegistrarRegisterBasesViewParams): void;
+  registerBasesView: (params: BasesViewRegistrarRegisterBasesViewParams) => void;
 }
 
 /**

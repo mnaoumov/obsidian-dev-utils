@@ -16,9 +16,7 @@ import type {
 import { TypeAsserter } from './type.ts';
 
 interface TestEvents {
-  on(name: 'bar', callback: (isEnabled: boolean) => void): void;
-  on(name: 'foo', callback: (a: string, b: number) => void): void;
-  on(name: string, callback: (...data: unknown[]) => unknown): void;
+  on: ((name: 'bar', callback: (isEnabled: boolean) => void) => void) & ((name: 'foo', callback: (a: string, b: number) => void) => void) & ((name: string, callback: (...data: unknown[]) => unknown) => void);
 }
 
 describe('ExtractEventMap', () => {

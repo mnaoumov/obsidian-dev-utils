@@ -73,7 +73,7 @@ export interface SettingsMigrationComponentConstructorParams<TMigratableSettings
    *
    * @returns The values to propose, or `null` when there is nothing to offer.
    */
-  getProposedSettings(this: void): null | TMigratableSettings;
+  readonly getProposedSettings: () => null | TMigratableSettings;
 
   /**
    * The settings component of the plugin making the proposal.
@@ -101,7 +101,7 @@ export interface SettingsMigrationComponentConstructorParams<TMigratableSettings
    * `setProperty(…)`. The latter only edits the in-memory state, so the retirement is forgotten on the next
    * reload and the migration is offered again forever.
    */
-  retireProposedSettings(this: void): Promisable<void>;
+  readonly retireProposedSettings: () => Promisable<void>;
 
   /**
    * The `manifest.id` of the plugin making the proposal, so the provider's dialog can say whose settings these

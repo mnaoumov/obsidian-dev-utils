@@ -19,7 +19,7 @@ export interface GenerateMarkdownLinkDefaultParamsComponentConstructorParams {
    *
    * @returns The default params.
    */
-  getDefaultParams(this: void): Partial<GenerateMarkdownLinkParams>;
+  readonly getDefaultParams: () => Partial<GenerateMarkdownLinkParams>;
 }
 
 /**
@@ -32,7 +32,7 @@ export class GenerateMarkdownLinkDefaultParamsComponent extends ComponentEx {
   /**
    * Returns the default {@link GenerateMarkdownLinkParams} registered while this component is loaded.
    */
-  protected readonly getDefaultParams: (this: void) => Partial<GenerateMarkdownLinkParams>;
+  protected readonly getDefaultParams: () => Partial<GenerateMarkdownLinkParams>;
 
   /**
    * Creates a new component.

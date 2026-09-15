@@ -23,7 +23,7 @@ export interface MarkdownCodeBlockProcessorRegistrar {
    * @param params - The parameters for the markdown code block processor.
    * @returns The markdown post processor.
    */
-  registerMarkdownCodeBlockProcessor(params: MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams): MarkdownPostProcessor;
+  registerMarkdownCodeBlockProcessor: (params: MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams) => MarkdownPostProcessor;
 }
 
 interface MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorParams {
@@ -34,7 +34,7 @@ interface MarkdownCodeBlockProcessorRegistrarRegisterMarkdownCodeBlockProcessorP
    * @param element - The HTML element representing the code block.
    * @param context - The context for the markdown post processor.
    */
-  handler(this: void, source: string, element: HTMLElement, context: MarkdownPostProcessorContext): Promisable<void>;
+  readonly handler: (source: string, element: HTMLElement, context: MarkdownPostProcessorContext) => Promisable<void>;
 
   /**
    * The language of the code block to register the processor for.

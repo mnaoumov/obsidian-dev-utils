@@ -141,7 +141,7 @@ export interface GetAvailablePathForAttachmentsFunctionExtended extends GetAvail
    * @param folderPath - The vault-relative path of the folder.
    * @returns `true` if the folder is designated as an attachment unit, `false` otherwise.
    */
-  checkIsAttachmentUnitFolder?(this: void, folderPath: string): boolean;
+  checkIsAttachmentUnitFolder?: (folderPath: string) => boolean;
 
   /**
    * Get available path for attachments with additional params.
@@ -149,7 +149,7 @@ export interface GetAvailablePathForAttachmentsFunctionExtended extends GetAvail
    * @param params - Parameters for the get available path for attachments.
    * @returns A {@link Promise} that resolves to the available path for attachments.
    */
-  extended(params: GetAvailablePathForAttachmentsExtendedFunctionParams): Promise<string>;
+  extended: (params: GetAvailablePathForAttachmentsExtendedFunctionParams) => Promise<string>;
 }
 
 type GetAvailablePathForAttachmentsFunction = Vault['getAvailablePathForAttachments'];

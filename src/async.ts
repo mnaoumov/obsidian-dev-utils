@@ -305,7 +305,7 @@ export interface InvokeAsyncSafelyAfterDelayParams {
    *
    * @param abortSignal - The abort signal to listen to.
    */
-  asyncFunction(this: void, abortSignal: AbortSignal): Promisable<void>;
+  readonly asyncFunction: (abortSignal: AbortSignal) => Promisable<void>;
 
   /**
    * The delay in milliseconds.
@@ -460,7 +460,7 @@ export interface RetryWithTimeoutParams {
    *
    * @param context - The timeout context.
    */
-  onTimeout?(this: void, context: TimeoutContext): void;
+  readonly onTimeout?: (context: TimeoutContext) => void;
 
   /**
    * The function to execute.
@@ -468,7 +468,7 @@ export interface RetryWithTimeoutParams {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFunction(this: void, abortSignal: AbortSignal): Promisable<boolean>;
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<boolean>;
 
   /**
    * The name of the operation.
@@ -504,7 +504,7 @@ export interface RunWithTimeoutParams<Result> {
    *
    * @param context - The timeout context.
    */
-  onTimeout?(this: void, context: TimeoutContext): void;
+  readonly onTimeout?: (context: TimeoutContext) => void;
 
   /**
    * The operation function to execute.
@@ -512,7 +512,7 @@ export interface RunWithTimeoutParams<Result> {
    * @param abortSignal - The abort signal to listen to.
    * @returns The result of the function.
    */
-  operationFunction(this: void, abortSignal: AbortSignal): Promisable<Result>;
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<Result>;
 
   /**
    * The name of the operation.
@@ -567,7 +567,7 @@ export interface TimeoutContext {
    *
    * @param callback - The function to call when the operation completes.
    */
-  onOperationCompleted(callback: () => void): void;
+  onOperationCompleted: (callback: () => void) => void;
   /**
    * The name of the operation.
    */
@@ -575,7 +575,7 @@ export interface TimeoutContext {
   /**
    * Terminates the operation that timed out.
    */
-  terminateOperation(): void;
+  terminateOperation: () => void;
 }
 
 /**

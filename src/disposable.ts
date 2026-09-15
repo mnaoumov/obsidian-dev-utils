@@ -92,13 +92,13 @@ export interface AsyncDisposableEx extends AsyncDisposable {
    *
    * @returns A {@link Promise} that resolves once disposal completes.
    */
-  asyncDispose(): Promise<void>;
+  asyncDispose: () => Promise<void>;
 }
 
 /**
  * A callback invoked when an {@link AsyncCallbackDisposable} is disposed.
  */
-export type AsyncDisposeCallback = (this: void) => Promisable<void>;
+export type AsyncDisposeCallback = () => Promisable<void>;
 
 /**
  * The parameters for constructing a {@link CallbackDisposable}.
@@ -187,13 +187,13 @@ export interface DisposableEx extends Disposable {
   /**
    * Disposes the object. Delegates to `this[Symbol.dispose]()`.
    */
-  dispose(): void;
+  dispose: () => void;
 }
 
 /**
  * A callback invoked when a {@link CallbackDisposable} is disposed.
  */
-export type DisposeCallback = (this: void) => void;
+export type DisposeCallback = () => void;
 
 /**
  * Abstract base for an {@link AsyncDisposableEx}: it carries the re-dispose guard (via

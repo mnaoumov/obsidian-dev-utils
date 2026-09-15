@@ -20,7 +20,7 @@ export interface ViewRegistrar {
    *
    * @param params - The parameters for the view registration.
    */
-  registerView(params: PluginViewRegistrarRegisterViewParams): void;
+  registerView: (params: PluginViewRegistrarRegisterViewParams) => void;
 }
 
 type PluginViewRegistrarRegisterViewParams = ViewRegistrarRegisterViewParams;
@@ -37,7 +37,7 @@ interface ViewRegistrarRegisterViewParams {
    * @param leaf - The workspace leaf where the view will be created.
    * @returns The created view instance.
    */
-  viewCreator(this: void, leaf: WorkspaceLeaf): View;
+  readonly viewCreator: (leaf: WorkspaceLeaf) => View;
 }
 
 /**

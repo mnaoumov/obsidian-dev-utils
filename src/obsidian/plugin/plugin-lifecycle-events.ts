@@ -125,6 +125,14 @@ declare module 'obsidian' {
      * @param context - The context passed as `this` to the `callback` function.
      * @returns The event reference.
      */
+    /*
+     * An augmentation of an EXISTING overload set has to stay a method signature. A property member does not merge into
+     * `Workspace.on`'s overloads, and TypeScript says so nowhere near here: the declaration itself compiles, and every
+     * call site loses the signature instead — `on(PLUGIN_LOADED_EVENT_NAME, ...)` fails with "the last overload gave the
+     * following error". The rule reports this one without a fix for the same reason, so the disable below is the answer
+     * rather than a deferral.
+     */
+    // eslint-disable-next-line @typescript-eslint/method-signature-style -- A property member does not merge into an existing overload set. See above.
     on(name: PluginLifecycleEventName, callback: (payload: PluginLifecycleEventPayload) => unknown, context?: unknown): EventRef;
   }
 }

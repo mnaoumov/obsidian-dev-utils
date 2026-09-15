@@ -41,7 +41,7 @@ export interface EditJsonParams<T> extends EditJsonOptions {
    *
    * @param data - The parsed JSON data to edit.
    */
-  editFunction(this: void, data: T): Promisable<void>;
+  readonly editFunction: (data: T) => Promisable<void>;
 
   /**
    * The path to the JSON file.
@@ -65,7 +65,7 @@ export interface EditJsonSyncParams<T> extends EditJsonSyncOptions {
    *
    * @param data - The parsed JSON data to edit.
    */
-  editFunction(this: void, data: T): void;
+  readonly editFunction: (data: T) => void;
 
   /**
    * The path to the JSON file.

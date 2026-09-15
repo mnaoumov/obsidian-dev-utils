@@ -55,14 +55,14 @@ export interface DefineEslintConfigsOptions {
    * @param context - The ESLint configuration context.
    * @returns The custom ESLint configurations.
    */
-  customConfigs?(context: EslintConfigContext): Linter.Config[];
+  readonly customConfigs?: (context: EslintConfigContext) => Linter.Config[];
 
   /**
    * A function that edits the ESLint configuration context.
    *
    * @param context - The ESLint configuration context.
    */
-  editContext?(context: EslintConfigContext): void;
+  readonly editContext?: (context: EslintConfigContext) => void;
 }
 
 /**
@@ -774,7 +774,11 @@ function getTseslintConfigs(context: EslintConfigContext): Linter.Config[] {
       rules: {
         '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-member-accessibility': 'error',
-        '@typescript-eslint/method-signature-style': ['error', 'method'],
+        // The rule's own `property` default, spelled as a bare severity so it stays the rule's default rather than a copy of it.
+        // Do NOT pass `'method'` for tidiness: the method form keeps parameters bivariant, drops `readonly` (the rule's own fixer
+        // message says so), and makes `@typescript-eslint/unbound-method` fire on every forwarded bag member, which is what the
+        // `this: void` boilerplate used to pay for. Do NOT delete the line either - the rule is in no preset, so that turns it off.
+        '@typescript-eslint/method-signature-style': 'error',
         '@typescript-eslint/no-floating-promises': ['error', {
           checkThenables: true
         }],

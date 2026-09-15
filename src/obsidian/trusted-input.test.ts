@@ -28,7 +28,7 @@ interface HelperCase {
    * Calls the facade's helper with the sentinel params, so the test never has to build a real
    * `HTMLElement` or `Editor` just to watch it be forwarded to an arm.
    */
-  call(params: object): Promise<void>;
+  call: (params: object) => Promise<void>;
 
   /**
    * The name both arms export it under.

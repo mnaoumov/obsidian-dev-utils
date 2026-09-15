@@ -43,10 +43,10 @@ interface ComponentContext {
    * Completes the host's pending settings load, optionally with the declined flag the file turned out to
    * hold. Only meaningful when the component was created with `isSettingsLoadPending`.
    */
-  finishSettingsLoad(isDeclined?: boolean): void;
+  finishSettingsLoad: (isDeclined?: boolean) => void;
   readonly setSuggestionDeclined: SetSuggestionDeclinedMock;
   readonly showNotice: ReturnType<typeof vi.fn>;
-  triggerLayoutReady(): void;
+  triggerLayoutReady: () => void;
 }
 
 interface CreateComponentOptions {

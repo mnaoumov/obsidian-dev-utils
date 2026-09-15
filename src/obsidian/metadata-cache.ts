@@ -160,7 +160,7 @@ export interface GetBacklinksForFileSafeWrapper {
    * @param pathOrFile - The path or file object.
    * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
    */
-  safe(pathOrFile: PathOrFile): Promise<CustomArrayDict<Reference>>;
+  safe: (pathOrFile: PathOrFile) => Promise<CustomArrayDict<Reference>>;
 }
 
 /**
@@ -309,7 +309,7 @@ interface FeatureLinkSelector {
   /**
    * Selects the links for this category from the cache.
    */
-  select(this: void, cache: CachedMetadataEx): Reference[] | undefined;
+  select: (cache: CachedMetadataEx) => Reference[] | undefined;
 
   /**
    * Whether to include this category.

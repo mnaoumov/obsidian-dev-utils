@@ -226,7 +226,7 @@ export interface PluginGateComponentConstructorParams {
    *
    * @returns A {@link Promise} that resolves once the surface is loaded.
    */
-  loadFeatureSurface(this: void): Promise<void>;
+  readonly loadFeatureSurface: () => Promise<void>;
 
   /**
    * The host plugin — the one declaring the dependencies and conflicts.
@@ -241,7 +241,7 @@ export interface PluginGateComponentConstructorParams {
   /**
    * Unloads the host plugin's feature surface. Called when a gate that had been open closes.
    */
-  unloadFeatureSurface(this: void): void;
+  readonly unloadFeatureSurface: () => void;
 }
 
 /**
@@ -258,7 +258,7 @@ interface BlockedPluginSettingTabConstructorParams {
    *
    * @param containerEl - The tab's container element.
    */
-  renderBanner(this: void, containerEl: HTMLElement): void;
+  readonly renderBanner: (containerEl: HTMLElement) => void;
 }
 
 /**

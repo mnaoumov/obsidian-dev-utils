@@ -38,7 +38,7 @@ const VIEWPORT_MARGIN_IN_PIXELS = 8;
  * @typeParam Value - The type of the value resolved by the popover.
  * @returns The current value.
  */
-export type PopoverValueGetter<Value> = (this: void) => Value;
+export type PopoverValueGetter<Value> = () => Value;
 
 /**
  * The tools handed to {@link ShowPopoverParams.build} for populating a popover.
@@ -47,12 +47,12 @@ export interface ShowPopoverBuildParams {
   /**
    * Dismisses the popover, resolving it with `null`, as the Cancel button does.
    */
-  cancel(this: void): void;
+  readonly cancel: () => void;
 
   /**
    * Confirms the popover, resolving it with the built value, as the OK button does.
    */
-  confirm(this: void): void;
+  readonly confirm: () => void;
 
   /**
    * The element to add the popover's content to. The OK and Cancel buttons are appended after it.
@@ -77,7 +77,7 @@ export interface ShowPopoverParams<Value> {
    * @param params - The tools for populating the popover.
    * @returns A getter read when the popover is confirmed.
    */
-  build(this: void, params: ShowPopoverBuildParams): PopoverValueGetter<Value>;
+  readonly build: (params: ShowPopoverBuildParams) => PopoverValueGetter<Value>;
 
   /**
    * A text for the "Cancel" button.

@@ -17,7 +17,7 @@ export interface EditorExtensionRegistrar {
    *
    * @param extension - The editor extension to register.
    */
-  registerEditorExtension(extension: Extension): void;
+  registerEditorExtension: (extension: Extension) => void;
 }
 
 /**

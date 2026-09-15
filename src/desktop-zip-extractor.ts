@@ -71,7 +71,7 @@ export interface ZipExtractionFileSystem {
    * @param options - The {@link ZipExtractionMkdirOptions}.
    * @returns The first directory created, if any.
    */
-  mkdirSync(path: string, options: ZipExtractionMkdirOptions): string | undefined;
+  mkdirSync: (path: string, options: ZipExtractionMkdirOptions) => string | undefined;
 
   /**
    * Writes a file, overwriting it if it exists.
@@ -79,7 +79,7 @@ export interface ZipExtractionFileSystem {
    * @param path - The file to write.
    * @param data - The bytes to write.
    */
-  writeFileSync(path: string, data: Buffer): void;
+  writeFileSync: (path: string, data: Buffer) => void;
 }
 
 /**

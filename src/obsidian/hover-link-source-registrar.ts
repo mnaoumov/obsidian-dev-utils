@@ -17,7 +17,7 @@ export interface HoverLinkSourceRegistrar {
    *
    * @param params - The parameters for the hover link source registration.
    */
-  registerHoverLinkSource(params: HoverLinkSourceRegistrarRegisterHoverLinkSourceParams): void;
+  registerHoverLinkSource: (params: HoverLinkSourceRegistrarRegisterHoverLinkSourceParams) => void;
 }
 
 /**

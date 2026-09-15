@@ -59,7 +59,7 @@ export interface LoopParams<T> {
    * @param params - The parameters for building the notice message.
    * @returns A string to display in the notice.
    */
-  buildNoticeMessage(params: LoopBuildNoticeMessageParams<T>): string;
+  readonly buildNoticeMessage: (params: LoopBuildNoticeMessageParams<T>) => string;
 
   /**
    * Items to loop over.
@@ -90,7 +90,7 @@ export interface LoopParams<T> {
    *
    * @param item - The current item.
    */
-  processItem(item: T): Promisable<void>;
+  readonly processItem: (item: T) => Promisable<void>;
 
   /**
    * A title of the progress bar.

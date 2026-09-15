@@ -22,7 +22,7 @@ export interface AllWindowsEventComponentRegisterAllDocumentsDomEventParams<Docu
    * @param $event - The event.
    * @returns The result of the callback.
    */
-  callback(this: HTMLElement, $event: DocumentEventMap[DocumentEventType]): unknown;
+  readonly callback: (this: HTMLElement, $event: DocumentEventMap[DocumentEventType]) => unknown;
 
   /**
    * The options for the event.
@@ -47,7 +47,7 @@ export interface AllWindowsEventComponentRegisterAllWindowsDomEventParams<Window
    * @param $event - The event.
    * @returns The result of the callback.
    */
-  callback(this: HTMLElement, $event: WindowEventMap[WindowEventType]): unknown;
+  readonly callback: (this: HTMLElement, $event: WindowEventMap[WindowEventType]) => unknown;
 
   /**
    * The options for the event.
@@ -83,7 +83,6 @@ export class AllWindowsEventComponent extends ComponentEx {
     params: AllWindowsEventComponentRegisterAllDocumentsDomEventParams<DocumentEventType>
   ): void {
     const {
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- The callback is a DOM event handler forwarded to registerDomEvent, which binds this to the element.
       callback,
       options,
       type
@@ -105,7 +104,6 @@ export class AllWindowsEventComponent extends ComponentEx {
     params: AllWindowsEventComponentRegisterAllWindowsDomEventParams<WindowEventType>
   ): void {
     const {
-      // eslint-disable-next-line @typescript-eslint/unbound-method -- The callback is a DOM event handler forwarded to registerDomEvent, which binds this to the element.
       callback,
       options,
       type

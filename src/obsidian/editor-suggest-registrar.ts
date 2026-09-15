@@ -18,7 +18,7 @@ export interface EditorSuggestRegistrar {
    *
    * @param editorSuggest - The editor suggest to register.
    */
-  registerEditorSuggest(editorSuggest: EditorSuggest<unknown>): void;
+  registerEditorSuggest: (editorSuggest: EditorSuggest<unknown>) => void;
 }
 
 /**

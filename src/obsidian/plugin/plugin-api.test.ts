@@ -62,7 +62,7 @@ const ANY_VERSION_RANGE = '>=0.0.0';
 const SYMBOL_KEY: unique symbol = Symbol('tag');
 
 interface GreeterApi {
-  greet(name: string): string;
+  greet: (name: string) => string;
   greeting: string;
 }
 
@@ -79,7 +79,7 @@ interface RegistryShape {
 }
 
 interface SymbolKeyedApi {
-  [SYMBOL_KEY](): string;
+  [SYMBOL_KEY]: () => string;
 }
 
 interface TestHarness {
@@ -87,11 +87,11 @@ interface TestHarness {
   /**
    * Publishes an API on behalf of a plugin and returns the function that unloads that plugin.
    */
-  publish(options?: PublishOptions): () => void;
+  publish: (options?: PublishOptions) => () => void;
   /**
    * Starts a watch and returns the ref plus the function that unloads the consuming component.
    */
-  watch<TApi extends object>(options?: WatchOptions): WatchResult<TApi>;
+  watch: <TApi extends object>(options?: WatchOptions) => WatchResult<TApi>;
 }
 
 interface WatchOptions {
@@ -102,7 +102,7 @@ interface WatchOptions {
 
 interface WatchResult<TApi extends object> {
   readonly ref: PluginApiRef<TApi>;
-  unloadComponent(): void;
+  readonly unloadComponent: () => void;
 }
 
 describe('plugin-api', () => {

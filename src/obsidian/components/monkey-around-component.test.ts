@@ -42,8 +42,8 @@ interface RegisterDeferringPatchParams {
 }
 
 interface TestObject {
-  greet(name: string): string;
-  sum(a: number, b: number): number;
+  greet: (name: string) => string;
+  sum: (a: number, b: number) => number;
   value: number;
 }
 
@@ -765,9 +765,9 @@ describe('MonkeyAroundComponent', () => {
 
   describe('FunctionKeys / MethodKeys', () => {
     interface Mixed {
-      greet(name: string): string;
+      greet: (name: string) => string;
       save: Debouncer<[string], void>;
-      sum(a: number, b: number): number;
+      sum: (a: number, b: number) => number;
       value: number;
     }
 

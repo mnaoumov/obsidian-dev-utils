@@ -39,7 +39,7 @@ export interface SelectItemParams<T> extends ModalParamsBase {
    * @param item - The item to get the display text for.
    * @returns The display text for the item.
    */
-  itemTextFunction(this: void, item: T): string;
+  readonly itemTextFunction: (item: T) => string;
 
   /**
    * A placeholder text for the input field.
@@ -68,7 +68,7 @@ type ItemSelectModalConstructorParams<T> = ModalBaseConstructorParams<null | T> 
 class ItemSelectModal<T> extends FuzzySuggestModal<T> {
   private isSelected = false;
   private readonly items: T[];
-  private readonly itemTextFunction: (this: void, item: T) => string;
+  private readonly itemTextFunction: (item: T) => string;
   private readonly placeholder: string | undefined;
   private readonly promiseResolve: PromiseResolve<null | T>;
   private readonly spellcheckMode: SpellcheckMode;

@@ -13,8 +13,8 @@ import { lintMarkdownContent } from './linters/markdownlint-content.ts';
  */
 interface MarkdownlintCli2TestParameters {
   directory: string;
-  logError(message: string): void;
-  logMessage(message: string): void;
+  logError: (message: string) => void;
+  logMessage: (message: string) => void;
   noGlobs: boolean;
   nonFileContents: Record<string, string>;
   optionsDefault: unknown;

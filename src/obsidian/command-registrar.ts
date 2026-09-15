@@ -18,14 +18,14 @@ export interface CommandRegistrar {
    *
    * @param command - The command to add.
    */
-  addCommand(command: Command): void;
+  addCommand: (command: Command) => void;
 
   /**
    * Removes a command from the registrar.
    *
    * @param commandId - The ID of the command to remove.
    */
-  removeCommand(commandId: string): void;
+  removeCommand: (commandId: string) => void;
 }
 
 /**

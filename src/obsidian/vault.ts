@@ -223,7 +223,7 @@ export interface InvokeWithFileSystemLockParams {
    *
    * @param content - The content of the file.
    */
-  $function(this: void, content: string): void;
+  readonly $function: (content: string) => void;
 
   /**
    * The application instance.
@@ -386,7 +386,7 @@ interface InvokeFileActionSafeParams {
    * @param file - The file to perform the action on.
    * @returns A {@link Promise} that resolves when the action is complete.
    */
-  fileAction(this: void, file: TFile): Promise<void>;
+  readonly fileAction: (file: TFile) => Promise<void>;
 
   /**
    * The path or file to perform the action on.
