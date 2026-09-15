@@ -144,10 +144,14 @@ export class ObsidianPluginVitestConfigContext {
    * and the matching `test:integration:desktop:performance` script exists in every plugin built on this library.
    *
    * A plugin's `test:integration` aggregate leaves this project out on purpose, and it stays out even on a
-   * machine with a desktop Obsidian set up. Perf suites are expensive by design — 600 s timeouts, large
-   * generated vaults, sized through env vars — so they are run deliberately rather than as part of a
-   * routine check. Reach them through the dedicated `test:integration:desktop:performance` script; adding
-   * them to that aggregate is drift, not a gap to close.
+   * machine with a desktop Obsidian set up. The reason is the fixture rather than the cost: a perf suite
+   * needs its own generated, populated vault, sized through env vars, and the aggregate's small temporary
+   * vault is the wrong one. The 600 s below is a timeout, not a duration — measured end to end, most perf
+   * suites finish in seconds, and only one that generates tens of thousands of notes takes minutes.
+   *
+   * No routine command runs them, but something does: a weekly sweep runs every plugin's
+   * `test:integration:desktop:performance`, which is also how to reach them by hand. Adding them to that
+   * aggregate is drift, not a gap to close.
    */
   public readonly desktopPerformance: ObsidianPluginVitestProjectConfig = {
     environment: 'node',
