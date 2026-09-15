@@ -30,10 +30,53 @@ import { defineConfig } from 'vitest/config';
  */
 export type ObsidianPluginVitestProjectConfig = NonNullable<TestProjectInlineConfiguration['test']>;
 
+/*
+ * The per-eval cap BOTH transports enforce: one `evalInObsidian` closure gets this much and no more,
+ * measured from the moment the transport dispatches it. Outrunning it raises `EvalCapExceededError`,
+ * which names the cap, the transport that enforced it, and the `pollInObsidian` remedy — the one message
+ * that turns "this timed out" into "this closure asked for more time than exists".
+ *
+ * The number is restated rather than imported because `obsidian-integration-testing` keeps it private on
+ * both transports (`COMMAND_TIMEOUT_IN_MILLISECONDS` on desktop CDP,
+ * `DEFAULT_SCRIPT_TIMEOUT_IN_MILLISECONDS` on Appium). It is also the default cap of this library's own
+ * `no-over-cap-wait-in-eval-in-obsidian` lint rule, so the rule and the budgets below agree on one number.
+ *
+ * TODO: Import it once `obsidian-integration-testing` exports it.
+ */
+const TRANSPORT_EVAL_CAP_IN_MILLISECONDS = 30_000;
+
+/*
+ * How much a project's per-test budget clears the cap by.
+ *
+ * A test budget EQUAL to the cap makes the cap's own diagnosis unreachable: vitest starts its clock at
+ * the top of the test and the transport starts its own only once the eval is dispatched, so vitest always
+ * wins by the few milliseconds in between and reports its anonymous `Test timed out in 30000ms`. That is
+ * not a hypothetical — it is how every over-cap desktop eval had surfaced here until this margin existed,
+ * and one of them aborted an otherwise green release five minutes into the preflight with no indication
+ * of which wait was to blame (measured 2026-09-15: 30044 ms burned against a 30000 ms budget).
+ *
+ * The margin has to cover everything a test does BEFORE the eval that hangs — earlier ones included —
+ * so it is a healthy fraction of the cap rather than a couple of seconds.
+ */
+const TRANSPORT_EVAL_CAP_MARGIN_IN_MILLISECONDS = 15_000;
+
+/*
+ * Android was never affected, and that asymmetry is the evidence the desktop equality was an oversight
+ * rather than a decision: its budget has always been double the Appium cap, so an over-cap mobile closure
+ * has always been able to report itself.
+ */
 const ANDROID_TIMEOUT_IN_MILLISECONDS = 60_000;
-const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
 const HOOK_TIMEOUT_MULTIPLIER = 4;
 const PERFORMANCE_TIMEOUT_IN_MILLISECONDS = 600_000;
+
+/**
+ * The per-test budget of the regular integration projects, in milliseconds.
+ *
+ * Exported because a repo that assembles its vitest projects by hand instead of through
+ * {@link defineObsidianPluginVitestConfig} still needs the same relationship to the per-eval cap, and
+ * restating the number there is how the two drift apart.
+ */
+export const INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS = TRANSPORT_EVAL_CAP_IN_MILLISECONDS + TRANSPORT_EVAL_CAP_MARGIN_IN_MILLISECONDS;
 
 const ANDROID_TEST_FILES = 'src/**/*.android.integration.test.ts';
 const CROSS_PLATFORM_TEST_FILES = 'src/**/*.cross-platform.integration.test.ts';
@@ -109,9 +152,13 @@ export class ObsidianPluginVitestConfigContext {
   /**
    * The per-test budget of the regular integration projects, in milliseconds.
    *
-   * @default `30000`
+   * It deliberately CLEARS the transports' per-eval cap rather than matching it, so that a closure which
+   * outruns the cap fails with the harness's `EvalCapExceededError` — naming the cap and the remedy —
+   * instead of with vitest's anonymous timeout. Lowering it to the cap restores that blind spot.
+   *
+   * @default `45000`
    */
-  public readonly bigTimeoutInMilliseconds = BIG_TIMEOUT_IN_MILLISECONDS;
+  public readonly bigTimeoutInMilliseconds = INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS;
 
   /**
    * The coverage `exclude` globs. Push onto it to drop more files from the coverage report.
@@ -131,11 +178,11 @@ export class ObsidianPluginVitestConfigContext {
     environment: 'node',
     fileParallelism: false,
     globalSetup: ['obsidian-integration-testing/vitest-global-setup-plugin'],
-    hookTimeout: BIG_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
+    hookTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
     include: [DESKTOP_TEST_FILES, CROSS_PLATFORM_TEST_FILES],
     name: 'integration-tests:desktop',
     setupFiles: ['obsidian-integration-testing/vitest-setup'],
-    testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+    testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
   };
 
   /**
@@ -178,10 +225,10 @@ export class ObsidianPluginVitestConfigContext {
   public readonly noApp: ObsidianPluginVitestProjectConfig = {
     environment: 'node',
     fileParallelism: false,
-    hookTimeout: BIG_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
+    hookTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
     include: [NO_APP_TEST_FILES],
     name: 'integration-tests:no-app',
-    testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+    testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
   };
 
   /**
