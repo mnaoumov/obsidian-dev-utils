@@ -40,6 +40,7 @@ import { archivePluginDemoVault } from './demo-vault.ts';
 import { readdirPosix } from './fs.ts';
 import { gate } from './gate.ts';
 import { editJson } from './json.ts';
+import { lintMarkdownContent } from './linters/markdownlint-content.ts';
 import {
   editNpmShrinkWrapJson,
   editPackageJson,
@@ -217,6 +218,12 @@ const DEFAULT_PREID = 'beta';
  * user can install. See {@link getLatestObsidianVersion}.
  */
 const DESKTOP_RELEASES_JSON_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/desktop-releases.json';
+
+/**
+ * The npm script whose check the settled changelog is held to, named in the messages so a reader knows which
+ * gate they are looking at — and knows that fixing it here is the same fix as fixing it on the branch.
+ */
+const LINT_MD_SCRIPT_NAME = 'lint:md';
 
 /**
  * The shape of a merge subject git wrote itself, rather than one an author chose.
@@ -630,6 +637,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  * 6. Builds the project.
  * 7. Settles the changelog — the only step that can block on a human, and deliberately the last one before
  *    anything is written, so an interrupt here leaves the working tree clean and the release re-runnable.
+ *    The settled text is linted here too: `lint:md` ran in step 5, before a character of it existed.
  * 8. Updates version in files, then writes the settled changelog.
  * 9. Adds updated files to Git, tags the commit, and pushes to the repository.
  * 10. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
@@ -848,6 +856,38 @@ function extractChangelogSection(changelogContent: string, version: string): str
 }
 
 /**
+ * Runs `lint:md`'s checks over the NEW section of a composed changelog, before any of it reaches the
+ * repository.
+ *
+ * Only the new section is linted, and deliberately so. The honest check is the whole file, but it fails a
+ * release on a defect in a section somebody shipped years ago — which is a release nobody can cut without
+ * first fixing history, and is exactly how a changelog defect becomes a permanent blocker instead of a
+ * two-minute fix. The new section is the only part this release is responsible for.
+ *
+ * The section is handed over inside a minimal document rather than on its own, so the heading and list rules
+ * see the context they need (a document whose first line is a list item is a different document). The line
+ * numbers a finding reports are the composed `CHANGELOG.md`'s own, which is not a coincidence and is worth
+ * keeping: a section is PREPENDED, so the minimal document is character-for-character the head of the file
+ * that is about to be written.
+ *
+ * @param changelogContent - The full composed `CHANGELOG.md` content.
+ * @param version - The version whose section is about to be published.
+ * @returns A {@link Promise} that resolves to the findings, or an empty array when the section is clean.
+ */
+async function getChangelogSectionMarkdownlintFindings(changelogContent: string, version: string): Promise<string[]> {
+  const heading = `# CHANGELOG\n\n## ${version}`;
+  const section = extractChangelogSection(changelogContent, version);
+  // An empty section is a real shape — a release with no commits to describe, or prepared notes that are an
+  // empty file — and appending a blank body to the heading would report a defect this release did not commit.
+  const document = section === '' ? `${heading}\n` : `${heading}\n\n${section}\n`;
+
+  return await lintMarkdownContent({
+    content: document,
+    filePath: resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd })
+  });
+}
+
+/**
  * Fetches the latest version of Obsidian that the desktop app can actually run.
  *
  * Reads {@link DESKTOP_RELEASES_JSON_URL}, not the GitHub `releases/latest` API. The API returns the newest
@@ -914,6 +954,14 @@ function parseNpmPackOutput(output: string): NpmPackResult {
  * The settled content is handed to {@link assertChangelogHasNoMergeSubjects} before it is returned, which is
  * how that guard reaches every caller and every path — reviewed or not, commit-derived or prepared — from a
  * single site.
+ *
+ * It is also where the new section is LINTED, for the same reason and one the release's ordering forces: the
+ * release's only `lint:md` runs in the gate, which is over before this text exists, so every character of a
+ * new changelog section used to enter the repository after the only check that could have looked at it. The
+ * generator's own bullets cannot fail it — they are one `toFirstLine` per commit — but the two paths a human
+ * or an agent writes, the interactive review and `--changelog-file`, are exactly the paths that carry prose.
+ * A defect there does not fail the release: it lands on the default branch inside the `chore: release`
+ * commit, and turns the NEXT gate red, on a branch belonging to somebody who did not write it.
  *
  * @param newVersion - The new version number the changelog section is written for.
  * @param options - The {@link UpdateChangelogOptions} controlling where the section body comes from.
@@ -983,7 +1031,33 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
   }
 
   // Prepared notes are already the reviewed text, so they never open an editor, whatever `shouldEditChangelog` says.
-  const settledChangeLog = changelogFilePath === undefined && shouldEditChangelog ? await reviewChangelog(newChangeLog) : newChangeLog;
+  const isReviewDue = changelogFilePath === undefined && shouldEditChangelog;
+  let settledChangeLog = newChangeLog;
+  let findings: string[] = [];
+
+  // The lint runs on the SETTLED text, so the review sits inside the loop rather than before it: the author is
+  // still sitting at the editor, so they are handed the findings and the same scratch copy back. A review that
+  // returns byte-identical text is the author declining to fix them, which ends the loop instead of reopening
+  // for ever. There is nobody to hand a finding to on the other paths, so those throw on the first one.
+  for (;;) {
+    if (isReviewDue) {
+      const reviewedChangeLog = await reviewChangelog(settledChangeLog, findings);
+      if (findings.length > 0 && reviewedChangeLog === settledChangeLog) {
+        throw toChangelogMarkdownlintError(findings, newVersion);
+      }
+
+      settledChangeLog = reviewedChangeLog;
+    }
+
+    findings = await getChangelogSectionMarkdownlintFindings(settledChangeLog, newVersion);
+    if (findings.length === 0) {
+      break;
+    }
+
+    if (!isReviewDue) {
+      throw toChangelogMarkdownlintError(findings, newVersion);
+    }
+  }
 
   // The last thing the composition does, and that placement is the whole point: this ONE site sees the
   // commit-derived bullets, the prepared notes and whatever a review left behind, so the guard runs whether or not
@@ -998,9 +1072,11 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
  * returns whatever they left behind. The scratch folder is removed even when the review fails.
  *
  * @param newChangeLog - The composed `CHANGELOG.md` content to hand over for review.
+ * @param findings - The markdownlint findings the previous round of this review left unfixed, printed above
+ * the prompt so the author sees what has to change. Empty on the first round.
  * @returns A {@link Promise} that resolves to the reviewed content.
  */
-async function reviewChangelog(newChangeLog: string): Promise<string> {
+async function reviewChangelog(newChangeLog: string, findings: string[]): Promise<string> {
   const scratchFolder = await mkdtemp(join(tmpdir(), 'obsidian-dev-utils-changelog-'));
   const scratchChangelogPath = join(scratchFolder, ObsidianPluginRepoPaths.ChangelogMd);
 
@@ -1012,6 +1088,10 @@ async function reviewChangelog(newChangeLog: string): Promise<string> {
       shouldIgnoreExitCode: true
     });
     const versionDebugger = getLibDebugger('Version');
+    if (findings.length > 0) {
+      versionDebugger(`${ObsidianPluginRepoPaths.ChangelogMd} does not pass ${LINT_MD_SCRIPT_NAME} yet:\n${findings.join('\n')}`);
+    }
+
     if (codeVersion) {
       versionDebugger(`Please update the ${ObsidianPluginRepoPaths.ChangelogMd} file. Close Visual Studio Code when you are done...`);
       await execFromRoot(['code', '-w', scratchChangelogPath], {
@@ -1055,6 +1135,28 @@ function toChangelogEntry(commitMessage: string): string {
   }
 
   return lines[1] ?? subject;
+}
+
+/**
+ * Builds the error that stops a release whose new changelog section does not pass `lint:md`.
+ *
+ * It is thrown from the composition step, which is BEFORE anything is written, so the recovery it describes is
+ * the whole recovery: there is nothing to revert, and the release re-runs from the top.
+ *
+ * @param findings - The markdownlint findings, as {@link lintMarkdownContent} reported them.
+ * @param version - The version whose section was being published.
+ * @returns The error to throw.
+ */
+function toChangelogMarkdownlintError(findings: string[], version: string): Error {
+  return new Error(
+    `The ${version} section of ${ObsidianPluginRepoPaths.ChangelogMd} does not pass ${LINT_MD_SCRIPT_NAME}:\n`
+      + `${findings.join('\n')}\n`
+      + 'The changelog is settled before it is written, so this stops the release with the repository untouched'
+      + ' and nothing to revert. The line numbers are the ones the written file would have had. Fix the release'
+      + ' notes — in the prepared notes file, or in the commit messages they were generated from — and re-run the'
+      + ' release. Releasing anyway would land the defect on the default branch inside the release commit, where'
+      + ` the next ${LINT_MD_SCRIPT_NAME} on anyone's branch reports it.`
+  );
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string, minAppVersion: string | undefined): Promise<void> {
