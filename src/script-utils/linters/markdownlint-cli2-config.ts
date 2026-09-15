@@ -40,12 +40,13 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       shortcut_syntax: true
     },
-    // Registered but OFF. markdownlint enables an unlisted custom rule by default, so landing it silent
-    // has to be said out loud. Every repo in this config's reach is hard-wrapped somewhere, and the count
-    // is not knowable from a wrapped-line heuristic — one measured against a heuristic's own top ten
-    // over-counted six files and under-counted four, worst cases 158 against 776 and 74 against 34. So a
-    // repo measures itself with the rule, unwraps, and turns it on by overriding this one key in its own
-    // `scripts/markdownlint-cli2-config.ts` — the same seam this repo uses for `ignores`.
+    // Registered but OFF by default. markdownlint enables an unlisted custom rule by default, so landing it
+    // silent has to be said out loud. Every repo in this config's reach was hard-wrapped somewhere when this
+    // landed, and the count is not knowable from a wrapped-line heuristic — one measured against a
+    // heuristic's own top ten over-counted six files and under-counted four, worst cases 158 against 776 and
+    // 74 against 34. So a repo measures itself with the rule, unwraps, and turns it on by overriding this one
+    // key in its own `scripts/markdownlint-cli2-config.ts` — the same seam this repo uses for `ignores`.
+    // This repo's own override does exactly that, and is the worked example.
     'no-soft-break-in-paragraph': false,
     'relative-links': true
   },
