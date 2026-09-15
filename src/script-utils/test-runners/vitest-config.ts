@@ -23,6 +23,7 @@ import type {
 } from 'vitest/config';
 
 import process from 'node:process';
+import { DEFAULT_EVAL_CAP_IN_MILLISECONDS } from 'obsidian-integration-testing';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -31,22 +32,13 @@ import { defineConfig } from 'vitest/config';
 export type ObsidianPluginVitestProjectConfig = NonNullable<TestProjectInlineConfiguration['test']>;
 
 /*
- * The per-eval cap BOTH transports enforce: one `evalInObsidian` closure gets this much and no more,
- * measured from the moment the transport dispatches it. Outrunning it raises `EvalCapExceededError`,
- * which names the cap, the transport that enforced it, and the `pollInObsidian` remedy — the one message
- * that turns "this timed out" into "this closure asked for more time than exists".
- *
- * The number is restated rather than imported because `obsidian-integration-testing` keeps it private on
- * both transports (`COMMAND_TIMEOUT_IN_MILLISECONDS` on desktop CDP,
- * `DEFAULT_SCRIPT_TIMEOUT_IN_MILLISECONDS` on Appium). It is also the default cap of this library's own
- * `no-over-cap-wait-in-eval-in-obsidian` lint rule, so the rule and the budgets below agree on one number.
- *
- * TODO: Import it once `obsidian-integration-testing` exports it.
- */
-const TRANSPORT_EVAL_CAP_IN_MILLISECONDS = 30_000;
-
-/*
- * How much a project's per-test budget clears the cap by.
+ * How much a project's per-test budget clears `DEFAULT_EVAL_CAP_IN_MILLISECONDS` by — the per-eval cap
+ * BOTH transports enforce, imported from `obsidian-integration-testing` rather than restated so the
+ * budgets below and the cap they are sized against can never be two numbers. One `evalInObsidian` closure
+ * gets that much and no more, measured from the moment the transport dispatches it; outrunning it raises
+ * `EvalCapExceededError`, which names the cap, the transport that enforced it, and the `pollInObsidian`
+ * remedy — the one message that turns "this timed out" into "this closure asked for more time than
+ * exists".
  *
  * A test budget EQUAL to the cap makes the cap's own diagnosis unreachable: vitest starts its clock at
  * the top of the test and the transport starts its own only once the eval is dispatched, so vitest always
@@ -76,7 +68,7 @@ const PERFORMANCE_TIMEOUT_IN_MILLISECONDS = 600_000;
  * {@link defineObsidianPluginVitestConfig} still needs the same relationship to the per-eval cap, and
  * restating the number there is how the two drift apart.
  */
-export const INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS = TRANSPORT_EVAL_CAP_IN_MILLISECONDS + TRANSPORT_EVAL_CAP_MARGIN_IN_MILLISECONDS;
+export const INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS = DEFAULT_EVAL_CAP_IN_MILLISECONDS + TRANSPORT_EVAL_CAP_MARGIN_IN_MILLISECONDS;
 
 const ANDROID_TEST_FILES = 'src/**/*.android.integration.test.ts';
 const CROSS_PLATFORM_TEST_FILES = 'src/**/*.cross-platform.integration.test.ts';
