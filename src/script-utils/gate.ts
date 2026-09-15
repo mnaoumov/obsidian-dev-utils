@@ -12,8 +12,9 @@
  * This module exists so the two are the same code rather than two lists that agree today: `updateVersion`
  * calls {@link gate}, and a check added here is reachable from both. What the gate deliberately leaves to
  * the release path is the clean-repo assertion — a branch gate is run on a dirty tree, which is the whole
- * point of running it before committing — and the integration suite, which has to run in sequence across
- * every repo sharing the one Obsidian instance and so cannot be part of a command run casually.
+ * point of running it before committing — and the integration suite, which is the one preflight step that
+ * already has a routine command of its own (`npm run test:integration`) and so is not in the class this
+ * module exists for.
  *
  * The tests run ONCE, through `test:coverage` where the project defines it and through `test` otherwise.
  * Running both, as this did until 2026-09-05, was a duplicate everywhere it mattered: a project scopes its
@@ -53,9 +54,16 @@ export interface GateOptions {
   readonly shouldRunChecks?: boolean;
 
   /**
-   * Whether to run the integration test suite. Off by default: integration runs have to be serialized
-   * across the whole set of sibling repositories, so a gate that always ran them would collide with
-   * another session's run.
+   * Whether to run the integration test suite. Off by default, on two reasons that are about COST rather
+   * than about contention — desktop runs stopped contending in `obsidian-integration-testing` 5.0.0, which
+   * gives every run its own user-data dir and CDP port, and the Android emulator that is still shared is
+   * serialized by that package's own `android` setup lock, which waits rather than failing.
+   *
+   * The reasons that do hold: `test:integration` is the one preflight step reachable by a routine command
+   * of its own, unlike the four this gate exists for; and in a project whose suite includes an Android
+   * test it boots an AVD and an Appium server, then queues behind any other Android run for up to that
+   * lock's hour-long acquisition timeout. A command whose whole selling point is answering in seconds must
+   * not start one unasked. The release path opts in, so nothing is skipped before a publish.
    *
    * @default `false`
    */
@@ -113,6 +121,10 @@ export async function gate(options: GateOptions = {}): Promise<void> {
 /**
  * Parses the command-line arguments for the gate script.
  *
+ * The two `--no-` flags switch off steps that are on; `--integration` is the one that switches a step ON,
+ * because {@link GateOptions.shouldRunIntegrationTests} is off by default for cost. It exists so that
+ * default is a choice the caller can make per run rather than one only a programmatic caller can reach.
+ *
  * @param $arguments - The command-line arguments to parse.
  * @returns The parsed {@link GateOptions}.
  */
@@ -121,6 +133,7 @@ export function parseGateArguments($arguments: string[]): GateOptions {
     // eslint-disable-next-line unicorn/name-replacements -- `args` is the option name Node's `parseArgs` reads.
     args: $arguments,
     options: {
+      'integration': { type: 'boolean' },
       'no-build': { type: 'boolean' },
       'no-checks': { type: 'boolean' }
     }
@@ -128,6 +141,7 @@ export function parseGateArguments($arguments: string[]): GateOptions {
 
   return {
     shouldBuild: !(values['no-build'] ?? false),
-    shouldRunChecks: !(values['no-checks'] ?? false)
+    shouldRunChecks: !(values['no-checks'] ?? false),
+    shouldRunIntegrationTests: values.integration ?? false
   };
 }

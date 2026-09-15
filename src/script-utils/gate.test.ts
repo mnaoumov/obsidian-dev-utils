@@ -176,31 +176,47 @@ describe('gate', () => {
 });
 
 describe('parseGateArguments', () => {
-  it('should enable the build and the checks when no flags are passed', () => {
+  it('should enable the build and the checks but not the integration suite when no flags are passed', () => {
     expect(parseGateArguments([])).toEqual({
       shouldBuild: true,
-      shouldRunChecks: true
+      shouldRunChecks: true,
+      shouldRunIntegrationTests: false
     });
   });
 
   it('should turn off the build for --no-build', () => {
     expect(parseGateArguments(['--no-build'])).toEqual({
       shouldBuild: false,
-      shouldRunChecks: true
+      shouldRunChecks: true,
+      shouldRunIntegrationTests: false
     });
   });
 
   it('should turn off the checks for --no-checks', () => {
     expect(parseGateArguments(['--no-checks'])).toEqual({
       shouldBuild: true,
-      shouldRunChecks: false
+      shouldRunChecks: false,
+      shouldRunIntegrationTests: false
     });
   });
 
-  it('should accept both flags together', () => {
-    expect(parseGateArguments(['--no-build', '--no-checks'])).toEqual({
+  it('should turn on the integration suite for --integration', () => {
+    expect(parseGateArguments(['--integration'])).toEqual({
+      shouldBuild: true,
+      shouldRunChecks: true,
+      shouldRunIntegrationTests: true
+    });
+  });
+
+  it('should accept every flag together', () => {
+    expect(parseGateArguments([
+      '--no-build',
+      '--no-checks',
+      '--integration'
+    ])).toEqual({
       shouldBuild: false,
-      shouldRunChecks: false
+      shouldRunChecks: false,
+      shouldRunIntegrationTests: true
     });
   });
 });
