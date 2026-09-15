@@ -43,6 +43,7 @@ const {
   mockEditPackageLockJson,
   mockExecFromRoot,
   mockExistsSync,
+  mockLintMarkdownContent,
   mockMkdtemp,
   mockNpmRun,
   mockNpmRunOptional,
@@ -62,6 +63,7 @@ const {
   mockEditPackageLockJson: vi.fn(),
   mockExecFromRoot: vi.fn(),
   mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockLintMarkdownContent: vi.fn<() => Promise<string[]>>(),
   mockMkdtemp: vi.fn(),
   mockNpmRun: vi.fn(),
   mockNpmRunOptional: vi.fn(),
@@ -125,6 +127,10 @@ vi.mock('../script-utils/json.ts', () => ({
   editJson: mockEditJson
 }));
 
+vi.mock('./linters/markdownlint-content.ts', () => ({
+  lintMarkdownContent: mockLintMarkdownContent
+}));
+
 vi.mock('../script-utils/npm-run.ts', async (importOriginal) => {
   const $module = await importOriginal<typeof import('./npm-run.ts')>();
   return {
@@ -140,6 +146,7 @@ vi.mock('../debug.ts', () => ({
 
 const SCRATCH_FOLDER = '/tmp/obsidian-dev-utils-changelog-abc123';
 const SCRATCH_CHANGELOG_PATH = `${SCRATCH_FOLDER}/CHANGELOG.md`;
+const MARKDOWNLINT_FINDINGS = ['CHANGELOG.md:5 error no-soft-break-in-paragraph Paragraph is hard-wrapped (soft line break inside a paragraph)'];
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -157,6 +164,7 @@ beforeEach(() => {
   mockArchivePluginDemoVault.mockResolvedValue(null);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockExistsSync.mockReturnValue(false);
+  mockLintMarkdownContent.mockResolvedValue([]);
 });
 
 function setIsTty(value: boolean | undefined): void {
@@ -180,6 +188,24 @@ function stubPassThroughReview(previousChangelog = ''): void {
     return noopAsync();
   });
   mockReadFile.mockImplementation((path: string) => Promise.resolve(path === SCRATCH_CHANGELOG_PATH ? scratchContent : previousChangelog));
+}
+
+/**
+ * Mimics a review that hands back a prepared text per round, so a case can play out an author fixing — or
+ * declining to fix — what the linter reported. The last entry is repeated once the list runs out, which is
+ * what makes a one-entry list an author who changes nothing.
+ */
+function stubReviewReturning(...reviewedContents: string[]): void {
+  let roundIndex = 0;
+  mockReadFile.mockImplementation((path: string) => {
+    if (path !== SCRATCH_CHANGELOG_PATH) {
+      return Promise.resolve('');
+    }
+
+    const reviewedContent = reviewedContents[Math.min(roundIndex, reviewedContents.length - 1)] ?? '';
+    roundIndex++;
+    return Promise.resolve(reviewedContent);
+  });
 }
 
 describe('VersionUpdateType', () => {
@@ -1062,6 +1088,86 @@ describe('updateChangelog', () => {
       expect.stringContaining('## 0.0.0'),
       'utf-8'
     );
+  });
+
+  // The release's only `lint:md` runs in the gate, which is over before a character of this text exists. So the
+  // settled section is linted here, where the working tree is still pristine and the release can still stop.
+  it('should lint the settled new section, and only that section', async () => {
+    mockExistsSync.mockReturnValue(true);
+    stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Old change\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('0123456789abcdef')
+      .mockResolvedValueOnce('feat: add a shiny new feature\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+
+    // The minimal document: the heading context the list and heading rules need, and nothing anybody else
+    // shipped. Its line numbers are the written file's own, because a section is prepended.
+    expect(mockLintMarkdownContent).toHaveBeenCalledWith({
+      content: '# CHANGELOG\n\n## 1.0.0\n\n- feat: add a shiny new feature\n',
+      filePath: '/root/CHANGELOG.md'
+    });
+  });
+
+  it('should lint a bare heading when the new section has no body', async () => {
+    mockReadFile.mockResolvedValue('');
+    await updateChangelog('1.0.0', { changelogFilePath: '/notes.md' });
+    expect(mockLintMarkdownContent).toHaveBeenCalledWith({
+      content: '# CHANGELOG\n\n## 1.0.0\n',
+      filePath: '/root/CHANGELOG.md'
+    });
+  });
+
+  it('should refuse prepared release notes the markdown linter reports on, before writing them', async () => {
+    mockReadFile.mockResolvedValue('- A note that is hard-wrapped\n  onto a second line\n');
+    mockLintMarkdownContent.mockResolvedValue(MARKDOWNLINT_FINDINGS);
+    await expect(updateChangelog('1.0.0', { changelogFilePath: '/notes.md' })).rejects.toThrow('does not pass lint:md');
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a reported new section when the review is disabled', async () => {
+    mockExecFromRoot.mockResolvedValueOnce('feat: a note\0');
+    mockLintMarkdownContent.mockResolvedValue(MARKDOWNLINT_FINDINGS);
+    await expect(updateChangelog('1.0.0', { shouldEditChangelog: false })).rejects.toThrow(MARKDOWNLINT_FINDINGS[0] ?? '');
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  // The author is still sitting at the editor, so the findings go back to them rather than ending the release.
+  it('should re-open the review with the findings and accept the text they fixed', async () => {
+    stubReviewReturning(
+      '# CHANGELOG\n\n## 1.0.0\n\n- A note that is hard-wrapped\n  onto a second line\n',
+      '# CHANGELOG\n\n## 1.0.0\n\n- A note that is hard-wrapped onto a second line\n'
+    );
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    mockLintMarkdownContent
+      .mockResolvedValueOnce(MARKDOWNLINT_FINDINGS)
+      .mockResolvedValueOnce([]);
+    await updateChangelog('1.0.0');
+
+    expect(mockMkdtemp).toHaveBeenCalledTimes(2);
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      '# CHANGELOG\n\n## 1.0.0\n\n- A note that is hard-wrapped onto a second line\n',
+      'utf-8'
+    );
+  });
+
+  // A review that hands back byte-identical text is the author declining to fix it, which has to end the loop.
+  it('should stop when the review hands the same reported text back', async () => {
+    stubReviewReturning('# CHANGELOG\n\n## 1.0.0\n\n- A note that is hard-wrapped\n  onto a second line\n');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    mockLintMarkdownContent.mockResolvedValue(MARKDOWNLINT_FINDINGS);
+    await expect(updateChangelog('1.0.0')).rejects.toThrow('does not pass lint:md');
+
+    expect(mockMkdtemp).toHaveBeenCalledTimes(2);
+    expect(mockWriteFile).not.toHaveBeenCalledWith('/root/CHANGELOG.md', expect.any(String), 'utf-8');
   });
 
   it('should skip the interactive review when changelog editing is disabled', async () => {
