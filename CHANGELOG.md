@@ -16,7 +16,7 @@
 
 - fix(command-handlers): tie onloadImpl commands to the feature surface, not to the plugin
 - docs(plugin-api): document the protocol for plugins that do not use this library
-- Merge branch 'T1110'
+- fix(plugin): store the gate component before adding it, so onloadImpl can read it
 - docs: document the deepmerge-ts and fflate advisory overrides
 
 ## 103.1.0
