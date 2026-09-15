@@ -12,6 +12,7 @@ import type { MarkdownlintCli2ConfigurationSchema as MarkdownlintCli2ConfigSchem
 
 import { CLAUDE_WORKTREES_IGNORE_GLOB } from './lint-ignores.ts';
 import { NODE_MODULES_IGNORE_GLOB } from './markdownlint-ignores.ts';
+import { noSoftBreakInParagraphRule } from './markdownlint-rules/no-soft-break-in-paragraph.ts';
 
 /**
  * Default markdownlint-cli2 configuration for the Obsidian Dev Utils.
@@ -39,9 +40,17 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       shortcut_syntax: true
     },
+    // Registered but OFF. markdownlint enables an unlisted custom rule by default, so landing it silent
+    // has to be said out loud. Every repo in this config's reach is hard-wrapped somewhere, and the count
+    // is not knowable from a wrapped-line heuristic — one measured against a heuristic's own top ten
+    // over-counted six files and under-counted four, worst cases 158 against 776 and 74 against 34. So a
+    // repo measures itself with the rule, unwraps, and turns it on by overriding this one key in its own
+    // `scripts/markdownlint-cli2-config.ts` — the same seam this repo uses for `ignores`.
+    'no-soft-break-in-paragraph': false,
     'relative-links': true
   },
   customRules: [
+    noSoftBreakInParagraphRule,
     relativeLinksRule
   ],
   // Every `.gitignore` in the tree, and up to the repository root — git's own default behavior. A path git
