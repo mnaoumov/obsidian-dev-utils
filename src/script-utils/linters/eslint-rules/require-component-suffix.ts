@@ -49,7 +49,7 @@ The ancestor class name that triggers the suffix requirement.
 const REQUIRED_ANCESTOR = 'Component';
 
 interface TypeWithBaseTypes {
-  getBaseTypes?(): Type[] | undefined;
+  getBaseTypes?: () => Type[] | undefined;
 }
 
 /**

@@ -35,7 +35,7 @@ import {
 } from './editor.ts';
 
 interface DomEventHandlers {
-  keydown(): boolean;
+  keydown: () => boolean;
 }
 
 const mocks = vi.hoisted(() => {

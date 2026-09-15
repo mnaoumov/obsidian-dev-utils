@@ -102,7 +102,7 @@ interface PeekLockEntry {
   /**
    * Flashes the floating bar to signal a blocked attempt.
    */
-  flash(): void;
+  flash: () => void;
 
   /**
    * The wrapped modal instance, so its own `open()` is never blocked by the lock.

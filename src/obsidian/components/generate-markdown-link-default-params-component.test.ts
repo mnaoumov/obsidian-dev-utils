@@ -14,7 +14,7 @@ vi.mock('../link.ts', () => ({
   getGenerateMarkdownLinkDefaultParamsFns: vi.fn()
 }));
 
-type DefaultParamsFunction = (this: void) => Partial<GenerateMarkdownLinkParams>;
+type DefaultParamsFunction = () => Partial<GenerateMarkdownLinkParams>;
 
 describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
   it('should append the default-params function on load and remove it on unload', () => {
@@ -30,7 +30,7 @@ describe('GenerateMarkdownLinkDefaultParamsComponent', () => {
     component.unload();
     expect(fns).toStrictEqual([]);
 
-    function getDefaultParams(this: void): Partial<GenerateMarkdownLinkParams> {
+    function getDefaultParams(): Partial<GenerateMarkdownLinkParams> {
       return { shouldUseLeadingSlashForAbsolutePaths: true };
     }
   });

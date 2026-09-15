@@ -91,9 +91,9 @@ export interface FolderNoteConfig {
    * @param folder - The folder whose note is being named.
    * @returns The note's name; an empty (or blank) name means the folder has no folder note.
    */
-  // `this: void` because it is a standalone callback, never a method of the config — which is also what
-  // lets it be destructured and handed on without tripping `unbound-method`.
-  resolveName(this: void, folder: TFolder): string;
+  // A function property rather than a method, because it is a standalone callback, never a method of the
+  // config — which is also what lets it be destructured and handed on without tripping `unbound-method`.
+  resolveName: (folder: TFolder) => string;
 }
 
 /**
@@ -138,8 +138,8 @@ export interface ResolveFolderNoteConfigParams {
    * @returns The note's name.
    * @default `(folder) => folder.name`
    */
-  // See {@link FolderNoteConfig.resolveName} for why `this: void`.
-  resolveName?(this: void, folder: TFolder): string;
+  // See {@link FolderNoteConfig.resolveName} for why this is a function property.
+  readonly resolveName?: (folder: TFolder) => string;
 }
 
 /**

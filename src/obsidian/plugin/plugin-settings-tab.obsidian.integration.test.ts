@@ -70,7 +70,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         } = lib;
 
         interface AsyncEventSourceStub {
-          offref(): void;
+          offref: () => void;
         }
 
         interface EventReferenceStub {
@@ -194,7 +194,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         } = lib;
 
         interface AsyncEventSourceStub {
-          offref(): void;
+          offref: () => void;
         }
 
         interface EventReferenceStub {
@@ -306,7 +306,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         } = lib;
 
         interface AsyncEventSourceStub {
-          offref(): void;
+          offref: () => void;
         }
 
         interface EventReferenceStub {
@@ -404,7 +404,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
         const LEGACY_CLASS = 'probe-legacy-content';
 
         interface AsyncEventSourceStub {
-          offref(): void;
+          offref: () => void;
         }
 
         interface EventReferenceStub {

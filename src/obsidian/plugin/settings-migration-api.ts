@@ -90,5 +90,5 @@ export interface SettingsMigrationApi<TMigratableSettings extends object> {
    * @param params - The proposal.
    * @returns What the user approved.
    */
-  migrateSettings(params: MigrateSettingsParams<TMigratableSettings>): Promise<MigrateSettingsResult>;
+  migrateSettings: (params: MigrateSettingsParams<TMigratableSettings>) => Promise<MigrateSettingsResult>;
 }

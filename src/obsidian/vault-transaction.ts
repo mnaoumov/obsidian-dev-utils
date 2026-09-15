@@ -63,7 +63,7 @@ export interface VaultTransactionConstructorParams {
    *
    * @returns A {@link Disposable} that ends the bypass scope.
    */
-  openMutationBypass?(this: void): Disposable;
+  readonly openMutationBypass?: () => Disposable;
 
   /**
    * The dot-prefixed folder that soft-deleted resources are moved into until the transaction is
@@ -78,7 +78,7 @@ export interface VaultTransactionConstructorParams {
 type TransactionState = 'committed' | 'open' | 'rolledBack';
 
 interface UndoStep {
-  undo(this: void): Promise<void>;
+  undo: () => Promise<void>;
 }
 
 /**

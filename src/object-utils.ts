@@ -130,11 +130,11 @@ interface ApplySubstitutionsParams {
 
 interface EqualityComparerEntry<T> {
   constructor: Constructor<T>;
-  equalityComparer(a: T, b: T): boolean;
+  equalityComparer: (a: T, b: T) => boolean;
 }
 
 interface JSONSerializable {
-  toJSON(...$arguments: unknown[]): unknown;
+  toJSON: (...$arguments: unknown[]) => unknown;
 }
 
 interface ModuleWithDefaultExport<T> {
@@ -153,15 +153,13 @@ interface TokenSubstitutions {
 
 const KEY_SEPARATOR = '.';
 const PLACEHOLDER_KEY_PREFIX = 'toJson:';
-const equalityComparerEntries = createEqualityComparerEntries(
-  [
-    { constructor: ArrayBuffer, equalityComparer: isDeepEqualArrayBuffer },
-    { constructor: Date, equalityComparer: isDeepEqualDate },
-    { constructor: RegExp, equalityComparer: isDeepEqualRegExp },
-    { constructor: Map, equalityComparer: isDeepEqualMap },
-    { constructor: Set, equalityComparer: isDeepEqualSet }
-  ] as const
-);
+const equalityComparerEntries: readonly EqualityComparerEntry<unknown>[] = [
+  createEqualityComparerEntry(ArrayBuffer, isDeepEqualArrayBuffer),
+  createEqualityComparerEntry(Date, isDeepEqualDate),
+  createEqualityComparerEntry(RegExp, isDeepEqualRegExp),
+  createEqualityComparerEntry<Map<unknown, unknown>>(Map, isDeepEqualMap),
+  createEqualityComparerEntry<Set<unknown>>(Set, isDeepEqualSet)
+];
 
 /**
  * Parameters for {@link setNestedPropertyValue}.
@@ -998,9 +996,18 @@ function assignWithNonEnumerablePropertiesImpl(target: object, ...sources: objec
   return target;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- `unknown` doesn't work, getting compiler errors.
-function createEqualityComparerEntries<const T extends readonly EqualityComparerEntry<any>[]>(entries: T): T {
-  return entries;
+/*
+ * The one place where the list's heterogeneity is bridged, and it needs a cast because the correlation that makes it
+ * safe is a runtime one: `tryEntryEquality` calls the comparer only after `a instanceof entry.constructor` has held for
+ * both operands, and no type can tie that `instanceof` to this entry's `T`. Confining the cast here buys the check the
+ * list used to lack - the constructor and the comparer are inferred from ONE `T`, so a mismatched pair is a compile
+ * error at the call site instead of being waved through by an `any`-typed entry array.
+ */
+function createEqualityComparerEntry<T>(constructor: Constructor<T>, checkIsEqual: (a: T, b: T) => boolean): EqualityComparerEntry<unknown> {
+  return {
+    constructor,
+    equalityComparer: (a, b) => checkIsEqual(a as T, b as T)
+  };
 }
 
 function deepEqualTyped(a: unknown, b: unknown): boolean | undefined {

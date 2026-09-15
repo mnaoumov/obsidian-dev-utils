@@ -120,7 +120,7 @@ export interface AnalyzeOverExposureParams {
    * whole-program reference analysis is slow, so this lets callers report live progress instead of
    * appearing to hang.
    */
-  onProgress?(this: void, progress: OverExposureProgress): void;
+  readonly onProgress?: (progress: OverExposureProgress) => void;
 
   /**
    * When `true`, each fixable finding is tightened in place via {@link writeFile} (which must then
@@ -155,7 +155,7 @@ export interface AnalyzeOverExposureParams {
    * @param path - Absolute path of the file to write (original casing, as stored in the program).
    * @param content - The full new file contents.
    */
-  writeFile?(this: void, path: string, content: string): void;
+  readonly writeFile?: (path: string, content: string) => void;
 }
 
 /**
@@ -201,7 +201,7 @@ export interface FindOverExposureParams {
    * Optional callback invoked once per analyzed source file, for live progress reporting. Forwarded
    * to {@link analyzeOverExposure}.
    */
-  onProgress?(this: void, progress: OverExposureProgress): void;
+  readonly onProgress?: (progress: OverExposureProgress) => void;
 
   /**
   Absolute path to the project root (the folder containing `tsconfig.json` and `src`).
@@ -251,7 +251,7 @@ export interface OverExposureFileSystem {
    * @param path - Directory path.
    * @returns `true` when the directory exists.
    */
-  directoryExists(this: void, path: string): boolean;
+  directoryExists: (path: string) => boolean;
 
   /**
    * Checks whether a file exists.
@@ -259,14 +259,14 @@ export interface OverExposureFileSystem {
    * @param path - File path.
    * @returns `true` when the file exists.
    */
-  fileExists(this: void, path: string): boolean;
+  fileExists: (path: string) => boolean;
 
   /**
    * Resolves the directory that relative paths are resolved against.
    *
    * @returns The current working directory.
    */
-  getCurrentDirectory(this: void): string;
+  getCurrentDirectory: () => string;
 
   /**
    * Lists the immediate subdirectories of a directory.
@@ -274,7 +274,7 @@ export interface OverExposureFileSystem {
    * @param path - Directory path.
    * @returns The immediate subdirectory names.
    */
-  getDirectories(this: void, path: string): string[];
+  getDirectories: (path: string) => string[];
 
   /**
    * Lists the files under a directory, filtered by extension and include/exclude patterns.
@@ -286,7 +286,7 @@ export interface OverExposureFileSystem {
    * @param depth - Maximum recursion depth.
    * @returns The matching file paths.
    */
-  readDirectory(this: void, path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number): string[];
+  readDirectory: (path: string, extensions?: readonly string[], exclude?: readonly string[], include?: readonly string[], depth?: number) => string[];
 
   /**
    * Reads a file as text.
@@ -294,7 +294,7 @@ export interface OverExposureFileSystem {
    * @param path - File path.
    * @returns The file contents, or `undefined` when absent.
    */
-  readFile(this: void, path: string): string | undefined;
+  readFile: (path: string) => string | undefined;
 }
 
 /**
@@ -448,7 +448,7 @@ interface ApplyOverExposureFixesParams {
   /**
   Writes the tightened contents of a changed file back to disk.
    */
-  writeFile(this: void, path: string, content: string): void;
+  readonly writeFile: (path: string, content: string) => void;
 }
 
 /**

@@ -252,7 +252,7 @@ export interface PluginApiRef<TApi extends object> extends AsyncEventSource<Plug
    * @throws A {@link PluginApiUnavailableError} whose {@link PluginApiUnavailableError.reason} says which of
    * the five failures occurred, if the API does not become available before the timeout elapses.
    */
-  whenAvailable(options?: WhenAvailablePluginApiOptions): Promise<TApi>;
+  whenAvailable: (options?: WhenAvailablePluginApiOptions) => Promise<TApi>;
 }
 
 /**

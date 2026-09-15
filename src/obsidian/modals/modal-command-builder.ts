@@ -86,7 +86,7 @@ export interface CheckboxCommand extends CommandBase {
    *
    * @param isChecked - The new checked state.
    */
-  onChange(isChecked: boolean): void;
+  onChange: (isChecked: boolean) => void;
 
   /**
    * Called once with the created checkbox element, to initialize its state.
@@ -96,7 +96,7 @@ export interface CheckboxCommand extends CommandBase {
    *
    * @param checkboxEl - The created checkbox element.
    */
-  onInit(checkboxEl: HTMLInputElement): void;
+  onInit: (checkboxEl: HTMLInputElement) => void;
 }
 
 /**
@@ -113,7 +113,7 @@ export interface CommandBase {
    *
    * @returns Whether the control can be used right now.
    */
-  checkIsAvailable?(this: void): boolean;
+  checkIsAvailable?: () => boolean;
 
   /**
    * The key that activates the command.
@@ -143,14 +143,14 @@ export interface DropDownCommand extends CommandBase {
    *
    * @param value - The newly selected value.
    */
-  onChange(value: string): void;
+  onChange: (value: string) => void;
 
   /**
    * Called once with the created dropdown component, to initialize its options and state.
    *
    * @param dropdownComponent - The created dropdown component.
    */
-  onInit(dropdownComponent: DropdownComponent): void;
+  onInit: (dropdownComponent: DropdownComponent) => void;
 }
 
 /**
@@ -166,7 +166,7 @@ export interface KeyboardCommand extends CommandBase {
    *
    * @returns Whether the command reads as ON.
    */
-  checkIsOn?(this: void): boolean;
+  checkIsOn?: () => boolean;
 
   /**
    * The pointer route into the same handler the shortcut runs. Required for the command to render a
@@ -175,7 +175,7 @@ export interface KeyboardCommand extends CommandBase {
    *
    * @param $event - The click event, so a command that picks something has one to hand on.
    */
-  onActivate?(this: void, $event: MouseEvent): void;
+  onActivate?: ($event: MouseEvent) => void;
 
   /**
    * The handler invoked when the shortcut is pressed. When omitted, the command is a hint only and no
@@ -185,7 +185,7 @@ export interface KeyboardCommand extends CommandBase {
    * @param context - The keymap context.
    * @returns `false` to prevent Obsidian's default handling, or `void`/`true` otherwise.
    */
-  onKey?($event: KeyboardEvent, context: KeymapContext): boolean;
+  onKey?: ($event: KeyboardEvent, context: KeymapContext) => boolean;
 }
 
 /**
@@ -220,7 +220,7 @@ export interface ModalCommands {
    * The strip is built once and only re-stated afterwards, because rebuilding it would replace an element
    * the pointer may be about to click.
    */
-  refresh(): void;
+  refresh: () => void;
 }
 
 /**
@@ -255,12 +255,12 @@ export type ModalCommandsTarget = Modal | ModalCommandsHost | SuggestModal<unkno
  * It reports its own pressed state, because only the button renderer has anywhere to show one.
  */
 interface ButtonControl {
-  checkIsOn(this: void): boolean;
-  setDisabled(this: void, isDisabled: boolean): void;
+  checkIsOn: () => boolean;
+  setDisabled: (isDisabled: boolean) => void;
 }
 
 interface CommandEntry {
-  readonly checkIsAvailable: ((this: void) => boolean) | null;
+  readonly checkIsAvailable: (() => boolean) | null;
   readonly commandText: string;
   readonly initButton: ((buttonEl: HTMLButtonElement, scope: Scope) => ButtonControl) | null;
   readonly initInstruction: ((purposeEl: HTMLSpanElement, scope: Scope) => InstructionControl) | null;
@@ -276,7 +276,7 @@ interface CommandEntry {
  * so a second copy would only be a second thing to keep in sync.
  */
 interface InstructionControl {
-  setDisabled(this: void, isDisabled: boolean): void;
+  setDisabled: (isDisabled: boolean) => void;
 }
 
 interface InstructionEx extends Instruction {
@@ -286,7 +286,7 @@ interface InstructionEx extends Instruction {
 /**
  * Re-states one rendered control, already bound to its own elements.
  */
-type RefreshControl = (this: void) => void;
+type RefreshControl = () => void;
 
 const NOOP_MODAL_COMMANDS: ModalCommands = {
   refresh: (): void => {

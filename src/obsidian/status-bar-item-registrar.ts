@@ -15,7 +15,7 @@ export interface StatusBarItemRegistrar {
    *
    * @returns The registered status bar item element.
    */
-  addStatusBarItem(): HTMLElement;
+  addStatusBarItem: () => HTMLElement;
 }
 
 /**

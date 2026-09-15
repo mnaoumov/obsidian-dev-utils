@@ -231,7 +231,7 @@ export interface RenderInternalLinkFolderNoteOptions {
    * @returns The note's name.
    * @default `(folder) => folder.name`
    */
-  resolveName?(this: void, folder: TFolder): string;
+  readonly resolveName?: (folder: TFolder) => string;
 }
 
 /**

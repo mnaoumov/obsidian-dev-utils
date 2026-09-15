@@ -39,8 +39,8 @@ const ruleTester = new RuleTester({
 });
 
 interface MockBaseType {
-  getBaseTypes?(): MockBaseType[] | undefined;
-  getSymbol?(): MockSymbol | undefined;
+  getBaseTypes?: () => MockBaseType[] | undefined;
+  getSymbol?: () => MockSymbol | undefined;
 }
 
 interface MockRuleContextResult {
@@ -49,7 +49,7 @@ interface MockRuleContextResult {
 }
 
 interface MockSymbol {
-  getName(): string;
+  getName: () => string;
 }
 
 /**

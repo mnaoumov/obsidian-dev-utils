@@ -61,7 +61,7 @@ export interface SyntaxHighlightingComponentGrammarFactoryParams {
    * @returns The grammar of the language.
    * @throws An {@link Error} if the language is not registered.
    */
-  requirePrismLanguage(language: string): Grammar;
+  readonly requirePrismLanguage: (language: string) => Grammar;
 }
 
 /**

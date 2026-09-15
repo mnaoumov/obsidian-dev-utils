@@ -36,7 +36,7 @@ interface Nested {
 }
 
 interface TestObject {
-  $function(): string;
+  $function: () => string;
   name: string;
   nested: Nested;
 }

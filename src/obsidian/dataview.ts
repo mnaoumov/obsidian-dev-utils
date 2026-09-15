@@ -59,7 +59,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @param array - The array of items to wrap.
    * @returns A {@link DataArray} containing the items.
    */
-  array<T>(array: T[]): DataArray<T>;
+  array: <T>(array: T[]) => DataArray<T>;
 
   /**
    * Retrieves the current page, with an optional custom page type.
@@ -67,7 +67,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @typeParam CustomPage - The type of the custom page. Defaults to `SMarkdownPage`.
    * @returns The current page.
    */
-  current<CustomFrontmatter = unknown>(): CombinedPage<CustomFrontmatter>;
+  current: <CustomFrontmatter = unknown>() => CombinedPage<CustomFrontmatter>;
 
   /**
    * Retrieves pages based on an optional query, with an optional custom page type.
@@ -76,7 +76,7 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @param query - An optional string query to filter the pages.
    * @returns A {@link DataArray} of pages matching the query.
    */
-  pages<CustomFrontmatter = unknown>(query?: string): DataArray<CombinedPage<CustomFrontmatter>>;
+  pages: <CustomFrontmatter = unknown>(query?: string) => DataArray<CombinedPage<CustomFrontmatter>>;
 
   /**
    * Creates a paragraph HTML element with the provided text and optional DOM element options.
@@ -85,10 +85,10 @@ export interface DataviewInlineApi extends DataviewInlineApiOriginal {
    * @param options - Optional DOM element options, including an optional container.
    * @returns The created HTML paragraph element.
    */
-  paragraph(
+  paragraph: (
     text: unknown,
     options?: DomElementInfoWithContainer
-  ): HTMLParagraphElement;
+  ) => HTMLParagraphElement;
 }
 
 /**
@@ -254,7 +254,7 @@ export interface RenderPaginatedParams<T> {
    * @param rowsForOnePage - The rows to render.
    * @returns A {@link Promise} that resolves when the content is rendered.
    */
-  renderer(rowsForOnePage: ArrayOrDataArray<T>): Promisable<void>;
+  readonly renderer: (rowsForOnePage: ArrayOrDataArray<T>) => Promisable<void>;
 
   /**
    * Rows to paginate.

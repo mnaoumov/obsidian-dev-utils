@@ -67,14 +67,14 @@ export interface RescueStillUsedFileParams {
 
 interface DeleteIfNotUsedParams {
   readonly app: App;
-  deleteAbstractFile?(this: void, file: TAbstractFile): Promise<void>;
+  readonly deleteAbstractFile?: (file: TAbstractFile) => Promise<void>;
   readonly deletedNotePath?: string;
   readonly deletedNotePaths?: readonly string[];
   readonly pathOrFile: PathOrAbstractFile;
   readonly pluginNoticeComponent?: PluginNoticeComponent;
-  rescueStillUsedFile?(this: void, params: RescueStillUsedFileParams): Promise<boolean>;
+  readonly rescueStillUsedFile?: (params: RescueStillUsedFileParams) => Promise<boolean>;
   readonly shouldDeleteEmptyFolders?: boolean;
-  shouldProtectIfStillUsed?(this: void, file: TFile): boolean;
+  readonly shouldProtectIfStillUsed?: (file: TFile) => boolean;
 }
 
 /**

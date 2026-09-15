@@ -23,7 +23,7 @@ export interface CliHandlerRegistrar {
    *
    * @param params - The parameters for the CLI handler registration.
    */
-  registerCliHandler(params: CliHandlerRegistrarRegisterCliHandlerParams): void;
+  registerCliHandler: (params: CliHandlerRegistrarRegisterCliHandlerParams) => void;
 }
 
 /**
@@ -51,7 +51,7 @@ export interface CliHandlerRegistrarRegisterCliHandlerParams {
    * @param cliData - The data passed to the handler.
    * @returns The result of the handler.
    */
-  handler(cliData: CliData): Promisable<string>;
+  readonly handler: (cliData: CliData) => Promisable<string>;
 }
 
 type PluginCliHandlerRegistrarRegisterCliHandlerParams = CliHandlerRegistrarRegisterCliHandlerParams;

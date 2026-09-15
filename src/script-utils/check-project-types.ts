@@ -62,7 +62,7 @@ export interface CheckProjectTypesParams {
    * @param diagnostic - The diagnostic to evaluate.
    * @returns `true` to report the diagnostic, `false` to ignore it.
    */
-  shouldKeepDiagnostic?(this: void, diagnostic: Diagnostic): boolean;
+  readonly shouldKeepDiagnostic?: (diagnostic: Diagnostic) => boolean;
 
   /**
    * Decides whether a diagnostic's source file is one we care about.
@@ -70,7 +70,7 @@ export interface CheckProjectTypesParams {
    * @param fileName - The diagnostic's source file, already passed through {@link toCanonical}.
    * @returns `true` to report the diagnostic, `false` to ignore it.
    */
-  shouldKeepFile(this: void, fileName: string): boolean;
+  readonly shouldKeepFile: (fileName: string) => boolean;
 }
 
 /**

@@ -70,7 +70,7 @@ interface MobileSandbox {
   readonly navigator: unknown;
   readonly process: MobileProcess;
   readonly queueMicrotask: typeof queueMicrotask;
-  require(moduleId: string): unknown;
+  require: (moduleId: string) => unknown;
   self: unknown;
   readonly setInterval: typeof setInterval;
   readonly setTimeout: typeof setTimeout;

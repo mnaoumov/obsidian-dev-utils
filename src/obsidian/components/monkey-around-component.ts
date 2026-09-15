@@ -74,7 +74,7 @@ export interface MonkeyAroundComponentRegisterFunctionPatchParams<$Object extend
    * @param originalValue - The original value of the function.
    * @returns The patched value of the function.
    */
-  patchHandler(originalValue: $Object[FunctionName]): $Object[FunctionName];
+  readonly patchHandler: (originalValue: $Object[FunctionName]) => $Object[FunctionName];
 }
 
 /**
@@ -150,7 +150,7 @@ export interface PatchHandlerParams<$Object extends object, MethodName extends M
    *
    * @returns Whatever the original method returns.
    */
-  fallback(this: void): ReturnType<ExtractFunction<$Object, MethodName>>;
+  readonly fallback: () => ReturnType<ExtractFunction<$Object, MethodName>>;
 
   /**
    * The original arguments of the intercepted call, as a tuple.

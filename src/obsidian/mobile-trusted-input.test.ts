@@ -24,7 +24,7 @@ interface HelperCase {
    * Calls the module's helper with the sentinel params, so the test never has to build a real
    * `HTMLElement` or `Editor` just to watch it be forwarded.
    */
-  call(params: object): Promise<void>;
+  call: (params: object) => Promise<void>;
 
   /**
    * The seam member the helper must delegate to.

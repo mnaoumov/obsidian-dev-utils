@@ -91,7 +91,7 @@ interface MockPlugins {
 }
 
 interface MockWorkspaceActiveView {
-  getActiveViewOfType(): unknown;
+  getActiveViewOfType: () => unknown;
 }
 
 interface MutableViewFile {

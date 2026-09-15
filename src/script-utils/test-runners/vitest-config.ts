@@ -93,14 +93,14 @@ export interface DefineObsidianPluginVitestConfigOptions {
    * @param context - The vitest configuration context.
    * @returns The extra projects.
    */
-  customProjects?(context: ObsidianPluginVitestConfigContext): TestProjectConfiguration[];
+  readonly customProjects?: (context: ObsidianPluginVitestConfigContext) => TestProjectConfiguration[];
 
   /**
    * A function that edits the vitest configuration context before it is assembled into a configuration.
    *
    * @param context - The vitest configuration context.
    */
-  editContext?(context: ObsidianPluginVitestConfigContext): void;
+  readonly editContext?: (context: ObsidianPluginVitestConfigContext) => void;
 }
 
 /**

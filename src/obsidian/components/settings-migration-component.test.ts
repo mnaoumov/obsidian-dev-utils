@@ -70,13 +70,13 @@ interface Harness {
   /**
    * Publishes the provider's API, as enabling that plugin would.
    */
-  publish(api?: object): void;
+  publish: (api?: object) => void;
   readonly settingsComponent: PluginSettingsComponentBase<TestSettings>;
   /**
    * The consumer's `data.json`, so a test can assert the retirement was PERSISTED rather than only edited in
    * memory.
    */
-  storedData(): unknown;
+  storedData: () => unknown;
 }
 
 type MigrateSettingsMock = ReturnType<typeof vi.fn<(params: MigrateSettingsParams<TestMigratableSettings>) => Promise<MigrateSettingsResult>>>;

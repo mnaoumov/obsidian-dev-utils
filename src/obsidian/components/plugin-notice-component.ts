@@ -79,7 +79,7 @@ export interface PluginNoticeCloseClickEvent {
   /**
    * Cancels the close, leaving the notice open.
    */
-  cancel(): void;
+  cancel: () => void;
 }
 
 /**
@@ -99,7 +99,7 @@ export interface PluginNoticeComponentDelayedNotice extends Disposable {
    *
    * @param content - The new notice content.
    */
-  setContent(content: DocumentFragment | string): void;
+  setContent: (content: DocumentFragment | string) => void;
 }
 
 /**
@@ -185,7 +185,7 @@ export interface PluginNoticeComponentShowNoticeOptions {
    * {@link PluginNoticeComponentShowNoticeOptions.shouldHideOnClick} `= false` and
    * {@link PluginNoticeComponentShowNoticeOptions.shouldShowCloseButton} are set).
    */
-  onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
+  readonly onCloseClick?: (event: PluginNoticeCloseClickEvent) => Promisable<void>;
 
   /**
    * A callback invoked when the notice is hidden — whether by the user closing it, by a later reusable
@@ -194,7 +194,7 @@ export interface PluginNoticeComponentShowNoticeOptions {
    * a programmatic hide. An async callback is run fire-and-forget (its rejection surfaces through the
    * async-error pipeline).
    */
-  onHide?(this: void, info: PluginNoticeHideInfo): Promisable<void>;
+  readonly onHide?: (info: PluginNoticeHideInfo) => Promisable<void>;
 
   /**
    * Whether clicking the notice hides it. When `true` (the default), the notice dismisses on click like
@@ -243,14 +243,14 @@ export interface PluginNoticeHideInfo {
 
 interface PluginNoticeComponentAppendCloseButtonParams {
   readonly contentEl: HTMLElement;
-  getNotice(this: void): Notice | null;
-  onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
+  readonly getNotice: () => Notice | null;
+  readonly onCloseClick?: (event: PluginNoticeCloseClickEvent) => Promisable<void>;
 }
 
 interface PluginNoticeComponentAppendToCurrentNoticeParams {
   readonly durationInMilliseconds: null | number;
   readonly message: DocumentFragment | string;
-  onHide?(this: void, info: PluginNoticeHideInfo): Promisable<void>;
+  readonly onHide?: (info: PluginNoticeHideInfo) => Promisable<void>;
   readonly shouldRegisterAsPermanent: boolean;
 }
 
@@ -266,7 +266,7 @@ interface PluginNoticeComponentBuildNoticeContentParams {
    * not exist yet when the content is built, so it is resolved lazily at click time. Required when a
    * close button is shown.
    */
-  getNotice?(this: void): Notice | null;
+  readonly getNotice?: () => Notice | null;
 
   /**
    * The message to display after the plugin name prefix.
@@ -277,7 +277,7 @@ interface PluginNoticeComponentBuildNoticeContentParams {
    * Invoked when the close button is clicked; may cancel the close. See
    * {@link PluginNoticeComponentShowNoticeOptions.onCloseClick}.
    */
-  onCloseClick?(this: void, event: PluginNoticeCloseClickEvent): Promisable<void>;
+  readonly onCloseClick?: (event: PluginNoticeCloseClickEvent) => Promisable<void>;
 
   /**
    * Whether the notice is hard to close: stops every click from dismissing it and, unless suppressed by
@@ -355,8 +355,8 @@ interface PluginNoticeComponentShowNoticeWithDurationParams {
   readonly durationInMilliseconds: null | number;
   readonly message: DocumentFragment | string;
   readonly mode: PluginNoticeMode;
-  readonly onCloseClick: ((this: void, event: PluginNoticeCloseClickEvent) => Promisable<void>) | undefined;
-  readonly onHide: ((this: void, info: PluginNoticeHideInfo) => Promisable<void>) | undefined;
+  readonly onCloseClick: ((event: PluginNoticeCloseClickEvent) => Promisable<void>) | undefined;
+  readonly onHide: ((info: PluginNoticeHideInfo) => Promisable<void>) | undefined;
   readonly requiresExplicitClose: boolean;
   readonly shouldRegisterAsPermanent: boolean;
   readonly shouldShowCloseButton: boolean;
@@ -888,7 +888,7 @@ export class PluginNoticeComponent extends ComponentEx {
    * @param notice - The notice whose `hide` to wrap.
    * @param onHide - The callback to invoke on the first hide, or `undefined` to skip wrapping.
    */
-  private wireOnHide(notice: Notice, onHide: ((this: void, info: PluginNoticeHideInfo) => Promisable<void>) | undefined): void {
+  private wireOnHide(notice: Notice, onHide: ((info: PluginNoticeHideInfo) => Promisable<void>) | undefined): void {
     if (!onHide) {
       return;
     }

@@ -78,7 +78,7 @@ export interface LinkCheckFileSystem {
    * @param pageKey - The key returned by {@link LinkCheckFileSystem.resolveExistingPage}.
    * @returns The set of element ids on that page.
    */
-  readIds(pageKey: string): Set<string>;
+  readIds: (pageKey: string) => Set<string>;
 
   /**
    * Resolves an output-relative path to an existing page.
@@ -87,7 +87,7 @@ export interface LinkCheckFileSystem {
    * @returns A stable key (e.g. the resolved absolute file path) for the existing page, or
    *   `null` when nothing exists at that path or the path escapes the build-output root.
    */
-  resolveExistingPage(outputRelativePath: string): null | string;
+  resolveExistingPage: (outputRelativePath: string) => null | string;
 }
 
 /**

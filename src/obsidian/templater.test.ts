@@ -69,7 +69,7 @@ interface CreateTemplaterApiRecorderOptions {
    * @default resolves with `'rendered'`
    * @returns The rendered text.
    */
-  parse?(): Promise<string>;
+  readonly parse?: () => Promise<string>;
 }
 
 /**

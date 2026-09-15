@@ -26,20 +26,20 @@ RuleTester.it = it;
 const ruleTester = new RuleTester();
 
 interface MockBaseType {
-  getProperty(name: string): MockBaseTypeProperty | undefined;
+  getProperty: (name: string) => MockBaseTypeProperty | undefined;
 }
 
 interface MockBaseTypeProperty {
-  getDeclarations(): undefined | unknown[];
+  getDeclarations: () => undefined | unknown[];
 }
 
 interface MockRuleContextResult {
   readonly report: ReturnType<typeof vi.fn>;
-  visitMethodDefinitionExit(node: Rule.Node): void;
+  readonly visitMethodDefinitionExit: (node: Rule.Node) => void;
 }
 
 interface MockTypeCheckerOverrides {
-  getBaseTypes?(): MockBaseType[] | undefined;
+  getBaseTypes?: () => MockBaseType[] | undefined;
 }
 
 /**

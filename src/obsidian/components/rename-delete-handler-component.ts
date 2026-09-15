@@ -136,17 +136,17 @@ export interface RenameDeleteHandlerSettings {
    * than guesses. Returning `null` — or not implementing this at all — keeps the attachment where it is,
    * which is the behavior every consumer had before this member existed.
    */
-  getRescuePath?(params: GetRescuePathParams): Promise<null | string>;
+  getRescuePath?: (params: GetRescuePathParams) => Promise<null | string>;
 
   /**
    * Whether the path is a note.
    */
-  isNote(path: string): boolean;
+  isNote: (path: string) => boolean;
 
   /**
    * Whether to ignore the path.
    */
-  isPathIgnored(path: string): boolean;
+  isPathIgnored: (path: string) => boolean;
 
   /**
    * Whether to delete conflicting attachments.
@@ -274,7 +274,7 @@ interface RenameDeleteHandlerComponentConstructorParams {
   readonly linkUpdateProgressReporter?: LinkUpdateProgressReporter;
   readonly pluginNoticeComponent: PluginNoticeComponent;
   readonly resourceLockComponent: null | ResourceLockComponent;
-  settingsBuilder(this: void): Partial<RenameDeleteHandlerSettings>;
+  readonly settingsBuilder: () => Partial<RenameDeleteHandlerSettings>;
 }
 
 class DeleteHandler {

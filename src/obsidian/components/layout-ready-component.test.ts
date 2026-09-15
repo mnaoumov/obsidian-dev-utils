@@ -23,7 +23,7 @@ import {
 
 interface MockApp {
   app: AppOriginal;
-  triggerLayoutReady(): void;
+  triggerLayoutReady: () => void;
 }
 
 function createMockApp(): MockApp {

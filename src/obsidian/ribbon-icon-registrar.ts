@@ -18,7 +18,7 @@ export interface RibbonIconRegistrar {
    * @param params - The parameters for the ribbon icon registration.
    * @returns The HTML element representing the registered ribbon icon.
    */
-  addRibbonIcon(params: RibbonIconRegistrarAddRibbonIconParams): HTMLElement;
+  addRibbonIcon: (params: RibbonIconRegistrarAddRibbonIconParams) => HTMLElement;
 }
 
 /**
@@ -30,7 +30,7 @@ export interface RibbonIconRegistrarAddRibbonIconParams {
    *
    * @param $event - The mouse event that triggered the callback.
    */
-  callback(this: void, $event: MouseEvent): void;
+  readonly callback: ($event: MouseEvent) => void;
 
   /**
    * The icon name for the ribbon icon to register.

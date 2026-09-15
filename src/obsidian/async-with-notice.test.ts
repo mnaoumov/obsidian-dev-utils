@@ -98,8 +98,8 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
 }));
 
 interface CreateFragmentGlobalResult {
-  cleanup(): void;
-  getLastFragment(): DocumentFragment | null;
+  readonly cleanup: () => void;
+  readonly getLastFragment: () => DocumentFragment | null;
 }
 
 /**

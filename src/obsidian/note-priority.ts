@@ -102,7 +102,7 @@ export interface PickHighestPriorityNotePathParams {
    * @param notePath - The vault-relative path of the note.
    * @returns The rank.
    */
-  rank(notePath: string): number;
+  readonly rank: (notePath: string) => number;
 }
 
 /**

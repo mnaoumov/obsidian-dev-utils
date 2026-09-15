@@ -15,14 +15,14 @@ export interface DataHandler {
    *
    * @returns The loaded data.
    */
-  loadData(): Promise<unknown>;
+  loadData: () => Promise<unknown>;
 
   /**
    * A function to save data to the plugin's data file.
    *
    * @param data - The data to save.
    */
-  saveData(data: unknown): Promise<void>;
+  saveData: (data: unknown) => Promise<void>;
 }
 
 /**

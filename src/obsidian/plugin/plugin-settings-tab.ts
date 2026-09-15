@@ -76,7 +76,7 @@ export interface BindOptions<T> {
   /**
    * A callback function that is called when the value of the component changes.
    */
-  onChanged?(newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>): Promisable<void>;
+  readonly onChanged?: (newValue: ReadonlyDeep<T>, oldValue: ReadonlyDeep<T>) => Promisable<void>;
 
   /**
    * Whether to reset the setting when the component value is empty.
@@ -120,7 +120,7 @@ export interface BindOptionsExtended<
    * @param uiValue - The value of the UI component.
    * @returns The value to set on the plugin settings.
    */
-  componentToPluginSettingsValueConverter(uiValue: UIValue): PluginSettings[PropertyName] | ValidationMessageHolder;
+  componentToPluginSettingsValueConverter: (uiValue: UIValue) => PluginSettings[PropertyName] | ValidationMessageHolder;
 
   /**
    * Converts the plugin settings value to the value used by the UI component.
@@ -128,7 +128,7 @@ export interface BindOptionsExtended<
    * @param pluginSettingsValue - The value of the property in the plugin settings.
    * @returns The value to set on the UI component.
    */
-  pluginSettingsToComponentValueConverter(pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>): UIValue;
+  pluginSettingsToComponentValueConverter: (pluginSettingsValue: ReadonlyDeep<PluginSettings[PropertyName]>) => UIValue;
 }
 
 /**
@@ -237,7 +237,7 @@ export interface PluginSettingsTabBaseSettingExParams {
    * @returns An optional cleanup function.
    */
   // eslint-disable-next-line @typescript-eslint/no-invalid-void-type -- Mirrors Obsidian's `SettingDefinitionRender.render`, whose cleanup function is optional.
-  render(setting: SettingEx, group: SettingGroup): (() => void) | void;
+  readonly render: (setting: SettingEx, group: SettingGroup) => (() => void) | void;
 
   /**
    * Controls whether the setting is included in the settings search. Defaults to `true`.
@@ -339,16 +339,16 @@ interface PluginSettingsTabEventsComponentConstructorParams<PluginSettings exten
   /**
    * Called when the plugin settings are loaded.
    */
-  onLoadSettings(loadedState: ReadonlyPluginSettingsState<PluginSettings>, isInitialLoad: boolean): Promisable<void>;
+  readonly onLoadSettings: (loadedState: ReadonlyPluginSettingsState<PluginSettings>, isInitialLoad: boolean) => Promisable<void>;
 
   /**
    * Called when the plugin settings are saved.
    */
-  onSaveSettings(
+  readonly onSaveSettings: (
     newState: ReadonlyPluginSettingsState<PluginSettings>,
     oldState: ReadonlyPluginSettingsState<PluginSettings>,
     context: unknown
-  ): Promisable<void>;
+  ) => Promisable<void>;
 
   /**
    * The settings component to subscribe to.

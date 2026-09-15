@@ -36,9 +36,9 @@ import { assertNonNullable } from './type-guards.ts';
 type CapturedHook = HookFunction | undefined;
 
 interface CapturedSetupHooks {
-  afterAllCallback(): ReturnType<HookFunction>;
-  afterEachCallback(): ReturnType<HookFunction>;
-  beforeEachCallback(): ReturnType<HookFunction>;
+  afterAllCallback: () => ReturnType<HookFunction>;
+  afterEachCallback: () => ReturnType<HookFunction>;
+  beforeEachCallback: () => ReturnType<HookFunction>;
 }
 
 type HookFunction = Parameters<HookRegistrar>[0];

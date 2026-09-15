@@ -21,7 +21,7 @@ export interface ObsidianProtocolHandlerRegistrar {
    *
    * @param params - The parameters for the Obsidian protocol handler registration.
    */
-  registerObsidianProtocolHandler(params: ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams): void;
+  registerObsidianProtocolHandler: (params: ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams) => void;
 }
 
 interface ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams {
@@ -36,7 +36,7 @@ interface ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams 
    * @param obsidianProtocolData - The data passed to the handler.
    * @returns The result of the handler.
    */
-  handler(this: void, obsidianProtocolData: ObsidianProtocolData): Promisable<void>;
+  readonly handler: (obsidianProtocolData: ObsidianProtocolData) => Promisable<void>;
 }
 
 type PluginObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams = ObsidianProtocolHandlerRegistrarRegisterObsidianProtocolHandlerParams;

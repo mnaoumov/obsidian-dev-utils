@@ -23,7 +23,7 @@ export interface InvokeAsyncAndLogParams {
    * @param abortSignal - The abort signal to control the execution of the function.
    * @returns A {@link Promisable} that resolves when the function is complete.
    */
-  $function(this: void, abortSignal: AbortSignal): Promisable<void>;
+  readonly $function: (abortSignal: AbortSignal) => Promisable<void>;
 
   /**
    * The abort signal to control the execution of the function.

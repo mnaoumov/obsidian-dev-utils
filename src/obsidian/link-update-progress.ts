@@ -32,4 +32,4 @@ export interface LinkUpdateProgress {
  * link-update operation. It is always optional: when it is not provided, no progress is reported and
  * behavior is otherwise unchanged.
  */
-export type LinkUpdateProgressReporter = (this: void, progress: LinkUpdateProgress) => void;
+export type LinkUpdateProgressReporter = (progress: LinkUpdateProgress) => void;

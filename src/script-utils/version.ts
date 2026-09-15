@@ -144,7 +144,7 @@ export interface UpdateVersionOptions {
    * @param newVersion - The new version number for the release.
    * @returns A {@link Promise} that resolves when the GitHub release has been prepared.
    */
-  prepareGitHubRelease?(this: void, newVersion: string): Promise<void>;
+  readonly prepareGitHubRelease?: (newVersion: string) => Promise<void>;
 
   /**
    * Whether to archive the plugin's demo vault (`demo-vault/` in the repo root) as a release

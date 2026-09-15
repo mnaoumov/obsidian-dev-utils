@@ -19,7 +19,7 @@ export interface ValueComponentWithChangeTracking<T> extends ValueComponent<T> {
    *
    * @param callback - A callback function that is called when the value of the component changes.
    */
-  onChange(callback: (newValue: T) => void): this;
+  onChange: (callback: (newValue: T) => void) => this;
 }
 
 /* v8 ignore stop */
