@@ -1400,6 +1400,26 @@ describe('MyModule', () => {
   `window.activeWindow = getMainWindow(app)` (plus `window.activeDocument`) in a `finally`.
   `scripts/integration-test-obsidian-setup.ts` carries an `afterEach` that does this for every file as a
   net, but a test that leaks is still a bug — the net exists so one leak cannot fail unrelated files.
+- **A per-test budget must CLEAR the transports' per-eval cap, never match it.** One `evalInObsidian`
+  closure is capped at 30 000 ms by the transport (`commandTimeoutInMilliseconds` on desktop CDP,
+  the script timeout on Appium), and outrunning that raises `EvalCapExceededError` — which names the cap,
+  the transport and the `pollInObsidian` remedy. That message is unreachable when `testTimeout` is also
+  30 000: vitest starts its clock at the top of the test and the transport starts its own only once the
+  eval is dispatched, so vitest always wins by the few milliseconds in between and reports its anonymous
+  `Test timed out in 30000ms` instead. Both budgets were 30 000 here until 2026-09-15, which is why the
+  release abort of 2026-09-13 (30 044 ms burned against a 30 000 ms budget) named nothing; the four
+  Obsidian projects now take `INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS` (45 000), and the shared
+  `defineObsidianPluginVitestConfig` gives every plugin the same clearance. Android was never affected —
+  its 60 000 always cleared the Appium cap, which is the evidence the desktop equality was an oversight.
+  **Do not lower either project's budget back to the cap**; a unit test pins the relationship.
+- **`hoverElement` and `unhoverElement` THROW when their `:hover` post-condition is not met**, rather than
+  resolving quietly after their 5 000 ms poll. A quiet resolve is the silent-no-op class this repo's
+  trusted-input helpers exist to eliminate: a test that reads an element which never took the hover passes
+  on whatever its base style happens to be. `unhoverElement` also SNAPS the box edge outward
+  (`Math.floor(rect.left) - 1`) before stepping off the element, because `moveMouse` rounds — so on a
+  fractional edge the plain one-pixel step rounded straight back onto the element's own pixel column.
+  Measured on a bar whose `left` was 859.796875: the old step never cleared the hover and burned the full
+  5 000 ms on every single run, while the snapped one clears in 26 ms.
 - **A whole-file, flat-timeout failure is an ordering symptom, not a load symptom.** Vitest orders files
   from its `node_modules/.vite/vitest` duration cache, so the order changes run to run and a
   state-leak like the one above surfaces as a different set of "flaky" files each time, while every file
