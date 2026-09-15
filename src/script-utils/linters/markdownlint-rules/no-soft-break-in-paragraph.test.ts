@@ -53,7 +53,13 @@ describe('noSoftBreakInParagraphRule', () => {
       ['prose inside a `<details>` wrapper', '<details>\n<summary>Sum</summary>\n\nalpha\nbravo\n\n</details>\n', [4]],
       // Line numbers restart at 1 once front matter is stripped, and the offset is added back before the
       // error surfaces.
-      ['the real line number after front matter', '---\nalpha: 1\nbravo: 2\n---\n\none\ntwo\n', [6]]
+      ['the real line number after front matter', '---\nalpha: 1\nbravo: 2\n---\n\none\ntwo\n', [6]],
+      // Only the callout's MARKER line is exempt. Its body wraps like any other paragraph, so the break at
+      // the end of the first body line is a finding while the marker's is not.
+      ['a wrapped callout body', '> [!NOTE]\n> alpha\n> bravo\n', [2]],
+      // The exemption is anchored to a blockquote marker, so a bracketed word mid-paragraph is not one and
+      // must still be reported.
+      ['a bracketed marker mid-paragraph', 'see [!important] note\nand more\n', [1]]
     ])('in %s', async (_caseName: string, markdown: string, expectedLineNumbers: number[]) => {
       await expect(getReportedLineNumbers(markdown)).resolves.toEqual(expectedLineNumbers);
     });
@@ -84,7 +90,16 @@ describe('noSoftBreakInParagraphRule', () => {
       ['a wrapped link reference definition', '[ref]:\n  https://example.com\n  "Title"\n\n[ref]\n'],
       // `setextHeadingText` is not a paragraph either. A known limitation of the token-type test rather
       // than a decision — recorded so it is not later read as a bug.
-      ['a wrapped setext heading', 'alpha\nbravo\n=====\n']
+      ['a wrapped setext heading', 'alpha\nbravo\n=====\n'],
+      // CommonMark knows no callout, so micromark parses a marker and its body as ONE blockquote
+      // paragraph — indistinguishable from an ordinary wrapped one. Joining the marker's break destroys
+      // the construct in both renderers that matter: GitHub demotes the alert to a literal blockquote,
+      // and Obsidian swallows the whole body into the callout's title.
+      ['a callout marker line', '> [!NOTE]\n> The body of the callout.\n'],
+      ['a titled callout marker line', '> [!info] A title\n> The body.\n'],
+      ['a foldable callout marker line', '> [!tip]- Folded\n> The body.\n'],
+      ['a nested callout marker line', '> > [!NOTE]\n> > The body.\n'],
+      ['an indented callout marker line', '- alpha\n\n  > [!NOTE]\n  > The body.\n']
     ])('for %s', async (_caseName: string, markdown: string) => {
       await expect(getReportedLineNumbers(markdown)).resolves.toEqual([]);
     });
