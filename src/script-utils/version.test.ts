@@ -52,6 +52,7 @@ const {
   mockReadPackageJson,
   mockResolvePathFromRootSafe,
   mockRm,
+  mockSpellcheckContent,
   mockWriteFile
 } = vi.hoisted(() => ({
   mockArchivePluginDemoVault: vi.fn(),
@@ -72,6 +73,7 @@ const {
   mockReadPackageJson: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
   mockRm: vi.fn(),
+  mockSpellcheckContent: vi.fn<() => Promise<string[]>>(),
   mockWriteFile: vi.fn()
 }));
 
@@ -127,6 +129,10 @@ vi.mock('../script-utils/json.ts', () => ({
   editJson: mockEditJson
 }));
 
+vi.mock('./linters/cspell-content.ts', () => ({
+  spellcheckContent: mockSpellcheckContent
+}));
+
 vi.mock('./linters/markdownlint-content.ts', () => ({
   lintMarkdownContent: mockLintMarkdownContent
 }));
@@ -147,6 +153,9 @@ vi.mock('../debug.ts', () => ({
 const SCRATCH_FOLDER = '/tmp/obsidian-dev-utils-changelog-abc123';
 const SCRATCH_CHANGELOG_PATH = `${SCRATCH_FOLDER}/CHANGELOG.md`;
 const MARKDOWNLINT_FINDINGS = ['CHANGELOG.md:5 error no-soft-break-in-paragraph Paragraph is hard-wrapped (soft line break inside a paragraph)'];
+// The word is assembled rather than written out for the same reason its sibling suite assembles one: this file
+// is read by `spellcheck` too, and a literal unknown word here is the very defect the check exists to catch.
+const SPELLING_FINDINGS = [`CHANGELOG.md:5:11 - Unknown word (${['lint', 'able'].join('')})`];
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -165,6 +174,7 @@ beforeEach(() => {
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockExistsSync.mockReturnValue(false);
   mockLintMarkdownContent.mockResolvedValue([]);
+  mockSpellcheckContent.mockResolvedValue([]);
 });
 
 function setIsTty(value: boolean | undefined): void {
@@ -1168,6 +1178,68 @@ describe('updateChangelog', () => {
 
     expect(mockMkdtemp).toHaveBeenCalledTimes(2);
     expect(mockWriteFile).not.toHaveBeenCalledWith('/root/CHANGELOG.md', expect.any(String), 'utf-8');
+  });
+
+  // The spelling half of the same ordering: the release's only `spellcheck` also runs in the gate, and a coined
+  // word in a release note is the defect five repositories in this workspace are currently stuck on.
+  it('should spellcheck the settled new section, and only that section', async () => {
+    mockReadFile.mockResolvedValue('');
+    await updateChangelog('1.0.0', { changelogFilePath: '/notes.md' });
+    expect(mockSpellcheckContent).toHaveBeenCalledWith({
+      content: '# CHANGELOG\n\n## 1.0.0\n',
+      filePath: '/root/CHANGELOG.md'
+    });
+  });
+
+  it('should refuse prepared release notes the spellchecker reports on, before writing them', async () => {
+    mockReadFile.mockResolvedValue('- A note nobody can spell\n');
+    mockSpellcheckContent.mockResolvedValue(SPELLING_FINDINGS);
+    await expect(updateChangelog('1.0.0', { changelogFilePath: '/notes.md' })).rejects.toThrow('does not pass spellcheck');
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  // Naming both unconditionally would be a lie half the time, so the message names only what actually reported:
+  // a release stopped by a coined word would otherwise send its author to look at `lint:md`, which passed.
+  it('should name only the check that reported', async () => {
+    mockReadFile.mockResolvedValue('- A note nobody can spell\n');
+    mockSpellcheckContent.mockResolvedValue(SPELLING_FINDINGS);
+    await expect(updateChangelog('1.0.0', { changelogFilePath: '/notes.md' })).rejects.toThrow(
+      `does not pass spellcheck:\n[spellcheck] ${SPELLING_FINDINGS[0] ?? ''}`
+    );
+  });
+
+  // Neither check short-circuits the other, so an author with both defects fixes them in ONE round of the
+  // review instead of being sent back twice.
+  it('should report both checks at once, each finding tagged with the script that reported it', async () => {
+    mockReadFile.mockResolvedValue('- A hard-wrapped note nobody can spell\n');
+    mockLintMarkdownContent.mockResolvedValue(MARKDOWNLINT_FINDINGS);
+    mockSpellcheckContent.mockResolvedValue(SPELLING_FINDINGS);
+
+    await expect(updateChangelog('1.0.0', { changelogFilePath: '/notes.md' })).rejects.toThrow(
+      `does not pass lint:md and spellcheck:\n[lint:md] ${MARKDOWNLINT_FINDINGS[0] ?? ''}\n[spellcheck] ${SPELLING_FINDINGS[0] ?? ''}`
+    );
+    expect(mockSpellcheckContent).toHaveBeenCalledTimes(1);
+  });
+
+  it('should re-open the review with the spelling findings and accept the text they fixed', async () => {
+    stubReviewReturning(
+      '# CHANGELOG\n\n## 1.0.0\n\n- A note nobody can spell\n',
+      '# CHANGELOG\n\n## 1.0.0\n\n- A note anybody can spell\n'
+    );
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    mockSpellcheckContent
+      .mockResolvedValueOnce(SPELLING_FINDINGS)
+      .mockResolvedValueOnce([]);
+    await updateChangelog('1.0.0');
+
+    expect(mockMkdtemp).toHaveBeenCalledTimes(2);
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      '# CHANGELOG\n\n## 1.0.0\n\n- A note anybody can spell\n',
+      'utf-8'
+    );
   });
 
   it('should skip the interactive review when changelog editing is disabled', async () => {
