@@ -176,6 +176,8 @@ export const config = defineObsidianPluginVitestConfig({
 
 Everything the context exposes is live — the arrays and objects it hands you are the ones the final configuration is built from.
 
+**Every custom project must declare its own `include`**, and `defineObsidianPluginVitestConfig` throws if one does not. The root section deliberately declares no glob, so a project that declares none falls back to vitest's own default, which matches *every* test file in the repo — the project then runs the unit suites under an Obsidian transport, the android suites against the desktop one, and any screenshot-capture suite that opens a window and overwrites a checked-in PNG. That widening is silent: the project passes, slowly, having done all of it. Spreading a standard project (`...context.desktop`) and overriding its `include` is the shortest way to satisfy this.
+
 That `integration-tests:demo-vault` project is written out in full above to show what `customProjects` can declare; a project that drives a real desktop Obsidian is shorter written as `...context.desktop` plus its own `globalSetup` and `include`. See [Clicking every button](/obsidian-dev-utils/guides/demo-vault/#clicking-every-button) for the whole three-part wiring — the project, its global setup, and the suite that uses them — and note that declaring a project here is only half the job: `scripts/test-integration.ts` has to list it too, or nothing ever runs it.
 
 ## Integration tests: reaching library helpers inside `evalInObsidian`
