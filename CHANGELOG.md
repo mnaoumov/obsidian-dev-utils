@@ -83,8 +83,7 @@
 ## 101.3.0
 
 - fix(modals): space the instruction strip's key hint and its injected control
-- The fix adds two exported `CssClass` members, `ModalCommandControl` and `PromptInstructionCommand`, so
-  this is a minor rather than a patch.
+- The fix adds two exported `CssClass` members, `ModalCommandControl` and `PromptInstructionCommand`, so this is a minor rather than a patch.
 
 ## 101.2.0
 

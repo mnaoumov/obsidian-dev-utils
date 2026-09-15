@@ -20,45 +20,13 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 - `npm run build` — full build pipeline
 - `npm run build:clean` — clean build output
 - `npm run build:compile` — compile: fans out to the svelte and TypeScript passes below
-- `npm run build:compile:svelte` — type-check Svelte components with svelte-check. **The gate globs the
-  Svelte extensions (`**/*.svelte`, `**/*.svelte.js`, `**/*.svelte.ts`) directly — never the tsconfig
-  `include` patterns.** Globbing `include` and filtering the result for Svelte extensions is empty *by
-  construction* (a tsconfig `include` lists `.ts` globs), so the step silently skipped in every consumer
-  until 2026-09-02. `node_modules`/`dist` are excluded explicitly because a tsconfig that sets
-  `exclude` at all replaces TypeScript's default `node_modules` exclusion. A project that has Svelte files
-  but does not declare `svelte-check` in its `package.json` now **fails** with an error naming it, rather
-  than falling through to the package manager's exec form and downloading the tool mid-build. The
-  declaration is read from `package.json`, not probed in `node_modules/.bin`, because a locally installed
-  tool has no bin shim under yarn PnP.
+- `npm run build:compile:svelte` — type-check Svelte components with svelte-check. **The gate globs the Svelte extensions (`**/*.svelte`, `**/*.svelte.js`, `**/*.svelte.ts`) directly — never the tsconfig `include` patterns.** Globbing `include` and filtering the result for Svelte extensions is empty *by construction* (a tsconfig `include` lists `.ts` globs), so the step silently skipped in every consumer until 2026-09-02. `node_modules`/`dist` are excluded explicitly because a tsconfig that sets `exclude` at all replaces TypeScript's default `node_modules` exclusion. A project that has Svelte files but does not declare `svelte-check` in its `package.json` now **fails** with an error naming it, rather than falling through to the package manager's exec form and downloading the tool mid-build. The declaration is read from `package.json`, not probed in `node_modules/.bin`, because a locally installed tool has no bin shim under yarn PnP.
 - `npm run build:compile:typescript` — type-check with tsc
 - `npm run build:templates` — copy consumer templates
 - `npm run build:validate-templates` — type-check the copied consumer templates (needs `dist/lib` built)
-- `npm run spellcheck` — spell check with cspell. **A `words` entry in `cspell.json` covers only that exact
-  word — it carries no affix flags, so its inflections are separate unknown words.** `unhover` was listed and
-  its `-s` form still failed the check (2026-09-01). Prefer rewording over adding the inflection: the
-  list is for domain terms, not for coinages a rewrite avoids. Note this bullet cannot spell out the example
-  without failing the very check it documents.
-- `npm run find-overexposed` / `find-overexposed:fix` — report (or narrow) declarations exposed more broadly
-  than their references require. It is one of the four preflight-only checks described under `npm run gate`
-  below (2026-08-29).
-- `npm run gate` — **the branch gate: run this before committing.** It is the same code
-  `npm run version` runs as its preflight (`gate()` in `src/script-utils/gate.ts`, which `updateVersion`
-  calls), so the two cannot drift: `format:check` -> `spellcheck` -> `lint:md` -> `build` -> `lint` ->
-  `find-overexposed` -> `test:coverage`, fastest first. **Four of those are reachable by no other
-  routine command — `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`** (none is part of
-  `npm run lint`, and `test:coverage` is the only routine command pinning all four coverage thresholds at
-  exactly 100). So a branch green on build + lint could still abort the release ~15 minutes in; one release died
-  that way at `spellcheck`, on one coinage in a code comment. **The tests run once**: `test:coverage` is
-  preferred and `npm test` runs only as its fallback, in a project that defines no `test:coverage`. Running
-  both — which this did until 2026-09-05 — was a duplicate, because a project scopes its two test
-  scripts to the same vitest projects (here both are `['unit-tests']`), so `test:coverage` is `test` plus
-  the thresholds over the identical files. One consequence: `TEST_COVERAGE=0` now switches off the gate's
-  whole test step. Two steps of the preflight are deliberately
-  NOT in the gate: the clean-repo assertion (the gate is run on a dirty tree on purpose) and
-  `test:integration` — left out for COST, not for contention (2026-09-15): desktop runs stopped contending in `obsidian-integration-testing` 5.0.0, which gives every run its own user-data dir and CDP port, and the Android emulator that is still shared is serialized by that package's own waiting `android` setup lock. What holds is that it is the one preflight step with a routine command of its own, and that in a plugin repo it boots an AVD and Appium and can queue for up to that lock's hour-long timeout, which a seconds-long command must not do unasked.
-  When a caller does ask for it, it runs after the unit tests, so a broken unit test fails first.
-  `npm run gate -- --no-build` skips the build when the output is already current; `npm run gate -- --integration` adds `test:integration`; `GATE=0` skips the whole
-  thing and each step keeps its own switch (`SPELLCHECK=0`, ...).
+- `npm run spellcheck` — spell check with cspell. **A `words` entry in `cspell.json` covers only that exact word — it carries no affix flags, so its inflections are separate unknown words.** `unhover` was listed and its `-s` form still failed the check (2026-09-01). Prefer rewording over adding the inflection: the list is for domain terms, not for coinages a rewrite avoids. Note this bullet cannot spell out the example without failing the very check it documents.
+- `npm run find-overexposed` / `find-overexposed:fix` — report (or narrow) declarations exposed more broadly than their references require. It is one of the four preflight-only checks described under `npm run gate` below (2026-08-29).
+- `npm run gate` — **the branch gate: run this before committing.** It is the same code `npm run version` runs as its preflight (`gate()` in `src/script-utils/gate.ts`, which `updateVersion` calls), so the two cannot drift: `format:check` -> `spellcheck` -> `lint:md` -> `build` -> `lint` -> `find-overexposed` -> `test:coverage`, fastest first. **Four of those are reachable by no other routine command — `format:check`, `spellcheck`, `find-overexposed` and `test:coverage`** (none is part of `npm run lint`, and `test:coverage` is the only routine command pinning all four coverage thresholds at exactly 100). So a branch green on build + lint could still abort the release ~15 minutes in; one release died that way at `spellcheck`, on one coinage in a code comment. **The tests run once**: `test:coverage` is preferred and `npm test` runs only as its fallback, in a project that defines no `test:coverage`. Running both — which this did until 2026-09-05 — was a duplicate, because a project scopes its two test scripts to the same vitest projects (here both are `['unit-tests']`), so `test:coverage` is `test` plus the thresholds over the identical files. One consequence: `TEST_COVERAGE=0` now switches off the gate's whole test step. Two steps of the preflight are deliberately NOT in the gate: the clean-repo assertion (the gate is run on a dirty tree on purpose) and `test:integration` — left out for COST, not for contention (2026-09-15): desktop runs stopped contending in `obsidian-integration-testing` 5.0.0, which gives every run its own user-data dir and CDP port, and the Android emulator that is still shared is serialized by that package's own waiting `android` setup lock. What holds is that it is the one preflight step with a routine command of its own, and that in a plugin repo it boots an AVD and Appium and can queue for up to that lock's hour-long timeout, which a seconds-long command must not do unasked. When a caller does ask for it, it runs after the unit tests, so a broken unit test fails first. `npm run gate -- --no-build` skips the build when the output is already current; `npm run gate -- --integration` adds `test:integration`; `GATE=0` skips the whole thing and each step keeps its own switch (`SPELLCHECK=0`, ...).
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version
 - `npm run publish:npm` — publish the built package to NPM; runs in CI only (see [Releasing](#releasing))
@@ -94,77 +62,17 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
 
 ### Documentation Site
 
-The API-reference + guides site is a self-contained **Astro + Starlight** project deployed to **GitHub
-Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom domain aliases
-`mnaoumov.github.io`). It is NOT a separate npm package — its dependencies live in the root
-`package.json` and it is driven by the root `docs:dev`/`docs:build`/`docs:preview` scripts.
+The API-reference + guides site is a self-contained **Astro + Starlight** project deployed to **GitHub Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom domain aliases `mnaoumov.github.io`). It is NOT a separate npm package — its dependencies live in the root `package.json` and it is driven by the root `docs:dev`/`docs:build`/`docs:preview` scripts.
 
-- `astro.config.ts` (repo root) — the Astro config. `srcDir` is set to `./docs/src` so the site's
-  source tree never collides with the library's own `src/`; `outDir` is `./docs/dist`, `site` is
-  `https://mnaoumov.dev` and `base` is `/obsidian-dev-utils`. The Starlight integration uses
-  `starlight-github-alerts` to render GitHub-style Markdown alerts as native Starlight asides.
+- `astro.config.ts` (repo root) — the Astro config. `srcDir` is set to `./docs/src` so the site's source tree never collides with the library's own `src/`; `outDir` is `./docs/dist`, `site` is `https://mnaoumov.dev` and `base` is `/obsidian-dev-utils`. The Starlight integration uses `starlight-github-alerts` to render GitHub-style Markdown alerts as native Starlight asides.
 - `docs/src/content.config.ts` — Starlight content-collection config.
-- `docs/src/content/docs/` — site content: `index.mdx` (landing), `guides/` (the hand-written topic
-  guides, each with Starlight frontmatter; co-located screenshots under `guides/images/` — the guides
-  sidebar autogenerates from the directory), and the generated `api/` (gitignored — regenerated on
-  every build).
-- `scripts/docs-gen/` — the **custom** API-reference generator (there is no TypeDoc / `starlight-typedoc`
-  in the pipeline). `generate-api-docs.ts` walks `src` with **ts-morph**, extracts every documentable
-  exported declaration, and emits Starlight-compatible MDX plus a sidebar JSON; the output tree mirrors
-  the library's module/subpath structure (a type's namespace is its source path relative to `src`). It
-  reads each module's `@file` overview directly (`helpers/api-doc-jsdoc.ts`), so no
-  `@packageDocumentation`/`@module` tag is needed. `generate-og-images.ts` renders the per-page OG
-  images (satori). Paths are centralized in `helpers/api-doc-constants.ts`: output
-  `docs/src/content/docs/api`, cache `…/api/.cache-hash`, sidebar `docs/src/generated-sidebar.json`,
-  base path `/obsidian-dev-utils`. `DOCS_ROOT` overrides the repo root for out-of-tree runs. All three
-  outputs are gitignored (`.gitignore:30-32`, the third being `docs/public/og`).
-  **Every** generated page kind (module index, type overview, property, method) emits its frontmatter
-  through the single `renderFrontMatter` helper in `helpers/api-doc-page-generation.ts`. `description`
-  is not only the meta description — it is the line the OG card renders under the title, so a page kind
-  that skips it produces a title-only card next to fully populated ones (module index pages did until
-  the helper was introduced). A hand-written guide must therefore carry a `description` too, and a
-  symbol with no TSDoc summary yields a title-only card no generator change can fix.
-- **Tooling scope:** ESLint validates `astro.config.ts`, `docs/src/**/*.ts`, `docs/**/*.astro`, and the
-  documentation generator under `scripts/docs-gen/`; `npm run lint` explicitly supplies the `.astro` glob
-  because ESLint does not discover that extension by default. Markdownlint excludes the whole docs sub-project
-  because Starlight's MDX follows its own conventions, while `astro build` validates the site. cspell excludes
-  the generated `docs/src/content/docs/api`, `docs/dist`/`.astro`, `docs/src/components`, `docs/src/styles`,
-  and `scripts/docs-gen`. `linkinator.config.json` skips `guides`/`api` links on a `localhost` /
-  `127.0.0.1` origin — the local preview serves only what has been generated — and **nothing else**. In
-  particular the `mnaoumov.dev/obsidian-dev-utils` links ARE fetched live, which this file claimed the
-  opposite of until 2026-09-12.
-  - **So a brand-new guide cannot be announced in `README.md` by its site URL in the same commit that
-    adds it.** `lint:md` runs linkinator over the markdown, the page is not deployed yet, and the gate
-    fails on a 404 for a link that is perfectly correct — a release-ordering artifact, not a defect.
-    Link the new page by its repo-relative source path instead (`docs/src/content/docs/guides/<name>.md`),
-    which is valid immediately and renders inline on GitHub, where most people meet the README. Do NOT
-    add a `skip` entry for it: that is a temporary exception nothing would ever come back and remove.
-  - **Astro's generated types live at the REPO ROOT, not under `docs/`, and `npm run lint` generates them
-    when they are missing.** `docs/src/content.config.ts` imports from the `astro:content` virtual module
-    and `docs/src/route-data.ts` reads `import.meta.env`; nothing on disk declares either until Astro
-    writes `.astro/types.d.ts`. Astro writes that under its **root**, and the root is the repo root
-    because `astro.config.ts` sits there — `srcDir: './docs/src'` moves the sources, not the root. So
-    `docs/tsconfig.json` includes `../.astro/types.d.ts`; it included `.astro/types.d.ts` (i.e.
-    `docs/.astro/`, which Astro never writes) until 2026-09-12, and every use of `defineCollection` was
-    therefore `error`-typed on any checkout but one. The defect was invisible here because this tree
-    carried a stale `docs/.astro/` from an earlier layout — gitignored, so never cleaned and never
-    restored — and invisible everywhere else because no CI ran `lint`. It made `npm run lint`,
-    `npm run gate` and `npm run version`'s preflight red on every fresh clone. Both halves are fixed:
-    the `include` names the real path, and `scripts/helpers/sync-astro-types.ts` runs `astro sync` from
-    `lint`/`lint:fix` **only when `.astro/types.d.ts` is absent** — `lint:fix` is a pre-commit step, and
-    what these rules need is the `astro:content` / `astro/client` module declarations, which do not
-    change with the collection contents.
-- `.github/workflows/lint.yml` — runs `npm ci` -> `npm run build` -> `npm run lint` on every push to
-  `main` and every pull request. It exists because nothing in CI ran `lint` at all, so a check that was red
-  on every clean checkout could — and did — survive unseen. The build step is load-bearing: `lint` is
-  type-aware and the `src/**/index.ts` barrels and their `.d.ts` siblings are gitignored build outputs, so
-  a clone that has never been built lints with hundreds of "error typed value" failures that say nothing
-  about the source. `lint:md` is deliberately left out: its linkinator half fetches the site's links live
-  (see above), so it would make every pull request depend on the network and on what is already deployed.
-- `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`,
-  which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages,
-  `docs/src/generated-sidebar.json`, and OG images; the generator only skips regeneration when its cache
-  hash and sidebar file both exist. Requires Pages to be enabled with **GitHub Actions** as the source.
+- `docs/src/content/docs/` — site content: `index.mdx` (landing), `guides/` (the hand-written topic guides, each with Starlight frontmatter; co-located screenshots under `guides/images/` — the guides sidebar autogenerates from the directory), and the generated `api/` (gitignored — regenerated on every build).
+- `scripts/docs-gen/` — the **custom** API-reference generator (there is no TypeDoc / `starlight-typedoc` in the pipeline). `generate-api-docs.ts` walks `src` with **ts-morph**, extracts every documentable exported declaration, and emits Starlight-compatible MDX plus a sidebar JSON; the output tree mirrors the library's module/subpath structure (a type's namespace is its source path relative to `src`). It reads each module's `@file` overview directly (`helpers/api-doc-jsdoc.ts`), so no `@packageDocumentation`/`@module` tag is needed. `generate-og-images.ts` renders the per-page OG images (satori). Paths are centralized in `helpers/api-doc-constants.ts`: output `docs/src/content/docs/api`, cache `…/api/.cache-hash`, sidebar `docs/src/generated-sidebar.json`, base path `/obsidian-dev-utils`. `DOCS_ROOT` overrides the repo root for out-of-tree runs. All three outputs are gitignored (`.gitignore:30-32`, the third being `docs/public/og`). **Every** generated page kind (module index, type overview, property, method) emits its frontmatter through the single `renderFrontMatter` helper in `helpers/api-doc-page-generation.ts`. `description` is not only the meta description — it is the line the OG card renders under the title, so a page kind that skips it produces a title-only card next to fully populated ones (module index pages did until the helper was introduced). A hand-written guide must therefore carry a `description` too, and a symbol with no TSDoc summary yields a title-only card no generator change can fix.
+- **Tooling scope:** ESLint validates `astro.config.ts`, `docs/src/**/*.ts`, `docs/**/*.astro`, and the documentation generator under `scripts/docs-gen/`; `npm run lint` explicitly supplies the `.astro` glob because ESLint does not discover that extension by default. Markdownlint excludes the whole docs sub-project because Starlight's MDX follows its own conventions, while `astro build` validates the site. cspell excludes the generated `docs/src/content/docs/api`, `docs/dist`/`.astro`, `docs/src/components`, `docs/src/styles`, and `scripts/docs-gen`. `linkinator.config.json` skips `guides`/`api` links on a `localhost` / `127.0.0.1` origin — the local preview serves only what has been generated — and **nothing else**. In particular the `mnaoumov.dev/obsidian-dev-utils` links ARE fetched live, which this file claimed the opposite of until 2026-09-12.
+  - **So a brand-new guide cannot be announced in `README.md` by its site URL in the same commit that adds it.** `lint:md` runs linkinator over the markdown, the page is not deployed yet, and the gate fails on a 404 for a link that is perfectly correct — a release-ordering artifact, not a defect. Link the new page by its repo-relative source path instead (`docs/src/content/docs/guides/<name>.md`), which is valid immediately and renders inline on GitHub, where most people meet the README. Do NOT add a `skip` entry for it: that is a temporary exception nothing would ever come back and remove.
+  - **Astro's generated types live at the REPO ROOT, not under `docs/`, and `npm run lint` generates them when they are missing.** `docs/src/content.config.ts` imports from the `astro:content` virtual module and `docs/src/route-data.ts` reads `import.meta.env`; nothing on disk declares either until Astro writes `.astro/types.d.ts`. Astro writes that under its **root**, and the root is the repo root because `astro.config.ts` sits there — `srcDir: './docs/src'` moves the sources, not the root. So `docs/tsconfig.json` includes `../.astro/types.d.ts`; it included `.astro/types.d.ts` (i.e. `docs/.astro/`, which Astro never writes) until 2026-09-12, and every use of `defineCollection` was therefore `error`-typed on any checkout but one. The defect was invisible here because this tree carried a stale `docs/.astro/` from an earlier layout — gitignored, so never cleaned and never restored — and invisible everywhere else because no CI ran `lint`. It made `npm run lint`, `npm run gate` and `npm run version`'s preflight red on every fresh clone. Both halves are fixed: the `include` names the real path, and `scripts/helpers/sync-astro-types.ts` runs `astro sync` from `lint`/`lint:fix` **only when `.astro/types.d.ts` is absent** — `lint:fix` is a pre-commit step, and what these rules need is the `astro:content` / `astro/client` module declarations, which do not change with the collection contents.
+- `.github/workflows/lint.yml` — runs `npm ci` -> `npm run build` -> `npm run lint` on every push to `main` and every pull request. It exists because nothing in CI ran `lint` at all, so a check that was red on every clean checkout could — and did — survive unseen. The build step is load-bearing: `lint` is type-aware and the `src/**/index.ts` barrels and their `.d.ts` siblings are gitignored build outputs, so a clone that has never been built lints with hundreds of "error typed value" failures that say nothing about the source. `lint:md` is deliberately left out: its linkinator half fetches the site's links live (see above), so it would make every pull request depend on the network and on what is already deployed.
+- `.github/workflows/build-pages.yml` — a release event dispatches a `workflow_dispatch` run on `main`, which builds and deploys the site to GitHub Pages. Its generated-docs cache includes the API pages, `docs/src/generated-sidebar.json`, and OG images; the generator only skips regeneration when its cache hash and sidebar file both exist. Requires Pages to be enabled with **GitHub Actions** as the source.
 
 ### TypeScript
 
@@ -177,108 +85,35 @@ Pages** at `https://mnaoumov.dev/obsidian-dev-utils/` (the `mnaoumov.dev` custom
 - esbuild for bundling (ESM + CJS dual output)
 - `src/**/index.ts` files are auto-generated — do NOT edit them manually
 - `package.json` exports are auto-generated via `build:generate-exports`
-- `src/__merged.ts` is an auto-generated flat re-export barrel of every renderer-safe **value** export
-  (gitignored + eslint-ignored, exactly like `index.ts`; produced by `build:generate-merged`, which runs
-  before `build:generate-index`). It backs the `obsidian-dev-utils/__merged` subpath and the `lib` bag
-  injected into `evalInObsidian` closures — wired via `registerLibResolver` in
-  `scripts/integration-test-obsidian-setup.ts` plus the `Lib` augmentation in
-  `src/@types/obsidian-integration-testing.d.ts`. The generator **fails the build if two modules export
-  the same value name**: every public value export must be unique (this is why `path.ts` / `string.ts`
-  `normalize` were renamed to `normalizePath` / `normalizeString`). Do NOT edit `__merged.ts` manually.
-- **The integration-test harness plugin bundle is checked at build time for whether it can load on mobile.**
-  `buildIntegrationTestPlugin` runs `assertMobileLoadableBundle`
-  (`scripts/helpers/assert-mobile-loadable-bundle.ts`), which evaluates the emitted `main.js` in a
-  `node:vm` context shaped like Obsidian mobile — `require` returns `undefined` for every Node builtin and
-  a permissive stand-in for the app-provided externals, and `process` is present and renderer-shaped so a
-  load-time branch (as in `debug`) takes the browser path a webview does. It asserts only that module
-  INITIALIZATION survives, so L6's call-time dynamic `import()` of platform-only work still passes. It
-  guards both outputs (`dist/integration-test-plugin/`, which ships, and `dist/dev/`), because that
-  bundle is seeded into an Android integration vault, where a load-time reach for a platform-only API
-  surfaces as an opaque "plugin failed to load" with every test in the project failing behind it.
-- **That one check covers the whole library, which is why L5 can allow the barrels to re-export every
-  module.** The harness plugin's entry imports `../src/index.ts` — the entire public surface — so its
-  bundle is the worst-case consumer: a plugin that imports everything. Any module that stops being
-  import-safe on mobile fails `npm run build` here, long before it reaches a phone. Do not weaken that
-  entry to a narrower import; it is what makes the check load-bearing rather than incidental.
+- `src/__merged.ts` is an auto-generated flat re-export barrel of every renderer-safe **value** export (gitignored + eslint-ignored, exactly like `index.ts`; produced by `build:generate-merged`, which runs before `build:generate-index`). It backs the `obsidian-dev-utils/__merged` subpath and the `lib` bag injected into `evalInObsidian` closures — wired via `registerLibResolver` in `scripts/integration-test-obsidian-setup.ts` plus the `Lib` augmentation in `src/@types/obsidian-integration-testing.d.ts`. The generator **fails the build if two modules export the same value name**: every public value export must be unique (this is why `path.ts` / `string.ts` `normalize` were renamed to `normalizePath` / `normalizeString`). Do NOT edit `__merged.ts` manually.
+- **The integration-test harness plugin bundle is checked at build time for whether it can load on mobile.** `buildIntegrationTestPlugin` runs `assertMobileLoadableBundle` (`scripts/helpers/assert-mobile-loadable-bundle.ts`), which evaluates the emitted `main.js` in a `node:vm` context shaped like Obsidian mobile — `require` returns `undefined` for every Node builtin and a permissive stand-in for the app-provided externals, and `process` is present and renderer-shaped so a load-time branch (as in `debug`) takes the browser path a webview does. It asserts only that module INITIALIZATION survives, so L6's call-time dynamic `import()` of platform-only work still passes. It guards both outputs (`dist/integration-test-plugin/`, which ships, and `dist/dev/`), because that bundle is seeded into an Android integration vault, where a load-time reach for a platform-only API surfaces as an opaque "plugin failed to load" with every test in the project failing behind it.
+- **That one check covers the whole library, which is why L5 can allow the barrels to re-export every module.** The harness plugin's entry imports `../src/index.ts` — the entire public surface — so its bundle is the worst-case consumer: a plugin that imports everything. Any module that stops being import-safe on mobile fails `npm run build` here, long before it reaches a phone. Do not weaken that entry to a narrower import; it is what makes the check load-bearing rather than incidental.
 
 ### Type Validation (manual `skipLibCheck` wrapper)
 
-`tsconfig.json` sets `skipLibCheck: true`. This is a deliberate exception to the usual "never
-weaken `@tsconfig/strictest`" stance: it lets `tsc` type-check our `.ts` files without failing on
-broken upstream `.d.ts` files we do not control (e.g. a given version's `obsidian.d.ts`, which has
-shipped `HistoryHandler`/`PromiseWithResolvers` type errors).
+`tsconfig.json` sets `skipLibCheck: true`. This is a deliberate exception to the usual "never weaken `@tsconfig/strictest`" stance: it lets `tsc` type-check our `.ts` files without failing on broken upstream `.d.ts` files we do not control (e.g. a given version's `obsidian.d.ts`, which has shipped `HistoryHandler`/`PromiseWithResolvers` type errors).
 
-The declarations we author (`src/@types/**`, `src/obsidian/@types/dataview/**`) are still fully
-validated. `buildCompileTypeScript()` (run by `build:compile:typescript`) does two passes:
+The declarations we author (`src/@types/**`, `src/obsidian/@types/dataview/**`) are still fully validated. `buildCompileTypeScript()` (run by `build:compile:typescript`) does two passes:
 
 1. `tsc --build --force` — the normal compile, with `skipLibCheck: true`.
-2. An in-memory re-check via `checkProjectTypes()` (`src/script-utils/check-project-types.ts`) with
-   `skipLibCheck: false`, reporting **only** diagnostics whose source file is under the project root
-   and outside `node_modules`. It prints `Ignored N diagnostic(s) outside the validated set.` —
-   when upstream is fixed and `N` reaches `0`, the workaround is no longer doing anything and
-   `skipLibCheck` can go back to `false`.
+2. An in-memory re-check via `checkProjectTypes()` (`src/script-utils/check-project-types.ts`) with `skipLibCheck: false`, reporting **only** diagnostics whose source file is under the project root and outside `node_modules`. It prints `Ignored N diagnostic(s) outside the validated set.` — when upstream is fixed and `N` reaches `0`, the workaround is no longer doing anything and `skipLibCheck` can go back to `false`.
 
-`checkProjectTypes()` / `parseTsConfig()` / `toCanonical()` are exported as a reusable primitive, so
-consuming plugins inherit the same resilience through the shared `buildCompileTypeScript()`.
+`checkProjectTypes()` / `parseTsConfig()` / `toCanonical()` are exported as a reusable primitive, so consuming plugins inherit the same resilience through the shared `buildCompileTypeScript()`.
 
 ### `PluginBase`: two component tiers, and what a consumer can observe
 
-`PluginBase` holds its children on TWO internal wrappers rather than one, because the two have opposite
-lifetimes. `universalWrapperComponent` carries the library's own components — the notice, the async error
-handler, the abort signal, the gate itself — and has to OUTLIVE a lost dependency, since it is what names
-the plugin that went away and renders the button that brings it back. `gatedWrapperComponent` carries
-everything the subclass owns, which is exactly what must stop running: the gate tears it down when a
-declared dependency disappears or a declared conflict appears, and rebuilds it as a fresh instance when the
-surface comes back up.
+`PluginBase` holds its children on TWO internal wrappers rather than one, because the two have opposite lifetimes. `universalWrapperComponent` carries the library's own components — the notice, the async error handler, the abort signal, the gate itself — and has to OUTLIVE a lost dependency, since it is what names the plugin that went away and renders the button that brings it back. `gatedWrapperComponent` carries everything the subclass owns, which is exactly what must stop running: the gate tears it down when a declared dependency disappears or a declared conflict appears, and rebuilds it as a fresh instance when the surface comes back up.
 
-Two consequences of that split are visible from OUTSIDE the library, and both broke a consumer's tests when
-the tiers landed, which is why they are written down here:
+Two consequences of that split are visible from OUTSIDE the library, and both broke a consumer's tests when the tiers landed, which is why they are written down here:
 
-- **`addChild` is the subclass's door, and only the subclass's.** The universal components take a private
-  `addUniversalChild` route onto the other wrapper, so anything observing the public `addChild` — a test
-  counting its calls, a patch wrapping it — sees exactly the children the subclass added and none of the
-  library's. A consumer counting the total of both tiers is the one thing the split could not keep working;
-  such a test asserts the subclass's own number.
-- **A load failure is an `AggregateError`, and it crosses two of them.** The feature surface's
-  `loadWithPromises` aggregates the failure, then the universal wrapper's aggregates that, so a single throw
-  from `onloadImpl` arrives nested two deep. It still leaves `onload()` — a plugin whose `onloadImpl` throws
-  still fails to load, unchanged — but the SHAPE moved, and a test written against the old one reads the
-  change as lost propagation rather than as extra nesting. Every aggregate the library builds now carries a
-  message naming the failure (`createAggregateError` in `src/aggregate-error.ts`: a lone failure lends its own message
-  to every aggregate above it, several become a count), so `error.message` and `rejects.toThrow(message)`
-  find the real sentence at the top instead of an empty string. `errorToString` walks the whole tree either
-  way, which is why the console never showed the problem.
+- **`addChild` is the subclass's door, and only the subclass's.** The universal components take a private `addUniversalChild` route onto the other wrapper, so anything observing the public `addChild` — a test counting its calls, a patch wrapping it — sees exactly the children the subclass added and none of the library's. A consumer counting the total of both tiers is the one thing the split could not keep working; such a test asserts the subclass's own number.
+- **A load failure is an `AggregateError`, and it crosses two of them.** The feature surface's `loadWithPromises` aggregates the failure, then the universal wrapper's aggregates that, so a single throw from `onloadImpl` arrives nested two deep. It still leaves `onload()` — a plugin whose `onloadImpl` throws still fails to load, unchanged — but the SHAPE moved, and a test written against the old one reads the change as lost propagation rather than as extra nesting. Every aggregate the library builds now carries a message naming the failure (`createAggregateError` in `src/aggregate-error.ts`: a lone failure lends its own message to every aggregate above it, several become a count), so `error.message` and `rejects.toThrow(message)` find the real sentence at the top instead of an empty string. `errorToString` walks the whole tree either way, which is why the console never showed the problem.
 
-A third thing follows from the split and is a GUARANTEE rather than a trap, because it was made one:
-**`this.pluginGateComponent` is readable throughout `onloadImpl`, synchronous prefix included.** Adding the
-gate is what runs `onloadImpl` — the gate loads the feature surface as it is added, synchronously for a
-plugin declaring neither a dependency nor a conflict — so the assignment statement in `onload` has not
-returned while the subclass is running. `onload` therefore assigns the field BEFORE adding the child, alone
-among the universal components, whose every sibling has already returned by then. Without that, a settings
-tab built in `onloadImpl` and reaching for the `Warn` overlap banner got `Value is undefined` out of the
-getter, and the workaround was to pass the tab a lazy `() => this.pluginGateComponent` accessor. That
-accessor still works and is still the safer shape if a tab is ever built earlier for some other reason; it
-is no longer required. Nothing about child-add ORDER moves for this — the sequence of `addUniversalChild`
-calls is untouched, and only the field store changed place.
+A third thing follows from the split and is a GUARANTEE rather than a trap, because it was made one: **`this.pluginGateComponent` is readable throughout `onloadImpl`, synchronous prefix included.** Adding the gate is what runs `onloadImpl` — the gate loads the feature surface as it is added, synchronously for a plugin declaring neither a dependency nor a conflict — so the assignment statement in `onload` has not returned while the subclass is running. `onload` therefore assigns the field BEFORE adding the child, alone among the universal components, whose every sibling has already returned by then. Without that, a settings tab built in `onloadImpl` and reaching for the `Warn` overlap banner got `Value is undefined` out of the getter, and the workaround was to pass the tab a lazy `() => this.pluginGateComponent` accessor. That accessor still works and is still the safer shape if a tab is ever built earlier for some other reason; it is no longer required. Nothing about child-add ORDER moves for this — the sequence of `addUniversalChild` calls is untouched, and only the field store changed place.
 
-**A COMMAND belongs to the tier that registered it, not to the component that registered it.**
-`commandHandlerComponent` is universal — it has to be, since a blocked plugin still offers the unlock-locked-note
-rescue — but the commands a subclass registers through it from `onloadImpl` close over collaborators the gate
-tears down, so they go down with the surface. That is what
-`CommandHandlerComponent`'s `commandLifetimeOwnerProvider` is for: `PluginBase` constructs the component with
-`() => this.gatedWrapperComponent`, so a consumer's ordinary
-`await this.commandHandlerComponent.registerCommandHandlers(...)` needs no change at the call site and still
-gets surface-scoped teardown. The provider is resolved on EVERY call, never captured, because
-`unloadFeatureSurface` replaces the wrapper rather than emptying it — each gate cycle's commands must land on
-that cycle's wrapper. A batch that has to outlive the surface names its owner explicitly instead
-(`registerCommandHandlers(factory, { lifetimeOwner })`); `PluginBase` does exactly that, once, for
-`UnlockActiveNoteCommandHandler`.
+**A COMMAND belongs to the tier that registered it, not to the component that registered it.** `commandHandlerComponent` is universal — it has to be, since a blocked plugin still offers the unlock-locked-note rescue — but the commands a subclass registers through it from `onloadImpl` close over collaborators the gate tears down, so they go down with the surface. That is what `CommandHandlerComponent`'s `commandLifetimeOwnerProvider` is for: `PluginBase` constructs the component with `() => this.gatedWrapperComponent`, so a consumer's ordinary `await this.commandHandlerComponent.registerCommandHandlers(...)` needs no change at the call site and still gets surface-scoped teardown. The provider is resolved on EVERY call, never captured, because `unloadFeatureSurface` replaces the wrapper rather than emptying it — each gate cycle's commands must land on that cycle's wrapper. A batch that has to outlive the surface names its owner explicitly instead (`registerCommandHandlers(factory, { lifetimeOwner })`); `PluginBase` does exactly that, once, for `UnlockActiveNoteCommandHandler`.
 
-Before this, every command's removal was tied to the universal component's unload, so a plugin whose
-dependency went away kept a full palette of commands calling into torn-down objects, and gained a second set
-of disposables each time the dependency came back. Consumers papered over it by keeping the returned
-`DisposableEx` and disposing it from a child component added in `onloadImpl`; that workaround is no longer
-needed and should be deleted wherever it survives.
+Before this, every command's removal was tied to the universal component's unload, so a plugin whose dependency went away kept a full palette of commands calling into torn-down objects, and gained a second set of disposables each time the dependency came back. Consumers papered over it by keeping the returned `DisposableEx` and disposing it from a child component added in `onloadImpl`; that workaround is no longer needed and should be deleted wherever it survives.
 
 ## Code Conventions
 
@@ -307,16 +142,7 @@ export function myFunction(param: Type): ReturnType {
 - Directories: kebab-case (e.g., `script-utils/bundlers/esbuild-impl`, `test-runners`)
 - **Exception:** `src/test-helpers/mocks/` files use PascalCase to mirror Obsidian API export names (e.g., `App.ts`, `Vault.ts`, `TFile.ts`)
 - **Exception:** `constructors/` files use camelCase matching the exported function name (e.g., `getDomEventsHandlersConstructor.ts`), mirroring the `obsidian-typings` Constructors convention
-- **An `Async` suffix disambiguates, it does NOT mean "this returns a promise".** Add it only when a
-  synchronous counterpart of the same name already exists and would otherwise collide. Being `async` is
-  never on its own a reason for the suffix — measured 2026-07-31, ~18 suffixed members against ~179 async
-  members without one, and **every** established use resolves a name collision: `onloadAsync` (Obsidian's
-  `onload`), `hideAsync`, `triggerAsync`/`tryTriggerAsync`, `createDivAsync`/`createElAsync`/… (Obsidian's
-  sync `createDiv`/`createEl`), `setTimeoutAsync`/`requestAnimationFrameAsync`/`setImmediateAsync`/
-  `nextTickAsync` (the callback-based globals), `replaceAllAsync`
-  (`String.replaceAll`), `noopAsync` (`noop`). (`invokeAsyncSafely` is not a counter-example — its `Async`
-  is mid-name, describing what it invokes.) A `*Params` interface is named after its method, so it follows
-  the method either way.
+- **An `Async` suffix disambiguates, it does NOT mean "this returns a promise".** Add it only when a synchronous counterpart of the same name already exists and would otherwise collide. Being `async` is never on its own a reason for the suffix — measured 2026-07-31, ~18 suffixed members against ~179 async members without one, and **every** established use resolves a name collision: `onloadAsync` (Obsidian's `onload`), `hideAsync`, `triggerAsync`/`tryTriggerAsync`, `createDivAsync`/`createElAsync`/… (Obsidian's sync `createDiv`/`createEl`), `setTimeoutAsync`/`requestAnimationFrameAsync`/`setImmediateAsync`/ `nextTickAsync` (the callback-based globals), `replaceAllAsync` (`String.replaceAll`), `noopAsync` (`noop`). (`invokeAsyncSafely` is not a counter-example — its `Async` is mid-name, describing what it invokes.) A `*Params` interface is named after its method, so it follows the method either way.
 
 ### Documentation
 
@@ -333,63 +159,19 @@ export function myFunction(param: Type): ReturnType {
 
 - Use `assertNonNullable()` from `src/type-guards.ts` in tests instead of `!`
 - Custom ESLint rule `obsidian-dev-utils/no-unused-params-members` flags `*Params`/`*Options` interface members never read by the receiving function; spreading, rest-destructuring, forwarding, returning, or storing the whole object counts as using all members.
-- The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by
-  `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts`: `manifest-description`, `manifest-id`,
-  `manifest-name`, `manifest-schema`, `no-async-callback-to-unsafe-return`,
-  `no-over-cap-wait-in-eval-in-obsidian`, `no-untrusted-input-events`, `no-unused-params-members`,
-  `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`,
-  `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`,
-  `require-super-call`. The TypeScript rules use `@typescript-eslint/rule-tester` via
-  `rule-tester-helper.ts`; the four `manifest-*` rules use ESLint's own `RuleTester` with
-  `{ language: 'json/json', plugins: { json: jsonPlugin } }`.
+- The in-house rules live in `src/script-utils/linters/eslint-rules/`, are registered by `obsidian-dev-utils-plugin.ts`, and each has a `*.test.ts`: `manifest-description`, `manifest-id`, `manifest-name`, `manifest-schema`, `no-async-callback-to-unsafe-return`, `no-over-cap-wait-in-eval-in-obsidian`, `no-untrusted-input-events`, `no-unused-params-members`, `no-used-underscore-variables`, `params-options-name-match`, `prefer-noop-async`, `readonly-params-options-result-members`, `require-component-suffix`, `require-method-template`, `require-super-call`. The TypeScript rules use `@typescript-eslint/rule-tester` via `rule-tester-helper.ts`; the four `manifest-*` rules use ESLint's own `RuleTester` with `{ language: 'json/json', plugins: { json: jsonPlugin } }`.
 - **There is an in-house markdownlint rule too**, in `src/script-utils/linters/markdownlint-rules/`: `no-soft-break-in-paragraph`, registered in `markdownlint-cli2-config.ts`'s `customRules` beside the third-party `relative-links`. It reports a `lineEnding` token that micromark places inside a `paragraph` — a hard-wrapped paragraph — which is a syntactic fact needing no heuristic, and which exempts fenced and indented code, math blocks, tables, headings and front matter for free because none of them is a `paragraph`. Four things about it are worth not rediscovering:
-  - **It is registered but turned OFF** (`'no-soft-break-in-paragraph': false`). markdownlint enables an unlisted custom rule by default, so landing it silent has to be said out loud. A repo measures itself with the rule, unwraps, and turns it on by overriding that one key in its own `scripts/markdownlint-cli2-config.ts` — the same seam this repo uses for `ignores`.
+  - **The SHARED default is OFF** (`'no-soft-break-in-paragraph': false` in `src/script-utils/linters/markdownlint-cli2-config.ts`). markdownlint enables an unlisted custom rule by default, so landing it silent has to be said out loud. A repo measures itself with the rule, unwraps, and turns it on by overriding that one key in its own `scripts/markdownlint-cli2-config.ts` — the same seam this repo uses for `ignores`. **This repo has done that, so the rule is ON here**: the measurement was 1134 findings over `AGENTS.md` (1128), `README.md` (5) and `CHANGELOG.md` (1) — of the four files `lint:md` sees, `CONTRIBUTING.md` was already clean — and all three were unwrapped in one commit. So every paragraph in this repo's markdown is one physical line, and re-wrapping one is now a `lint:md` failure rather than a matter of taste. The unwrap is a whole-file rewrite, which is why `git blame` on `AGENTS.md` bottoms out at that commit for most lines.
   - **`htmlFlow` has to be skipped, and it is a real false positive rather than insurance.** markdownlint's micromark re-parses an HTML block into a nested `content` / `paragraph` pair so its inline rules can reach the text, so every newline inside a multi-line `<div>` or `<details>` wrapper reads as a soft break — and acting on that rewrites literal HTML. A `<!-- … -->` comment takes a different shape (`htmlFlowData`, no paragraph); skipping the block answers both. `codeFenced` / `codeIndented` / `mathFlow` sit in the same set as insurance only — today nothing descends into them anyway.
   - **A trailing `\` is NOT folded into the preceding token.** It becomes a `hardBreakEscape` followed by an ordinary `lineEnding`, exactly as two trailing spaces become `hardBreakTrailing`, so both have to be excluded explicitly or every sanctioned explicit break becomes a finding. Two trailing spaces are excluded on the ground that `MD009` already owns that shape.
   - **It carries no `fixInfo`, and cannot.** `applyFix` rewrites ONE line and `RuleOnErrorInfo` carries one fix per error, so joining two lines needs two edits on two lines — two errors — and a paragraph's last line has no soft break to hang the second one on. Encoding it anyway loses text: for a three-line paragraph the bottom-to-top sort appends the third line to the second and then deletes the second. Unwrapping in bulk stays a job for a purpose-built script.
-- **ESLint covers the root `manifest.json` and `LICENSE`** (`getManifestConfigs` / `getLicenseConfigs` in
-  `src/script-utils/linters/eslint-config.ts`), which nothing linted before. Three things about that are
-  worth not rediscovering:
-  - **`obsidianmd/validate-manifest` can never fire, whatever it is scoped to.** It registers a `Program`
-    visitor and expects an ESTree `ObjectExpression`; `@eslint/json`'s `json/json` language produces a
-    Momoa `Document`, and `jsonc-eslint-parser` produces `JSONObjectExpression`. Measured on
-    `eslint-plugin-obsidianmd@0.4.2` against a manifest violating nearly every check: zero messages. The
-    four in-house `manifest-*` rules exist because of this, not to duplicate it.
-  - **`manifest.json` is strict JSON, so a check can only be waived in the config.** A comment there is a
-    parse error and would stop Obsidian loading the plugin; an ignore *key* would ship to users and is
-    itself reported as a disallowed key. That is why the checks are split across four rules — a repo with
-    a grandfathered `id` turns off `manifest-id` alone. ESLint 10's `eslint-suppressions.json` is the
-    other option, but the config has room for the written justification the directory review needs.
-  - **`obsidianmd/validate-license` needs the LICENSE line in its own shape.** Its regex wants
-    `Copyright (C) <year>[-<year>] by <holder>`; a conventional `Copyright (c) 2024 <holder>` matches
-    nothing, so the rule silently passes. Its year check runs against `new Date().getFullYear()` at lint
-    time, so `.github/workflows/update-license-year.yml` bumps the end year on 1 January — a repo
-    adopting this config needs that workflow too, or its CI fails at the turn of the year. It also needs
-    the plugin's unexported `PlainTextParser`, reached through `dist/`.
-- **This repo's own root `manifest.json` is a stub kept for `eslint-plugin-obsidianmd`, not a plugin manifest.**
-  It arrived with the plugin in `7858d3c3`, its `version` is frozen at `1.0.0`, and `version.ts` already
-  decides `isObsidianPlugin = packageJson.name !== 'obsidian-dev-utils'`. Do not delete it: the plugin's
-  `no-nodejs-modules` rule is configured as `manifest && manifest.isDesktopOnly ? 'off' : 'warn'`, so
-  removing the manifest turns it on across every `node:*` import under `src/script-utils/**` (and adds a
-  `Failed to load JSON file:` line to every lint run). It is linted like any other manifest so the rules
-  are exercised end to end here.
-- The shared config extends **`eslint-plugin-unicorn`'s `recommended`** preset
-  (`getUnicornConfigs()` in `src/script-utils/linters/eslint-config.ts`), adopted repo-wide in
-  `7808eeb1`. It is a curated adoption, not a blanket one: a long explicit off-list turns off the rules
-  that fight this codebase, and `unicorn/name-replacements` carries custom replacements because unicorn
-  substitutes at the word level inside compound names.
-- **File-name casing is `unicorn/filename-case`'s job — do not re-add an in-house rule for it.** The
-  migration above initially kept `obsidian-dev-utils/kebab-case-file-name` alongside it, so every bad
-  name was reported twice; it was deleted once measured. `unicorn/filename-case` arrives enabled with
-  the `recommended` preset (nothing here turns it off) and defaults to `case: 'kebabCase'`, and it
-  already does everything the in-house rule did: `multipleFileExtensions` (default on) makes it judge
-  only the part before the FIRST dot, so `alpha.obsidian.integration.test.ts` reduces to `alpha` exactly
-  as before. It additionally checks DIRECTORY names, which the in-house rule never did. The only
-  divergence is that unicorn exempts a name starting with `$` (`filename.startsWith('$')`) — no such
-  file exists here. The in-house rule's other claimed edge, stripping a leading dot so
-  `.markdownlint-cli2.mjs` is judged as `markdownlint-cli2`, never actually ran: root dotfiles are not
-  in `EslintConfigContext.allFiles()` (test + script + source files plus three named root configs), so
-  no rule sees them.
+- **ESLint covers the root `manifest.json` and `LICENSE`** (`getManifestConfigs` / `getLicenseConfigs` in `src/script-utils/linters/eslint-config.ts`), which nothing linted before. Three things about that are worth not rediscovering:
+  - **`obsidianmd/validate-manifest` can never fire, whatever it is scoped to.** It registers a `Program` visitor and expects an ESTree `ObjectExpression`; `@eslint/json`'s `json/json` language produces a Momoa `Document`, and `jsonc-eslint-parser` produces `JSONObjectExpression`. Measured on `eslint-plugin-obsidianmd@0.4.2` against a manifest violating nearly every check: zero messages. The four in-house `manifest-*` rules exist because of this, not to duplicate it.
+  - **`manifest.json` is strict JSON, so a check can only be waived in the config.** A comment there is a parse error and would stop Obsidian loading the plugin; an ignore *key* would ship to users and is itself reported as a disallowed key. That is why the checks are split across four rules — a repo with a grandfathered `id` turns off `manifest-id` alone. ESLint 10's `eslint-suppressions.json` is the other option, but the config has room for the written justification the directory review needs.
+  - **`obsidianmd/validate-license` needs the LICENSE line in its own shape.** Its regex wants `Copyright (C) <year>[-<year>] by <holder>`; a conventional `Copyright (c) 2024 <holder>` matches nothing, so the rule silently passes. Its year check runs against `new Date().getFullYear()` at lint time, so `.github/workflows/update-license-year.yml` bumps the end year on 1 January — a repo adopting this config needs that workflow too, or its CI fails at the turn of the year. It also needs the plugin's unexported `PlainTextParser`, reached through `dist/`.
+- **This repo's own root `manifest.json` is a stub kept for `eslint-plugin-obsidianmd`, not a plugin manifest.** It arrived with the plugin in `7858d3c3`, its `version` is frozen at `1.0.0`, and `version.ts` already decides `isObsidianPlugin = packageJson.name !== 'obsidian-dev-utils'`. Do not delete it: the plugin's `no-nodejs-modules` rule is configured as `manifest && manifest.isDesktopOnly ? 'off' : 'warn'`, so removing the manifest turns it on across every `node:*` import under `src/script-utils/**` (and adds a `Failed to load JSON file:` line to every lint run). It is linted like any other manifest so the rules are exercised end to end here.
+- The shared config extends **`eslint-plugin-unicorn`'s `recommended`** preset (`getUnicornConfigs()` in `src/script-utils/linters/eslint-config.ts`), adopted repo-wide in `7808eeb1`. It is a curated adoption, not a blanket one: a long explicit off-list turns off the rules that fight this codebase, and `unicorn/name-replacements` carries custom replacements because unicorn substitutes at the word level inside compound names.
+- **File-name casing is `unicorn/filename-case`'s job — do not re-add an in-house rule for it.** The migration above initially kept `obsidian-dev-utils/kebab-case-file-name` alongside it, so every bad name was reported twice; it was deleted once measured. `unicorn/filename-case` arrives enabled with the `recommended` preset (nothing here turns it off) and defaults to `case: 'kebabCase'`, and it already does everything the in-house rule did: `multipleFileExtensions` (default on) makes it judge only the part before the FIRST dot, so `alpha.obsidian.integration.test.ts` reduces to `alpha` exactly as before. It additionally checks DIRECTORY names, which the in-house rule never did. The only divergence is that unicorn exempts a name starting with `$` (`filename.startsWith('$')`) — no such file exists here. The in-house rule's other claimed edge, stripping a leading dot so `.markdownlint-cli2.mjs` is judged as `markdownlint-cli2`, never actually ran: root dotfiles are not in `EslintConfigContext.allFiles()` (test + script + source files plus three named root configs), so no rule sees them.
 
 ## Rules
 
@@ -426,241 +208,56 @@ export function myFunction(param: Type): ReturnType {
 
 ### L5. Platform-only modules carry a `desktop-` / `mobile-` filename prefix
 
-- A module that only works on (or is only meant for) **desktop** must have a `desktop-` filename
-  prefix; a **mobile**-only module must have a `mobile-` prefix. The prefix marks the file, not its
-  exports — e.g. `desktop-trusted-input.ts` exports `typeIntoEditor`, not `desktopTypeIntoEditor`.
-- **The `desktop-` prefix is LOAD-BEARING, not advisory** — `getNodeBuiltinsConfigs` in
-  `src/script-utils/linters/eslint-config.ts` keys the Node-builtins exemption off
-  `src/**/desktop-*.ts`, in every plugin built on this library. A desktop-only module that skips the prefix keeps reporting
-  `import-x/no-nodejs-modules` **and** `obsidianmd/no-nodejs-modules`, the second of which a consumer
-  cannot waive (the community-directory runner turns an inline `obsidianmd/*` disable into an error);
-  a cross-platform module that wrongly takes the prefix gets an exemption it should not have. The
-  exemption exists because the `Platform.isDesktopApp` gate lives one file up, in the caller, where
-  neither rule can see it — see **L6**.
-- **Tests group by SUT, so they take a dot segment, never the prefix.** A desktop-only test of a
-  cross-platform SUT is `<sut>.desktop.test.ts` / `<sut>.desktop.integration.test.ts` — the subject
-  first, the platform as a dot segment, matching `*.android.integration.test.ts`. A desktop-only
-  module's own co-located test just inherits the module's name (`desktop-zip-extractor.test.ts`), so
-  it is already grouped and already exempt. Both shapes are covered without a further glob: every
-  `*.integration.test.ts` and every `context.testFiles` unit test is exempt from the Node-builtins
-  bans anyway, since neither is ever bundled into `main.js`.
-- "Platform-only" means the module directly uses a platform-restricted API (Node builtins,
-  `window.electron`, mobile-only APIs) at the **top level** (so importing the module loads that API).
-  Examples: `desktop-trusted-input.ts` (`window.electron` trusted input), `desktop-demo-vault-opener.ts`
-  (`node:fs`/`node:os` + `window.electron`). A module using only cross-platform APIs at the top level
-  gets no prefix — e.g. `community-plugins.ts` (uses `requestUrl`), and `open-demo-vault-command-handler.ts`,
-  which is desktop-*gated* but stays cross-platform-loadable by dynamic-importing the desktop-only opener
-  (see **L6**).
-- **The prefix restricts where a module may be CALLED, never whether it may be IMPORTED — every module
-  in `src/` must survive being imported on either platform.** The generated barrels (`src/**/index.ts`,
-  `src/__merged.ts`) re-export **every** leaf they find, and `src/index.ts` pulls in both, so anything
-  under `src/` is on the load path of every consumer that imports a namespace — and of the
-  integration-test harness plugin, which loads the whole library on a phone. A `desktop-` name therefore
-  buys no exemption from being loaded there; it only says "calling this on mobile is a bug".
-  `desktop-trusted-input.ts` is the model: it names `window.electron` only *inside* its functions, so
-  importing it on mobile is inert.
-- **So a platform-only dependency that runs code while INITIALIZING must be dynamically imported.** A
-  static `import { existsSync } from 'node:fs'` is fine (mobile's `require` returns `undefined` and
-  nothing reads it at load time), but a dependency whose own top level *evaluates* a platform-only API is
-  not. `adm-zip` opens with `const { randomFillSync } = require('crypto')`, so a static
-  `import AdmZip from 'adm-zip'` in `desktop-demo-vault-opener.ts` threw during barrel initialization and
-  killed the harness plugin's load on Android — every test in its `integration-tests:android` project
-  failed behind an opaque "plugin failed to load". `adm-zip` has since left this package entirely, so
-  neither half of it is in the tree to inspect: extraction moved to `desktop-zip-extractor.ts`, which
-  needs only `node:zlib`, and the release-time archiver moved to `fflate`. The rule stands for the next
-  such dependency — defer it behind a call-time `import()`, or do without it.
-- **A dependency on the plugin-runtime path costs every consumer's bundle, and a dynamic `import()` does
-  NOT buy it back.** An Obsidian plugin ships one CJS `main.js`, esbuild has no code splitting to put a
-  chunk behind, and `await import()` only defers EVALUATION — the module body is inlined either way.
-  Measured 2026-08-31 in `obsidian-fix-tab-size`'s 247 KB bundle: the demo-vault opener and the `adm-zip`
-  it then imported took ~41 KB of it, ~17%, in a plugin that opens no archives of its own. Prefer a Node
-  builtin (already `external`, so free) over a dependency for anything reachable from `src/obsidian/`.
-- `mobile-trusted-input.ts` is the `mobile-` example: it reads `window.__obsidianIntegrationTesting`, a
-  global only the integration-testing harness installs, and calling it anywhere else throws. Like its
-  `desktop-` twin it names that global only *inside* its functions, so importing it on desktop is inert —
-  which it has to be, since the barrels put it on every consumer's load path.
-- (the naming half is enforced only in the negative — a non-`desktop-` file using `node:` reports, since
-  it gets no exemption, but a `desktop-` file that uses nothing platform-only is not flagged for taking a
-  prefix it does not need. A custom check could still flag `window.electron` usage in a non-`desktop-`
-  file, which no rule covers. The **import-safety** half IS enforced, by the mobile-load check on the
-  harness plugin bundle described under **Build** — that bundle imports the entire library, so it stands
-  in for the worst-case consumer.)
+- A module that only works on (or is only meant for) **desktop** must have a `desktop-` filename prefix; a **mobile**-only module must have a `mobile-` prefix. The prefix marks the file, not its exports — e.g. `desktop-trusted-input.ts` exports `typeIntoEditor`, not `desktopTypeIntoEditor`.
+- **The `desktop-` prefix is LOAD-BEARING, not advisory** — `getNodeBuiltinsConfigs` in `src/script-utils/linters/eslint-config.ts` keys the Node-builtins exemption off `src/**/desktop-*.ts`, in every plugin built on this library. A desktop-only module that skips the prefix keeps reporting `import-x/no-nodejs-modules` **and** `obsidianmd/no-nodejs-modules`, the second of which a consumer cannot waive (the community-directory runner turns an inline `obsidianmd/*` disable into an error); a cross-platform module that wrongly takes the prefix gets an exemption it should not have. The exemption exists because the `Platform.isDesktopApp` gate lives one file up, in the caller, where neither rule can see it — see **L6**.
+- **Tests group by SUT, so they take a dot segment, never the prefix.** A desktop-only test of a cross-platform SUT is `<sut>.desktop.test.ts` / `<sut>.desktop.integration.test.ts` — the subject first, the platform as a dot segment, matching `*.android.integration.test.ts`. A desktop-only module's own co-located test just inherits the module's name (`desktop-zip-extractor.test.ts`), so it is already grouped and already exempt. Both shapes are covered without a further glob: every `*.integration.test.ts` and every `context.testFiles` unit test is exempt from the Node-builtins bans anyway, since neither is ever bundled into `main.js`.
+- "Platform-only" means the module directly uses a platform-restricted API (Node builtins, `window.electron`, mobile-only APIs) at the **top level** (so importing the module loads that API). Examples: `desktop-trusted-input.ts` (`window.electron` trusted input), `desktop-demo-vault-opener.ts` (`node:fs`/`node:os` + `window.electron`). A module using only cross-platform APIs at the top level gets no prefix — e.g. `community-plugins.ts` (uses `requestUrl`), and `open-demo-vault-command-handler.ts`, which is desktop-*gated* but stays cross-platform-loadable by dynamic-importing the desktop-only opener (see **L6**).
+- **The prefix restricts where a module may be CALLED, never whether it may be IMPORTED — every module in `src/` must survive being imported on either platform.** The generated barrels (`src/**/index.ts`, `src/__merged.ts`) re-export **every** leaf they find, and `src/index.ts` pulls in both, so anything under `src/` is on the load path of every consumer that imports a namespace — and of the integration-test harness plugin, which loads the whole library on a phone. A `desktop-` name therefore buys no exemption from being loaded there; it only says "calling this on mobile is a bug". `desktop-trusted-input.ts` is the model: it names `window.electron` only *inside* its functions, so importing it on mobile is inert.
+- **So a platform-only dependency that runs code while INITIALIZING must be dynamically imported.** A static `import { existsSync } from 'node:fs'` is fine (mobile's `require` returns `undefined` and nothing reads it at load time), but a dependency whose own top level *evaluates* a platform-only API is not. `adm-zip` opens with `const { randomFillSync } = require('crypto')`, so a static `import AdmZip from 'adm-zip'` in `desktop-demo-vault-opener.ts` threw during barrel initialization and killed the harness plugin's load on Android — every test in its `integration-tests:android` project failed behind an opaque "plugin failed to load". `adm-zip` has since left this package entirely, so neither half of it is in the tree to inspect: extraction moved to `desktop-zip-extractor.ts`, which needs only `node:zlib`, and the release-time archiver moved to `fflate`. The rule stands for the next such dependency — defer it behind a call-time `import()`, or do without it.
+- **A dependency on the plugin-runtime path costs every consumer's bundle, and a dynamic `import()` does NOT buy it back.** An Obsidian plugin ships one CJS `main.js`, esbuild has no code splitting to put a chunk behind, and `await import()` only defers EVALUATION — the module body is inlined either way. Measured 2026-08-31 in `obsidian-fix-tab-size`'s 247 KB bundle: the demo-vault opener and the `adm-zip` it then imported took ~41 KB of it, ~17%, in a plugin that opens no archives of its own. Prefer a Node builtin (already `external`, so free) over a dependency for anything reachable from `src/obsidian/`.
+- `mobile-trusted-input.ts` is the `mobile-` example: it reads `window.__obsidianIntegrationTesting`, a global only the integration-testing harness installs, and calling it anywhere else throws. Like its `desktop-` twin it names that global only *inside* its functions, so importing it on desktop is inert — which it has to be, since the barrels put it on every consumer's load path.
+- (the naming half is enforced only in the negative — a non-`desktop-` file using `node:` reports, since it gets no exemption, but a `desktop-` file that uses nothing platform-only is not flagged for taking a prefix it does not need. A custom check could still flag `window.electron` usage in a non-`desktop-` file, which no rule covers. The **import-safety** half IS enforced, by the mobile-load check on the harness plugin bundle described under **Build** — that bundle imports the entire library, so it stands in for the worst-case consumer.)
 
 ### L6. Public-facing APIs must be cross-platform-loadable — internalize the platform split
 
-- No **public-facing** API (anything a consuming plugin imports and uses — a command handler, a
-  component, a helper it registers) may force the consumer to write a platform check
-  (`if (Platform.isDesktop) { … }`) or a dynamic `import()` around it. That is too much hassle and leaks
-  an implementation detail. The public entry point must be **cross-platform-loadable**: importing it
-  never loads a platform-only module, so a plugin registers it directly (`new FooCommandHandler({ … })`)
-  on any platform.
-- The library **internalizes the platform split**: the public module keeps only cross-platform top-level
-  imports, and defers the desktop-/mobile-only work to a `Platform`-gated **dynamic `import()`** of a
-  `desktop-`/`mobile-` prefixed module (L5) at **call time** — inside a method that only runs on the
-  right platform. This is the library-owned counterpart to the rule a consuming plugin follows (a
-  dual-platform plugin reaching a `desktop-*` module uses a dynamic import); here the library does it
-  so the consumer never has to.
-- Reference: `OpenDemoVaultCommandHandler` (`command-handlers/open-demo-vault-command-handler.ts`, no
-  prefix) is registered directly by any plugin; its `canExecute` gates on `Platform.isDesktopApp` (so the
-  command hides on mobile and `execute` runs only on desktop), and `execute` does
-  `const { openDemoVault } = await import('../desktop-demo-vault-opener.ts')` — so the desktop-only
-  opener (static `node:fs` imports) is never on the mobile load path, yet the consumer writes no platform
-  guard. The dynamic `import()` needs no `eslint-disable` (the `no-restricted-syntax` `ImportExpression`
-  ban was removed from the shared config); keep the literal path so esbuild can bundle it.
-- **Second reference — a facade over BOTH arms, and the flat-barrel rule it needs.** `trusted-input.ts`
-  (no prefix) exports the same seven helper names as `desktop-trusted-input.ts` and
-  `mobile-trusted-input.ts`, and each one dispatches through a `Platform.isDesktopApp`-gated call-time
-  `import()` of the arm that fits. Unlike the demo-vault case there is no `canExecute` to hide the
-  command on the wrong platform, so the dispatch happens per call, in the helper itself.
-  - **That trio is a name collision in the flat barrel**, which is one namespace — and L5 forbids the
-    obvious escape ("the prefix marks the file, not its exports", so no `desktopPressKey`). So
-    `scripts/build-generate-merged.ts` **supersedes**: when an unprefixed module has a `desktop-` /
-    `mobile-` prefixed sibling of the same name in the same directory, the barrel exports the facade and
-    skips the twins. `lib.pressKey` inside an `evalInObsidian` closure is then platform-correct, both
-    published subpaths stay importable, and no export is renamed. The per-directory `index.ts` barrels
-    need none of this — they re-export namespaced (`export * as 'desktop-trusted-input'`), so a
-    same-named sibling never collides there.
-  - **A facade may supersede its twins only if it exports every value name they do**, and the generator
-    throws otherwise (`scripts/helpers/module-supersession.ts`). Without that invariant a twin that later
-    grows an export the facade lacks would silently vanish from the flat bag instead of failing the
-    build. A prefixed module with no facade — `desktop-demo-vault-opener.ts` — supersedes nothing and
-    reaches the barrel on its own.
-- The rule constrains what the library **forces**, not what a consumer **may** import. A consumer is
-  free to import a `desktop-*` / `mobile-*` module directly — that is a **deliberate platform
-  commitment**: correct for a desktop-only plugin (or for a consumer wrapping both arms in a facade of
-  its own), and a knowingly-wrong choice for a cross-platform plugin (it will break that plugin's load
-  on the other platform). What L6 forbids is the library shipping its **cross-platform-intended** public
-  API as a `desktop-*`/`mobile-*` module, thereby forcing every consumer into a platform guard. So:
-  prefer a cross-platform facade as the primary, documented entry point; still expose the
-  `desktop-*`/`mobile-*` modules for consumers who deliberately opt in.
+- No **public-facing** API (anything a consuming plugin imports and uses — a command handler, a component, a helper it registers) may force the consumer to write a platform check (`if (Platform.isDesktop) { … }`) or a dynamic `import()` around it. That is too much hassle and leaks an implementation detail. The public entry point must be **cross-platform-loadable**: importing it never loads a platform-only module, so a plugin registers it directly (`new FooCommandHandler({ … })`) on any platform.
+- The library **internalizes the platform split**: the public module keeps only cross-platform top-level imports, and defers the desktop-/mobile-only work to a `Platform`-gated **dynamic `import()`** of a `desktop-`/`mobile-` prefixed module (L5) at **call time** — inside a method that only runs on the right platform. This is the library-owned counterpart to the rule a consuming plugin follows (a dual-platform plugin reaching a `desktop-*` module uses a dynamic import); here the library does it so the consumer never has to.
+- Reference: `OpenDemoVaultCommandHandler` (`command-handlers/open-demo-vault-command-handler.ts`, no prefix) is registered directly by any plugin; its `canExecute` gates on `Platform.isDesktopApp` (so the command hides on mobile and `execute` runs only on desktop), and `execute` does `const { openDemoVault } = await import('../desktop-demo-vault-opener.ts')` — so the desktop-only opener (static `node:fs` imports) is never on the mobile load path, yet the consumer writes no platform guard. The dynamic `import()` needs no `eslint-disable` (the `no-restricted-syntax` `ImportExpression` ban was removed from the shared config); keep the literal path so esbuild can bundle it.
+- **Second reference — a facade over BOTH arms, and the flat-barrel rule it needs.** `trusted-input.ts` (no prefix) exports the same seven helper names as `desktop-trusted-input.ts` and `mobile-trusted-input.ts`, and each one dispatches through a `Platform.isDesktopApp`-gated call-time `import()` of the arm that fits. Unlike the demo-vault case there is no `canExecute` to hide the command on the wrong platform, so the dispatch happens per call, in the helper itself.
+  - **That trio is a name collision in the flat barrel**, which is one namespace — and L5 forbids the obvious escape ("the prefix marks the file, not its exports", so no `desktopPressKey`). So `scripts/build-generate-merged.ts` **supersedes**: when an unprefixed module has a `desktop-` / `mobile-` prefixed sibling of the same name in the same directory, the barrel exports the facade and skips the twins. `lib.pressKey` inside an `evalInObsidian` closure is then platform-correct, both published subpaths stay importable, and no export is renamed. The per-directory `index.ts` barrels need none of this — they re-export namespaced (`export * as 'desktop-trusted-input'`), so a same-named sibling never collides there.
+  - **A facade may supersede its twins only if it exports every value name they do**, and the generator throws otherwise (`scripts/helpers/module-supersession.ts`). Without that invariant a twin that later grows an export the facade lacks would silently vanish from the flat bag instead of failing the build. A prefixed module with no facade — `desktop-demo-vault-opener.ts` — supersedes nothing and reaches the barrel on its own.
+- The rule constrains what the library **forces**, not what a consumer **may** import. A consumer is free to import a `desktop-*` / `mobile-*` module directly — that is a **deliberate platform commitment**: correct for a desktop-only plugin (or for a consumer wrapping both arms in a facade of its own), and a knowingly-wrong choice for a cross-platform plugin (it will break that plugin's load on the other platform). What L6 forbids is the library shipping its **cross-platform-intended** public API as a `desktop-*`/`mobile-*` module, thereby forcing every consumer into a platform guard. So: prefer a cross-platform facade as the primary, documented entry point; still expose the `desktop-*`/`mobile-*` modules for consumers who deliberately opt in.
 - (cannot be forced by ESLint — an API-design convention)
 
 ### L7. Register/unregister commands by their pre-registration id (Obsidian mutates `command.id`)
 
-- Obsidian's `Plugin.addCommand(command)` **mutates the passed object**, prefixing `command.id` (and
-  `command.name`) with the plugin id/name; `Plugin.removeCommand(commandId)` then **re-prefixes** the id
-  it is handed. So a command must be removed by its ORIGINAL, unprefixed id — the id it had **before**
-  `addCommand`. Reading `command.id` *after* registration yields the already-prefixed id, which
-  `removeCommand` prefixes again, so the command is never removed (a silent leak).
-- `CommandHandlerComponent.registerCommandHandlers` captures the id before `addCommand` for exactly this
-  reason. Any other add/remove pairing routed through a `CommandRegistrar` / `Plugin` must do the same.
-- The `obsidian-test-mocks` `Plugin` does NOT prefix ids, so a unit test cannot catch this — it only
-  surfaces against real Obsidian. Confirm command register/unregister with a
-  `*.obsidian.integration.test.ts` using the real `PluginCommandRegistrar` (via the harness plugin
-  `obsidian-dev-utils-integration-test`) and asserting on `app.commands.commands['<pluginId>:<id>']`.
-  This is exactly how the leak in the ad-hoc `registerCommandHandlers` was found and fixed.
-- (cannot be forced by ESLint — a runtime-behavior gotcha; a custom rule could flag reading `command.id`
-  after an `addCommand` call, but not reliably)
+- Obsidian's `Plugin.addCommand(command)` **mutates the passed object**, prefixing `command.id` (and `command.name`) with the plugin id/name; `Plugin.removeCommand(commandId)` then **re-prefixes** the id it is handed. So a command must be removed by its ORIGINAL, unprefixed id — the id it had **before** `addCommand`. Reading `command.id` *after* registration yields the already-prefixed id, which `removeCommand` prefixes again, so the command is never removed (a silent leak).
+- `CommandHandlerComponent.registerCommandHandlers` captures the id before `addCommand` for exactly this reason. Any other add/remove pairing routed through a `CommandRegistrar` / `Plugin` must do the same.
+- The `obsidian-test-mocks` `Plugin` does NOT prefix ids, so a unit test cannot catch this — it only surfaces against real Obsidian. Confirm command register/unregister with a `*.obsidian.integration.test.ts` using the real `PluginCommandRegistrar` (via the harness plugin `obsidian-dev-utils-integration-test`) and asserting on `app.commands.commands['<pluginId>:<id>']`. This is exactly how the leak in the ad-hoc `registerCommandHandlers` was found and fixed.
+- (cannot be forced by ESLint — a runtime-behavior gotcha; a custom rule could flag reading `command.id` after an `addCommand` call, but not reliably)
 
 ### L8. Re-export a type from an ESM-only package through its `import type`, never `export … from`
 
-- `build:validate-declarations` type-checks the emitted `dist/lib/cjs/**/*.d.cts` under CJS resolution.
-  There, any reference to an **ESM-only** dependency (`type-fest`, and anything else without a CJS entry)
-  fails with **TS1479** unless the module specifier carries `with { 'resolution-mode': 'import' }`.
-- TypeScript's declaration emit adds that attribute **only to import declarations**. It does NOT add it to
-  a re-export, so `export type { PackageJson } from 'type-fest';` compiles fine in `src/` and then fails
-  the `.d.cts` validation — a break invisible to `lint`, `test`, and `build:compile:typescript`.
-- Re-export the binding already imported at the top of the file instead
-  (`import type { PackageJson } from 'type-fest';` … `export type { PackageJson };`). The resolution mode
-  stays attached to the import, and both the `.d.cts` and `.d.mts` emit the bare `export type { … };`.
-- `unicorn/prefer-export-from` actively pushes back toward the broken form, so the re-export needs an
-  `// eslint-disable-next-line unicorn/prefer-export-from -- …` naming this reason. See
-  `src/script-utils/npm.ts` for the reference case.
-- (cannot be forced by ESLint — the opposing rule is the one ESLint has; `build:validate-declarations` is
-  the check that catches it)
+- `build:validate-declarations` type-checks the emitted `dist/lib/cjs/**/*.d.cts` under CJS resolution. There, any reference to an **ESM-only** dependency (`type-fest`, and anything else without a CJS entry) fails with **TS1479** unless the module specifier carries `with { 'resolution-mode': 'import' }`.
+- TypeScript's declaration emit adds that attribute **only to import declarations**. It does NOT add it to a re-export, so `export type { PackageJson } from 'type-fest';` compiles fine in `src/` and then fails the `.d.cts` validation — a break invisible to `lint`, `test`, and `build:compile:typescript`.
+- Re-export the binding already imported at the top of the file instead (`import type { PackageJson } from 'type-fest';` … `export type { PackageJson };`). The resolution mode stays attached to the import, and both the `.d.cts` and `.d.mts` emit the bare `export type { … };`.
+- `unicorn/prefer-export-from` actively pushes back toward the broken form, so the re-export needs an `// eslint-disable-next-line unicorn/prefer-export-from -- …` naming this reason. See `src/script-utils/npm.ts` for the reference case.
+- (cannot be forced by ESLint — the opposing rule is the one ESLint has; `build:validate-declarations` is the check that catches it)
 
 ### L9. Cross-plugin APIs: consume through the registry (hand-declared narrow types otherwise), expose through `getPluginApis()` and a root `api.d.ts` — never a build-time dependency
 
-- **When the other plugin publishes through the registry, use the registry.** `publishPluginApi` /
-  `watchPluginApi` (`src/obsidian/plugin/plugin-api.ts`) are this library's own protocol for cross-plugin
-  APIs, and they generalize everything below into one mechanism: records keyed by `manifest.id`, semver
-  contract-version negotiation, a revocable handle that names its provider instead of null-dereferencing,
-  a `PluginApiUnavailabilityReason` that tells the five failure causes apart, and debug-gated Standard
-  Schema payload validation. The live `PluginApiRef` is what replaces the layout-ready timing dance below:
-  its `value` starts `null` and becomes correct on its own, so there is nothing to time. The rest of this
-  rule is the fallback for the (still common) case of a plugin that publishes nothing.
-- **One handover shape is already generic, so do NOT hand-declare it: settings.** When a feature moves from
-  one plugin to another, the settings the user configured have to move too, and that protocol is identical
-  for every pair — a `migrateSettings` call, who is proposing, and whether the user applied it.
-  `src/obsidian/plugin/settings-migration-api.ts` declares that ENVELOPE for both ends, and
-  `SettingsMigrationComponent` drives the consumer side of it. Only the payload type and the provider's
-  identity stay with the pair, because neither is this library's business. It exists because five plugins
-  each hand-declared the same contract with no compiler link between the copies, so drift was **silent** —
-  every copy still compiled and the handover failed at runtime. The prose fallback below still
-  governs everything that is not a settings handover.
-- **A plugin that cannot work without another DECLARES it, and the library enforces it.** Override
-  `PluginBase.getPluginDependencies()` with a `PluginDependency` (`pluginId`, `pluginName`,
-  `apiVersionRange`, and a `reason` the user reads). While one is missing, disabled or out of range,
-  `onloadImpl` does NOT run — the plugin registers nothing at all, stays enabled in Obsidian's list rather
-  than disabling itself, explains itself through a notice and a stand-in settings tab, installs the
-  dependency in one click, and completes its load with no restart. This is the strict sibling of
-  `PluginSuggestionComponent`: use a suggestion when the other plugin ADDS something, a dependency when the
-  host's advertised behavior is not there without it. A dependency must publish an API, because that is
-  what makes presence, absence, version and departure observable through the one mechanism above.
-- **A plugin that must NOT run beside another declares that too, through the same gate.**
-  `PluginBase.getPluginConflicts()` takes a `PluginConflict` (`pluginId`, `pluginName`,
-  `conflictingVersionRange`, `reason`, `severity`). `Block` behaves exactly like an unsatisfied dependency —
-  `onloadImpl` never runs — for an overlap where both plugins acting damages the vault; `Warn` keeps both
-  running and says so, for one that merely duplicates a command. One `PluginGateComponent` enforces both
-  kinds because it owns the surface's up/down state machine and the single blocked settings tab. The
-  detection differs from a dependency's on purpose (see `L25`): a conflicting plugin usually publishes
-  nothing, so its installed VERSION is read instead of a registry.
-- **Where shared behavior belongs — the rule that decides every case of this shape.** A shared GLOBAL
-  patch (one prototype, one event source, one arbitration) belongs in a separate PLUGIN, because every
-  consumer bundles its own copy of this library and two copies at different versions both patch. That is
-  the reasoning behind extracting Advanced Rename and Delete Handler, and a runtime singleton does not
-  rescue it. PER-PLUGIN logic — a declaration, a gate, a component each plugin instantiates for itself —
-  belongs HERE, because there is no shared object for versions to fight over. The dependency mechanism is
-  the second kind, which is why it is a library feature rather than another plugin.
-- **The registry record is a WIRE FORMAT between different `obsidian-dev-utils` copies**, since every plugin
-  bundles its own. Nothing crossing it may be `instanceof`-checked — plain data and plain functions only,
-  read structurally. The same discipline governs the `obsidian-dev-utils:plugin-loaded` /
-  `-unloaded` broadcast every `PluginBase` makes on `app.workspace`
-  (`src/obsidian/plugin/plugin-lifecycle-events.ts`): its name and payload are a cross-version contract —
-  plain data, additive fields only. It is triggered only after every `getPluginApis()` declaration has been
-  published, so a listener may call those APIs immediately, and it carries `dependencyPluginIds` so a
-  provider can answer "which installed plugins need me", which the registry cannot. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would
-  actually catch a violation; a unit test cannot, because it has only one copy of the library.
-  - **That wire format is now PUBLISHED, and the guide is part of it.** `docs/.../guides/plugin-api-protocol.md`
-    tells third-party plugins that never install this library to hardcode the two event names, the payload
-    fields, the state key `pluginApiRegistry` under `globalThis.__obsidianDevUtils`, the five
-    `PublishedPluginApiRecord` field names, and "highest live record satisfying the range wins". **Publishing
-    added no constraint** — the cross-copy rule above already forbade every change an outsider could notice —
-    so the practical effect is one extra step, not one extra rule: a change to any of those names ships with
-    the guide updated in the same commit. Only `pluginApiRegistry` is public within the shared-state bag.
-    `PublishedPluginApiRecord` stays UNEXPORTED on purpose: no consumer of the library reads a record
-    (`watchPluginApi` is their whole surface), so exporting it would widen the package's API for an audience
-    that does not import the package — the guide reproduces it verbatim instead.
-- A plugin whose surface this library integrates with (today: Notebook Navigator, see
-  `src/obsidian/notebook-navigator.ts`; `folder-notes`, whose folder-note settings
-  `src/obsidian/folder-note.ts` reads; and Templater, whose UNDOCUMENTED internals
-  `src/obsidian/templater.ts` wraps) is reached through `app.plugins.getPlugin(<id>)` and typed by
-  **interfaces declared here**, narrowed to the members actually called. Do NOT add the other plugin as
-  a dependency — most ship a `.d.ts` for download rather than an npm package, and depending on one
-  turns an optional integration into a build requirement. This mirrors the vendored
-  `src/obsidian/@types/dataview/**`, minus the vendored tree when the used slice is small.
-- The value arrives as `unknown`, so narrow it with a **runtime type-guard predicate**, never an `as`
-  cast — a cast asserts a shape nothing checked. A version that predates the API, renames it, or
-  breaks it then reads as "not there" and the integration stays dormant, instead of throwing while the
-  user's context menu is opening.
-- **Binding to UNDOCUMENTED internals is a further step, and it ships in two tiers or not at all.**
-  Templater publishes nothing — not through this registry, not as a documented API — so
-  `src/obsidian/templater.ts` reads `plugin.templater`, which no version guarantee covers. Where that
-  trade-off is taken deliberately (owner's call), the module says so in its `@file` block, NAMES
-  the Templater version its shapes were read from, and exposes BOTH a `resolve…Api` returning `null`
-  (for an optional integration) and a `require…Api` throwing a named error carrying a
-  `…UnavailabilityReason` (for a caller that cannot carry on without it). What is never acceptable is
-  the middle ground: an `as` cast that fails somewhere deep inside the other plugin with no name
-  attached to it.
-- Bind at **layout-ready**, not `onload`: plugin load order is not ours to choose, and the other
-  plugin's API only exists once it is up.
-- **Menu surfaces plug in as additional `MenuEventRegistrar`s.** `CommandHandlerComponent` takes
-  `additionalMenuEventRegistrars` and calls the `CommandHandlerFactory` once per surface, so a plugin
-  declares its handlers ONCE. The extra passes add no commands (the palette already has them) and
-  carry `CommandHandlerRegistrationContext.shouldAddCommandToSubmenu: false`, because such a bridge
-  wraps everything in its own plugin-titled parent entry — a handler's own section submenu would make
-  `Menu.sort()` nest a second, identical entry inside the first. Each surface needs its OWN handler
-  instances: a handler carries per-registration state, which is exactly why the API is a factory.
+- **When the other plugin publishes through the registry, use the registry.** `publishPluginApi` / `watchPluginApi` (`src/obsidian/plugin/plugin-api.ts`) are this library's own protocol for cross-plugin APIs, and they generalize everything below into one mechanism: records keyed by `manifest.id`, semver contract-version negotiation, a revocable handle that names its provider instead of null-dereferencing, a `PluginApiUnavailabilityReason` that tells the five failure causes apart, and debug-gated Standard Schema payload validation. The live `PluginApiRef` is what replaces the layout-ready timing dance below: its `value` starts `null` and becomes correct on its own, so there is nothing to time. The rest of this rule is the fallback for the (still common) case of a plugin that publishes nothing.
+- **One handover shape is already generic, so do NOT hand-declare it: settings.** When a feature moves from one plugin to another, the settings the user configured have to move too, and that protocol is identical for every pair — a `migrateSettings` call, who is proposing, and whether the user applied it. `src/obsidian/plugin/settings-migration-api.ts` declares that ENVELOPE for both ends, and `SettingsMigrationComponent` drives the consumer side of it. Only the payload type and the provider's identity stay with the pair, because neither is this library's business. It exists because five plugins each hand-declared the same contract with no compiler link between the copies, so drift was **silent** — every copy still compiled and the handover failed at runtime. The prose fallback below still governs everything that is not a settings handover.
+- **A plugin that cannot work without another DECLARES it, and the library enforces it.** Override `PluginBase.getPluginDependencies()` with a `PluginDependency` (`pluginId`, `pluginName`, `apiVersionRange`, and a `reason` the user reads). While one is missing, disabled or out of range, `onloadImpl` does NOT run — the plugin registers nothing at all, stays enabled in Obsidian's list rather than disabling itself, explains itself through a notice and a stand-in settings tab, installs the dependency in one click, and completes its load with no restart. This is the strict sibling of `PluginSuggestionComponent`: use a suggestion when the other plugin ADDS something, a dependency when the host's advertised behavior is not there without it. A dependency must publish an API, because that is what makes presence, absence, version and departure observable through the one mechanism above.
+- **A plugin that must NOT run beside another declares that too, through the same gate.** `PluginBase.getPluginConflicts()` takes a `PluginConflict` (`pluginId`, `pluginName`, `conflictingVersionRange`, `reason`, `severity`). `Block` behaves exactly like an unsatisfied dependency — `onloadImpl` never runs — for an overlap where both plugins acting damages the vault; `Warn` keeps both running and says so, for one that merely duplicates a command. One `PluginGateComponent` enforces both kinds because it owns the surface's up/down state machine and the single blocked settings tab. The detection differs from a dependency's on purpose (see `L25`): a conflicting plugin usually publishes nothing, so its installed VERSION is read instead of a registry.
+- **Where shared behavior belongs — the rule that decides every case of this shape.** A shared GLOBAL patch (one prototype, one event source, one arbitration) belongs in a separate PLUGIN, because every consumer bundles its own copy of this library and two copies at different versions both patch. That is the reasoning behind extracting Advanced Rename and Delete Handler, and a runtime singleton does not rescue it. PER-PLUGIN logic — a declaration, a gate, a component each plugin instantiates for itself — belongs HERE, because there is no shared object for versions to fight over. The dependency mechanism is the second kind, which is why it is a library feature rather than another plugin.
+- **The registry record is a WIRE FORMAT between different `obsidian-dev-utils` copies**, since every plugin bundles its own. Nothing crossing it may be `instanceof`-checked — plain data and plain functions only, read structurally. The same discipline governs the `obsidian-dev-utils:plugin-loaded` / `-unloaded` broadcast every `PluginBase` makes on `app.workspace` (`src/obsidian/plugin/plugin-lifecycle-events.ts`): its name and payload are a cross-version contract — plain data, additive fields only. It is triggered only after every `getPluginApis()` declaration has been published, so a listener may call those APIs immediately, and it carries `dependencyPluginIds` so a provider can answer "which installed plugins need me", which the registry cannot. `src/obsidian/plugin/plugin-api.obsidian.integration.test.ts` is the test that would actually catch a violation; a unit test cannot, because it has only one copy of the library.
+  - **That wire format is now PUBLISHED, and the guide is part of it.** `docs/.../guides/plugin-api-protocol.md` tells third-party plugins that never install this library to hardcode the two event names, the payload fields, the state key `pluginApiRegistry` under `globalThis.__obsidianDevUtils`, the five `PublishedPluginApiRecord` field names, and "highest live record satisfying the range wins". **Publishing added no constraint** — the cross-copy rule above already forbade every change an outsider could notice — so the practical effect is one extra step, not one extra rule: a change to any of those names ships with the guide updated in the same commit. Only `pluginApiRegistry` is public within the shared-state bag. `PublishedPluginApiRecord` stays UNEXPORTED on purpose: no consumer of the library reads a record (`watchPluginApi` is their whole surface), so exporting it would widen the package's API for an audience that does not import the package — the guide reproduces it verbatim instead.
+- A plugin whose surface this library integrates with (today: Notebook Navigator, see `src/obsidian/notebook-navigator.ts`; `folder-notes`, whose folder-note settings `src/obsidian/folder-note.ts` reads; and Templater, whose UNDOCUMENTED internals `src/obsidian/templater.ts` wraps) is reached through `app.plugins.getPlugin(<id>)` and typed by **interfaces declared here**, narrowed to the members actually called. Do NOT add the other plugin as a dependency — most ship a `.d.ts` for download rather than an npm package, and depending on one turns an optional integration into a build requirement. This mirrors the vendored `src/obsidian/@types/dataview/**`, minus the vendored tree when the used slice is small.
+- The value arrives as `unknown`, so narrow it with a **runtime type-guard predicate**, never an `as` cast — a cast asserts a shape nothing checked. A version that predates the API, renames it, or breaks it then reads as "not there" and the integration stays dormant, instead of throwing while the user's context menu is opening.
+- **Binding to UNDOCUMENTED internals is a further step, and it ships in two tiers or not at all.** Templater publishes nothing — not through this registry, not as a documented API — so `src/obsidian/templater.ts` reads `plugin.templater`, which no version guarantee covers. Where that trade-off is taken deliberately (owner's call), the module says so in its `@file` block, NAMES the Templater version its shapes were read from, and exposes BOTH a `resolve…Api` returning `null` (for an optional integration) and a `require…Api` throwing a named error carrying a `…UnavailabilityReason` (for a caller that cannot carry on without it). What is never acceptable is the middle ground: an `as` cast that fails somewhere deep inside the other plugin with no name attached to it.
+- Bind at **layout-ready**, not `onload`: plugin load order is not ours to choose, and the other plugin's API only exists once it is up.
+- **Menu surfaces plug in as additional `MenuEventRegistrar`s.** `CommandHandlerComponent` takes `additionalMenuEventRegistrars` and calls the `CommandHandlerFactory` once per surface, so a plugin declares its handlers ONCE. The extra passes add no commands (the palette already has them) and carry `CommandHandlerRegistrationContext.shouldAddCommandToSubmenu: false`, because such a bridge wraps everything in its own plugin-titled parent entry — a handler's own section submenu would make `Menu.sort()` nest a second, identical entry inside the first. Each surface needs its OWN handler instances: a handler carries per-registration state, which is exactly why the API is a factory.
 - **Everything above is the CONSUMER side. The PROVIDER side: a plugin exposes a surface through `getPluginApis()` and nothing else.** Override it and the base does the rest — publishes each declaration against the gated wrapper component, revokes them when the feature surface unloads (never when the plugin unloads, so a consumer is not left holding a handle into a torn-down half), and derives the `plugin-loaded` broadcast's `apiVersions` from that same list. The asymmetry this replaces was measurable: five of the plugins built on this library have a public surface, and they had arrived at four different shapes — every one of them following the consumer-side rule above correctly, because the rule said nothing about the half they were on. Three shortcuts are wrong, and each is wrong in a way nothing type-checks:
   - **Never call `publishPluginApi` by hand.** `apiVersions` is derived *exclusively* from `getPluginApis()` (`broadcastLoaded`, `src/obsidian/plugin/plugin.ts`), so a hand-published API is announced as **no API at all** — and the published protocol guide tells a third party that an empty `apiVersions` means the plugin exposes nothing. The registry records still get written, so every consumer that goes through `watchPluginApi` works and the defect is invisible from the inside; the one audience that guide was written for is the one handed the wrong answer.
   - **Never a bare public method on the `Plugin` class as the route.** It carries no contract, no version and no revocation, so the only thing a consumer can do is `getPlugin(<id>)` and feature-detect with `typeof … === 'function'` — a hand-written duck type with no compiler link to the declaration it is imitating, which is exactly the silent drift the settings-handover bullet above exists to prevent. That is not hypothetical: it is what the one plugin that took this route cost its one consumer.
@@ -686,492 +283,147 @@ export function myFunction(param: Type): ReturnType {
 
 ### L10. Never hold a phantom file registration across an `await` during a rename
 
-- `registerFiles` (`obsidian/metadata-cache.ts`) makes a **non-existing** path resolve again, by putting a
-  phantom `TFile` into `vault.fileMap` + `metadataCache.uniqueFileLookup`. That is exactly what
-  Obsidian's own post-rename link update consults, so a live phantom is not inert — it changes core's
-  answer.
-- `FileManager.runAsyncLinkUpdate()` snapshots each reference's resolved paths, `await`s the handler
-  (which performs the rename), then in its `finally` sets `inProgressUpdates = null` and **immediately**
-  calls `updateAllLinks()`, which rewrites a link only when `getLinkpathDest()` now returns an empty or
-  different path set. That per-link decision is **synchronous** — nothing else can interleave once it
-  starts. So a registration confined to a synchronous span is invisible to it; one held across an
-  `await` is not, and while it is live the old path still resolves, core concludes "unchanged", and
-  **nothing rewrites the link** — a silent data-consistency bug, not an error.
-- Two ways to stay safe, in order of preference: (a) keep the registration inside a purely synchronous
-  span (this is why `getBacklinksForFileOrPath` registers and reads without awaiting); (b) when the
-  work in between is unavoidably async — a consumer-supplied attachment-path callback, a backlink
-  fetch — `await waitForPendingLinkUpdates(app)` (`obsidian/file-manager.ts`) **first**. Observing
-  `inProgressUpdates === null` proves core has already decided, precisely because of the ordering above.
-- `RenameHandler.handle()` awaits it unconditionally for this reason. The invariant is one sentence:
-  *never touch the vault index while Obsidian is mid-decision.*
-- A unit test cannot see this — it is a microtask race against real Obsidian. Cover it with an
-  `*.obsidian.integration.test.ts` asserting the link was rewritten, and confirm the test is **red
-  before the fix**; a race that happens to pass proves nothing. See
-  [#47](https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/47).
-- (cannot be forced by ESLint — a custom rule could flag an `await` inside the scope of a
-  `using … = registerFiles(…)`, which would catch the common shape but not the cross-operation case)
+- `registerFiles` (`obsidian/metadata-cache.ts`) makes a **non-existing** path resolve again, by putting a phantom `TFile` into `vault.fileMap` + `metadataCache.uniqueFileLookup`. That is exactly what Obsidian's own post-rename link update consults, so a live phantom is not inert — it changes core's answer.
+- `FileManager.runAsyncLinkUpdate()` snapshots each reference's resolved paths, `await`s the handler (which performs the rename), then in its `finally` sets `inProgressUpdates = null` and **immediately** calls `updateAllLinks()`, which rewrites a link only when `getLinkpathDest()` now returns an empty or different path set. That per-link decision is **synchronous** — nothing else can interleave once it starts. So a registration confined to a synchronous span is invisible to it; one held across an `await` is not, and while it is live the old path still resolves, core concludes "unchanged", and **nothing rewrites the link** — a silent data-consistency bug, not an error.
+- Two ways to stay safe, in order of preference: (a) keep the registration inside a purely synchronous span (this is why `getBacklinksForFileOrPath` registers and reads without awaiting); (b) when the work in between is unavoidably async — a consumer-supplied attachment-path callback, a backlink fetch — `await waitForPendingLinkUpdates(app)` (`obsidian/file-manager.ts`) **first**. Observing `inProgressUpdates === null` proves core has already decided, precisely because of the ordering above.
+- `RenameHandler.handle()` awaits it unconditionally for this reason. The invariant is one sentence: *never touch the vault index while Obsidian is mid-decision.*
+- A unit test cannot see this — it is a microtask race against real Obsidian. Cover it with an `*.obsidian.integration.test.ts` asserting the link was rewritten, and confirm the test is **red before the fix**; a race that happens to pass proves nothing. See [#47](https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/47).
+- (cannot be forced by ESLint — a custom rule could flag an `await` inside the scope of a `using … = registerFiles(…)`, which would catch the common shape but not the cross-operation case)
 
 ### L11. A path-keyed registry must be re-keyed on rename — and so must everything derived from it
 
-- A vault path is a **name, not an identity**: a rename changes it while the resource stays the same.
-  Any long-lived structure keyed by path (today: `ResourceLockManager.lockEntriesByPath`) must move its
-  entry — and every **descendant** entry, since a folder rename changes a whole prefix — when the path
-  is renamed, or it silently stops describing anything. Subscribe to `vault.on('rename')` and re-key
-  **before** the handler's other work, so the rest of it sees where things actually are.
-- Re-keying the map is the easy half; what breaks is everything that **captured a path**. When
-  `ResourceLockManager` was fixed, three separate captures had to move with it, and each was its own
-  bug: a sibling registry of path strings (`bypassPathSets` — leaving it behind inverts the defect, so
-  the owner's own mutations start reading as intruders), a captured path inside the release closure
-  (release silently no-ops → the lock leaks forever, which is worse than the original symptom), and a
-  captured path inside a UI element's click handler (`assertNonNullable` throws when the user clicks).
-  So the checklist is: **grep for every place that path was stored or closed over**, and either re-key
-  it too or make it resolve at use time. Prefer resolve-at-use-time — a mutable `path` on the entry, a
-  `() => resolve(view.file?.path)` getter — over another thing to remember to re-key.
-- Make the re-key **idempotent** (a path that no longer matches is left alone). Obsidian's event order
-  for a folder rename vs its descendants' is not a contract, and a consumer's own
-  `vault.on('rename')` may run before or after ours. Anything order-dependent works in the test and
-  fails in the field. Reconcile **unconditionally** after a rename, not only when a key moved:
-  coverage also changes when a resource is renamed *into* or *out of* a subtree-scoped entry.
-- A unit test with the mock vault covers the branches, but only an `*.obsidian.integration.test.ts`
-  replaying the real sequence proves the event ordering — and it must be **red before the fix**. See
-  the folder-swap case in `resource-lock.obsidian.integration.test.ts`, and
-  [#49](https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/49).
-- (cannot be forced by ESLint — a design invariant; a custom rule could flag a `Map`/`Set` field whose
-  name ends in `ByPath` in a class with no `vault.on('rename')` subscription, but not the captures)
+- A vault path is a **name, not an identity**: a rename changes it while the resource stays the same. Any long-lived structure keyed by path (today: `ResourceLockManager.lockEntriesByPath`) must move its entry — and every **descendant** entry, since a folder rename changes a whole prefix — when the path is renamed, or it silently stops describing anything. Subscribe to `vault.on('rename')` and re-key **before** the handler's other work, so the rest of it sees where things actually are.
+- Re-keying the map is the easy half; what breaks is everything that **captured a path**. When `ResourceLockManager` was fixed, three separate captures had to move with it, and each was its own bug: a sibling registry of path strings (`bypassPathSets` — leaving it behind inverts the defect, so the owner's own mutations start reading as intruders), a captured path inside the release closure (release silently no-ops → the lock leaks forever, which is worse than the original symptom), and a captured path inside a UI element's click handler (`assertNonNullable` throws when the user clicks). So the checklist is: **grep for every place that path was stored or closed over**, and either re-key it too or make it resolve at use time. Prefer resolve-at-use-time — a mutable `path` on the entry, a `() => resolve(view.file?.path)` getter — over another thing to remember to re-key.
+- Make the re-key **idempotent** (a path that no longer matches is left alone). Obsidian's event order for a folder rename vs its descendants' is not a contract, and a consumer's own `vault.on('rename')` may run before or after ours. Anything order-dependent works in the test and fails in the field. Reconcile **unconditionally** after a rename, not only when a key moved: coverage also changes when a resource is renamed *into* or *out of* a subtree-scoped entry.
+- A unit test with the mock vault covers the branches, but only an `*.obsidian.integration.test.ts` replaying the real sequence proves the event ordering — and it must be **red before the fix**. See the folder-swap case in `resource-lock.obsidian.integration.test.ts`, and [#49](https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/49).
+- (cannot be forced by ESLint — a design invariant; a custom rule could flag a `Map`/`Set` field whose name ends in `ByPath` in a class with no `vault.on('rename')` subscription, but not the captures)
 
 ### L12. Do not read an unofficial member of a consumer-supplied object on a hot path
 
-- A member that only `@obsidian-typings` declares (`Modal.bgEl`, `App.setting`, …) type-checks fine here,
-  but the objects this library is *handed* by a consumer are, in that consumer's unit tests,
-  `obsidian-test-mocks` doubles — and every one is a `strictProxy` that **throws** on an unmocked string
-  read, not one that returns `undefined`. The mocks model the official surface; the unofficial members
-  are mostly absent. So reading one turns every consumer's unit test into a crash we caused.
-- The cost scales with how often the read runs. A read inside an **event handler** installed on a
-  consumer's object is the worst case: it fires on interactions the consumer's tests already simulate,
-  in tests that have nothing to do with the feature. `MinimizableModal`'s background-click guard was
-  planned as `$event.target === modal.bgEl` and would have thrown on *any* click inside *any* wrapped
-  modal, in this repo's tests and in every plugin's.
-- Prefer an equivalent expressed in **official** members: DOM structure (`composedPath().includes(modalEl)`,
-  `containerEl`) usually pins down the same element as the unofficial handle. Prefer `composedPath()` over
-  `contains($event.target)` / `instanceof HTMLElement` — it needs no cast and stays correct in popout
-  windows, where an `instanceof` against another realm's constructor is false (see
-  `src/obsidian/popovers/popover.ts`).
-- Reading one is still fine where the consumer cannot be caught in the blast radius: a one-shot read this
-  library performs on an object **it constructed**, or one behind an explicit opt-in. When there is no
-  official equivalent at all, teach `obsidian-test-mocks` the member instead of casting around it — and
-  remember that lands on consumers only after they bump it.
-- (cannot be forced by ESLint — a custom rule could flag member reads whose declaration file lives in
-  `@obsidian-typings`, via `ts-declaration-location`, but not the "hot path" judgment)
+- A member that only `@obsidian-typings` declares (`Modal.bgEl`, `App.setting`, …) type-checks fine here, but the objects this library is *handed* by a consumer are, in that consumer's unit tests, `obsidian-test-mocks` doubles — and every one is a `strictProxy` that **throws** on an unmocked string read, not one that returns `undefined`. The mocks model the official surface; the unofficial members are mostly absent. So reading one turns every consumer's unit test into a crash we caused.
+- The cost scales with how often the read runs. A read inside an **event handler** installed on a consumer's object is the worst case: it fires on interactions the consumer's tests already simulate, in tests that have nothing to do with the feature. `MinimizableModal`'s background-click guard was planned as `$event.target === modal.bgEl` and would have thrown on *any* click inside *any* wrapped modal, in this repo's tests and in every plugin's.
+- Prefer an equivalent expressed in **official** members: DOM structure (`composedPath().includes(modalEl)`, `containerEl`) usually pins down the same element as the unofficial handle. Prefer `composedPath()` over `contains($event.target)` / `instanceof HTMLElement` — it needs no cast and stays correct in popout windows, where an `instanceof` against another realm's constructor is false (see `src/obsidian/popovers/popover.ts`).
+- Reading one is still fine where the consumer cannot be caught in the blast radius: a one-shot read this library performs on an object **it constructed**, or one behind an explicit opt-in. When there is no official equivalent at all, teach `obsidian-test-mocks` the member instead of casting around it — and remember that lands on consumers only after they bump it.
+- (cannot be forced by ESLint — a custom rule could flag member reads whose declaration file lives in `@obsidian-typings`, via `ts-declaration-location`, but not the "hot path" judgment)
 
 ### L13. A listener cannot protect data from a destructive action — intercept the primitive
 
-- `RenameDeleteHandlerComponent` is otherwise purely reactive (`vault.on('delete')`, `vault.on('rename')`,
-  `metadataCache.on('deleted')`), and for a *note* deletion that is enough: the note is gone but its
-  attachments are not, so `deleteIfNotUsed` can still decide their fate afterwards. For a *folder* deletion
-  it is not — Obsidian reports the folder only once its children are already destroyed, so there is nothing
-  left to protect. The event tells you what happened, never what is about to. Whenever the thing at risk is
-  destroyed *by* the event, the hook has to be a patch on the primitive, not a listener.
-- **Patch every primitive that can perform the action, and remember they nest.** A folder deletion arrives
-  through `FileManager.trashFile` (the file-explorer Delete flow, via `promptForDeletion`) *and* through the
-  raw `Vault.delete` / `Vault.trash` a plugin may call directly — and `trashFile` itself calls down into the
-  other two. So one user action fires several patches. Guard with a **path-scoped** in-flight set, not a
-  boolean flag, or a concurrent unrelated deletion interleaving on an `await` loses its protection.
-- **Do the work through the intercepted primitive's unpatched original** (`originalMethodBound`). It keeps
-  the caller's semantics — `vault.delete` is permanent, `vault.trash` is not, and routing both through
-  `trashSafe` would silently change which one the user gets — and it makes re-entry into your own patch
-  impossible by construction rather than by bookkeeping.
-- **Scan first; when nothing is at risk, call `fallback()` and let the native action run untouched.** This is
-  what makes patching a shared primitive safe: the overwhelming majority of deletions behave exactly as they
-  did before, and only the rare one that would lose data takes your replacement path. It also dodges the
-  trap that `deleteIfNotUsed` refuses to remove a folder containing anything Obsidian does not track, which
-  would otherwise turn ordinary folder deletions into silent no-ops.
-- **A protection that cannot be overridden is a bug of its own.** `deleteIfNotUsed` keeps *any* still-
-  referenced file, so handing it a whole folder would preserve every note inside that anything else links
-  to — making a folder of linked-to notes undeletable. Obsidian's own answer is to leave a dangling link,
-  so notes are exempted via `shouldProtectIfStillUsed`. Ask what the feature makes *impossible*, not only
-  what it makes safe.
-- Prove it with a **negative control**: detach the patch and confirm the integration test goes red on every
-  primitive, and that the "deletes normally" control stays green. A protection test that passes because
-  nothing was ever at risk asserts nothing.
+- `RenameDeleteHandlerComponent` is otherwise purely reactive (`vault.on('delete')`, `vault.on('rename')`, `metadataCache.on('deleted')`), and for a *note* deletion that is enough: the note is gone but its attachments are not, so `deleteIfNotUsed` can still decide their fate afterwards. For a *folder* deletion it is not — Obsidian reports the folder only once its children are already destroyed, so there is nothing left to protect. The event tells you what happened, never what is about to. Whenever the thing at risk is destroyed *by* the event, the hook has to be a patch on the primitive, not a listener.
+- **Patch every primitive that can perform the action, and remember they nest.** A folder deletion arrives through `FileManager.trashFile` (the file-explorer Delete flow, via `promptForDeletion`) *and* through the raw `Vault.delete` / `Vault.trash` a plugin may call directly — and `trashFile` itself calls down into the other two. So one user action fires several patches. Guard with a **path-scoped** in-flight set, not a boolean flag, or a concurrent unrelated deletion interleaving on an `await` loses its protection.
+- **Do the work through the intercepted primitive's unpatched original** (`originalMethodBound`). It keeps the caller's semantics — `vault.delete` is permanent, `vault.trash` is not, and routing both through `trashSafe` would silently change which one the user gets — and it makes re-entry into your own patch impossible by construction rather than by bookkeeping.
+- **Scan first; when nothing is at risk, call `fallback()` and let the native action run untouched.** This is what makes patching a shared primitive safe: the overwhelming majority of deletions behave exactly as they did before, and only the rare one that would lose data takes your replacement path. It also dodges the trap that `deleteIfNotUsed` refuses to remove a folder containing anything Obsidian does not track, which would otherwise turn ordinary folder deletions into silent no-ops.
+- **A protection that cannot be overridden is a bug of its own.** `deleteIfNotUsed` keeps *any* still- referenced file, so handing it a whole folder would preserve every note inside that anything else links to — making a folder of linked-to notes undeletable. Obsidian's own answer is to leave a dangling link, so notes are exempted via `shouldProtectIfStillUsed`. Ask what the feature makes *impossible*, not only what it makes safe.
+- Prove it with a **negative control**: detach the patch and confirm the integration test goes red on every primitive, and that the "deletes normally" control stays green. A protection test that passes because nothing was ever at risk asserts nothing.
 
 ### L14. Never drive the user's workspace to obtain a runtime handle — supply the missing half yourself
 
-- Reaching an unofficial Obsidian internal by **making the app do something** (open a leaf, open a file,
-  render a view) so a monkey-patch can intercept what it passes around is not a neutral read: it is a
-  mutation of the user's workspace, and it lands on **every consumer, on every load**.
-  `getDomEventsHandlersConstructor` did exactly that to obtain the `DomEventsHandlers` class —
-  `getLeaf(true)` + `openFile(…, { active: true, state: { mode: 'preview' } })`, a 5 s
-  `retryWithTimeout`, `leaf.detach()`, and `__temp.md` created and trashed in an empty vault. Measured
-  cost per plugin load, desktop and Android alike: leaf count 9 → 10 → 9, two `file-open` and two
-  `active-leaf-change` cascading into every other plugin, and an unrelated note rendered in preview.
-  A consumer could not opt out (the memoised constructor is module-private), so the only lever was
-  *when* the dance ran — which is why it ping-ponged between the first dialog and plugin load.
-- **Look for the seam first: how much of the internal do you actually need?** Obsidian's link handling
-  is two separable halves — `MarkdownPreviewRenderer.registerDomEvents(el, handlers)` does the
-  **delegation** (which element was hit, which link text it carries, `belongsToMe` scoping, and the
-  `a.internal-link` / `a.footnote-link` / `a.external-link` / `a.tag` / `img,video` cases), and the
-  `handlers` object does the **behavior**. Only the second half was private. Porting those seven
-  methods (`markdown.ts`'s `LinkDomEventsHandlers`) removed the leaf entirely while keeping every
-  delegation case, which hand-wiring a bare `createEl('a')` + click listener would have silently
-  dropped.
-- **Port from the shipped bundle, not from memory.** The reference implementation is readable in
-  `%APPDATA%\obsidian\obsidian-<version>.asar` (`grep -aob '<methodName>'`, then `dd` a window around
-  the offset). Substitute house helpers where Obsidian reaches for its own privates (`isUrl` for its
-  `new URL(…)` probe; an `obsidianDevUtils.*` i18n key for its own catalog, which our typed `t()`
-  cannot address).
-- The cost of the port is that the copy can drift from Obsidian's original. That is the trade: a
-  behavior that may lag a version against a workspace mutation every consumer pays on every load.
-  Pin it down with integration assertions on the **contract** — the `hover-link` payload, the URL
-  handed to `win.open`, the `tag:` query — not on Obsidian's internals.
-- **The assertion that catches this class of bug is a workspace-invariance snapshot**: leaf count via
-  `iterateAllLeaves`, the active file, and `active-leaf-change` / `file-open` counters taken around the
-  call, plus `vault.getFiles().length` for the file-writing half. Prove it with a **negative control** —
-  restore the extraction and confirm the leaf assertion goes red; a leaf-count assertion is exactly the
-  kind that passes vacuously.
-- (cannot be forced by ESLint — a custom rule could flag `getLeaf(` / `openFile(` inside a module whose
-  purpose is extraction, but not the judgment)
+- Reaching an unofficial Obsidian internal by **making the app do something** (open a leaf, open a file, render a view) so a monkey-patch can intercept what it passes around is not a neutral read: it is a mutation of the user's workspace, and it lands on **every consumer, on every load**. `getDomEventsHandlersConstructor` did exactly that to obtain the `DomEventsHandlers` class — `getLeaf(true)` + `openFile(…, { active: true, state: { mode: 'preview' } })`, a 5 s `retryWithTimeout`, `leaf.detach()`, and `__temp.md` created and trashed in an empty vault. Measured cost per plugin load, desktop and Android alike: leaf count 9 → 10 → 9, two `file-open` and two `active-leaf-change` cascading into every other plugin, and an unrelated note rendered in preview. A consumer could not opt out (the memoised constructor is module-private), so the only lever was *when* the dance ran — which is why it ping-ponged between the first dialog and plugin load.
+- **Look for the seam first: how much of the internal do you actually need?** Obsidian's link handling is two separable halves — `MarkdownPreviewRenderer.registerDomEvents(el, handlers)` does the **delegation** (which element was hit, which link text it carries, `belongsToMe` scoping, and the `a.internal-link` / `a.footnote-link` / `a.external-link` / `a.tag` / `img,video` cases), and the `handlers` object does the **behavior**. Only the second half was private. Porting those seven methods (`markdown.ts`'s `LinkDomEventsHandlers`) removed the leaf entirely while keeping every delegation case, which hand-wiring a bare `createEl('a')` + click listener would have silently dropped.
+- **Port from the shipped bundle, not from memory.** The reference implementation is readable in `%APPDATA%\obsidian\obsidian-<version>.asar` (`grep -aob '<methodName>'`, then `dd` a window around the offset). Substitute house helpers where Obsidian reaches for its own privates (`isUrl` for its `new URL(…)` probe; an `obsidianDevUtils.*` i18n key for its own catalog, which our typed `t()` cannot address).
+- The cost of the port is that the copy can drift from Obsidian's original. That is the trade: a behavior that may lag a version against a workspace mutation every consumer pays on every load. Pin it down with integration assertions on the **contract** — the `hover-link` payload, the URL handed to `win.open`, the `tag:` query — not on Obsidian's internals.
+- **The assertion that catches this class of bug is a workspace-invariance snapshot**: leaf count via `iterateAllLeaves`, the active file, and `active-leaf-change` / `file-open` counters taken around the call, plus `vault.getFiles().length` for the file-writing half. Prove it with a **negative control** — restore the extraction and confirm the leaf assertion goes red; a leaf-count assertion is exactly the kind that passes vacuously.
+- (cannot be forced by ESLint — a custom rule could flag `getLeaf(` / `openFile(` inside a module whose purpose is extraction, but not the judgment)
 
 ### L15. A function serialized into the emitted banner may only reference its own module — and `globalThis` stays spelled out
 
-- `preprocess-plugin.ts` ships code as **text**: `makeBanner()` builds the esbuild banner out
-  of `String(fn)`, so what lands in every consumer's bundle is source text, not a linked module. Two
-  consequences that no type-check or unit test catches, because both are correct in the builder process
-  and wrong only in the emitted artifact:
-- **Cross-module calls do not survive.** esbuild compiles an imported call to `(0, import_module.fn)(…)`
-  in the CJS dist — `makeValidVariableName` appears exactly that way in
-  `dist/lib/cjs/script-utils/bundlers/esbuild-impl/preprocess-plugin.cjs` — naming a binding the emitted
-  bundle does not have. Only **same-module** references stay bare identifiers. That is why
-  `ensureBrowserProcess` / `keepName` live beside `initCjs` / `initEsm` rather than in a tidy
-  `banner-shims.ts` (drafted once, then deleted for this reason), and why `makeBanner()` serializes
-  the shims alongside the `init` function that calls them.
-- **A helper that is referenced but not serialized fails silently**, degrading to whatever the consumer's global
-  scope holds under that name. `globalThisRecord['__name'] ??= name;` shipped for years resolving `name`
-  to `window.name` — a string, not a function. Nothing threw, because nothing called it.
-- **Never let `lint:fix` shorten `globalThis.x` to `x` in banner code.** `unicorn/no-unnecessary-global-this`
-  autofixes `globalThis.process` → `process`, which is equivalent in a module but not in the banner: there
-  a bare `process` is a free identifier, so reading it where the host has none throws a **ReferenceError**
-  — precisely the case `ensureBrowserProcess` exists to handle. The line carries a disable comment saying
-  so; keep it.
-- **Verify against the built `dist`, never only the source.** Run `npm run build`, then execute the
-  banner sliced out of `dist/lib/cjs/*.cjs` and `dist/lib/esm/*.mjs` against the host shapes you care
-  about. The unit tests call `String(fn)` on vitest's transform, which is exactly the compilation step
-  that differs.
-- (cannot be forced by ESLint — a custom rule could flag imported identifiers inside the serialized
-  functions, but not the `globalThis` autofix interaction)
+- `preprocess-plugin.ts` ships code as **text**: `makeBanner()` builds the esbuild banner out of `String(fn)`, so what lands in every consumer's bundle is source text, not a linked module. Two consequences that no type-check or unit test catches, because both are correct in the builder process and wrong only in the emitted artifact:
+- **Cross-module calls do not survive.** esbuild compiles an imported call to `(0, import_module.fn)(…)` in the CJS dist — `makeValidVariableName` appears exactly that way in `dist/lib/cjs/script-utils/bundlers/esbuild-impl/preprocess-plugin.cjs` — naming a binding the emitted bundle does not have. Only **same-module** references stay bare identifiers. That is why `ensureBrowserProcess` / `keepName` live beside `initCjs` / `initEsm` rather than in a tidy `banner-shims.ts` (drafted once, then deleted for this reason), and why `makeBanner()` serializes the shims alongside the `init` function that calls them.
+- **A helper that is referenced but not serialized fails silently**, degrading to whatever the consumer's global scope holds under that name. `globalThisRecord['__name'] ??= name;` shipped for years resolving `name` to `window.name` — a string, not a function. Nothing threw, because nothing called it.
+- **Never let `lint:fix` shorten `globalThis.x` to `x` in banner code.** `unicorn/no-unnecessary-global-this` autofixes `globalThis.process` → `process`, which is equivalent in a module but not in the banner: there a bare `process` is a free identifier, so reading it where the host has none throws a **ReferenceError** — precisely the case `ensureBrowserProcess` exists to handle. The line carries a disable comment saying so; keep it.
+- **Verify against the built `dist`, never only the source.** Run `npm run build`, then execute the banner sliced out of `dist/lib/cjs/*.cjs` and `dist/lib/esm/*.mjs` against the host shapes you care about. The unit tests call `String(fn)` on vitest's transform, which is exactly the compilation step that differs.
+- (cannot be forced by ESLint — a custom rule could flag imported identifiers inside the serialized functions, but not the `globalThis` autofix interaction)
 
 ### L16. A notice is transient by design — record it as it arrives, never sample the DOM for it
 
-- `PluginNoticeComponent.showNotice` defaults to `PluginNoticeMode.Replace`, which calls
-  `this.notice?.hide()` before showing the new one: **the next notice from the same component removes
-  the previous one from the DOM.** So a test that reads
-  `activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content')` is not asking "was
-  this notice shown?" — it is asking "is it *still* the newest notice at this instant?", and any
-  follow-up notice makes that false.
-- Two mechanisms turn that into an unwinnable race. The rescue notice in
-  `didRescueStillUsedAttachment` is followed by the `updatedLinks` notice the `RenameHandler` defers
-  through `addToQueue`, which takes the same slot; and the harness's `waitUntil` **polls immediately**, so a
-  predicate whose condition is already met exits on the first poll and a latch riding along in that
-  predicate never gets a second look.
-- **The tell is inverted timing: it fails when the run is FAST and passes under load.** `waitUntil`
-  returns instantly when the machine is idle, so the loop never runs; a loaded machine spreads the
-  queue out and a poll happens to land while the notice is still up. That is the opposite of a normal
-  flake, which is why running the whole suite is not a valid check — the bug hides there. Run the file
-  ALONE (`npx vitest run --project=obsidian-integration-tests <file>`) to reproduce it.
-- **The fix is a `MutationObserver` installed before the action**, accumulating the text of every
-  `.obsidian-dev-utils.plugin-notice-content` element as it is inserted (test the added node and sweep
-  its subtree — the content element rides inside the `.notice` container that is what actually gets
-  added). Do not seed it with a sweep of the existing DOM: a notice left over from an earlier case
-  would then satisfy this one. Assert on the recording, and put both conditions in the same `waitUntil`
-  predicate rather than reading one after the other.
-- **Size an in-vault `waitUntil` to fail INSIDE the harness's 30 s `Runtime.evaluate` ceiling.** A
-  30 s wait can never report: the CDP command is killed first, and vitest's own 30 s `testTimeout`
-  fires at the same moment — so the message naming the unmet condition is replaced by a bare "Test
-  timed out"/"CDP command timed out". The rescue cases use 12 s for this reason. Raising the vitest
-  timeout does not help; the CDP ceiling is the binding one.
-  - **This is now ENFORCED, not remembered: `obsidian-dev-utils/no-over-cap-wait-in-eval-in-obsidian`.**
-    It sums the declared `waitUntil` / `sleep` budget inside every `evalInObsidian` / `pollInObsidian`
-    closure — counting the 5 s a `waitUntil` takes when it omits `timeoutInMilliseconds`, and resolving
-    an identifier through scope, including one threaded via the call's own `input` — and reports at or
-    over `capInMilliseconds` (default `30_000`). It is enabled on ALL files, not only integration tests,
-    because script code that drives a real Obsidian is under the same cap. A budget it cannot resolve
-    statically is silently ignored, so it under-reports rather than crying wolf; a site that genuinely
-    cannot become a `poll` / `until` pair disables it with a written reason. A note is what let this
-    reach thirty repos, which is why it is a rule.
-  - **A LOOP declares a ceiling too, and reading it uncovered 18 over-cap closures nothing had ever
-    reported.** A deadline loop — `const deadline = Date.now() + BUDGET` guarded by
-    `Date.now() < deadline`, on either clock — is charged `BUDGET` once, and a counting
-    `for (let attempt = 0; attempt < ATTEMPTS; attempt++)` multiplies the waits inside it by `ATTEMPTS`.
-    Either ceiling counts when it is one conjunct of a compound test, which is how both are written in
-    practice. A `while (true)`, a `for…of`, and a bound that does not resolve all keep the old
-    per-iteration charge rather than a guess. The one under-count left is a bounded retry HELPER declared
-    inside the closure: its waits are attributed once, not once per call site.
-  - **The fix for a wait that genuinely needs longer than the cap is `pollInObsidian`, not a bigger
-    number**: a short DOM-reading `poll` closure, `until` evaluated in Node, and the long budget in
-    `timeoutInMilliseconds`. `demo-vault-helper.obsidian.integration.test.ts` has three worked examples.
-- Prove the assertion is not vacuous with a **negative control**: comment out the `showNotice` call and
-  confirm the case fails on the wait's own message.
-- **When the test OWNS the notice component, record at the source instead — a `MutationObserver` is the
-  fallback, not the goal.** The observer exists because the rescue cases assert on notices raised by
-  production code they do not own. A test that constructs its own `PluginNoticeComponent` can subclass it
-  and push each `showNotice` message into an array, which is both exact and *structurally* immune to
-  neighbors: an observer on `activeDocument.body` still sees a notice any other file raises during its
-  window, while nothing can push into a private array. `path-settings.obsidian.integration.test.ts` does
-  this, and also had to wire its own `AsyncErrorHandlerComponent` — the pooled instance's harness plugin
-  extends plain `Plugin`, not `PluginBase`, so **no unhandled-error notice is rendered there unless the
-  test renders it**. A "no notice was shown" assertion in that instance is vacuous until it owns that
-  wiring; the negative control above is what catches it.
-- (cannot be forced by ESLint — a rule could flag `querySelectorAll('…plugin-notice-content')` inside
-  an `evalInObsidian` closure, but not the timing judgment)
+- `PluginNoticeComponent.showNotice` defaults to `PluginNoticeMode.Replace`, which calls `this.notice?.hide()` before showing the new one: **the next notice from the same component removes the previous one from the DOM.** So a test that reads `activeDocument.querySelectorAll('.obsidian-dev-utils.plugin-notice-content')` is not asking "was this notice shown?" — it is asking "is it *still* the newest notice at this instant?", and any follow-up notice makes that false.
+- Two mechanisms turn that into an unwinnable race. The rescue notice in `didRescueStillUsedAttachment` is followed by the `updatedLinks` notice the `RenameHandler` defers through `addToQueue`, which takes the same slot; and the harness's `waitUntil` **polls immediately**, so a predicate whose condition is already met exits on the first poll and a latch riding along in that predicate never gets a second look.
+- **The tell is inverted timing: it fails when the run is FAST and passes under load.** `waitUntil` returns instantly when the machine is idle, so the loop never runs; a loaded machine spreads the queue out and a poll happens to land while the notice is still up. That is the opposite of a normal flake, which is why running the whole suite is not a valid check — the bug hides there. Run the file ALONE (`npx vitest run --project=obsidian-integration-tests <file>`) to reproduce it.
+- **The fix is a `MutationObserver` installed before the action**, accumulating the text of every `.obsidian-dev-utils.plugin-notice-content` element as it is inserted (test the added node and sweep its subtree — the content element rides inside the `.notice` container that is what actually gets added). Do not seed it with a sweep of the existing DOM: a notice left over from an earlier case would then satisfy this one. Assert on the recording, and put both conditions in the same `waitUntil` predicate rather than reading one after the other.
+- **Size an in-vault `waitUntil` to fail INSIDE the harness's 30 s `Runtime.evaluate` ceiling.** A 30 s wait can never report: the CDP command is killed first, and vitest's own 30 s `testTimeout` fires at the same moment — so the message naming the unmet condition is replaced by a bare "Test timed out"/"CDP command timed out". The rescue cases use 12 s for this reason. Raising the vitest timeout does not help; the CDP ceiling is the binding one.
+  - **This is now ENFORCED, not remembered: `obsidian-dev-utils/no-over-cap-wait-in-eval-in-obsidian`.** It sums the declared `waitUntil` / `sleep` budget inside every `evalInObsidian` / `pollInObsidian` closure — counting the 5 s a `waitUntil` takes when it omits `timeoutInMilliseconds`, and resolving an identifier through scope, including one threaded via the call's own `input` — and reports at or over `capInMilliseconds` (default `30_000`). It is enabled on ALL files, not only integration tests, because script code that drives a real Obsidian is under the same cap. A budget it cannot resolve statically is silently ignored, so it under-reports rather than crying wolf; a site that genuinely cannot become a `poll` / `until` pair disables it with a written reason. A note is what let this reach thirty repos, which is why it is a rule.
+  - **A LOOP declares a ceiling too, and reading it uncovered 18 over-cap closures nothing had ever reported.** A deadline loop — `const deadline = Date.now() + BUDGET` guarded by `Date.now() < deadline`, on either clock — is charged `BUDGET` once, and a counting `for (let attempt = 0; attempt < ATTEMPTS; attempt++)` multiplies the waits inside it by `ATTEMPTS`. Either ceiling counts when it is one conjunct of a compound test, which is how both are written in practice. A `while (true)`, a `for…of`, and a bound that does not resolve all keep the old per-iteration charge rather than a guess. The one under-count left is a bounded retry HELPER declared inside the closure: its waits are attributed once, not once per call site.
+  - **The fix for a wait that genuinely needs longer than the cap is `pollInObsidian`, not a bigger number**: a short DOM-reading `poll` closure, `until` evaluated in Node, and the long budget in `timeoutInMilliseconds`. `demo-vault-helper.obsidian.integration.test.ts` has three worked examples.
+- Prove the assertion is not vacuous with a **negative control**: comment out the `showNotice` call and confirm the case fails on the wait's own message.
+- **When the test OWNS the notice component, record at the source instead — a `MutationObserver` is the fallback, not the goal.** The observer exists because the rescue cases assert on notices raised by production code they do not own. A test that constructs its own `PluginNoticeComponent` can subclass it and push each `showNotice` message into an array, which is both exact and *structurally* immune to neighbors: an observer on `activeDocument.body` still sees a notice any other file raises during its window, while nothing can push into a private array. `path-settings.obsidian.integration.test.ts` does this, and also had to wire its own `AsyncErrorHandlerComponent` — the pooled instance's harness plugin extends plain `Plugin`, not `PluginBase`, so **no unhandled-error notice is rendered there unless the test renders it**. A "no notice was shown" assertion in that instance is vacuous until it owns that wiring; the negative control above is what catches it.
+- (cannot be forced by ESLint — a rule could flag `querySelectorAll('…plugin-notice-content')` inside an `evalInObsidian` closure, but not the timing judgment)
 
 ### L17. Never key a cached `Reference` by its `position` across an `await` — and never skip a link in silence
 
-- A `Reference` carries `position.{start,end}.{line,col,offset}`, so `toJson(reference)` is a
-  **position-bearing** key. `RenameHandler` used exactly that to match links snapshotted before the
-  attachments moved against links re-read from the live metadata cache afterwards. Any edit to the file
-  in between shifts the offsets of every link **below** it, so each of those missed its key — while the
-  links above it matched and were rewritten. Partial, ordered, and completely silent. Key by the link's
-  **text** (`getLinkIdentityKey`: `{ link, original }`) instead: text is the only part that survives the
-  gap, unchanged text matches however far it moved, and text somebody else already rewrote legitimately
-  misses because it needs no rewrite. Identical link texts in one file resolve to the same target, so
-  collapsing them costs nothing.
-- **Assume something else edits the file inside your window.** The window here is wide — snapshot,
-  N attachment renames, then the rewrite — and `FileManagerRunAsyncLinkUpdatePatchComponent` only
-  suppresses *Obsidian's* markdown link updates, never a co-installed plugin's. This is why
-  <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60> reproduced only with
-  other plugins enabled, and why the plain "move a note with 30 attachments" test stayed green against
-  the broken build. A single-plugin test cannot cover a multi-plugin window; supply the concurrent edit
-  yourself, from inside the `vault.on('rename')` of the first attachment move.
-- **A lookup miss on a link you were asked to rewrite must be logged.** That branch had no output of
-  any kind, so every broken embed reported nothing — no error, no retry, no notice, and the user's only
-  signal was an image that stopped rendering. Where a skip is a legitimate outcome and a bug looks
-  identical to it, the debug line is the only thing that tells them apart.
-- **Insert the perturbation in the MIDDLE when diagnosing this shape.** An edit at the top shifts every
-  link and loses all of them, which is indistinguishable from a whole-file bail-out
-  (`applyFileChanges` returning `null`). A middle insertion leaves a contiguous stale **tail**, which
-  only a per-link key mismatch can produce.
-- **Both halves are now seams on the shared primitive, not per-caller code.** `editBacklinksSnapshot`
-  in `src/obsidian/link.ts` takes a `linkIdentityKeyProvider` (defaulting to `JSON.stringify`, which is
-  position-bearing and therefore only safe when nothing awaits between the capture and the rewrite) and a
-  `shouldVisitUnmatchedLinks` flag, which is what lets a caller see — and log — the links its snapshot does
-  not name. A caller whose window spans an `await` passes a text-only provider such as
-  `getLinkIdentityKey`; one that fetches and rewrites in the same breath uses `editBacklinks`, the
-  fetch-then-delegate wrapper, and gets the default. Choosing the provider IS choosing whether this rule
-  applies to you.
-- (cannot be forced by ESLint — a rule could flag `toJson()` on a value typed `Reference` used as a
-  `Map` key, but not the lifetime that makes it wrong)
+- A `Reference` carries `position.{start,end}.{line,col,offset}`, so `toJson(reference)` is a **position-bearing** key. `RenameHandler` used exactly that to match links snapshotted before the attachments moved against links re-read from the live metadata cache afterwards. Any edit to the file in between shifts the offsets of every link **below** it, so each of those missed its key — while the links above it matched and were rewritten. Partial, ordered, and completely silent. Key by the link's **text** (`getLinkIdentityKey`: `{ link, original }`) instead: text is the only part that survives the gap, unchanged text matches however far it moved, and text somebody else already rewrote legitimately misses because it needs no rewrite. Identical link texts in one file resolve to the same target, so collapsing them costs nothing.
+- **Assume something else edits the file inside your window.** The window here is wide — snapshot, N attachment renames, then the rewrite — and `FileManagerRunAsyncLinkUpdatePatchComponent` only suppresses *Obsidian's* markdown link updates, never a co-installed plugin's. This is why <https://github.com/mnaoumov/obsidian-custom-attachment-location/issues/60> reproduced only with other plugins enabled, and why the plain "move a note with 30 attachments" test stayed green against the broken build. A single-plugin test cannot cover a multi-plugin window; supply the concurrent edit yourself, from inside the `vault.on('rename')` of the first attachment move.
+- **A lookup miss on a link you were asked to rewrite must be logged.** That branch had no output of any kind, so every broken embed reported nothing — no error, no retry, no notice, and the user's only signal was an image that stopped rendering. Where a skip is a legitimate outcome and a bug looks identical to it, the debug line is the only thing that tells them apart.
+- **Insert the perturbation in the MIDDLE when diagnosing this shape.** An edit at the top shifts every link and loses all of them, which is indistinguishable from a whole-file bail-out (`applyFileChanges` returning `null`). A middle insertion leaves a contiguous stale **tail**, which only a per-link key mismatch can produce.
+- **Both halves are now seams on the shared primitive, not per-caller code.** `editBacklinksSnapshot` in `src/obsidian/link.ts` takes a `linkIdentityKeyProvider` (defaulting to `JSON.stringify`, which is position-bearing and therefore only safe when nothing awaits between the capture and the rewrite) and a `shouldVisitUnmatchedLinks` flag, which is what lets a caller see — and log — the links its snapshot does not name. A caller whose window spans an `await` passes a text-only provider such as `getLinkIdentityKey`; one that fetches and rewrites in the same breath uses `editBacklinks`, the fetch-then-delegate wrapper, and gets the default. Choosing the provider IS choosing whether this rule applies to you.
+- (cannot be forced by ESLint — a rule could flag `toJson()` on a value typed `Reference` used as a `Map` key, but not the lifetime that makes it wrong)
 
 ### L18. The Windows command-line budget is not 8191 — measure what you can, reserve for what you cannot
 
-- `exec()` has **two** length limits on purpose and they must not be collapsed into one.
-  `getMaxCommandLength()` is the raw platform maximum and guards a command that cannot be split;
-  `getMaxBatchCommandLength()` subtracts `WINDOWS_CHILD_EXPANSION_RESERVE` and sizes an
-  `ExecArgument` batch. Splitting a batch costs one extra sequential invocation, so that side may be
-  wrong in the safe direction; rejecting a command that cannot be split is fatal, so that side must stay exact.
-- **The assembled command is not what `cmd.exe` sees.** Two costs are spent after any naive length
-  check: node's `spawn(…, { shell: true })` wraps the command as `%ComSpec% /d /s /c "…"`, and
-  `spawnViaShell` then runs `cmdEscapeCommandLine` over it, which grows a list of quoted paths by a few
-  percent. Both are ours, so `getEffectiveCommandLineLength()` computes them rather than guessing —
-  and its platform branch must stay in sync with `spawnViaShell`'s.
-- **A third cost is not computable and must be reserved for.** `npx <tool> <args…>` is a *chain* of
-  `cmd.exe` lines: `npx.cmd` re-expands `%*`, the tool's `.bin/<tool>.cmd` shim does it again, and each
-  hop re-quotes what it forwards. Every line in the chain faces the same 8191 limit and every one is
-  longer than ours. Measured on one repo's 187-file list: a `markdownlint-cli2` invocation **assembled
-  at 7051 chars** — 1140 under the limit — died with `The command line is too long.`
-- **The symptom names nothing wrong with the content**, and it is size-dependent, so a repo passes until
-  the day it adds a few files and does not. Both halves of `markdownlint.ts`' `lint()` are exposed, not
-  just the `linkinator` one. If it ever returns, raise the reserve; never lower it.
+- `exec()` has **two** length limits on purpose and they must not be collapsed into one. `getMaxCommandLength()` is the raw platform maximum and guards a command that cannot be split; `getMaxBatchCommandLength()` subtracts `WINDOWS_CHILD_EXPANSION_RESERVE` and sizes an `ExecArgument` batch. Splitting a batch costs one extra sequential invocation, so that side may be wrong in the safe direction; rejecting a command that cannot be split is fatal, so that side must stay exact.
+- **The assembled command is not what `cmd.exe` sees.** Two costs are spent after any naive length check: node's `spawn(…, { shell: true })` wraps the command as `%ComSpec% /d /s /c "…"`, and `spawnViaShell` then runs `cmdEscapeCommandLine` over it, which grows a list of quoted paths by a few percent. Both are ours, so `getEffectiveCommandLineLength()` computes them rather than guessing — and its platform branch must stay in sync with `spawnViaShell`'s.
+- **A third cost is not computable and must be reserved for.** `npx <tool> <args…>` is a *chain* of `cmd.exe` lines: `npx.cmd` re-expands `%*`, the tool's `.bin/<tool>.cmd` shim does it again, and each hop re-quotes what it forwards. Every line in the chain faces the same 8191 limit and every one is longer than ours. Measured on one repo's 187-file list: a `markdownlint-cli2` invocation **assembled at 7051 chars** — 1140 under the limit — died with `The command line is too long.`
+- **The symptom names nothing wrong with the content**, and it is size-dependent, so a repo passes until the day it adds a few files and does not. Both halves of `markdownlint.ts`' `lint()` are exposed, not just the `linkinator` one. If it ever returns, raise the reserve; never lower it.
 - (cannot be forced by ESLint — the limit is a property of the spawned process's own shim chain)
 
 ### L19. An adapter flag is a claim, not a contract — check the two adapters separately, and they may fail opposite ways
 
-- `DataAdapter.rmdir(path, recursive)` looks like one API with one behavior. It is two implementations that
-  disagree, and **both** ignore the flag — in **opposite directions**. Read from `obsidian-1.13.7.asar`:
-  `CapacitorAdapter` (mobile) is `rmdir(e, t) { this.fs.rmdir(this.getFullPath(e)) }` over a layer that
-  hardcodes `Lf.rmdir({ …, recursive: !0 })` — the argument is not even accepted, so a non-recursive call
-  **deletes the whole subtree silently**. `FileSystemAdapter` (desktop) is
-  `fsPromises.rm(fullPath, { maxRetries: 5, recursive: t })`, and Node's `fs.rm` throws `ERR_FS_EISDIR` for
-  **any** directory when `recursive` is `false` — so the non-recursive call **never succeeds, not even on an
-  empty folder**. One is data loss, the other is a permanent failure, and no single-platform test can see both.
-- **Do not generalize a footgun from the platform you happen to run on.** The first report described the
-  mobile data loss as universal, because that is the half that gets noticed. The desktop half is invisible
-  until something calls it — and then it looks like a bug in the caller.
-- **The fix for "the flag is ignored" is to establish the precondition yourself and then call the mode that
-  works.** `RmdirGuardComponent` proves the folder empty (through `isEmptyFolder` → `adapter.list`, i.e. the
-  adapter's own truth) and forwards to `originalMethodBound(path, true)`. Forwarding *recursively* after
-  proving emptiness looks redundant and is not: it is what makes the empty-folder case succeed on desktop.
-  Anything the precondition does not cover takes `fallback()` and keeps native semantics exactly.
-- **Never decide "is this folder empty?" from the vault file tree.** `folder.children.length === 0` is not
-  the question — the index omits dot-prefixed and otherwise hidden entries, so a folder holding only hidden
-  files reads as empty there. For a guard whose whole job is preventing a deletion, that inverts it.
-- **Pin the premise with a negative control at the integration layer.** The unit tests here drive
-  `obsidian-test-mocks`' in-memory adapter, which is *our own* reimplementation of `rmdir` — it can only
-  confirm the component matches our model. `rmdir-guard-component.obsidian.integration.test.ts` asserts the
-  unguarded `ERR_FS_EISDIR` directly, so if Obsidian ever fixes `rmdir` the case goes red and says the guard
-  is obsolete, rather than quietly guarding nothing.
-- **Read the bundle rather than trusting the signature or the memory of it.** `grep -aob '<methodName>'` over
-  `%APPDATA%\obsidian\obsidian-<version>.asar`, then `dd` a window around the offset (same technique as L14).
+- `DataAdapter.rmdir(path, recursive)` looks like one API with one behavior. It is two implementations that disagree, and **both** ignore the flag — in **opposite directions**. Read from `obsidian-1.13.7.asar`: `CapacitorAdapter` (mobile) is `rmdir(e, t) { this.fs.rmdir(this.getFullPath(e)) }` over a layer that hardcodes `Lf.rmdir({ …, recursive: !0 })` — the argument is not even accepted, so a non-recursive call **deletes the whole subtree silently**. `FileSystemAdapter` (desktop) is `fsPromises.rm(fullPath, { maxRetries: 5, recursive: t })`, and Node's `fs.rm` throws `ERR_FS_EISDIR` for **any** directory when `recursive` is `false` — so the non-recursive call **never succeeds, not even on an empty folder**. One is data loss, the other is a permanent failure, and no single-platform test can see both.
+- **Do not generalize a footgun from the platform you happen to run on.** The first report described the mobile data loss as universal, because that is the half that gets noticed. The desktop half is invisible until something calls it — and then it looks like a bug in the caller.
+- **The fix for "the flag is ignored" is to establish the precondition yourself and then call the mode that works.** `RmdirGuardComponent` proves the folder empty (through `isEmptyFolder` → `adapter.list`, i.e. the adapter's own truth) and forwards to `originalMethodBound(path, true)`. Forwarding *recursively* after proving emptiness looks redundant and is not: it is what makes the empty-folder case succeed on desktop. Anything the precondition does not cover takes `fallback()` and keeps native semantics exactly.
+- **Never decide "is this folder empty?" from the vault file tree.** `folder.children.length === 0` is not the question — the index omits dot-prefixed and otherwise hidden entries, so a folder holding only hidden files reads as empty there. For a guard whose whole job is preventing a deletion, that inverts it.
+- **Pin the premise with a negative control at the integration layer.** The unit tests here drive `obsidian-test-mocks`' in-memory adapter, which is *our own* reimplementation of `rmdir` — it can only confirm the component matches our model. `rmdir-guard-component.obsidian.integration.test.ts` asserts the unguarded `ERR_FS_EISDIR` directly, so if Obsidian ever fixes `rmdir` the case goes red and says the guard is obsolete, rather than quietly guarding nothing.
+- **Read the bundle rather than trusting the signature or the memory of it.** `grep -aob '<methodName>'` over `%APPDATA%\obsidian\obsidian-<version>.asar`, then `dd` a window around the offset (same technique as L14).
 - (cannot be forced by ESLint — a runtime-behavior asymmetry between adapters)
 
 ### L20. A patch token is for a NON-IDEMPOTENT patch — an idempotent one stacks safely and must not defer
 
-- Every plugin bundles its own copy of this library, so a patch on a shared object (`app.vault.adapter`,
-  `app.fileManager`) is installed once per plugin that opts in. The reflex is to add a `patchToken` +
-  `hasPatchToken` so later copies defer to the first. **That reflex is right only when running the patch
-  twice would actually do something different from running it once.**
-- **The stacking is already safe, because `monkey-around` neutralizes an unloaded wrapper in place.** Its
-  `remove()` sets `current = original` unconditionally — it restores `obj[method]` only when its own wrapper
-  is still the outermost, but the wrapper it cannot splice out of the middle becomes a pass-through either
-  way. So N patches can be unloaded in **any** order and the method stays patched until the last one goes.
-  `rmdir-guard-component.test.ts` pins this with all six unload orders of three guards; they pass with and
-  without a token, which is the measurement that settles the question.
-- **Idempotent → no token.** `RmdirGuardComponent` is "prove empty, then delete": the outermost guard either
-  throws or forwards with `recursive: true`, which every guard beneath passes straight through. One `stat`,
-  one `list`, same result. A token would only move the decision from the outermost (last-loaded) guard to
-  the innermost (first-loaded) one — an equally arbitrary load-order accident — while adding a code path on
-  which a guard **declines to guard**. For anything protecting data, that trade is strictly negative.
-- **Non-idempotent → token.** `FileManagerRunAsyncLinkUpdatePatchComponent` suppresses `runAsyncLinkUpdate`
-  so a custom handler owns link rewriting. Two of those would both suppress and both rewrite — a real
-  conflict — so deferring via `hasPatchToken(originalMethod, PATCH_TOKEN)` is what keeps them from fighting.
-- **Cost of a token, when you do add one:** it is a deferral, i.e. trusting a patch you do not control. Its
-  safety rests on the token being dropped on unload (`registerMethodPatch` does this) — otherwise a guard
-  defers to a neutralized wrapper and the call falls through to the unpatched original. And `Symbol.for` is
-  a global name, so anything that registers the same token can switch your patch off.
-- The question to ask is therefore never "could this be installed twice?" but **"does installing it twice
-  behave differently from installing it once?"** If no, write down why there is no token — otherwise the
-  reflex re-fires on the next reader.
+- Every plugin bundles its own copy of this library, so a patch on a shared object (`app.vault.adapter`, `app.fileManager`) is installed once per plugin that opts in. The reflex is to add a `patchToken` + `hasPatchToken` so later copies defer to the first. **That reflex is right only when running the patch twice would actually do something different from running it once.**
+- **The stacking is already safe, because `monkey-around` neutralizes an unloaded wrapper in place.** Its `remove()` sets `current = original` unconditionally — it restores `obj[method]` only when its own wrapper is still the outermost, but the wrapper it cannot splice out of the middle becomes a pass-through either way. So N patches can be unloaded in **any** order and the method stays patched until the last one goes. `rmdir-guard-component.test.ts` pins this with all six unload orders of three guards; they pass with and without a token, which is the measurement that settles the question.
+- **Idempotent → no token.** `RmdirGuardComponent` is "prove empty, then delete": the outermost guard either throws or forwards with `recursive: true`, which every guard beneath passes straight through. One `stat`, one `list`, same result. A token would only move the decision from the outermost (last-loaded) guard to the innermost (first-loaded) one — an equally arbitrary load-order accident — while adding a code path on which a guard **declines to guard**. For anything protecting data, that trade is strictly negative.
+- **Non-idempotent → token.** `FileManagerRunAsyncLinkUpdatePatchComponent` suppresses `runAsyncLinkUpdate` so a custom handler owns link rewriting. Two of those would both suppress and both rewrite — a real conflict — so deferring via `hasPatchToken(originalMethod, PATCH_TOKEN)` is what keeps them from fighting.
+- **Cost of a token, when you do add one:** it is a deferral, i.e. trusting a patch you do not control. Its safety rests on the token being dropped on unload (`registerMethodPatch` does this) — otherwise a guard defers to a neutralized wrapper and the call falls through to the unpatched original. And `Symbol.for` is a global name, so anything that registers the same token can switch your patch off.
+- The question to ask is therefore never "could this be installed twice?" but **"does installing it twice behave differently from installing it once?"** If no, write down why there is no token — otherwise the reflex re-fires on the next reader.
 - (cannot be forced by ESLint — an idempotence judgment about the patch body)
 
 ### L21. A `Reference` is a union — `position` is not universal, and a frontmatter offset is not a file offset
 
-- **`Reference` is `ReferenceCache | FrontmatterLinkCache`, and only the first half has a `position`.**
-  `ReferenceCache` (body links, embeds, body external links) carries `position.{start,end}.{line,col,offset}`;
-  `FrontmatterLinkCache` — frontmatter links, multi-link frontmatter value entries, and **every canvas
-  reference** (`CanvasReference extends FrontmatterLinkCache`) — carries only a `key`. `getLinks` mixes both
-  kinds into one `Reference[]` and includes frontmatter links by DEFAULT, so any code that walks the
-  converter's input and reads `link.position` is reading `undefined` on a routine input, not an exotic one.
-  A design written against "every `Reference` has a `Pos`" is wrong before it is typed — that premise is
-  what the offset-range work was specified on, and the union is why the filter excludes position-less
-  references rather than comparing something.
-- **`FrontmatterLinkCacheWithOffsets.startOffset` / `.endOffset` are the trap, because they LOOK like the
-  missing position.** They are offsets **within the link's own property value string** — that is exactly how
-  `referenceToFileChange` uses them, `reference.original.slice(startOffset, endOffset)`. Comparing them
-  against a file offset silently addresses a different coordinate space: a frontmatter link at value-offset
-  6-11 would test as "inside" a file range of 0-20 and be rewritten, though nothing about the file range
-  covers it. The failure is a wrong link rewritten, not an error.
-- **Narrow with `isReferenceCache`, never with a `position` truthiness check.** `isReferenceCache` is the
-  published guard (`@obsidian-typings/obsidian-public-latest/implementations`), it reads as the intent, and
-  it keeps the two coordinate spaces from ever meeting. `isReferenceInOffsetRange` (`src/obsidian/reference.ts`)
-  is the shared predicate; use it rather than open-coding the comparison.
-- **A test double must declare `position: undefined` explicitly.** `strictProxy` throws on an unmocked
-  property, and `isReferenceCache` probes `position` — so a frontmatter/canvas double built without it fails
-  with `Unmocked property "position" was accessed` the moment any guard runs over it. `reference.test.ts`
-  carries `FrontmatterLinkCacheEx` / `CanvasReferenceEx` interfaces for exactly this.
-- (cannot be forced by ESLint — a rule could flag `.position` on a value typed `Reference` outside an
-  `isReferenceCache` guard, but not the coordinate-space confusion that makes the offsets wrong)
+- **`Reference` is `ReferenceCache | FrontmatterLinkCache`, and only the first half has a `position`.** `ReferenceCache` (body links, embeds, body external links) carries `position.{start,end}.{line,col,offset}`; `FrontmatterLinkCache` — frontmatter links, multi-link frontmatter value entries, and **every canvas reference** (`CanvasReference extends FrontmatterLinkCache`) — carries only a `key`. `getLinks` mixes both kinds into one `Reference[]` and includes frontmatter links by DEFAULT, so any code that walks the converter's input and reads `link.position` is reading `undefined` on a routine input, not an exotic one. A design written against "every `Reference` has a `Pos`" is wrong before it is typed — that premise is what the offset-range work was specified on, and the union is why the filter excludes position-less references rather than comparing something.
+- **`FrontmatterLinkCacheWithOffsets.startOffset` / `.endOffset` are the trap, because they LOOK like the missing position.** They are offsets **within the link's own property value string** — that is exactly how `referenceToFileChange` uses them, `reference.original.slice(startOffset, endOffset)`. Comparing them against a file offset silently addresses a different coordinate space: a frontmatter link at value-offset 6-11 would test as "inside" a file range of 0-20 and be rewritten, though nothing about the file range covers it. The failure is a wrong link rewritten, not an error.
+- **Narrow with `isReferenceCache`, never with a `position` truthiness check.** `isReferenceCache` is the published guard (`@obsidian-typings/obsidian-public-latest/implementations`), it reads as the intent, and it keeps the two coordinate spaces from ever meeting. `isReferenceInOffsetRange` (`src/obsidian/reference.ts`) is the shared predicate; use it rather than open-coding the comparison.
+- **A test double must declare `position: undefined` explicitly.** `strictProxy` throws on an unmocked property, and `isReferenceCache` probes `position` — so a frontmatter/canvas double built without it fails with `Unmocked property "position" was accessed` the moment any guard runs over it. `reference.test.ts` carries `FrontmatterLinkCacheEx` / `CanvasReferenceEx` interfaces for exactly this.
+- (cannot be forced by ESLint — a rule could flag `.position` on a value typed `Reference` outside an `isReferenceCache` guard, but not the coordinate-space confusion that makes the offsets wrong)
 
 ### L22. A `newContentProvider` has THREE outcomes — returning `null` for a permanent refusal wedges the whole queue
 
-- **`process` (`src/obsidian/vault.ts`) reads its provider's return value as one of three things**, and the
-  middle one is easy to miss: `null` means "cannot produce the content YET, retry"; the **old content
-  returned unchanged** means "there is nothing to write, the operation is done", and `process` completes
-  without calling `app.vault.process` at all; any other string is written. Pick by whether the refusal can
-  ever resolve on its own, not by whether a write is wanted.
-- **`retryWithTimeoutNotice` never gives up.** Its `timeoutInMilliseconds` only decides when a notice
-  appears — the operation keeps retrying behind it, with a running-time counter and a `Cancel` button. So a
-  `null` returned for a condition that cannot change is an infinite loop by construction, and the notice is
-  the only sign of it.
-- **The blast radius is the whole plugin, not the one file.** Callers run these through a shared sequential
-  operation queue, so one spinning operation blocks every rename and delete after it for the rest of the
-  session. Measured 2026-09-02 in `obsidian-advanced-rename-and-delete-handler`: moving a canvas
-  with `nodes` but no `edges` left `flushQueue()` unresolved forever, and a later unrelated rename never
-  drained either; clicking the notice's `Cancel` released it.
-- **`applyCanvasChanges` is the worked example.** Its guards — a canvas whose `nodes`/`edges` are not both
-  arrays, a node index out of bounds, a file-node content mismatch, a text node whose `text` is not a
-  string — are all permanent for the `(content, changes)` pair they were handed, so each returns `content`.
-  Only the changes provider itself returning `null` stays `null`, because a later call really can produce
-  changes. `applyContentChanges` says the same thing as
-  `return shouldRetryOnInvalidChanges ? null : content`.
+- **`process` (`src/obsidian/vault.ts`) reads its provider's return value as one of three things**, and the middle one is easy to miss: `null` means "cannot produce the content YET, retry"; the **old content returned unchanged** means "there is nothing to write, the operation is done", and `process` completes without calling `app.vault.process` at all; any other string is written. Pick by whether the refusal can ever resolve on its own, not by whether a write is wanted.
+- **`retryWithTimeoutNotice` never gives up.** Its `timeoutInMilliseconds` only decides when a notice appears — the operation keeps retrying behind it, with a running-time counter and a `Cancel` button. So a `null` returned for a condition that cannot change is an infinite loop by construction, and the notice is the only sign of it.
+- **The blast radius is the whole plugin, not the one file.** Callers run these through a shared sequential operation queue, so one spinning operation blocks every rename and delete after it for the rest of the session. Measured 2026-09-02 in `obsidian-advanced-rename-and-delete-handler`: moving a canvas with `nodes` but no `edges` left `flushQueue()` unresolved forever, and a later unrelated rename never drained either; clicking the notice's `Cancel` released it.
+- **`applyCanvasChanges` is the worked example.** Its guards — a canvas whose `nodes`/`edges` are not both arrays, a node index out of bounds, a file-node content mismatch, a text node whose `text` is not a string — are all permanent for the `(content, changes)` pair they were handed, so each returns `content`. Only the changes provider itself returning `null` stays `null`, because a later call really can produce changes. `applyContentChanges` says the same thing as `return shouldRetryOnInvalidChanges ? null : content`.
 - (cannot be forced by ESLint — a rule cannot tell a transient refusal from a permanent one)
 
 ### L23. Layout-ready is not "everything has loaded" — a sibling component's async load is still in flight
 
-- **`LayoutReadyComponent` waits for the component's OWN load, and nothing else.** It awaits
-  `getInFlightLoadPromise()` — its `onloadAsync` plus its children — precisely so a handler does not observe
-  its own half-initialized state. A SIBLING under the same plugin is outside that promise, so a handler that
-  reads a sibling's state is racing it with no wait at all.
-- **The race is empty on a cold start and wide open on a runtime enable.** Cold start: the plugin loads long
-  before the workspace layout is ready, so every sibling has settled by the time the handler runs, and the
-  bug is invisible. Enable from the Community Plugins tab, or a re-enable after an update: the layout is
-  ALREADY ready, `onLayoutReady` fires its callback on the next macrotask, and `PluginBase.onload` is still
-  awaiting `onloadImpl` — so the sibling's `onloadAsync` has not finished. Test on a runtime enable, not
-  only on a restart.
-- **The settings component is almost always the sibling in question**, and reading it early does not throw —
-  it answers with the DEFAULTS, which is why the failure reads as "the user's stored answer was ignored"
-  rather than as a crash. Measured 2026-09-02 against a live Obsidian:
-  `PluginSuggestionComponent` re-asked a user whose decline was on disk and whose settings object held
-  `declined: true` at the moment the notice was already showing — the notice had been decided earlier,
-  against the default.
-- **Wait for the sibling explicitly.** `PluginSettingsComponentBase.whenLoadedFromFile()` is the signal for
-  the settings case; it resolves immediately once the first read has happened, so a late subscriber is not
-  stranded the way a one-shot `loadSettings` listener would be. Then re-check the component is still loaded
-  (`isUnloaded()`) before acting, because the wait spans an `await`.
-- **But `whenLoadedFromFile()` is the right signal only for a ONE-SHOT decision.** Where the thing being
-  decided can become possible again later, subscribe to the `loadSettings` EVENT instead and re-read the
-  state on every firing. `SettingsMigrationComponent` is the worked example: its offer needs the settings
-  AND the other plugin's API, either can arrive first, and the API can arrive minutes later when the user
-  installs that plugin — so it wires both edges plus an immediate check, and gates on nothing during
-  `onload`. A one-shot wait there would settle before the provider ever appeared. The bullet above still
-  applies to a decision made exactly once, which is what `PluginSuggestionComponent` does.
-- **A component that needs the wait should TAKE the collaborator, not a readiness flag.** Requiring
-  `pluginSettingsComponent` in the constructor params makes the wait impossible for a host to forget;
-  handing the host a `whenReady`-style promise to pass in makes it one more thing to get right per consumer,
-  which is the same defect one layer up.
+- **`LayoutReadyComponent` waits for the component's OWN load, and nothing else.** It awaits `getInFlightLoadPromise()` — its `onloadAsync` plus its children — precisely so a handler does not observe its own half-initialized state. A SIBLING under the same plugin is outside that promise, so a handler that reads a sibling's state is racing it with no wait at all.
+- **The race is empty on a cold start and wide open on a runtime enable.** Cold start: the plugin loads long before the workspace layout is ready, so every sibling has settled by the time the handler runs, and the bug is invisible. Enable from the Community Plugins tab, or a re-enable after an update: the layout is ALREADY ready, `onLayoutReady` fires its callback on the next macrotask, and `PluginBase.onload` is still awaiting `onloadImpl` — so the sibling's `onloadAsync` has not finished. Test on a runtime enable, not only on a restart.
+- **The settings component is almost always the sibling in question**, and reading it early does not throw — it answers with the DEFAULTS, which is why the failure reads as "the user's stored answer was ignored" rather than as a crash. Measured 2026-09-02 against a live Obsidian: `PluginSuggestionComponent` re-asked a user whose decline was on disk and whose settings object held `declined: true` at the moment the notice was already showing — the notice had been decided earlier, against the default.
+- **Wait for the sibling explicitly.** `PluginSettingsComponentBase.whenLoadedFromFile()` is the signal for the settings case; it resolves immediately once the first read has happened, so a late subscriber is not stranded the way a one-shot `loadSettings` listener would be. Then re-check the component is still loaded (`isUnloaded()`) before acting, because the wait spans an `await`.
+- **But `whenLoadedFromFile()` is the right signal only for a ONE-SHOT decision.** Where the thing being decided can become possible again later, subscribe to the `loadSettings` EVENT instead and re-read the state on every firing. `SettingsMigrationComponent` is the worked example: its offer needs the settings AND the other plugin's API, either can arrive first, and the API can arrive minutes later when the user installs that plugin — so it wires both edges plus an immediate check, and gates on nothing during `onload`. A one-shot wait there would settle before the provider ever appeared. The bullet above still applies to a decision made exactly once, which is what `PluginSuggestionComponent` does.
+- **A component that needs the wait should TAKE the collaborator, not a readiness flag.** Requiring `pluginSettingsComponent` in the constructor params makes the wait impossible for a host to forget; handing the host a `whenReady`-style promise to pass in makes it one more thing to get right per consumer, which is the same defect one layer up.
 - (cannot be forced by ESLint — a rule cannot tell which reads cross a component boundary)
 
 ### L24. A `null` that means "retry" is a SENTINEL — check it at the call site, never assign it into data
 
-- **`applyContentChanges` returns `null | string`, and the `null` is a control signal, not a value.** It is
-  the same three-outcome vocabulary `L22` gives `newContentProvider`: `null` says "these changes are not
-  valid for this content, retry", and its only reachable source is
-  `return shouldRetryOnInvalidChanges ? null : content`. Anything that stores the return value instead of
-  branching on it has stored a signal where a value belongs.
-- **The failure is silent and destructive, not a crash.** `applyCanvasChanges` did
-  `node.text = await applyContentChanges(…)`, then fell through to `JSON.stringify`, so a canvas text node
-  whose change no longer matched was written back as `"text": null` — the node's content gone, and not even
-  the type the canvas schema declares (fixed 2026-09-03). Contrast `L22`'s bug, which wedged the
-  queue and announced itself with a standing notice; this one completes successfully and corrupts the file.
-- **The loose type is why the compiler stays quiet.** `GenericObject<CanvasData>` is
-  `Record<string | symbol, unknown> & CanvasData`, so `node.text = null` type-checks. Do not expect
-  `strict` to cover a nested call's sentinel — the index signature swallows it. The pattern to write is
-  always `const x = await f(); if (x === null) { …; } obj.prop = x;`.
-- **Which branch the check takes is `L22`'s question, asked one layer down.** In `applyCanvasChanges` a
-  text-node mismatch is permanent for the `(content, changes)` pair it was handed, exactly like the
-  file-node mismatch a few lines above, so it `return content`s and the operation completes with no write.
-  The sibling refusal already discards node mutations made earlier in the same pass, so returning early is
-  the established behavior there, not a new one.
+- **`applyContentChanges` returns `null | string`, and the `null` is a control signal, not a value.** It is the same three-outcome vocabulary `L22` gives `newContentProvider`: `null` says "these changes are not valid for this content, retry", and its only reachable source is `return shouldRetryOnInvalidChanges ? null : content`. Anything that stores the return value instead of branching on it has stored a signal where a value belongs.
+- **The failure is silent and destructive, not a crash.** `applyCanvasChanges` did `node.text = await applyContentChanges(…)`, then fell through to `JSON.stringify`, so a canvas text node whose change no longer matched was written back as `"text": null` — the node's content gone, and not even the type the canvas schema declares (fixed 2026-09-03). Contrast `L22`'s bug, which wedged the queue and announced itself with a standing notice; this one completes successfully and corrupts the file.
+- **The loose type is why the compiler stays quiet.** `GenericObject<CanvasData>` is `Record<string | symbol, unknown> & CanvasData`, so `node.text = null` type-checks. Do not expect `strict` to cover a nested call's sentinel — the index signature swallows it. The pattern to write is always `const x = await f(); if (x === null) { …; } obj.prop = x;`.
+- **Which branch the check takes is `L22`'s question, asked one layer down.** In `applyCanvasChanges` a text-node mismatch is permanent for the `(content, changes)` pair it was handed, exactly like the file-node mismatch a few lines above, so it `return content`s and the operation completes with no write. The sibling refusal already discards node mutations made earlier in the same pass, so returning early is the established behavior there, not a new one.
 - (cannot be forced by ESLint — a rule cannot tell a sentinel `null` from a nullable value)
 
 ### L25. Obsidian raises no plugin enable/disable event — so read a version, and know what you cannot see
 
-- **There is no `app.plugins` event for another plugin being enabled or disabled.** `plugin-lifecycle-events.ts`
-  says so in its header, and it is the reason that file exists at all: the library broadcasts
-  `obsidian-dev-utils:plugin-loaded` / `-unloaded` on `app.workspace` because there was nothing else to
-  listen to. That broadcast covers plugins built on THIS library and nothing else.
-- **So a question about another plugin has two possible answers, and they are not equivalent.** What a
-  plugin has REGISTERED (a handler, an entry in a registry, a published API) depends on whether it has
-  loaded yet, so the same question answers differently depending on when it is asked — plugins load in an
-  unspecified order. What a plugin HAS — `app.plugins.manifests[id].version`, `enabledPlugins.has(id)` — is
-  populated for everything installed before any of them load, so it answers the same way at any point.
-  `getInstalledPluginVersion` (`obsidian/plugin/plugin-install-state.ts`) is the second kind, and
-  `PluginGateComponent`'s conflict half is built on it for exactly that reason.
-- **State the ceiling in the file rather than implying it away.** A conflict guard re-checks on the library
-  broadcast, so a plugin built on this library and toggled mid-session is caught immediately; a plugin by another author is
-  caught at the next load. That is a real limit, and a header that omits it reads as a guarantee the code
-  does not make. Do not paper over it with a poll — a timer that re-reads `enabledPlugins` trades a stated
-  limit for an unstated cost.
-- **Fail closed when the version cannot be parsed.** A conflict whose version comparison throws is treated
-  as holding. A false alarm costs a notice; a false all-clear costs whatever the two plugins were about to
-  do to the vault at once.
+- **There is no `app.plugins` event for another plugin being enabled or disabled.** `plugin-lifecycle-events.ts` says so in its header, and it is the reason that file exists at all: the library broadcasts `obsidian-dev-utils:plugin-loaded` / `-unloaded` on `app.workspace` because there was nothing else to listen to. That broadcast covers plugins built on THIS library and nothing else.
+- **So a question about another plugin has two possible answers, and they are not equivalent.** What a plugin has REGISTERED (a handler, an entry in a registry, a published API) depends on whether it has loaded yet, so the same question answers differently depending on when it is asked — plugins load in an unspecified order. What a plugin HAS — `app.plugins.manifests[id].version`, `enabledPlugins.has(id)` — is populated for everything installed before any of them load, so it answers the same way at any point. `getInstalledPluginVersion` (`obsidian/plugin/plugin-install-state.ts`) is the second kind, and `PluginGateComponent`'s conflict half is built on it for exactly that reason.
+- **State the ceiling in the file rather than implying it away.** A conflict guard re-checks on the library broadcast, so a plugin built on this library and toggled mid-session is caught immediately; a plugin by another author is caught at the next load. That is a real limit, and a header that omits it reads as a guarantee the code does not make. Do not paper over it with a poll — a timer that re-reads `enabledPlugins` trades a stated limit for an unstated cost.
+- **Fail closed when the version cannot be parsed.** A conflict whose version comparison throws is treated as holding. A false alarm costs a notice; a false all-clear costs whatever the two plugins were about to do to the vault at once.
 - (cannot be forced by ESLint — a rule cannot tell which question about another plugin is being asked)
 
 ## Testing
@@ -1179,127 +431,36 @@ export function myFunction(param: Type): ReturnType {
 ### Goals
 
 - The project aims for 100% test coverage. Every new or changed code path must be covered by tests.
-- Three layers, one vitest project per concern (see `scripts/vitest-config.ts`): unit tests
-  (`*.test.ts`, jsdom or node), Node-side integration tests (`*.integration.test.ts`), and real-Obsidian
-  E2E tests (`*.obsidian.integration.test.ts`, driven over CDP by `obsidian-integration-testing`
-  against an owned Electron instance). The E2E layer is no longer "planned" — it is the only layer that
-  sees behavior the mocks cannot reproduce (see L7, L10, L11 above for cases that only surface there).
-- **Three E2E projects own a DEDICATED Obsidian instance each**, because their vaults cannot be shared with
-  the pooled `obsidian-integration-tests` one. Each has its own `globalSetup` and its own ascending
-  `groupOrder`, so the instances never run concurrently:
-  `obsidian-integration-tests:demo-vault-helper` (bootstraps a whole demo vault),
-  `obsidian-integration-tests:consumer-lib` (a vault with NO plugin-under-test, proving a consumer's `lib`
-  wiring), and `obsidian-integration-tests:plugin-api` (two SEPARATELY BUNDLED plugins in one vault, so two
-  distinct copies of this library share one renderer — the only place the plugin-API registry's wire-format
-  claim can actually be tested; sources under `integration-test-plugin-api/`, built by
-  `scripts/helpers/build-plugin-api-test-plugins.ts` into `dist/` and never shipped). A file belonging to
-  one of these must ALSO be added to the pooled project's `exclude` list, or it runs twice against the
-  wrong vault.
+- Three layers, one vitest project per concern (see `scripts/vitest-config.ts`): unit tests (`*.test.ts`, jsdom or node), Node-side integration tests (`*.integration.test.ts`), and real-Obsidian E2E tests (`*.obsidian.integration.test.ts`, driven over CDP by `obsidian-integration-testing` against an owned Electron instance). The E2E layer is no longer "planned" — it is the only layer that sees behavior the mocks cannot reproduce (see L7, L10, L11 above for cases that only surface there).
+- **Three E2E projects own a DEDICATED Obsidian instance each**, because their vaults cannot be shared with the pooled `obsidian-integration-tests` one. Each has its own `globalSetup` and its own ascending `groupOrder`, so the instances never run concurrently: `obsidian-integration-tests:demo-vault-helper` (bootstraps a whole demo vault), `obsidian-integration-tests:consumer-lib` (a vault with NO plugin-under-test, proving a consumer's `lib` wiring), and `obsidian-integration-tests:plugin-api` (two SEPARATELY BUNDLED plugins in one vault, so two distinct copies of this library share one renderer — the only place the plugin-API registry's wire-format claim can actually be tested; sources under `integration-test-plugin-api/`, built by `scripts/helpers/build-plugin-api-test-plugins.ts` into `dist/` and never shipped). A file belonging to one of these must ALSO be added to the pooled project's `exclude` list, or it runs twice against the wrong vault.
 
 ### Test setup
 
-- Consumers wire the library's per-test setup into their suites via three endpoints, mirroring
-  `obsidian-test-mocks`'s naming: `obsidian-dev-utils/setup` (framework-agnostic
-  `setup({ beforeEach, afterEach, afterAll })`), `obsidian-dev-utils/vitest-setup`, and
-  `obsidian-dev-utils/jest-setup`. `afterAll` is **required** — it closes the unhandled-async-error
-  collection window for the file (see "Unhandled async errors" below); the two framework endpoints pass it
-  for you.
-  Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so
-  accumulated state does not leak between tests), enables async-operation tracking, silences every
-  `console` method (replacing each with a no-op via `silenceConsole()`, so incidental log/warn/error
-  output does not pollute the test report), clears `localStorage` (so per-worker Web Storage does
-  not leak between tests), and starts collecting unhandled async errors; after each test it drains any
-  tracked fire-and-forget operations **and the pending macrotask queue**, disables tracking, restores the
-  original `console` methods
-  (`restoreConsole()`), and fails the test with an `AggregateError` if any unhandled async error was
-  emitted (see "Unhandled async errors" below), so tests can `await waitForAllAsyncOperations()` against
-  isolated state. A test that needs to assert on console output re-instruments the method it cares about (e.g.
-  `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test. The Vitest/Jest
-  files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The top-level
-  `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see
-  `scripts/build-generate-index.ts`) so a production `import 'obsidian-dev-utils'` never pulls in
-  `vitest`/`@jest/globals`.
+- Consumers wire the library's per-test setup into their suites via three endpoints, mirroring `obsidian-test-mocks`'s naming: `obsidian-dev-utils/setup` (framework-agnostic `setup({ beforeEach, afterEach, afterAll })`), `obsidian-dev-utils/vitest-setup`, and `obsidian-dev-utils/jest-setup`. `afterAll` is **required** — it closes the unhandled-async-error collection window for the file (see "Unhandled async errors" below); the two framework endpoints pass it for you. Before each test the setup resets the shared-state bag on `globalThis.__obsidianDevUtils` (so accumulated state does not leak between tests), enables async-operation tracking, silences every `console` method (replacing each with a no-op via `silenceConsole()`, so incidental log/warn/error output does not pollute the test report), clears `localStorage` (so per-worker Web Storage does not leak between tests), and starts collecting unhandled async errors; after each test it drains any tracked fire-and-forget operations **and the pending macrotask queue**, disables tracking, restores the original `console` methods (`restoreConsole()`), and fails the test with an `AggregateError` if any unhandled async error was emitted (see "Unhandled async errors" below), so tests can `await waitForAllAsyncOperations()` against isolated state. A test that needs to assert on console output re-instruments the method it cares about (e.g. `vi.spyOn(console, 'error')`), which transparently overrides the no-op for that test. The Vitest/Jest files are thin setup-file glue (v8-ignored) over the unit-tested agnostic core. The top-level `setup.ts` and all `*-setup.ts` files are excluded from the auto-generated barrels (see `scripts/build-generate-index.ts`) so a production `import 'obsidian-dev-utils'` never pulls in `vitest`/`@jest/globals`.
 
 ### `localStorage` in tests (`--localstorage-file`)
 
-- Node 22+ exposes an experimental Web Storage `localStorage`, but touching it without the
-  `--localstorage-file` CLI flag emits an `ExperimentalWarning` and leaves `localStorage` unavailable
-  (`undefined`). In real Obsidian (Electron) `localStorage` exists, so the root-cause fix is to provide
-  it in tests — not to suppress the warning.
-- `exec()` (`src/script-utils/exec.ts`) therefore appends `--localstorage-file=:memory:` to every spawned
-  child process's `NODE_OPTIONS` (via `CHILD_ENV`, the same env-injection point already used for
-  `DEBUG_COLORS`; existing `NODE_OPTIONS` are preserved by `appendNodeOption()`). `:memory:` gives each
-  process a working, non-persistent `localStorage` — no file on disk, no state shared between processes.
-  Because the flag rides on `NODE_OPTIONS`, it reaches Vitest's forked workers (Vitest ignores
-  `poolOptions.*.execArgv` for this) whenever tests are launched through the runner (`npm test` →
-  `test()` → `exec`). Running `vitest` **directly** (bare `npx vitest`) bypasses `exec`, so `localStorage`
-  is absent there — run tests via the npm scripts.
+- Node 22+ exposes an experimental Web Storage `localStorage`, but touching it without the `--localstorage-file` CLI flag emits an `ExperimentalWarning` and leaves `localStorage` unavailable (`undefined`). In real Obsidian (Electron) `localStorage` exists, so the root-cause fix is to provide it in tests — not to suppress the warning.
+- `exec()` (`src/script-utils/exec.ts`) therefore appends `--localstorage-file=:memory:` to every spawned child process's `NODE_OPTIONS` (via `CHILD_ENV`, the same env-injection point already used for `DEBUG_COLORS`; existing `NODE_OPTIONS` are preserved by `appendNodeOption()`). `:memory:` gives each process a working, non-persistent `localStorage` — no file on disk, no state shared between processes. Because the flag rides on `NODE_OPTIONS`, it reaches Vitest's forked workers (Vitest ignores `poolOptions.*.execArgv` for this) whenever tests are launched through the runner (`npm test` → `test()` → `exec`). Running `vitest` **directly** (bare `npx vitest`) bypasses `exec`, so `localStorage` is absent there — run tests via the npm scripts.
 
 ### Warnings as errors
 
-- `installWarningsAsErrors()` (`src/script-utils/warnings-as-errors.ts`) registers a process `'warning'` listener that
-  rethrows, so any Node warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`,
-  …) surfaces as an uncaught error and **fails the run** (non-zero exit). This forces warnings to be fixed
-  at the source rather than scrolling past unread.
-- It is installed by the standard `setup()` (`src/setup.ts`), so **every** consumer of
-  `obsidian-dev-utils/vitest-setup`, `obsidian-dev-utils/jest-setup`, or the agnostic
-  `obsidian-dev-utils/setup` gets it — it is forced, not opt-in. `installWarningsAsErrors()` is
-  idempotent, so the repeated `setup()` calls across setup files register the listener at most once.
-  Note this pairs with the `--localstorage-file` fix above: with warnings-as-errors on, a run that does
-  **not** provide `localStorage` fails on the `ExperimentalWarning` — so tests must be launched through
-  the runner (which supplies the flag) or with `--localstorage-file` set.
+- `installWarningsAsErrors()` (`src/script-utils/warnings-as-errors.ts`) registers a process `'warning'` listener that rethrows, so any Node warning (`ExperimentalWarning`, `DeprecationWarning`, `MaxListenersExceededWarning`, …) surfaces as an uncaught error and **fails the run** (non-zero exit). This forces warnings to be fixed at the source rather than scrolling past unread.
+- It is installed by the standard `setup()` (`src/setup.ts`), so **every** consumer of `obsidian-dev-utils/vitest-setup`, `obsidian-dev-utils/jest-setup`, or the agnostic `obsidian-dev-utils/setup` gets it — it is forced, not opt-in. `installWarningsAsErrors()` is idempotent, so the repeated `setup()` calls across setup files register the listener at most once. Note this pairs with the `--localstorage-file` fix above: with warnings-as-errors on, a run that does **not** provide `localStorage` fails on the `ExperimentalWarning` — so tests must be launched through the runner (which supplies the flag) or with `--localstorage-file` set.
 
 ### Unhandled async errors
 
-- The standard `setup()` also fails a test if a fire-and-forget async operation emitted an async error the
-  test did not declare as expected — the "no swallowed async errors" harness. `beforeEach` calls
-  `startCollectingUnhandledAsyncErrors()` (`src/error.ts`); `afterEach` drains tracked operations
-  via `waitForAllAsyncOperations()` (guarded by `isAsyncOperationTrackingEnabled()`, so a test that
-  disabled tracking itself does not trip the drain), then throws an `AggregateError` of whatever
-  `drainCollectedUnhandledAsyncErrors()` returns. It is forced, not opt-in.
-- **A registered consumer handler does NOT exempt an error** (it used to, via an
-  `asyncErrorHandlerCount === 0` gate mirroring Node's `unhandledRejection`). `PluginBase` adds
-  `AsyncErrorHandlerComponent` during `onload`, which registers such a handler — so the old gate disarmed
-  the harness for the whole of **every plugin's `plugin.test.ts`**, where it was needed most. In
-  production a handler showing the user a Notice is a defensible definition of "handled"; in a test it is
-  not an assertion that the error was expected. `startAsyncErrorIgnoreContext()` is now the single,
-  explicit opt-out, and it is explicit at the call site rather than dependent on which components a plugin
-  happens to load. Consequence for consumers: a test that registers a handler and asserts on the emitted
-  error must now also open an ignore context.
-- **The collection window spans the gaps between tests, and `afterAll` closes it.** A `setTimeout(…, 0)`
-  a test leaves pending (e.g. `LayoutReadyComponent.onload`) is not a tracked async operation, so
-  `waitForAllAsyncOperations()` does not wait for it. `afterEach` therefore also lets the macrotask queue
-  turn over (`drainPendingMacrotasks()`, built on a `globalThis.setTimeout` captured at module load so
-  `vi.useFakeTimers()` cannot hang teardown), and *drains* the window rather than closing it — an error
-  emitted in the gap is reported by the next `beforeEach` ("after the previous test finished"), and one
-  emitted after the file's last test by `afterAll` ("after the last test finished"). Earlier, such an
-  error hit a nulled bucket after `restoreConsole()` had run: it printed to a real console and failed
-  nothing. The tell was a `stderr | <file>` block with **no test name** — i.e. emitted outside any running
-  test.
-- A test that deliberately triggers an async error opens an ignore context:
-  `using _ = startAsyncErrorIgnoreContext()` (an `asyncErrorIgnoreContextDepth` counter checked by
-  `emitAsyncErrorEvent`, exposed via `isAsyncErrorIgnoreContextActive()`). Crucially this also covers
-  **fire-and-forget** operations: `addErrorHandler` (`src/async.ts`) captures the active ignore context
-  synchronously at schedule time and passes it as `emitAsyncErrorEvent(error, shouldIgnore)`, so a
-  rejection that settles during the `afterEach` drain — after the `using` scope has exited — is still
-  ignored. No manual `waitForAllAsyncOperations()` in the test is needed. Only operations scheduled
-  *inside* the context are ignored; one scheduled outside is still reported.
+- The standard `setup()` also fails a test if a fire-and-forget async operation emitted an async error the test did not declare as expected — the "no swallowed async errors" harness. `beforeEach` calls `startCollectingUnhandledAsyncErrors()` (`src/error.ts`); `afterEach` drains tracked operations via `waitForAllAsyncOperations()` (guarded by `isAsyncOperationTrackingEnabled()`, so a test that disabled tracking itself does not trip the drain), then throws an `AggregateError` of whatever `drainCollectedUnhandledAsyncErrors()` returns. It is forced, not opt-in.
+- **A registered consumer handler does NOT exempt an error** (it used to, via an `asyncErrorHandlerCount === 0` gate mirroring Node's `unhandledRejection`). `PluginBase` adds `AsyncErrorHandlerComponent` during `onload`, which registers such a handler — so the old gate disarmed the harness for the whole of **every plugin's `plugin.test.ts`**, where it was needed most. In production a handler showing the user a Notice is a defensible definition of "handled"; in a test it is not an assertion that the error was expected. `startAsyncErrorIgnoreContext()` is now the single, explicit opt-out, and it is explicit at the call site rather than dependent on which components a plugin happens to load. Consequence for consumers: a test that registers a handler and asserts on the emitted error must now also open an ignore context.
+- **The collection window spans the gaps between tests, and `afterAll` closes it.** A `setTimeout(…, 0)` a test leaves pending (e.g. `LayoutReadyComponent.onload`) is not a tracked async operation, so `waitForAllAsyncOperations()` does not wait for it. `afterEach` therefore also lets the macrotask queue turn over (`drainPendingMacrotasks()`, built on a `globalThis.setTimeout` captured at module load so `vi.useFakeTimers()` cannot hang teardown), and *drains* the window rather than closing it — an error emitted in the gap is reported by the next `beforeEach` ("after the previous test finished"), and one emitted after the file's last test by `afterAll` ("after the last test finished"). Earlier, such an error hit a nulled bucket after `restoreConsole()` had run: it printed to a real console and failed nothing. The tell was a `stderr | <file>` block with **no test name** — i.e. emitted outside any running test.
+- A test that deliberately triggers an async error opens an ignore context: `using _ = startAsyncErrorIgnoreContext()` (an `asyncErrorIgnoreContextDepth` counter checked by `emitAsyncErrorEvent`, exposed via `isAsyncErrorIgnoreContextActive()`). Crucially this also covers **fire-and-forget** operations: `addErrorHandler` (`src/async.ts`) captures the active ignore context synchronously at schedule time and passes it as `emitAsyncErrorEvent(error, shouldIgnore)`, so a rejection that settles during the `afterEach` drain — after the `using` scope has exited — is still ignored. No manual `waitForAllAsyncOperations()` in the test is needed. Only operations scheduled *inside* the context are ignored; one scheduled outside is still reported.
 
 ### Framework
 
 - Vitest with explicit imports (globals: false) — always import `describe`, `it`, `expect`, etc. from `'vitest'`
 - Test environment: `node` by default; use `// @vitest-environment jsdom` directive for browser tests
 - Coverage provider: v8
-- **A `unit-tests:eslint-typecheck` case timing out at 60 s is machine load, not a broken rule — retry
-  rather than investigate.** That project runs `maxWorkers: 1` with `isolate: false`
-  (`scripts/vitest-config.ts`) and every `@typescript-eslint/rule-tester` case builds a type-aware
-  program, so it is the first thing in the suite to blow the per-test timeout when the box is busy — one
-  case was measured at 141 s under load. It fails as a bare `Error: Test timed out in 60000ms.` inside
-  `RuleTester.js` with no assertion message, which reads like a real regression. Confirm by running the
-  named file alone (`npx vitest run <file>`): if it passes there, nothing is wrong. Do not run
-  `find-overexposed` or another gate concurrently with `test:coverage` — that alone was enough to fail
-  two runs on 2026-09-02, and a failed run also wipes `coverage/`, so there is no lcov left to decode
-  afterwards.
+- **A `unit-tests:eslint-typecheck` case timing out at 60 s is machine load, not a broken rule — retry rather than investigate.** That project runs `maxWorkers: 1` with `isolate: false` (`scripts/vitest-config.ts`) and every `@typescript-eslint/rule-tester` case builds a type-aware program, so it is the first thing in the suite to blow the per-test timeout when the box is busy — one case was measured at 141 s under load. It fails as a bare `Error: Test timed out in 60000ms.` inside `RuleTester.js` with no assertion message, which reads like a real regression. Confirm by running the named file alone (`npx vitest run <file>`): if it passes there, nothing is wrong. Do not run `find-overexposed` or another gate concurrently with `test:coverage` — that alone was enough to fail two runs on 2026-09-02, and a failed run also wipes `coverage/`, so there is no lcov left to decode afterwards.
 
 ### File Conventions
 
@@ -1336,48 +497,17 @@ describe('MyModule', () => {
 - For mock-specific APIs (`create__`, `createConfigured__`, etc.), import from `'obsidian-test-mocks/obsidian'` directly
 - Use `vi.fn()` for mock functions, `vi.useFakeTimers()`/`vi.useRealTimers()` for timer mocking
 - Use `vi.stubGlobal()` / `vi.unstubAllGlobals()` for global stubs
-- The shared setup silences all `console` methods per-test (see "Test setup"); a test that must assert
-  on console output re-instruments the method (`vi.spyOn(console, 'error')`), which overrides the no-op.
-- The `eslint-plugin-obsidianmd` `no-console` rule flags `console.<member>` access (e.g. `console.log`)
-  but NOT bare `console` identifier references. So when a test needs to inspect a console method itself
-  (identity/replacement checks), read it via a descriptor — `Object.getOwnPropertyDescriptor(console,
-  name)?.value` — which stays lint-clean instead of scattering `eslint-disable no-console` comments
-  (`no-console` disables do not even match the obsidian rule's custom message).
+- The shared setup silences all `console` methods per-test (see "Test setup"); a test that must assert on console output re-instruments the method (`vi.spyOn(console, 'error')`), which overrides the no-op.
+- The `eslint-plugin-obsidianmd` `no-console` rule flags `console.<member>` access (e.g. `console.log`) but NOT bare `console` identifier references. So when a test needs to inspect a console method itself (identity/replacement checks), read it via a descriptor — `Object.getOwnPropertyDescriptor(console, name)?.value` — which stays lint-clean instead of scattering `eslint-disable no-console` comments (`no-console` disables do not even match the obsidian rule's custom message).
 
 ### Integration test timing
 
-- Obsidian integration tests (`*.obsidian.integration.test.ts`) share a single Obsidian instance
-  via the global setup. Never gate on a fixed `setTimeout`/sleep wait — it passes in isolation but
-  flakes under full-suite load, because the shared instance is slower when the unit suites run
-  concurrently. Wait on a readiness signal instead.
-- For metadata-cache-dependent assertions, `await ensureMetadataCacheReady(app)` after mutating the
-  vault — it awaits `onCleanCache` and is unbounded, so it waits exactly as long as needed.
-  `getBacklinksForFileSafe` already calls it internally, but inside a *bounded* retry that can time
-  out under load, so call it explicitly first.
-- **`ensureMetadataCacheReady` is NOT sufficient for a file you just created.** It awaits
-  `onCleanCache`, which resolves as soon as the cache is clean *at that instant* — and right after
-  `vault.create` the indexing work is not queued yet, so it returns before there is anything to wait
-  for. Measured: it left 2 of 3 flakes in place. For a fresh file, wait on the concrete
-  condition instead (e.g. the file's `resolvedLinks` entry appearing), not on cache cleanliness.
-- When there is no readiness event to await, poll with `retryWithTimeout` (bounded) rather than a
-  single frame or fixed delay — e.g. `getDomEventsHandlersConstructor` retries until the constructor
-  is intercepted instead of asserting after one `requestAnimationFrame`.
-- Inside `evalInObsidian` callbacks, library helpers arrive via the injected `lib` bag — **not** via the
-  test file's imports, since the callback is serialized and runs in the Obsidian process. `lib` is
-  **flat**, so it is `lib.ensureMetadataCacheReady`, not `lib.obsidian['metadata-cache'].…`. Destructure
-  by name (`fn({ app, lib: { ensureMetadataCacheReady } })`). A new export only appears there after
-  `npm run build:generate-merged` regenerates the gitignored `src/__merged.ts`; otherwise `tsc` fails with
-  `Property '<name>' does not exist on type 'Lib'`. The runtime source is
-  `window.__obsidianDevUtilsModule`, published by the harness plugin.
-- **The harness switches the settings POPOUT off, so a test whose subject is that window must opt back
-  in.** `obsidian-integration-testing` writes `settingsPopoutWindow: false` into every vault it provisions,
-  and says so in its run log (*"settingsPopoutWindow off: settings stay in the driven window"*). That is
-  right for most tests. It is wrong for the few whose premise IS the second Electron window: anything that
-  waits on `activeWindow !== window`, or asserts that a settings window was (or was not) created, then
-  never observes the thing it is asserting and simply times out — with no assertion failure to point at the
-  cause. Those opt back in through the harness's own Node-side seam (`obsidian-integration-testing` 12.2.0
-  and later), which wraps whatever needs the popout — one `evalInObsidian`, or an eval plus the polls that
-  follow it:
+- Obsidian integration tests (`*.obsidian.integration.test.ts`) share a single Obsidian instance via the global setup. Never gate on a fixed `setTimeout`/sleep wait — it passes in isolation but flakes under full-suite load, because the shared instance is slower when the unit suites run concurrently. Wait on a readiness signal instead.
+- For metadata-cache-dependent assertions, `await ensureMetadataCacheReady(app)` after mutating the vault — it awaits `onCleanCache` and is unbounded, so it waits exactly as long as needed. `getBacklinksForFileSafe` already calls it internally, but inside a *bounded* retry that can time out under load, so call it explicitly first.
+- **`ensureMetadataCacheReady` is NOT sufficient for a file you just created.** It awaits `onCleanCache`, which resolves as soon as the cache is clean *at that instant* — and right after `vault.create` the indexing work is not queued yet, so it returns before there is anything to wait for. Measured: it left 2 of 3 flakes in place. For a fresh file, wait on the concrete condition instead (e.g. the file's `resolvedLinks` entry appearing), not on cache cleanliness.
+- When there is no readiness event to await, poll with `retryWithTimeout` (bounded) rather than a single frame or fixed delay — e.g. `getDomEventsHandlersConstructor` retries until the constructor is intercepted instead of asserting after one `requestAnimationFrame`.
+- Inside `evalInObsidian` callbacks, library helpers arrive via the injected `lib` bag — **not** via the test file's imports, since the callback is serialized and runs in the Obsidian process. `lib` is **flat**, so it is `lib.ensureMetadataCacheReady`, not `lib.obsidian['metadata-cache'].…`. Destructure by name (`fn({ app, lib: { ensureMetadataCacheReady } })`). A new export only appears there after `npm run build:generate-merged` regenerates the gitignored `src/__merged.ts`; otherwise `tsc` fails with `Property '<name>' does not exist on type 'Lib'`. The runtime source is `window.__obsidianDevUtilsModule`, published by the harness plugin.
+- **The harness switches the settings POPOUT off, so a test whose subject is that window must opt back in.** `obsidian-integration-testing` writes `settingsPopoutWindow: false` into every vault it provisions, and says so in its run log (*"settingsPopoutWindow off: settings stay in the driven window"*). That is right for most tests. It is wrong for the few whose premise IS the second Electron window: anything that waits on `activeWindow !== window`, or asserts that a settings window was (or was not) created, then never observes the thing it is asserting and simply times out — with no assertion failure to point at the cause. Those opt back in through the harness's own Node-side seam (`obsidian-integration-testing` 12.2.0 and later), which wraps whatever needs the popout — one `evalInObsidian`, or an eval plus the polls that follow it:
 
   ```ts
   await withAppConfig({
@@ -1389,57 +519,17 @@ describe('MyModule', () => {
   });
   ```
 
-  `vaultPath` and `transport` are optional and resolve from the test context; pass `vaultPath` where the
-  file already drives a named vault. The seam RESTORES the key on the way out — writing the previous value
-  back, or deleting the key again where the vault never carried it — which matters because the vault is
-  shared with every other test in that instance, and an inline `app.vault.setConfig` left the popout on for
-  all of them. It also owns the cast `obsidian-typings`' `ConfigItem` union forces (it omits the key), so no
-  test repeats it. `setAppConfig` / `restoreAppConfig` are the `beforeAll` / `afterAll` halves, and
-  `getAppConfig` reads. Three integration files use this today.
-- **A test that opens the settings POPOUT must point the active window home before it ends.** Obsidian
-  moves the `activeWindow` / `activeDocument` globals on window FOCUS, and the owned test instance is
-  hidden by being moved OFF-SCREEN — so `app.setting.close()` alone leaves them pinned to the popout
-  that was just destroyed, permanently. Every later file shares that instance and builds its UI in
-  `activeDocument`, so each modal / popover / notice then renders into a dead window and waits out its
-  full timeout with no assertion failure. Close Settings and reassign
-  `window.activeWindow = getMainWindow(app)` (plus `window.activeDocument`) in a `finally`.
-  `scripts/integration-test-obsidian-setup.ts` carries an `afterEach` that does this for every file as a
-  net, but a test that leaks is still a bug — the net exists so one leak cannot fail unrelated files.
-- **A per-test budget must CLEAR the transports' per-eval cap, never match it.** One `evalInObsidian`
-  closure is capped at 30 000 ms by the transport (`commandTimeoutInMilliseconds` on desktop CDP,
-  the script timeout on Appium), and outrunning that raises `EvalCapExceededError` — which names the cap,
-  the transport and the `pollInObsidian` remedy. That message is unreachable when `testTimeout` is also
-  30 000: vitest starts its clock at the top of the test and the transport starts its own only once the
-  eval is dispatched, so vitest always wins by the few milliseconds in between and reports its anonymous
-  `Test timed out in 30000ms` instead. Both budgets were 30 000 here until 2026-09-15, which is why the
-  release abort of 2026-09-13 (30 044 ms burned against a 30 000 ms budget) named nothing; the four
-  Obsidian projects now take `INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS` (45 000), and the shared
-  `defineObsidianPluginVitestConfig` gives every plugin the same clearance. Android was never affected —
-  its 60 000 always cleared the Appium cap, which is the evidence the desktop equality was an oversight.
-  **Do not lower either project's budget back to the cap**; a unit test pins the relationship.
-- **`hoverElement` and `unhoverElement` THROW when their `:hover` post-condition is not met**, rather than
-  resolving quietly after their 5 000 ms poll. A quiet resolve is the silent-no-op class this repo's
-  trusted-input helpers exist to eliminate: a test that reads an element which never took the hover passes
-  on whatever its base style happens to be. `unhoverElement` also SNAPS the box edge outward
-  (`Math.floor(rect.left) - 1`) before stepping off the element, because `moveMouse` rounds — so on a
-  fractional edge the plain one-pixel step rounded straight back onto the element's own pixel column.
-  Measured on a bar whose `left` was 859.796875: the old step never cleared the hover and burned the full
-  5 000 ms on every single run, while the snapped one clears in 26 ms.
-- **A whole-file, flat-timeout failure is an ordering symptom, not a load symptom.** Vitest orders files
-  from its `node_modules/.vite/vitest` duration cache, so the order changes run to run and a
-  state-leak like the one above surfaces as a different set of "flaky" files each time, while every file
-  passes in isolation. Before blaming load, run the suspect file alone, then again with the files that
-  preceded it, and bisect.
+  `vaultPath` and `transport` are optional and resolve from the test context; pass `vaultPath` where the file already drives a named vault. The seam RESTORES the key on the way out — writing the previous value back, or deleting the key again where the vault never carried it — which matters because the vault is shared with every other test in that instance, and an inline `app.vault.setConfig` left the popout on for all of them. It also owns the cast `obsidian-typings`' `ConfigItem` union forces (it omits the key), so no test repeats it. `setAppConfig` / `restoreAppConfig` are the `beforeAll` / `afterAll` halves, and `getAppConfig` reads. Three integration files use this today.
+- **A test that opens the settings POPOUT must point the active window home before it ends.** Obsidian moves the `activeWindow` / `activeDocument` globals on window FOCUS, and the owned test instance is hidden by being moved OFF-SCREEN — so `app.setting.close()` alone leaves them pinned to the popout that was just destroyed, permanently. Every later file shares that instance and builds its UI in `activeDocument`, so each modal / popover / notice then renders into a dead window and waits out its full timeout with no assertion failure. Close Settings and reassign `window.activeWindow = getMainWindow(app)` (plus `window.activeDocument`) in a `finally`. `scripts/integration-test-obsidian-setup.ts` carries an `afterEach` that does this for every file as a net, but a test that leaks is still a bug — the net exists so one leak cannot fail unrelated files.
+- **A per-test budget must CLEAR the transports' per-eval cap, never match it.** One `evalInObsidian` closure is capped at 30 000 ms by the transport (`commandTimeoutInMilliseconds` on desktop CDP, the script timeout on Appium), and outrunning that raises `EvalCapExceededError` — which names the cap, the transport and the `pollInObsidian` remedy. That message is unreachable when `testTimeout` is also 30 000: vitest starts its clock at the top of the test and the transport starts its own only once the eval is dispatched, so vitest always wins by the few milliseconds in between and reports its anonymous `Test timed out in 30000ms` instead. Both budgets were 30 000 here until 2026-09-15, which is why the release abort of 2026-09-13 (30 044 ms burned against a 30 000 ms budget) named nothing; the four Obsidian projects now take `INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS` (45 000), and the shared `defineObsidianPluginVitestConfig` gives every plugin the same clearance. Android was never affected — its 60 000 always cleared the Appium cap, which is the evidence the desktop equality was an oversight. **Do not lower either project's budget back to the cap**; a unit test pins the relationship.
+- **`hoverElement` and `unhoverElement` THROW when their `:hover` post-condition is not met**, rather than resolving quietly after their 5 000 ms poll. A quiet resolve is the silent-no-op class this repo's trusted-input helpers exist to eliminate: a test that reads an element which never took the hover passes on whatever its base style happens to be. `unhoverElement` also SNAPS the box edge outward (`Math.floor(rect.left) - 1`) before stepping off the element, because `moveMouse` rounds — so on a fractional edge the plain one-pixel step rounded straight back onto the element's own pixel column. Measured on a bar whose `left` was 859.796875: the old step never cleared the hover and burned the full 5 000 ms on every single run, while the snapped one clears in 26 ms.
+- **A whole-file, flat-timeout failure is an ordering symptom, not a load symptom.** Vitest orders files from its `node_modules/.vite/vitest` duration cache, so the order changes run to run and a state-leak like the one above surfaces as a different set of "flaky" files each time, while every file passes in isolation. Before blaming load, run the suspect file alone, then again with the files that preceded it, and bisect.
 
 ## Dependencies
 
 ### Pinned versions
 
-An **exact** version (no `^`) is how a dependency is held back here, and it is also what makes it
-invisible to `update-npm-deps.ps1`: that script upgrades caret ranges and *silently* skips exact pins.
-Nothing will ever remind you a pin is stale, so every row below states the condition that releases it
-and the command that tests that condition. **A pin added without an "upgrade when" row cannot be
-retired by anyone but its author — do not add one.**
+An **exact** version (no `^`) is how a dependency is held back here, and it is also what makes it invisible to `update-npm-deps.ps1`: that script upgrades caret ranges and *silently* skips exact pins. Nothing will ever remind you a pin is stale, so every row below states the condition that releases it and the command that tests that condition. **A pin added without an "upgrade when" row cannot be retired by anyone but its author — do not add one.**
 
 | Package | Pin | Why | Upgrade when |
 | --- | --- | --- | --- |
@@ -1453,13 +543,7 @@ retired by anyone but its author — do not add one.**
 | `deepmerge-ts` (override) | `^8.0.2` | Not a pin but an advisory-driven override: it clears GHSA-ggr8-5vv4-36mx, which no direct bump reaches because every `@wdio/*` package still declares the vulnerable `^7.0.3`, its newest release included. See "Security overrides (`deepmerge-ts`)" below. | `@wdio/utils` asks for `deepmerge-ts@^8` or later itself — the `check` in [`pinned-versions.json`](pinned-versions.json) |
 | `fflate` (override) | `$fflate` | Not a pin but an advisory-driven override: it clears GHSA-px8p-9vwx-vf98, which no direct bump reaches because `satori` pins the vulnerable `0.7.3` exactly. `fflate` is a direct dependency too, so the override carries the `$fflate` shorthand and collapses the tree onto that one declared copy. See "Security overrides (`fflate`)" below. | `satori` asks for `0.7.5` or later, or drops `fflate` entirely — the `check` in [`pinned-versions.json`](pinned-versions.json) |
 
-**The CodeMirror pins are already due — the condition has fired upstream but not yet on npm.**
-`obsidian-api` master ([`package.json`](https://github.com/obsidianmd/obsidian-api/blob/master/package.json))
-is at `1.13.2` and peer-pins `@codemirror/state` **`6.7.0`** and `@codemirror/view` **`6.43.5`**
-(it also moves `moment` `2.29.4` → `2.30.1`). npm still serves `1.13.1` with `6.5.0` / `6.38.6`, which
-is what is installed here. Because the spec is `obsidian: ^1.13.1`, the day `1.13.2` publishes a plain
-`npm install` will pull it in and the two pins below it become wrong — they must be bumped to
-`6.7.0` / `6.43.5` **in the same commit**, or the tree ends up with two CodeMirror instances.
+**The CodeMirror pins are already due — the condition has fired upstream but not yet on npm.** `obsidian-api` master ([`package.json`](https://github.com/obsidianmd/obsidian-api/blob/master/package.json)) is at `1.13.2` and peer-pins `@codemirror/state` **`6.7.0`** and `@codemirror/view` **`6.43.5`** (it also moves `moment` `2.29.4` → `2.30.1`). npm still serves `1.13.1` with `6.5.0` / `6.38.6`, which is what is installed here. Because the spec is `obsidian: ^1.13.1`, the day `1.13.2` publishes a plain `npm install` will pull it in and the two pins below it become wrong — they must be bumped to `6.7.0` / `6.43.5` **in the same commit**, or the tree ends up with two CodeMirror instances.
 
 So the check is two-sided — the installed copy tells you only after the fact:
 
@@ -1469,17 +553,9 @@ npm view obsidian version                                                 # what
 # and https://github.com/obsidianmd/obsidian-api/blob/master/package.json  # what is coming
 ```
 
-**`@lezer/common` was settled by reading the bundle — and `1.2.3` was simply wrong.** `1fdd8d24`
-("chore: update libs") had **downgraded** it from `^1.4.0` to `1.2.3` inside an upgrade sweep without
-recording a reason, and the old wording here ("`obsidian` uses this version at runtime") was inherited
-rather than verified. `obsidian-api`'s manifest lists **no** `@lezer/*` entry in any section, so unlike
-the CodeMirror pins there is no declared upstream version to compare against — Obsidian bundles Lezer
-inside `app.js`, which is also where the pin's *reason* is visible: `app.js` registers `'@lezer/common'`
-in the module map it hands to plugins (Obsidian `1.13.4`, `app.js:167784`), so our copy is types-only.
+**`@lezer/common` was settled by reading the bundle — and `1.2.3` was simply wrong.** `1fdd8d24` ("chore: update libs") had **downgraded** it from `^1.4.0` to `1.2.3` inside an upgrade sweep without recording a reason, and the old wording here ("`obsidian` uses this version at runtime") was inherited rather than verified. `obsidian-api`'s manifest lists **no** `@lezer/*` entry in any section, so unlike the CodeMirror pins there is no declared upstream version to compare against — Obsidian bundles Lezer inside `app.js`, which is also where the pin's *reason* is visible: `app.js` registers `'@lezer/common'` in the module map it hands to plugins (Obsidian `1.13.4`, `app.js:167784`), so our copy is types-only.
 
-The bundle carries no version string, but the implementation is identifiable. Diff the `dist` of
-candidate versions (`npm pack @lezer/common@<v>`) and grep `app.js` for what distinguishes them; against
-Obsidian `1.13.4` (exactly one Lezer copy in the bundle) the markers land on **`1.5.2`**:
+The bundle carries no version string, but the implementation is identifiable. Diff the `dist` of candidate versions (`npm pack @lezer/common@<v>`) and grep `app.js` for what distinguishes them; against Obsidian `1.13.4` (exactly one Lezer copy in the bundle) the markers land on **`1.5.2`**:
 
 | Marker present in `app.js` | Introduced in |
 | --- | --- |
@@ -1489,77 +565,36 @@ Obsidian `1.13.4` (exactly one Lezer copy in the bundle) the markers land on **`
 | `nextChild`'s bracketed test in the `!mounted.overlay && mounted.bracketed && pos >= start` form (`1.5.0` used an `?.overlay === null` form) | `1.5.1` |
 | `FragmentCursor.moveTo` guarding the advance with `cursor.to <= pos` | `1.5.2` |
 
-`npm view @lezer/common version` is therefore a *trigger*, not a verdict: when it moves past `1.5.2`,
-re-run the marker comparison against the current `app.js` before touching the pin. A single value can
-serve as the pin because this project targets the **latest** Obsidian only — "what Obsidian bundles"
-always means the current release, and no older bundle has to stay satisfied. Stronger enforcement
-would be an integration test — the harness runs inside Obsidian, where `require('@lezer/common')`
-returns the real bundled module, so its export keys and `IterMode` members can be compared against the
-installed copy — which is the mismatch that actually bites. Not written yet.
+`npm view @lezer/common version` is therefore a *trigger*, not a verdict: when it moves past `1.5.2`, re-run the marker comparison against the current `app.js` before touching the pin. A single value can serve as the pin because this project targets the **latest** Obsidian only — "what Obsidian bundles" always means the current release, and no older bundle has to stay satisfied. Stronger enforcement would be an integration test — the harness runs inside Obsidian, where `require('@lezer/common')` returns the real bundled module, so its export keys and `IterMode` members can be compared against the installed copy — which is the mismatch that actually bites. Not written yet.
 
-Not pinned, despite what this table used to claim: `@types/node` is `^26.1.2`. The old row said
-`25.0.3` "matches the Node.js version used in the project"; it has since moved to a caret range and
-tracks the `26.x` line.
+Not pinned, despite what this table used to claim: `@types/node` is `^26.1.2`. The old row said `25.0.3` "matches the Node.js version used in the project"; it has since moved to a caret range and tracks the `26.x` line.
 
 ### The `js-yaml` override is pinned to `4.3.2` — do NOT take it to `5.x`
 
-`overrides.js-yaml` is an **exact pin**, deliberately: `update-npm-deps.ps1` upgrades every
-caret-ranged override it finds and has no exclusion list, so `^4.x` got carried to `^5.2.2` twice. An
-exact pin is the only self-enforcing form — the script skips exact versions by design.
+`overrides.js-yaml` is an **exact pin**, deliberately: `update-npm-deps.ps1` upgrades every caret-ranged override it finds and has no exclusion list, so `^4.x` got carried to `^5.2.2` twice. An exact pin is the only self-enforcing form — the script skips exact versions by design.
 
-`js-yaml@5` drops the default export, so forcing it breaks `npm run docs:build` at Astro's own
-`import yaml from 'js-yaml'` with `The requested module 'js-yaml' does not provide an export named
-'default'`. Unit tests and lint stay green, so this only shows up in the docs build — re-run
-`docs:build` after any `js-yaml` change.
+`js-yaml@5` drops the default export, so forcing it breaks `npm run docs:build` at Astro's own `import yaml from 'js-yaml'` with `The requested module 'js-yaml' does not provide an export named 'default'`. Unit tests and lint stay green, so this only shows up in the docs build — re-run `docs:build` after any `js-yaml` change.
 
-The pin is a compromise, not a consensus: `astro` asks for `^4.3.0` (raised from `^4.1.1` in
-`astro@7.1.6`), `@astrojs/starlight` and `@astrojs/internal-helpers` for `^4.1.1`, `cosmiconfig` for
-`^4.1.0` and `@istanbuljs/load-nyc-config` for `^3`, but `markdownlint-cli2` pins `5.2.2` **exactly**
-and is force-downgraded to the pinned `4.x` by this override. That downgrade is verified green through
-`lint:md`. The pin always sits on the newest `4.x` — whatever the `v4-legacy` dist-tag points at — because
-that line is where the advisory fixes are backported, which makes this override what clears them for
-`astro`, `starlight`, `cosmiconfig`, `markdownlint-cli2` and `@istanbuljs/load-nyc-config` at once:
-`4.3.1` carried CVE-2026-59870 (GHSA-5p4m-2wfm-xmqj, quadratic CPU in `!!omap` resolution) and `4.3.2`
-carries GHSA-2883-xcg3-v3hh (`maxTotalMergeKeys` does not limit CPU use for empty merge sources). When
-Astro moves to `js-yaml@5`, the pin can be retired — until then, check `lint:md` as well as `docs:build`
-on any bump.
+The pin is a compromise, not a consensus: `astro` asks for `^4.3.0` (raised from `^4.1.1` in `astro@7.1.6`), `@astrojs/starlight` and `@astrojs/internal-helpers` for `^4.1.1`, `cosmiconfig` for `^4.1.0` and `@istanbuljs/load-nyc-config` for `^3`, but `markdownlint-cli2` pins `5.2.2` **exactly** and is force-downgraded to the pinned `4.x` by this override. That downgrade is verified green through `lint:md`. The pin always sits on the newest `4.x` — whatever the `v4-legacy` dist-tag points at — because that line is where the advisory fixes are backported, which makes this override what clears them for `astro`, `starlight`, `cosmiconfig`, `markdownlint-cli2` and `@istanbuljs/load-nyc-config` at once: `4.3.1` carried CVE-2026-59870 (GHSA-5p4m-2wfm-xmqj, quadratic CPU in `!!omap` resolution) and `4.3.2` carries GHSA-2883-xcg3-v3hh (`maxTotalMergeKeys` does not limit CPU use for empty merge sources). When Astro moves to `js-yaml@5`, the pin can be retired — until then, check `lint:md` as well as `docs:build` on any bump.
 
-**Being exact is what keeps the sweep off it, and also what lets it go stale — so the `check` watches the
-tag, not Astro.** `pinned-versions.json` used to test this pin by reading Astro's declared range, which
-answers "can the override be deleted yet?" and says nothing about "is the pinned version still the
-patched one?". On 2026-09-09 that gap surfaced exactly as predicted: `4.3.2` had published with the
-`maxTotalMergeKeys` fix, the pin sat on `4.3.1`, the sweep failed on ten high advisories, and the check
-had been green the whole time. The `check` is now `npm view js-yaml dist-tags.v4-legacy`; the Astro
-question moved to that entry's `manualCheck`, where it belongs — a deletion condition, not a safety one.
+**Being exact is what keeps the sweep off it, and also what lets it go stale — so the `check` watches the tag, not Astro.** `pinned-versions.json` used to test this pin by reading Astro's declared range, which answers "can the override be deleted yet?" and says nothing about "is the pinned version still the patched one?". On 2026-09-09 that gap surfaced exactly as predicted: `4.3.2` had published with the `maxTotalMergeKeys` fix, the pin sat on `4.3.1`, the sweep failed on ten high advisories, and the check had been green the whole time. The `check` is now `npm view js-yaml dist-tags.v4-legacy`; the Astro question moved to that entry's `manualCheck`, where it belongs — a deletion condition, not a safety one.
 
-Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yaml's `safeLoad` /
-`safeDump` at **module-load** time, and both were removed in js-yaml v4 — so merely *importing*
-`gray-matter` throws `Cannot read properties of undefined (reading 'bind')`, before any `engines`
-option can override the default. `scripts/docs-gen/generate-og-images.ts` therefore parses frontmatter
-itself with `yaml`. (`yaml`, not `js-yaml`: `depend/ban-dependencies` bans `js-yaml` as a *direct*
-dependency, which is why it only ever appears under `overrides`.)
+Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yaml's `safeLoad` / `safeDump` at **module-load** time, and both were removed in js-yaml v4 — so merely *importing* `gray-matter` throws `Cannot read properties of undefined (reading 'bind')`, before any `engines` option can override the default. `scripts/docs-gen/generate-og-images.ts` therefore parses frontmatter itself with `yaml`. (`yaml`, not `js-yaml`: `depend/ban-dependencies` bans `js-yaml` as a *direct* dependency, which is why it only ever appears under `overrides`.)
 
 ### `@astrojs/markdown-remark` is a direct devDependency on purpose
 
-Astro 7 made Sätteri its default Markdown processor and **stopped installing `@astrojs/markdown-remark`**,
-but `markdown.remarkPlugins` (used by [`astro.config.ts`](astro.config.ts) for `remarkRelativeLinks`) still
-runs on the `unified` processor from that package. Without it as a direct dependency, `npm run docs:build`
-dies during config validation with
+Astro 7 made Sätteri its default Markdown processor and **stopped installing `@astrojs/markdown-remark`**, but `markdown.remarkPlugins` (used by [`astro.config.ts`](astro.config.ts) for `remarkRelativeLinks`) still runs on the `unified` processor from that package. Without it as a direct dependency, `npm run docs:build` dies during config validation with
 
 ```text
 `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` run on the `unified`
 processor from `@astrojs/markdown-remark`, which is no longer installed by default …
 ```
 
-`@astrojs/mdx` pulls its own **nested** copy, which does not satisfy this — the resolution has to succeed
-from the project root. So the package is listed in `devDependencies`; do not drop it as "already
-transitively available". It retires only if `astro.config.ts` stops using remark/rehype plugins.
+`@astrojs/mdx` pulls its own **nested** copy, which does not satisfy this — the resolution has to succeed from the project root. So the package is listed in `devDependencies`; do not drop it as "already transitively available". It retires only if `astro.config.ts` stops using remark/rehype plugins.
 
 ### Security overrides (`brace-expansion` GHSA-mh99-v99m-4gvg)
 
-`brace-expansion` <= `5.0.7` is vulnerable; the fix ships **only** on the `5.x` line, while `minimatch@3`
-and `minimatch@9` pin the unpatched `1.x` / `2.x` lines. `npm audit fix` cannot resolve this — its only
-offer downgrades unrelated packages — so the `overrides` block carries the fix:
+`brace-expansion` <= `5.0.7` is vulnerable; the fix ships **only** on the `5.x` line, while `minimatch@3` and `minimatch@9` pin the unpatched `1.x` / `2.x` lines. `npm audit fix` cannot resolve this — its only offer downgrades unrelated packages — so the `overrides` block carries the fix:
 
 | Override | Why |
 | --- | --- |
@@ -1568,132 +603,67 @@ offer downgrades unrelated packages — so the `overrides` block carries the fix
 | `eslint-plugin-import` → `npm:eslint-plugin-import-x` | `eslint-plugin-import` still needs `minimatch@^3` at its latest version, and `import-x` is its maintained fork (on `minimatch@^9 \|\| ^10`). |
 | `brace-expansion` → `file:patches/brace-expansion-callable` | Last resort for `eslint-plugin-react`, which `@microsoft/eslint-plugin-sdl` pins and which still needs `minimatch@3`. The two lines differ **only** in module shape (`module.exports = expand` vs `exports.expand`), so the patch re-exports the patched `5.x` implementation — installed under the `brace-expansion-upstream` alias — in the legacy callable shape. |
 
-Do not point the `brace-expansion` override at a nested (scoped) key: npm resolves a `file:` spec there
-relative to the *dependent*, producing a junction to a path that does not exist. It must stay top-level.
+Do not point the `brace-expansion` override at a nested (scoped) key: npm resolves a `file:` spec there relative to the *dependent*, producing a junction to a path that does not exist. It must stay top-level.
 
-**Remove all of this** once upstream lands the backports — the ranges (`^1.1.7` / `^2.0.2` / `^3.1.2`) mean a
-published `brace-expansion@1.1.17` flows in through a plain `npm update`, at which point the patch and the
-`brace-expansion-upstream` alias are dead weight. Test the condition with
-`npm view brace-expansion versions --json`: the legacy heads were `1.1.16` / `2.1.3` / `3.0.5` as of
-2026-07-28, all still unpatched, so anything newer on those lines means the backport landed. The
-`eslint-plugin-import` →
-`import-x` alias is separate and does **not** retire with it — that one lasts as long as
-`eslint-plugin-import` needs `minimatch@^3`.
+**Remove all of this** once upstream lands the backports — the ranges (`^1.1.7` / `^2.0.2` / `^3.1.2`) mean a published `brace-expansion@1.1.17` flows in through a plain `npm update`, at which point the patch and the `brace-expansion-upstream` alias are dead weight. Test the condition with `npm view brace-expansion versions --json`: the legacy heads were `1.1.16` / `2.1.3` / `3.0.5` as of 2026-07-28, all still unpatched, so anything newer on those lines means the backport landed. The `eslint-plugin-import` → `import-x` alias is separate and does **not** retire with it — that one lasts as long as `eslint-plugin-import` needs `minimatch@^3`.
 
 ### Security overrides (`smol-toml` GHSA-7w5x-hrqm-74c2)
 
-`smol-toml` <= `1.7.0` denial-of-services on malformed TOML documents; the fix is in `1.7.1`. Nothing here
-depends on it directly, and no direct bump reaches it: `markdownlint-cli2` pins `1.7.0` **exactly** and is
-already at its latest, while `astro` and `@astrojs/internal-helpers` ask for `^1.6.0` but had deduped onto
-that same vulnerable copy. So the `overrides` block carries `smol-toml` → `^1.8.0`, which moves all three
-at once.
+`smol-toml` <= `1.7.0` denial-of-services on malformed TOML documents; the fix is in `1.7.1`. Nothing here depends on it directly, and no direct bump reaches it: `markdownlint-cli2` pins `1.7.0` **exactly** and is already at its latest, while `astro` and `@astrojs/internal-helpers` ask for `^1.6.0` but had deduped onto that same vulnerable copy. So the `overrides` block carries `smol-toml` → `^1.8.0`, which moves all three at once.
 
-The forced version was already proven in this tree before the override existed: `cspell-config-lib` requires
-`^1.8.0`, so `1.8.0` was installed side by side with the `1.7.0` copy — the override **collapses** the two
-rather than introducing anything, and `1.8.0` is a minor inside `1.x`. It is a **caret**, not an exact pin,
-because there is no upper bound to hold: it is an advisory floor, so `update-npm-deps.ps1` floats it like
-any other caret override.
+The forced version was already proven in this tree before the override existed: `cspell-config-lib` requires `^1.8.0`, so `1.8.0` was installed side by side with the `1.7.0` copy — the override **collapses** the two rather than introducing anything, and `1.8.0` is a minor inside `1.x`. It is a **caret**, not an exact pin, because there is no upper bound to hold: it is an advisory floor, so `update-npm-deps.ps1` floats it like any other caret override.
 
-**Never take `npm audit fix --force` here.** Its remedy is `markdownlint-cli2@0.21.0`, a downgrade — and
-a downgrade is never an acceptable way to clear an advisory.
+**Never take `npm audit fix --force` here.** Its remedy is `markdownlint-cli2@0.21.0`, a downgrade — and a downgrade is never an acceptable way to clear an advisory.
 
-**Remove this override** when `markdownlint-cli2` asks for `1.7.1` or later itself, which is what
-[`pinned-versions.json`](pinned-versions.json) checks on every sweep.
+**Remove this override** when `markdownlint-cli2` asks for `1.7.1` or later itself, which is what [`pinned-versions.json`](pinned-versions.json) checks on every sweep.
 
 ### Security overrides (`extract-zip` GHSA-jmr9-qjv8-65gv)
 
-`extract-zip` is vulnerable at **every** published version (the advisory range is `*`, and `2.0.1` is the
-last release), so unlike `brace-expansion` there is no patched version to override it *to*. It reaches
-this tree through one chain only:
+`extract-zip` is vulnerable at **every** published version (the advisory range is `*`, and `2.0.1` is the last release), so unlike `brace-expansion` there is no patched version to override it *to*. It reaches this tree through one chain only:
 
 ```text
 obsidian-integration-testing → webdriverio → @wdio/utils → @puppeteer/browsers@2.x → extract-zip
 ```
 
-Upgrading the direct dependency does not help either: `obsidian-integration-testing` is already at its
-latest and pins `webdriverio` **exactly**, and even the newest `webdriverio` still declares
-`@puppeteer/browsers: ^2.2.0` under `@wdio/utils`. So the fix goes one level up the chain —
-`@puppeteer/browsers` → `^3.2.2`, whose `3.x` line replaced `extract-zip` with `modern-tar`. That drops
-the vulnerable subtree entirely (43 packages) and **dedupes**: `puppeteer-core` already pulls `3.2.2`
-into this tree, so the override collapses two copies into one rather than adding anything.
+Upgrading the direct dependency does not help either: `obsidian-integration-testing` is already at its latest and pins `webdriverio` **exactly**, and even the newest `webdriverio` still declares `@puppeteer/browsers: ^2.2.0` under `@wdio/utils`. So the fix goes one level up the chain — `@puppeteer/browsers` → `^3.2.2`, whose `3.x` line replaced `extract-zip` with `modern-tar`. That drops the vulnerable subtree entirely (43 packages) and **dedupes**: `puppeteer-core` already pulls `3.2.2` into this tree, so the override collapses two copies into one rather than adding anything.
 
-The major bump is safe for `@wdio/utils`, the only consumer left on `2.x`. It imports exactly `install`,
-`canDownload`, `resolveBuildId`, `detectBrowserPlatform`, `Browser`, `ChromeReleaseChannel`,
-`computeExecutablePath` and the `InstallOptions` type — all still exported by `3.x` — and its
-`downloadProgressCallback: (downloaded, total) => …` call sites still satisfy `3.x`'s widened
-`'default' | fn` type. Both packages are ESM-only, so there is no CJS/ESM break. `3.2.2` wants
-node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already imposed that.
+The major bump is safe for `@wdio/utils`, the only consumer left on `2.x`. It imports exactly `install`, `canDownload`, `resolveBuildId`, `detectBrowserPlatform`, `Browser`, `ChromeReleaseChannel`, `computeExecutablePath` and the `InstallOptions` type — all still exported by `3.x` — and its `downloadProgressCallback: (downloaded, total) => …` call sites still satisfy `3.x`'s widened `'default' | fn` type. Both packages are ESM-only, so there is no CJS/ESM break. `3.2.2` wants node `>=22.12.0` against this repo's `>=22.0.0`, but `puppeteer-core` already imposed that.
 
-**Never take `npm audit fix --force` here.** Its remedy for this advisory is
-`obsidian-integration-testing@1.1.2` — a downgrade across eleven majors from the `12.x` in use, and a
-downgrade is never an acceptable way to clear an advisory.
+**Never take `npm audit fix --force` here.** Its remedy for this advisory is `obsidian-integration-testing@1.1.2` — a downgrade across eleven majors from the `12.x` in use, and a downgrade is never an acceptable way to clear an advisory.
 
-**Remove this override** when `@wdio/utils` moves to `@puppeteer/browsers@^3` on its own, which is what
-[`pinned-versions.json`](pinned-versions.json) checks on every sweep.
+**Remove this override** when `@wdio/utils` moves to `@puppeteer/browsers@^3` on its own, which is what [`pinned-versions.json`](pinned-versions.json) checks on every sweep.
 
 ### Security overrides (`deepmerge-ts` GHSA-ggr8-5vv4-36mx)
 
-`deepmerge-ts` below `8.0.0` exhausts the stack when merging recursive object graphs; the fix is
-`8.0.0`. Nothing here depends on it directly — it arrives through one chain only:
+`deepmerge-ts` below `8.0.0` exhausts the stack when merging recursive object graphs; the fix is `8.0.0`. Nothing here depends on it directly — it arrives through one chain only:
 
 ```text
 obsidian-integration-testing → webdriverio → @wdio/config / @wdio/utils / webdriver → deepmerge-ts@7.x
 ```
 
-and no direct bump reaches it: every `@wdio/*` package still declares `deepmerge-ts: ^7.0.3`, its newest
-release included. So the `overrides` block carries `deepmerge-ts` → `^8.0.2`.
+and no direct bump reaches it: every `@wdio/*` package still declares `deepmerge-ts: ^7.0.3`, its newest release included. So the `overrides` block carries `deepmerge-ts` → `^8.0.2`.
 
-The forced major is safe for those consumers, and that was settled at the call sites rather than from the
-changelog. `8.0.0` breaks by renaming the `mergeInfo` system and aligning the customization shorthand; a
-scan of the whole installed tree found exactly two bindings in use, `deepmerge` and `deepmergeCustom`.
-Both `deepmergeCustom` shapes present — `@wdio/config`'s `mergeArrays` handler, which reads `meta.key`
-and returns `utils.actions.defaultMerge`, and `webdriver`'s `deepmergeCustom({ mergeArrays: false })` —
-were run against `7.1.6` and `8.0.1` and produce identical output. The same override is carried for the
-same reason in `create-obsidian-plugin`'s `ADVISORY_OVERRIDES`.
+The forced major is safe for those consumers, and that was settled at the call sites rather than from the changelog. `8.0.0` breaks by renaming the `mergeInfo` system and aligning the customization shorthand; a scan of the whole installed tree found exactly two bindings in use, `deepmerge` and `deepmergeCustom`. Both `deepmergeCustom` shapes present — `@wdio/config`'s `mergeArrays` handler, which reads `meta.key` and returns `utils.actions.defaultMerge`, and `webdriver`'s `deepmergeCustom({ mergeArrays: false })` — were run against `7.1.6` and `8.0.1` and produce identical output. The same override is carried for the same reason in `create-obsidian-plugin`'s `ADVISORY_OVERRIDES`.
 
-**Never take `npm audit fix --force` here.** Its remedy is `obsidian-integration-testing@1.1.2` — the same
-downgrade across eleven majors the `extract-zip` override refuses.
+**Never take `npm audit fix --force` here.** Its remedy is `obsidian-integration-testing@1.1.2` — the same downgrade across eleven majors the `extract-zip` override refuses.
 
-**Remove this override** when `@wdio/utils` moves to `deepmerge-ts@^8` on its own, which is what
-[`pinned-versions.json`](pinned-versions.json) checks on every sweep. Re-run the `deepmergeCustom` probe
-before lifting it rather than trusting the range: `@wdio/config` passes a handler that reads `meta.key`,
-and that is precisely the API `8.0.0` renamed, so a regression there would be silent rather than a crash.
+**Remove this override** when `@wdio/utils` moves to `deepmerge-ts@^8` on its own, which is what [`pinned-versions.json`](pinned-versions.json) checks on every sweep. Re-run the `deepmergeCustom` probe before lifting it rather than trusting the range: `@wdio/config` passes a handler that reads `meta.key`, and that is precisely the API `8.0.0` renamed, so a regression there would be silent rather than a crash.
 
 ### Security overrides (`fflate` GHSA-px8p-9vwx-vf98)
 
-`fflate` `0.7.0`–`0.7.4` loops forever in `unzipSync` on a malformed ZIP64 archive; the fix is in
-`0.7.5`. `satori` — a devDependency of the Astro docs site — pins the vulnerable `0.7.3` **exactly** and
-is itself already at its latest, so only an override reaches it.
+`fflate` `0.7.0`–`0.7.4` loops forever in `unzipSync` on a malformed ZIP64 archive; the fix is in `0.7.5`. `satori` — a devDependency of the Astro docs site — pins the vulnerable `0.7.3` **exactly** and is itself already at its latest, so only an override reaches it.
 
-Unlike the other three, `fflate` is **also a direct dependency**: `src/script-utils/demo-vault.ts` writes
-release archives with its `zipSync`, and `src/desktop-zip-extractor.test.ts`,
-`src/obsidian/desktop-demo-vault-opener.test.ts` and `src/script-utils/demo-vault.test.ts` write their
-fixtures with it. That is why the override is the `$fflate` shorthand rather than a version: it holds the
-forced version equal to the declared one **by construction**, so `update-npm-deps.ps1` can float the direct
-caret without the override silently drifting behind it, and the whole tree collapses onto that one copy.
+Unlike the other three, `fflate` is **also a direct dependency**: `src/script-utils/demo-vault.ts` writes release archives with its `zipSync`, and `src/desktop-zip-extractor.test.ts`, `src/obsidian/desktop-demo-vault-opener.test.ts` and `src/script-utils/demo-vault.test.ts` write their fixtures with it. That is why the override is the `$fflate` shorthand rather than a version: it holds the forced version equal to the declared one **by construction**, so `update-npm-deps.ps1` can float the direct caret without the override silently drifting behind it, and the whole tree collapses onto that one copy.
 
 **Never take `npm audit fix --force` here.** Its remedy is `satori@0.32.0`, a downgrade.
 
-**Remove this override** when `satori` moves to `0.7.5` or later, or off `fflate` entirely, which is what
-[`pinned-versions.json`](pinned-versions.json) checks on every sweep. The `fflate` line in `dependencies`
-stays either way. Two paths verify a change: `npm run test:coverage` covers the archiver and the ZIP
-fixtures, and `npm run docs:build` covers satori's OG-image path, which lint and unit tests never touch.
+**Remove this override** when `satori` moves to `0.7.5` or later, or off `fflate` entirely, which is what [`pinned-versions.json`](pinned-versions.json) checks on every sweep. The `fflate` line in `dependencies` stays either way. Two paths verify a change: `npm run test:coverage` covers the archiver and the ZIP fixtures, and `npm run docs:build` covers satori's OG-image path, which lint and unit tests never touch.
 
 ### Unused dependencies (`.depcheckrc.json`)
 
-A dependency nothing references is as invisible to a sweep as a stale pin: npm never mentions it, `npm
-audit` never mentions it, and it keeps dragging a whole subtree — and that subtree's advisories — into
-every install. `update-npm-deps.ps1` therefore ends by running `depcheck`. depcheck is heuristic and
-cannot see a package that is only invoked as a CLI from a script, named as a string in a config, or
-pulled in by a compiler option, so it **never** removes anything: it reports, and
-[`.depcheckrc.json`](.depcheckrc.json) records each verified false positive **together with the
-reference that proves it**. Because that file exists, anything depcheck still reports **fails** the
-sweep — so silencing a name without its reason defeats the entire mechanism.
+A dependency nothing references is as invisible to a sweep as a stale pin: npm never mentions it, `npm audit` never mentions it, and it keeps dragging a whole subtree — and that subtree's advisories — into every install. `update-npm-deps.ps1` therefore ends by running `depcheck`. depcheck is heuristic and cannot see a package that is only invoked as a CLI from a script, named as a string in a config, or pulled in by a compiler option, so it **never** removes anything: it reports, and [`.depcheckrc.json`](.depcheckrc.json) records each verified false positive **together with the reference that proves it**. Because that file exists, anything depcheck still reports **fails** the sweep — so silencing a name without its reason defeats the entire mechanism.
 
-Three entries are subtler than "run as a CLI": `@types/babel__core`, `@types/pug` and `postcss-modules`
-are imported by no file here, only by `svelte-preprocess`' and `esbuild-sass-plugin`'s own `.d.ts`. The
-compile does not care (`skipLibCheck: true`), but the `skipLibCheck: false` re-check above does — drop
-them and its `Ignored N diagnostic(s)` count, which is meant to reach `0`, goes **up** by three.
+Three entries are subtler than "run as a CLI": `@types/babel__core`, `@types/pug` and `postcss-modules` are imported by no file here, only by `svelte-preprocess`' and `esbuild-sass-plugin`'s own `.d.ts`. The compile does not care (`skipLibCheck: true`), but the `skipLibCheck: false` re-check above does — drop them and its `Ignored N diagnostic(s)` count, which is meant to reach `0`, goes **up** by three.
 
 ## Consumer Script Pattern
 
@@ -1727,8 +697,7 @@ import { obsidianDevUtilsConfig } from 'obsidian-dev-utils/script-utils/commitli
 export const config = obsidianDevUtilsConfig;
 ```
 
-The nano-staged config script calls `getNanoStagedConfig()` (not a bare re-export) so the pre-commit
-checks honor the `NANO_STAGED=0` `.env` opt-out:
+The nano-staged config script calls `getNanoStagedConfig()` (not a bare re-export) so the pre-commit checks honor the `NANO_STAGED=0` `.env` opt-out:
 
 ```typescript
 // scripts/nano-staged-config.ts
@@ -1736,140 +705,43 @@ import { getNanoStagedConfig } from 'obsidian-dev-utils/script-utils/nano-staged
 export const config = getNanoStagedConfig();
 ```
 
-Every root config template under `templates/` (`commitlint.config.ts`, `eslint.config.mts.template`,
-`vitest.config.ts`, `.markdownlint-cli2.mjs`, `.nano-staged.mjs`) is a thin re-export of a matching
-`templates/scripts/*-config.ts`, which ships alongside it — so the copied templates resolve without
-hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer
-examples.
+Every root config template under `templates/` (`commitlint.config.ts`, `eslint.config.mts.template`, `vitest.config.ts`, `.markdownlint-cli2.mjs`, `.nano-staged.mjs`) is a thin re-export of a matching `templates/scripts/*-config.ts`, which ships alongside it — so the copied templates resolve without hand-writing the `scripts/*-config.ts` logic file. See `templates/scripts/` for the full set of consumer examples.
 
 ## Releasing
 
-- **Choose the bump from `git log <lastTag>..HEAD`, never from the change you happen to be working on.**
-  `npm run version -- <type>` takes the type as an ARGUMENT and derives nothing, so the release ships
-  every commit accumulated since the last tag — which is routinely more than the current task's. Scan that
-  range for `feat:` (→ minor) and `!` / `BREAKING CHANGE:` (→ major) before picking. Missed on `96.5.1`:
-  it was chosen as a patch for a one-line `fix`, and shipped six unreleased `feat:` commits with it.
-- **A commit that reaches `main` and is then superseded still lands in the changelog**, which is generated
-  from commit messages (`git log <lastTag>..HEAD --format=%B --first-parent`). If an approach is reworked
-  before it is ever released, squash the unreleased commits rather than letting the changelog announce a
-  state that never shipped (done for `96.5.1` — two `fix(build)!` commits carrying a `BREAKING CHANGE:`
-  footer for an abandoned barrel change were squashed into one `fix(obsidian):` commit and force-pushed).
+- **Choose the bump from `git log <lastTag>..HEAD`, never from the change you happen to be working on.** `npm run version -- <type>` takes the type as an ARGUMENT and derives nothing, so the release ships every commit accumulated since the last tag — which is routinely more than the current task's. Scan that range for `feat:` (→ minor) and `!` / `BREAKING CHANGE:` (→ major) before picking. Missed on `96.5.1`: it was chosen as a patch for a one-line `fix`, and shipped six unreleased `feat:` commits with it.
+- **A commit that reaches `main` and is then superseded still lands in the changelog**, which is generated from commit messages (`git log <lastTag>..HEAD --format=%B --first-parent`). If an approach is reworked before it is ever released, squash the unreleased commits rather than letting the changelog announce a state that never shipped (done for `96.5.1` — two `fix(build)!` commits carrying a `BREAKING CHANGE:` footer for an abandoned barrel change were squashed into one `fix(obsidian):` commit and force-pushed).
 
-- **The changelog review is the only step that can block, and it is deliberately the last step before
-  anything is written.** `updateVersion` settles the changelog on a scratch copy under the OS temp folder
-  *before* `updateVersionInFiles`, so interrupting the review leaves the working tree pristine and the
-  release simply re-runnable — the earlier order bumped `package.json` / `manifest.json` / `versions.json`
-  first, and a stop at the editor then stranded a dirty tree that `assertGitRepoClean` refused to re-release
-  (hit cutting App Update Notifier 1.0.0).
-- **The GitHub release body is the changelog section delimited by LINES, terminating at the next `'## '`
-  heading or at end-of-file — never by a regex that requires a following heading.** `getReleaseNotes` used to match
-  `\n## <version>\n\n(…)\n\n##`, whose trailing `##` is mandatory. Sections are PREPENDED, so the newest one is
-  bounded by the previous release only once a previous release exists: on a **first release** the match was
-  `null` and the body silently shipped as nothing but the `**Full Changelog**` link. It reached the store on
-  five plugins' `1.0.0` — nested-properties, edit-link-alias, backlink-full-path, refresh-any-view,
-  app-update-notifier — i.e. exactly the release where notes matter most, and no warning was ever emitted.
-  The same regex also truncated a section at its own `###` sub-heading, because it treated the
-  delimiter as if only version headings could produce it. `extractChangelogSection` now scans lines and stops
-  at `'## '` **with the trailing space** (so `###` stays inside the section) or at the end of the file.
-- **The first `##` heading in `CHANGELOG.md` is a HEADING, not a tag — `prepareChangelog` verifies it
-  resolves (`git rev-parse --verify --quiet refs/tags/<heading>`) before spending it as a git revision.** It
-  used to hand the heading straight to `git log <heading>..HEAD`, so a repo that had never been tagged died
-  on `fatal: ambiguous argument '0.0.0..HEAD'` — and died at the very END of the release, after the entire
-  preflight had been paid for. Two ways in: a hand-written `## 0.0.0` placeholder in a repo awaiting its
-  first release (hit cutting Advanced Markdown Export 1.0.0), or a tag deleted after the fact. An
-  unresolvable heading now falls back to the full history, with a `Version` debug line naming it — visible
-  where it matters, because the interactive review is right there to trim an over-included range, and the
-  debug line is all the non-interactive paths get.
-- **A release without a TTY refuses in the preflight, not after the gate.** `npm run version` checks
-  `process.stdin.isTTY` right after the git/gh assertions and before the checks and build, so an agent- or
-  CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release
-  unattended with `--changelog-file <path>` (prepared release notes replace the commit-derived bullets) or
-  `--no-changelog-editing` (accept the generated bullets as is).
-- **In PowerShell, QUOTE the `--` separator: `npm run version '--' <type> --no-changelog-editing`.**
-  PowerShell consumes a bare `--` as its own end-of-parameters token, so npm never receives the separator
-  and parses the following flag as npm's own config — `npm run version -- minor --no-changelog-editing`
-  dies with `EUNKNOWNCONFIG … Unknown cli flag: --changelog-editing` before `scripts/version.ts` starts.
-  The positional bump type forwards either way, which is what makes the error read like a bad flag name.
-  This is a shell-quoting issue, not an npm 12 regression: with the same npm 12.0.2 the bare form forwards
-  correctly from bash, and the quoted form forwards correctly from PowerShell (verified both ways,
-  2026-09-01). `npx jiti scripts/version.ts <type> --no-changelog-editing` also works from any shell —
-  the npm script is only `jiti scripts/version.ts`, so it is the same code path with no separator to lose.
-- **`publishGitHubRelease` accepts both `npm pack --json` shapes, and must keep doing so — on the LIBRARY
-  path only.** `publishGitHubRelease` never packs on the plugin path: its
-  `if (isObsidianPlugin)` branch uploads whatever `dist/build/` contains, and only the `else` branch shells
-  out to `npm pack`. `isObsidianPlugin` is true for any repo that has a `manifest.json` and whose package
-  name is not `obsidian-dev-utils`, i.e. for every plugin built on this library, and false for this repo — so the
-  `npm pack` branch is **this library's own releases**, and nothing else in practice (every other non-plugin repo
-  here, `obsidian-integration-testing` and `obsidian-test-mocks` included, ships its own standalone `scripts/version.ts`, since every repo has to
-  stand on its own). **A plugin release on a pre-98 version of this library is unaffected and never needs a bump on
-  this account** — Advanced Rename and Delete Handler `1.1.1` was cut on version `96.5.2` of this library under npm 12.0.2
-  on 2026-08-31 and its GitHub release exists.
-  Say this library, not "every release": the unscoped wording once led to a planned mandatory dependency bump that was not needed.
-  The defect itself: npm 11 emits an array of pack results; npm 12 emits an object keyed by package name.
-  The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every
-  release of this library on npm 12 threw at the very LAST step — after the bump, changelog, commit, tag and push had all
-  landed, leaving a public tag with no GitHub release and therefore nothing on NPM (`publish-npm.yml`
-  triggers on `release: published`). It failed four releases of this library for four before being fixed.
-  `parseNpmPackOutput` now locates the payload by parsing from each candidate start — the `npm notice` lines
-  go to stderr, but the `prepare` script's own stdout precedes the JSON and may contain braces — and
-  normalizes both shapes. **Any test mocking that output must mock the object shape**; mocking only the
-  array is exactly what held coverage at 100% while the real command diverged. If a release of this library ever
-  half-fails here again, `npm pack` has already written the tarball, so recovery needs no rebuild:
-  `gh release create <version> dist/<tarball> dist/styles.css --title v<version> --notes-file <notes>`, the
-  notes being the CHANGELOG section plus the `**Full Changelog**: …/compare/<prev>...<new>` line.
-  `publish-npm.yml` fires on a manually-created release exactly as it would on a scripted one.
+- **The changelog review is the only step that can block, and it is deliberately the last step before anything is written.** `updateVersion` settles the changelog on a scratch copy under the OS temp folder *before* `updateVersionInFiles`, so interrupting the review leaves the working tree pristine and the release simply re-runnable — the earlier order bumped `package.json` / `manifest.json` / `versions.json` first, and a stop at the editor then stranded a dirty tree that `assertGitRepoClean` refused to re-release (hit cutting App Update Notifier 1.0.0).
+- **The GitHub release body is the changelog section delimited by LINES, terminating at the next `'## '` heading or at end-of-file — never by a regex that requires a following heading.** `getReleaseNotes` used to match `\n## <version>\n\n(…)\n\n##`, whose trailing `##` is mandatory. Sections are PREPENDED, so the newest one is bounded by the previous release only once a previous release exists: on a **first release** the match was `null` and the body silently shipped as nothing but the `**Full Changelog**` link. It reached the store on five plugins' `1.0.0` — nested-properties, edit-link-alias, backlink-full-path, refresh-any-view, app-update-notifier — i.e. exactly the release where notes matter most, and no warning was ever emitted. The same regex also truncated a section at its own `###` sub-heading, because it treated the delimiter as if only version headings could produce it. `extractChangelogSection` now scans lines and stops at `'## '` **with the trailing space** (so `###` stays inside the section) or at the end of the file.
+- **The first `##` heading in `CHANGELOG.md` is a HEADING, not a tag — `prepareChangelog` verifies it resolves (`git rev-parse --verify --quiet refs/tags/<heading>`) before spending it as a git revision.** It used to hand the heading straight to `git log <heading>..HEAD`, so a repo that had never been tagged died on `fatal: ambiguous argument '0.0.0..HEAD'` — and died at the very END of the release, after the entire preflight had been paid for. Two ways in: a hand-written `## 0.0.0` placeholder in a repo awaiting its first release (hit cutting Advanced Markdown Export 1.0.0), or a tag deleted after the fact. An unresolvable heading now falls back to the full history, with a `Version` debug line naming it — visible where it matters, because the interactive review is right there to trim an over-included range, and the debug line is all the non-interactive paths get.
+- **A release without a TTY refuses in the preflight, not after the gate.** `npm run version` checks `process.stdin.isTTY` right after the git/gh assertions and before the checks and build, so an agent- or CI-driven run fails in seconds instead of paying ~17 minutes and then hanging on `code -w`. Release unattended with `--changelog-file <path>` (prepared release notes replace the commit-derived bullets) or `--no-changelog-editing` (accept the generated bullets as is).
+- **In PowerShell, QUOTE the `--` separator: `npm run version '--' <type> --no-changelog-editing`.** PowerShell consumes a bare `--` as its own end-of-parameters token, so npm never receives the separator and parses the following flag as npm's own config — `npm run version -- minor --no-changelog-editing` dies with `EUNKNOWNCONFIG … Unknown cli flag: --changelog-editing` before `scripts/version.ts` starts. The positional bump type forwards either way, which is what makes the error read like a bad flag name. This is a shell-quoting issue, not an npm 12 regression: with the same npm 12.0.2 the bare form forwards correctly from bash, and the quoted form forwards correctly from PowerShell (verified both ways, 2026-09-01). `npx jiti scripts/version.ts <type> --no-changelog-editing` also works from any shell — the npm script is only `jiti scripts/version.ts`, so it is the same code path with no separator to lose.
+- **`publishGitHubRelease` accepts both `npm pack --json` shapes, and must keep doing so — on the LIBRARY path only.** `publishGitHubRelease` never packs on the plugin path: its `if (isObsidianPlugin)` branch uploads whatever `dist/build/` contains, and only the `else` branch shells out to `npm pack`. `isObsidianPlugin` is true for any repo that has a `manifest.json` and whose package name is not `obsidian-dev-utils`, i.e. for every plugin built on this library, and false for this repo — so the `npm pack` branch is **this library's own releases**, and nothing else in practice (every other non-plugin repo here, `obsidian-integration-testing` and `obsidian-test-mocks` included, ships its own standalone `scripts/version.ts`, since every repo has to stand on its own). **A plugin release on a pre-98 version of this library is unaffected and never needs a bump on this account** — Advanced Rename and Delete Handler `1.1.1` was cut on version `96.5.2` of this library under npm 12.0.2 on 2026-08-31 and its GitHub release exists. Say this library, not "every release": the unscoped wording once led to a planned mandatory dependency bump that was not needed. The defect itself: npm 11 emits an array of pack results; npm 12 emits an object keyed by package name. The old code found the tarball name by scanning for the array's literal `'[\n  {'` opening, so every release of this library on npm 12 threw at the very LAST step — after the bump, changelog, commit, tag and push had all landed, leaving a public tag with no GitHub release and therefore nothing on NPM (`publish-npm.yml` triggers on `release: published`). It failed four releases of this library for four before being fixed. `parseNpmPackOutput` now locates the payload by parsing from each candidate start — the `npm notice` lines go to stderr, but the `prepare` script's own stdout precedes the JSON and may contain braces — and normalizes both shapes. **Any test mocking that output must mock the object shape**; mocking only the array is exactly what held coverage at 100% while the real command diverged. If a release of this library ever half-fails here again, `npm pack` has already written the tarball, so recovery needs no rebuild: `gh release create <version> dist/<tarball> dist/styles.css --title v<version> --notes-file <notes>`, the notes being the CHANGELOG section plus the `**Full Changelog**: …/compare/<prev>...<new>` line. `publish-npm.yml` fires on a manually-created release exactly as it would on a scripted one.
 
 A release is two stages, split across two machines on purpose:
 
-1. **Local** — `npm run version -- <patch|minor|…>` runs the checks and the build, bumps the version,
-   writes the changelog, commits, tags, pushes, and creates the **GitHub release**. It stops there; it
-   does **not** publish to NPM (`scripts/version.ts` no longer calls `publish()`).
-2. **CI** — the `release: published` event triggers `.github/workflows/publish-npm.yml`, which reinstalls,
-   rebuilds (`dist/` is gitignored, so the tarball's contents exist only after a build) and runs
-   `npm run publish:npm` → `publish()` → `npm publish --tag <latest|beta>`, with the dist-tag derived from
-   whether the `package.json` version is a pre-release.
+1. **Local** — `npm run version -- <patch|minor|…>` runs the checks and the build, bumps the version, writes the changelog, commits, tags, pushes, and creates the **GitHub release**. It stops there; it does **not** publish to NPM (`scripts/version.ts` no longer calls `publish()`).
+2. **CI** — the `release: published` event triggers `.github/workflows/publish-npm.yml`, which reinstalls, rebuilds (`dist/` is gitignored, so the tarball's contents exist only after a build) and runs `npm run publish:npm` → `publish()` → `npm publish --tag <latest|beta>`, with the dist-tag derived from whether the `package.json` version is a pre-release.
 
-The publish authenticates with **npm trusted publishing** (OIDC), not a token: the job's `id-token: write`
-permission lets the npm CLI trade a short-lived GitHub OIDC token for a publish grant, and provenance is
-generated automatically. Consequences worth knowing before touching any of this:
+The publish authenticates with **npm trusted publishing** (OIDC), not a token: the job's `id-token: write` permission lets the npm CLI trade a short-lived GitHub OIDC token for a publish grant, and provenance is generated automatically. Consequences worth knowing before touching any of this:
 
-- **No `NPM_TOKEN` exists anywhere** — not in repo secrets, not in a local `.env`. `publish()` reads no
-  credentials, and publishing from a developer machine is simply not possible (trusted publishing works
-  only from the configured CI). A "how do I publish locally?" answer does not exist; re-run the workflow.
-- **The npmjs.com side names the workflow file** (Package settings → Trusted publisher: owner, repo,
-  workflow filename `publish-npm.yml`, case-sensitive). Renaming or moving that file breaks publishing
-  with an auth error that says nothing about the rename — update the setting in the same change.
+- **No `NPM_TOKEN` exists anywhere** — not in repo secrets, not in a local `.env`. `publish()` reads no credentials, and publishing from a developer machine is simply not possible (trusted publishing works only from the configured CI). A "how do I publish locally?" answer does not exist; re-run the workflow.
+- **The npmjs.com side names the workflow file** (Package settings → Trusted publisher: owner, repo, workflow filename `publish-npm.yml`, case-sensitive). Renaming or moving that file breaks publishing with an auth error that says nothing about the rename — update the setting in the same change.
 - Requires npm ≥ `11.5.1` and Node ≥ `22.14.0`; the version in `.nvmrc` satisfies both.
-- `workflow_dispatch` is also wired up, so a failed publish can be retried from the Actions tab without
-  cutting a new release.
-- **Because CI rebuilds, anything the tarball needs must happen in `npm run build` — never in
-  `scripts/version.ts`.** The release script runs only on the maintainer's machine, so a step placed
-  there reaches the local `dist/` and nothing else, while CI publishes a `dist/` that never saw it.
-  This is not hypothetical: the placeholder substitution used to live in `prepareGitHubRelease`, and
-  every release from `94.7.0` (the one that moved publishing to CI) through `96.0.0` shipped a literal
-  `$(LIBRARY_VERSION)`, which made `initPluginContext` throw `Invalid argument not valid semver` in
-  every consumer. It is now the build step `build:stamp-generated`, which throws if the declaration it
-  rewrites is missing, so an unstamped publish fails the build instead of reaching NPM. Verify a
-  release with `npm pack obsidian-dev-utils@<version>` and grep the extracted
-  `dist/lib/esm/generated-during-build.mjs` for the stamped value.
+- `workflow_dispatch` is also wired up, so a failed publish can be retried from the Actions tab without cutting a new release.
+- **Because CI rebuilds, anything the tarball needs must happen in `npm run build` — never in `scripts/version.ts`.** The release script runs only on the maintainer's machine, so a step placed there reaches the local `dist/` and nothing else, while CI publishes a `dist/` that never saw it. This is not hypothetical: the placeholder substitution used to live in `prepareGitHubRelease`, and every release from `94.7.0` (the one that moved publishing to CI) through `96.0.0` shipped a literal `$(LIBRARY_VERSION)`, which made `initPluginContext` throw `Invalid argument not valid semver` in every consumer. It is now the build step `build:stamp-generated`, which throws if the declaration it rewrites is missing, so an unstamped publish fails the build instead of reaching NPM. Verify a release with `npm pack obsidian-dev-utils@<version>` and grep the extracted `dist/lib/esm/generated-during-build.mjs` for the stamped value.
 
 ## Commits
 
 - Conventional Commits enforced via commitlint + husky (commit-msg hook)
 - nano-staged runs spellcheck, compilation, lint, and format on staged files via husky pre-commit hook
-  - Opt out per-developer by setting `NANO_STAGED=0` (or `false`/`off`/`no`) in a gitignored `.env`
-    (cross-platform, mirrors husky's own `HUSKY=0`); the `.env` is read by `getNanoStagedConfig()` in
-    `src/script-utils/nano-staged-config.ts`, which the thin `scripts/nano-staged-config.ts` entry calls.
-    The commit-msg/commitlint hook still runs.
-  - The tasks run through the package manager that owns the tree — `bun run lint:fix --` on a bun tree,
-    not `npm run lint:fix --`. The prefix comes from `getPackageManagerRunCommand()` and is resolved once
-    when `nano-staged-config.ts` is first imported, so a lockfile change needs a fresh process to take
-    effect (2026-09-02).
+  - Opt out per-developer by setting `NANO_STAGED=0` (or `false`/`off`/`no`) in a gitignored `.env` (cross-platform, mirrors husky's own `HUSKY=0`); the `.env` is read by `getNanoStagedConfig()` in `src/script-utils/nano-staged-config.ts`, which the thin `scripts/nano-staged-config.ts` entry calls. The commit-msg/commitlint hook still runs.
+  - The tasks run through the package manager that owns the tree — `bun run lint:fix --` on a bun tree, not `npm run lint:fix --`. The prefix comes from `getPackageManagerRunCommand()` and is resolved once when `nano-staged-config.ts` is first imported, so a lockfile change needs a fresh process to take effect (2026-09-02).
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
   - `npm run spellcheck`
   - `npm run build:compile:typescript`
   - `npm run lint:fix`
   - `npm run format`
-- Before pushing a branch you intend to release from, run **`npm run gate`** — the four preflight-only
-  checks it adds on top of the list above are the ones a release otherwise fails on 15 minutes in.
+- Before pushing a branch you intend to release from, run **`npm run gate`** — the four preflight-only checks it adds on top of the list above are the ones a release otherwise fails on 15 minutes in.
