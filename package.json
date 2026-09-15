@@ -698,14 +698,10 @@
     "deepmerge-ts": "^8.0.2",
     "eslint": "$eslint",
     "eslint-plugin-import": "npm:eslint-plugin-import-x@^4.17.1",
-    "eslint-plugin-json-schema-validator": "^6.3.1",
     "eslint-plugin-n": "$eslint-plugin-n",
     "fflate": "$fflate",
-    "glob": "^13.0.6",
     "js-yaml": "4.3.2",
-    "readdir-glob": "^3.0.0",
     "smol-toml": "^1.8.0",
-    "test-exclude": "^8.0.0",
     "typescript": "$typescript"
   },
   "dependencies": {
