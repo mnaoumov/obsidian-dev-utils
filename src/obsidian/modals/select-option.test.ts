@@ -70,7 +70,7 @@ describe('selectOption', () => {
         { text: 'C', value: 'c' }
       ]
     });
-    // OnOpen has run synchronously - buttons are created.
+    // onOpen has run synchronously - buttons are created.
     expect(buttonInstances).toHaveLength(3);
     queueMicrotask(() => {
       castTo<ButtonComponent>(buttonInstances[0]).simulateClick__();

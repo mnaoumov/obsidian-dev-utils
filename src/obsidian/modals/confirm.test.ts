@@ -75,7 +75,7 @@ describe('confirm', () => {
       app,
       message: 'Continue?'
     });
-    // OnOpen has run synchronously - buttons are created.
+    // onOpen has run synchronously - buttons are created.
     // Simulate OK button click via microtask (runs before setTimeout auto-close).
     queueMicrotask(() => {
       const okButton = buttonInstances[0];

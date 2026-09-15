@@ -188,13 +188,18 @@ function getEslintConfigs(context: EslintConfigContext): Linter.Config[] {
          * `ignoreConsecutiveComments` exempts a line comment that directly follows another one, which is exactly the
          * shape of a wrapped block, while still holding its FIRST line to a capital. Block comments need no such
          * option: a block comment is a single token however many lines it spans.
+         * `ignorePattern` covers the half that leaves behind: a comment whose FIRST word is a camelCase identifier is
+         * exempt, so a comment that opens by naming a symbol keeps the name a reader can grep instead of a PascalCase
+         * one that exists nowhere. The rule anchors the pattern at the start of the comment and `[a-zA-Z0-9]` matches
+         * no whitespace, so it can only ever match that first word — ordinary lowercase prose stays reported. Both
+         * option bags need it, and `block` keeps its `v8` exemption by alternation rather than losing it.
          */
         'capitalized-comments': [
           'error',
           'always',
           {
-            block: { ignorePattern: 'v8' },
-            line: { ignoreConsecutiveComments: true }
+            block: { ignorePattern: 'v8|[a-z][a-zA-Z0-9]*[A-Z]' },
+            line: { ignoreConsecutiveComments: true, ignorePattern: '[a-z][a-zA-Z0-9]*[A-Z]' }
           }
         ],
         'complexity': 'error',

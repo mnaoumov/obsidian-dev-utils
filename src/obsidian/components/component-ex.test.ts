@@ -291,7 +291,7 @@ describe('ComponentEx', () => {
       const child = new TestComponentEx();
       parent.addChild(child);
 
-      // LoadPromise is extended — need to wait for it
+      // loadPromise is extended — need to wait for it
       await vi.waitFor(() => {
         expect(child.asyncLoadFunction).toHaveBeenCalledOnce();
       });

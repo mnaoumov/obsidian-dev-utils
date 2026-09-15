@@ -222,7 +222,7 @@ describe('getNoteFilesSorted', () => {
   it('should return note files (md, canvas) sorted by path, excluding non-notes', () => {
     const files = getNoteFilesSorted(app);
     const paths = files.map((f) => f.path);
-    // IsNote returns true for md, canvas, and base extension files
+    // isNote returns true for md, canvas, and base extension files
     expect(paths).toContain('a-note.md');
     expect(paths).toContain('z-note.md');
     expect(paths).toContain('drawing.canvas');
@@ -653,7 +653,7 @@ describe('getSafeRenamePath', () => {
   });
 
   it('should return newPath directly when only case differs (case-sensitive filesystem)', () => {
-    // OldPath.toLowerCase() === newPath.toLowerCase(), so returns newPath directly
+    // oldPath.toLowerCase() === newPath.toLowerCase(), so returns newPath directly
     const result = getSafeRenamePath({ app, newPath: 'Old.md', oldPathOrAbstractFile: 'old.md' });
     expect(result).toBe('Old.md');
   });
@@ -725,8 +725,8 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.fileManager, 'renameFile').mockRejectedValue(new Error('Rename failed'));
     vi.spyOn(app.vault, 'exists')
-      .mockResolvedValueOnce(true) // NewAvailablePath exists
-      .mockResolvedValueOnce(false); // OldPath doesn't exist
+      .mockResolvedValueOnce(true) // newAvailablePath exists
+      .mockResolvedValueOnce(false); // oldPath doesn't exist
     const result = await renameSafe({ app, newPath: 'dest/target.md', oldPathOrAbstractFile: 'source.md' });
     expect(result).toBe('dest/target');
   });
@@ -744,8 +744,8 @@ describe('renameSafe', () => {
     vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.fileManager, 'renameFile').mockRejectedValue(new Error('Rename failed'));
     vi.spyOn(app.vault, 'exists')
-      .mockResolvedValueOnce(true) // NewAvailablePath exists
-      .mockResolvedValueOnce(true); // OldPath still exists
+      .mockResolvedValueOnce(true) // newAvailablePath exists
+      .mockResolvedValueOnce(true); // oldPath still exists
     await expect(renameSafe({ app, newPath: 'dest/target.md', oldPathOrAbstractFile: 'source.md' })).rejects.toThrow('Rename failed');
   });
 });
@@ -1142,7 +1142,7 @@ describe('processFile', () => {
   it('should handle doesFileExist being false after readSafe succeeds', async () => {
     setupRetryToInvokeOperationFunction();
 
-    // ReadSafe succeeds, but file disappears before the second invokeFileActionSafe
+    // readSafe succeeds, but file disappears before the second invokeFileActionSafe
     vi.spyOn(app.vault, 'read').mockImplementation(async () => {
       await noopAsync();
       // Delete file during read so subsequent getFileOrNull returns null
