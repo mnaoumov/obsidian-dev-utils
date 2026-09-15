@@ -55,9 +55,9 @@ All npm scripts follow the `"alpha:bravo": "jiti scripts/alpha-bravo.ts"` patter
   the thresholds over the identical files. One consequence: `TEST_COVERAGE=0` now switches off the gate's
   whole test step. Two steps of the preflight are deliberately
   NOT in the gate: the clean-repo assertion (the gate is run on a dirty tree on purpose) and
-  `test:integration` (it has to run in sequence across every repo sharing the one Obsidian instance, so a casually-run command must not start it;
-  when a caller does ask for it, it runs after the unit tests, so a broken unit test fails first).
-  `npm run gate -- --no-build` skips the build when the output is already current; `GATE=0` skips the whole
+  `test:integration` — left out for COST, not for contention (2026-09-15): desktop runs stopped contending in `obsidian-integration-testing` 5.0.0, which gives every run its own user-data dir and CDP port, and the Android emulator that is still shared is serialized by that package's own waiting `android` setup lock. What holds is that it is the one preflight step with a routine command of its own, and that in a plugin repo it boots an AVD and Appium and can queue for up to that lock's hour-long timeout, which a seconds-long command must not do unasked.
+  When a caller does ask for it, it runs after the unit tests, so a broken unit test fails first.
+  `npm run gate -- --no-build` skips the build when the output is already current; `npm run gate -- --integration` adds `test:integration`; `GATE=0` skips the whole
   thing and each step keeps its own switch (`SPELLCHECK=0`, ...).
 - `npm run commit` — guided commit via Commitizen
 - `npm run version` — update version

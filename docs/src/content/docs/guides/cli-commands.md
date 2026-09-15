@@ -220,16 +220,17 @@ The tests run **once**. `test:coverage` is preferred, and `test` runs only as it
 Steps your project does not define are skipped, not fatal. Two steps of the preflight are deliberately left out:
 
 - **The clean-repo check.** The gate is meant to be run on a dirty tree — that is the point of running it before you commit.
-- **`test:integration`.** Integration suites usually have to be serialized across a machine, so a command run this casually must not start one. Pass `shouldRunIntegrationTests: true` if your project wants it anyway; the release path sets it. It then runs last, after the unit tests, so a broken unit test fails before an integration suite is started.
+- **`test:integration`.** Left out for cost, not for contention: it is the one preflight step that already has a routine command of its own, and in a plugin project it boots an Android emulator and an Appium server before it runs anything. A command whose point is answering in seconds must not start one unasked. Pass `--integration` (or `shouldRunIntegrationTests: true`) when you want it; the release path sets it. It then runs last, after the unit tests, so a broken unit test fails before an integration suite is started.
 
 `gate` is not a second list of the same checks — `updateVersion` calls it, so a check added to one is reachable from both.
 
 #### Flags
 
-| Flag          | Effect                                                                                                     |
-|---------------|------------------------------------------------------------------------------------------------------------|
-| `--no-build`  | Skips the build. Use only when the build output already matches the current code — it is the only step that type-checks the project, and a green lint is not a type-check. |
-| `--no-checks` | Skips every verification check and runs only the build.                                                     |
+| Flag            | Effect                                                                                                     |
+|-----------------|------------------------------------------------------------------------------------------------------------|
+| `--no-build`    | Skips the build. Use only when the build output already matches the current code — it is the only step that type-checks the project, and a green lint is not a type-check. |
+| `--no-checks`   | Skips every verification check and runs only the build.                                                     |
+| `--integration` | Runs `test:integration` too, last of all. Off by default for the cost reason above; this is how you ask for it on a run where you want it. |
 
 ### Version Management
 
