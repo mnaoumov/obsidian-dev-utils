@@ -40,6 +40,7 @@ import { archivePluginDemoVault } from './demo-vault.ts';
 import { readdirPosix } from './fs.ts';
 import { gate } from './gate.ts';
 import { editJson } from './json.ts';
+import { spellcheckContent } from './linters/cspell-content.ts';
 import { lintMarkdownContent } from './linters/markdownlint-content.ts';
 import {
   editNpmShrinkWrapJson,
@@ -201,6 +202,25 @@ export interface UpdateVersionOptions {
   readonly shouldVerifyCommit?: boolean;
 }
 
+/**
+ * One finding reported over the settled changelog section, tagged with the npm script whose check produced it.
+ *
+ * The tag is what lets one message name `lint:md`, `spellcheck` or both, truthfully. Both checks run over
+ * every settle, so an author who has to fix a hard-wrapped line and a coined word fixes them in ONE round of
+ * the review rather than being sent back twice.
+ */
+interface ChangelogFinding {
+  /**
+   * The npm script that would have reported this on the branch.
+   */
+  readonly scriptName: string;
+
+  /**
+   * The reported line, exactly as that script's own output would have carried it.
+   */
+  readonly text: string;
+}
+
 interface NpmPackResult {
   readonly filename: string;
 }
@@ -220,10 +240,15 @@ const DEFAULT_PREID = 'beta';
 const DESKTOP_RELEASES_JSON_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/desktop-releases.json';
 
 /**
- * The npm script whose check the settled changelog is held to, named in the messages so a reader knows which
+ * The npm scripts whose checks the settled changelog is held to, named in the messages so a reader knows which
  * gate they are looking at — and knows that fixing it here is the same fix as fixing it on the branch.
  */
 const LINT_MD_SCRIPT_NAME = 'lint:md';
+
+/**
+ * See {@link LINT_MD_SCRIPT_NAME}.
+ */
+const SPELLCHECK_SCRIPT_NAME = 'spellcheck';
 
 /**
  * The shape of a merge subject git wrote itself, rather than one an author chose.
@@ -856,35 +881,47 @@ function extractChangelogSection(changelogContent: string, version: string): str
 }
 
 /**
- * Runs `lint:md`'s checks over the NEW section of a composed changelog, before any of it reaches the
- * repository.
+ * Runs `lint:md`'s and `spellcheck`'s checks over the NEW section of a composed changelog, before any of it
+ * reaches the repository.
  *
- * Only the new section is linted, and deliberately so. The honest check is the whole file, but it fails a
+ * Only the new section is checked, and deliberately so. The honest check is the whole file, but it fails a
  * release on a defect in a section somebody shipped years ago — which is a release nobody can cut without
  * first fixing history, and is exactly how a changelog defect becomes a permanent blocker instead of a
- * two-minute fix. The new section is the only part this release is responsible for.
+ * two-minute fix. That is not hypothetical for the spelling half in particular: it is the state five
+ * repositories in this workspace are in, each with a coined word already published in an old section. The new
+ * section is the only part this release is responsible for.
  *
- * The section is handed over inside a minimal document rather than on its own, so the heading and list rules
- * see the context they need (a document whose first line is a list item is a different document). The line
- * numbers a finding reports are the composed `CHANGELOG.md`'s own, which is not a coincidence and is worth
- * keeping: a section is PREPENDED, so the minimal document is character-for-character the head of the file
- * that is about to be written.
+ * BOTH checks run over every settle, and neither short-circuits the other. An author who has a hard-wrapped
+ * line and a coined word is told about both at once, in one round of the review, rather than fixing one and
+ * being sent back for the other.
  *
  * @param changelogContent - The full composed `CHANGELOG.md` content.
  * @param version - The version whose section is about to be published.
  * @returns A {@link Promise} that resolves to the findings, or an empty array when the section is clean.
  */
-async function getChangelogSectionMarkdownlintFindings(changelogContent: string, version: string): Promise<string[]> {
-  const heading = `# CHANGELOG\n\n## ${version}`;
-  const section = extractChangelogSection(changelogContent, version);
-  // An empty section is a real shape — a release with no commits to describe, or prepared notes that are an
-  // empty file — and appending a blank body to the heading would report a defect this release did not commit.
-  const document = section === '' ? `${heading}\n` : `${heading}\n\n${section}\n`;
+async function getChangelogSectionFindings(changelogContent: string, version: string): Promise<ChangelogFinding[]> {
+  const content = toChangelogSectionDocument(changelogContent, version);
+  const filePath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
 
-  return await lintMarkdownContent({
-    content: document,
-    filePath: resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd })
+  const markdownlintFindings = await lintMarkdownContent({
+    content,
+    filePath
   });
+  const spellingFindings = await spellcheckContent({
+    content,
+    filePath
+  });
+
+  return [
+    ...markdownlintFindings.map((text) => ({
+      scriptName: LINT_MD_SCRIPT_NAME,
+      text
+    })),
+    ...spellingFindings.map((text) => ({
+      scriptName: SPELLCHECK_SCRIPT_NAME,
+      text
+    }))
+  ];
 }
 
 /**
@@ -955,13 +992,14 @@ function parseNpmPackOutput(output: string): NpmPackResult {
  * how that guard reaches every caller and every path — reviewed or not, commit-derived or prepared — from a
  * single site.
  *
- * It is also where the new section is LINTED, for the same reason and one the release's ordering forces: the
- * release's only `lint:md` runs in the gate, which is over before this text exists, so every character of a
- * new changelog section used to enter the repository after the only check that could have looked at it. The
- * generator's own bullets cannot fail it — they are one `toFirstLine` per commit — but the two paths a human
- * or an agent writes, the interactive review and `--changelog-file`, are exactly the paths that carry prose.
- * A defect there does not fail the release: it lands on the default branch inside the `chore: release`
- * commit, and turns the NEXT gate red, on a branch belonging to somebody who did not write it.
+ * It is also where the new section is LINTED and SPELLCHECKED, for the same reason and one the release's
+ * ordering forces: the release's only `lint:md` and `spellcheck` run in the gate, which is over before this
+ * text exists, so every character of a new changelog section used to enter the repository after the only
+ * checks that could have looked at it. The generator's own bullets cannot fail them — they are one
+ * `toFirstLine` per commit — but the two paths a human or an agent writes, the interactive review and
+ * `--changelog-file`, are exactly the paths that carry prose. A defect there does not fail the release: it
+ * lands on the default branch inside the `chore: release` commit, and turns the NEXT gate red, on a branch
+ * belonging to somebody who did not write it.
  *
  * @param newVersion - The new version number the changelog section is written for.
  * @param options - The {@link UpdateChangelogOptions} controlling where the section body comes from.
@@ -1033,9 +1071,9 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
   // Prepared notes are already the reviewed text, so they never open an editor, whatever `shouldEditChangelog` says.
   const isReviewDue = changelogFilePath === undefined && shouldEditChangelog;
   let settledChangeLog = newChangeLog;
-  let findings: string[] = [];
+  let findings: ChangelogFinding[] = [];
 
-  // The lint runs on the SETTLED text, so the review sits inside the loop rather than before it: the author is
+  // The checks run on the SETTLED text, so the review sits inside the loop rather than before it: the author is
   // still sitting at the editor, so they are handed the findings and the same scratch copy back. A review that
   // returns byte-identical text is the author declining to fix them, which ends the loop instead of reopening
   // for ever. There is nobody to hand a finding to on the other paths, so those throw on the first one.
@@ -1043,19 +1081,19 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
     if (isReviewDue) {
       const reviewedChangeLog = await reviewChangelog(settledChangeLog, findings);
       if (findings.length > 0 && reviewedChangeLog === settledChangeLog) {
-        throw toChangelogMarkdownlintError(findings, newVersion);
+        throw toChangelogFindingsError(findings, newVersion);
       }
 
       settledChangeLog = reviewedChangeLog;
     }
 
-    findings = await getChangelogSectionMarkdownlintFindings(settledChangeLog, newVersion);
+    findings = await getChangelogSectionFindings(settledChangeLog, newVersion);
     if (findings.length === 0) {
       break;
     }
 
     if (!isReviewDue) {
-      throw toChangelogMarkdownlintError(findings, newVersion);
+      throw toChangelogFindingsError(findings, newVersion);
     }
   }
 
@@ -1072,11 +1110,11 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
  * returns whatever they left behind. The scratch folder is removed even when the review fails.
  *
  * @param newChangeLog - The composed `CHANGELOG.md` content to hand over for review.
- * @param findings - The markdownlint findings the previous round of this review left unfixed, printed above
- * the prompt so the author sees what has to change. Empty on the first round.
+ * @param findings - The findings the previous round of this review left unfixed, printed above the prompt so
+ * the author sees what has to change. Empty on the first round.
  * @returns A {@link Promise} that resolves to the reviewed content.
  */
-async function reviewChangelog(newChangeLog: string, findings: string[]): Promise<string> {
+async function reviewChangelog(newChangeLog: string, findings: ChangelogFinding[]): Promise<string> {
   const scratchFolder = await mkdtemp(join(tmpdir(), 'obsidian-dev-utils-changelog-'));
   const scratchChangelogPath = join(scratchFolder, ObsidianPluginRepoPaths.ChangelogMd);
 
@@ -1089,7 +1127,9 @@ async function reviewChangelog(newChangeLog: string, findings: string[]): Promis
     });
     const versionDebugger = getLibDebugger('Version');
     if (findings.length > 0) {
-      versionDebugger(`${ObsidianPluginRepoPaths.ChangelogMd} does not pass ${LINT_MD_SCRIPT_NAME} yet:\n${findings.join('\n')}`);
+      versionDebugger(
+        `${ObsidianPluginRepoPaths.ChangelogMd} does not pass ${toFailedScriptNames(findings)} yet:\n${toFindingLines(findings)}`
+      );
     }
 
     if (codeVersion) {
@@ -1138,25 +1178,74 @@ function toChangelogEntry(commitMessage: string): string {
 }
 
 /**
- * Builds the error that stops a release whose new changelog section does not pass `lint:md`.
+ * Builds the error that stops a release whose new changelog section does not pass `lint:md` or `spellcheck`.
  *
  * It is thrown from the composition step, which is BEFORE anything is written, so the recovery it describes is
  * the whole recovery: there is nothing to revert, and the release re-runs from the top.
  *
- * @param findings - The markdownlint findings, as {@link lintMarkdownContent} reported them.
+ * @param findings - The findings, as {@link getChangelogSectionFindings} collected them.
  * @param version - The version whose section was being published.
  * @returns The error to throw.
  */
-function toChangelogMarkdownlintError(findings: string[], version: string): Error {
+function toChangelogFindingsError(findings: ChangelogFinding[], version: string): Error {
+  const scriptNames = toFailedScriptNames(findings);
   return new Error(
-    `The ${version} section of ${ObsidianPluginRepoPaths.ChangelogMd} does not pass ${LINT_MD_SCRIPT_NAME}:\n`
-      + `${findings.join('\n')}\n`
+    `The ${version} section of ${ObsidianPluginRepoPaths.ChangelogMd} does not pass ${scriptNames}:\n`
+      + `${toFindingLines(findings)}\n`
       + 'The changelog is settled before it is written, so this stops the release with the repository untouched'
       + ' and nothing to revert. The line numbers are the ones the written file would have had. Fix the release'
-      + ' notes — in the prepared notes file, or in the commit messages they were generated from — and re-run the'
-      + ' release. Releasing anyway would land the defect on the default branch inside the release commit, where'
-      + ` the next ${LINT_MD_SCRIPT_NAME} on anyone's branch reports it.`
+      + ' notes — in the prepared notes file, or in the commit messages they were generated from — or, for a word'
+      + ' this project really does use, add it to the project\'s `cspell` configuration, and re-run the release.'
+      + ' Releasing anyway would land the defect on the default branch inside the release commit, where the next'
+      + ` ${scriptNames} on anyone's branch reports it.`
   );
+}
+
+/**
+ * Wraps one version's changelog section in the minimal document the checks are handed.
+ *
+ * The section goes inside a document rather than on its own, so the heading and list rules see the
+ * context they need (a document whose first line is a list item is a different document). The line numbers a
+ * finding reports are then the composed `CHANGELOG.md`'s own, which is not a coincidence and is worth keeping:
+ * a section is PREPENDED, so this document is character-for-character the head of the file about to be written.
+ *
+ * @param changelogContent - The full composed `CHANGELOG.md` content.
+ * @param version - The version whose section is about to be published.
+ * @returns The minimal document to check.
+ */
+function toChangelogSectionDocument(changelogContent: string, version: string): string {
+  const heading = `# CHANGELOG\n\n## ${version}`;
+  const section = extractChangelogSection(changelogContent, version);
+  // An empty section is a real shape — a release with no commits to describe, or prepared notes that are an
+  // empty file — and appending a blank body to the heading would report a defect this release did not commit.
+  return section === '' ? `${heading}\n` : `${heading}\n\n${section}\n`;
+}
+
+/**
+ * Names the npm scripts that actually reported something, in the order they ran.
+ *
+ * Naming both unconditionally would be the easy version and would be a lie half the time: a release stopped by
+ * a coined word would tell its author to go and look at `lint:md`, which passed.
+ *
+ * @param findings - The findings to name the scripts of.
+ * @returns The script names, joined for prose — `lint:md`, `spellcheck`, or `lint:md and spellcheck`.
+ */
+function toFailedScriptNames(findings: ChangelogFinding[]): string {
+  const scriptNames = [LINT_MD_SCRIPT_NAME, SPELLCHECK_SCRIPT_NAME].filter((scriptName) => findings.some((finding) => finding.scriptName === scriptName));
+  return scriptNames.join(' and ');
+}
+
+/**
+ * Renders the findings for a message, each line tagged with the script that reported it.
+ *
+ * The tag is not decoration: the two tools' output shapes are similar enough to be mistaken for each other,
+ * and the fix for one is not the fix for the other.
+ *
+ * @param findings - The findings to render.
+ * @returns The rendered lines, one finding per line.
+ */
+function toFindingLines(findings: ChangelogFinding[]): string {
+  return findings.map((finding) => `[${finding.scriptName}] ${finding.text}`).join('\n');
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string, minAppVersion: string | undefined): Promise<void> {
