@@ -892,6 +892,14 @@ export function myFunction(param: Type): ReturnType {
     statically is silently ignored, so it under-reports rather than crying wolf; a site that genuinely
     cannot become a `poll` / `until` pair disables it with a written reason. A note is what let this
     reach thirty repos, which is why it is a rule.
+  - **A LOOP declares a ceiling too, and reading it uncovered 18 over-cap closures nothing had ever
+    reported.** A deadline loop — `const deadline = Date.now() + BUDGET` guarded by
+    `Date.now() < deadline`, on either clock — is charged `BUDGET` once, and a counting
+    `for (let attempt = 0; attempt < ATTEMPTS; attempt++)` multiplies the waits inside it by `ATTEMPTS`.
+    Either ceiling counts when it is one conjunct of a compound test, which is how both are written in
+    practice. A `while (true)`, a `for…of`, and a bound that does not resolve all keep the old
+    per-iteration charge rather than a guess. The one under-count left is a bounded retry HELPER declared
+    inside the closure: its waits are attributed once, not once per call site.
   - **The fix for a wait that genuinely needs longer than the cap is `pollInObsidian`, not a bigger
     number**: a short DOM-reading `poll` closure, `until` evaluated in Node, and the long budget in
     `timeoutInMilliseconds`. `demo-vault-helper.obsidian.integration.test.ts` has three worked examples.
