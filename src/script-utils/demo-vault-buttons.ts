@@ -21,7 +21,10 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
-import { evalInObsidian } from 'obsidian-integration-testing';
+import {
+  DEFAULT_EVAL_CAP_IN_MILLISECONDS,
+  evalInObsidian
+} from 'obsidian-integration-testing';
 import { getTemporaryVault } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 import {
   beforeAll,
@@ -145,15 +148,6 @@ export interface RegisterDemoVaultButtonSuiteOptions {
 const DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS = 10_000;
 const DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS = 12_000;
 
-/*
- * The cap the sum above is measured against, restated here because NOTHING exports it: the desktop CDP
- * transport holds it as a module-private `COMMAND_TIMEOUT_IN_MILLISECONDS`, and the Appium one exports
- * `DEFAULT_SCRIPT_TIMEOUT_IN_MILLISECONDS` from its own module without re-exporting it from the package
- * root. Both are this number, and this suite runs on desktop. `no-over-cap-wait-in-eval-in-obsidian`
- * assumes the same number as its default cap and reports AT it as well as over it, which is why the
- * assertion below refuses a sum that merely reaches it.
- */
-const TRANSPORT_SCRIPT_TIMEOUT_IN_MILLISECONDS = 30_000;
 const POLL_INTERVAL_IN_MILLISECONDS = 100;
 const OUTPUT_EXCERPT_LENGTH = 400;
 
@@ -184,7 +178,13 @@ const CODE_BUTTON_FENCE_REG_EXP = /^\s*```code-button/gm;
  */
 export function assertClickBudgetsFitTransportCap(timeouts: ClickButtonTimeouts): void {
   const totalInMilliseconds = timeouts.settleTimeoutInMilliseconds + timeouts.buttonResultTimeoutInMilliseconds;
-  if (totalInMilliseconds < TRANSPORT_SCRIPT_TIMEOUT_IN_MILLISECONDS) {
+
+  /*
+   * The comparison is `<` rather than `<=` because a sum that merely REACHES the cap can already never
+   * be honoured: `no-over-cap-wait-in-eval-in-obsidian` reports at the cap as well as over it, and a
+   * closure handed exactly the transport's budget has nothing left for the dispatch itself.
+   */
+  if (totalInMilliseconds < DEFAULT_EVAL_CAP_IN_MILLISECONDS) {
     return;
   }
 
@@ -192,7 +192,7 @@ export function assertClickBudgetsFitTransportCap(timeouts: ClickButtonTimeouts)
     `One demo-vault button click spends settleTimeoutInMilliseconds (${String(timeouts.settleTimeoutInMilliseconds)} ms) and `
       + `buttonResultTimeoutInMilliseconds (${String(timeouts.buttonResultTimeoutInMilliseconds)} ms) inside a single transport call, `
       + `so their sum of ${String(totalInMilliseconds)} ms is at or over the transport's `
-      + `${String(TRANSPORT_SCRIPT_TIMEOUT_IN_MILLISECONDS)} ms script timeout and can never be honoured. `
+      + `${String(DEFAULT_EVAL_CAP_IN_MILLISECONDS)} ms script timeout and can never be honoured. `
       + 'Lower either budget in RegisterDemoVaultButtonSuiteOptions.'
   );
 }

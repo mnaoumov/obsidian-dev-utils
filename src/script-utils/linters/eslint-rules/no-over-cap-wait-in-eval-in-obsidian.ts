@@ -12,6 +12,12 @@
  * that actually blew the budget, so the failure reads as a broken device rather than as a
  * closure asking for more time than exists. That misdiagnosis cost two days.
  *
+ * The cap the rule assumes when `capInMilliseconds` is not configured is
+ * `DEFAULT_EVAL_CAP_IN_MILLISECONDS`, imported from `obsidian-integration-testing` — the same constant
+ * both of its transports enforce, so the rule cannot drift from the thing it is predicting. That import
+ * is why the harness is a required peer of this library rather than an optional one: the shared ESLint
+ * config loads this rule, so every consuming repo resolves it at lint time.
+ *
  * A closure declaring a 30 000 ms `waitUntil`, or two 20 000 ms ones, therefore cannot
  * succeed on any machine slow enough to need the time it asks for. The fix is to move the
  * waiting to Node: `pollInObsidian` runs a SHORT DOM-reading `poll` closure repeatedly,
@@ -87,15 +93,12 @@ import type {
   Scope
 } from 'eslint';
 
+import { DEFAULT_EVAL_CAP_IN_MILLISECONDS } from 'obsidian-integration-testing';
+
 /**
  * Message ID reported when an in-Obsidian closure declares more waiting than the transport's cap allows.
  */
 export const MESSAGE_ID = 'noOverCapWaitInEvalInObsidian';
-
-/**
- * The cap assumed when the rule is configured without one, matching the transport's own script timeout.
- */
-const DEFAULT_CAP_IN_MILLISECONDS = 30_000;
 
 /**
  * The budget a `waitUntil` takes when it omits `timeoutInMilliseconds`, per `WaitUntilParams`.
@@ -241,7 +244,7 @@ type LoopStatement = TSESTree.DoWhileStatement | TSESTree.ForStatement | TSESTre
 export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
   create(context) {
     const options = context.options[0] as CapOptions | undefined;
-    const capInMilliseconds = options?.capInMilliseconds ?? DEFAULT_CAP_IN_MILLISECONDS;
+    const capInMilliseconds = options?.capInMilliseconds ?? DEFAULT_EVAL_CAP_IN_MILLISECONDS;
     const callGraph: CallGraph = {
       callCountByCalleeNodeByCallerNode: new Map<HelperFunction, Map<HelperFunction, number>>(),
       stateByClosureNode: new Map<ClosureFunction, ClosureState>(),
