@@ -32,9 +32,32 @@
  * scope rather than by regex is the whole reason this is a rule and not a script. But a
  * value arriving from a caller (`options.timeout ?? DEFAULT`, threaded through a
  * parameter) would need analysis across call boundaries, and reporting every such site would
- * make each legitimately parameterized helper red across thirty repos. A LOOP is out of scope
- * for the same reason: a `sleep` in a `while` has no statically declared ceiling, so the
- * sum below is per-iteration and says nothing about the whole.
+ * make each legitimately parameterized helper red across thirty repos.
+ *
+ * LOOPS were once out of scope wholesale, on the reasoning that a `sleep` in a `while` has no
+ * statically declared ceiling. That is true of `while (true)` and false of the loop these
+ * suites actually write, which declares its ceiling as plainly as any literal timeout — and
+ * leaving them all out hid 22 over-cap closures across six repos, one of them ten times over.
+ * Two shapes are read now, both through the same scope walk a budget uses:
+ *
+ * - A DEADLINE loop — `const deadline = Date.now() + BUDGET`, guarded by `Date.now() < deadline` —
+ *   cannot run longer than `BUDGET` whatever its poll interval, so `BUDGET` is charged to the
+ *   closure ONCE per loop, on top of the single iteration its inner waits are already charged
+ *   (a poll that starts just under the deadline still runs to completion, so the sum of the two
+ *   is the honest worst case rather than a double count). `performance.now()` counts as well as
+ *   `Date.now()`: a `performance`-written deadline read as unbounded is why one 245 025 ms
+ *   closure was absent from every roster produced before this.
+ * - A COUNTING `for` — `for (let attempt = 0; attempt < ATTEMPTS; attempt++)` — multiplies every
+ *   wait inside it by its iteration count, read from the loop's own start, bound and step.
+ *
+ * Either ceiling may be ONE CONJUNCT of a compound test (`while (count < expected && Date.now() < deadline)`,
+ * `for (let attempt = 0; attempt < ATTEMPTS && !isOpen; attempt++)`), which is how both are actually
+ * written: a progress condition beside the guard does not remove the ceiling the other conjunct declares.
+ *
+ * Anything else keeps the old per-iteration charge rather than a guess — `while (true)`, a `for…of`,
+ * a bound or deadline that does not resolve — which is what keeps a genuinely unbounded loop silent.
+ * So does a bounded retry HELPER declared inside the closure and called several times: its waits are
+ * attributed to the enclosing closure once, not once per call site.
  *
  * Not every over-cap closure can become a `poll` / `until` pair, so the rule is meant to be
  * disabled — with a reason — at the sites that have one. `require-description` makes that
@@ -65,6 +88,14 @@ const INPUT_PROPERTY_NAME = 'input';
 const SLEEP_CALLEE_NAME = 'sleep';
 const TIMEOUT_PROPERTY_NAME = 'timeoutInMilliseconds';
 const WAIT_UNTIL_CALLEE_NAME = 'waitUntil';
+
+/**
+ * The clocks a deadline may be taken from. Both occur in these suites, and a rule that knew only `Date`
+ * read every `performance`-written deadline as unbounded.
+ */
+const CLOCK_OBJECT_NAMES = new Set(['Date', 'performance']);
+
+const NOW_METHOD_NAME = 'now';
 
 /**
  * Which properties of each helper's parameter object hold a closure that runs INSIDE Obsidian, and is
@@ -131,6 +162,12 @@ interface EvalClosure {
 }
 
 /**
+ * A loop whose own test can declare a ceiling. `for…of` / `for…in` are deliberately absent: neither
+ * declares one statically, so both keep the per-iteration charge every unsized loop gets.
+ */
+type LoopStatement = TSESTree.DoWhileStatement | TSESTree.ForStatement | TSESTree.WhileStatement;
+
+/**
  * ESLint rule disallowing an in-Obsidian closure whose declared waiting exceeds the transport's script-timeout cap.
  */
 export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
@@ -138,6 +175,41 @@ export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
     const options = context.options[0] as CapOptions | undefined;
     const capInMilliseconds = options?.capInMilliseconds ?? DEFAULT_CAP_IN_MILLISECONDS;
     const budgetByClosureNode = new Map<TSESTree.Node, ClosureBudget>();
+
+    /**
+     * Adds waiting to the running total of the closure it was declared in.
+     *
+     * @param closure - The closure to charge.
+     * @param waitInMilliseconds - The waiting to add.
+     */
+    function addWait(closure: EvalClosure, waitInMilliseconds: number): void {
+      const runningTotalInMilliseconds = budgetByClosureNode.get(closure.closureNode)?.totalInMilliseconds ?? 0;
+      budgetByClosureNode.set(closure.closureNode, {
+        reportNode: closure.reportNode,
+        totalInMilliseconds: runningTotalInMilliseconds + waitInMilliseconds
+      });
+    }
+
+    /**
+     * Charges a deadline-bounded loop its whole deadline, once.
+     *
+     * @param node - The loop statement.
+     */
+    function chargeLoopDeadline(node: Rule.Node): void {
+      const loopNode = node as LoopStatement;
+
+      const closure = findEnclosingEvalClosure(loopNode);
+      if (!closure) {
+        return;
+      }
+
+      const deadlineInMilliseconds = readLoopDeadlineInMilliseconds(loopNode, closure, context);
+      if (deadlineInMilliseconds === null) {
+        return;
+      }
+
+      addWait(closure, deadlineInMilliseconds * readLoopMultiplier(loopNode, closure, context));
+    }
 
     return {
       'CallExpression'(node: Rule.Node): void {
@@ -155,17 +227,15 @@ export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
 
         const waitInMilliseconds = budgetExpression === null
           ? WAIT_UNTIL_DEFAULT_TIMEOUT_IN_MILLISECONDS
-          : resolveMilliseconds(budgetExpression, closure, context);
+          : resolveNumber(budgetExpression, closure, context);
         if (waitInMilliseconds === null) {
           return;
         }
 
-        const runningTotalInMilliseconds = budgetByClosureNode.get(closure.closureNode)?.totalInMilliseconds ?? 0;
-        budgetByClosureNode.set(closure.closureNode, {
-          reportNode: closure.reportNode,
-          totalInMilliseconds: runningTotalInMilliseconds + waitInMilliseconds
-        });
+        addWait(closure, waitInMilliseconds * readLoopMultiplier(callNode, closure, context));
       },
+      DoWhileStatement: chargeLoopDeadline,
+      ForStatement: chargeLoopDeadline,
       'Program:exit'(): void {
         for (const budget of budgetByClosureNode.values()) {
           if (budget.totalInMilliseconds < capInMilliseconds) {
@@ -181,7 +251,8 @@ export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
             node: budget.reportNode
           });
         }
-      }
+      },
+      WhileStatement: chargeLoopDeadline
     };
   },
   meta: {
@@ -251,6 +322,17 @@ function findVariable(scope: Scope.Scope, name: string): null | Scope.Variable {
 }
 
 /**
+ * Checks whether a node is an assignment expression.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is an `AssignmentExpression`.
+ */
+function isAssignmentExpression(node: TSESTree.Node): node is TSESTree.AssignmentExpression {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'AssignmentExpression';
+}
+
+/**
  * Checks whether a node is a binary expression.
  *
  * @param node - The node to check.
@@ -284,6 +366,17 @@ function isClosureFunction(node: TSESTree.Node): node is ClosureFunction {
 }
 
 /**
+ * Checks whether a node is a counting `for` statement.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is a `ForStatement`.
+ */
+function isForStatement(node: TSESTree.Node): node is TSESTree.ForStatement {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'ForStatement';
+}
+
+/**
  * Checks whether a node is an identifier.
  *
  * @param node - The node to check.
@@ -292,6 +385,39 @@ function isClosureFunction(node: TSESTree.Node): node is ClosureFunction {
 function isIdentifier(node: TSESTree.Node): node is TSESTree.Identifier {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
   return node.type === 'Identifier';
+}
+
+/**
+ * Checks whether a node is an `&&` chain, whose conjuncts a ceiling may be declared in one of.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is a `LogicalExpression` with the `&&` operator.
+ */
+function isLogicalAndExpression(node: TSESTree.Node): node is TSESTree.LogicalExpression {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'LogicalExpression' && node.operator === '&&';
+}
+
+/**
+ * Checks whether a node is a loop whose own test can declare a ceiling.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is a `WhileStatement`, a `DoWhileStatement` or a `ForStatement`.
+ */
+function isLoopStatement(node: TSESTree.Node): node is LoopStatement {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'WhileStatement' || node.type === 'DoWhileStatement' || isForStatement(node);
+}
+
+/**
+ * Checks whether a node is a member expression.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is a `MemberExpression`.
+ */
+function isMemberExpression(node: TSESTree.Node): node is TSESTree.MemberExpression {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'MemberExpression';
 }
 
 /**
@@ -336,6 +462,28 @@ function isObjectPattern(node: TSESTree.Node): node is TSESTree.ObjectPattern {
 function isProperty(node: TSESTree.Node): node is TSESTree.Property {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
   return node.type === 'Property';
+}
+
+/**
+ * Checks whether a node is an update expression.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is an `UpdateExpression`.
+ */
+function isUpdateExpression(node: TSESTree.Node): node is TSESTree.UpdateExpression {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'UpdateExpression';
+}
+
+/**
+ * Checks whether a node is a variable declaration.
+ *
+ * @param node - The node to check.
+ * @returns `true` if the node is a `VariableDeclaration`.
+ */
+function isVariableDeclaration(node: TSESTree.Node): node is TSESTree.VariableDeclaration {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+  return node.type === 'VariableDeclaration';
 }
 
 /**
@@ -388,6 +536,35 @@ function readBoundExpression(node: TSESTree.Identifier, closure: EvalClosure, co
 }
 
 /**
+ * Reads the clock a node reads the current time from, if that is what it does.
+ *
+ * @param node - The node to inspect.
+ * @returns The clock object's name (`Date` or `performance`), or `null` when the node is not a clock reading.
+ */
+function readClockName(node: TSESTree.Node): null | string {
+  if (!isCallExpression(node) || node.arguments.length > 0) {
+    return null;
+  }
+
+  const calleeNode = node.callee as TSESTree.Node;
+  if (!isMemberExpression(calleeNode) || calleeNode.computed) {
+    return null;
+  }
+
+  const objectNode = calleeNode.object as TSESTree.Node;
+  const propertyNode = calleeNode.property as TSESTree.Node;
+  if (!isIdentifier(objectNode) || !isIdentifier(propertyNode)) {
+    return null;
+  }
+
+  if (propertyNode.name !== NOW_METHOD_NAME || !CLOCK_OBJECT_NAMES.has(objectNode.name)) {
+    return null;
+  }
+
+  return objectNode.name;
+}
+
+/**
  * Reads the closure property names a call's parameter object may carry, by the helper it calls.
  *
  * @param callNode - The call expression.
@@ -399,6 +576,62 @@ function readClosureNames(callNode: TSESTree.CallExpression): null | readonly st
   }
 
   return CLOSURE_NAMES_BY_CALLEE_NAME.get(callNode.callee.name) ?? null;
+}
+
+/**
+ * Flattens an `&&` chain into the conditions it is built from.
+ *
+ * A test that is not an `&&` chain answers with itself, so a caller never special-cases the simple form.
+ *
+ * @param node - The expression to flatten.
+ * @returns Every conjunct, left to right.
+ */
+function readConjuncts(node: TSESTree.Expression): TSESTree.Expression[] {
+  if (!isLogicalAndExpression(node)) {
+    return [node];
+  }
+
+  return [...readConjuncts(node.left), ...readConjuncts(node.right)];
+}
+
+/**
+ * Reads the ceiling a single `clock.now() < deadline` comparison declares.
+ *
+ * Both operand orders are read, since `deadline > clock.now()` is the same guard written the other way
+ * round. The binding must take its time from the SAME clock as the guard: a comparison across the two
+ * measures nothing, and declining it is the silence any unresolvable value already gets.
+ *
+ * @param node - The condition to inspect.
+ * @param closure - The in-Obsidian closure the loop runs inside.
+ * @param context - The rule context, used to resolve the deadline through scope.
+ * @returns The ceiling in milliseconds, or `null` when the condition declares none.
+ */
+function readDeadlineGuardInMilliseconds(node: TSESTree.Node, closure: EvalClosure, context: Rule.RuleContext): null | number {
+  if (!isBinaryExpression(node)) {
+    return null;
+  }
+
+  const isClockOnLeft = node.operator === '<' || node.operator === '<=';
+  if (!isClockOnLeft && node.operator !== '>' && node.operator !== '>=') {
+    return null;
+  }
+
+  const clockName = readClockName(isClockOnLeft ? node.left : node.right);
+  const deadlineNode = (isClockOnLeft ? node.right : node.left) as TSESTree.Node;
+  if (clockName === null || !isIdentifier(deadlineNode)) {
+    return null;
+  }
+
+  const boundNode = readBoundExpression(deadlineNode, closure, context);
+  if (!boundNode || !isBinaryExpression(boundNode) || boundNode.operator !== '+') {
+    return null;
+  }
+
+  if (readClockName(boundNode.left) !== clockName) {
+    return null;
+  }
+
+  return resolveNumber(boundNode.right, closure, context);
 }
 
 /**
@@ -485,6 +718,174 @@ function readInputPropertyValue(paramsNode: TSESTree.ObjectExpression, keyName: 
 }
 
 /**
+ * Reads the whole-loop ceiling a clock deadline declares, in milliseconds.
+ *
+ * The guard is looked for among the test's `&&` conjuncts rather than as the whole test, because the
+ * loops that carry one pair it with a progress condition — `while (count < expected && Date.now() < deadline)`
+ * — and a compound test must not remove a ceiling one of its conjuncts plainly declares.
+ *
+ * @param loopNode - The loop to inspect.
+ * @param closure - The in-Obsidian closure the loop runs inside.
+ * @param context - The rule context, used to resolve the deadline through scope.
+ * @returns The ceiling in milliseconds, or `null` when the loop declares none.
+ */
+function readLoopDeadlineInMilliseconds(loopNode: LoopStatement, closure: EvalClosure, context: Rule.RuleContext): null | number {
+  if (!loopNode.test) {
+    return null;
+  }
+
+  for (const conjunct of readConjuncts(loopNode.test)) {
+    const deadlineInMilliseconds = readDeadlineGuardInMilliseconds(conjunct, closure, context);
+    if (deadlineInMilliseconds !== null) {
+      return deadlineInMilliseconds;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Reads the first value a loop's test will not let its counter reach.
+ *
+ * An inclusive bound answers one higher than it is written, so a caller works in one currency rather than
+ * carrying the operator along with the number. The test is read as `&&` conjuncts for the same reason a
+ * deadline guard is: `attempt < ATTEMPTS && !isOpen` still cannot run more than `ATTEMPTS` times.
+ *
+ * @param testNode - The loop's test.
+ * @param counterName - The name of the counter the loop advances.
+ * @param closure - The in-Obsidian closure the loop runs inside.
+ * @param context - The rule context, used to resolve the bound through scope.
+ * @returns The exclusive bound, or `null` when no conjunct bounds that counter by a resolvable number.
+ */
+function readLoopExclusiveBound(
+  testNode: TSESTree.Expression,
+  counterName: string,
+  closure: EvalClosure,
+  context: Rule.RuleContext
+): null | number {
+  for (const conjunct of readConjuncts(testNode)) {
+    if (!isBinaryExpression(conjunct) || (conjunct.operator !== '<' && conjunct.operator !== '<=')) {
+      continue;
+    }
+
+    const counterNode = conjunct.left as TSESTree.Node;
+    if (!isIdentifier(counterNode) || counterNode.name !== counterName) {
+      continue;
+    }
+
+    const boundValue = resolveNumber(conjunct.right, closure, context);
+    if (boundValue === null) {
+      continue;
+    }
+
+    return conjunct.operator === '<' ? boundValue : boundValue + 1;
+  }
+
+  return null;
+}
+
+/**
+ * Reads how many times a counting `for` runs.
+ *
+ * The bound is read from the same `&&` conjuncts a deadline is, for the same reason:
+ * `attempt < ATTEMPTS && !isOpen` still cannot run more than `ATTEMPTS` times. The STEP is read rather
+ * than presumed to be one, or a `for (let elapsed = 0; elapsed < BUDGET; elapsed += INTERVAL)` poll would
+ * be counted `BUDGET` times.
+ *
+ * @param loopNode - The loop to inspect.
+ * @param closure - The in-Obsidian closure the loop runs inside.
+ * @param context - The rule context, used to resolve the start, bound and step through scope.
+ * @returns The iteration count, or `null` when it is not statically knowable.
+ */
+function readLoopIterationCount(loopNode: LoopStatement, closure: EvalClosure, context: Rule.RuleContext): null | number {
+  if (!isForStatement(loopNode) || !loopNode.test || !loopNode.init || !isVariableDeclaration(loopNode.init)) {
+    return null;
+  }
+
+  const declaratorNodes = loopNode.init.declarations;
+  const declaratorNode = declaratorNodes.length === 1 ? declaratorNodes[0] : undefined;
+  if (!declaratorNode?.init || !isIdentifier(declaratorNode.id)) {
+    return null;
+  }
+
+  const startValue = resolveNumber(declaratorNode.init, closure, context);
+  const stepSize = readLoopStepSize(loopNode.update, declaratorNode.id, closure, context);
+  const boundValue = readLoopExclusiveBound(loopNode.test, declaratorNode.id.name, closure, context);
+  if (startValue === null || stepSize === null || stepSize <= 0 || boundValue === null) {
+    return null;
+  }
+
+  const span = boundValue - startValue;
+  return span > 0 ? Math.ceil(span / stepSize) : 0;
+}
+
+/**
+ * Reads how many times something written at a node actually runs, as the product of its enclosing loops.
+ *
+ * A loop that is not statically countable contributes a factor of ONE rather than disqualifying the sum:
+ * that is the per-iteration charge this rule has always made, and it is what keeps an unbounded
+ * `while (true)` silent instead of guessed at. A DEADLINE-bounded loop contributes one as well, because
+ * its whole-loop ceiling is charged separately and multiplying too would count the same waiting twice.
+ *
+ * @param node - The node to count the runs of.
+ * @param closure - The in-Obsidian closure the node runs inside.
+ * @param context - The rule context, used to resolve loop bounds through scope.
+ * @returns The multiplier, never less than one.
+ */
+function readLoopMultiplier(node: TSESTree.Node, closure: EvalClosure, context: Rule.RuleContext): number {
+  let multiplier = 1;
+  let currentNode: TSESTree.Node | undefined = node.parent;
+
+  while (currentNode && currentNode !== closure.closureNode) {
+    if (isLoopStatement(currentNode) && readLoopDeadlineInMilliseconds(currentNode, closure, context) === null) {
+      const iterationCount = readLoopIterationCount(currentNode, closure, context);
+      if (iterationCount !== null) {
+        multiplier *= iterationCount;
+      }
+    }
+    currentNode = currentNode.parent;
+  }
+
+  return multiplier;
+}
+
+/**
+ * Reads how far a counting loop's variable advances each iteration.
+ *
+ * @param updateNode - The loop's update expression.
+ * @param counterNode - The identifier the loop counts on.
+ * @param closure - The in-Obsidian closure the loop runs inside.
+ * @param context - The rule context, used to resolve a non-literal step through scope.
+ * @returns The step, or `null` when the update is not a plain advance of the loop's own counter.
+ */
+function readLoopStepSize(
+  updateNode: null | TSESTree.Expression,
+  counterNode: TSESTree.Identifier,
+  closure: EvalClosure,
+  context: Rule.RuleContext
+): null | number {
+  if (!updateNode) {
+    return null;
+  }
+
+  if (isUpdateExpression(updateNode)) {
+    const argumentNode = updateNode.argument as TSESTree.Node;
+    return updateNode.operator === '++' && isIdentifier(argumentNode) && argumentNode.name === counterNode.name ? 1 : null;
+  }
+
+  if (!isAssignmentExpression(updateNode) || updateNode.operator !== '+=') {
+    return null;
+  }
+
+  const targetNode = updateNode.left as TSESTree.Node;
+  if (!isIdentifier(targetNode) || targetNode.name !== counterNode.name) {
+    return null;
+  }
+
+  return resolveNumber(updateNode.right, closure, context);
+}
+
+/**
  * Reads the `input` key a destructured closure parameter is bound from.
  *
  * The binding may be renamed (`timeoutInMilliseconds: timeout`), so the KEY is what the call's `input`
@@ -551,7 +952,11 @@ function readWaitBudgetExpression(callNode: TSESTree.CallExpression): null | TSE
 }
 
 /**
- * Resolves an expression to a millisecond count, through scope.
+ * Resolves an expression to a number, through scope.
+ *
+ * Every number the rule reads comes through here — a wait's budget, a loop's deadline, and a counting
+ * loop's start, bound and step — which is why it is named for what it resolves rather than for
+ * milliseconds.
  *
  * Handles a numeric literal, a literal-only product (`60 * 1000`), an identifier bound to either in any
  * enclosing scope, and a destructured closure parameter followed back through the call's own `input`.
@@ -564,9 +969,9 @@ function readWaitBudgetExpression(callNode: TSESTree.CallExpression): null | TSE
  * @param node - The expression to resolve.
  * @param closure - The closure the expression was written inside.
  * @param context - The rule context, used to resolve identifiers through scope.
- * @returns The millisecond count, or `null` when it cannot be resolved statically.
+ * @returns The number, or `null` when it cannot be resolved statically.
  */
-function resolveMilliseconds(node: TSESTree.Node, closure: EvalClosure, context: Rule.RuleContext): null | number {
+function resolveNumber(node: TSESTree.Node, closure: EvalClosure, context: Rule.RuleContext): null | number {
   const visitedNodes = new Set<TSESTree.Node>();
   let currentNode = node;
 
@@ -578,14 +983,14 @@ function resolveMilliseconds(node: TSESTree.Node, closure: EvalClosure, context:
     }
 
     if (isBinaryExpression(currentNode) && currentNode.operator === '*') {
-      const leftInMilliseconds = resolveMilliseconds(currentNode.left, closure, context);
-      const rightInMilliseconds = resolveMilliseconds(currentNode.right, closure, context);
+      const leftValue = resolveNumber(currentNode.left, closure, context);
+      const rightValue = resolveNumber(currentNode.right, closure, context);
 
-      if (leftInMilliseconds === null || rightInMilliseconds === null) {
+      if (leftValue === null || rightValue === null) {
         return null;
       }
 
-      return leftInMilliseconds * rightInMilliseconds;
+      return leftValue * rightValue;
     }
 
     if (!isIdentifier(currentNode)) {
