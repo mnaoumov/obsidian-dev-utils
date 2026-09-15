@@ -219,6 +219,21 @@ const DEFAULT_PREID = 'beta';
 const DESKTOP_RELEASES_JSON_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/master/desktop-releases.json';
 
 /**
+ * The shape of a merge subject git wrote itself, rather than one an author chose.
+ *
+ * Every default git produces opens with `Merge` and a word boundary — `Merge branch 'x'`,
+ * `Merge branches 'x' and 'y'`, `Merge remote-tracking branch 'x'`, `Merge pull request #1 from y`,
+ * `Merge tag 'x'`, `Merge commit 'abc'` — which is what the optional alternation and the trailing `\b` cover
+ * between them. Being that broad costs nothing here: every changelog entry in this workspace is a
+ * Conventional-Commits subject, and those open with a type (`feat`, `fix`, `chore`, …), never with `Merge`.
+ *
+ * ONE pattern drives both halves of the guard, so they cannot drift apart: {@link toChangelogEntry} rewrites
+ * a commit whose subject matches it, and {@link assertChangelogHasNoMergeSubjects} refuses a changelog line
+ * that still does. The refusal is therefore reachable only for a merge the rewrite had nothing to work with.
+ */
+const MERGE_SUBJECT_REG_EXP = /^Merge(?: branch| remote-tracking| pull request)?\b/;
+
+/**
  * Enum representing different types of version updates.
  *
  * Aligns with npm's `npm version` increment types plus `Manual` for explicit versions.
@@ -749,6 +764,44 @@ export function validate(versionUpdateType: string): void {
 }
 
 /**
+ * Refuses a changelog whose NEW section still carries an entry that reads as a merge subject git wrote itself.
+ *
+ * The convention this enforces is that a non-ff merge takes the same Conventional-Commits subject as the branch
+ * commit it lands. Nothing used to hold it: for a non-ff merge the first-parent commit is the merge commit, so a
+ * default subject ships verbatim, publishing a bare branch name (`Merge branch 'fix-the-thing'`) as a changelog
+ * entry — which says nothing about what changed, and on a branch named after a private tracker item decodes to
+ * nothing at all for a reader. The interactive review was the de facto catch, and `--no-changelog-editing`, the
+ * flag an unattended release actually uses, skips it; one sweep across this workspace found twelve such
+ * published entries in a single repository.
+ *
+ * Only the section being published is scanned, so an entry already shipped under an older version cannot block
+ * every future release. {@link toChangelogEntry} has already rewritten every merge that had a body to rewrite
+ * from, so what reaches here is a merge whose author wrote nothing at all — which no rewrite can invent, and
+ * which is therefore worth stopping the release for.
+ *
+ * @param changelogContent - The full composed `CHANGELOG.md` content.
+ * @param version - The version whose section is about to be published.
+ */
+function assertChangelogHasNoMergeSubjects(changelogContent: string, version: string): void {
+  const BULLET_REG_EXP = /^- /;
+  const offendingEntries = extractChangelogSection(changelogContent, version)
+    .split('\n')
+    .filter((line) => MERGE_SUBJECT_REG_EXP.test(line.replace(BULLET_REG_EXP, '')));
+
+  if (offendingEntries.length === 0) {
+    return;
+  }
+
+  throw new Error(
+    `The ${version} section of ${ObsidianPluginRepoPaths.ChangelogMd} carries a merge subject git wrote itself:\n`
+      + `${offendingEntries.join('\n')}\n`
+      + 'Such an entry publishes a branch name instead of saying what shipped. Give the merge commit the same'
+      + ' subject as the branch commit it lands (`git commit --amend` on the merge, then re-run the release), or'
+      + ' supply the release notes yourself with `--changelog-file <path>`.'
+  );
+}
+
+/**
  * Refuses a release that would have to stop at the interactive changelog review with nobody there to
  * finish it. Called from the preflight so the refusal costs seconds, not the whole check-and-build gate.
  *
@@ -858,6 +911,10 @@ function parseNpmPackOutput(output: string): NpmPackResult {
  * WITHOUT touching the repository. Nothing here writes into the repo, so an interrupt anywhere in the
  * review window (the whole point of the split) leaves the working tree exactly as it was.
  *
+ * The settled content is handed to {@link assertChangelogHasNoMergeSubjects} before it is returned, which is
+ * how that guard reaches every caller and every path — reviewed or not, commit-derived or prepared — from a
+ * single site.
+ *
  * @param newVersion - The new version number the changelog section is written for.
  * @param options - The {@link UpdateChangelogOptions} controlling where the section body comes from.
  * @returns A {@link Promise} that resolves to the settled `CHANGELOG.md` content.
@@ -908,7 +965,7 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
 
     const commitRange = resolvedLastTag ? `${lastTag}..HEAD` : 'HEAD';
     const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
-    const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toFirstLine(commitMessage));
+    const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toChangelogEntry(commitMessage));
 
     for (const message of commitMessages) {
       newChangeLog += `- ${autolinkBareUrls(message)}\n`;
@@ -926,11 +983,14 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
   }
 
   // Prepared notes are already the reviewed text, so they never open an editor, whatever `shouldEditChangelog` says.
-  if (changelogFilePath !== undefined || !shouldEditChangelog) {
-    return newChangeLog;
-  }
+  const settledChangeLog = changelogFilePath === undefined && shouldEditChangelog ? await reviewChangelog(newChangeLog) : newChangeLog;
 
-  return await reviewChangelog(newChangeLog);
+  // The last thing the composition does, and that placement is the whole point: this ONE site sees the
+  // commit-derived bullets, the prepared notes and whatever a review left behind, so the guard runs whether or not
+  // the interactive review does — and the review is precisely what `--no-changelog-editing` skips. Nothing has been
+  // written to the repository yet either, so the throw leaves the working tree pristine and the release re-runnable.
+  assertChangelogHasNoMergeSubjects(settledChangeLog, newVersion);
+  return settledChangeLog;
 }
 
 /**
@@ -974,8 +1034,27 @@ async function reviewChangelog(newChangeLog: string): Promise<string> {
   }
 }
 
-function toFirstLine($string: string): string {
-  return $string.split(/\r?\n/).filter(Boolean).slice(0, 1).join('');
+/**
+ * Turns one full commit message (`git log --format=%B`) into the changelog line it should contribute.
+ *
+ * Normally that is the subject. The exception is a merge whose subject git wrote itself: for a non-ff merge
+ * the first-parent commit IS the merge commit, so its subject is what ships, and a default one publishes a
+ * private branch name as a changelog entry. The message the author actually wrote is usually still there —
+ * one line below, as the merge body — so it is lifted out rather than discarded, which is exactly the edit a
+ * human makes by hand at the review step. A merge with no body has nothing to lift and keeps its subject;
+ * {@link assertChangelogHasNoMergeSubjects} is what stops that one from being published.
+ *
+ * @param commitMessage - The full commit message.
+ * @returns The changelog line for that commit.
+ */
+function toChangelogEntry(commitMessage: string): string {
+  const lines = commitMessage.split(/\r?\n/).filter(Boolean);
+  const subject = lines[0] ?? '';
+  if (!MERGE_SUBJECT_REG_EXP.test(subject)) {
+    return subject;
+  }
+
+  return lines[1] ?? subject;
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string, minAppVersion: string | undefined): Promise<void> {

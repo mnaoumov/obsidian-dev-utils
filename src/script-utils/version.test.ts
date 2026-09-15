@@ -898,6 +898,109 @@ describe('updateChangelog', () => {
     );
   });
 
+  it('should take the subject out of the merge body when the merge kept git\'s default subject', async () => {
+    mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
+    mockExecFromRoot
+      .mockResolvedValueOnce('Merge branch \'a-branch\'\n\nfix(plugin): store the gate component before adding it\n\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      expect.stringContaining('- fix(plugin): store the gate component before adding it\n'),
+      'utf-8'
+    );
+    expect(mockWriteFile).not.toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      expect.stringContaining('Merge branch'),
+      'utf-8'
+    );
+  });
+
+  it('should take the subject out of the body of a default pull request merge too', async () => {
+    mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
+    mockExecFromRoot
+      .mockResolvedValueOnce('Merge pull request #12 from user/a-branch\n\nfeat: add a shiny new feature\n\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      expect.stringContaining('- feat: add a shiny new feature\n'),
+      'utf-8'
+    );
+  });
+
+  // The residual case the rewrite cannot reach: the author wrote nothing at all, so there is no subject to lift
+  // and the branch name is the whole of the entry. Refusing is the only honest answer left.
+  it('should refuse a merge subject that has no body to take a subject from', async () => {
+    mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
+    mockExecFromRoot
+      .mockResolvedValueOnce('Merge branch \'a-branch\'\n\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await expect(updateChangelog('1.0.0')).rejects.toThrow('carries a merge subject git wrote itself');
+    expect(mockWriteFile).not.toHaveBeenCalledWith('/root/CHANGELOG.md', expect.any(String), 'utf-8');
+  });
+
+  // `--changelog-file` and `--no-changelog-editing` are the two flags an unattended release uses, and both bypass
+  // the review that used to be the only catch. The guard sits below them rather than beside them.
+  it('should refuse prepared release notes that carry a merge subject', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReadFile.mockResolvedValue('Merge remote-tracking branch \'origin/a-branch\'\n');
+    await expect(updateChangelog('1.0.0', { changelogFilePath: '/notes.md' })).rejects.toThrow('carries a merge subject git wrote itself');
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a merge subject when the review is disabled', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockExecFromRoot.mockResolvedValueOnce('Merge branch \'a-branch\'\n\0');
+    await expect(updateChangelog('1.0.0', { shouldEditChangelog: false })).rejects.toThrow('carries a merge subject git wrote itself');
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  // Only the section being published is scanned. An entry that already shipped is part of the published record,
+  // and scanning the whole file would leave such a repository unable to release anything ever again.
+  it('should not refuse a merge subject that was already published under an older version', async () => {
+    mockExistsSync.mockReturnValue(true);
+    stubPassThroughReview('# CHANGELOG\n\n## 0.9.0\n\n- Merge branch \'an-old-branch\'\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('0123456789abcdef')
+      .mockResolvedValueOnce('feat: add a shiny new feature\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      expect.stringContaining('- Merge branch \'an-old-branch\''),
+      'utf-8'
+    );
+  });
+
+  it('should produce an empty entry for a commit message that is nothing but blank lines', async () => {
+    mockExistsSync.mockReturnValue(false);
+    stubPassThroughReview();
+    mockExecFromRoot
+      .mockResolvedValueOnce('\n\0')
+      .mockResolvedValueOnce('');
+    mockCreateInterface.mockReturnValue({
+      question: vi.fn().mockResolvedValue(undefined)
+    });
+    await updateChangelog('1.0.0');
+    expect(mockWriteFile).toHaveBeenCalledWith('/root/CHANGELOG.md', '# CHANGELOG\n\n## 1.0.0\n\n- \n', 'utf-8');
+  });
+
   it('should handle existing changelog without trailing newline', async () => {
     mockExistsSync.mockReturnValue(true);
     // No trailing \n — last element after split won't be ''
