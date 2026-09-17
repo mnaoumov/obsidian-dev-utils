@@ -755,7 +755,8 @@ The publish authenticates with **npm trusted publishing** (OIDC), not a token: t
 
 - Conventional Commits enforced via commitlint + husky (commit-msg hook)
 - nano-staged runs spellcheck, compilation, lint, and format on staged files via husky pre-commit hook
-  - Opt out per-developer by setting `NANO_STAGED=0` (or `false`/`off`/`no`) in a gitignored `.env` (cross-platform, mirrors husky's own `HUSKY=0`); the `.env` is read by `getNanoStagedConfig()` in `src/script-utils/nano-staged-config.ts`, which the thin `scripts/nano-staged-config.ts` entry calls. The commit-msg/commitlint hook still runs.
+  - Opt out per-developer by setting `NANO_STAGED=0` (or `false`/`off`/`no`) in a gitignored `.env` (cross-platform, mirrors husky's own `HUSKY=0`); the `.env` is read by `getNanoStagedConfig()` in `src/script-utils/nano-staged-config.ts`, which the `scripts/nano-staged-config.ts` entry calls. The commit-msg/commitlint hook still runs.
+  - That entry adds one glob the shared config does not carry: `*.astro` → `lint:fix`, for the docs site components. It is local because only this repo's ESLint config loads `eslint-plugin-astro`, and it has no `format` step because none of the dprint plugins formats Astro. Without it a staged `.astro` change was spellchecked and nothing else (2026-09-16).
   - The tasks run through the package manager that owns the tree — `bun run lint:fix --` on a bun tree, not `npm run lint:fix --`. The prefix comes from `getPackageManagerRunCommand()` and is resolved once when `nano-staged-config.ts` is first imported, so a lockfile change needs a fresh process to take effect (2026-09-02).
 - Use `npm run commit` (Commitizen) for guided commit messages
 - Before each commit, run these commands and ensure they complete without errors:
