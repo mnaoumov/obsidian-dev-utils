@@ -392,18 +392,16 @@ class ToJsonConverter {
       depth,
       value
     } = params;
-    if (depth > this.fullOptions.maxDepth) {
-      return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length);
-    }
-
-    return value.map((item, index) =>
-      this.toPlainObject({
-        canUseToJSON,
-        depth: depth + 1,
-        key: String(index),
-        value: item
-      })
-    );
+    return depth > this.fullOptions.maxDepth
+      ? makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReachedArray, value.length)
+      : value.map((item, index) =>
+        this.toPlainObject({
+          canUseToJSON,
+          depth: depth + 1,
+          key: String(index),
+          value: item
+        })
+      );
   }
 
   private handleCircularReference(value: object, key: string): unknown {
@@ -465,15 +463,13 @@ class ToJsonConverter {
       return makePlaceholder(TokenSubstitutionKey.MaxDepthLimitReached);
     }
 
-    if (value instanceof Error && this.fullOptions.shouldHandleErrors) {
-      return errorToString(value);
-    }
-
-    return this.handlePlainObject({
-      canUseToJSON,
-      depth,
-      value
-    });
+    return value instanceof Error && this.fullOptions.shouldHandleErrors
+      ? errorToString(value)
+      : this.handlePlainObject({
+        canUseToJSON,
+        depth,
+        value
+      });
   }
 
   private handlePlainObject(params: HandlePlainObjectParams): unknown {
@@ -517,16 +513,14 @@ class ToJsonConverter {
       return this.handleFunction(value);
     }
 
-    if (typeof value !== 'object' || value === null) {
-      return value;
-    }
-
-    return this.handleObject({
-      canUseToJSON,
-      depth,
-      key,
-      value
-    });
+    return typeof value !== 'object' || value === null
+      ? value
+      : this.handleObject({
+        canUseToJSON,
+        depth,
+        key,
+        value
+      });
   }
 
   private tryHandleToJSON(params: TryHandleToJSONParams): unknown {
@@ -676,11 +670,7 @@ export function extractDefaultExportInterop<T>(module: ModuleWithDefaultExport<T
     return module;
   }
 
-  if ('default' in module) {
-    return module.default;
-  }
-
-  return module;
+  return 'default' in module ? module.default : module;
 }
 
 /**
@@ -708,11 +698,7 @@ export function getAllKeys<T extends object>($object: T): StringKeys<T>[] {
   while (current) {
     const descriptors = Object.getOwnPropertyDescriptors(current);
     for (const [key, descriptor] of Object.entries(descriptors)) {
-      if (key === '__proto__') {
-        continue;
-      }
-
-      if (typeof descriptor.value === 'function') {
+      if ((key === '__proto__') || (typeof descriptor.value === 'function')) {
         continue;
       }
 
@@ -763,10 +749,7 @@ export function getNestedPropertyValue($object: GenericObject, path: string): un
  * @returns The prototype of the object.
  */
 export function getPrototypeOf<T>(instance: T): T {
-  if (instance === undefined || instance === null) {
-    return instance;
-  }
-  return Object.getPrototypeOf(instance) as T;
+  return instance === undefined || instance === null ? instance : (Object.getPrototypeOf(instance) as T);
 }
 
 /**
@@ -1094,8 +1077,5 @@ function tryEntryEquality(params: TryEntryEqualityParams): boolean | undefined {
     b,
     entry
   } = params;
-  if (a instanceof entry.constructor && b instanceof entry.constructor) {
-    return entry.equalityComparer(a, b);
-  }
-  return undefined;
+  return a instanceof entry.constructor && b instanceof entry.constructor ? entry.equalityComparer(a, b) : undefined;
 }

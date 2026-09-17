@@ -483,10 +483,7 @@ describe('addUpdatedFilesToGit', () => {
     try {
       mockExecFromRoot.mockImplementation((command: string | string[]) => {
         const commandString = Array.isArray(command) ? command.join(' ') : command;
-        if (commandString.startsWith('git commit')) {
-          return Promise.reject(new Error('Unknown word in cspell'));
-        }
-        return Promise.resolve('');
+        return commandString.startsWith('git commit') ? Promise.reject(new Error('Unknown word in cspell')) : Promise.resolve('');
       });
 
       await expect(addUpdatedFilesToGit('1.0.0')).rejects.toThrow('Unknown word in cspell');
@@ -641,10 +638,7 @@ describe('publishGitHubRelease', () => {
       if (commandString.startsWith('gh repo view')) {
         return Promise.resolve('https://github.com/user/repo');
       }
-      if (commandString.includes('npm pack')) {
-        return Promise.resolve(packOutput);
-      }
-      return Promise.resolve('');
+      return commandString.includes('npm pack') ? Promise.resolve(packOutput) : Promise.resolve('');
     });
   }
 
@@ -875,10 +869,7 @@ describe('updateChangelog', () => {
       if (commandString.startsWith('code -w')) {
         return Promise.reject(new Error('Editor crashed'));
       }
-      if (commandString === 'code --version') {
-        return Promise.resolve('1.92.0');
-      }
-      return Promise.resolve('msg\0');
+      return commandString === 'code --version' ? Promise.resolve('1.92.0') : Promise.resolve('msg\0');
     });
 
     await expect(updateChangelog('1.0.0')).rejects.toThrow('Editor crashed');
@@ -1348,10 +1339,7 @@ describe('updateVersion', () => {
       if (commandString.startsWith('gh repo view')) {
         return Promise.resolve('https://github.com/user/repo');
       }
-      if (commandString.includes('npm pack')) {
-        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2));
-      }
-      return Promise.resolve('');
+      return commandString.includes('npm pack') ? Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2)) : Promise.resolve('');
     });
   }
 
@@ -1663,10 +1651,7 @@ describe('updateVersion', () => {
       if (commandString.startsWith('gh repo view')) {
         return Promise.resolve('https://github.com/user/repo');
       }
-      if (commandString.includes('npm pack')) {
-        return Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2));
-      }
-      return Promise.resolve('');
+      return commandString.includes('npm pack') ? Promise.resolve(JSON.stringify([{ filename: 'pkg-1.0.1.tgz' }], null, 2)) : Promise.resolve('');
     });
     mockEditPackageJson.mockImplementation(() => {
       steps.push('bump');

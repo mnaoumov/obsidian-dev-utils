@@ -91,12 +91,8 @@ export const requireSuperCall: Rule.RuleModule = {
       'MethodDefinition'(node: Rule.Node): void {
         const methodNode = node as TSESTree.MethodDefinition;
 
-        if (!methodNode.override) {
-          return;
-        }
-
         // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-        if (methodNode.key.type !== 'Identifier') {
+        if (!methodNode.override || methodNode.key.type !== 'Identifier') {
           return;
         }
 
@@ -118,12 +114,8 @@ export const requireSuperCall: Rule.RuleModule = {
 
         methodStack.pop();
 
-        if (info.hasSuperCall) {
-          return;
-        }
-
         if (
-          isParentMethodAbstract({
+          info.hasSuperCall || isParentMethodAbstract({
             context,
             methodName: info.methodName,
             methodNode: info.node

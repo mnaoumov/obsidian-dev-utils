@@ -227,11 +227,7 @@ export async function processFrontmatter<CustomFrontmatter = unknown>(params: Pr
         return null;
       }
 
-      if (isDeepEqual(oldFrontmatter, newFrontmatter)) {
-        return content;
-      }
-
-      return setFrontmatter(content, newFrontmatter);
+      return isDeepEqual(oldFrontmatter, newFrontmatter) ? content : setFrontmatter(content, newFrontmatter);
     },
     pathOrFile,
     ...options

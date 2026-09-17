@@ -39,10 +39,7 @@ const {
     return noopAsync();
   });
   const mockTLibFunction2 = vi.fn((selector: unknown) => {
-    if (typeof selector === 'function') {
-      return (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' });
-    }
-    return 'mock-translated';
+    return typeof selector === 'function' ? (selector as (translations: Record<string, unknown>) => unknown)({ test: 'translated-value' }) : 'mock-translated';
   });
   return {
     mockAddResourceBundleFunction: mockAddResourceBundleFunction2,

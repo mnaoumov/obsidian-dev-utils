@@ -92,6 +92,7 @@ function getIgnoreConfigs(): Linter.Config[] {
 function getJsdocsConfigs(context: EslintConfigContext): Linter.Config[] {
   return defineConfig([
     {
+      // eslint-disable-next-line import-x/no-named-as-default-member -- `configs` is the plugin's configuration namespace.
       ...jsdoc.configs['flat/recommended-typescript-error'],
       files: context.sourceFiles,
       ignores: context.testFiles

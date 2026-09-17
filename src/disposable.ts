@@ -556,14 +556,12 @@ export function isDisposableEx($unknown: unknown): $unknown is DisposableEx {
  * @returns An {@link AsyncDisposableEx} wrapping the async disposable.
  */
 export function toAsyncDisposableEx(asyncDisposable: AsyncDisposable): AsyncDisposableEx {
-  if (isAsyncDisposableEx(asyncDisposable)) {
-    return asyncDisposable;
-  }
-
-  return {
-    asyncDispose: asyncDisposeAdapted,
-    [Symbol.asyncDispose]: asyncDisposeAdapted
-  };
+  return isAsyncDisposableEx(asyncDisposable)
+    ? asyncDisposable
+    : {
+      asyncDispose: asyncDisposeAdapted,
+      [Symbol.asyncDispose]: asyncDisposeAdapted
+    };
 
   function asyncDisposeAdapted(): Promise<void> {
     return disposeAsync(asyncDisposable);
@@ -580,14 +578,12 @@ export function toAsyncDisposableEx(asyncDisposable: AsyncDisposable): AsyncDisp
  * @returns A {@link DisposableEx} wrapping the disposable.
  */
 export function toDisposableEx(disposable: Disposable): DisposableEx {
-  if (isDisposableEx(disposable)) {
-    return disposable;
-  }
-
-  return {
-    dispose: disposeAdapted,
-    [Symbol.dispose]: disposeAdapted
-  };
+  return isDisposableEx(disposable)
+    ? disposable
+    : {
+      dispose: disposeAdapted,
+      [Symbol.dispose]: disposeAdapted
+    };
 
   function disposeAdapted(): void {
     dispose(disposable);

@@ -158,11 +158,7 @@ async function main(): Promise<void> {
 
 function parseFrontMatter(content: string): Record<string, unknown> {
   const frontMatter = FRONT_MATTER_REG_EXP.exec(content)?.groups?.['frontMatter'];
-  if (!frontMatter) {
-    return {};
-  }
-
-  return (parseYaml(frontMatter) as null | Record<string, unknown>) ?? {};
+  return frontMatter ? (parseYaml(frontMatter) as null | Record<string, unknown>) ?? {} : {};
 }
 
 async function parsePage(filePath: string, contentDocsDirectory: string): Promise<null | PageEntry> {

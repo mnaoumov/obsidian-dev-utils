@@ -22,23 +22,11 @@ await wrapCliTask(async () => {
   }
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.CurrentFolder, { recursive: true })) {
-    if (basename(file) !== ObsidianDevUtilsRepoPaths.PackageJson as string) {
-      continue;
-    }
-
-    if (file === ObsidianDevUtilsRepoPaths.PackageJson as string) {
-      continue;
-    }
-
-    if (file.startsWith(ObsidianDevUtilsRepoPaths.NodeModules)) {
-      continue;
-    }
-
     /*
-     * A patched copy of a third-party package needs its own hand-written manifest — without one, Node
-     * resolves the wrapper against this repo's `"type": "module"` and refuses to run its `require()`.
+     * The `Patches` exclusion: a patched copy of a third-party package needs its own hand-written manifest — without
+     * one, Node resolves the wrapper against this repo's `"type": "module"` and refuses to run its `require()`.
      */
-    if (file.startsWith(ObsidianDevUtilsRepoPaths.Patches)) {
+    if ((basename(file) !== ObsidianDevUtilsRepoPaths.PackageJson as string) || (file === ObsidianDevUtilsRepoPaths.PackageJson as string) || file.startsWith(ObsidianDevUtilsRepoPaths.NodeModules) || file.startsWith(ObsidianDevUtilsRepoPaths.Patches)) {
       continue;
     }
 

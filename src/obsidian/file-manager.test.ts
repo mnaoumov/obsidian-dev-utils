@@ -54,10 +54,7 @@ vi.mock('../object-utils.ts', async (importOriginal) => {
 vi.mock('../obsidian/file-system.ts', () => ({
   getFile: vi.fn((params: GetFileParams) => {
     const { pathOrFile } = params;
-    if (typeof pathOrFile === 'string') {
-      return { basename: pathOrFile.replace(/\.[^.]+$/, ''), extension: 'md', name: pathOrFile, path: pathOrFile };
-    }
-    return pathOrFile;
+    return typeof pathOrFile === 'string' ? { basename: pathOrFile.replace(/\.[^.]+$/, ''), extension: 'md', name: pathOrFile, path: pathOrFile } : pathOrFile;
   }),
   getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as PathHolder).path),
   isMarkdownFile: vi.fn(() => true)

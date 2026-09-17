@@ -35,10 +35,7 @@ export async function resolveValue<Value, Arguments extends object = object>(
 ): Promise<Value> {
   const fullArguments = { ...$arguments, abortSignal: $arguments.abortSignal ?? abortSignalNever() };
   fullArguments.abortSignal.throwIfAborted();
-  if (isFunction(provider)) {
-    return await provider(fullArguments);
-  }
-  return provider;
+  return isFunction(provider) ? (await provider(fullArguments)) : provider;
 }
 
 /**

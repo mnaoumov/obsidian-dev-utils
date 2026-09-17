@@ -561,10 +561,7 @@ export async function createTemporaryFolder(app: App, path: string): Promise<() 
  */
 export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
   const folder = getFolderOrNull({ app, pathOrFolder });
-  if (!folder) {
-    return;
-  }
-  if (!await isEmptyFolder(app, folder)) {
+  if (!folder || !await isEmptyFolder(app, folder)) {
     return;
   }
   await trashSafe(app, folder);
@@ -604,11 +601,7 @@ export function getAbstractFilePathSafe(params: GetAbstractFilePathSafeParams): 
   } = params;
   const abstractFile = getAbstractFileOrNull({ app, pathOrFile: path });
 
-  if (abstractFile && getFileSystemType(abstractFile) === type) {
-    return path;
-  }
-
-  return getAvailablePath(app, path);
+  return abstractFile && getFileSystemType(abstractFile) === type ? path : getAvailablePath(app, path);
 }
 
 /**
@@ -754,11 +747,7 @@ export function getSafeRenamePath(params: GetSafeRenamePathParams): string {
     newPath = join(folder.getParentPrefix(), nonExistingPath);
   }
 
-  if (oldPath.toLowerCase() === newPath.toLowerCase()) {
-    return newPath;
-  }
-
-  return getAvailablePath(app, newPath);
+  return oldPath.toLowerCase() === newPath.toLowerCase() ? newPath : getAvailablePath(app, newPath);
 }
 
 /**
@@ -799,11 +788,7 @@ export function isChild(params: IsChildParams): boolean {
     return false;
   }
 
-  if (parentPath === '/') {
-    return true;
-  }
-
-  return childPath.startsWith(`${parentPath}/`);
+  return parentPath === '/' ? true : childPath.startsWith(`${parentPath}/`);
 }
 
 /**
@@ -943,11 +928,7 @@ export async function process(params: ProcessParams): Promise<void> {
         pathOrFile
       });
 
-      if (result === InvokeFileActionSafeResult.NotInvoked) {
-        return shouldTreatMissingFileAsSuccess();
-      }
-
-      return isSuccess;
+      return result === InvokeFileActionSafeResult.NotInvoked ? shouldTreatMissingFileAsSuccess() : isSuccess;
 
       // eslint-disable-next-line unicorn/consistent-function-scoping -- Closes over `fullOptions` and `path` from the enclosing scope, so it cannot be hoisted.
       function shouldTreatMissingFileAsSuccess(): boolean {

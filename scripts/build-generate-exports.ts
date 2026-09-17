@@ -31,11 +31,7 @@ await wrapCliTask(async () => {
 
     const path = join(dirent.parentPath, dirent.name);
 
-    if (path.includes(ObsidianDevUtilsRepoPaths.Styles)) {
-      continue;
-    }
-
-    if (path.includes(ObsidianDevUtilsRepoPaths.TestHelpers)) {
+    if (path.includes(ObsidianDevUtilsRepoPaths.Styles) || path.includes(ObsidianDevUtilsRepoPaths.TestHelpers)) {
       continue;
     }
 

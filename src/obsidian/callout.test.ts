@@ -84,10 +84,7 @@ vi.mock('../object-utils.ts', async (importOriginal) => ({
 vi.mock('../value-provider.ts', () => ({
   resolveValue: vi.fn(async (provider: unknown) => {
     await noopAsync();
-    if (typeof provider === 'function') {
-      return (provider as () => unknown)();
-    }
-    return provider;
+    return typeof provider === 'function' ? (provider as () => unknown)() : provider;
   })
 }));
 

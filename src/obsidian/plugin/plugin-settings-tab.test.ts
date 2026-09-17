@@ -374,10 +374,12 @@ describe('PluginSettingsTabBase', () => {
     tab.bind({ propertyName: 'name', valueComponent: mockComponent });
 
     // First call sets things up
-    if (changeCallback) {
-      await changeCallback('value1');
-      expect(pluginSettingsComponent.setProperty).toHaveBeenCalledTimes(1);
+    if (!changeCallback) {
+      return;
     }
+
+    await changeCallback('value1');
+    expect(pluginSettingsComponent.setProperty).toHaveBeenCalledTimes(1);
   });
 
   it('should handle bind with validatorElement', () => {

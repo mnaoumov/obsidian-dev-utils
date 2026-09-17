@@ -70,10 +70,7 @@ describe('RmdirGuardComponent', () => {
             await operation();
             return '';
           } catch (error) {
-            if (typeof error === 'object' && error !== null && 'code' in error) {
-              return String(error.code);
-            }
-            return String(error);
+            return String(typeof error === 'object' && error !== null && 'code' in error ? error.code : error);
           }
         }
       }
@@ -134,10 +131,7 @@ describe('RmdirGuardComponent', () => {
             await operation();
             return '';
           } catch (error) {
-            if (typeof error === 'object' && error !== null && 'code' in error) {
-              return String(error.code);
-            }
-            return String(error);
+            return String(typeof error === 'object' && error !== null && 'code' in error ? error.code : error);
           }
         }
       }

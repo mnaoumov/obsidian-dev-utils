@@ -587,7 +587,8 @@ export function parseLinks($string: string): ParseLinkResult[] {
  */
 export function toParseLinkReference(params: ToParseLinkReferenceParams): ParseLinkReference {
   const { content, parseLinkResult } = params;
-  const reference: ParseLinkReference = {
+  return {
+    ...(parseLinkResult.alias !== undefined && { displayText: parseLinkResult.alias }),
     link: parseLinkResult.url,
     original: parseLinkResult.raw,
     parseLinkResult,
@@ -596,12 +597,6 @@ export function toParseLinkReference(params: ToParseLinkReferenceParams): ParseL
       start: offsetToLoc(content, parseLinkResult.startOffset)
     }
   };
-
-  if (parseLinkResult.alias !== undefined) {
-    reference.displayText = parseLinkResult.alias;
-  }
-
-  return reference;
 }
 
 /**

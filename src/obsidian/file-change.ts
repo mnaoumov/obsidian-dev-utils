@@ -346,23 +346,21 @@ export async function applyFileChanges(params: ApplyFileChangesParams): Promise<
   await process(normalizeOptionalProperties<ProcessParams>({
     app,
     async newContentProvider({ abortSignal, content }) {
-      if (isCanvasFile(pathOrFile)) {
-        return await applyCanvasChanges({
+      return isCanvasFile(pathOrFile)
+        ? (await applyCanvasChanges({
           abortSignal,
           changesProvider,
           content,
           path: getPath(app, pathOrFile),
           shouldRetryOnInvalidChanges
-        });
-      }
-
-      return await applyContentChanges({
-        abortSignal,
-        changesProvider,
-        content,
-        path: getPath(app, pathOrFile),
-        shouldRetryOnInvalidChanges
-      });
+        }))
+        : (await applyContentChanges({
+          abortSignal,
+          changesProvider,
+          content,
+          path: getPath(app, pathOrFile),
+          shouldRetryOnInvalidChanges
+        }));
     },
     pathOrFile,
     ...options
@@ -436,14 +434,12 @@ export function isFrontmatterChangeWithOffsets(fileChange: FileChange): fileChan
  * @returns The converted file change.
  */
 export function toFrontmatterChangeWithOffsets(fileChange: FrontmatterChange): FrontmatterChangeWithOffsets {
-  if (isFrontmatterChangeWithOffsets(fileChange)) {
-    return fileChange;
-  }
-
-  return {
-    ...fileChange,
-    reference: toFrontmatterLinkCacheWithOffsets(fileChange.reference)
-  };
+  return isFrontmatterChangeWithOffsets(fileChange)
+    ? fileChange
+    : {
+      ...fileChange,
+      reference: toFrontmatterLinkCacheWithOffsets(fileChange.reference)
+    };
 }
 
 async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<null | string> {
@@ -779,10 +775,7 @@ function buildFinalContent(params: BuildFinalContentParams): string {
     frontmatterChanged,
     newContent
   } = params;
-  if (frontmatterChanged.size > 0) {
-    return setFrontmatter(newContent, frontmatter);
-  }
-  return newContent;
+  return frontmatterChanged.size > 0 ? setFrontmatter(newContent, frontmatter) : newContent;
 }
 
 function parseFrontmatterSafely(params: ParseFrontmatterSafelyParams): ParseFrontmatterSafelyResult {
@@ -838,9 +831,6 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
     if (change.oldContent === change.newContent) {
       return false;
     }
-    if (index === 0) {
-      return true;
-    }
-    return !isDeepEqual(change, changes[index - 1]);
+    return index === 0 ? true : !isDeepEqual(change, changes[index - 1]);
   });
 }

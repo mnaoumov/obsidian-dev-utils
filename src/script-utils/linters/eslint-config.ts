@@ -372,10 +372,7 @@ function getEslintImportResolverTypescriptConfigs(): Linter.Config[] {
 
 function getGitIgnoreConfigs(): Linter.Config[] {
   const gitignorePath = join(getRootFolder() ?? '', '.gitignore');
-  if (!existsSync(gitignorePath)) {
-    return [];
-  }
-  return [includeIgnoreFile(gitignorePath)];
+  return existsSync(gitignorePath) ? [includeIgnoreFile(gitignorePath)] : [];
 }
 
 function getImportXConfigs(context: EslintConfigContext): Linter.Config[] {
@@ -671,14 +668,12 @@ function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
   const obsidianRecommendedConfigs = obsidianmd.configs.recommended;
 
   const scopedObsidianRecommendedConfigs = obsidianRecommendedConfigs.map((config) => {
-    if (config.files?.includes('package.json')) {
-      return config;
-    }
-
-    return {
-      ...config,
-      files: context.sourceFiles
-    };
+    return config.files?.includes('package.json')
+      ? config
+      : {
+        ...config,
+        files: context.sourceFiles
+      };
   });
 
   return defineConfig([

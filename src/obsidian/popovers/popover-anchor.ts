@@ -100,13 +100,11 @@ export function createAnchorFromPoint(x: number, y: number, doc: Document): Popo
 export function createAnchorFromSelection(doc: Document): PopoverAnchor {
   const selection = doc.getSelection();
   const rect = selection?.rangeCount ? selection.getRangeAt(0).getBoundingClientRect() : null;
-  if (!rect || (rect.bottom === 0 && rect.left === 0)) {
-    return createAnchorFromDocumentCenter(doc);
-  }
-
-  return {
-    bottom: rect.bottom,
-    doc,
-    left: rect.left
-  };
+  return !rect || (rect.bottom === 0 && rect.left === 0)
+    ? createAnchorFromDocumentCenter(doc)
+    : {
+      bottom: rect.bottom,
+      doc,
+      left: rect.left
+    };
 }

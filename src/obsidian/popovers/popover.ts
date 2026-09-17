@@ -165,10 +165,12 @@ export async function showPopover<Value>(params: ShowPopoverParams<Value>): Prom
         return;
       }
 
-      if ($event.key === 'Escape') {
-        $event.preventDefault();
-        handleCancel();
+      if ($event.key !== 'Escape') {
+        return;
       }
+
+      $event.preventDefault();
+      handleCancel();
     });
 
     const buttonsSetting = new Setting(popoverEl);

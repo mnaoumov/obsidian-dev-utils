@@ -1596,26 +1596,24 @@ export function convertLink(params: ConvertLinkParams): string {
     link: params.link,
     sourcePathOrFile: params.oldSourcePathOrFile ?? params.newSourcePathOrFile
   });
-  if (!targetFile) {
-    return params.link.original;
-  }
-
-  return updateLink(normalizeOptionalProperties<UpdateLinkParams>({
-    app: params.app,
-    isEmptyEmbedAliasAllowed: params.isEmptyEmbedAliasAllowed,
-    link: params.link,
-    linkPathStyle: params.linkPathStyle,
-    linkStyle: params.linkStyle,
-    newSourcePathOrFile: params.newSourcePathOrFile,
-    newTargetPathOrFile: targetFile,
-    oldSourcePathOrFile: params.oldSourcePathOrFile,
-    shouldEscapeAlias: params.shouldEscapeAlias,
-    shouldIncludeAttachmentExtensionToEmbedAlias: params.shouldIncludeAttachmentExtensionToEmbedAlias,
-    shouldUpdateFileNameAlias: params.shouldUpdateFileNameAlias,
-    shouldUseAngleBrackets: params.shouldUseAngleBrackets,
-    shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths,
-    shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
-  }));
+  return targetFile
+    ? updateLink(normalizeOptionalProperties<UpdateLinkParams>({
+      app: params.app,
+      isEmptyEmbedAliasAllowed: params.isEmptyEmbedAliasAllowed,
+      link: params.link,
+      linkPathStyle: params.linkPathStyle,
+      linkStyle: params.linkStyle,
+      newSourcePathOrFile: params.newSourcePathOrFile,
+      newTargetPathOrFile: targetFile,
+      oldSourcePathOrFile: params.oldSourcePathOrFile,
+      shouldEscapeAlias: params.shouldEscapeAlias,
+      shouldIncludeAttachmentExtensionToEmbedAlias: params.shouldIncludeAttachmentExtensionToEmbedAlias,
+      shouldUpdateFileNameAlias: params.shouldUpdateFileNameAlias,
+      shouldUseAngleBrackets: params.shouldUseAngleBrackets,
+      shouldUseLeadingDotForRelativePaths: params.shouldUseLeadingDotForRelativePaths,
+      shouldUseLeadingSlashForAbsolutePaths: params.shouldUseLeadingSlashForAbsolutePaths
+    }))
+    : params.link.original;
 }
 
 /**
@@ -1676,15 +1674,13 @@ export async function editBacklinksSnapshot<TPayload>(params: EditBacklinksSnaps
       app,
       linkConverter: (link) => {
         const linkIdentityKey = linkIdentityKeyProvider(link);
-        if (!payloads.has(linkIdentityKey) && !shouldVisitUnmatchedLinks) {
-          return;
-        }
-
-        return linkConverter({
-          link,
-          payload: payloads.get(linkIdentityKey),
-          sourcePath: backlinkNotePath
-        });
+        return !payloads.has(linkIdentityKey) && !shouldVisitUnmatchedLinks
+          ? undefined
+          : linkConverter({
+            link,
+            payload: payloads.get(linkIdentityKey),
+            sourcePath: backlinkNotePath
+          });
       },
       pathOrFile: backlinkNotePath,
       ...options
@@ -1732,20 +1728,18 @@ export async function editLinks(params: EditLinksParams): Promise<void> {
       const file = getFile({ app, pathOrFile });
       const cachedContent = await app.vault.cachedRead(file);
       abortSignal.throwIfAborted();
-      if (content !== cachedContent) {
-        return null;
-      }
-
-      return await getFileChanges(normalizeOptionalProperties<GetFileChangesParams>({
-        abortSignal,
-        cache,
-        isCanvasFileCache: isCanvasFile(pathOrFile),
-        linkConverter,
-        offsetRange,
-        shouldIncludeExternalLinks: shouldEditExternalLinks,
-        shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
-        shouldIncludeMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
-      }));
+      return content === cachedContent
+        ? (await getFileChanges(normalizeOptionalProperties<GetFileChangesParams>({
+          abortSignal,
+          cache,
+          isCanvasFileCache: isCanvasFile(pathOrFile),
+          linkConverter,
+          offsetRange,
+          shouldIncludeExternalLinks: shouldEditExternalLinks,
+          shouldIncludeFrontmatterExternalLinks: shouldEditFrontmatterExternalLinks,
+          shouldIncludeMultiValueFrontmatterExternalLinks: shouldEditMultiValueFrontmatterExternalLinks
+        })))
+        : null;
     },
     pathOrFile,
     ...options
@@ -1830,11 +1824,7 @@ export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
 
   const fullLinkPath = join(dirname(sourcePath), `./${linkPath}`);
 
-  if (fullLinkPath.startsWith('../')) {
-    return null;
-  }
-
-  return getFile({ app, pathOrFile: fullLinkPath, shouldIncludeNonExisting: true });
+  return fullLinkPath.startsWith('../') ? null : getFile({ app, pathOrFile: fullLinkPath, shouldIncludeNonExisting: true });
 }
 
 /**
@@ -2227,24 +2217,23 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
     content,
     linkConverter: (link) => {
       const isEmbedLink = hasEmbedSyntax(link.original);
-      if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
-        return;
-      }
-      return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
-        app,
-        isEmptyEmbedAliasAllowed,
-        link,
-        linkPathStyle,
-        linkStyle,
-        newSourcePathOrFile,
-        oldSourcePathOrFile,
-        shouldEscapeAlias,
-        shouldIncludeAttachmentExtensionToEmbedAlias,
-        shouldUpdateFileNameAlias,
-        shouldUseAngleBrackets,
-        shouldUseLeadingDotForRelativePaths,
-        shouldUseLeadingSlashForAbsolutePaths
-      }));
+      return shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink
+        ? undefined
+        : convertLink(normalizeOptionalProperties<ConvertLinkParams>({
+          app,
+          isEmptyEmbedAliasAllowed,
+          link,
+          linkPathStyle,
+          linkStyle,
+          newSourcePathOrFile,
+          oldSourcePathOrFile,
+          shouldEscapeAlias,
+          shouldIncludeAttachmentExtensionToEmbedAlias,
+          shouldUpdateFileNameAlias,
+          shouldUseAngleBrackets,
+          shouldUseLeadingDotForRelativePaths,
+          shouldUseLeadingSlashForAbsolutePaths
+        }));
     }
   });
 }
@@ -2280,24 +2269,23 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
     ...params,
     linkConverter: (link) => {
       const isEmbedLink = hasEmbedSyntax(link.original);
-      if (shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink) {
-        return;
-      }
-      return convertLink(normalizeOptionalProperties<ConvertLinkParams>({
-        app,
-        isEmptyEmbedAliasAllowed,
-        link,
-        linkPathStyle,
-        linkStyle,
-        newSourcePathOrFile,
-        oldSourcePathOrFile,
-        shouldEscapeAlias,
-        shouldIncludeAttachmentExtensionToEmbedAlias,
-        shouldUpdateFileNameAlias,
-        shouldUseAngleBrackets,
-        shouldUseLeadingDotForRelativePaths,
-        shouldUseLeadingSlashForAbsolutePaths
-      }));
+      return shouldUpdateEmbedOnlyLinks !== undefined && shouldUpdateEmbedOnlyLinks !== isEmbedLink
+        ? undefined
+        : convertLink(normalizeOptionalProperties<ConvertLinkParams>({
+          app,
+          isEmptyEmbedAliasAllowed,
+          link,
+          linkPathStyle,
+          linkStyle,
+          newSourcePathOrFile,
+          oldSourcePathOrFile,
+          shouldEscapeAlias,
+          shouldIncludeAttachmentExtensionToEmbedAlias,
+          shouldUpdateFileNameAlias,
+          shouldUseAngleBrackets,
+          shouldUseLeadingDotForRelativePaths,
+          shouldUseLeadingSlashForAbsolutePaths
+        }));
     },
     pathOrFile: newSourcePathOrFile
   });
@@ -2461,19 +2449,15 @@ function generateMarkdownStyleLink(params: GenerateMarkdownStyleLinkParams): str
 
 function generateWikiLink(params: GenerateWikiLinkParams): string {
   const { alias, isEmbed, linkText } = params;
-  if (alias?.toLowerCase() === linkText.toLowerCase()) {
-    return generateRawMarkdownLink({
-      isEmbed,
-      isWikilink: true,
-      url: alias
-    });
-  }
-
   return generateRawMarkdownLink({
-    alias,
     isEmbed,
     isWikilink: true,
-    url: linkText
+    ...(alias?.toLowerCase() === linkText.toLowerCase()
+      ? { url: alias }
+      : {
+        alias,
+        url: linkText
+      })
   });
 }
 
@@ -2588,12 +2572,8 @@ function getUndefinedPayload(): undefined {
 
 function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean): MaybeReturn<string> {
   if (isParseLinkFrontmatterReference(link)) {
-    if (!link.parseLinkResult.isFileUrl) {
-      return;
-    }
-
     // A frontmatter value holds a bare URL (re-serialized/quoted as YAML), not a `[alias](url)` markdown link.
-    return normalizeFileUrl(link.parseLinkResult.url);
+    return link.parseLinkResult.isFileUrl ? normalizeFileUrl(link.parseLinkResult.url) : undefined;
   }
 
   if (!isParseLinkReference(link)) {
@@ -2601,17 +2581,15 @@ function normalizeFileUrlLink(link: Reference, shouldUseAngleBrackets: boolean):
   }
 
   const { parseLinkResult } = link;
-  if (!parseLinkResult.isFileUrl) {
-    return;
-  }
-
-  return generateRawMarkdownLink(normalizeOptionalProperties<GenerateRawMarkdownLinkParams>({
-    alias: parseLinkResult.alias,
-    isEmbed: parseLinkResult.isEmbed,
-    isWikilink: false,
-    shouldUseAngleBrackets,
-    url: normalizeFileUrl(parseLinkResult.url)
-  }));
+  return parseLinkResult.isFileUrl
+    ? generateRawMarkdownLink(normalizeOptionalProperties<GenerateRawMarkdownLinkParams>({
+      alias: parseLinkResult.alias,
+      isEmbed: parseLinkResult.isEmbed,
+      isWikilink: false,
+      shouldUseAngleBrackets,
+      url: normalizeFileUrl(parseLinkResult.url)
+    }))
+    : undefined;
 }
 
 function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathStyle {
@@ -2639,11 +2617,7 @@ function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: Tab
   }
   /* v8 ignore stop */
 
-  if (!UNESCAPED_WIKILINK_DIVIDER_REGEXP.test(fileChange.newContent)) {
-    return false;
-  }
-
-  return tablePositions.some((tablePosition) => tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end);
+  return UNESCAPED_WIKILINK_DIVIDER_REGEXP.test(fileChange.newContent) ? tablePositions.some((tablePosition) => tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end) : false;
 }
 
 function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {

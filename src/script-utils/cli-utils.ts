@@ -258,10 +258,7 @@ function argvQuote(argument: string): string {
  * @returns The quoted argument string.
  */
 function posixQuote(argument: string): string {
-  if (POSIX_SAFE_ARG_RE.test(argument)) {
-    return argument;
-  }
-  return `'${replaceAll({ $string: argument, replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE })}'`;
+  return POSIX_SAFE_ARG_RE.test(argument) ? argument : `'${replaceAll({ $string: argument, replacer: POSIX_ESCAPED_SINGLE_QUOTE, searchValue: SINGLE_QUOTE_RE })}'`;
 }
 
 /**

@@ -530,10 +530,12 @@ class PluginApiRefImpl<TApi extends object> extends mixinAsyncEvents<PluginApiRe
 
       const handleChange = (): void => {
         const value = this.value;
-        if (value !== null) {
-          cleanUp();
-          resolve(value);
+        if (value === null) {
+          return;
         }
+
+        cleanUp();
+        resolve(value);
       };
 
       abortSignal.addEventListener('abort', handleAbort);
@@ -916,11 +918,7 @@ function resolveUnavailabilityReason(params: WatchPluginApiParams): PluginApiUna
     return PluginApiUnavailabilityReason.NotPublished;
   }
 
-  if (records.every((record) => !satisfiesVersion(record.apiVersion, params.apiVersionRange))) {
-    return PluginApiUnavailabilityReason.VersionMismatch;
-  }
-
-  return PluginApiUnavailabilityReason.ShapeMismatch;
+  return records.every((record) => !satisfiesVersion(record.apiVersion, params.apiVersionRange)) ? PluginApiUnavailabilityReason.VersionMismatch : PluginApiUnavailabilityReason.ShapeMismatch;
 }
 
 /**

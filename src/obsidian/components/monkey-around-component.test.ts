@@ -73,11 +73,7 @@ function registerDeferringPatch(params: RegisterDeferringPatchParams): void {
     $object: params.$object,
     methodName: 'greet',
     patchHandler: ({ fallback, originalMethod }) => {
-      if (hasPatchToken(originalMethod, params.patchToken)) {
-        return fallback();
-      }
-
-      return `${params.label}: ${fallback()}`;
+      return hasPatchToken(originalMethod, params.patchToken) ? fallback() : `${params.label}: ${fallback()}`;
     },
     patchToken: params.patchToken
   });

@@ -674,11 +674,7 @@ export function normalizePromisable<T>(promisable: Promisable<T>): Promise<T> | 
     return promisable as Promise<T>;
   }
 
-  if ((promisable as Partial<PromiseLike<T>>).then) {
-    return Promise.resolve(promisable);
-  }
-
-  return promisable as T;
+  return (promisable as Partial<PromiseLike<T>>).then ? Promise.resolve(promisable) : (promisable as T);
 }
 
 /**

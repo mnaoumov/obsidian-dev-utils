@@ -128,11 +128,7 @@ export function isCanvasTextNodeReference(reference: Reference): reference is Ca
  * @returns Whether the reference is fully contained within the offset range.
  */
 export function isReferenceInOffsetRange(reference: Reference, offsetRange: OffsetRange): boolean {
-  if (!isReferenceCache(reference)) {
-    return false;
-  }
-
-  return offsetRange.startOffset <= reference.position.start.offset && reference.position.end.offset <= offsetRange.endOffset;
+  return isReferenceCache(reference) ? offsetRange.startOffset <= reference.position.start.offset && reference.position.end.offset <= offsetRange.endOffset : false;
 }
 
 /**
@@ -143,17 +139,9 @@ export function isReferenceInOffsetRange(reference: Reference, offsetRange: Offs
  * @returns The file change.
  */
 export function referenceToFileChange(reference: Reference, newContent: string): FileChange {
-  if (isFrontmatterLinkCacheWithOffsets(reference)) {
-    return {
-      newContent,
-      oldContent: reference.original.slice(reference.startOffset, reference.endOffset),
-      reference
-    };
-  }
-
   return {
     newContent,
-    oldContent: reference.original,
+    oldContent: isFrontmatterLinkCacheWithOffsets(reference) ? reference.original.slice(reference.startOffset, reference.endOffset) : reference.original,
     reference
   };
 }

@@ -112,10 +112,7 @@ export function findType(allTypes: Map<string, TypeInfo>, name: string, currentN
  */
 export function linkBaseType(typeName: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   const isSimpleTypeRef = /^[a-zA-Z][a-zA-Z0-9]*(?:<.*>)?$/.test(typeName.trim());
-  if (isSimpleTypeRef) {
-    return escapeMdxAngleBrackets(renderTypeWithLinks(typeName, allTypes, undefined, currentNamespace));
-  }
-  return typeLink(typeName, allTypes, currentNamespace);
+  return isSimpleTypeRef ? escapeMdxAngleBrackets(renderTypeWithLinks(typeName, allTypes, undefined, currentNamespace)) : typeLink(typeName, allTypes, currentNamespace);
 }
 
 export function loadExternalTypeMaps(): void {
@@ -137,12 +134,9 @@ export function markdownToHtml(text: string): string {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll(/\[(?<text>[^\]]+)\]\((?<url>[^)]+)\)/g, (_match: string, linkText: string, url: string) => {
-      if (/^(?:https?:\/\/|\/|#|mailto:)/.test(url)) {
-        return `<a href="${url}">${linkText}</a>`;
-      }
       // A relative URL here is an illustrative example path in TSDoc (e.g. `[foo](foo.png)`), not a
       // real navigable link — render it as literal inline code so it neither 404s nor loses meaning.
-      return `<code>[${linkText}](${url})</code>`;
+      return /^(?:https?:\/\/|\/|#|mailto:)/.test(url) ? `<a href="${url}">${linkText}</a>` : `<code>[${linkText}](${url})</code>`;
     })
     .replaceAll(/`(?<code>[^`]+)`/g, '<code>$<code></code>')
     .replaceAll('\n', '<br/>');
@@ -205,6 +199,7 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
   typeFileSegments.clear();
   typeRouteSegments.clear();
   const byNamespace = new Map<string, TypeInfo[]>();
+  // eslint-disable-next-line unicorn/prefer-group-by -- `Map.groupBy` is ES2024, and the shared `tsconfig.json` types only ES2022.
   for (const info of types.values()) {
     const list = byNamespace.get(info.namespace) ?? [];
     list.push(info);
@@ -238,10 +233,7 @@ export function registerRouteSegments(types: Map<string, TypeInfo>): void {
  * otherwise the raw example text is wrapped in a `ts` code fence so it is emitted literally.
  */
 export function renderExampleMdx(example: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
-  if (/(?:^|\n)\s*(?:```|~~~)/.test(example)) {
-    return renderMdxProse(example, allTypes, selfNamespace);
-  }
-  return `\`\`\`ts\n${example}\n\`\`\``;
+  return /(?:^|\n)\s*(?:```|~~~)/.test(example) ? renderMdxProse(example, allTypes, selfNamespace) : `\`\`\`ts\n${example}\n\`\`\``;
 }
 
 /**
@@ -322,11 +314,7 @@ export function renderTypeWithLinks(typeText: string, allTypes: Map<string, Type
 
       // TypeScript primitive types
       const primitiveUrl = Object.hasOwn(TS_PRIMITIVE_TYPES, typeName) ? TS_PRIMITIVE_TYPES[typeName] : undefined;
-      if (primitiveUrl) {
-        return `[${typeName}](${primitiveUrl})`;
-      }
-
-      return typeName;
+      return primitiveUrl ? `[${typeName}](${primitiveUrl})` : typeName;
     }
   );
 }
@@ -355,10 +343,7 @@ export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, self
     // Handle simple type references — if display contains generic args, link each type individually
     const info = findType(allTypes, target, selfNamespace);
     if (info) {
-      if (display !== target && display.includes('<')) {
-        return renderTypeWithLinks(display, allTypes, undefined, selfNamespace);
-      }
-      return `[${display}](${typeHref(info)})`;
+      return display !== target && display.includes('<') ? renderTypeWithLinks(display, allTypes, undefined, selfNamespace) : `[${display}](${typeHref(info)})`;
     }
     return `\`${display}\``;
   });
@@ -370,10 +355,8 @@ export function resolveTsUtilityUrl(name: string): string | undefined {
     if (['Iterable'].includes(name)) {
       return `https://www.typescriptlang.org/docs/handbook/iterators-and-generators.html#${hash}`;
     }
-    if (['Capitalize', 'Lowercase', 'Uncapitalize', 'Uppercase'].includes(name)) { // Cspell:disable-line
-      return `https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html#${hash}`;
-    }
-    return `https://www.typescriptlang.org/docs/handbook/utility-types.html#${hash}`;
+    const handbookPage = ['Capitalize', 'Lowercase', 'Uncapitalize', 'Uppercase'].includes(name) ? '2/template-literal-types' : 'utility-types'; // Cspell:disable-line
+    return `https://www.typescriptlang.org/docs/handbook/${handbookPage}.html#${hash}`;
   }
   return undefined;
 }
@@ -420,10 +403,7 @@ Create an absolute link to a type page
 export function typeLink(typeName: string, allTypes: Map<string, TypeInfo>, currentNamespace?: string): string {
   const cleanName = typeName.replace(/<.*>$/, '').trim();
   const info = findType(allTypes, cleanName, currentNamespace);
-  if (!info) {
-    return `\`${typeName}\``;
-  }
-  return `[${escapeMdxAngleBrackets(typeName)}](${typeHref(info)})`;
+  return info ? `[${escapeMdxAngleBrackets(typeName)}](${typeHref(info)})` : `\`${typeName}\``;
 }
 
 function disambiguate(base: string, used: Set<string>, keyOf: (segment: string) => string): string {

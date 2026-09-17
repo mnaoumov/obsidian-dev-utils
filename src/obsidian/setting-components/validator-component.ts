@@ -131,11 +131,7 @@ export function getValidatorComponent($unknown: unknown): null | ValidatorCompon
     return new ValidatorElementWrapper($unknown.inputEl);
   }
 
-  if ($unknown instanceof ToggleComponent) {
-    return new OverlayValidatorComponent($unknown.toggleEl);
-  }
-
-  return null;
+  return $unknown instanceof ToggleComponent ? new OverlayValidatorComponent($unknown.toggleEl) : null;
 }
 
 function isValidatorComponent($unknown: unknown): $unknown is ValidatorComponent {

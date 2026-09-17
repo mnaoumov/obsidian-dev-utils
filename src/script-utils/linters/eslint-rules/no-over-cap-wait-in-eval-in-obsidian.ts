@@ -727,11 +727,7 @@ function readBoundExpression(node: TSESTree.Identifier, closure: EvalClosure, co
 
     if (definitionNode === closure.closureNode) {
       const inputKey = readParameterInputKey(closure.closureNode, node.name);
-      if (inputKey === null) {
-        return null;
-      }
-
-      return readInputPropertyValue(closure.paramsNode, inputKey);
+      return inputKey === null ? null : readInputPropertyValue(closure.paramsNode, inputKey);
     }
   }
 
@@ -816,15 +812,7 @@ function readClockName(node: TSESTree.Node): null | string {
 
   const objectNode = calleeNode.object as TSESTree.Node;
   const propertyNode = calleeNode.property as TSESTree.Node;
-  if (!isIdentifier(objectNode) || !isIdentifier(propertyNode)) {
-    return null;
-  }
-
-  if (propertyNode.name !== NOW_METHOD_NAME || !CLOCK_OBJECT_NAMES.has(objectNode.name)) {
-    return null;
-  }
-
-  return objectNode.name;
+  return !isIdentifier(objectNode) || !isIdentifier(propertyNode) || propertyNode.name !== NOW_METHOD_NAME || !CLOCK_OBJECT_NAMES.has(objectNode.name) ? null : objectNode.name;
 }
 
 /**
@@ -834,11 +822,7 @@ function readClockName(node: TSESTree.Node): null | string {
  * @returns The in-Obsidian closure property names, or `null` when the callee is not one of the helpers.
  */
 function readClosureNames(callNode: TSESTree.CallExpression): null | readonly string[] {
-  if (!isIdentifier(callNode.callee)) {
-    return null;
-  }
-
-  return CLOSURE_NAMES_BY_CALLEE_NAME.get(callNode.callee.name) ?? null;
+  return isIdentifier(callNode.callee) ? CLOSURE_NAMES_BY_CALLEE_NAME.get(callNode.callee.name) ?? null : null;
 }
 
 /**
@@ -880,11 +864,7 @@ function readClosureWaitInMilliseconds(state: ClosureState, callGraph: CallGraph
  * @returns Every conjunct, left to right.
  */
 function readConjuncts(node: TSESTree.Expression): TSESTree.Expression[] {
-  if (!isLogicalAndExpression(node)) {
-    return [node];
-  }
-
-  return [...readConjuncts(node.left), ...readConjuncts(node.right)];
+  return isLogicalAndExpression(node) ? [...readConjuncts(node.left), ...readConjuncts(node.right)] : [node];
 }
 
 /**
@@ -916,15 +896,7 @@ function readDeadlineGuardInMilliseconds(node: TSESTree.Node, closure: EvalClosu
   }
 
   const boundNode = readBoundExpression(deadlineNode, closure, context);
-  if (!boundNode || !isBinaryExpression(boundNode) || boundNode.operator !== '+') {
-    return null;
-  }
-
-  if (readClockName(boundNode.left) !== clockName) {
-    return null;
-  }
-
-  return resolveNumber(boundNode.right, closure, context);
+  return !boundNode || !isBinaryExpression(boundNode) || boundNode.operator !== '+' || (readClockName(boundNode.left) !== clockName) ? null : resolveNumber(boundNode.right, closure, context);
 }
 
 /**
@@ -972,11 +944,7 @@ function readEvalClosure(node: TSESTree.Node): EvalClosure | null {
    * pattern can carry one too. Neither is a helper call's parameter object.
    */
   const paramsNode = propertyNode.parent;
-  if (!isObjectExpression(paramsNode)) {
-    return null;
-  }
-
-  if (!isIdentifier(propertyNode.key)) {
+  if (!isObjectExpression(paramsNode) || !isIdentifier(propertyNode.key)) {
     return null;
   }
 
@@ -986,15 +954,13 @@ function readEvalClosure(node: TSESTree.Node): EvalClosure | null {
   }
 
   const closureNames = readClosureNames(callNode);
-  if (!closureNames?.includes(propertyNode.key.name)) {
-    return null;
-  }
-
-  return {
-    closureNode: node,
-    paramsNode,
-    reportNode: propertyNode
-  };
+  return closureNames?.includes(propertyNode.key.name)
+    ? {
+      closureNode: node,
+      paramsNode,
+      reportNode: propertyNode
+    }
+    : null;
 }
 
 /**
@@ -1194,11 +1160,7 @@ function readLoopStepSize(
   }
 
   const targetNode = updateNode.left as TSESTree.Node;
-  if (!isIdentifier(targetNode) || targetNode.name !== counterNode.name) {
-    return null;
-  }
-
-  return resolveNumber(updateNode.right, closure, context);
+  return !isIdentifier(targetNode) || targetNode.name !== counterNode.name ? null : resolveNumber(updateNode.right, closure, context);
 }
 
 /**
@@ -1302,11 +1264,7 @@ function resolveNumber(node: TSESTree.Node, closure: EvalClosure, context: Rule.
       const leftValue = resolveNumber(currentNode.left, closure, context);
       const rightValue = resolveNumber(currentNode.right, closure, context);
 
-      if (leftValue === null || rightValue === null) {
-        return null;
-      }
-
-      return leftValue * rightValue;
+      return leftValue === null || rightValue === null ? null : leftValue * rightValue;
     }
 
     if (!isIdentifier(currentNode)) {

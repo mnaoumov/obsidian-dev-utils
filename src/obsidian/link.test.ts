@@ -970,11 +970,7 @@ describe('app-dependent functions', () => {
       if (key === 'useMarkdownLinks') {
         return false;
       }
-      if (key === 'newLinkFormat') {
-        return 'shortest';
-      }
-      // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-      return undefined;
+      return key === 'newLinkFormat' ? 'shortest' : undefined;
     });
 
     // eslint-disable-next-line unicorn/name-replacements -- The member belongs to a dependency and cannot be renamed here.
@@ -1199,11 +1195,7 @@ describe('app-dependent functions', () => {
         if (key === 'useMarkdownLinks') {
           return true;
         }
-        if (key === 'newLinkFormat') {
-          return 'shortest';
-        }
-        // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-        return undefined;
+        return key === 'newLinkFormat' ? 'shortest' : undefined;
       });
       const result = generateMarkdownLink({
         app,
@@ -1294,10 +1286,7 @@ describe('app-dependent functions', () => {
 
     it('should use ObsidianSettingsDefault link path style with absolute format', () => {
       app.vault.getConfig = vi.fn((key: string) => {
-        if (key === 'newLinkFormat') {
-          return 'absolute';
-        }
-        return false;
+        return key === 'newLinkFormat' ? 'absolute' : false;
       });
       const result = generateMarkdownLink({
         app,
@@ -1311,10 +1300,7 @@ describe('app-dependent functions', () => {
 
     it('should use ObsidianSettingsDefault link path style with relative format', () => {
       app.vault.getConfig = vi.fn((key: string) => {
-        if (key === 'newLinkFormat') {
-          return 'relative';
-        }
-        return false;
+        return key === 'newLinkFormat' ? 'relative' : false;
       });
       const result = generateMarkdownLink({
         app,
@@ -1351,10 +1337,7 @@ describe('app-dependent functions', () => {
 
     it('should throw for invalid ObsidianSettingsDefault new link format', () => {
       app.vault.getConfig = vi.fn((key: string) => {
-        if (key === 'newLinkFormat') {
-          return 'invalid-format';
-        }
-        return false;
+        return key === 'newLinkFormat' ? 'invalid-format' : false;
       });
       expect(() =>
         generateMarkdownLink({
@@ -2368,10 +2351,7 @@ describe('app-dependent functions', () => {
       };
       vi.mocked(getBacklinksForFileSafe).mockResolvedValue(strictProxy<Awaited<ReturnType<typeof getBacklinksForFileSafe>>>({
         get: (key: string) => {
-          if (key === 'note.md') {
-            return [backlinkRef];
-          }
-          return null;
+          return key === 'note.md' ? [backlinkRef] : null;
         },
         keys: () => ['note.md']
       }));

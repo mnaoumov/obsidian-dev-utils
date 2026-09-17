@@ -107,17 +107,11 @@ vi.mock('../obsidian/i18n/i18n.ts', () => ({
 vi.mock('../obsidian/file-system.ts', () => ({
   getFile: vi.fn((params: GetFileParams) => {
     const { pathOrFile } = params;
-    if (typeof pathOrFile === 'string') {
-      return { deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile };
-    }
-    return pathOrFile;
+    return typeof pathOrFile === 'string' ? { deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile } : pathOrFile;
   }),
   getFileOrNull: vi.fn((params: GetFileOrNullParams) => {
     const { pathOrFile } = params;
-    if (typeof pathOrFile === 'string') {
-      return { deleted: false, name: pathOrFile.split('/').pop(), path: pathOrFile, stat: { ctime: 0, mtime: 0, size: 0 } };
-    }
-    return pathOrFile;
+    return typeof pathOrFile === 'string' ? { deleted: false, name: pathOrFile.split('/').pop(), path: pathOrFile, stat: { ctime: 0, mtime: 0, size: 0 } } : pathOrFile;
   }),
   getFolder: vi.fn((params: GetFolderParams) => ({ children: [], deleted: false, path: params.pathOrFolder })),
   getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as PathHolder).path),
@@ -130,10 +124,7 @@ vi.mock('../obsidian/frontmatter-link-cache-with-offsets.ts', () => ({
     return r['startOffset'] !== undefined && r['endOffset'] !== undefined && r['key'] !== undefined;
   }),
   toFrontmatterLinkCacheWithOffsets: vi.fn((link: GenericObject) => {
-    if (link['startOffset'] !== undefined && link['endOffset'] !== undefined) {
-      return link;
-    }
-    return { ...link, endOffset: typeof link['original'] === 'string' ? link['original'].length : 0, startOffset: 0 };
+    return link['startOffset'] !== undefined && link['endOffset'] !== undefined ? link : { ...link, endOffset: typeof link['original'] === 'string' ? link['original'].length : 0, startOffset: 0 };
   })
 }));
 
@@ -773,10 +764,7 @@ describe('getBacklinksForFileOrPath', () => {
     mockedGetFile.mockReset();
     mockedGetFile.mockImplementation((params: GetFileParams) => {
       const { pathOrFile } = params;
-      if (typeof pathOrFile === 'string') {
-        return castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile });
-      }
-      return pathOrFile;
+      return typeof pathOrFile === 'string' ? castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile }) : pathOrFile;
     });
   });
 
@@ -971,10 +959,7 @@ describe('getBacklinksForFileSafe', () => {
 
     mockedGetFile.mockImplementation((params: GetFileParams) => {
       const { pathOrFile } = params;
-      if (typeof pathOrFile === 'string') {
-        return castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile });
-      }
-      return pathOrFile;
+      return typeof pathOrFile === 'string' ? castTo<ReturnType<typeof getFile>>({ deleted: true, name: pathOrFile.split('/').pop(), path: pathOrFile }) : pathOrFile;
     });
   });
 

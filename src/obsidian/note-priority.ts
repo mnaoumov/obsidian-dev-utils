@@ -197,11 +197,7 @@ export function findNotePriorityRank(params: FindNotePriorityRankParams): number
 
   for (const [index, entry] of params.entries.entries()) {
     // A shorter entry can never beat one that already matched, so it is not worth testing.
-    if (entry.length <= bestLength) {
-      continue;
-    }
-
-    if (!checkEntryMatches(entry, params)) {
+    if ((entry.length <= bestLength) || !checkEntryMatches(entry, params)) {
       continue;
     }
 
@@ -238,11 +234,7 @@ export function pickHighestPriorityNotePath(params: PickHighestPriorityNotePathP
     }
   }
 
-  if (bestCount !== 1 || bestRank === NO_PRIORITY_MATCH) {
-    return null;
-  }
-
-  return bestNotePath;
+  return bestCount !== 1 || bestRank === NO_PRIORITY_MATCH ? null : bestNotePath;
 }
 
 function checkEntryMatches(entry: string, params: FindNotePriorityRankParams): boolean {
@@ -287,9 +279,5 @@ function checkPropertyMatches(specifier: string, frontmatter: null | Readonly<Re
   const actualValue = frontmatter[propertyName];
   // Frontmatter values are whatever YAML produced, so compare their rendering rather than requiring a
   // string. An array matches when any of its entries does, which is how tag-like properties read.
-  if (Array.isArray(actualValue)) {
-    return actualValue.some((item) => String(item) === expectedValue);
-  }
-
-  return String(actualValue) === expectedValue;
+  return Array.isArray(actualValue) ? actualValue.some((item) => String(item) === expectedValue) : String(actualValue) === expectedValue;
 }

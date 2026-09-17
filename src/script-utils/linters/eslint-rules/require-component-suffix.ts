@@ -212,13 +212,8 @@ function reportClass(params: ReportClassParams): void {
   const hasComponentBaseSuffix = className.endsWith('ComponentBase');
   const hasComponentSuffix = !hasComponentBaseSuffix && className.endsWith('Component');
 
-  // Correct: non-abstract ending with Component
-  if (hasComponentSuffix && !isAbstract) {
-    return;
-  }
-
-  // Correct: abstract ending with ComponentBase
-  if (hasComponentBaseSuffix && isAbstract) {
+  // Correct: non-abstract ending with Component, or abstract ending with ComponentBase
+  if ((hasComponentSuffix && !isAbstract) || (hasComponentBaseSuffix && isAbstract)) {
     return;
   }
 

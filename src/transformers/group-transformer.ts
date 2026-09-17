@@ -76,11 +76,7 @@ export class GroupTransformer extends Transformer {
    */
   protected override getTransformerId(value: unknown, key: string): null | string {
     const transformer = this.getFirstTransformerThatCanTransform(value, key);
-    if (transformer === null) {
-      return null;
-    }
-
-    return transformer.id;
+    return transformer === null ? null : transformer.id;
   }
 
   /**

@@ -35,35 +35,7 @@ async function generateIndex(folder: string): Promise<GenerateIndexResult> {
 }
 
 async function handleDirent(folder: string, dirent: Dirent): Promise<string | undefined> {
-  if (dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string) {
-    return;
-  }
-
-  if (dirent.name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-    return;
-  }
-
-  if (dirent.name === ObsidianDevUtilsRepoPaths.Types as string || folder.split('/').includes(ObsidianDevUtilsRepoPaths.Types)) {
-    return;
-  }
-
-  if (dirent.name === ObsidianDevUtilsRepoPaths.Styles as string) {
-    return;
-  }
-
-  if (dirent.name === ObsidianDevUtilsRepoPaths.TestHelpers as string) {
-    return;
-  }
-
-  if (dirent.isFile() && !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)) {
-    return;
-  }
-
-  if (dirent.isFile() && dirent.name.endsWith('.test.ts')) {
-    return;
-  }
-
-  if (dirent.isFile() && (dirent.name === 'setup.ts' || dirent.name.endsWith('-setup.ts'))) {
+  if ((dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string) || dirent.name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) || dirent.name === ObsidianDevUtilsRepoPaths.Types as string || folder.split('/').includes(ObsidianDevUtilsRepoPaths.Types) || (dirent.name === ObsidianDevUtilsRepoPaths.Styles as string) || (dirent.name === ObsidianDevUtilsRepoPaths.TestHelpers as string) || (dirent.isFile() && !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)) || (dirent.isFile() && dirent.name.endsWith('.test.ts')) || (dirent.isFile() && (dirent.name === 'setup.ts' || dirent.name.endsWith('-setup.ts')))) {
     return;
   }
 
@@ -82,9 +54,5 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     sourceFile = normalizeIfRelative(dirent.name);
   }
 
-  if (name === ObsidianDevUtilsRepoPaths.ScriptUtils as string) {
-    return;
-  }
-
-  return `export * as '${name}' from '${sourceFile}';`;
+  return name === ObsidianDevUtilsRepoPaths.ScriptUtils as string ? undefined : `export * as '${name}' from '${sourceFile}';`;
 }

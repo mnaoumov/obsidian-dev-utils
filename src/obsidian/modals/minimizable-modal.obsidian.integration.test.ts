@@ -583,11 +583,8 @@ describe('MinimizableModal', () => {
             }
             // Legacy comma form `rgba(r, g, b, a)` — the 4th component is the alpha.
             const legacyAlpha = /^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*(?<alpha>[\d.]+)\s*\)$/.exec(color)?.groups?.['alpha'];
-            if (legacyAlpha !== undefined) {
-              return Number(legacyAlpha);
-            }
             // `rgb(r, g, b)` / `oklch(l c h)` / hex — no alpha channel serialized means fully opaque.
-            return 1;
+            return legacyAlpha === undefined ? 1 : Number(legacyAlpha);
           }
         }
       });

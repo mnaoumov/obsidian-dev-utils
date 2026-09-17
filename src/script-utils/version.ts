@@ -338,10 +338,7 @@ export async function addUpdatedFilesToGit(newVersion: string, options: AddUpdat
   const { shouldVerifyCommit = true } = options;
   const versionDebugger = getLibDebugger('Version');
 
-  const commitArguments = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty'];
-  if (!shouldVerifyCommit) {
-    commitArguments.push('--no-verify');
-  }
+  const commitArguments = ['git', 'commit', '-m', `chore: release ${newVersion}`, '--allow-empty', ...(shouldVerifyCommit ? [] : ['--no-verify'])];
 
   for (;;) {
     try {
@@ -518,11 +515,7 @@ export function getVersionUpdateType(versionUpdateType: string): VersionUpdateTy
     }
 
     default: {
-      if (/^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType)) {
-        return VersionUpdateType.Manual;
-      }
-
-      return VersionUpdateType.Invalid;
+      return /^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType) ? VersionUpdateType.Manual : VersionUpdateType.Invalid;
     }
   }
 }
@@ -1170,11 +1163,7 @@ async function reviewChangelog(newChangeLog: string, findings: ChangelogFinding[
 function toChangelogEntry(commitMessage: string): string {
   const lines = commitMessage.split(/\r?\n/).filter(Boolean);
   const subject = lines[0] ?? '';
-  if (!MERGE_SUBJECT_REG_EXP.test(subject)) {
-    return subject;
-  }
-
-  return lines[1] ?? subject;
+  return MERGE_SUBJECT_REG_EXP.test(subject) ? lines[1] ?? subject : subject;
 }
 
 /**

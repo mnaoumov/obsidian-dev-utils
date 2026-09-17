@@ -225,7 +225,7 @@ describe('PluginSettingsTabBase declarative rendering', () => {
 
         class StructuralTab extends PluginSettingsTabBase<ProbeSettings> {
           public override getSettingDefinitionItems(): SettingDefinitionItem[] {
-            const items: SettingDefinitionItem[] = [
+            return [
               this.settingEx({
                 name: 'Always',
                 render: (setting) => {
@@ -233,21 +233,18 @@ describe('PluginSettingsTabBase declarative rendering', () => {
                     toggle.setValue(true);
                   });
                 }
-              })
+              }),
+              ...(hasExtraRow
+                ? [this.settingEx({
+                  name: 'Extra',
+                  render: (setting) => {
+                    setting.addText((text) => {
+                      text.setValue('extra');
+                    });
+                  }
+                })]
+                : [])
             ];
-
-            if (hasExtraRow) {
-              items.push(this.settingEx({
-                name: 'Extra',
-                render: (setting) => {
-                  setting.addText((text) => {
-                    text.setValue('extra');
-                  });
-                }
-              }));
-            }
-
-            return items;
           }
         }
 

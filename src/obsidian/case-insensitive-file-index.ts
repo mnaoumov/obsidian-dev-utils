@@ -125,10 +125,7 @@ export class CaseInsensitiveFileIndex {
  */
 export function getCaseInsensitiveFileIndex(app: App): CaseInsensitiveFileIndex | null {
   const index = getObsidianDevUtilsState<CaseInsensitiveFileIndex | null>(STATE_KEY, null).value;
-  if (index?.ownsApp(app)) {
-    return index;
-  }
-  return null;
+  return index?.ownsApp(app) ? index : null;
 }
 
 /**

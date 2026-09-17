@@ -855,10 +855,11 @@ describe('invokeWithFileSystemLock', () => {
     // The process function should return the same content
     const call = vi.mocked(app.vault.process).mock.calls[0];
     expect(call).toBeDefined();
-    if (call) {
-      const processFunction = call[1];
-      expect(processFunction('test content')).toBe('test content');
+    if (!call) {
+      return;
     }
+    const processFunction = call[1];
+    expect(processFunction('test content')).toBe('test content');
   });
 });
 

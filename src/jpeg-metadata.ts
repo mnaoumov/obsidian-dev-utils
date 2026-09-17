@@ -146,10 +146,7 @@ function checkIsMetadataSegment(bytes: Uint8Array, offset: number, marker: numbe
   if (marker === APP1_MARKER) {
     return checkMatchesHeader(bytes, payloadOffset, EXIF_HEADER) || checkMatchesHeader(bytes, payloadOffset, XMP_HEADER);
   }
-  if (marker === APP2_MARKER) {
-    return checkMatchesHeader(bytes, payloadOffset, ICC_PROFILE_HEADER);
-  }
-  return false;
+  return marker === APP2_MARKER ? checkMatchesHeader(bytes, payloadOffset, ICC_PROFILE_HEADER) : false;
 }
 
 function checkMatchesHeader(bytes: Uint8Array, offset: number, header: string): boolean {

@@ -168,10 +168,7 @@ function mockRegistryAndReleases(): void {
       // eslint-disable-next-line camelcase -- The field name is dictated by the GitHub API JSON.
       return Promise.resolve({ json: { tag_name: LATEST_VERSION } });
     }
-    if (url.includes('manifest.json')) {
-      return Promise.resolve({ json: MANIFEST });
-    }
-    return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    return url.includes('manifest.json') ? Promise.resolve({ json: MANIFEST }) : Promise.reject(new Error(`Unexpected URL: ${url}`));
   });
 }
 

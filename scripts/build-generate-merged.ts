@@ -256,26 +256,8 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
 }
 
 function isLeafFile(name: string): boolean {
-  if (!name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)) {
-    return false;
-  }
-  if (name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-    return false;
-  }
-  if (name === ObsidianDevUtilsRepoPaths.IndexTs as string) {
-    return false;
-  }
-  if (name.endsWith('.test.ts')) {
-    return false;
-  }
-  if (name === 'setup.ts' || name.endsWith('-setup.ts')) {
-    return false;
-  }
-  // The flat barrel must not re-export from itself.
-  if (basename(name, ObsidianDevUtilsRepoPaths.TsExtension) === MERGED_BASENAME) {
-    return false;
-  }
-  return true;
+  // The last clause: the flat barrel must not re-export from itself.
+  return !(!name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension) || name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) || (name === ObsidianDevUtilsRepoPaths.IndexTs as string) || name.endsWith('.test.ts') || name === 'setup.ts' || name.endsWith('-setup.ts') || basename(name, ObsidianDevUtilsRepoPaths.TsExtension) === MERGED_BASENAME);
 }
 
 function isTypeOnlyExport(exportSymbol: TsSymbol): boolean {
@@ -297,9 +279,5 @@ function toResolvedValueSymbol(checker: TypeChecker, exportSymbol: TsSymbol): nu
   // eslint-disable-next-line no-bitwise -- Bitwise flag test is the TypeScript API idiom for symbol flags.
   const resolved = exportSymbol.flags & SymbolFlags.Alias ? checker.getAliasedSymbol(exportSymbol) : exportSymbol;
   // eslint-disable-next-line no-bitwise -- Bitwise flag test is the TypeScript API idiom for symbol flags.
-  if (!(resolved.getFlags() & SymbolFlags.Value)) {
-    return null;
-  }
-
-  return resolved;
+  return (resolved.getFlags() & SymbolFlags.Value) ? resolved : null;
 }

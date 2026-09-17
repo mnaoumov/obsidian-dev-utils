@@ -58,10 +58,7 @@ export function syncOpenEditorBuffersForPath(app: App, pathOrFile: PathOrFile, c
   const path = getPath(app, pathOrFile);
   for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
     const view = leaf.view;
-    if (!(view instanceof MarkdownView)) {
-      continue;
-    }
-    if (view.file?.path !== path) {
+    if (!(view instanceof MarkdownView) || (view.file?.path !== path)) {
       continue;
     }
     if (view.editor.getValue() !== content) {

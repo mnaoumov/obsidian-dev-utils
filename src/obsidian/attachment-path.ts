@@ -500,16 +500,14 @@ export function getAttachmentFolderPathSyncOrNull(params: GetAttachmentFolderPat
     notePathOrFile
   } = params;
 
-  if (getExtendedFunction(app)) {
-    return null;
-  }
-
-  return parentFolderPath(getAttachmentFilePathSync({
-    app,
-    notePathOrFile,
-    oldAttachmentPathOrFile: DUMMY_PATH,
-    shouldSkipDuplicateCheck: true
-  }));
+  return getExtendedFunction(app)
+    ? null
+    : parentFolderPath(getAttachmentFilePathSync({
+      app,
+      notePathOrFile,
+      oldAttachmentPathOrFile: DUMMY_PATH,
+      shouldSkipDuplicateCheck: true
+    }));
 }
 
 /**

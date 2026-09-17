@@ -168,14 +168,11 @@ function buildOgImageMarkup(params: OgImageParams, logoDataUri: null | string): 
   const logoNode = logoDataUri ? buildLogoMarkup(logoDataUri) : null;
 
   // Top row: logo on the left, badge on the right.
-  const topRowChildren: Record<string, unknown>[] = [];
-  if (logoNode) {
-    topRowChildren.push(logoNode);
-  }
-  topRowChildren.push({ props: { style: { flex: 1 } }, type: 'div' });
-  if (badgeNode) {
-    topRowChildren.push(badgeNode);
-  }
+  const topRowChildren: Record<string, unknown>[] = [
+    ...(logoNode ? [logoNode] : []),
+    { props: { style: { flex: 1 } }, type: 'div' },
+    ...(badgeNode ? [badgeNode] : [])
+  ];
   const topRow = {
     props: {
       children: topRowChildren,

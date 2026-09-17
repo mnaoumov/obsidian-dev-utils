@@ -152,12 +152,8 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
           }
         }
 
-        if (typeof window !== 'undefined') {
-          return activeWindow.location.href;
-        }
-
         // Fallback to an empty string if the environment is unknown
-        return '';
+        return typeof window === 'undefined' ? '' : activeWindow.location.href;
       }
     };
 
@@ -179,10 +175,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 
         for (const [key, value] of Object.entries(replacements)) {
           const variable = `__${makeValidVariableName(key)}`;
-          if (!contents.includes(key)) {
-            continue;
-          }
-          if (contents.includes(`var ${variable}`)) {
+          if (!contents.includes(key) || contents.includes(`var ${variable}`)) {
             continue;
           }
           const valueString = typeof value === 'function' ? `(${String(value)})()` : toJson(value, { functionHandlingMode: FunctionHandlingMode.Full });

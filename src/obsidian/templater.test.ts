@@ -140,12 +140,9 @@ function createTemplaterApiRecorder(options: CreateTemplaterApiRecorderOptions =
       parsedConfigs.push(config);
       renderTargetsSeen.push(getTemplaterRenderTargetFile());
       return await (options.parse ?? ((): Promise<string> => Promise.resolve('rendered')))();
-    }
+    },
+    ...(options.currentFunctionsObject && { current_functions_object: options.currentFunctionsObject })
   };
-
-  if (options.currentFunctionsObject) {
-    api.current_functions_object = options.currentFunctionsObject;
-  }
 
   return {
     api,

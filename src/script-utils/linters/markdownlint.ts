@@ -133,15 +133,13 @@ const MARKDOWN_PATHSPEC = '*.md';
  */
 async function getMarkdownFiles(): Promise<string[]> {
   const nonIgnoredFiles = await getNonIgnoredFiles({ patterns: [MARKDOWN_PATHSPEC] });
-  if (nonIgnoredFiles) {
-    return nonIgnoredFiles.filter((path) => !checkIsInNodeModules(path));
-  }
-
-  return await toArray(glob(['**/*.md'], {
-    exclude: [
-      '.git/**',
-      'dist/**',
-      NODE_MODULES_IGNORE_GLOB
-    ]
-  }));
+  return nonIgnoredFiles
+    ? nonIgnoredFiles.filter((path) => !checkIsInNodeModules(path))
+    : (await toArray(glob(['**/*.md'], {
+      exclude: [
+        '.git/**',
+        'dist/**',
+        NODE_MODULES_IGNORE_GLOB
+      ]
+    })));
 }

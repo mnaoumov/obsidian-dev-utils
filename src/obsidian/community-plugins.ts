@@ -506,11 +506,7 @@ async function getPluginManifest(repo: string, version: string): Promise<PluginM
 // Reads a loaded plugin's `pluginSettingsComponent`, or `null` when it has none. Takes `unknown` because
 // A plugin is under no obligation to expose one, so there is no type to narrow from.
 function getSettingsComponent(plugin: unknown): unknown {
-  if (typeof plugin !== 'object' || plugin === null || !('pluginSettingsComponent' in plugin)) {
-    return null;
-  }
-
-  return plugin.pluginSettingsComponent;
+  return typeof plugin !== 'object' || plugin === null || !('pluginSettingsComponent' in plugin) ? null : plugin.pluginSettingsComponent;
 }
 
 async function resolveCommunityPluginId(reference: CommunityPluginRef): Promise<string> {

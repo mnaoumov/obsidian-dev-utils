@@ -187,11 +187,7 @@ export function collectExternalTargets(pages: DocumentationPage[], siteBaseUrl: 
     const pageUrl = getPageUrl(page.relativePath, siteBaseUrl);
     for (const rawLink of extractLinks(page.html)) {
       const targetUrl = new URL(rawLink, pageUrl);
-      if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
-        continue;
-      }
-
-      if (isInternalDocUrl(targetUrl, siteBaseUrl)) {
+      if ((targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') || isInternalDocUrl(targetUrl, siteBaseUrl)) {
         continue;
       }
 
@@ -304,11 +300,7 @@ export function resolveWithinRoot(outputRootPath: string, outputRelativePath: st
     joined = joined.replace(/\/$/u, '');
   }
 
-  if (joined !== root && !joined.startsWith(`${root}/`)) {
-    return null;
-  }
-
-  return joined;
+  return joined !== root && !joined.startsWith(`${root}/`) ? null : joined;
 }
 
 function describeHttpStatus(httpStatus: number | undefined): string {

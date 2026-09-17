@@ -135,12 +135,7 @@ function isDispatchEventCall(node: TSESTree.CallExpression): boolean {
   const callee = node.callee;
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-  if (callee.type !== 'MemberExpression') {
-    return false;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-  return callee.property.type === 'Identifier' && callee.property.name === 'dispatchEvent';
+  return callee.type === 'MemberExpression' && callee.property.type === 'Identifier' && callee.property.name === 'dispatchEvent';
 }
 
 /**
@@ -151,11 +146,7 @@ function isDispatchEventCall(node: TSESTree.CallExpression): boolean {
  */
 function readConstructorName(node: TSESTree.NewExpression): null | string {
   // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-  if (node.callee.type !== 'Identifier') {
-    return null;
-  }
-
-  return node.callee.name;
+  return node.callee.type === 'Identifier' ? node.callee.name : null;
 }
 
 /**

@@ -109,15 +109,7 @@ export async function getDependenciesToSkip(): Promise<Set<string>> {
  * @returns A boolean indicating whether the module can be skipped from bundling.
  */
 function canSkipFromBundling(moduleName: string): boolean {
-  if (moduleName.startsWith('@types/')) {
-    return true;
-  }
-
-  if (moduleName.startsWith('obsidian')) {
-    return true;
-  }
-
-  if (moduleName === 'esbuild') {
+  if (moduleName.startsWith('@types/') || moduleName.startsWith('obsidian') || (moduleName === 'esbuild')) {
     return true;
   }
 

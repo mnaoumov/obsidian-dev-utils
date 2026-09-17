@@ -83,11 +83,7 @@ export abstract class Transformer {
    * @returns The id of the transformer that can transform the given value.
    */
   protected getTransformerId(value: unknown, key: string): null | string {
-    if (this.canTransform(value, key)) {
-      return this.id;
-    }
-
-    return null;
+    return this.canTransform(value, key) ? this.id : null;
   }
 
   /**

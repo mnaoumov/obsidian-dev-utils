@@ -139,14 +139,16 @@ describe('ComponentEx', () => {
       assertNonNullable(promise);
       const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
-      if (rejection instanceof AggregateError) {
-        expect(rejection.errors).toHaveLength(1);
-        const [childAggregate] = rejection.errors;
-        expect(childAggregate).toBeInstanceOf(AggregateError);
-        if (childAggregate instanceof AggregateError) {
-          expect(childAggregate.errors).toEqual([childError]);
-        }
+      if (!(rejection instanceof AggregateError)) {
+        return;
       }
+      expect(rejection.errors).toHaveLength(1);
+      const [childAggregate] = rejection.errors;
+      expect(childAggregate).toBeInstanceOf(AggregateError);
+      if (!(childAggregate instanceof AggregateError)) {
+        return;
+      }
+      expect(childAggregate.errors).toEqual([childError]);
     });
 
     it('should keep each child failure grouped in its own AggregateError', async () => {
@@ -162,15 +164,16 @@ describe('ComponentEx', () => {
       assertNonNullable(promise);
       const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
-      if (rejection instanceof AggregateError) {
-        expect(rejection.errors).toHaveLength(2);
-        const messages = rejection.errors.map((childAggregate: unknown) =>
-          childAggregate instanceof AggregateError && childAggregate.errors[0] instanceof Error
-            ? childAggregate.errors[0].message
-            : 'unexpected'
-        );
-        expect(messages).toEqual(['error 1', 'error 2']);
+      if (!(rejection instanceof AggregateError)) {
+        return;
       }
+      expect(rejection.errors).toHaveLength(2);
+      const messages = rejection.errors.map((childAggregate: unknown) =>
+        childAggregate instanceof AggregateError && childAggregate.errors[0] instanceof Error
+          ? childAggregate.errors[0].message
+          : 'unexpected'
+      );
+      expect(messages).toEqual(['error 1', 'error 2']);
     });
 
     it('should name a lone failure in the AggregateError message, rather than leaving it empty', async () => {
@@ -227,13 +230,15 @@ describe('ComponentEx', () => {
       assertNonNullable(promise);
       const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
-      if (rejection instanceof AggregateError) {
-        const [firstError] = rejection.errors;
-        expect(firstError).toBeInstanceOf(ErrorWrapper);
-        if (firstError instanceof ErrorWrapper) {
-          expect(firstError.cause).toBe('string failure');
-        }
+      if (!(rejection instanceof AggregateError)) {
+        return;
       }
+      const [firstError] = rejection.errors;
+      expect(firstError).toBeInstanceOf(ErrorWrapper);
+      if (!(firstError instanceof ErrorWrapper)) {
+        return;
+      }
+      expect(firstError.cause).toBe('string failure');
     });
 
     it('should reset its load promise after settling', async () => {
@@ -254,14 +259,16 @@ describe('ComponentEx', () => {
       assertNonNullable(promise);
       const rejection = await promise.catch((error: unknown) => error);
       expect(rejection).toBeInstanceOf(AggregateError);
-      if (rejection instanceof AggregateError) {
-        expect(rejection.errors).toHaveLength(1);
-        const [firstError] = rejection.errors;
-        expect(firstError).toBeInstanceOf(Error);
-        if (firstError instanceof Error) {
-          expect(firstError.message).toBe('sync load failed');
-        }
+      if (!(rejection instanceof AggregateError)) {
+        return;
       }
+      expect(rejection.errors).toHaveLength(1);
+      const [firstError] = rejection.errors;
+      expect(firstError).toBeInstanceOf(Error);
+      if (!(firstError instanceof Error)) {
+        return;
+      }
+      expect(firstError.message).toBe('sync load failed');
     });
   });
 

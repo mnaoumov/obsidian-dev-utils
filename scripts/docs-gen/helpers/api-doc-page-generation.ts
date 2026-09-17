@@ -81,10 +81,11 @@ export async function appendBacklinksAndWrite(
       lines.push('', '---', '', '**Links to this page:**', '');
       for (const blKey of sortedBacklinks) {
         const blInfo = allTypes.get(blKey);
-        if (blInfo) {
-          const blNsDirectory = getNamespaceDirectory(blInfo.namespace);
-          lines.push(`- [${blInfo.name}](${BASE_PATH}/api/${blNsDirectory}/${toTypeRouteSegment(blInfo.namespace, blInfo.name)}/)`);
+        if (!blInfo) {
+          continue;
         }
+        const blNsDirectory = getNamespaceDirectory(blInfo.namespace);
+        lines.push(`- [${blInfo.name}](${BASE_PATH}/api/${blNsDirectory}/${toTypeRouteSegment(blInfo.namespace, blInfo.name)}/)`);
       }
     }
     await writeFile(filePath, lines.join('\n'), 'utf-8');
@@ -165,10 +166,7 @@ export function computeOverviewSignature(name: string, info: TypeInfo): string |
   if (info.kind === 'type') {
     return `type ${getDisplayName(info.name, info)} = ${info.typeAliasText ?? 'unknown'}`;
   }
-  if (info.kind === 'variable') {
-    return `${info.variableKeyword ?? 'let'} ${name}: ${info.variableType ?? 'unknown'}`;
-  }
-  return undefined;
+  return info.kind === 'variable' ? `${info.variableKeyword ?? 'let'} ${name}: ${info.variableType ?? 'unknown'}` : undefined;
 }
 
 export async function generateMemberPages(name: string, info: TypeInfo, allTypes: Map<string, TypeInfo>): Promise<void> {
@@ -467,15 +465,18 @@ others. `description` in particular is not just SEO metadata — it is the line 
 the title, so a page kind that skipped it produced a title-only card next to fully populated ones.
 */
 export function renderFrontMatter(frontMatter: PageFrontMatter): string[] {
-  const lines: string[] = ['---', `title: "${escapeYaml(frontMatter.title)}"`, `slug: "${frontMatter.slug}"`];
-  if (frontMatter.description) {
-    lines.push(`description: "${escapeYaml(stripMarkdown(frontMatter.description))}"`);
-  }
-  if (frontMatter.signature) {
-    lines.push(`signature: "${escapeYaml(truncateSignature(frontMatter.signature))}"`);
-  }
-  lines.push('editUrl: false', 'sidebar:', `  label: "${escapeYaml(frontMatter.sidebarLabel)}"`, '---', '');
-  return lines;
+  return [
+    '---',
+    `title: "${escapeYaml(frontMatter.title)}"`,
+    `slug: "${frontMatter.slug}"`,
+    ...(frontMatter.description ? [`description: "${escapeYaml(stripMarkdown(frontMatter.description))}"`] : []),
+    ...(frontMatter.signature ? [`signature: "${escapeYaml(truncateSignature(frontMatter.signature))}"`] : []),
+    'editUrl: false',
+    'sidebar:',
+    `  label: "${escapeYaml(frontMatter.sidebarLabel)}"`,
+    '---',
+    ''
+  ];
 }
 
 export function renderFunctionPage(lines: string[], info: TypeInfo, allTypes: Map<string, TypeInfo>): void {
@@ -543,10 +544,7 @@ export function renderMethodTableMdx(lines: string[], info: TypeInfo, allTypes: 
     const desc = escapeJsString(markdownToHtml(resolveLinks(method.description, allTypes, info.namespace)));
     const staticPrefix = method.isStatic ? 'static ' : '';
     const shortParams = method.parameters.map((p, index) => {
-      if (index === 0 && EVENT_METHODS.has(method.name) && (p.type.startsWith('"') || p.type.startsWith('\''))) {
-        return p.type.replaceAll('"', '\'');
-      }
-      return p.name;
+      return index === 0 && EVENT_METHODS.has(method.name) && (p.type.startsWith('"') || p.type.startsWith('\'')) ? p.type.replaceAll('"', '\'') : p.name;
     }).join(', ');
     const shortSig = `${staticPrefix}${method.name}(${shortParams})`;
     const sig = escapeJsString(shortSig);

@@ -48,13 +48,11 @@ export function isFrontmatterLinkCacheWithOffsets(reference: Reference): referen
  * @returns The converted reference.
  */
 export function toFrontmatterLinkCacheWithOffsets(reference: FrontmatterLinkCache): FrontmatterLinkCacheWithOffsets {
-  if (isFrontmatterLinkCacheWithOffsets(reference)) {
-    return reference;
-  }
-
-  return {
-    ...reference,
-    endOffset: reference.original.length,
-    startOffset: 0
-  };
+  return isFrontmatterLinkCacheWithOffsets(reference)
+    ? reference
+    : {
+      ...reference,
+      endOffset: reference.original.length,
+      startOffset: 0
+    };
 }

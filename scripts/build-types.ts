@@ -48,11 +48,7 @@ await wrapCliTask(async () => {
   const allTypes = await collectAllTypes();
 
   for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-    if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension)) {
-      continue;
-    }
-
-    if (file.startsWith(ObsidianDevUtilsRepoPaths.TestHelpers)) {
+    if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) || file.startsWith(ObsidianDevUtilsRepoPaths.TestHelpers)) {
       continue;
     }
 
@@ -133,14 +129,13 @@ function buildAllReferenceLibDirectives(libs: string[]): string {
 }
 
 function buildAllReferenceTypesDirectives(types: string[]): string {
-  if (types.length === 0) {
-    return '';
-  }
-  return `${
-    types
-      .map((type) => `/// <reference types="${type}" />`)
-      .join('\n')
-  }\n`;
+  return types.length === 0
+    ? ''
+    : `${
+      types
+        .map((type) => `/// <reference types="${type}" />`)
+        .join('\n')
+    }\n`;
 }
 
 function buildReferencePathDirective(declarationFilePath: string, moduleDirectory: string, extension: string): string {

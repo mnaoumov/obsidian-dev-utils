@@ -60,26 +60,12 @@ export const preferNoopAsync: Rule.RuleModule = {
  * @returns `true` if the node is `Promise.resolve()` with no arguments.
  */
 function isPromiseResolveWithNoArguments(node: TSESTree.CallExpression): boolean {
-  if (node.arguments.length > 0) {
-    return false;
-  }
-
   const callee = node.callee;
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-  if (callee.type !== 'MemberExpression') {
-    return false;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-  if (callee.object.type !== 'Identifier' || callee.object.name !== 'Promise') {
-    return false;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
-  if (callee.property.type !== 'Identifier' || callee.property.name !== 'resolve') {
-    return false;
-  }
-
-  return true;
+  /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
+  return node.arguments.length === 0
+    && callee.type === 'MemberExpression'
+    && callee.object.type === 'Identifier' && callee.object.name === 'Promise'
+    && callee.property.type === 'Identifier' && callee.property.name === 'resolve';
+  /* eslint-enable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
 }

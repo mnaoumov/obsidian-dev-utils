@@ -321,11 +321,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
       context,
       editor
     } = params;
-    if (!this.shouldAddToCommandPalette()) {
-      return false;
-    }
-
-    if (!this.canExecuteEditor(editor, context)) {
+    if (!this.shouldAddToCommandPalette() || !this.canExecuteEditor(editor, context)) {
       return false;
     }
 
@@ -342,11 +338,7 @@ export abstract class EditorCommandHandler extends CommandHandler {
       editor,
       menu
     } = params;
-    if (!this.shouldAddToEditorMenu(editor, context)) {
-      return;
-    }
-
-    if (!this.canExecuteEditor(editor, context)) {
+    if (!this.shouldAddToEditorMenu(editor, context) || !this.canExecuteEditor(editor, context)) {
       return;
     }
 

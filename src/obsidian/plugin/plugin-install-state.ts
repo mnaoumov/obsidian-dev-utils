@@ -136,11 +136,7 @@ export function getInstalledPluginState(params: GetInstalledPluginStateParams): 
 export function getInstalledPluginVersion(params: GetInstalledPluginVersionParams): null | string {
   const { app, pluginId } = params;
 
-  if (!app.plugins.enabledPlugins.has(pluginId)) {
-    return null;
-  }
-
-  return app.plugins.manifests[pluginId]?.version ?? '';
+  return app.plugins.enabledPlugins.has(pluginId) ? app.plugins.manifests[pluginId]?.version ?? '' : null;
 }
 
 /**

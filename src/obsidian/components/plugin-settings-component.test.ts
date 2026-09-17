@@ -133,11 +133,7 @@ describe('PluginSettingsComponentBase', () => {
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
-          if (value < 0) {
-            return 'Count must be non-negative';
-          }
-          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-          return undefined;
+          return value < 0 ? 'Count must be non-negative' : undefined;
         });
       }
     }
@@ -231,11 +227,7 @@ describe('PluginSettingsComponentBase', () => {
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
-          if (value < 0) {
-            return 'Invalid';
-          }
-          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-          return undefined;
+          return value < 0 ? 'Invalid' : undefined;
         });
       }
     }
@@ -258,11 +250,7 @@ describe('PluginSettingsComponentBase', () => {
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
-          if (value < 0) {
-            return 'Invalid';
-          }
-          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-          return undefined;
+          return value < 0 ? 'Invalid' : undefined;
         });
       }
     }
@@ -287,11 +275,7 @@ describe('PluginSettingsComponentBase', () => {
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('name', (value) => {
-          if (value === '') {
-            return 'Name required';
-          }
-          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-          return undefined;
+          return value === '' ? 'Name required' : undefined;
         });
       }
     }
@@ -430,10 +414,7 @@ describe('PluginSettingsComponentBase', () => {
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
-          if (value < 0) {
-            return 'Count must be non-negative';
-          }
-          return '';
+          return value < 0 ? 'Count must be non-negative' : '';
         });
       }
     }
@@ -465,11 +446,7 @@ describe('PluginSettingsComponentBase', () => {
       protected override registerValidators(): void {
         super.registerValidators();
         this.registerValidator('count', (value) => {
-          if (value < 0) {
-            return 'Must be non-negative';
-          }
-          // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-          return undefined;
+          return value < 0 ? 'Must be non-negative' : undefined;
         });
       }
     }

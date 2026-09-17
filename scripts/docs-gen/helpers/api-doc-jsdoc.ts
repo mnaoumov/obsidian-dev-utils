@@ -274,10 +274,7 @@ Get the return type as declared in source (preserves union order), falling back 
 */
 export function getDeclaredReturnType(method: ReturnTypeProvider): string {
   const annotation = method.getReturnTypeNode?.()?.getText();
-  if (annotation) {
-    return simplifyType(annotation);
-  }
-  return simplifyType(method.getReturnType().getText());
+  return simplifyType(annotation ?? method.getReturnType().getText());
 }
 
 export function getDescription(node: JSDocableNode): string {
@@ -337,10 +334,7 @@ Strip `| undefined` only when it was implicitly added by ts-morph for optional p
 */
 export function getPropertyType(property: PropertyDeclaration | PropertySignature): string {
   const typeNode = property.getTypeNode();
-  if (typeNode) {
-    return resolveTypeofAliases(simplifyType(typeNode.getText()), property.getSourceFile());
-  }
-  return simplifyType(property.getType().getText());
+  return typeNode ? resolveTypeofAliases(simplifyType(typeNode.getText()), property.getSourceFile()) : simplifyType(property.getType().getText());
 }
 
 /**

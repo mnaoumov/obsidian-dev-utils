@@ -398,23 +398,19 @@ export class MinimizableModal<TModal extends Modal> {
   }
 
   private handleContainerClick($event: MouseEvent): void {
-    // While minimized the container is hidden, so no click can reach it — but a synthetic one still can,
-    // and minimizing an already-minimized modal is meaningless.
-    if (this.isMinimizedValue) {
-      return;
-    }
-
-    // A click that passed through the modal itself is ordinary interaction with its content.
-    // `composedPath()` (rather than `modalEl.contains($event.target)`) needs no cast and stays correct
-    // across windows, where an `instanceof HTMLElement` check against another realm's element would not.
-    if ($event.composedPath().includes(this.modal.modalEl)) {
-      return;
-    }
-
-    // A text selection dragged from inside the modal out onto the background makes the resulting
-    // `click` fire on their common ancestor — `containerEl`. Obsidian does not dismiss on that gesture (its
-    // own listener sits on `bgEl`, which is never the target here), so neither does this.
-    if ($event.target === this.modal.containerEl) {
+    if (
+      // While minimized the container is hidden, so no click can reach it — but a synthetic one still can,
+      // and minimizing an already-minimized modal is meaningless.
+      this.isMinimizedValue
+      // A click that passed through the modal itself is ordinary interaction with its content.
+      // `composedPath()` (rather than `modalEl.contains($event.target)`) needs no cast and stays correct
+      // across windows, where an `instanceof HTMLElement` check against another realm's element would not.
+      || $event.composedPath().includes(this.modal.modalEl)
+      // A text selection dragged from inside the modal out onto the background makes the resulting
+      // `click` fire on their common ancestor — `containerEl`. Obsidian does not dismiss on that gesture (its
+      // own listener sits on `bgEl`, which is never the target here), so neither does this.
+      || $event.target === this.modal.containerEl
+    ) {
       return;
     }
 
@@ -477,11 +473,7 @@ function isMinimizedInnerModal(modal: Modal): boolean {
 function isPeekAllowedKey($event: KeyboardEvent): boolean {
   // Navigation moves the cursor/scrolls (allowed), but Shift+navigation extends the selection (not
   // needed for inspection), so it is blocked. Bare modifier presses pass through on their own.
-  if (NAVIGATION_KEYS.has($event.key)) {
-    return !$event.shiftKey;
-  }
-
-  return MODIFIER_KEYS.has($event.key);
+  return NAVIGATION_KEYS.has($event.key) ? !$event.shiftKey : MODIFIER_KEYS.has($event.key);
 }
 
 function isPeekLocked(): boolean {

@@ -138,9 +138,5 @@ export function findAttachmentUnitFolderPath(params: FindAttachmentUnitFolderPat
  */
 export function rebasePathOntoFolder(params: RebasePathOntoFolderParams): null | string {
   const prefix = `${params.oldFolderPath}/`;
-  if (!params.path.startsWith(prefix)) {
-    return null;
-  }
-
-  return `${params.newFolderPath}/${params.path.slice(prefix.length)}`;
+  return params.path.startsWith(prefix) ? `${params.newFolderPath}/${params.path.slice(prefix.length)}` : null;
 }

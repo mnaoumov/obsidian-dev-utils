@@ -347,13 +347,7 @@ describe('getZIndex', () => {
     const parent = buildElement();
     const child = buildElement({ parent });
     vi.mocked(getComputedStyle).mockImplementation((target) => {
-      if (target === child) {
-        return strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' });
-      }
-      if (target === parent) {
-        return strictProxy<CSSStyleDeclaration>({ zIndex: '5' });
-      }
-      return strictProxy<CSSStyleDeclaration>({ zIndex: 'auto' });
+      return strictProxy<CSSStyleDeclaration>({ zIndex: target === parent ? '5' : 'auto' });
     });
     expect(getZIndex(child)).toBe(5);
   });
@@ -376,10 +370,7 @@ describe('getZIndex', () => {
     const parent = buildElement();
     const child = buildElement({ parent });
     vi.mocked(getComputedStyle).mockImplementation((target) => {
-      if (target === child) {
-        return strictProxy<CSSStyleDeclaration>({ zIndex: '' });
-      }
-      return strictProxy<CSSStyleDeclaration>({ zIndex: '7' });
+      return strictProxy<CSSStyleDeclaration>({ zIndex: target === child ? '' : '7' });
     });
     expect(getZIndex(child)).toBe(7);
   });

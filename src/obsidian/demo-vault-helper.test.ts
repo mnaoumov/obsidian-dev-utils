@@ -276,10 +276,7 @@ beforeEach(() => {
       // eslint-disable-next-line camelcase -- The field name is dictated by the GitHub API JSON.
       return Promise.resolve({ json: { tag_name: isFolderNotes ? FOLDER_NOTES_VERSION : CODE_SCRIPT_TOOLKIT_VERSION } });
     }
-    if (url.includes('manifest.json')) {
-      return Promise.resolve({ json: isFolderNotes ? FOLDER_NOTES_MANIFEST : CODE_SCRIPT_TOOLKIT_MANIFEST });
-    }
-    return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    return url.includes('manifest.json') ? Promise.resolve({ json: isFolderNotes ? FOLDER_NOTES_MANIFEST : CODE_SCRIPT_TOOLKIT_MANIFEST }) : Promise.reject(new Error(`Unexpected URL: ${url}`));
   });
 });
 

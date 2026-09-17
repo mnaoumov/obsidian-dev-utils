@@ -96,10 +96,9 @@ export function foldTsDocParagraphs(text: string): string {
   const segments = segmentMarkdown(text);
   return segments
     .map((seg) => {
-      if (seg.type === 'code') {
-        return `\`\`\`${seg.lang ?? ''}\n${seg.text}\n\`\`\``;
-      }
-      return seg.text
+      return seg.type === 'code'
+? `\`\`\`${seg.lang ?? ''}\n${seg.text}\n\`\`\``
+: seg.text
         .split(/\n{2,}/)
         .map((paragraph) => paragraph.replaceAll('\n', ' '))
         .join('\n\n');
@@ -259,10 +258,7 @@ export function toRouteSegmentPreserveCase(segment: string): string {
  */
 export function truncateSignature(signature: string): string {
   const collapsed = signature.replaceAll(/\s+/g, ' ').trim();
-  if (collapsed.length <= SIGNATURE_MAX_LENGTH) {
-    return collapsed;
-  }
-  return `${collapsed.slice(0, SIGNATURE_MAX_LENGTH - 1).trimEnd()}…`;
+  return collapsed.length <= SIGNATURE_MAX_LENGTH ? collapsed : `${collapsed.slice(0, SIGNATURE_MAX_LENGTH - 1).trimEnd()}…`;
 }
 
 function slugifyMemberName(name: string): string {
@@ -271,12 +267,9 @@ function slugifyMemberName(name: string): string {
     .replaceAll(/[^a-zA-Z0-9]/g, '-')
     .replaceAll(/-+/g, '-')
     .replaceAll(/^-|-$/g, '');
-  if (cleaned === 'index') {
-    // A member literally named `index` would write `index.mdx`, colliding with the type-overview
-    // `index.mdx` in the same directory (one silently overwrites the other, 404-ing the loser).
-    return 'index-member';
-  }
-  return cleaned || 'unnamed';
+  // A member literally named `index` would write `index.mdx`, colliding with the type-overview
+  // `index.mdx` in the same directory (one silently overwrites the other, 404-ing the loser).
+  return cleaned === 'index' ? 'index-member' : (cleaned || 'unnamed');
 }
 
 function slugifyOverloadKey(overloadKey: string): string {

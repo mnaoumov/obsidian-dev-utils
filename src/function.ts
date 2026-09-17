@@ -70,11 +70,7 @@ export function getFunctionExpressionString($function: Function): string {
   }
 
   const asyncMatch = ASYNC_KEYWORD_RE.exec(functionString);
-  if (asyncMatch) {
-    return `async function ${functionString.slice(asyncMatch[0].length)}`;
-  }
-
-  return `function ${functionString}`;
+  return asyncMatch ? `async function ${functionString.slice(asyncMatch[0].length)}` : `function ${functionString}`;
 }
 
 /**

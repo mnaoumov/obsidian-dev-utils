@@ -253,16 +253,14 @@ export function resolveFolderNoteConfig(params: ResolveFolderNoteConfigParams): 
     resolveName
   } = params;
 
-  if (location !== undefined && location !== FolderNoteLocation.Auto) {
-    return {
+  return location !== undefined && location !== FolderNoteLocation.Auto
+    ? {
       extensions: normalizeExtensions(extensions ?? [MARKDOWN_FILE_EXTENSION]),
       isHidden: isHidden ?? false,
       location,
       resolveName: resolveName ?? FALLBACK_FOLDER_NOTE_CONFIG.resolveName
-    };
-  }
-
-  return readFolderNotesPluginConfig(app) ?? FALLBACK_FOLDER_NOTE_CONFIG;
+    }
+    : readFolderNotesPluginConfig(app) ?? FALLBACK_FOLDER_NOTE_CONFIG;
 }
 
 /**

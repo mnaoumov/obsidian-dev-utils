@@ -176,10 +176,7 @@ export function appendNodeOption(existingNodeOptions: string | undefined, option
   if (trimmed === '') {
     return option;
   }
-  if (trimmed.split(/\s+/).includes(option)) {
-    return trimmed;
-  }
-  return `${trimmed} ${option}`;
+  return trimmed.split(/\s+/).includes(option) ? trimmed : `${trimmed} ${option}`;
 }
 
 /**
@@ -194,14 +191,11 @@ export function appendNodeOption(existingNodeOptions: string | undefined, option
  * @returns The environment to pass to spawned child processes.
  */
 export function buildChildEnv(baseEnv: NodeJS.ProcessEnv, allowedNodeEnvironmentFlags: ReadonlySet<string>): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = {
+  return {
     DEBUG_COLORS: '1',
-    ...baseEnv
+    ...baseEnv,
+    ...(allowedNodeEnvironmentFlags.has('--localstorage-file') && { NODE_OPTIONS: appendNodeOption(baseEnv['NODE_OPTIONS'], LOCAL_STORAGE_NODE_OPTION) })
   };
-  if (allowedNodeEnvironmentFlags.has('--localstorage-file')) {
-    env['NODE_OPTIONS'] = appendNodeOption(baseEnv['NODE_OPTIONS'], LOCAL_STORAGE_NODE_OPTION);
-  }
-  return env;
 }
 
 /**
@@ -252,35 +246,31 @@ export function exec(command: CommandPart[] | string, options: ExecOptions = {})
 
     const maxCommandLength = getMaxCommandLength();
     const effectiveLength = getEffectiveCommandLineLength(commandLine);
-    if (effectiveLength > maxCommandLength) {
-      return Promise.reject(
+    return effectiveLength > maxCommandLength
+      ? Promise.reject(
         new Error(
           `Command line is too long (${String(effectiveLength)} chars once wrapped for the shell, max ${String(maxCommandLength)} on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
         )
-      );
-    }
-
-    return execString({
-      command: commandLine,
-      options,
-      rawArguments: $arguments
-    });
+      )
+      : execString({
+        command: commandLine,
+        options,
+        rawArguments: $arguments
+      });
   }
 
   const maxCommandLength = getMaxCommandLength();
   const effectiveLength = getEffectiveCommandLineLength(command);
-  if (effectiveLength > maxCommandLength) {
-    return Promise.reject(
+  return effectiveLength > maxCommandLength
+    ? Promise.reject(
       new Error(
         `Command line is too long (${String(effectiveLength)} chars once wrapped for the shell, max ${String(maxCommandLength)} on ${process.platform}). Consider splitting into smaller batches or use ExecArg.`
       )
-    );
-  }
-
-  return execString({
-    command,
-    options
-  });
+    )
+    : execString({
+      command,
+      options
+    });
 }
 
 /**
@@ -546,16 +536,14 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
     failure ??= result.exitCode === 0 ? null : result;
   }
 
-  if (options.shouldIncludeDetails) {
-    return {
+  return options.shouldIncludeDetails
+    ? {
       exitCode: failure?.exitCode ?? 0,
       exitSignal: failure?.exitSignal ?? null,
       stderr: stderrParts.join('\n'),
       stdout: stdoutParts.join('\n')
-    };
-  }
-
-  return stdoutParts.join('\n');
+    }
+    : stdoutParts.join('\n');
 }
 
 /**

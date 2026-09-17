@@ -89,6 +89,7 @@ describe('listNotesWithButtons', () => {
     writeNote('01 One.md', `# One\n\n${button('Alpha')}\n`);
     writeNote('Materials/01 One/Fixture.md', `# Fixture\n\n${button('Bravo')}\n`);
     writeNote('_assets/Snippet.md', `# Snippet\n\n${button('Charlie')}\n`);
+    // eslint-disable-next-line obsidianmd/hardcoded-config-path -- Testing that a note under the default config folder is skipped.
     writeNote('.obsidian/Notes.md', `# Config\n\n${button('Delta')}\n`);
 
     expect(listNotesWithButtons(demoVaultPath, new Set()).map((note) => note.name)).toEqual(['01 One.md']);

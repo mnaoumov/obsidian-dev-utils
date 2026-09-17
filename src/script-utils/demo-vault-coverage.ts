@@ -1071,10 +1071,7 @@ function readWikilinkAllowanceReason(content: string): null | string {
     return null;
   }
   const reason = WIKILINK_ALLOWANCE_REG_EXP.exec(frontmatter)?.groups?.['reason'];
-  if (reason === undefined) {
-    return null;
-  }
-  return reason.trim().replace(/^(?<quote>["'])(?<value>[\s\S]*)\k<quote>$/, '$<value>');
+  return reason === undefined ? null : reason.trim().replace(/^(?<quote>["'])(?<value>[\s\S]*)\k<quote>$/, '$<value>');
 }
 
 // Reads the note's inline `obsidian-dev-utils-disable…` directives, returning which lines they allow a

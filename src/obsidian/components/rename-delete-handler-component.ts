@@ -325,11 +325,7 @@ class DeleteHandler {
 
         for (const link of links) {
           const attachmentFile = extractLinkFile({ app: this.app, link, sourcePathOrFile: this.file.path });
-          if (!attachmentFile) {
-            continue;
-          }
-
-          if (this.settingsManager.isNoteEx(attachmentFile.path)) {
+          if (!attachmentFile || this.settingsManager.isNoteEx(attachmentFile.path)) {
             continue;
           }
 
@@ -365,12 +361,8 @@ class DeleteHandler {
     });
     const attachmentFolder = getFolderOrNull({ app: this.app, pathOrFolder: attachmentFolderPath });
 
-    if (!attachmentFolder) {
-      return;
-    }
-
     if (
-      !await hasOwnAttachmentFolder({
+      !attachmentFolder || !await hasOwnAttachmentFolder({
         app: this.app,
         context: AttachmentPathContext.DeleteNote,
         path: this.file.path
@@ -535,11 +527,7 @@ class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
     fallback: () => Promise<void>,
     deleteAbstractFile: (abstractFile: TAbstractFile) => Promise<void>
   ): Promise<void> {
-    if (!this.shouldConsiderFolder(file)) {
-      return fallback();
-    }
-
-    return this.replayFolderDeletion(file, fallback, deleteAbstractFile);
+    return this.shouldConsiderFolder(file) ? this.replayFolderDeletion(file, fallback, deleteAbstractFile) : fallback();
   }
 
   /**
@@ -619,11 +607,7 @@ class DeleteProtectionPatchComponent extends MonkeyAroundComponent {
     }
 
     const settings = this.settingsManager.getSettings();
-    if (!settings.shouldHandleDeletions) {
-      return false;
-    }
-
-    if (settings.isPathIgnored?.(file.path) ?? false) {
+    if (!settings.shouldHandleDeletions || (settings.isPathIgnored?.(file.path) ?? false)) {
       return false;
     }
 
@@ -734,23 +718,7 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
           return true;
         }
 
-        if (!this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas)) {
-          return false;
-        }
-
-        if (this.app.plugins.getPlugin('backlink-cache')) {
-          return false;
-        }
-
-        if (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) {
-          return true;
-        }
-
-        if (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION) {
-          return true;
-        }
-
-        return false;
+        return !this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas) || this.app.plugins.getPlugin('backlink-cache') ? false : (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) || (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION);
       }
     );
   }
@@ -1064,25 +1032,27 @@ class RenameHandler {
 
   private async continueInterruptedRenames(): Promise<void> {
     const interruptedRenames = this.interruptedRenamesMap.get(this.oldPath);
-    if (interruptedRenames) {
-      this.interruptedRenamesMap.delete(this.oldPath);
-      for (const interruptedRename of interruptedRenames) {
-        await new RenameHandler({
-          abortSignal: this.abortSignal,
-          app: this.app,
-          handledRenames: this.handledRenames,
-          interruptedCombinedBacklinksMap: interruptedRename.combinedBacklinksMap,
-          interruptedRenamesMap: this.interruptedRenamesMap,
-          linkUpdateProgressReporter: this.linkUpdateProgressReporter,
-          newPath: this.newPath,
-          oldCache: this.oldCache,
-          oldPath: interruptedRename.oldPath,
-          oldPathBacklinksMap: this.oldPathBacklinksMap,
-          pluginNoticeComponent: this.pluginNoticeComponent,
-          resourceLockComponent: this.resourceLockComponent,
-          settingsManager: this.settingsManager
-        }).handle();
-      }
+    if (!interruptedRenames) {
+      return;
+    }
+
+    this.interruptedRenamesMap.delete(this.oldPath);
+    for (const interruptedRename of interruptedRenames) {
+      await new RenameHandler({
+        abortSignal: this.abortSignal,
+        app: this.app,
+        handledRenames: this.handledRenames,
+        interruptedCombinedBacklinksMap: interruptedRename.combinedBacklinksMap,
+        interruptedRenamesMap: this.interruptedRenamesMap,
+        linkUpdateProgressReporter: this.linkUpdateProgressReporter,
+        newPath: this.newPath,
+        oldCache: this.oldCache,
+        oldPath: interruptedRename.oldPath,
+        oldPathBacklinksMap: this.oldPathBacklinksMap,
+        pluginNoticeComponent: this.pluginNoticeComponent,
+        resourceLockComponent: this.resourceLockComponent,
+        settingsManager: this.settingsManager
+      }).handle();
     }
   }
 
@@ -1207,11 +1177,7 @@ class RenameMap {
 
     const oldAttachmentFolder = getFolderOrNull({ app: this.app, pathOrFolder: oldAttachmentFolderPath });
 
-    if (!oldAttachmentFolder) {
-      return;
-    }
-
-    if (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles) {
+    if (!oldAttachmentFolder || (oldAttachmentFolderPath === newAttachmentFolderPath && !settings.shouldRenameAttachmentFiles)) {
       return;
     }
 
@@ -1234,19 +1200,17 @@ class RenameMap {
       for (const oldPathLink of this.oldPathLinks) {
         this.abortSignal.throwIfAborted();
         const oldAttachmentFile = extractLinkFile({ app: this.app, link: oldPathLink, sourcePathOrFile: this.oldPath });
-        if (!oldAttachmentFile) {
+        if (!oldAttachmentFile || (!isOldAttachmentFolderAtRoot && !oldAttachmentFile.path.startsWith(oldAttachmentFolderPath))) {
           continue;
         }
 
-        if (isOldAttachmentFolderAtRoot || oldAttachmentFile.path.startsWith(oldAttachmentFolderPath)) {
-          const oldAttachmentBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: oldAttachmentFile });
-          this.abortSignal.throwIfAborted();
-          const keys = new Set<string>(oldAttachmentBacklinks.keys());
-          keys.delete(this.oldPath);
-          keys.delete(this.newPath);
-          if (keys.size === 0) {
-            oldAttachmentFiles.push(oldAttachmentFile);
-          }
+        const oldAttachmentBacklinks = await getBacklinksForFileSafe({ app: this.app, pathOrFile: oldAttachmentFile });
+        this.abortSignal.throwIfAborted();
+        const keys = new Set<string>(oldAttachmentBacklinks.keys());
+        keys.delete(this.oldPath);
+        keys.delete(this.newPath);
+        if (keys.size === 0) {
+          oldAttachmentFiles.push(oldAttachmentFile);
         }
       }
     }

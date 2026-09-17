@@ -63,11 +63,7 @@ export function getTextBasedComponentValue<T>($unknown: unknown): null | TextBas
     return $unknown;
   }
 
-  if ($unknown instanceof AbstractTextComponent) {
-    return new AbstractTextComponentWrapper<T>($unknown);
-  }
-
-  return null;
+  return $unknown instanceof AbstractTextComponent ? new AbstractTextComponentWrapper<T>($unknown) : null;
 }
 
 function isTextBasedComponent<T>(component: unknown): component is TextBasedComponent<T> {

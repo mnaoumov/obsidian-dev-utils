@@ -461,11 +461,7 @@ export abstract class PluginBase extends mixinAsyncEvents<PluginEventMap>()(Plug
     // Routed by ownership rather than by which tier `addChild` would have chosen, because the two do not
     // always agree: a universal component is parented directly on the universal wrapper, yet a subclass
     // replacing one goes through the same public `removeChild` as it would for its own children.
-    if (this.gatedWrapperComponent.hasChild(component)) {
-      return this.gatedWrapperComponent.removeChild(component);
-    }
-
-    return this.universalWrapperComponent.removeChild(component);
+    return this.gatedWrapperComponent.hasChild(component) ? this.gatedWrapperComponent.removeChild(component) : this.universalWrapperComponent.removeChild(component);
   }
 
   /**

@@ -484,39 +484,37 @@ export function replaceAll<CapturedGroupArguments extends string[]>(params: Repl
     searchValue = new RegExp(searchValue.source, `${searchValue.flags}g`);
   }
 
-  if (typeof replacer === 'string') {
+  return typeof replacer === 'string'
     // eslint-disable-next-line unicorn/no-unsafe-string-replacement -- The pass-through is load-bearing: callers rely on `$&` and friends being expanded. `escapeAlias` passes `\$&` to prefix each matched character with a backslash, and `cli-utils` passes `^$&`. Inserting the string literally would break both.
-    return $string.replaceAll(searchValue, replacer);
-  }
+    ? $string.replaceAll(searchValue, replacer)
+    : $string.replaceAll(searchValue, (substring: string, ...$arguments: unknown[]) => {
+      const SOURCE_INDEX_OFFSET_FOR_GROUP_ARG = 2;
+      const hasGroupsArgument = typeof $arguments.at(-1) === 'object';
+      const sourceIndex = hasGroupsArgument ? $arguments.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : $arguments.length - 1;
 
-  return $string.replaceAll(searchValue, (substring: string, ...$arguments: unknown[]) => {
-    const SOURCE_INDEX_OFFSET_FOR_GROUP_ARG = 2;
-    const hasGroupsArgument = typeof $arguments.at(-1) === 'object';
-    const sourceIndex = hasGroupsArgument ? $arguments.length - SOURCE_INDEX_OFFSET_FOR_GROUP_ARG : $arguments.length - 1;
+      const replaceArguments: ReplaceArguments<CapturedGroupArguments> = {
+        // eslint-disable-next-line no-restricted-syntax -- Can't avoid.
+        capturedGroupArguments: [] as unknown[] as CapturedGroupArguments,
+        groups: hasGroupsArgument ? $arguments.at(-1) as Record<string, string | undefined> : undefined,
+        missingGroupIndices: [],
+        offset: $arguments.at(sourceIndex - 1) as number,
+        source: $arguments.at(sourceIndex) as string,
+        substring
+      };
 
-    const replaceArguments: ReplaceArguments<CapturedGroupArguments> = {
-      // eslint-disable-next-line no-restricted-syntax -- Can't avoid.
-      capturedGroupArguments: [] as unknown[] as CapturedGroupArguments,
-      groups: hasGroupsArgument ? $arguments.at(-1) as Record<string, string | undefined> : undefined,
-      missingGroupIndices: [],
-      offset: $arguments.at(sourceIndex - 1) as number,
-      source: $arguments.at(sourceIndex) as string,
-      substring
-    };
-
-    for (let index = 0; index < sourceIndex - 1; index++) {
-      const item = $arguments[index];
-      if (typeof item === 'string') {
-        replaceArguments.capturedGroupArguments.push(item);
-        /* v8 ignore start -- v8 tracks the implicit else branch that never happens. */
-      } else if (item === undefined) {
-        /* v8 ignore stop */
-        replaceArguments.missingGroupIndices.push(index);
+      for (let index = 0; index < sourceIndex - 1; index++) {
+        const item = $arguments[index];
+        if (typeof item === 'string') {
+          replaceArguments.capturedGroupArguments.push(item);
+          /* v8 ignore start -- v8 tracks the implicit else branch that never happens. */
+        } else if (item === undefined) {
+          /* v8 ignore stop */
+          replaceArguments.missingGroupIndices.push(index);
+        }
       }
-    }
 
-    return (replacer(replaceArguments) as string | undefined) ?? replaceArguments.substring;
-  });
+      return (replacer(replaceArguments) as string | undefined) ?? replaceArguments.substring;
+    });
 }
 
 /**

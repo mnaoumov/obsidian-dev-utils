@@ -229,13 +229,11 @@ export class SyntaxHighlightingComponent extends ComponentEx {
       return this.requirePrismLanguage(prism, grammarSource);
     }
 
-    if (typeof grammarSource === 'function') {
-      return grammarSource({
+    return typeof grammarSource === 'function'
+      ? grammarSource({
         prism,
         requirePrismLanguage: (language) => this.requirePrismLanguage(prism, language)
-      });
-    }
-
-    return grammarSource;
+      })
+      : grammarSource;
   }
 }

@@ -694,11 +694,7 @@ describe('replaceAllAsync', () => {
     const result = await replaceAllAsync({
       $string: 'foobar',
       replacer: ({ substring }) => {
-        if (substring === 'foo') {
-          return;
-        }
-
-        return 'baz';
+        return substring === 'foo' ? undefined : 'baz';
       },
       searchValue: /foo|bar/g
     });

@@ -415,26 +415,10 @@ const renderTargetFiles: TFile[] = [];
  * @returns Whether it carries every member this library calls.
  */
 function isTemplaterApi(value: unknown): value is TemplaterApi {
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-
-  if (!('create_running_config' in value) || typeof value.create_running_config !== 'function') {
-    return false;
-  }
-
-  if (!('read_and_parse_template' in value) || typeof value.read_and_parse_template !== 'function') {
-    return false;
-  }
-
-  if (!('functions_generator' in value)) {
+  if (typeof value !== 'object' || value === null || !('create_running_config' in value) || typeof value.create_running_config !== 'function' || !('read_and_parse_template' in value) || typeof value.read_and_parse_template !== 'function' || !('functions_generator' in value)) {
     return false;
   }
 
   const functionsGenerator: unknown = value.functions_generator;
-  if (typeof functionsGenerator !== 'object' || functionsGenerator === null) {
-    return false;
-  }
-
-  return 'generate_object' in functionsGenerator && typeof functionsGenerator.generate_object === 'function';
+  return typeof functionsGenerator !== 'object' || functionsGenerator === null ? false : 'generate_object' in functionsGenerator && typeof functionsGenerator.generate_object === 'function';
 }

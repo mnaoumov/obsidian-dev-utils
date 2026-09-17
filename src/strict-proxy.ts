@@ -85,10 +85,7 @@ export function bypassStrictProxy<T>($object: T): T {
     return $object;
   }
   // eslint-disable-next-line unicorn/no-computed-property-existence-check -- On a proxy, `Object.hasOwn` triggers the `getOwnPropertyDescriptor` trap rather than `has`.
-  if (!(STRICT_PROXY_TARGET_SYMBOL in $object)) {
-    return $object;
-  }
-  return $object[STRICT_PROXY_TARGET_SYMBOL] as T;
+  return (STRICT_PROXY_TARGET_SYMBOL in $object) ? ($object[STRICT_PROXY_TARGET_SYMBOL] as T) : $object;
 }
 
 /**

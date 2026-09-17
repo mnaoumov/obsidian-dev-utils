@@ -425,12 +425,8 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
         abstractFile,
         leaf,
         source
-      })
+      }) || !this.canExecuteAbstractFile(abstractFile)
     ) {
-      return;
-    }
-
-    if (!this.canExecuteAbstractFile(abstractFile)) {
       return;
     }
 
@@ -463,12 +459,8 @@ export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
         abstractFiles,
         leaf,
         source
-      })
+      }) || !this.canExecuteAbstractFiles(abstractFiles)
     ) {
-      return;
-    }
-
-    if (!this.canExecuteAbstractFiles(abstractFiles)) {
       return;
     }
 

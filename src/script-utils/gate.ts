@@ -104,17 +104,19 @@ export async function gate(options: GateOptions = {}): Promise<void> {
     await npmRun('build');
   }
 
-  if (shouldRunChecks) {
-    await npmRun('lint');
-    await npmRunOptional('find-overexposed');
+  if (!shouldRunChecks) {
+    return;
+  }
 
-    if (await npmRunOptional('test:coverage') === NpmRunOptionalResult.Skipped) {
-      await npmRunOptional('test');
-    }
+  await npmRun('lint');
+  await npmRunOptional('find-overexposed');
 
-    if (shouldRunIntegrationTests) {
-      await npmRunOptional('test:integration');
-    }
+  if (await npmRunOptional('test:coverage') === NpmRunOptionalResult.Skipped) {
+    await npmRunOptional('test');
+  }
+
+  if (shouldRunIntegrationTests) {
+    await npmRunOptional('test:integration');
   }
 }
 

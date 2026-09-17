@@ -517,19 +517,11 @@ export function getLinks(params: GetLinksParams): Reference[] {
     shouldIncludeReferences = true
   } = params;
 
-  let links: Reference[] = [];
-
-  if (shouldIncludeReferences && cache.links) {
-    links.push(...cache.links);
-  }
-
-  if (shouldIncludeEmbeds && cache.embeds) {
-    links.push(...cache.embeds);
-  }
-
-  if (shouldIncludeFrontmatterLinks && cache.frontmatterLinks) {
-    links.push(...cache.frontmatterLinks);
-  }
+  let links: Reference[] = [
+    ...(shouldIncludeReferences ? cache.links ?? [] : []),
+    ...(shouldIncludeEmbeds ? cache.embeds ?? [] : []),
+    ...(shouldIncludeFrontmatterLinks ? cache.frontmatterLinks ?? [] : [])
+  ];
 
   const featureLinkSelectors: FeatureLinkSelector[] = [
     {

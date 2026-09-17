@@ -153,11 +153,7 @@ function checkIsExplicitBreak(previousToken: MicromarkToken | undefined): boolea
     return false;
   }
 
-  if (EXPLICIT_BREAK_TOKEN_TYPES.has(previousToken.type)) {
-    return true;
-  }
-
-  return previousToken.type === HTML_TEXT_TOKEN_TYPE && BR_HTML_TEXT_REG_EXP.test(previousToken.text);
+  return EXPLICIT_BREAK_TOKEN_TYPES.has(previousToken.type) ? true : previousToken.type === HTML_TEXT_TOKEN_TYPE && BR_HTML_TEXT_REG_EXP.test(previousToken.text);
 }
 
 /**

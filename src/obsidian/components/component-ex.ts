@@ -126,10 +126,7 @@ export class ComponentEx extends Component implements Disposable {
 
     const loadPromise = this.loadPromise;
     if (!loadPromise) {
-      if (this.loadErrors.length > 0) {
-        return Promise.reject(createAggregateError(this.loadErrors));
-      }
-      return null;
+      return this.loadErrors.length > 0 ? Promise.reject(createAggregateError(this.loadErrors)) : null;
     }
 
     return loadPromise.then(() => {
@@ -317,13 +314,11 @@ export class ComponentEx extends Component implements Disposable {
    * @returns A never-rejecting {@link Promise}, or `null` if the result is fully synchronous.
    */
   private captureSettled(loadPromisable: null | Promisable<void>): null | Promise<void> {
-    if (loadPromisable === null || loadPromisable === undefined) {
-      return null;
-    }
-
-    return Promise.resolve(loadPromisable).then(noop).catch((error: unknown) => {
-      this.captureError(error);
-    });
+    return loadPromisable === null || loadPromisable === undefined
+      ? null
+      : Promise.resolve(loadPromisable).then(noop).catch((error: unknown) => {
+        this.captureError(error);
+      });
   }
 
   /**
@@ -348,11 +343,8 @@ export class ComponentEx extends Component implements Disposable {
     if (!this.childrenSet.has(component)) {
       return null;
     }
-    if (component instanceof ComponentEx) {
-      return component.loadWithPromises();
-    }
     // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression, @typescript-eslint/no-unnecessary-type-assertion -- It can be `Promise<void>` in runtime. Want explicitly cast to show we know it may be promise, despite the declared type `void`.
-    return component.load() as Promisable<void>;
+    return component instanceof ComponentEx ? component.loadWithPromises() : component.load() as Promisable<void>;
   }
 
   private resetLoadState(): void {

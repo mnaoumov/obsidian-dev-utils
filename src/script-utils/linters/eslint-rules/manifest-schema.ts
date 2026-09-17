@@ -279,11 +279,7 @@ function reportKeyValues(params: ReportParams): void {
  */
 function reportMissingKeys(params: ReportParams): void {
   const { context, manifestObject } = params;
-  const requiredKeys = [...ALWAYS_REQUIRED_KEYS];
-
-  if (getManifestStringValue(manifestObject, 'version') !== UNRELEASED_VERSION) {
-    requiredKeys.push('minAppVersion');
-  }
+  const requiredKeys = [...ALWAYS_REQUIRED_KEYS, ...(getManifestStringValue(manifestObject, 'version') === UNRELEASED_VERSION ? [] : ['minAppVersion'])];
 
   for (const key of requiredKeys) {
     if (!findManifestMember(manifestObject, key)) {

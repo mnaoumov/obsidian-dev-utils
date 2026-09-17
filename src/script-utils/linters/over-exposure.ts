@@ -831,11 +831,7 @@ function analyzeExport(node: Node, context: AnalysisContext): void {
   }
 
   const declaration = asExportableDeclaration(node);
-  if (!declaration) {
-    return;
-  }
-
-  if (hasTsDocComment(declaration)) {
+  if (!declaration || hasTsDocComment(declaration)) {
     return;
   }
 
@@ -904,11 +900,7 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
   }
 
   const modifierKinds = getModifierKinds(member);
-  if (modifierKinds.has(SyntaxKind.StaticKeyword) || modifierKinds.has(SyntaxKind.OverrideKeyword) || LIFECYCLE_ALLOWLIST.has(nameNode.getText())) {
-    return;
-  }
-
-  if (hasTsDocComment(member)) {
+  if (modifierKinds.has(SyntaxKind.StaticKeyword) || modifierKinds.has(SyntaxKind.OverrideKeyword) || LIFECYCLE_ALLOWLIST.has(nameNode.getText()) || hasTsDocComment(member)) {
     return;
   }
 
@@ -926,11 +918,7 @@ function analyzeMember(node: Node, context: AnalysisContext): void {
 
   const neededForSrc = computeNeededExposure({ context, declaringClass, references: nonTestReferences });
 
-  if (neededForSrc === 'public') {
-    return;
-  }
-
-  if (rankExposure(neededForSrc) >= rankExposure(currentExposure)) {
+  if ((neededForSrc === 'public') || (rankExposure(neededForSrc) >= rankExposure(currentExposure))) {
     return;
   }
 
@@ -1005,24 +993,18 @@ function applyOverExposureFixes(params: ApplyOverExposureFixesParams): OverExpos
 }
 
 function asClassMember(node: Node): ClassMemberDeclaration | undefined {
-  if (isMethodDeclaration(node) || isPropertyDeclaration(node) || isGetAccessorDeclaration(node) || isSetAccessorDeclaration(node)) {
-    return node;
-  }
-  return undefined;
+  return isMethodDeclaration(node) || isPropertyDeclaration(node) || isGetAccessorDeclaration(node) || isSetAccessorDeclaration(node) ? node : undefined;
 }
 
 function asExportableDeclaration(node: Node): ExportableDeclaration | undefined {
-  if (
-    isFunctionDeclaration(node)
-    || isClassDeclaration(node)
-    || isInterfaceDeclaration(node)
-    || isTypeAliasDeclaration(node)
-    || isEnumDeclaration(node)
-    || isVariableStatement(node)
-  ) {
-    return node;
-  }
-  return undefined;
+  return isFunctionDeclaration(node)
+      || isClassDeclaration(node)
+      || isInterfaceDeclaration(node)
+      || isTypeAliasDeclaration(node)
+      || isEnumDeclaration(node)
+      || isVariableStatement(node)
+    ? node
+    : undefined;
 }
 
 function buildFinding(params: BuildFindingParams): OverExposureFinding {
@@ -1163,10 +1145,7 @@ function describeFixStatus(finding: OverExposureFinding): string {
   if (finding.wasFixed) {
     return ' [fixed]';
   }
-  if (finding.skipReason !== null) {
-    return ` [skipped: ${SKIP_REASON_DESCRIPTION[finding.skipReason]}]`;
-  }
-  return '';
+  return finding.skipReason === null ? '' : ` [skipped: ${SKIP_REASON_DESCRIPTION[finding.skipReason]}]`;
 }
 
 function describeReason(finding: OverExposureFinding): string {
@@ -1174,10 +1153,7 @@ function describeReason(finding: OverExposureFinding): string {
   if (finding.isForcedByTestOnly) {
     return `${base} (exposed only for tests)`;
   }
-  if (finding.hasNoReferences) {
-    return `${base} (no references at all)`;
-  }
-  return base;
+  return finding.hasNoReferences ? `${base} (no references at all)` : base;
 }
 
 function determineSkipReason(params: DetermineSkipReasonParams): null | OverExposureSkipReason {
@@ -1207,6 +1183,7 @@ function findNodeAtPosition(node: Node, position: number): Node | undefined {
 
 function formatFindingBlocks(findings: readonly OverExposureFinding[], baseFolder: string | undefined): string[] {
   const byFile = new Map<string, OverExposureFinding[]>();
+  // eslint-disable-next-line unicorn/prefer-group-by -- `Map.groupBy` is ES2024, and the shared `tsconfig.json` types only ES2022.
   for (const finding of findings) {
     const list = byFile.get(finding.filePath) ?? [];
     list.push(finding);
@@ -1232,10 +1209,7 @@ function formatSummary(findings: readonly OverExposureFinding[]): string {
   const summary = `${String(findings.length)} finding(s).`;
   const fixedCount = findings.filter((finding) => finding.wasFixed).length;
   const skippedCount = findings.filter((finding) => finding.skipReason !== null).length;
-  if (fixedCount === 0 && skippedCount === 0) {
-    return summary;
-  }
-  return `${summary} ${String(fixedCount)} fixed, ${String(skippedCount)} skipped.`;
+  return fixedCount === 0 && skippedCount === 0 ? summary : `${summary} ${String(fixedCount)} fixed, ${String(skippedCount)} skipped.`;
 }
 
 function getClassAtPosition(params: GetClassAtPositionParams): ClassLikeDeclaration | undefined {
@@ -1257,10 +1231,7 @@ function getCurrentMemberExposure(modifierKinds: ReadonlySet<SyntaxKind>): Membe
   if (modifierKinds.has(SyntaxKind.PrivateKeyword)) {
     return 'private';
   }
-  if (modifierKinds.has(SyntaxKind.ProtectedKeyword)) {
-    return 'protected';
-  }
-  return 'public';
+  return modifierKinds.has(SyntaxKind.ProtectedKeyword) ? 'protected' : 'public';
 }
 
 function getEnclosingClass(node: Node): ClassLikeDeclaration | undefined {
@@ -1376,10 +1347,7 @@ function isKeyReferenceToClass(params: IsKeyReferenceToClassParams): boolean {
     return false;
   }
   const literals = getStringLiteralConstituents(contextualType);
-  if (!literals) {
-    return false;
-  }
-  return literals.every((literal) => keySet.has(literal));
+  return literals ? literals.every((literal) => keySet.has(literal)) : false;
 }
 
 function isOwnSourceFile(params: IsOwnSourceFileParams): boolean {
@@ -1442,8 +1410,5 @@ function runOverExposureAnalysis(params: AnalyzeOverExposureParams): AnalysisRes
 
 function toDisplayPath(params: ToDisplayPathParams): string {
   const { baseFolder, filePath } = params;
-  if (baseFolder !== undefined && filePath.startsWith(`${baseFolder}/`)) {
-    return filePath.slice(baseFolder.length + 1);
-  }
-  return filePath;
+  return baseFolder !== undefined && filePath.startsWith(`${baseFolder}/`) ? filePath.slice(baseFolder.length + 1) : filePath;
 }

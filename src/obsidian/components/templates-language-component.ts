@@ -239,31 +239,19 @@ export class TemplatesLanguageComponent extends SyntaxHighlightingComponent {
       pattern: SUFFIX_PATTERN
     };
 
-    if (params.formatToken === null) {
-      return {
-        greedy: true,
-        inside: {
-          /* eslint-disable perfectionist/sort-objects -- Prism matches the entries in order, so the order is behavior. */
-          prefix: prefixToken,
-          token: tokenToken,
-          suffix: suffixToken
-          /* eslint-enable perfectionist/sort-objects -- Prism matches the entries in order, so the order is behavior. */
-        },
-        pattern: params.pattern
-      };
-    }
-
     return {
       greedy: true,
       inside: {
         /* eslint-disable perfectionist/sort-objects -- Prism matches the entries in order, so the order is behavior. */
         prefix: prefixToken,
         token: tokenToken,
-        formatDelimiter: {
-          alias: 'regex',
-          pattern: FORMAT_DELIMITER_PATTERN
-        },
-        format: params.formatToken,
+        ...(params.formatToken !== null && {
+          formatDelimiter: {
+            alias: 'regex',
+            pattern: FORMAT_DELIMITER_PATTERN
+          },
+          format: params.formatToken
+        }),
         suffix: suffixToken
         /* eslint-enable perfectionist/sort-objects -- Prism matches the entries in order, so the order is behavior. */
       },
@@ -286,11 +274,7 @@ export class TemplatesLanguageComponent extends SyntaxHighlightingComponent {
       };
     }
 
-    if (typeof this.formatSource === 'function') {
-      return this.formatSource(factoryParams);
-    }
-
-    return this.formatSource;
+    return typeof this.formatSource === 'function' ? this.formatSource(factoryParams) : this.formatSource;
   }
 }
 

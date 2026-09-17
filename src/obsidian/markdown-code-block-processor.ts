@@ -286,11 +286,7 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
         });
       }
 
-      if (!markdownInfo) {
-        return;
-      }
-
-      if (noteContentLf === noteContent) {
+      if (!markdownInfo || (noteContentLf === noteContent)) {
         return;
       }
 
@@ -437,11 +433,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
         return '';
       }
 
-      if (textBeforeCodeBlock) {
-        return `${textBeforeCodeBlock.slice(0, -1)}${textAfterCodeBlock}`;
-      }
-
-      return `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
+      return textBeforeCodeBlock ? `${textBeforeCodeBlock.slice(0, -1)}${textAfterCodeBlock}` : `${textBeforeCodeBlock}${textAfterCodeBlock.slice(1)}`;
     },
     pathOrFile: context.sourcePath,
     pluginNoticeComponent: null,

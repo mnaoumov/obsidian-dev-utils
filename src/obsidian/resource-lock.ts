@@ -594,10 +594,7 @@ class ResourceLockManager {
    * @param path - The path the event fired on.
    */
   private handleExternalMutation(app: App, path: string): void {
-    if (!this.isMutationBlockedByAncestor(app, path)) {
-      return;
-    }
-    if (this.isBypassed(app, path)) {
+    if (!this.isMutationBlockedByAncestor(app, path) || this.isBypassed(app, path)) {
       return;
     }
     for (const [lockedPath, entries] of this.lockEntriesByPath) {
@@ -769,20 +766,22 @@ class ResourceLockManager {
 
       // Resolve the lock covering this view: the exact path when directly locked, otherwise the enclosing `subtree`-locked folder. Indicators/tooltip/unlock menu key off that owner path.
       const ownerPath = this.resolveLockOwnerPath(app, path);
-      if (ownerPath !== null) {
-        viewsToLock.add(view);
-        const tooltip = this.lockTooltip(app, ownerPath);
-        // Re-apply the read-only toggle on every reconcile, not only the first time a view is tracked.
-        // The toggle is idempotent, so re-applying to an already-locked view is cheap.
-        // A view opened after the lock is reconciled synchronously, before its CodeMirror is ready.
-        // Its first toggle is therefore a no-op; re-applying makes the lock take hold once it settles.
-        toggleEditorReadOnly(view.editor, true);
-        const indicators = this.indicatorsByView.get(view);
-        if (indicators) {
-          this.updateIndicatorTooltips(indicators, tooltip);
-        } else {
-          this.indicatorsByView.set(view, this.createIndicators(app, view, tooltip));
-        }
+      if (ownerPath === null) {
+        continue;
+      }
+
+      viewsToLock.add(view);
+      const tooltip = this.lockTooltip(app, ownerPath);
+      // Re-apply the read-only toggle on every reconcile, not only the first time a view is tracked.
+      // The toggle is idempotent, so re-applying to an already-locked view is cheap.
+      // A view opened after the lock is reconciled synchronously, before its CodeMirror is ready.
+      // Its first toggle is therefore a no-op; re-applying makes the lock take hold once it settles.
+      toggleEditorReadOnly(view.editor, true);
+      const indicators = this.indicatorsByView.get(view);
+      if (indicators) {
+        this.updateIndicatorTooltips(indicators, tooltip);
+      } else {
+        this.indicatorsByView.set(view, this.createIndicators(app, view, tooltip));
       }
     }
 
@@ -807,10 +806,12 @@ class ResourceLockManager {
       this.eventsComponent?.unload();
       this.eventsComponent = null;
     }
-    if (!this.hasBlockingLock()) {
-      this.mutationBlockerComponent?.unload();
-      this.mutationBlockerComponent = null;
+    if (this.hasBlockingLock()) {
+      return;
     }
+
+    this.mutationBlockerComponent?.unload();
+    this.mutationBlockerComponent = null;
   }
 
   private registerUnlockMenu(app: App, element: HTMLElement, getContextPath: () => string | undefined): void {
@@ -902,10 +903,7 @@ class ResourceLockManager {
    * @returns `true` to reject the mutation, `false` to allow it.
    */
   private shouldBlockMutation(app: App, path: string): boolean {
-    if (!this.isMutationBlockedByAncestor(app, path)) {
-      return false;
-    }
-    return !this.isBypassed(app, path);
+    return this.isMutationBlockedByAncestor(app, path) ? !this.isBypassed(app, path) : false;
   }
 
   private unlockConfirmMessage(app: App, path: string): DocumentFragment {
@@ -1384,8 +1382,5 @@ function rebasePath(path: string, oldPath: string, newPath: string): null | stri
   if (path === oldPath) {
     return newPath;
   }
-  if (path.startsWith(`${oldPath}/`)) {
-    return newPath + path.slice(oldPath.length);
-  }
-  return null;
+  return path.startsWith(`${oldPath}/`) ? newPath + path.slice(oldPath.length) : null;
 }

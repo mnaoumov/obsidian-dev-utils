@@ -162,17 +162,8 @@ function isBufferResultOptions(options: BufferResultOptions | DirentResultOption
 
   const commonOptions = options as CommonOptions;
 
-  if (commonOptions.withFileTypes === true) {
-    return false;
-  }
-
-  /* v8 ignore start -- Dead code: isStringResultOptions already handles non-buffer encoding before this is called. */
-  if (commonOptions.encoding !== 'buffer') {
-    return false;
-  }
-  /* v8 ignore stop */
-
-  return true;
+  // The encoding check never fails in practice: isStringResultOptions already handles non-buffer encoding before this is called.
+  return commonOptions.withFileTypes !== true && commonOptions.encoding === 'buffer';
 }
 
 /**
@@ -190,13 +181,5 @@ function isStringResultOptions(options: BufferResultOptions | DirentResultOption
 
   const commonOptions = options as CommonOptions;
 
-  if (commonOptions.encoding === 'buffer') {
-    return false;
-  }
-
-  if (commonOptions.withFileTypes === true) {
-    return false;
-  }
-
-  return true;
+  return !((commonOptions.encoding === 'buffer') || (commonOptions.withFileTypes === true));
 }

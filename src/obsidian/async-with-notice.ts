@@ -231,13 +231,11 @@ function resolveOnTimeout(
   pluginNoticeComponent: null | PluginNoticeComponent,
   content?: ValueProvider<DocumentFragment | string>
 ): (context: TimeoutContext) => void {
-  if (!(shouldShowTimeoutNotice ?? true) || pluginNoticeComponent === null) {
-    return onTimeoutWithoutNotice;
-  }
-
-  return (context): void => {
-    onTimeoutNotice(context, pluginNoticeComponent, content);
-  };
+  return !(shouldShowTimeoutNotice ?? true) || pluginNoticeComponent === null
+    ? onTimeoutWithoutNotice
+    : (context): void => {
+      onTimeoutNotice(context, pluginNoticeComponent, content);
+    };
 }
 
 function showCustomContentNotice(context: TimeoutContext, pluginNoticeComponent: PluginNoticeComponent, content: ValueProvider<DocumentFragment | string>): void {

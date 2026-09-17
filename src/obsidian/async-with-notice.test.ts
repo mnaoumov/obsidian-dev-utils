@@ -61,11 +61,7 @@ vi.mock('../async.ts', () => ({
     if (typeof options['_captureOnTimeout'] === 'function') {
       (options['_captureOnTimeout'] as ($unknown: unknown) => void)(options['onTimeout']);
     }
-    if (typeof options['operationFunction'] === 'function') {
-      return (options['operationFunction'] as (signal: AbortSignal) => unknown)(new AbortController().signal);
-    }
-    // eslint-disable-next-line unicorn/no-useless-undefined -- The explicit `return undefined` is required: `noImplicitReturns` rejects a function where only some paths return a value.
-    return undefined;
+    return typeof options['operationFunction'] === 'function' ? (options['operationFunction'] as (signal: AbortSignal) => unknown)(new AbortController().signal) : undefined;
   })
 }));
 

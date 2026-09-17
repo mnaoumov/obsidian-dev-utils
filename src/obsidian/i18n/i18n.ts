@@ -84,11 +84,7 @@ function tImpl(
     invokeAsyncSafely(() => initI18N(defaultTranslationsMap, false));
   }
 
-  if (!options) {
-    return tLib(selector);
-  }
-
-  return tLib(selector, options);
+  return options ? tLib(selector, options) : tLib(selector);
 }
 
 /**

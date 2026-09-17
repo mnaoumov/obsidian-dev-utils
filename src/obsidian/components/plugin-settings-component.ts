@@ -480,11 +480,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
       const legacySettings = record as Partial<LegacySettings> & Partial<PluginSettings>;
       converter(legacySettings);
       for (const key of Object.keys(legacySettings)) {
-        if (pluginSettingKeys.has(key)) {
-          continue;
-        }
-
-        if (!legacySettingsKeys.has(key)) {
+        if (pluginSettingKeys.has(key) || !legacySettingsKeys.has(key)) {
           continue;
         }
 
@@ -596,13 +592,11 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
    * @returns A {@link Promise} that resolves once the settings have been loaded from the file.
    */
   public whenLoadedFromFile(): Promise<void> {
-    if (this.isLoadedFromFile) {
-      return noopAsync();
-    }
-
-    return new Promise<void>((resolve) => {
-      this.loadedFromFileResolvers.push(resolve);
-    });
+    return this.isLoadedFromFile
+      ? noopAsync()
+      : new Promise<void>((resolve) => {
+        this.loadedFromFileResolvers.push(resolve);
+      });
   }
 
   /**
@@ -720,11 +714,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   }
 
   private isValidPropertyName(property: unknown): property is PropertyNames<PluginSettings> {
-    if (typeof property !== 'string') {
-      return false;
-    }
-
-    return (this.propertyNames as string[]).includes(property);
+    return typeof property === 'string' ? (this.propertyNames as string[]).includes(property) : false;
   }
 
   private markLoadedFromFile(): void {

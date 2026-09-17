@@ -460,19 +460,11 @@ export function asFolderOrNull(abstractFile: null | TAbstractFile): null | TFold
  * @returns Returns `true` if the path or file has the specified extension, `false` otherwise.
  */
 export function checkExtension(pathOrFile: null | PathOrAbstractFile, extension: string): boolean {
-  if (isFile(pathOrFile)) {
-    return pathOrFile.extension === extension;
-  }
-
-  if (typeof pathOrFile === 'string') {
-    // Compare the path's own extension instead of resolving the file.
-    // Resolving a string path is O(vault) on a miss on a case-insensitive filesystem.
-    // That miss is the hot path during deletion cascades.
-    // Obsidian lowercases a file's canonical extension, so compare case-insensitively.
-    return extname(pathOrFile).slice(1).toLowerCase() === extension;
-  }
-
-  return false;
+  // For a string path, compare the path's own extension instead of resolving the file.
+  // Resolving a string path is O(vault) on a miss on a case-insensitive filesystem.
+  // That miss is the hot path during deletion cascades.
+  // Obsidian lowercases a file's canonical extension, so compare case-insensitively.
+  return isFile(pathOrFile) ? pathOrFile.extension === extension : typeof pathOrFile === 'string' && extname(pathOrFile).slice(1).toLowerCase() === extension;
 }
 
 /**
@@ -497,11 +489,7 @@ export function doesExist(params: DoesExistParams): boolean {
     return false;
   }
 
-  if (type === undefined) {
-    return true;
-  }
-
-  return getFileSystemType(abstractFile) === type;
+  return type === undefined ? true : getFileSystemType(abstractFile) === type;
 }
 
 /**
@@ -548,12 +536,7 @@ export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null
       return app.vault.getFileByPath(pathOrFile.path) ?? pathOrFile;
     }
     /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; defensive fallback. */
-    if (isFolder(pathOrFile)) {
-      return app.vault.getFolderByPath(pathOrFile.path) ?? pathOrFile;
-    }
-    /* v8 ignore stop */
-    /* v8 ignore start -- TAbstractFile is always TFile or TFolder in Obsidian; defensive fallback. */
-    return app.vault.getAbstractFileByPath(pathOrFile.path) ?? pathOrFile;
+    return isFolder(pathOrFile) ? (app.vault.getFolderByPath(pathOrFile.path) ?? pathOrFile) : (app.vault.getAbstractFileByPath(pathOrFile.path) ?? pathOrFile);
     /* v8 ignore stop */
   }
 
@@ -569,15 +552,13 @@ export function getAbstractFileOrNull(params: GetAbstractFileOrNullParams): null
 
   const resolvedPath = getResolvedPath(pathOrFile);
 
-  if (resolvedPath === pathOrFile) {
-    return null;
-  }
-
-  return getFileInternal(normalizeOptionalProperties<GetFileInternalParams>({
-    app,
-    isCaseInsensitive,
-    path: resolvedPath
-  }));
+  return resolvedPath === pathOrFile
+    ? null
+    : getFileInternal(normalizeOptionalProperties<GetFileInternalParams>({
+      app,
+      isCaseInsensitive,
+      path: resolvedPath
+    }));
 }
 
 /**
@@ -624,11 +605,7 @@ export function getBasename(params: GetBasenameParams): string {
     throw new Error(`Abstract file not found: ${path}`);
   }
 
-  if (treatment === MissingPathTreatment.Folder) {
-    return basename(path);
-  }
-
-  return basename(path, extname(path));
+  return treatment === MissingPathTreatment.Folder ? basename(path) : basename(path, extname(path));
 }
 
 /**
@@ -675,12 +652,8 @@ export function getExtension(params: GetExtensionParams): string {
     throw new Error(`Abstract file not found: ${path}`);
   }
 
-  if (treatment === MissingPathTreatment.Folder) {
-    return '';
-  }
-
   // Obsidian lowercases a file's canonical extension, so a path read as a file has to answer in the same case.
-  return extname(path).slice(1).toLowerCase();
+  return treatment === MissingPathTreatment.Folder ? '' : extname(path).slice(1).toLowerCase();
 }
 
 /**
@@ -732,10 +705,7 @@ export function getFileOrNull(params: GetFileOrNullParams): null | TFile {
     isCaseInsensitive,
     pathOrFile
   }));
-  if (isFile(file)) {
-    return file;
-  }
-  return null;
+  return isFile(file) ? file : null;
 }
 
 /**
@@ -802,10 +772,7 @@ export function getFolderOrNull(params: GetFolderOrNullParams): null | TFolder {
     isCaseInsensitive,
     pathOrFile: pathOrFolder
   }));
-  if (isFolder(folder)) {
-    return folder;
-  }
-  return null;
+  return isFolder(folder) ? folder : null;
 }
 
 /**
@@ -875,11 +842,7 @@ export async function getOrCreateFolder(app: App, path: string): Promise<TFolder
     app,
     pathOrFolder: path
   });
-  if (folder) {
-    return folder;
-  }
-
-  return await app.vault.createFolder(path);
+  return folder ?? (await app.vault.createFolder(path));
 }
 
 /**
@@ -898,11 +861,7 @@ export function getPath(app: App, pathOrFile: PathOrAbstractFile): string {
     app,
     pathOrFile
   });
-  if (file) {
-    return file.path;
-  }
-
-  return getResolvedPath(pathOrFile);
+  return file ? file.path : getResolvedPath(pathOrFile);
 }
 
 /**
@@ -1011,14 +970,12 @@ export function isTreatedAsAttachment(params: IsTreatedAsAttachmentParams): bool
  * @returns The file path with the markdown extension trimmed.
  */
 export function trimMarkdownExtension(file: TAbstractFile): string {
-  if (!isMarkdownFile(file)) {
-    return file.path;
-  }
-
-  return trimEnd({
-    $string: file.path,
-    suffix: `.${MARKDOWN_FILE_EXTENSION}`
-  });
+  return isMarkdownFile(file)
+    ? trimEnd({
+      $string: file.path,
+      suffix: `.${MARKDOWN_FILE_EXTENSION}`
+    })
+    : file.path;
 }
 
 function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {
@@ -1030,10 +987,7 @@ function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {
   isCaseInsensitive ??= getDataAdapterEx(app).insensitive;
   if (isCaseInsensitive) {
     const caseInsensitiveFileIndex = getCaseInsensitiveFileIndex(app);
-    if (caseInsensitiveFileIndex) {
-      return caseInsensitiveFileIndex.get(path);
-    }
-    return app.vault.getAbstractFileByPathInsensitive(path);
+    return caseInsensitiveFileIndex ? caseInsensitiveFileIndex.get(path) : app.vault.getAbstractFileByPathInsensitive(path);
   }
 
   return app.vault.getAbstractFileByPath(path);

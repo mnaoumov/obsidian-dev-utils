@@ -145,11 +145,7 @@ export function resolveToolCommand(params: ResolveToolCommandParams): string[] {
   const { cwd, tool } = params;
   const shimPath = findBinShim({ cwd, tool });
 
-  if (shimPath !== null) {
-    return [shimPath];
-  }
-
-  return [...getPackageManagerExecCommand(cwd), tool];
+  return shimPath === null ? [...getPackageManagerExecCommand(cwd), tool] : [shimPath];
 }
 
 /**
@@ -287,11 +283,7 @@ function detectPackageManagerFromPackageJson(root: string): null | PackageManage
 
   const match = DECLARATION_NAME_REG_EXP.exec(declaration);
 
-  if (!match) {
-    return null;
-  }
-
-  return parsePackageManagerName(getMandatoryNamedGroup(match, 'name'));
+  return match ? parsePackageManagerName(getMandatoryNamedGroup(match, 'name')) : null;
 }
 
 /**
@@ -310,11 +302,7 @@ function detectPackageManagerFromUserAgent(): null | PackageManager {
 
   const match = USER_AGENT_NAME_REG_EXP.exec(userAgent);
 
-  if (!match) {
-    return null;
-  }
-
-  return parsePackageManagerName(getMandatoryNamedGroup(match, 'name'));
+  return match ? parsePackageManagerName(getMandatoryNamedGroup(match, 'name')) : null;
 }
 
 /**
@@ -385,15 +373,13 @@ function getPackageManagerExecCommand(cwd?: string): string[] {
  * @returns The candidate file names, in the order they should be tried.
  */
 function getShimCandidates(tool: string): string[] {
-  if (process.platform !== 'win32') {
-    return [tool];
-  }
-
-  return [
-    `${tool}${ObsidianDevUtilsRepoPaths.CommandExtension}`,
-    `${tool}${ObsidianDevUtilsRepoPaths.ExeExtension}`,
-    `${tool}${ObsidianDevUtilsRepoPaths.BatExtension}`
-  ];
+  return process.platform === 'win32'
+    ? [
+      `${tool}${ObsidianDevUtilsRepoPaths.CommandExtension}`,
+      `${tool}${ObsidianDevUtilsRepoPaths.ExeExtension}`,
+      `${tool}${ObsidianDevUtilsRepoPaths.BatExtension}`
+    ]
+    : [tool];
 }
 
 /**
@@ -462,11 +448,7 @@ function resolvePackageManager(params: ResolvePackageManagerParams): PackageMana
 
   const launchedBy = detectPackageManagerFromUserAgent();
 
-  if (launchedBy !== null && claimants.has(launchedBy)) {
-    return launchedBy;
-  }
-
-  return firstLockfileOwner;
+  return launchedBy !== null && claimants.has(launchedBy) ? launchedBy : firstLockfileOwner;
 }
 
 /**

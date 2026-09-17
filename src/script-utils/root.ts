@@ -122,11 +122,8 @@ export function execFromRoot(command: CommandPart[] | string, options: ExecFromR
     root = options.cwd ?? process.cwd();
   }
 
-  if (options.shouldIncludeDetails) {
-    return exec(command, { ...options, cwd: root, shouldIncludeDetails: true });
-  }
-
-  return exec(command, { ...options, cwd: root, shouldIncludeDetails: false });
+  // eslint-disable-next-line unicorn/prefer-minimal-ternary -- Each branch picks a different `exec` overload by the literal `shouldIncludeDetails`; a `boolean` matches neither.
+  return options.shouldIncludeDetails ? exec(command, { ...options, cwd: root, shouldIncludeDetails: true }) : exec(command, { ...options, cwd: root, shouldIncludeDetails: false });
 }
 
 /**
@@ -160,11 +157,7 @@ export function resolvePathFromRoot(params: ResolvePathFromRootParams): null | s
     path
   } = params;
   const rootFolder = getRootFolder(cwd);
-  if (!rootFolder) {
-    return null;
-  }
-
-  return resolve(rootFolder, path);
+  return rootFolder ? resolve(rootFolder, path) : null;
 }
 
 /**

@@ -159,14 +159,12 @@ export function makeFileName(params: MakeFileNameParams): string {
  * @returns The normalized path, starting with "./" if it was relative.
  */
 export function normalizeIfRelative(path: string): string {
-  if (path.startsWith('/') || path.includes(':')) {
-    return path;
-  }
-
-  return ensureStartsWith({
-    $string: path,
-    prefix: './'
-  });
+  return path.startsWith('/') || path.includes(':')
+    ? path
+    : ensureStartsWith({
+      $string: path,
+      prefix: './'
+    });
 }
 
 /**

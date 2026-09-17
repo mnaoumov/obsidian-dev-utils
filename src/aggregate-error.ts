@@ -30,9 +30,5 @@ function getAggregateErrorMessage(errors: readonly unknown[]): string {
   // A lone failure lends its own message, which is what makes a one-cause chain read identically at every
   // level of nesting. Anything else is a count, because picking one of several messages to promote would
   // describe the failure as if the others had not happened.
-  if (errors.length === 1 && singleError instanceof Error && singleError.message !== '') {
-    return singleError.message;
-  }
-
-  return `${String(errors.length)} error(s) occurred`;
+  return errors.length === 1 && singleError instanceof Error && singleError.message !== '' ? singleError.message : `${String(errors.length)} error(s) occurred`;
 }

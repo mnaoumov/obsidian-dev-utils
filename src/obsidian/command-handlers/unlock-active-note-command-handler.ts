@@ -76,9 +76,6 @@ export class UnlockActiveNoteCommandHandler extends GlobalCommandHandler {
    */
   protected override canExecute(): boolean {
     const activeFile = this.app.workspace.getActiveFile();
-    if (!activeFile) {
-      return false;
-    }
-    return this.resourceLockComponent.isLockedByAncestorForPath(activeFile);
+    return activeFile ? this.resourceLockComponent.isLockedByAncestorForPath(activeFile) : false;
   }
 }
