@@ -107,6 +107,13 @@ describe('ObsidianPluginVitestConfigContext', () => {
     ]);
   });
 
+  it('should run the unit project on the VM pool with no global-stub files by default', () => {
+    const context = new ObsidianPluginVitestConfigContext();
+    expect(context.unitTests.pool).toBe('vmThreads');
+    expect(context.unitTests.execArgv).toEqual(['--no-webstorage']);
+    expect(context.globalStubTestFiles).toEqual([]);
+  });
+
   it('should not pin an Obsidian version when the environment variable is unset', () => {
     const context = new ObsidianPluginVitestConfigContext();
     expect(context.desktop.environmentOptions).toBeUndefined();
@@ -188,6 +195,71 @@ describe('defineObsidianPluginVitestConfig', () => {
     expect(config.test?.coverage).toMatchObject({
       exclude: ['src/**/*.test.ts', 'src/**/*.d.ts', 'src/**/*.generated.ts']
     });
+  });
+
+  it('should move the global-stub files to a sibling unit project on the default pool', () => {
+    const config = defineObsidianPluginVitestConfig({
+      customProjects(): TestProjectConfiguration[] {
+        return [{ test: { include: ['src/**/*.demo-vault.integration.test.ts'], name: 'integration-tests:demo-vault' } }];
+      },
+      editContext(context) {
+        context.globalStubTestFiles.push('src/stubs-window.test.ts');
+      }
+    });
+    expect(config.test?.projects).toMatchObject(
+      [...STANDARD_PROJECT_NAMES, 'unit-tests:global-stubs', 'integration-tests:demo-vault'].map((name) => ({ test: { name } }))
+    );
+    expect(config.test?.projects?.[0]).toMatchObject({
+      test: {
+        exclude: ['node_modules', 'dist', 'src/**/*.integration.test.ts', 'src/stubs-window.test.ts'],
+        include: ['src/**/*.test.ts'],
+        pool: 'vmThreads'
+      }
+    });
+    expect(config.test?.projects?.[5]).toEqual({
+      resolve: {
+        alias: {
+          obsidian: 'obsidian-test-mocks/obsidian'
+        }
+      },
+      test: {
+        environment: 'jsdom',
+        exclude: ['node_modules', 'dist', 'src/**/*.integration.test.ts'],
+        execArgv: ['--no-webstorage'],
+        include: ['src/stubs-window.test.ts'],
+        name: 'unit-tests:global-stubs',
+        pool: 'forks',
+        server: {
+          // eslint-disable-next-line unicorn/name-replacements -- `deps` is declared by `vitest`; renaming it here would not match the API.
+          deps: {
+            inline: ['@obsidian-typings', 'obsidian-dev-utils']
+          }
+        },
+        setupFiles: [
+          'obsidian-test-mocks/vitest-setup',
+          'obsidian-dev-utils/vitest-setup'
+        ]
+      }
+    });
+  });
+
+  it('should exclude the global-stub files from a unit project whose own exclude was removed', () => {
+    const config = defineObsidianPluginVitestConfig({
+      editContext(context) {
+        delete context.unitTests.exclude;
+        context.globalStubTestFiles.push('src/stubs-window.test.ts');
+      }
+    });
+    expect(config.test?.projects?.[0]).toMatchObject({ test: { exclude: ['src/stubs-window.test.ts'] } });
+  });
+
+  it('should keep a whole suite on the default pool when the context says so', () => {
+    const config = defineObsidianPluginVitestConfig({
+      editContext(context) {
+        context.unitTests.pool = 'forks';
+      }
+    });
+    expect(config.test?.projects?.[0]).toMatchObject({ test: { name: 'unit-tests', pool: 'forks' } });
   });
 
   it('should append the custom projects after the standard ones', () => {
@@ -427,6 +499,30 @@ describe('defineObsidianPluginVitestConfig project isolation', () => {
       });
     }
   );
+
+  /*
+   * A plugin's `test` and `test:coverage` scripts pass `projects: ['unit-tests']`, which the runner expands
+   * to `--project=unit-tests --project=unit-tests:*`. The sibling is only safe if that filter reaches it:
+   * a stub file that no scripted run collects is a test that silently never runs.
+   */
+  it('should hand a global-stub file to the sibling project, which the unit-tests filter selects', async () => {
+    const stubFilePath = join(fixtureRoot, 'src', 'stubs-window.test.ts');
+    writeFileSync(stubFilePath, 'export {};\n');
+
+    try {
+      const config = defineObsidianPluginVitestConfig({
+        editContext(context) {
+          context.globalStubTestFiles.push('src/stubs-window.test.ts');
+        }
+      });
+      expect(await collectFileNamesByProject(config, ['unit-tests', 'unit-tests:*'])).toEqual({
+        'unit-tests': ['plain.test.ts'],
+        'unit-tests:global-stubs': ['stubs-window.test.ts']
+      });
+    } finally {
+      rmSync(stubFilePath);
+    }
+  });
 
   it('should leave the checked-in screenshots untouched by every project but the capture ones', async () => {
     const fileNamesByProject = await collectFileNamesByProject(makePluginConfig());
