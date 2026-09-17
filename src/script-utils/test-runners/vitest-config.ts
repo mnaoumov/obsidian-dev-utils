@@ -78,6 +78,7 @@ const DESKTOP_TEST_FILES = 'src/**/*.desktop.integration.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const NO_APP_TEST_FILES = 'src/**/*.no-app.integration.test.ts';
 const UNIT_TEST_FILES = 'src/**/*.test.ts';
+const UNIT_TEST_GLOBAL_STUBS_PROJECT_NAME = 'unit-tests:global-stubs';
 
 const OBSIDIAN_VERSION_ENV_VARIABLE_NAME = 'OBSIDIAN_VERSION';
 const SHARED_EXCLUDE = ['node_modules', 'dist'];
@@ -204,6 +205,24 @@ export class ObsidianPluginVitestConfigContext {
   };
 
   /**
+   * The unit test files that redefine `window`, `document`, `location` or `top`, which the `unit-tests`
+   * project's VM pool cannot run.
+   *
+   * Under `pool: 'vmThreads'` those four are non-configurable properties of the VM global, so
+   * `vi.stubGlobal('window', …)` or `Object.defineProperty(window, 'location', …)` throws
+   * `Cannot redefine property`. That is JS semantics, not a bug to route around. Every other global stays
+   * configurable and stubs normally.
+   *
+   * Push a file here and it leaves `unit-tests` for a sibling `unit-tests:global-stubs` project that is
+   * identical except for the pool, which is the default one. A plugin's `test` and `test:coverage` scripts
+   * name `unit-tests`, which also selects every `unit-tests:*` project, so the sibling runs and is covered
+   * without a script change. It is emitted only when this list is non-empty.
+   *
+   * To keep a whole suite on the default pool instead, set `unitTests.pool` to `'forks'` and say why.
+   */
+  public readonly globalStubTestFiles: string[] = [];
+
+  /**
    * The multiplier applied to a project's test budget to get its hook budget. A hook typically populates
    * and opens a vault, so it needs several times what a single test does.
    *
@@ -238,9 +257,22 @@ export class ObsidianPluginVitestConfigContext {
   public readonly unitTests: ObsidianPluginVitestProjectConfig = {
     environment: 'jsdom',
     exclude: [...SHARED_EXCLUDE, INTEGRATION_TEST_FILES],
+    // A threads/forks pool option that still reaches the worker under the VM pool below: measured
+    // 2026-09-16, `process.execArgv` carries it and Node's own `localStorage` descriptor is gone, as it
+    // is under `threads`. Without the flag the descriptor is back under both pools.
     execArgv: ['--no-webstorage'],
     include: [UNIT_TEST_FILES],
     name: 'unit-tests',
+    /*
+     * The default pool constructs one jsdom per test file, and that construction, not the tests, was
+     * the unit suite's cost: 67% of tracked time in `obsidian-dev-utils`' own suite. A VM pool builds
+     * the jsdom once per worker and gives each file a fresh VM context, so per-file isolation holds.
+     * Measured there on 2026-09-15: the jsdom project 36.06s -> 9.92s, `coverage/lcov.info`
+     * byte-identical to the default pool's, and no DOM, `globalThis` or prototype state crossing files.
+     * `isolate: false`, the other remedy vitest suggests, was slower (91.62s) and broke 68 tests.
+     * The one cost is redefining `window`, `document`, `location` or `top`: see `globalStubTestFiles`.
+     */
+    pool: 'vmThreads',
     server: {
       // eslint-disable-next-line unicorn/name-replacements -- `deps` is declared by `vitest`; renaming it here would not match the API.
       deps: {
@@ -292,6 +324,28 @@ export function defineObsidianPluginVitestConfig(options: DefineObsidianPluginVi
   const customProjects = options.customProjects?.(context) ?? [];
   validateCustomProjects(customProjects);
 
+  const unitTestsResolve = {
+    alias: {
+      obsidian: 'obsidian-test-mocks/obsidian'
+    }
+  };
+  const globalStubTestFiles = [...context.globalStubTestFiles];
+  const unitTests: ObsidianPluginVitestProjectConfig = globalStubTestFiles.length === 0
+    ? context.unitTests
+    : { ...context.unitTests, exclude: [...context.unitTests.exclude ?? [], ...globalStubTestFiles] };
+  const globalStubsProjects: TestProjectConfiguration[] = globalStubTestFiles.length === 0
+    ? []
+    : [{
+      resolve: unitTestsResolve,
+      test: {
+        ...context.unitTests,
+        include: globalStubTestFiles,
+        name: UNIT_TEST_GLOBAL_STUBS_PROJECT_NAME,
+        // The default pool, named rather than omitted so the spread above cannot carry the VM pool over.
+        pool: 'forks'
+      }
+    }];
+
   return defineConfig({
     test: {
       coverage: {
@@ -317,17 +371,14 @@ export function defineObsidianPluginVitestConfig(options: DefineObsidianPluginVi
       passWithNoTests: true,
       projects: [
         {
-          resolve: {
-            alias: {
-              obsidian: 'obsidian-test-mocks/obsidian'
-            }
-          },
-          test: context.unitTests
+          resolve: unitTestsResolve,
+          test: unitTests
         },
         { test: context.noApp },
         { test: context.desktop },
         { test: context.desktopPerformance },
         { test: context.android },
+        ...globalStubsProjects,
         ...customProjects
       ]
     }
