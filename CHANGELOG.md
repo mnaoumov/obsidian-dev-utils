@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 105.1.0
+
+- style: satisfy the rules the unicorn 75 update brings
+- chore: update libs
+- docs(agents): record the local .astro glob in the nano-staged entry
+- chore(nano-staged): lint staged .astro files before a commit
+- feat(vitest-config)!: run every plugin's unit tests on the VM pool
+
 ## 105.0.0
 
 - refactor!: take method-signature-style back to its property default
