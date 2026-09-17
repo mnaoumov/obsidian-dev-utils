@@ -176,6 +176,20 @@ export const config = defineObsidianPluginVitestConfig({
 
 Everything the context exposes is live — the arrays and objects it hands you are the ones the final configuration is built from.
 
+**`unit-tests` runs on `pool: 'vmThreads'`.** The default pool builds one `jsdom` per test file, and that construction, rather than the tests, is most of a unit suite's time. A VM pool builds it once per worker and gives each file a fresh VM context, so files stay isolated from each other and coverage is unchanged. The one thing it cannot do is redefine `window`, `document`, `location` or `top`: inside a VM context those four are non-configurable, so `vi.stubGlobal('window', …)` or `Object.defineProperty(window, 'location', …)` throws `Cannot redefine property`. Every other global stubs as usual. List a file that redefines one of the four in `globalStubTestFiles`, and it moves to a sibling `unit-tests:global-stubs` project on the default pool:
+
+```typescript
+export const config = defineObsidianPluginVitestConfig({
+  editContext(context) {
+    context.globalStubTestFiles.push('src/window-timers.test.ts');
+  }
+});
+```
+
+A VM context also starts without Node's Web API globals that the default pool exposes — `crypto.subtle`, the Web Streams classes, `CompressionStream`, the `Performance*` classes and `URLPattern`. `obsidian-dev-utils/vitest-setup` defines each missing one from the Node module that exports it, so code that feature-detects them takes the same branch under either pool. `CryptoKey` and `QuotaExceededError` are not restored.
+
+The `test` and `test:coverage` scripts select `unit-tests` together with every `unit-tests:*` project, so the sibling runs and counts toward coverage with no script change. To keep a whole suite on the default pool instead, set `context.unitTests.pool = 'forks'` and leave a comment saying why.
+
 **Every custom project must declare its own `include`**, and `defineObsidianPluginVitestConfig` throws if one does not. The root section deliberately declares no glob, so a project that declares none falls back to vitest's own default, which matches *every* test file in the repo — the project then runs the unit suites under an Obsidian transport, the android suites against the desktop one, and any screenshot-capture suite that opens a window and overwrites a checked-in PNG. That widening is silent: the project passes, slowly, having done all of it. Spreading a standard project (`...context.desktop`) and overriding its `include` is the shortest way to satisfy this.
 
 That `integration-tests:demo-vault` project is written out in full above to show what `customProjects` can declare; a project that drives a real desktop Obsidian is shorter written as `...context.desktop` plus its own `globalSetup` and `include`. See [Clicking every button](/obsidian-dev-utils/guides/demo-vault/#clicking-every-button) for the whole three-part wiring — the project, its global setup, and the suite that uses them — and note that declaring a project here is only half the job: `scripts/test-integration.ts` has to list it too, or nothing ever runs it.
