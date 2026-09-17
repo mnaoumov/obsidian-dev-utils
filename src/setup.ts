@@ -40,6 +40,7 @@ import {
 import { noop } from './function.ts';
 import { Library } from './library.ts';
 import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+import { restoreNodeWebGlobals } from './script-utils/node-web-globals.ts';
 import { installWarningsAsErrors } from './script-utils/warnings-as-errors.ts';
 import { ensureNonNullable } from './type-guards.ts';
 
@@ -126,6 +127,7 @@ export function restoreConsole(): void {
  */
 export function setup(params: SetupParams): void {
   installWarningsAsErrors();
+  restoreNodeWebGlobals();
   params.beforeEach(beforeEachHandler);
   params.afterEach(afterEachHandler);
   params.afterAll(afterAllHandler);
