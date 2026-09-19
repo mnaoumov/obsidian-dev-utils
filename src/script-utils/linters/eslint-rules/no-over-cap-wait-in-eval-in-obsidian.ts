@@ -86,6 +86,26 @@
  * Not every over-cap closure can become a `poll` / `until` pair, so the rule is meant to be
  * disabled — with a reason — at the sites that have one. `require-description` makes that
  * reason mandatory, which is the point: it turns an invisible assumption into a written one.
+ *
+ * A CLOSURE DELIBERATELY LEFT UNDER THE CAP SAYS SO, in a comment opening with the exact line
+ *
+ *     Under the transport's ~30s per-closure cap, not at it.
+ *
+ * and then saying, for that closure, what the budget is made of and why it stays. This rule is silent
+ * on such a closure by construction — it is under the cap — so without the line there is no way to tell
+ * a budget somebody read and kept from one nobody has looked at, and a sweep run with a lower
+ * `capInMilliseconds` re-opens the same decisions every time. The line is the whole of the convention,
+ * which is what lets such a sweep subtract the closures already read and drive the remainder to zero.
+ *
+ * Two placements, because a ceiling lives in two places. A comment INSIDE the closure, over that
+ * closure's own ceiling constant, speaks for that closure alone; one at MODULE scope, over a constant
+ * the whole file shares, speaks for every closure in the file. A closure with no ceiling constant at
+ * all — several `waitUntil` calls taking the documented default — takes the in-closure form at the top
+ * of its body.
+ *
+ * Saying it is NOT the same as clearing it. A budget under the cap is not a defect, and "read, and left
+ * as it is" is a correct outcome: tightening a ceiling to bring a number down is how a suite starts
+ * failing legitimately on a cold machine.
  */
 import type { TSESTree } from '@typescript-eslint/utils';
 import type {
