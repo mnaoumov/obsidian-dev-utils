@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 105.2.0
+
+- docs(frontmatter): reword a comment the spell check cannot read
+- feat(frontmatter): add an opt-in CST-splice formatting preserver
+- docs: index the deliberately-under-cap marker beside the rule it belongs to
+- docs: say how a closure deliberately left under the eval cap records that
+- chore: update libs
+
 ## 105.1.0
 
 - style: satisfy the rules the unicorn 75 update brings
