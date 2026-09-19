@@ -377,7 +377,8 @@ describe('the differential fuzz', () => {
   const SEEDS = [1, 2];
   const ITERATIONS_PER_SEED = 500;
   const SEED_MULTIPLIER = 7919;
-  // A textbook linear congruential generator, so the sequence is this file's and not the platform's.
+  // A textbook linear generator of the kind every runtime once shipped, so the sequence is this file's own rather
+  // than the platform's, and a failure reproduces.
   const RANDOM_MODULUS = 4_294_967_296;
   const RANDOM_MULTIPLIER = 1_664_525;
   const RANDOM_INCREMENT = 1_013_904_223;
