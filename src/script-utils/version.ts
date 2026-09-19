@@ -22,6 +22,7 @@ import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 import {
   inc,
+  parse,
   prerelease
 } from 'semver';
 
@@ -203,6 +204,58 @@ export interface UpdateVersionOptions {
 }
 
 /**
+ * The lowest bump a range of commits may be published under, and the commits that force it.
+ */
+interface BumpFloor {
+  /**
+   * The commits whose Conventional-Commits markers force {@link level}, in the order `git log` reported them.
+   * Empty when nothing forces anything, which is the ordinary case for a range of `fix`es and `chore`s.
+   */
+  readonly forcingCommits: readonly ForcingCommit[];
+
+  /**
+   * The lowest {@link BumpLevel} the range may ship as.
+   */
+  readonly level: BumpLevel;
+}
+
+/**
+ * What {@link toBumpFloorError} needs beyond the {@link BumpFloor} itself to say what was asked for and what
+ * that would have shipped as.
+ */
+interface BumpFloorRefusalContext {
+  /**
+   * The previous release tag the range was measured from.
+   */
+  readonly lastTag: string;
+
+  /**
+   * The version the requested bump would have produced.
+   */
+  readonly newVersion: string;
+
+  /**
+   * The {@link BumpLevel} {@link newVersion} actually moves, relative to {@link lastTag}.
+   */
+  readonly takenLevel: BumpLevel;
+
+  /**
+   * The version update type the release was asked for, verbatim — which is a pre-release type or an explicit
+   * version as often as it is a plain `patch`, and is therefore worth quoting back rather than inferring.
+   */
+  readonly versionUpdateType: string;
+}
+
+/**
+ * The three release lines a bump can move, ordered by {@link isBumpLevelAtLeast}.
+ *
+ * A pre-release type is not one of these: `premajor` moves the major line and `prerelease` moves whichever
+ * line an earlier pre-release already chose, so what a pre-release did is read off the resulting version
+ * rather than off its type. See {@link toEffectiveBumpLevel}.
+ */
+type BumpLevel = VersionUpdateType.Major | VersionUpdateType.Minor | VersionUpdateType.Patch;
+
+/**
  * One finding reported over the settled changelog section, tagged with the npm script whose check produced it.
  *
  * The tag is what lets one message name `lint:md`, `spellcheck` or both, truthfully. Both checks run over
@@ -221,14 +274,82 @@ interface ChangelogFinding {
   readonly text: string;
 }
 
+/**
+ * One commit that forces a {@link BumpFloor}, rendered into the refusal so the author can go and look at it.
+ */
+interface ForcingCommit {
+  /**
+   * The {@link BumpLevel} this one commit forces on its own.
+   */
+  readonly level: BumpLevel;
+
+  /**
+   * What in the commit forced it — the `!` marker, the `BREAKING CHANGE:` footer, or the `feat` type — named
+   * so a reader can tell a deliberate breaking marker from a footer somebody wrote in passing.
+   */
+  readonly marker: string;
+
+  /**
+   * The full commit hash.
+   */
+  readonly sha: string;
+
+  /**
+   * The commit subject.
+   */
+  readonly subject: string;
+}
+
 interface NpmPackResult {
   readonly filename: string;
 }
 
 /**
+ * A `BREAKING CHANGE:` footer, in both spellings Conventional Commits allows.
+ *
+ * Matched per line (`m`) rather than against the whole message, because a footer sits at the bottom of the
+ * body. It is the half of the breaking-change signal that {@link MERGE_SUBJECT_REG_EXP}'s sibling rewrite
+ * cannot carry: `toChangelogEntry` lifts only the merge body's first line onto the merge subject, so a footer
+ * written on a branch commit never reaches the first-parent history at all. That is why
+ * {@link getBumpFloor} reads every commit in the range rather than only the first-parent ones.
+ */
+const BREAKING_CHANGE_FOOTER_REG_EXP = /^BREAKING[ -]CHANGE:/m;
+
+/**
+ * The marker names a {@link ForcingCommit} carries, and therefore what the refusal message says forced the
+ * floor. They are spelled out rather than reduced to the level alone, because `feat!` and a `BREAKING CHANGE:`
+ * footer buried in a body are very different things to be told about.
+ */
+const BREAKING_CHANGE_FOOTER_MARKER = 'a `BREAKING CHANGE:` footer';
+
+/**
+ * See {@link BREAKING_CHANGE_FOOTER_MARKER}.
+ */
+const BREAKING_MARKER = 'the `!` breaking marker';
+
+/**
+ * See {@link BREAKING_CHANGE_FOOTER_MARKER}.
+ */
+const FEAT_TYPE_MARKER = 'a `feat` type';
+
+/**
+ * A Conventional-Commits subject: a type, an optional scope, an optional `!`, then the colon.
+ *
+ * Deliberately tolerant of a subject that is not one at all — an unparsable subject simply constrains
+ * nothing, which is the same answer a `chore:` gives. This gate exists to catch a bump that is too LOW, so
+ * failing to recognize a subject can only under-constrain, never refuse a release that should have shipped.
+ */
+const CONVENTIONAL_COMMIT_SUBJECT_REG_EXP = /^(?<type>[a-z]+)(?:\([^()]*\))?(?<breaking>!)?:\s/i;
+
+/**
  * The default pre-release identifier used for pre-release versions.
  */
 const DEFAULT_PREID = 'beta';
+
+/**
+ * The Conventional-Commits type that forces a minor.
+ */
+const FEAT_TYPE = 'feat';
 
 /**
  * The feed the Obsidian desktop app updates from.
@@ -244,6 +365,12 @@ const DESKTOP_RELEASES_JSON_URL = 'https://raw.githubusercontent.com/obsidianmd/
  * gate they are looking at — and knows that fixing it here is the same fix as fixing it on the branch.
  */
 const LINT_MD_SCRIPT_NAME = 'lint:md';
+
+/**
+ * How much of a commit hash the bump-floor refusal prints. Long enough to paste into `git show`, short enough
+ * that a list of them stays readable.
+ */
+const SHORT_SHA_LENGTH = 8;
 
 /**
  * See {@link LINT_MD_SCRIPT_NAME}.
@@ -650,15 +777,16 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  * 1. Validates the version update type.
  * 2. Checks if Git and GitHub CLI are installed.
  * 3. Verifies that the interactive changelog review, if one is due, can actually be answered.
- * 4. Verifies that the Git repository is clean.
- * 5. Runs spellcheck and linting.
- * 6. Builds the project.
- * 7. Settles the changelog — the only step that can block on a human, and deliberately the last one before
+ * 4. Verifies that the bump is not lower than the commits since the last tag force it to be.
+ * 5. Verifies that the Git repository is clean.
+ * 6. Runs spellcheck and linting.
+ * 7. Builds the project.
+ * 8. Settles the changelog — the only step that can block on a human, and deliberately the last one before
  *    anything is written, so an interrupt here leaves the working tree clean and the release re-runnable.
- *    The settled text is linted here too: `lint:md` ran in step 5, before a character of it existed.
- * 8. Updates version in files, then writes the settled changelog.
- * 9. Adds updated files to Git, tags the commit, and pushes to the repository.
- * 10. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
+ *    The settled text is linted here too: `lint:md` ran in step 6, before a character of it existed.
+ * 9. Updates version in files, then writes the settled changelog.
+ * 10. Adds updated files to Git, tags the commit, and pushes to the repository.
+ * 11. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
  *
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, premajor, preminor, prepatch, prerelease, or x.y.z[-suffix]).
  * @param options - The {@link UpdateVersionOptions} controlling the release behavior.
@@ -703,6 +831,10 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   // caller learns in seconds instead of paying for the whole preflight and only then blocking on an editor
   // window nobody will ever close.
   assertChangelogStepIsNonBlocking(changelogFilePath, shouldEditChangelog);
+  // Same placement, same reason. Deliberately NOT under `shouldRunChecks`: that flag buys a fast release by
+  // skipping the VERIFICATION of the code, and this is a correctness gate on the release itself — the bump
+  // a `--no-checks` release ships is as public, and as unfixable afterwards, as any other.
+  await assertVersionUpdateTypeMeetsBumpFloor(versionUpdateType);
 
   if (shouldRunChecks) {
     await assertGitRepoClean();
@@ -847,6 +979,65 @@ function assertChangelogStepIsNonBlocking(changelogFilePath: string | undefined,
 }
 
 /**
+ * Refuses a release whose bump is LOWER than the commits it is about to publish force it to be.
+ *
+ * The rule this enforces is old and was written down after `96.5.1` shipped six unreleased `feat:` commits as
+ * a patch: choose the bump from the whole range since the last tag, never from the change you happen to be
+ * working on. It did not hold — `105.1.0` of this library is a MINOR carrying `feat(vitest-config)!`, so every
+ * consumer on a caret range took a breaking change with no version signal — and it could not hold, because it
+ * asked a human to scan a range and then type a bump that nothing compared against what the scan would have
+ * found. This is that comparison, at the one moment the rule is being broken.
+ *
+ * It refuses only a bump that is too LOW. A deliberately higher one — a major cut to signal a break late, a
+ * minor for a range of pure `fix`es — passes untouched, and there is no flag to switch the gate off: an
+ * opt-out is what gets reached for reflexively, and the legitimate escape (bump higher) already exists.
+ *
+ * Called from the preflight rather than at the bump itself, so a refusal costs seconds instead of the whole
+ * check-and-build gate, and nothing has been written when it throws.
+ *
+ * @param versionUpdateType - The version update type the release was asked for.
+ */
+async function assertVersionUpdateTypeMeetsBumpFloor(versionUpdateType: string): Promise<void> {
+  const versionDebugger = getLibDebugger('Version');
+  const lastTag = await resolveLastReleasedTag(await readPreviousChangelogLines());
+
+  // No baseline, no range, no floor. This is a first release, or one whose previous tag was deleted — the
+  // changelog step falls back to the full history there, and deriving a floor from the full history of a repo
+  // about to cut `1.0.0` would refuse it over commits that predate the concept of a published surface.
+  if (!lastTag) {
+    versionDebugger('No previous release tag resolved, so the bump floor is not derived. The bump is taken as given.');
+    return;
+  }
+
+  const bumpFloor = await getBumpFloor(`${lastTag}..HEAD`);
+  const floorLevel = bumpFloor.level;
+  if (floorLevel === VersionUpdateType.Patch) {
+    return;
+  }
+
+  const newVersion = await getNewVersion(versionUpdateType);
+  const takenLevel = toEffectiveBumpLevel(lastTag, newVersion);
+
+  // An unparsable baseline or target is not this gate's business to fail a release over. It can only happen
+  // for a tag that is not a version at all, which every other step here would have its own trouble with.
+  if (!takenLevel) {
+    versionDebugger(`Could not compare '${newVersion}' against the previous tag '${lastTag}', so the bump floor is not enforced.`);
+    return;
+  }
+
+  if (isBumpLevelAtLeast(takenLevel, floorLevel)) {
+    return;
+  }
+
+  throw toBumpFloorError(bumpFloor, {
+    lastTag,
+    newVersion,
+    takenLevel,
+    versionUpdateType
+  });
+}
+
+/**
  * Extracts the body of one version's `CHANGELOG.md` section — everything between its `## <version>` heading
  * and whichever comes first, the next `## ` heading or the end of the file.
  *
@@ -871,6 +1062,43 @@ function extractChangelogSection(changelogContent: string, version: string): str
   const nextHeadingOffset = lines.slice(bodyStartIndex).findIndex((line) => line.startsWith('## '));
   const bodyEndIndex = nextHeadingOffset === -1 ? lines.length : bodyStartIndex + nextHeadingOffset;
   return lines.slice(bodyStartIndex, bodyEndIndex).join('\n').trim();
+}
+
+/**
+ * Derives the lowest bump a commit range may be published under, from the Conventional-Commits markers the
+ * commits in it carry.
+ *
+ * A `!` before the subject's colon, or a `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer, forces a major; a
+ * `feat` type forces a minor; everything else — `fix`, `chore`, `docs`, `refactor`, an unparsable subject —
+ * constrains nothing and yields a patch floor, which is no constraint at all.
+ *
+ * **Every commit in the range is read, deliberately NOT only the first-parent ones**, which is where this
+ * differs from the changelog generated over the same range. The changelog is first-parent because it publishes
+ * one line per landed change; a breaking change is breaking whichever parent it arrived on. Concretely,
+ * {@link toChangelogEntry} lifts only the FIRST line of a merge body onto a default merge subject, so a
+ * `BREAKING CHANGE:` footer written on a branch commit is invisible to the first-parent history — and a footer
+ * is the one breaking signal Conventional Commits puts in the body rather than the subject. The cost of
+ * reading everything is over-detection: a branch whose breaking commit was reworked into a non-breaking merge
+ * still forces a major. That direction is safe — an over-bump costs a consumer nothing and the message names
+ * the commit so the author can see exactly which one — and the other direction is the defect this exists for.
+ *
+ * @param commitRange - The git revision range to scan, e.g. `105.2.0..HEAD`.
+ * @returns A {@link Promise} that resolves to the {@link BumpFloor} the range forces.
+ */
+async function getBumpFloor(commitRange: string): Promise<BumpFloor> {
+  // `%H%n%B` puts the hash on its own first line and the full message under it, and `-z` separates the
+  // commits with NUL — so nothing in a commit message can be mistaken for a record boundary.
+  const output = await execFromRoot(['git', 'log', commitRange, '--format=%H%n%B', '-z'], { isQuiet: true });
+
+  const forcingCommits = output
+    .split('\0')
+    .map((record) => toForcingCommit(record))
+    .filter((forcingCommit) => forcingCommit !== null);
+
+  return {
+    forcingCommits,
+    level: toHighestBumpLevel(forcingCommits)
+  };
 }
 
 /**
@@ -933,6 +1161,25 @@ async function getLatestObsidianVersion(): Promise<string> {
   const response = await fetch(DESKTOP_RELEASES_JSON_URL);
   const desktopReleasesJson = await response.json() as Partial<DesktopReleasesJson>;
   return ensureNonNullable(desktopReleasesJson.latestVersion, 'Could not find the latest desktop Obsidian version');
+}
+
+/**
+ * Whether a bump reaches a floor.
+ *
+ * Spelled out rather than given numeric ranks, because three levels do not need an ordering scheme and a
+ * `2 >= 3` in a release gate is one transposition away from silently passing everything. `floorLevel` excludes
+ * {@link VersionUpdateType.Patch} for the same reason it is not tested for: a patch floor is no floor, and its
+ * only caller has already returned by then — a branch that can only ever answer `true` is one nobody reads and
+ * nothing covers.
+ *
+ * @param level - The {@link BumpLevel} actually taken.
+ * @param floorLevel - The {@link BumpLevel} required.
+ * @returns Whether `level` is at least `floorLevel`.
+ */
+function isBumpLevelAtLeast(level: BumpLevel, floorLevel: VersionUpdateType.Major | VersionUpdateType.Minor): boolean {
+  return floorLevel === VersionUpdateType.Major
+    ? level === VersionUpdateType.Major
+    : level !== VersionUpdateType.Patch;
 }
 
 function isPreRelease(version: string): boolean {
@@ -1003,46 +1250,13 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
     changelogFilePath,
     shouldEditChangelog = true
   } = options;
-  const HEADER_LINES_COUNT = 2;
-  const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
-  let previousChangelogLines: string[];
-  if (existsSync(changelogPath)) {
-    const content = await readFile(changelogPath, 'utf-8');
-    previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
-    if (previousChangelogLines.at(-1) === '') {
-      previousChangelogLines.pop();
-    }
-  } else {
-    previousChangelogLines = [];
-  }
+  const previousChangelogLines = await readPreviousChangelogLines();
 
   let newChangeLog = `# CHANGELOG\n\n## ${newVersion}\n\n`;
 
   if (changelogFilePath === undefined) {
-    const lastTag = replaceAll({
-      $string: previousChangelogLines[0] ?? '',
-      replacer: '',
-      searchValue: '## '
-    });
-    // A heading is not a tag. A hand-written `## 0.0.0` placeholder in a never-tagged repo, or a tag deleted
-    // after the fact, would otherwise reach `git log` as a revision it cannot resolve — and it reaches it at
-    // the very END of the release, after the whole preflight has already been paid for. Falling back to the
-    // full history over-includes when a tag was deleted, but that is safe and visible: the review step just
-    // below is exactly where it gets trimmed.
-    const resolvedLastTag = lastTag
-      ? await execFromRoot(['git', 'rev-parse', '--verify', '--quiet', `refs/tags/${lastTag}`], {
-        isQuiet: true,
-        shouldIgnoreExitCode: true
-      })
-      : '';
-
-    if (lastTag && !resolvedLastTag) {
-      getLibDebugger('Version')(
-        `${ObsidianPluginRepoPaths.ChangelogMd} starts at '## ${lastTag}', but no such tag exists. Generating the changelog from the full history instead.`
-      );
-    }
-
-    const commitRange = resolvedLastTag ? `${lastTag}..HEAD` : 'HEAD';
+    const lastTag = await resolveLastReleasedTag(previousChangelogLines);
+    const commitRange = lastTag ? `${lastTag}..HEAD` : 'HEAD';
     const commitMessagesString = await execFromRoot(`git log ${commitRange} --format=%B --first-parent -z`, { isQuiet: true });
     const commitMessages = commitMessagesString.split('\0').filter(Boolean).map((commitMessage) => toChangelogEntry(commitMessage));
 
@@ -1099,6 +1313,68 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
 }
 
 /**
+ * Reads `CHANGELOG.md` and returns everything below its `# CHANGELOG` header — so the first line is the
+ * newest `## <version>` heading, which is what names the last released version.
+ *
+ * @returns A {@link Promise} that resolves to the lines, or an empty array when the repository has no changelog
+ * yet.
+ */
+async function readPreviousChangelogLines(): Promise<string[]> {
+  const HEADER_LINES_COUNT = 2;
+  const changelogPath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
+  if (!existsSync(changelogPath)) {
+    return [];
+  }
+
+  const content = await readFile(changelogPath, 'utf-8');
+  const previousChangelogLines = content.split('\n').slice(HEADER_LINES_COUNT);
+  if (previousChangelogLines.at(-1) === '') {
+    previousChangelogLines.pop();
+  }
+
+  return previousChangelogLines;
+}
+
+/**
+ * Resolves the tag of the last released version — the baseline both the changelog range and the bump floor are
+ * measured from, derived once here so those two can never disagree about which commits are being published.
+ *
+ * A heading is not a tag. A hand-written `## 0.0.0` placeholder in a never-tagged repo, or a tag deleted after
+ * the fact, would otherwise reach `git log` as a revision it cannot resolve — and it used to reach it at the
+ * very END of the release, after the whole preflight had been paid for. Falling back to no baseline
+ * over-includes when a tag was deleted, but that is safe and visible: the changelog review is exactly where an
+ * over-included range gets trimmed, and the bump floor declines to derive anything at all without a baseline.
+ *
+ * @param previousChangelogLines - The lines {@link readPreviousChangelogLines} returned.
+ * @returns A {@link Promise} that resolves to the tag name, or an empty string when there is none to resolve.
+ */
+async function resolveLastReleasedTag(previousChangelogLines: string[]): Promise<string> {
+  const lastTag = replaceAll({
+    $string: previousChangelogLines[0] ?? '',
+    replacer: '',
+    searchValue: '## '
+  });
+
+  if (!lastTag) {
+    return '';
+  }
+
+  const resolvedLastTag = await execFromRoot(['git', 'rev-parse', '--verify', '--quiet', `refs/tags/${lastTag}`], {
+    isQuiet: true,
+    shouldIgnoreExitCode: true
+  });
+
+  if (!resolvedLastTag) {
+    getLibDebugger('Version')(
+      `${ObsidianPluginRepoPaths.ChangelogMd} starts at '## ${lastTag}', but no such tag exists. Generating the changelog from the full history instead.`
+    );
+    return '';
+  }
+
+  return lastTag;
+}
+
+/**
  * Hands the composed changelog to the user for review on a scratch copy outside the repository, and
  * returns whatever they left behind. The scratch folder is removed even when the review fails.
  *
@@ -1145,6 +1421,34 @@ async function reviewChangelog(newChangeLog: string, findings: ChangelogFinding[
       recursive: true
     });
   }
+}
+
+/**
+ * Builds the error that refuses a bump lower than the range forces.
+ *
+ * It names every forcing commit with its short hash, its subject and WHICH marker forced it, because the
+ * remedy depends on that: a `feat!` is a deliberate break somebody typed, while a `BREAKING CHANGE:` footer
+ * sits in a body nobody re-reads and is exactly the thing this gate exists to surface. The instruction is to
+ * take the higher bump, not to edit the commits — history that already reached the default branch is what a
+ * release publishes, and rewriting it to dodge a version signal is the defect one level up.
+ *
+ * @param bumpFloor - The derived {@link BumpFloor}.
+ * @param context - The {@link BumpFloorRefusalContext} describing what was asked for.
+ * @returns The error to throw.
+ */
+function toBumpFloorError(bumpFloor: BumpFloor, context: BumpFloorRefusalContext): Error {
+  const forcingLines = bumpFloor.forcingCommits
+    .map((forcingCommit) => `  ${forcingCommit.sha.slice(0, SHORT_SHA_LENGTH)}  ${forcingCommit.subject}  (${forcingCommit.marker})`)
+    .join('\n');
+
+  return new Error(
+    `The commits since ${context.lastTag} force at least a ${bumpFloor.level} release, but '${context.versionUpdateType}' would publish`
+      + ` ${context.newVersion}, which is a ${context.takenLevel}.\n`
+      + `${forcingLines}\n`
+      + 'A release publishes every commit since the last tag, not the change you happen to be working on, so the'
+      + ' bump has to answer for all of them. Re-run the release with a'
+      + ` ${bumpFloor.level} bump — a higher one is always accepted, and nothing has been written yet.`
+  );
 }
 
 /**
@@ -1211,6 +1515,33 @@ function toChangelogSectionDocument(changelogContent: string, version: string): 
 }
 
 /**
+ * Reads off which release line a version actually moves, relative to the baseline it is being cut from.
+ *
+ * This is measured rather than read off the requested type on purpose, because the type does not always say.
+ * `prerelease` advances whichever line an earlier `premajor` or `preminor` already chose, and an explicit
+ * `x.y.z` says nothing at all until it is compared. Taking the coordinates of the resulting version answers all
+ * of them with one rule — and it answers them the way a consumer's caret range sees it, which is the only
+ * reading that matters for a published surface.
+ *
+ * @param baseVersion - The previous released version.
+ * @param newVersion - The version about to be published.
+ * @returns The {@link BumpLevel}, or `null` when either version is not parsable as semver.
+ */
+function toEffectiveBumpLevel(baseVersion: string, newVersion: string): BumpLevel | null {
+  const base = parse(baseVersion);
+  const next = parse(newVersion);
+  if (!base || !next) {
+    return null;
+  }
+
+  if (next.major > base.major) {
+    return VersionUpdateType.Major;
+  }
+
+  return next.minor > base.minor ? VersionUpdateType.Minor : VersionUpdateType.Patch;
+}
+
+/**
  * Names the npm scripts that actually reported something, in the order they ran.
  *
  * Naming both unconditionally would be the easy version and would be a lie half the time: a release stopped by
@@ -1235,6 +1566,69 @@ function toFailedScriptNames(findings: ChangelogFinding[]): string {
  */
 function toFindingLines(findings: ChangelogFinding[]): string {
   return findings.map((finding) => `[${finding.scriptName}] ${finding.text}`).join('\n');
+}
+
+/**
+ * Classifies one `git log --format=%H%n%B -z` record into the {@link ForcingCommit} it is, or `null` when it
+ * forces nothing.
+ *
+ * @param record - One NUL-delimited record: the full hash on the first line, the full commit message below it.
+ * @returns The {@link ForcingCommit}, or `null` for a record that constrains nothing or is not a record at all
+ * (the trailing empty string `-z` output ends with, among others).
+ */
+function toForcingCommit(record: string): ForcingCommit | null {
+  // The trailing empty record `-z` leaves has no hash, and a record with no line under the hash is not one
+  // this can classify. Both are the same non-answer.
+  const [sha, subjectLine, ...bodyLines] = record.split('\n');
+  if (!sha || subjectLine === undefined) {
+    return null;
+  }
+
+  const subject = subjectLine.trim();
+  const body = bodyLines.join('\n');
+  const subjectMatch = CONVENTIONAL_COMMIT_SUBJECT_REG_EXP.exec(subject);
+
+  if (subjectMatch?.groups?.['breaking']) {
+    return {
+      level: VersionUpdateType.Major,
+      marker: BREAKING_MARKER,
+      sha,
+      subject
+    };
+  }
+
+  if (BREAKING_CHANGE_FOOTER_REG_EXP.test(body)) {
+    return {
+      level: VersionUpdateType.Major,
+      marker: BREAKING_CHANGE_FOOTER_MARKER,
+      sha,
+      subject
+    };
+  }
+
+  return subjectMatch?.groups?.['type']?.toLowerCase() === FEAT_TYPE
+    ? {
+      level: VersionUpdateType.Minor,
+      marker: FEAT_TYPE_MARKER,
+      sha,
+      subject
+    }
+    : null;
+}
+
+/**
+ * Reduces the commits that force something to the one floor the range as a whole has to clear.
+ *
+ * @param forcingCommits - The {@link ForcingCommit}s found in the range.
+ * @returns The highest {@link BumpLevel} any of them forces, or {@link VersionUpdateType.Patch} — no
+ * constraint — when there are none.
+ */
+function toHighestBumpLevel(forcingCommits: readonly ForcingCommit[]): BumpLevel {
+  if (forcingCommits.some((forcingCommit) => forcingCommit.level === VersionUpdateType.Major)) {
+    return VersionUpdateType.Major;
+  }
+
+  return forcingCommits.length > 0 ? VersionUpdateType.Minor : VersionUpdateType.Patch;
 }
 
 async function updateVersionInFilesForPlugin(newVersion: string, minAppVersion: string | undefined): Promise<void> {
