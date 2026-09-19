@@ -1,14 +1,18 @@
 // @vitest-environment jsdom
 import {
+  afterEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import type { GenericObject } from '../type-guards.ts';
 
 import {
+  checkIsPlainObject,
   parseFrontmatter,
+  registerFrontmatterFormattingPreserver,
   removeEmptyFrontmatterValues,
   setFrontmatter
 } from './frontmatter.ts';
@@ -162,6 +166,68 @@ describe('setFrontmatter', () => {
     const content = 'Body';
     const result = setFrontmatter(content, { order: 5 });
     expect(result).toContain('order: 5');
+  });
+});
+
+describe('registerFrontmatterFormattingPreserver', () => {
+  const CONTENT = '---\ntitle: Old\n---\nBody text';
+
+  afterEach(() => {
+    registerFrontmatterFormattingPreserver(null);
+    vi.restoreAllMocks();
+  });
+
+  it('should let `setFrontmatter` write the block itself when no preserver is registered', () => {
+    expect(setFrontmatter(CONTENT, { title: 'New' })).toContain('title: New');
+  });
+
+  it('should write whatever the registered preserver returns', () => {
+    registerFrontmatterFormattingPreserver(() => 'preserved');
+    expect(setFrontmatter(CONTENT, { title: 'New' })).toBe('preserved');
+  });
+
+  it('should let `setFrontmatter` write the block itself when the preserver declines', () => {
+    registerFrontmatterFormattingPreserver(() => null);
+    expect(setFrontmatter(CONTENT, { title: 'New' })).toContain('title: New');
+  });
+
+  it('should let `setFrontmatter` write the block itself when the preserver throws, and report the throw', () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    registerFrontmatterFormattingPreserver(() => {
+      throw new Error('preserver is broken');
+    });
+
+    expect(setFrontmatter(CONTENT, { title: 'New' })).toContain('title: New');
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(String(errorSpy.mock.calls[0]?.[0])).toContain('preserver is broken');
+  });
+
+  it('should stop routing through a preserver that has been unregistered', () => {
+    registerFrontmatterFormattingPreserver(() => 'preserved');
+    registerFrontmatterFormattingPreserver(null);
+    expect(setFrontmatter(CONTENT, { title: 'New' })).toContain('title: New');
+  });
+});
+
+describe('checkIsPlainObject', () => {
+  it('should accept an object literal', () => {
+    expect(checkIsPlainObject({ a: 1 })).toBe(true);
+  });
+
+  it('should reject a class instance, which a YAML timestamp parses into', () => {
+    expect(checkIsPlainObject(new Date())).toBe(false);
+  });
+
+  it('should reject an array', () => {
+    expect(checkIsPlainObject([1, 2])).toBe(false);
+  });
+
+  it('should reject `null`', () => {
+    expect(checkIsPlainObject(null)).toBe(false);
+  });
+
+  it('should reject a primitive', () => {
+    expect(checkIsPlainObject('a')).toBe(false);
   });
 });
 
