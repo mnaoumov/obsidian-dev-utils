@@ -11,8 +11,11 @@ import {
 } from 'obsidian';
 
 import type { GenericObject } from '../type-guards.ts';
+import type { ValueWrapper } from '../value-wrapper.ts';
 
 import { filterInPlace } from '../array.ts';
+import { printError } from '../error.ts';
+import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { insertAt } from '../string.ts';
 
 /**
@@ -22,6 +25,17 @@ import { insertAt } from '../string.ts';
  * @typeParam CustomFrontmatter - The type of custom front matter.
  */
 export type CombinedFrontmatter<CustomFrontmatter> = GenericObject<CustomFrontmatter & ObsidianFrontmatter>;
+
+/**
+ * A rewrite of a note's front matter that keeps the author's original formatting wherever the change does not reach it.
+ *
+ * It is handed the whole note and the front matter to write, and returns the whole new note — or `null` when it cannot be faithful, which hands the write back to {@link setFrontmatter}'s own parse-and-stringify path. Returning `null` is never an error: it is how the preserver guarantees it can only ever match or improve on that path, never do worse than it.
+ *
+ * @param content - The note to rewrite the front matter of.
+ * @param newFrontmatter - The front matter to write.
+ * @returns The new note, or `null` to let {@link setFrontmatter} write it instead.
+ */
+export type FrontmatterFormattingPreserver = (this: void, content: string, newFrontmatter: object) => null | string;
 
 /**
  * A front matter of an Obsidian file.
@@ -108,6 +122,7 @@ export interface RemoveEmptyFrontmatterValuesParams {
   readonly shouldRemoveNulls?: boolean;
 }
 
+const FRONTMATTER_FORMATTING_PRESERVER_STATE_KEY = 'frontmatterFormattingPreserver';
 const KEY_PATH_SEPARATOR = '.';
 
 /**
@@ -200,6 +215,18 @@ class EmptyFrontmatterValueRemover {
 }
 
 /**
+ * Checks whether the value is a plain object, i.e. an object literal rather than an array or a class instance.
+ *
+ * `parseYaml()` turns a YAML timestamp into a {@link Date}, which has no own enumerable properties, so a plain `typeof value === 'object'` test would report every date as an empty object.
+ *
+ * @param value - The value to check.
+ * @returns Whether the value is a plain object.
+ */
+export function checkIsPlainObject(value: unknown): value is GenericObject {
+  return typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype;
+}
+
+/**
  * Parses the front matter of a given content string.
  *
  * @typeParam CustomFrontmatter - The type of the custom front matter.
@@ -209,6 +236,19 @@ class EmptyFrontmatterValueRemover {
 export function parseFrontmatter<CustomFrontmatter = unknown>(content: string): CombinedFrontmatter<CustomFrontmatter> {
   const frontmatterInfo = getFrontMatterInfo(content);
   return (parseYaml(frontmatterInfo.frontmatter) ?? {}) as CombinedFrontmatter<CustomFrontmatter>;
+}
+
+/**
+ * Registers the {@link FrontmatterFormattingPreserver} every front-matter write in this library routes through.
+ *
+ * There is at most one, shared by every plugin loaded in the same realm — like every other registration in this library it lives in the `globalThis.__obsidianDevUtils` bag — so a single call makes every write this library performs formatting-preserving, `processFrontmatter()` and `applyFileChanges()` included. Pass `null` to unregister.
+ *
+ * The preserver is NOT registered by default, and that is a bundle-size decision rather than a doubt about the engine: the one this library ships needs the `yaml` package's CST API, which Obsidian does not hand to plugins and which costs about 100 KB of a plugin's `main.js`. A plugin that wants it calls `enableFrontmatterFormattingPreservation()` from `obsidian-dev-utils/obsidian/frontmatter-formatting`, and pays for it only then.
+ *
+ * @param preserver - The preserver to route front-matter writes through, or `null` to unregister the current one.
+ */
+export function registerFrontmatterFormattingPreserver(preserver: FrontmatterFormattingPreserver | null): void {
+  getFrontmatterFormattingPreserverWrapper().value = preserver;
 }
 
 /**
@@ -228,11 +268,18 @@ export function removeEmptyFrontmatterValues(params: RemoveEmptyFrontmatterValue
 /**
  * Sets the front matter of a given content string.
  *
+ * When a {@link FrontmatterFormattingPreserver} is registered (see {@link registerFrontmatterFormattingPreserver}) the write goes through it first, so the parts of the block the change does not reach keep the bytes their author wrote — their comments, quoting, blank lines and indentation. Without one, and whenever the preserver reports it cannot be faithful, the whole block is parsed and written out again, which is what Obsidian's own `processFrontMatter()` does.
+ *
  * @param content - The content string to set the front matter in.
  * @param newFrontmatter - The new front matter to set.
  * @returns The new content string with the front matter set.
  */
 export function setFrontmatter(content: string, newFrontmatter: object): string {
+  const preservedContent = preserveFormatting(content, newFrontmatter);
+  if (preservedContent !== null) {
+    return preservedContent;
+  }
+
   const frontmatterInfo = getFrontMatterInfo(content);
   if (Object.keys(newFrontmatter).length === 0) {
     return content.slice(frontmatterInfo.contentStart);
@@ -250,14 +297,22 @@ export function setFrontmatter(content: string, newFrontmatter: object): string 
     : `---\n${newFrontmatterString}---\n${content}`;
 }
 
-/**
- * Checks whether the value is a plain object, i.e. an object literal rather than an array or a class instance.
- *
- * `parseYaml()` turns a YAML timestamp into a {@link Date}, which has no own enumerable properties, so a plain `typeof value === 'object'` test would report every date as an empty object.
- *
- * @param value - The value to check.
- * @returns Whether the value is a plain object.
- */
-function checkIsPlainObject(value: unknown): value is GenericObject {
-  return typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype;
+function getFrontmatterFormattingPreserverWrapper(): ValueWrapper<FrontmatterFormattingPreserver | null> {
+  return getObsidianDevUtilsState<FrontmatterFormattingPreserver | null>(FRONTMATTER_FORMATTING_PRESERVER_STATE_KEY, null);
+}
+
+function preserveFormatting(content: string, newFrontmatter: object): null | string {
+  const preserver = getFrontmatterFormattingPreserverWrapper().value;
+  if (!preserver) {
+    return null;
+  }
+
+  // A preserver can be supplied by any plugin, and this runs inside the write queue, where a throw wedges every write
+  // behind it. So a broken preserver is reported and stepped around rather than allowed to take the write down.
+  try {
+    return preserver(content, newFrontmatter);
+  } catch (error) {
+    printError(new Error('The registered front matter formatting preserver threw. Falling back to rewriting the whole block.', { cause: error }));
+    return null;
+  }
 }
