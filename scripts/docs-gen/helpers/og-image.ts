@@ -65,9 +65,10 @@ export function computeOgHash(params: ComputeOgHashParams): string {
 /**
  * Loads the fonts satori needs to render text.
  *
- * obsidian-dev-utils does not vendor Inter TTFs, so this looks for them (or any
- * `.ttf`/`.otf`) in `fontsDir` and returns `null` when none are available, so
- * the caller can skip OG generation instead of crashing the build.
+ * The repo vendors `inter-latin-400-normal.ttf` / `inter-latin-700-normal.ttf` under
+ * `scripts/docs-gen/assets/fonts`; this falls back to any other `.ttf`/`.otf` in `fontsDirectory` and
+ * returns `null` when the directory holds none, so the caller can skip OG generation instead of
+ * crashing the build.
  */
 export async function loadFonts(fontsDirectory: string): Promise<Font[] | null> {
   const regularPath = `${fontsDirectory}/inter-latin-400-normal.ttf`;
