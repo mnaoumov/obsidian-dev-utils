@@ -1665,4 +1665,151 @@ describe('updateVersion', () => {
     await updateVersion('patch');
     expect(steps).toEqual(['write-scratch', 'review', 'bump', 'write-changelog', 'commit']);
   });
+
+  describe('the bump floor', () => {
+    const LAST_TAG = '1.0.0';
+
+    /**
+     * Sets up a repository whose changelog names {@link LAST_TAG} as the last release, whose tag resolves, and
+     * whose range since that tag is the given commits.
+     *
+     * @param commits - One entry per commit, each a full commit message. The hash is synthesized from the
+     * index, so a case only ever has to write the part that decides the floor.
+     * @param currentVersion - The `package.json` version the bump is computed from.
+     */
+    function setupBumpFloorMocks(commits: string[], currentVersion = LAST_TAG): void {
+      setupFullMocks();
+      mockReaddirPosix.mockResolvedValue([]);
+      mockReadPackageJson.mockResolvedValue({ name: 'my-plugin', version: currentVersion });
+      mockExistsSync.mockImplementation((path: string) => path.includes('CHANGELOG.md'));
+      mockReadFile.mockImplementation((path: string) => Promise.resolve(path === SCRATCH_CHANGELOG_PATH ? '' : `# CHANGELOG\n\n## ${LAST_TAG}\n\n- chore: the previous release\n`));
+
+      // `-z` separates the records with NUL and leaves a trailing empty one, which is exactly the shape the
+      // real command produces and the one the parser has to survive.
+      const log = `${commits.map((message, index) => `${String(index + 1).repeat(40)}\n${message}\n`).join('\0')}\0`;
+
+      mockExecFromRoot.mockImplementation((command: string | string[]) => {
+        const commandString = Array.isArray(command) ? command.join(' ') : command;
+        if (commandString.startsWith('git rev-parse')) {
+          return Promise.resolve(`refs/tags/${LAST_TAG}`);
+        }
+        if (commandString.includes('--format=%H%n%B')) {
+          return Promise.resolve(log);
+        }
+        if (commandString.startsWith('git tag')) {
+          return Promise.resolve(LAST_TAG);
+        }
+        if (commandString.startsWith('gh repo view')) {
+          return Promise.resolve('https://github.com/user/repo');
+        }
+        return commandString.includes('npm pack') ? Promise.resolve(JSON.stringify([{ filename: 'pkg.tgz' }], null, 2)) : Promise.resolve('');
+      });
+    }
+
+    it('should refuse a patch when the range carries a feat', async () => {
+      setupBumpFloorMocks(['fix: a small thing', 'feat(parser): accept a second syntax']);
+      await expect(updateVersion('patch')).rejects.toThrow(
+        /force at least a minor release, but 'patch' would publish 1\.0\.1, which is a patch/
+      );
+    });
+
+    it('should name the forcing commit and its marker', async () => {
+      setupBumpFloorMocks(['fix: a small thing', 'feat(parser): accept a second syntax']);
+      await expect(updateVersion('patch')).rejects.toThrow('22222222  feat(parser): accept a second syntax  (a `feat` type)');
+    });
+
+    it('should refuse a minor when the range carries a breaking marker', async () => {
+      setupBumpFloorMocks(['feat(vitest-config)!: run a plugin\'s unit tests on the VM pool']);
+      await expect(updateVersion('minor')).rejects.toThrow(
+        /force at least a major release, but 'minor' would publish 1\.1\.0, which is a minor/
+      );
+      await expect(updateVersion('minor')).rejects.toThrow('(the `!` breaking marker)');
+    });
+
+    it('should refuse a minor over a BREAKING CHANGE footer whose subject carries no marker', async () => {
+      // The first-parent hole this gate exists to close: `toChangelogEntry` lifts only the FIRST line of a
+      // merge body onto a default merge subject, so a footer written on a branch commit reaches no
+      // first-parent history at all.
+      setupBumpFloorMocks(['fix(build): drop the barrel re-export\n\nBREAKING CHANGE: the barrel entry point is gone.']);
+      await expect(updateVersion('minor')).rejects.toThrow('(a `BREAKING CHANGE:` footer)');
+    });
+
+    it('should accept the BREAKING-CHANGE spelling too', async () => {
+      setupBumpFloorMocks(['fix(build): drop the barrel re-export\n\nBREAKING-CHANGE: the barrel entry point is gone.']);
+      await expect(updateVersion('minor')).rejects.toThrow('force at least a major release');
+    });
+
+    it('should refuse before anything is checked, built or written', async () => {
+      setupBumpFloorMocks(['feat: a new capability']);
+      await expect(updateVersion('patch')).rejects.toThrow('force at least a minor release');
+      expect(mockNpmRun).not.toHaveBeenCalled();
+      expect(mockEditPackageJson).not.toHaveBeenCalled();
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should refuse even when the verification checks are skipped', async () => {
+      setupBumpFloorMocks(['feat: a new capability']);
+      await expect(updateVersion('patch', { shouldRunChecks: false })).rejects.toThrow('force at least a minor release');
+    });
+
+    it('should refuse an explicit version below the floor', async () => {
+      setupBumpFloorMocks(['feat!: a breaking capability']);
+      await expect(updateVersion('1.0.1')).rejects.toThrow(/force at least a major release, but '1\.0\.1' would publish 1\.0\.1/);
+    });
+
+    it('should accept the bump the floor asks for', async () => {
+      setupBumpFloorMocks(['feat: a new capability']);
+      await updateVersion('minor');
+      expect(mockEditPackageJson).toHaveBeenCalled();
+    });
+
+    it('should accept a bump higher than the floor asks for', async () => {
+      setupBumpFloorMocks(['feat: a new capability']);
+      await updateVersion('major');
+      expect(mockEditPackageJson).toHaveBeenCalled();
+    });
+
+    it('should accept a patch over a range that forces nothing', async () => {
+      setupBumpFloorMocks(['fix: a small thing', 'chore: update libs', 'docs(agents): record the reason']);
+      await updateVersion('patch');
+      expect(mockEditPackageJson).toHaveBeenCalled();
+    });
+
+    it('should accept a prerelease that stays on the major line an earlier premajor already reached', async () => {
+      // `prerelease` says nothing about a line on its own — this is why the level is read off the resulting
+      // version rather than off the requested type.
+      setupBumpFloorMocks(['feat!: a breaking capability'], '2.0.0-beta.0');
+      await updateVersion('prerelease');
+      expect(mockEditPackageJson).toHaveBeenCalled();
+    });
+
+    it('should refuse a prerelease that stays below the floor', async () => {
+      setupBumpFloorMocks(['feat!: a breaking capability'], '1.0.1-beta.0');
+      await expect(updateVersion('prerelease')).rejects.toThrow('force at least a major release');
+    });
+
+    it('should not enforce a floor it cannot compare against, when the previous tag is not a version', async () => {
+      setupBumpFloorMocks(['feat!: a breaking capability']);
+      mockReadFile.mockImplementation((path: string) => Promise.resolve(path === SCRATCH_CHANGELOG_PATH ? '' : '# CHANGELOG\n\n## the-first-cut\n\n- chore: the previous release\n'));
+      await updateVersion('patch');
+      expect(mockEditPackageJson).toHaveBeenCalled();
+    });
+
+    it('should not derive a floor when no previous release tag resolves', async () => {
+      setupBumpFloorMocks(['feat!: a breaking capability']);
+      mockExecFromRoot.mockImplementation((command: string | string[]) => {
+        const commandString = Array.isArray(command) ? command.join(' ') : command;
+        if (commandString.startsWith('git tag')) {
+          return Promise.resolve(LAST_TAG);
+        }
+        if (commandString.startsWith('gh repo view')) {
+          return Promise.resolve('https://github.com/user/repo');
+        }
+        // `git rev-parse --verify --quiet` answers with nothing for a heading that is not a tag.
+        return commandString.includes('npm pack') ? Promise.resolve(JSON.stringify([{ filename: 'pkg.tgz' }], null, 2)) : Promise.resolve('');
+      });
+      await updateVersion('patch');
+      expect(mockEditPackageJson).toHaveBeenCalled();
+    });
+  });
 });
