@@ -605,16 +605,15 @@ The pin is a compromise, not a consensus: `astro` asks for `^4.3.0` (raised from
 
 Related: do **not** reintroduce `gray-matter`: its `lib/engines.js` binds js-yaml's `safeLoad` / `safeDump` at **module-load** time, and both were removed in js-yaml v4 — so merely *importing* `gray-matter` throws `Cannot read properties of undefined (reading 'bind')`, before any `engines` option can override the default. `scripts/docs-gen/generate-og-images.ts` therefore parses frontmatter itself with `yaml`. (`yaml`, not `js-yaml`: `depend/ban-dependencies` bans `js-yaml` as a *direct* dependency, which is why it only ever appears under `overrides`.)
 
-### `@astrojs/markdown-remark` is a direct devDependency on purpose
+### The docs build runs on Sätteri, and `@astrojs/markdown-satteri` + `satteri` are direct devDependencies because of it
 
-Astro 7 made Sätteri its default Markdown processor and **stopped installing `@astrojs/markdown-remark`**, but `markdown.remarkPlugins` (used by [`astro.config.ts`](astro.config.ts) for `remarkRelativeLinks`) still runs on the `unified` processor from that package. Without it as a direct dependency, `npm run docs:build` dies during config validation with
+Astro 7.3 made **Sätteri** its default Markdown processor. [`astro.config.ts`](astro.config.ts) names it explicitly — `markdown.processor: satteri({ mdastPlugins: [satteriRelativeLinks(BASE)] })` — and the absolute→relative link rewrite rides along as one of its mdast plugins, in [`scripts/docs-gen/helpers/satteri-plugins/satteri-relative-links.ts`](scripts/docs-gen/helpers/satteri-plugins/satteri-relative-links.ts).
 
-```text
-`markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` run on the `unified`
-processor from `@astrojs/markdown-remark`, which is no longer installed by default …
-```
+Both packages are only ever *transitively* available (through `astro`, `@astrojs/starlight` and `@astrojs/mdx`), so both are declared in `devDependencies` rather than left as phantoms — `astro.config.ts` imports the `satteri()` processor factory from `@astrojs/markdown-satteri`, and the plugin file imports its `MdastPluginDefinition` / `MdastVisitorContext` types from `satteri` — and code that imports a package it does not declare breaks the moment a transitive drops it.
 
-`@astrojs/mdx` pulls its own **nested** copy, which does not satisfy this — the resolution has to succeed from the project root. So the package is listed in `devDependencies`; do not drop it as "already transitively available". It retires only if `astro.config.ts` stops using remark/rehype plugins.
+**Declaring `satteri` is also what puts the right version at the root.** `starlight-github-alerts` asks for `^0.9.3` while `@astrojs/markdown-satteri` and `@astrojs/starlight` ask for `^0.10.3`; without a root declaration npm hoists the `0.9.x` and nests *two* `0.10.x` copies, and the types `astro.config.ts` imports then resolve to a version the processor is not. The `^0.10.5` declaration flips that — one `0.10.x` at the root, one nested `0.9.x` for `starlight-github-alerts`.
+
+**What this section used to be.** Until 2026-09-19 it was "`@astrojs/markdown-remark` is a direct devDependency on purpose", covering the other way out of the same Astro 7.3 change: keeping `markdown.remarkPlugins` working by reinstalling the `unified` processor Astro had stopped installing, since without it `npm run docs:build` dies during config validation with ``` `markdown.remarkPlugins`, `markdown.rehypePlugins`, and `markdown.remarkRehype` run on the `unified` processor from `@astrojs/markdown-remark`, which is no longer installed by default … ```. It named its own retirement condition — "it retires only if `astro.config.ts` stops using remark/rehype plugins" — and that is exactly what moving to Sätteri did. `@astrojs/markdown-remark` is no longer a dependency here; do not re-add it to make a remark plugin work, port the plugin to Sätteri's mdast visitor instead.
 
 ### ESLint plugin overrides (`eslint-plugin-import`, `eslint-plugin-n`)
 

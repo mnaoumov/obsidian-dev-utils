@@ -1,3 +1,4 @@
+import { satteri } from '@astrojs/markdown-satteri';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `StarlightIntegration` is too verbose.
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
@@ -8,7 +9,7 @@ import {
 import { resolve } from 'node:path';
 import starlightGitHubAlerts from 'starlight-github-alerts';
 
-import { remarkRelativeLinks } from './scripts/docs-gen/helpers/remark-plugins/remark-relative-links.ts';
+import { satteriRelativeLinks } from './scripts/docs-gen/helpers/satteri-plugins/satteri-relative-links.ts';
 
 // The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/src`
 // (`srcDir`) so it never collides with the library's own `src/` and `dist/`. The API reference is
@@ -46,7 +47,10 @@ export default defineConfig({
     })
   ],
   markdown: {
-    remarkPlugins: [remarkRelativeLinks(BASE)]
+    // Astro 7.3 made Sätteri the default Markdown processor; `markdown.remarkPlugins` now runs only on the
+    // `unified` processor from `@astrojs/markdown-remark`, which Astro no longer installs. Naming the
+    // Sätteri processor here keeps the pipeline on it, carrying the link rewrite as one of its mdast plugins.
+    processor: satteri({ mdastPlugins: [satteriRelativeLinks(BASE)] })
   },
   // eslint-disable-next-line unicorn/name-replacements -- `outDir` is an Astro config key.
   outDir: './docs/dist',
