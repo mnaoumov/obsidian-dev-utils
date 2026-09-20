@@ -222,7 +222,7 @@ function buildOgImageMarkup(params: OgImageParams, logoDataUri: null | string): 
     type: 'div'
   };
 
-  // Footer with text branding (obsidian-dev-utils has no logo asset)
+  // Footer with the package name as text branding (the favicon is rendered separately, in the header)
   const footer = {
     props: {
       children: [
