@@ -442,6 +442,15 @@ export function myFunction(param: Type): ReturnType {
 - **Its regression net is a seeded differential fuzz, in the test file.** Two seeds by 500 mutations assert both invariants: a preserved block reads back as exactly what the rewritten one would, and a change that changes nothing changes no byte. A 36 000-mutation run of the same generator is what found the one shape that produced unreadable YAML — a valueless item, a bare dash or a `key:` with nothing after it, absorbs the next line's indent, so removing one took its successor's indent with it — which `normalizeItemIndents` now repairs, and which is why that function is not the tidying it looks like.
 - (cannot be forced by ESLint — a `no-restricted-imports` entry could pin the one-module rule, which is the half worth adding if this ever grows a second engine)
 
+### L27. Recognize BOTH backlink-cache plugin ids — and the `.safe` graft is why that is a two-line problem rather than a fleet-wide one
+
+- **There are two plugins in this family and this library recognizes both**: `advanced-metadata-cache` (Advanced Metadata Cache) and `backlink-cache` (the retired Backlink Cache it supersedes). Both ids, and the `hasBacklinkCachePlugin()` that reads them, live in `src/obsidian/metadata-cache.ts`.
+- **`getBacklinksForFileSafe()` needs neither id, and that is the design rather than an oversight.** It detects the cache by the `.safe` overload grafted onto `MetadataCache.getBacklinksForFile` — the `GetBacklinksForFileSafeWrapper` convention this library publishes and both plugins satisfy — so a third implementation of that convention works with it on the day it ships, with no release here. Do not "fix" it by adding an id check; the id-free path is the one that scales.
+- **The one place an id is unavoidable is a question the graft does not answer.** The rename handler's canvas gate (`rename-delete-handler-component.ts`) stands down when such a plugin is present, because these plugins ALSO index canvas metadata — and nothing on the `getBacklinksForFile` surface says whether that is true. A new caller of that shape calls `hasBacklinkCachePlugin()` rather than inlining a third copy of the id list.
+- **It reads the LOADED plugin instance, not `enabledPlugins`.** The gate asks whether the patches are in place right now, and they are not until the plugin has loaded. That makes it an **L25** first-kind question, so it is only sound on a user-driven path — which the rename handler is.
+- **When the retired id may be dropped is written down on the constant, not here**, so the decision sits where the next session reading that id will be standing. The short form: not before Advanced Metadata Cache is in the community registry, not within twelve months of Backlink Cache's final handover release, and not in a minor. Removing a plugin from the registry blocks new installs and uninstalls nothing, so the old id keeps a live user base for as long as those users do not act.
+- (cannot be forced by ESLint — a rule cannot tell which of the two questions about the cache a call site is asking)
+
 ## Testing
 
 ### Goals

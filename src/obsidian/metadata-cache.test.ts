@@ -3,6 +3,7 @@ import type {
   App,
   CachedMetadata,
   FrontmatterLinkCache,
+  Plugin,
   Reference,
   ReferenceCache,
   TAbstractFile,
@@ -50,6 +51,8 @@ import {
 } from './file-system.ts';
 import { parseFrontmatter } from './frontmatter.ts';
 import {
+  ADVANCED_METADATA_CACHE_PLUGIN_ID,
+  BACKLINK_CACHE_PLUGIN_ID,
   CachedMetadataExFeature,
   ensureMetadataCacheReady,
   getBacklinksForFileOrPath,
@@ -57,6 +60,7 @@ import {
   getCacheSafe,
   getFrontmatterSafe,
   getLinks,
+  hasBacklinkCachePlugin,
   isCachedMetadataEx,
   parseMetadata,
   registerFileCacheForNonExistingFile,
@@ -152,8 +156,10 @@ vi.mock('@obsidian-typings/obsidian-public-latest/implementations', async (impor
 });
 
 let app: App;
+const loadedPluginIds = new Set<string>();
 
 beforeEach(() => {
+  loadedPluginIds.clear();
   app = createMockApp();
 });
 
@@ -191,6 +197,9 @@ function createMockApp(): App {
         add: vi.fn(),
         remove: vi.fn()
       }
+    },
+    plugins: {
+      getPlugin: vi.fn((id: string): null | Plugin => loadedPluginIds.has(id) ? castTo<Plugin>({}) : null)
     },
     vault: {
       cachedRead: vi.fn(),
@@ -1150,5 +1159,32 @@ describe('getBacklinksForFileSafe', () => {
 
     const result = await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(result.keys()).toEqual(['source.md']);
+  });
+});
+
+describe('hasBacklinkCachePlugin', () => {
+  it('should return false when no backlink cache plugin is loaded', () => {
+    expect(hasBacklinkCachePlugin(app)).toBe(false);
+  });
+
+  it('should return true when Advanced Metadata Cache is loaded', () => {
+    loadedPluginIds.add(ADVANCED_METADATA_CACHE_PLUGIN_ID);
+    expect(hasBacklinkCachePlugin(app)).toBe(true);
+  });
+
+  it('should return true when the retired Backlink Cache is loaded', () => {
+    loadedPluginIds.add(BACKLINK_CACHE_PLUGIN_ID);
+    expect(hasBacklinkCachePlugin(app)).toBe(true);
+  });
+
+  it('should return true when both are loaded', () => {
+    loadedPluginIds.add(ADVANCED_METADATA_CACHE_PLUGIN_ID);
+    loadedPluginIds.add(BACKLINK_CACHE_PLUGIN_ID);
+    expect(hasBacklinkCachePlugin(app)).toBe(true);
+  });
+
+  it('should not be fooled by an unrelated plugin', () => {
+    loadedPluginIds.add('some-other-plugin');
+    expect(hasBacklinkCachePlugin(app)).toBe(false);
   });
 });

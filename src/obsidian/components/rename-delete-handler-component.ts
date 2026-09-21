@@ -84,6 +84,7 @@ import {
   getBacklinksForFileOrPath,
   getBacklinksForFileSafe,
   getLinks,
+  hasBacklinkCachePlugin,
   registerFileCacheForNonExistingFile,
   registerFiles
 } from '../metadata-cache.ts';
@@ -718,7 +719,7 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
           return true;
         }
 
-        return !this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas) || this.app.plugins.getPlugin('backlink-cache') ? false : (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) || (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION);
+        return !this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas) || hasBacklinkCachePlugin(this.app) ? false : (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) || (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION);
       }
     );
   }

@@ -338,6 +338,22 @@ interface ToParsedCachedMetadataExParams {
 }
 
 /**
+ * The plugin id of the Advanced Metadata Cache plugin, the successor to Backlink Cache.
+ *
+ * Used by {@link hasBacklinkCachePlugin}. Note that {@link getBacklinksForFileSafe} does NOT need this id: it detects the cache by the {@link GetBacklinksForFileSafeWrapper.safe} overload grafted onto `MetadataCache.getBacklinksForFile`, which both plugins install and which names no plugin.
+ */
+export const ADVANCED_METADATA_CACHE_PLUGIN_ID = 'advanced-metadata-cache';
+
+/**
+ * The plugin id of the retired Backlink Cache plugin, superseded by {@link ADVANCED_METADATA_CACHE_PLUGIN_ID}.
+ *
+ * Still recognized by {@link hasBacklinkCachePlugin}, deliberately. Removing a plugin from the community registry blocks new installs; it uninstalls nothing, so every existing user keeps it until they migrate by hand.
+ *
+ * It may be dropped when all three of the following hold, and not before: Advanced Metadata Cache is listed in the community registry, so migrating is possible at all; the final Backlink Cache handover release has been out for at least twelve months; and this library is cutting a major release anyway, because dropping the id silently un-gates canvas link handling for anyone who has not migrated. There is no cost pressure to drop it earlier - recognizing a dead id is one string comparison on a path that already reads a plugin registry.
+ */
+export const BACKLINK_CACHE_PLUGIN_ID = 'backlink-cache';
+
+/**
  * Ensures that the metadata cache is ready for all files.
  *
  * @param app - The Obsidian app instance.
@@ -587,6 +603,20 @@ export function getLinks(params: GetLinksParams): Reference[] {
   });
 
   return links;
+}
+
+/**
+ * Determines whether a backlink cache plugin is currently loaded - either Advanced Metadata Cache ({@link ADVANCED_METADATA_CACHE_PLUGIN_ID}) or its retired predecessor Backlink Cache ({@link BACKLINK_CACHE_PLUGIN_ID}).
+ *
+ * Such a plugin grafts a drain-on-read backlink index onto the metadata cache and indexes canvas metadata, so a caller that compensates for Obsidian's own gaps can stand down while one is present. Both ids are recognized; {@link BACKLINK_CACHE_PLUGIN_ID} records when the retired one may be dropped.
+ *
+ * This reads the LOADED plugin instance rather than `app.plugins.enabledPlugins`, deliberately: the question is whether the plugin's patches are in place right now, and they are not until it has loaded. Plugins load in an unspecified order, so call this from a user-driven path rather than from plugin load - see rule L25 in `AGENTS.md`.
+ *
+ * @param app - The Obsidian app instance.
+ * @returns `true` if a backlink cache plugin is loaded, otherwise `false`.
+ */
+export function hasBacklinkCachePlugin(app: App): boolean {
+  return app.plugins.getPlugin(ADVANCED_METADATA_CACHE_PLUGIN_ID) !== null || app.plugins.getPlugin(BACKLINK_CACHE_PLUGIN_ID) !== null;
 }
 
 /**
