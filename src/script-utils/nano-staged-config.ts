@@ -30,19 +30,23 @@ const PACKAGE_MANAGER_RUN_COMMAND = getPackageManagerRunCommand().join(' ');
  * so on — so nano-staged file paths are forwarded as CLI arguments.
  */
 export const obsidianDevUtilsConfig: Record<string, string[]> = {
-  /*
-   * Lint everything except the `templates/` consumer templates: ESLint globally ignores them, and
-   * they ship their own consumer-facing config/scripts that cannot resolve in-repo, so passing one
-   * by explicit path errors out. The `!(templates)` negation drops any path that begins with
-   * `templates`. Formatting and spellchecking still cover `templates/` via the entries above and below.
-   */
-  '!(templates)*.{ts,tsx,mts}': [
-    `${PACKAGE_MANAGER_RUN_COMMAND} lint:fix --`
-  ],
   '*': [
     `${PACKAGE_MANAGER_RUN_COMMAND} spellcheck --`
   ],
+  /*
+   * `lint:fix` and `format` both REWRITE the file, so they have to share one key: nano-staged runs its
+   * per-pattern groups under `Promise.all` (`run()` in `nano-staged/lib/cmd-runner.js`), and sequences only
+   * the commands INSIDE a single key's array (`runTask()`, a `for ... of await`). Split across two keys they
+   * race, whichever finishes last wins, and the commit stages bytes that neither tool would have produced on
+   * its own.
+   *
+   * So do NOT express a directory exclusion by giving one of these two its own negated key -- that silently
+   * takes the ordering away. An exclusion belongs in the excluded tool's own config, where ESLint's
+   * `globalIgnores` already puts it: a path ESLint ignores is reported as a warning and exits 0 when it is
+   * passed explicitly, so it costs a console line rather than a failed commit and needs no key here.
+   */
   '*.{ts,tsx,mts}': [
+    `${PACKAGE_MANAGER_RUN_COMMAND} lint:fix --`,
     `${PACKAGE_MANAGER_RUN_COMMAND} format --`
   ],
   '*.md': [
