@@ -96,9 +96,8 @@ describe('getNanoStagedConfig', () => {
 describe('obsidianDevUtilsConfig', () => {
   it('should run every task through npm when npm owns the tree', () => {
     expect(obsidianDevUtilsConfig).toEqual({
-      '!(templates)*.{ts,tsx,mts}': ['npm run lint:fix --'],
       '*': ['npm run spellcheck --'],
-      '*.{ts,tsx,mts}': ['npm run format --'],
+      '*.{ts,tsx,mts}': ['npm run lint:fix --', 'npm run format --'],
       '*.md': ['npm run lint:md:fix --']
     });
   });
@@ -115,10 +114,27 @@ describe('obsidianDevUtilsConfig', () => {
     const { obsidianDevUtilsConfig: bunConfig } = await import('./nano-staged-config.ts');
 
     expect(bunConfig).toEqual({
-      '!(templates)*.{ts,tsx,mts}': ['bun run lint:fix --'],
       '*': ['bun run spellcheck --'],
-      '*.{ts,tsx,mts}': ['bun run format --'],
+      '*.{ts,tsx,mts}': ['bun run lint:fix --', 'bun run format --'],
       '*.md': ['bun run lint:md:fix --']
     });
+  });
+
+  /*
+   * The regression this pins. An earlier `templates/` exclusion moved `lint:fix` onto a key of its own,
+   * `!(templates)*.{ts,tsx,mts}`, which silently took the ordering away: nano-staged runs its per-pattern
+   * groups under `Promise.all` and sequences only the commands inside a single key's array, so the two
+   * writers of one file raced and whichever finished last won.
+   */
+  it('should keep both file-rewriting tasks under one key, in order', () => {
+    const keysRewritingTypeScript = Object.entries(obsidianDevUtilsConfig)
+      .filter(([, commands]) => commands.some((command) => command.includes('lint:fix') || command.includes(' format ')))
+      .map(([key]) => key);
+
+    expect(keysRewritingTypeScript).toEqual(['*.{ts,tsx,mts}']);
+    expect(obsidianDevUtilsConfig['*.{ts,tsx,mts}']).toEqual([
+      'npm run lint:fix --',
+      'npm run format --'
+    ]);
   });
 });
