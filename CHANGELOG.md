@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 106.0.0
+
+- feat(deps)!: move the obsidian-integration-testing peer range to ^16.0.0
+- chore(deps): bump typescript-eslint to 8.70.1 and drop the MethodKeys disable
+- feat(link): carry offsetRange through the four update-link wrappers
+- docs(changelog): say 105.1.0's vitest-config change was breaking and should have been a major
+- feat(vitest-config): pin the reporters so a run reports the same for a session as for a developer
+- fix(nano-staged-config): run lint:fix and format under one key so the writers cannot race
+- feat(metadata-cache): recognize the Advanced Metadata Cache plugin id beside backlink-cache
+- docs(og-image): say the favicon is rendered in the header, because it is
+- docs(og-image): say that the Inter TTFs are vendored, because they are
+- feat(version)!: refuse a bump below what the commits since the last tag force
+- refactor(docs): move the relative-link rewrite onto Sätteri, as obsidian-test-mocks already has
+
 ## 105.2.0
 
 - docs(frontmatter): reword a comment the spell check cannot read
