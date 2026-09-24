@@ -907,6 +907,8 @@ describe('createTempFile', () => {
   });
 
   it('should create file and return cleanup function', async () => {
+    // The mock's `create` refuses a path the adapter reports as existing, so the file must read as absent here.
+    vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.vault, 'create');
     const cleanup = await createTemporaryFile(app, 'new.md');
     expect(vi.mocked(app.vault.create)).toHaveBeenCalledWith('new.md', '');
@@ -927,15 +929,14 @@ describe('createTempFile', () => {
   });
 
   it('cleanup should trash non-deleted file', async () => {
-    const mockCreatedFile = TFile.create__(mockApp.vault, 'new.md');
-    const createdFile = mockCreatedFile.asOriginalType2__();
-    vi.spyOn(app.vault, 'create').mockResolvedValue(createdFile);
+    // The mock's `create` refuses a path the adapter reports as existing, so the file must read as absent here.
+    vi.spyOn(app.vault.adapter, 'exists').mockResolvedValue(false);
     vi.spyOn(app.fileManager, 'trashFile');
 
     const cleanup = await createTemporaryFile(app, 'new.md');
+    const createdFile = app.vault.getFileByPath('new.md');
+    assertNonNullable(createdFile);
 
-    // Set up the file in fileMap for cleanup to find it
-    mockApp.vault.setVaultAbstractFile__('new.md', mockCreatedFile);
     await cleanup();
     expect(vi.mocked(app.fileManager.trashFile)).toHaveBeenCalledWith(createdFile);
   });

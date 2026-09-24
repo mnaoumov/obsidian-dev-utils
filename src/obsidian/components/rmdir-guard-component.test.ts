@@ -72,19 +72,29 @@ describe('RmdirGuardComponent', () => {
     expect(await app.vault.adapter.exists(NON_EMPTY_FOLDER_CHILD_PATH)).toBe(false);
   });
 
-  it('should not check emptiness when the target is a file', async () => {
+  it('should hand a file to the native rmdir untouched, without checking emptiness', async () => {
+    // The guard installed by `beforeEach` sits above the stub only if it is re-installed after it.
+    component.unload();
+    const nativeRmdir = vi.spyOn(app.vault.adapter, 'rmdir').mockResolvedValue();
+    const guard = new RmdirGuardComponent(app);
+    guard.load();
     const listSpy = vi.spyOn(app.vault.adapter, 'list');
 
-    await app.vault.adapter.rmdir(FILE_PATH, false);
+    try {
+      await app.vault.adapter.rmdir(FILE_PATH, false);
+    } finally {
+      guard.unload();
+    }
 
+    expect(nativeRmdir).toHaveBeenCalledWith(FILE_PATH, false);
     expect(listSpy).not.toHaveBeenCalled();
-    expect(await app.vault.adapter.exists(FILE_PATH)).toBe(true);
   });
 
+  // The mock adapter is the desktop one, whose native non-recursive `rmdir` reports a missing path as `ENOENT`.
   it('should not check emptiness when the target does not exist', async () => {
     const listSpy = vi.spyOn(app.vault.adapter, 'list');
 
-    await app.vault.adapter.rmdir(MISSING_PATH, false);
+    await expect(app.vault.adapter.rmdir(MISSING_PATH, false)).rejects.toThrow('ENOENT');
 
     expect(listSpy).not.toHaveBeenCalled();
   });
@@ -92,9 +102,7 @@ describe('RmdirGuardComponent', () => {
   it('should stop guarding once unloaded', async () => {
     component.unload();
 
-    await app.vault.adapter.rmdir(NON_EMPTY_FOLDER_PATH, false);
-
-    expect(await app.vault.adapter.exists(NON_EMPTY_FOLDER_PATH)).toBe(false);
+    await expectUnguarded();
   });
 
   /*
@@ -148,8 +156,9 @@ describe('RmdirGuardComponent', () => {
     expect(await app.vault.adapter.exists(NON_EMPTY_FOLDER_CHILD_PATH)).toBe(true);
   }
 
+  // Unguarded, the desktop adapter's own non-recursive `rmdir` answers, and it refuses every folder, empty or not.
   async function expectUnguarded(): Promise<void> {
-    await app.vault.adapter.rmdir(NON_EMPTY_FOLDER_PATH, false);
-    expect(await app.vault.adapter.exists(NON_EMPTY_FOLDER_PATH)).toBe(false);
+    await expect(app.vault.adapter.rmdir(NON_EMPTY_FOLDER_PATH, false)).rejects.toThrow('EISDIR');
+    expect(await app.vault.adapter.exists(NON_EMPTY_FOLDER_CHILD_PATH)).toBe(true);
   }
 });

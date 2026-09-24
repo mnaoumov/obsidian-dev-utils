@@ -90,10 +90,16 @@ describe('getCanvasReferences', () => {
 
   const FRONTMATTER_MARKDOWN_LINK_TEXT = '---\nlink: "[My Note](my-note.md)"\n---\nbody';
 
-  it('should not surface a text-node frontmatter markdown link when the frontmatter-markdown-links plugin is absent', async () => {
+  // Obsidian's own metadata parse reads an internal markdown link in a property, so the plugin is not what finds it.
+  it('should surface a text-node frontmatter markdown link when the frontmatter-markdown-links plugin is absent', async () => {
     const app = createApp(toCanvasJson([{ id: '1', text: FRONTMATTER_MARKDOWN_LINK_TEXT, type: 'text' }]));
     const references = await getCanvasReferences(app, CANVAS_PATH);
-    expect(references).toEqual([]);
+    expect(references).toHaveLength(1);
+    expect(references[0]).toMatchObject({
+      key: 'nodes.0.text.0',
+      link: 'my-note.md',
+      original: '[My Note](my-note.md)'
+    });
   });
 
   it('should surface a text-node frontmatter markdown link when the frontmatter-markdown-links plugin is present', async () => {

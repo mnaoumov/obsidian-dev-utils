@@ -218,7 +218,10 @@ describe('prompt', () => {
     });
     queueMicrotask(() => {
       const textComp = textInstances[0];
-      castTo<TextComponent>(textComp).setValue('updated');
+      const textComponent = castTo<TextComponent>(textComp);
+      // As in Obsidian, `setValue` alone fires no change handler: the user's typing is the `input` event.
+      textComponent.setValue('updated');
+      textComponent.inputEl.dispatchEvent(new Event('input'));
       const okButton = buttonInstances[0];
       castTo<ButtonComponent>(okButton).simulateClick__();
     });
