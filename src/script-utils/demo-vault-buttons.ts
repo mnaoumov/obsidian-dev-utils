@@ -84,7 +84,7 @@ export interface DemoVaultButtonResult {
  */
 export interface DemoVaultNote {
   /**
-   * How many `code-button` fences the note's source declares.
+   * How many buttons the note's source renders, as counted by {@link countRenderedButtons}.
    */
   readonly buttonCount: number;
 
@@ -92,6 +92,27 @@ export interface DemoVaultNote {
    * The note's file name, relative to the demo vault root.
    */
   readonly name: string;
+}
+
+/**
+ * A button that is EXPECTED not to report success, so the suite does not fail on it.
+ */
+export interface ExpectedNonOkButton {
+  /**
+   * A substring of the button's rendered caption.
+   */
+  readonly captionIncludes: string;
+
+  /**
+   * The note holding the button, relative to the demo vault root.
+   */
+  readonly note: string;
+
+  /**
+   * The status the button is expected to end in. Any other status still fails, so an error demo that
+   * starts timing out instead is reported rather than waved through.
+   */
+  readonly status: Exclude<DemoVaultButtonResult['status'], 'ok'>;
 }
 
 /**
@@ -109,11 +130,28 @@ export interface RegisterDemoVaultButtonSuiteOptions {
   readonly buttonResultTimeoutInMilliseconds?: number;
 
   /**
+   * Folders to skip whole, matched against both the folder name and its path relative to the demo vault
+   * root — for a group whose notes cannot run unattended, such as ones that first install a third-party
+   * plugin from the community store.
+   *
+   * @default `[]`
+   */
+  readonly excludedFolders?: readonly string[];
+
+  /**
    * Note file names (relative to the demo vault root) to skip.
    *
    * @default `['README.md']`
    */
   readonly excludedNotes?: readonly string[];
+
+  /**
+   * Buttons that legitimately do not report success: an error demo, or a button that turns system
+   * messages off and so never prints the result line the suite classifies.
+   *
+   * @default `[]`
+   */
+  readonly expectedNonOkButtons?: readonly ExpectedNonOkButton[];
 
   /**
    * The repository root holding `demo-vault/`.
@@ -133,6 +171,18 @@ export interface RegisterDemoVaultButtonSuiteOptions {
    * @default `12000`
    */
   readonly settleTimeoutInMilliseconds?: number;
+
+  /**
+   * Whether to dismiss any open modal while waiting for a clicked button's result, and again once it is
+   * classified.
+   *
+   * A button that `await`s an `alert` / `confirm` / `prompt` cannot report a result until somebody closes
+   * the dialog, so without this it ends as `timeout` — and the dialog it left open then sits over every
+   * later button in the run. Off by default, so no suite changes behavior unasked.
+   *
+   * @default `false`
+   */
+  readonly shouldDismissModals?: boolean;
 }
 
 /*
@@ -148,6 +198,28 @@ export interface RegisterDemoVaultButtonSuiteOptions {
 const DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS = 10_000;
 const DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS = 12_000;
 
+interface ClickButtonParams {
+  /**
+   * The button's rendered caption, which is how it is addressed.
+   */
+  readonly buttonCaption: string;
+
+  /**
+   * The note holding the button.
+   */
+  readonly notePath: string;
+
+  /**
+   * Whether to dismiss the modals the button opens.
+   */
+  readonly shouldDismissModals: boolean;
+
+  /**
+   * The render and result budgets.
+   */
+  readonly timeouts: ClickButtonTimeouts;
+}
+
 const POLL_INTERVAL_IN_MILLISECONDS = 100;
 const OUTPUT_EXCERPT_LENGTH = 400;
 
@@ -155,7 +227,11 @@ const OUTPUT_EXCERPT_LENGTH = 400;
 // NOT excluded: the landing notes carry buttons of their own.
 const DEFAULT_EXCLUDED_NOTES = ['README.md'];
 
-const CODE_BUTTON_FENCE_REG_EXP = /^\s*```code-button/gm;
+// A fence line: its marker run (three or more backticks or tildes) and whatever follows it.
+const FENCE_REG_EXP = /^\s*(?<marker>`{3,}|~{3,})(?<info>.*)$/;
+const CODE_BUTTON_FENCE_INFO = 'code-button';
+const FRONT_MATTER_DELIMITER = '---';
+const RAW_MODE_CONFIG_REG_EXP = /^isRaw:\s*true\s*$/m;
 
 // The rendered-button selector is `:scope .block-language-code-button button.mod-cta`. It is written
 // out at each use site rather than held in a constant here: every closure below is serialized with
@@ -198,6 +274,72 @@ export function assertClickBudgetsFitTransportCap(timeouts: ClickButtonTimeouts)
 }
 
 /**
+ * Counts the buttons a note's source will actually render.
+ *
+ * Three kinds of ` ```code-button ` fence render no clickable button, and a vault that DOCUMENTS code
+ * buttons is full of the first two:
+ *
+ * - A fence nested inside a longer or different fence (a ```` ````markdown ```` or `~~~` block) is a
+ *   markdown SAMPLE shown to the reader; the renderer never sees it as a block.
+ * - An `isRaw: true` fence renders its output directly and no button element at all.
+ * - A fence whose info string carries anything after `code-button` uses the legacy argument syntax, which
+ *   renders an error banner asking to update the config rather than the button.
+ *
+ * Counting any of them makes the suite's shortfall assertion unsatisfiable — it demands more buttons
+ * than the note can ever render — and an assertion that cannot pass gates nothing.
+ *
+ * The scan follows CommonMark's fence rules: a fence closes only on a run of the SAME character at least
+ * as long as the opener, with no info string, and one left open runs to the end of the document, where it
+ * still renders.
+ *
+ * @param source - The note's markdown.
+ * @returns How many buttons it renders.
+ */
+export function countRenderedButtons(source: string): number {
+  let count = 0;
+  let openMarker = '';
+  let isCodeButtonFence = false;
+  let fenceBody: string[] = [];
+
+  function closeFence(): void {
+    if (isCodeButtonFence && !isRawFence(fenceBody)) {
+      count++;
+    }
+    openMarker = '';
+  }
+
+  for (const line of source.split(/\r?\n/)) {
+    const match = FENCE_REG_EXP.exec(line);
+    const marker = match?.groups?.['marker'] ?? '';
+    const info = (match?.groups?.['info'] ?? '').trim();
+
+    if (openMarker === '') {
+      if (match) {
+        openMarker = marker;
+        isCodeButtonFence = info === CODE_BUTTON_FENCE_INFO;
+        fenceBody = [];
+      }
+      continue;
+    }
+
+    // Anything else while a fence is open is its content — which is exactly how a ````markdown sample
+    // holds a ```code-button.
+    if (marker.startsWith(openMarker.charAt(0)) && marker.length >= openMarker.length && info === '') {
+      closeFence();
+      continue;
+    }
+
+    fenceBody.push(line);
+  }
+
+  if (openMarker !== '') {
+    closeFence();
+  }
+
+  return count;
+}
+
+/**
  * Builds the assertion message for a note's failing buttons.
  *
  * The captured output is included because a button's failure is a runtime one — the stack CodeScript
@@ -219,6 +361,47 @@ export function formatFailures(noteName: string, failures: readonly DemoVaultBut
 }
 
 /**
+ * Picks the buttons that failed and were not expected to.
+ *
+ * @param noteName - The note the results belong to, relative to the demo vault root.
+ * @param results - Every button's result in that note.
+ * @param expectedNonOkButtons - The buttons allowed to end in a given non-`ok` status.
+ * @returns The results that are not `ok` and match no {@link ExpectedNonOkButton}.
+ */
+export function selectUnexpectedFailures(
+  noteName: string,
+  results: readonly DemoVaultButtonResult[],
+  expectedNonOkButtons: readonly ExpectedNonOkButton[]
+): DemoVaultButtonResult[] {
+  return results.filter((result) =>
+    result.status !== 'ok'
+    && expectedNonOkButtons.every((expected) =>
+      !(expected.note === noteName
+        && expected.status === result.status
+        && result.caption.includes(expected.captionIncludes))
+    )
+  );
+}
+
+/**
+ * Whether a `code-button` fence's own YAML config asks for raw mode.
+ *
+ * Read from the leading `---` block rather than from the whole body, so an `isRaw: true` written inside
+ * a button's CODE — a button that demonstrates the key — is not mistaken for the button's own config.
+ *
+ * @param fenceBody - The fence's lines, without the fence markers.
+ * @returns Whether the fence renders no button.
+ */
+function isRawFence(fenceBody: readonly string[]): boolean {
+  if (fenceBody[0]?.trim() !== FRONT_MATTER_DELIMITER) {
+    return false;
+  }
+
+  const endIndex = fenceBody.findIndex((line, index) => index > 0 && line.trim() === FRONT_MATTER_DELIMITER);
+  return endIndex !== -1 && RAW_MODE_CONFIG_REG_EXP.test(fenceBody.slice(1, endIndex).join('\n'));
+}
+
+/**
  * Folders that never hold a walkthrough. `Materials/` holds the fixtures the walkthroughs act on;
  * `_assets/` holds the demo scripts; `.obsidian/` is vault config. A folder starting with `.` or `_`
  * is skipped on the same reasoning, without having to be listed.
@@ -236,9 +419,14 @@ const NON_WALKTHROUGH_FOLDERS = new Set(['Materials']);
  * @param demoVaultPath - The demo vault root.
  * @param excludedNotes - Note names to skip, matched against both the file name and the path relative
  * to the vault root.
+ * @param excludedFolders - Folders to skip whole, matched the same way.
  * @returns The notes, sorted by path.
  */
-export function listNotesWithButtons(demoVaultPath: string, excludedNotes: ReadonlySet<string>): DemoVaultNote[] {
+export function listNotesWithButtons(
+  demoVaultPath: string,
+  excludedNotes: ReadonlySet<string>,
+  excludedFolders: ReadonlySet<string> = new Set()
+): DemoVaultNote[] {
   const notes: DemoVaultNote[] = [];
 
   function walk(folder: string, relativeFolder: string): void {
@@ -246,7 +434,10 @@ export function listNotesWithButtons(demoVaultPath: string, excludedNotes: Reado
       const relativePath = relativeFolder === '' ? entry.name : `${relativeFolder}/${entry.name}`;
 
       if (entry.isDirectory()) {
-        if (!entry.name.startsWith('.') && !entry.name.startsWith('_') && !NON_WALKTHROUGH_FOLDERS.has(entry.name)) {
+        if (
+          !entry.name.startsWith('.') && !entry.name.startsWith('_') && !NON_WALKTHROUGH_FOLDERS.has(entry.name)
+          && !excludedFolders.has(entry.name) && !excludedFolders.has(relativePath)
+        ) {
           walk(join(folder, entry.name), relativePath);
         }
         continue;
@@ -256,7 +447,7 @@ export function listNotesWithButtons(demoVaultPath: string, excludedNotes: Reado
         continue;
       }
 
-      const buttonCount = (readFileSync(join(folder, entry.name), 'utf-8').match(CODE_BUTTON_FENCE_REG_EXP) ?? []).length;
+      const buttonCount = countRenderedButtons(readFileSync(join(folder, entry.name), 'utf-8'));
       if (buttonCount > 0) {
         notes.push({ buttonCount, name: relativePath });
       }
@@ -281,6 +472,9 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
   const rootFolder = options.rootFolder ?? getRootFolder() ?? process.cwd();
   const demoVaultPath = join(rootFolder, 'demo-vault');
   const excludedNotes = new Set(options.excludedNotes ?? DEFAULT_EXCLUDED_NOTES);
+  const excludedFolders = new Set(options.excludedFolders);
+  const expectedNonOkButtons = options.expectedNonOkButtons ?? [];
+  const shouldDismissModals = options.shouldDismissModals ?? false;
   const settleTimeoutInMilliseconds = options.settleTimeoutInMilliseconds ?? DEFAULT_SETTLE_TIMEOUT_IN_MILLISECONDS;
   const buttonResultTimeoutInMilliseconds = options.buttonResultTimeoutInMilliseconds ?? DEFAULT_BUTTON_RESULT_TIMEOUT_IN_MILLISECONDS;
 
@@ -292,7 +486,7 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
   };
   assertClickBudgetsFitTransportCap(clickButtonTimeouts);
 
-  const notes = listNotesWithButtons(demoVaultPath, excludedNotes);
+  const notes = listNotesWithButtons(demoVaultPath, excludedNotes, excludedFolders);
 
   describe('demo-vault buttons', () => {
     beforeAll(async () => {
@@ -318,13 +512,12 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
         expect(captions.length, `${note.name} declares ${String(note.buttonCount)} button(s) but only ${String(captions.length)} rendered`)
           .toBeGreaterThanOrEqual(note.buttonCount);
 
-        const failures: DemoVaultButtonResult[] = [];
+        const results: DemoVaultButtonResult[] = [];
         for (const caption of captions) {
-          const result = await clickButton(note.name, caption, clickButtonTimeouts);
-          if (result.status !== 'ok') {
-            failures.push(result);
-          }
+          results.push(await clickButton({ buttonCaption: caption, notePath: note.name, shouldDismissModals, timeouts: clickButtonTimeouts }));
         }
+
+        const failures = selectUnexpectedFailures(note.name, results, expectedNonOkButtons);
 
         expect(failures, formatFailures(note.name, failures)).toEqual([]);
       });
@@ -381,27 +574,22 @@ async function checkCodeScriptToolkitLoaded(timeoutInMilliseconds: number): Prom
  * so the block element is captured BEFORE the click and read afterwards — CodeScript Toolkit writes the
  * result into that same element even once it is detached.
  *
- * @param notePath - The note holding the button.
- * @param buttonCaption - The button's rendered caption, which is how it is addressed.
- * @param timeouts - The render and result budgets.
+ * @param params - The {@link ClickButtonParams}.
  * @returns The {@link DemoVaultButtonResult}.
  */
-async function clickButton(
-  notePath: string,
-  buttonCaption: string,
-  timeouts: ClickButtonTimeouts
-): Promise<DemoVaultButtonResult> {
+async function clickButton(params: ClickButtonParams): Promise<DemoVaultButtonResult> {
   return evalInObsidian({
     async callback({
       app,
       buttonResultTimeoutInMilliseconds,
       caption,
       intervalInMilliseconds,
-      lib: { waitUntil },
+      lib: { pressKey, waitUntil },
       notePath: notePathToOpen,
       obsidianModule,
       outputExcerptLength,
-      settleTimeoutInMilliseconds
+      settleTimeoutInMilliseconds,
+      shouldDismissModals: shouldDismiss
     }): Promise<DemoVaultButtonResult> {
       function view(): InstanceType<typeof obsidianModule.MarkdownView> | null {
         return app.workspace.getActiveViewOfType(obsidianModule.MarkdownView);
@@ -432,6 +620,22 @@ async function clickButton(
         }
         const isAtBottom = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - SCROLL_BOTTOM_TOLERANCE_IN_PIXELS;
         scroller.scrollTop = isAtBottom ? 0 : scroller.scrollTop + Math.floor(scroller.clientHeight * SCROLL_STEP_RATIO);
+      }
+
+      // Both the pre-1.13 and the 1.13 name of a modal's X: the old one alone matches nothing on a current
+      // Obsidian, and clicking nothing is a silent no-op rather than an error.
+      async function dismissModals(): Promise<void> {
+        if (!shouldDismiss) {
+          return;
+        }
+        for (const closeButton of activeDocument.body.querySelectorAll<HTMLElement>(':scope .modal-container :is(.modal-close-button, .modal-header-button)')) {
+          closeButton.click();
+        }
+        // A trusted Escape — what a user presses — but only while something is still open: this runs on
+        // every poll, and an unconditional key press would land in whatever the next button is doing.
+        if (activeDocument.querySelector('.modal-container, .prompt')) {
+          await pressKey({ key: 'Escape' });
+        }
       }
 
       // Re-open the note before every click instead of assuming the previous button left the workspace
@@ -473,7 +677,11 @@ async function clickButton(
         await waitUntil({
           intervalInMilliseconds,
           message: `button "${caption}" never reported a result`,
-          predicate: (): boolean => /Executed (?:successfully|with error)/.test(block?.textContent ?? ''),
+          predicate: async (): Promise<boolean> => {
+            // A button that awaits an alert / confirm / prompt reports nothing until the dialog closes.
+            await dismissModals();
+            return /Executed (?:successfully|with error)/.test(block?.textContent ?? '');
+          },
           timeoutInMilliseconds: buttonResultTimeoutInMilliseconds
         });
         const text = block?.textContent ?? '';
@@ -488,15 +696,19 @@ async function clickButton(
         status = 'timeout';
       }
 
+      // Whatever this button left open would otherwise sit over the next one.
+      await dismissModals();
+
       return { caption, output: (block?.textContent ?? '').slice(0, outputExcerptLength), status };
     },
     input: {
-      buttonResultTimeoutInMilliseconds: timeouts.buttonResultTimeoutInMilliseconds,
-      caption: buttonCaption,
+      buttonResultTimeoutInMilliseconds: params.timeouts.buttonResultTimeoutInMilliseconds,
+      caption: params.buttonCaption,
       intervalInMilliseconds: POLL_INTERVAL_IN_MILLISECONDS,
-      notePath,
+      notePath: params.notePath,
       outputExcerptLength: OUTPUT_EXCERPT_LENGTH,
-      settleTimeoutInMilliseconds: timeouts.settleTimeoutInMilliseconds
+      settleTimeoutInMilliseconds: params.timeouts.settleTimeoutInMilliseconds,
+      shouldDismissModals: params.shouldDismissModals
     },
     vaultPath: getTemporaryVault().path
   });
