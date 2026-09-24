@@ -51,6 +51,10 @@ export const ASYNC_WRAPPER_ERROR_MESSAGE = 'An unhandled error occurred executin
 
 const STACK_TRACE_PREFIX = '    at';
 
+const ERROR_HEADER_REG_EXP = /^\w*Error(?:: |$)/;
+
+const STACK_HEADER_PROBE_MESSAGE = 'stack header probe';
+
 /**
  * Parameters for the {@link CustomStackTraceError} constructor.
  */
@@ -69,6 +73,17 @@ export interface CustomStackTraceErrorConstructorParams {
    * The stack trace of the error.
    */
   readonly stackTrace: string;
+}
+
+/**
+ * One line of an error's string form, tagged with whether it is a stack frame.
+ *
+ * A title (an error header, a `Caused by:` marker, a line of a multi-line message) is wrapped into
+ * {@link generateStackTraceLine}'s form when the error it belongs to is nested; a frame is kept verbatim.
+ */
+interface ErrorLine {
+  readonly isFrame: boolean;
+  readonly text: string;
 }
 
 /**
@@ -95,14 +110,15 @@ export class CustomStackTraceError extends Error {
       rootCause = rootCause.cause;
     }
 
-    const originalStackLines = ensureNonNullable(this.stack).split('\n');
     const stackLines = stackTrace.split('\n');
-    const ERROR_HEADER_REG_EXP = /^\w*Error(?:: |$)/;
     if (ERROR_HEADER_REG_EXP.test(ensureNonNullable(stackLines[0]))) {
       stackLines.shift();
     }
-    originalStackLines.splice(1, originalStackLines.length - 1, ...stackLines);
-    this.stack = originalStackLines.join('\n');
+    // Keep the engine's own `.stack` shape: a header only where the engine writes one (V8), frames only where it does not (JavaScriptCore, SpiderMonkey).
+    if (hasStackHeader()) {
+      stackLines.unshift(getErrorHeader(this));
+    }
+    this.stack = stackLines.join('\n');
   }
 }
 
@@ -190,21 +206,7 @@ export function emitAsyncErrorEvent(asyncError: unknown, shouldIgnore = false): 
  * @returns The string representation of the error.
  */
 export function errorToString(error: unknown): string {
-  if (!(error instanceof Error)) {
-    return String(error);
-  }
-
-  let message = error.stack ?? `${error.name}: ${error.message}`;
-  if (error.cause !== undefined) {
-    message = appendNestedError(message, error.cause, 'Caused by:');
-  }
-  if (error instanceof AggregateError) {
-    const aggregatedErrors: readonly unknown[] = error.errors;
-    for (const [index, aggregatedError] of aggregatedErrors.entries()) {
-      message = appendNestedError(message, aggregatedError, `Aggregated error #${String(index + 1)}:`);
-    }
-  }
-  return message;
+  return getErrorLines(error).map((line) => line.text).join('\n');
 }
 
 /**
@@ -214,11 +216,12 @@ export function errorToString(error: unknown): string {
  * @returns A string representation of the current stack trace, excluding the current function call.
  */
 export function getStackTrace(framesToSkip = 0): string {
-  // Skipping Error prefix and `getStackTrace` function call
-  const ADDITIONAL_FRAMES_TO_SKIP = 2;
+  // Skipping the `getStackTrace` frame itself, plus the `Error` header line on an engine that writes one.
+  const GET_STACK_TRACE_FRAME_COUNT = 1;
+  const additionalLinesToSkip = GET_STACK_TRACE_FRAME_COUNT + (hasStackHeader() ? 1 : 0);
   const stack = ensureNonNullable(new Error().stack);
   const lines = stack.split('\n');
-  return lines.slice(framesToSkip + ADDITIONAL_FRAMES_TO_SKIP).join('\n');
+  return lines.slice(framesToSkip + additionalLinesToSkip).join('\n');
 }
 
 /**
@@ -331,21 +334,57 @@ export function throwExpression(error: unknown): never {
   throw error;
 }
 
-function appendNestedError(message: string, nestedError: unknown, title: string): string {
-  let result = `${message}\n${generateStackTraceLine(title)}`;
-  for (const line of errorToString(nestedError).split('\n')) {
-    if (!line.trim()) {
-      continue;
-    }
-    result += line.startsWith(STACK_TRACE_PREFIX)
-      ? `\n${line}`
-      : `\n${generateStackTraceLine(line)}`;
-  }
-  return result;
+function generateNestedErrorLines(nestedError: unknown, title: string): ErrorLine[] {
+  const lines = [toTitleLine(title), ...getErrorLines(nestedError).filter((line) => line.text.trim() !== '')];
+  return lines.map((line) => line.isFrame ? line : { isFrame: true, text: generateStackTraceLine(line.text) });
 }
 
 function generateStackTraceLine(title: string): string {
   return `${STACK_TRACE_PREFIX} --- ${title} --- (0)`;
+}
+
+/**
+ * Builds the `Name: message` header the way V8 writes it into `.stack` (a bare `Name` for an empty message).
+ *
+ * @param error - The error.
+ * @returns The header, which spans several lines when the message does.
+ */
+function getErrorHeader(error: Error): string {
+  return error.message ? `${error.name}: ${error.message}` : error.name;
+}
+
+function getErrorLines(error: unknown): ErrorLine[] {
+  if (!(error instanceof Error)) {
+    return String(error).split('\n').map((text) => toTitleLine(text));
+  }
+
+  const lines = getOwnErrorLines(error);
+  if (error.cause !== undefined) {
+    lines.push(...generateNestedErrorLines(error.cause, 'Caused by:'));
+  }
+  if (error instanceof AggregateError) {
+    const aggregatedErrors: readonly unknown[] = error.errors;
+    for (const [index, aggregatedError] of aggregatedErrors.entries()) {
+      lines.push(...generateNestedErrorLines(aggregatedError, `Aggregated error #${String(index + 1)}:`));
+    }
+  }
+  return lines;
+}
+
+function getOwnErrorLines(error: Error): ErrorLine[] {
+  const headerLines = getErrorHeader(error).split('\n').map((text) => toTitleLine(text));
+  if (error.stack === undefined) {
+    return headerLines;
+  }
+
+  const stackLines = error.stack.split('\n');
+  if (hasStackHeader()) {
+    return stackLines.map((text) => ({ isFrame: text.startsWith(STACK_TRACE_PREFIX), text }));
+  }
+
+  // On an engine without a header line, the `.stack` is frames only, in its own `name@url:line:col` form, so the message is nowhere in it:
+  // Prepend the header, and take every stack line as a frame.
+  return [...headerLines, ...stackLines.filter((text) => text.trim() !== '').map((text) => ({ isFrame: true, text }))];
 }
 
 /**
@@ -355,4 +394,23 @@ function generateStackTraceLine(title: string): string {
  */
 function handleAsyncError(asyncError: unknown): void {
   printError(asyncError);
+}
+
+/**
+ * Answers whether this engine's `.stack` opens with the error's `Name: message` header line.
+ *
+ * V8 writes one; JavaScriptCore (every Apple platform, so Obsidian on iOS and iPadOS) and SpiderMonkey write frames only.
+ * The answer belongs to the engine, not the platform, so it is probed rather than read off `Platform`. It is probed on every
+ * call rather than cached, because `Error.prepareStackTrace` can reshape V8's stack at runtime, and one extra `Error` costs
+ * nothing on a path that is already handling one.
+ *
+ * @returns `true` if `.stack` carries the header line.
+ */
+function hasStackHeader(): boolean {
+  const firstLine = new Error(STACK_HEADER_PROBE_MESSAGE).stack?.split('\n', 1)[0];
+  return firstLine === `Error: ${STACK_HEADER_PROBE_MESSAGE}`;
+}
+
+function toTitleLine(text: string): ErrorLine {
+  return { isFrame: false, text };
 }

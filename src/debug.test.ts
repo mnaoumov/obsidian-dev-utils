@@ -341,6 +341,43 @@ describe('Debug', () => {
       dbg('inside message');
       expect(consoleSpy).toHaveBeenCalled();
     });
+
+    it('should open the logged stack trace on the caller frame', () => {
+      Library.init({ cssClassScope: '', debugPrefixNamespace: '', shouldPrintStackTrace: true });
+      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      const namespace = 'log-caller-frame';
+      debug.enable(namespace);
+      const dbg = getDebugger(namespace);
+      function callerMarker(): void {
+        dbg('caller frame message');
+      }
+      callerMarker();
+      const stackTraceError = consoleSpy.mock.calls.flat().find((argument) => argument instanceof Error);
+      assertNonNullable(stackTraceError);
+      expect(stackTraceError.stack?.split('\n', 2)[1]).toMatch(/^ {4}at callerMarker /);
+    });
+
+    it('should open the logged stack trace on the caller frame on an engine whose stack carries no header line', () => {
+      const originalPrepareStackTrace = Error.prepareStackTrace;
+      // The JavaScriptCore shape: frames only, `name@url:line:col`.
+      Error.prepareStackTrace = (_error, callSites): string => callSites.map((callSite) => `${callSite.getFunctionName() ?? ''}@${callSite.getFileName() ?? ''}:${String(callSite.getLineNumber())}`).join('\n');
+      try {
+        Library.init({ cssClassScope: '', debugPrefixNamespace: '', shouldPrintStackTrace: true });
+        const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+        const namespace = 'log-caller-frame-no-header';
+        debug.enable(namespace);
+        const dbg = getDebugger(namespace);
+        function callerMarker(): void {
+          dbg('caller frame message');
+        }
+        callerMarker();
+        const stackTraceError = consoleSpy.mock.calls.flat().find((argument) => argument instanceof Error);
+        assertNonNullable(stackTraceError);
+        expect(stackTraceError.stack?.split('\n', 1)[0]).toMatch(/^callerMarker@/);
+      } finally {
+        Error.prepareStackTrace = originalPrepareStackTrace;
+      }
+    });
   });
 
   describe('showInitialDebugMessage', () => {

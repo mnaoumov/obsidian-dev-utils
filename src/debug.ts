@@ -10,13 +10,15 @@ import debug from 'debug';
 
 import type { DebugController } from './debug-controller.ts';
 
-import { CustomStackTraceError } from './error.ts';
+import {
+  CustomStackTraceError,
+  getStackTrace
+} from './error.ts';
 import {
   Library,
   LIBRARY_NAME
 } from './library.ts';
 import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
-import { ensureNonNullable } from './type-guards.ts';
 
 const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
@@ -218,21 +220,19 @@ function logWithCaller(params: LogWithCallerParams): void {
   }
 
   /**
-   * A caller line index is 4 because the call stack is as follows:
+   * The caller is 3 frames above this one, because the call stack is as follows:
    *
-   * 0: Error
-   * 1:     at logWithCaller (?:?:?)
-   * 2:     at debugInstance.log (?:?:?)
-   * 3:     at debug (?:?:?)
-   * 4:     at functionName (path/to/caller.js:?:?)
+   * 0: logWithCaller
+   * 1: debugInstance.log
+   * 2: debug
+   * 3: functionName (the caller)
+   *
+   * `getStackTrace` drops its own frame and, on an engine that writes one, the `Error` header line.
    */
-  const CALLER_LINE_INDEX = 4;
-
-  const stackLines = ensureNonNullable(new Error().stack).split('\n');
-  stackLines.splice(0, CALLER_LINE_INDEX + framesToSkip);
+  const CALLER_FRAME_INDEX = 3;
 
   // eslint-disable-next-line no-console -- Valid usage.
-  console.debug(message, ...$arguments, '\n\n---\nLogger stack trace:\n', makeStackTraceError(stackLines.join('\n')));
+  console.debug(message, ...$arguments, '\n\n---\nLogger stack trace:\n', makeStackTraceError(getStackTrace(CALLER_FRAME_INDEX + framesToSkip)));
 }
 
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {

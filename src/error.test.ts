@@ -708,3 +708,115 @@ describe('startAsyncErrorIgnoreContext', () => {
     expect(stopCollectingUnhandledAsyncErrors()).toStrictEqual([laterError]);
   });
 });
+
+describe('an engine whose stack carries no header line', () => {
+  // JavaScriptCore (every Apple platform) and SpiderMonkey write `.stack` as frames only, in `name@url:line:col` form. V8 lets a
+  // test reproduce exactly that shape through `Error.prepareStackTrace`.
+  const originalPrepareStackTrace = Error.prepareStackTrace;
+
+  function formatAsJavaScriptCore(_error: Error, callSites: NodeJS.CallSite[]): string {
+    return callSites.map((callSite) => `${callSite.getFunctionName() ?? ''}@${callSite.getFileName() ?? ''}:${String(callSite.getLineNumber())}:${String(callSite.getColumnNumber())}`).join('\n');
+  }
+
+  function useJavaScriptCoreStacks(): void {
+    Error.prepareStackTrace = formatAsJavaScriptCore;
+  }
+
+  afterEach(() => {
+    Error.prepareStackTrace = originalPrepareStackTrace;
+  });
+
+  it('should keep the message, which the stack does not carry', () => {
+    useJavaScriptCoreStacks();
+    const error = new Error('the actual cause');
+    expect(error.stack).not.toContain('the actual cause');
+    const lines = errorToString(error).split('\n');
+    expect(lines[0]).toBe('Error: the actual cause');
+    expect(lines[1]).toMatch(/@/);
+  });
+
+  it('should print a bare name for an empty message', () => {
+    useJavaScriptCoreStacks();
+    expect(errorToString(new Error()).split('\n', 1)[0]).toBe('Error');
+  });
+
+  it('should keep every line of a multi-line message', () => {
+    useJavaScriptCoreStacks();
+    expect(errorToString(new Error('first\nsecond'))).toMatch(/^Error: first\nsecond\n/);
+  });
+
+  it('should keep nested frames verbatim and wrap only the titles', () => {
+    useJavaScriptCoreStacks();
+    function innerFunctionMarker(): Error {
+      return new Error('inner');
+    }
+    const error = new Error('outer', { cause: innerFunctionMarker() });
+    const result = errorToString(error);
+    expect(result).toContain('    at --- Caused by: --- (0)\n    at --- Error: inner --- (0)\ninnerFunctionMarker@');
+    expect(result).not.toContain('--- innerFunctionMarker@');
+  });
+
+  it('should wrap the header of an aggregated error', () => {
+    useJavaScriptCoreStacks();
+    const result = errorToString(new AggregateError([new Error('first')], 'many'));
+    expect(result).toMatch(/^AggregateError: many\n/);
+    expect(result).toContain('    at --- Aggregated error #1: --- (0)\n    at --- Error: first --- (0)\n');
+  });
+
+  it('should drop empty stack lines', () => {
+    useJavaScriptCoreStacks();
+    const error = new Error('root');
+    Object.defineProperty(error, 'stack', { value: 'frame@file.js:1:1\n\n' });
+    expect(errorToString(error)).toBe('Error: root\nframe@file.js:1:1');
+  });
+
+  it('should treat an engine with no stack at all as having no header line', () => {
+    Error.prepareStackTrace = (): undefined => undefined;
+    expect(errorToString(new Error('no stack'))).toBe('Error: no stack');
+  });
+
+  it('should keep the caller as the first frame of getStackTrace', () => {
+    useJavaScriptCoreStacks();
+    function callerMarker(): string {
+      return getStackTrace();
+    }
+    expect(callerMarker().split('\n', 1)[0]).toMatch(/^callerMarker@/);
+  });
+
+  it('should skip the requested frames of getStackTrace', () => {
+    useJavaScriptCoreStacks();
+    function innerMarker(): string {
+      return getStackTrace(1);
+    }
+    function outerMarker(): string {
+      return innerMarker();
+    }
+    expect(outerMarker().split('\n', 1)[0]).toMatch(/^outerMarker@/);
+  });
+
+  it('should give CustomStackTraceError the custom frames only, with no header', () => {
+    useJavaScriptCoreStacks();
+    const error = new CustomStackTraceError({ cause: undefined, message: 'custom', stackTrace: 'a@a.js:1:1\nb@b.js:2:2' });
+    expect(error.stack).toBe('a@a.js:1:1\nb@b.js:2:2');
+    expect(errorToString(error)).toBe('CustomStackTraceError: custom\na@a.js:1:1\nb@b.js:2:2');
+  });
+});
+
+describe('an engine whose stack carries a header line', () => {
+  it('should keep the caller as the first frame of getStackTrace', () => {
+    function callerMarker(): string {
+      return getStackTrace();
+    }
+    expect(callerMarker().split('\n', 1)[0]).toMatch(/^ {4}at callerMarker /);
+  });
+
+  it('should not repeat the header the stack already carries', () => {
+    const result = errorToString(new Error('once'));
+    expect(result.match(/once/g)).toHaveLength(1);
+  });
+
+  it('should give CustomStackTraceError its full multi-line header', () => {
+    const error = new CustomStackTraceError({ cause: undefined, message: 'first\nsecond', stackTrace: '    at a (a.ts:1:1)' });
+    expect(error.stack).toBe('CustomStackTraceError: first\nsecond\n    at a (a.ts:1:1)');
+  });
+});
