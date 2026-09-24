@@ -49,6 +49,7 @@ const {
   mockNpmRunOptional,
   mockReaddirPosix,
   mockReadFile,
+  mockReadForbiddenPatterns,
   mockReadPackageJson,
   mockResolvePathFromRootSafe,
   mockRm,
@@ -70,6 +71,7 @@ const {
   mockNpmRunOptional: vi.fn(),
   mockReaddirPosix: vi.fn(),
   mockReadFile: vi.fn(),
+  mockReadForbiddenPatterns: vi.fn<() => Promise<RegExp[]>>(),
   mockReadPackageJson: vi.fn(),
   mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
   mockRm: vi.fn(),
@@ -129,6 +131,11 @@ vi.mock('../script-utils/json.ts', () => ({
   editJson: mockEditJson
 }));
 
+vi.mock('./forbidden-patterns.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('./forbidden-patterns.ts')>(),
+  readForbiddenPatterns: mockReadForbiddenPatterns
+}));
+
 vi.mock('./linters/cspell-content.ts', () => ({
   spellcheckContent: mockSpellcheckContent
 }));
@@ -175,6 +182,7 @@ beforeEach(() => {
   mockExistsSync.mockReturnValue(false);
   mockLintMarkdownContent.mockResolvedValue([]);
   mockSpellcheckContent.mockResolvedValue([]);
+  mockReadForbiddenPatterns.mockResolvedValue([]);
 });
 
 function setIsTty(value: boolean | undefined): void {
@@ -1011,6 +1019,31 @@ describe('updateChangelog', () => {
     expect(mockWriteFile).toHaveBeenCalledWith(
       '/root/CHANGELOG.md',
       expect.stringContaining('- Merge branch \'an-old-branch\''),
+      'utf-8'
+    );
+  });
+
+  it('should refuse a new section that matches a configured forbidden pattern', async () => {
+    mockExistsSync.mockReturnValue(false);
+    mockReadForbiddenPatterns.mockResolvedValue([/\bSECRET-\d+\b/]);
+    mockExecFromRoot.mockResolvedValueOnce('fix: close the gap noted in SECRET-42\0feat: add a shiny new feature\0');
+    const promise = updateChangelog('1.0.0', { shouldEditChangelog: false });
+    await expect(promise).rejects.toThrow('matches a pattern from the file FORBIDDEN_PATTERNS_FILE names');
+    await expect(promise).rejects.toThrow('- fix: close the gap noted in SECRET-42    <- SECRET-42');
+    expect(mockWriteFile).not.toHaveBeenCalled();
+  });
+
+  it('should not refuse a forbidden pattern that was already published under an older version', async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadForbiddenPatterns.mockResolvedValue([/\bSECRET-\d+\b/]);
+    mockReadFile.mockResolvedValue('# CHANGELOG\n\n## 0.9.0\n\n- fix: close the gap noted in SECRET-42\n');
+    mockExecFromRoot
+      .mockResolvedValueOnce('0123456789abcdef')
+      .mockResolvedValueOnce('feat: add a shiny new feature\0');
+    await updateChangelog('1.0.0', { shouldEditChangelog: false });
+    expect(mockWriteFile).toHaveBeenCalledWith(
+      '/root/CHANGELOG.md',
+      expect.stringContaining('- fix: close the gap noted in SECRET-42'),
       'utf-8'
     );
   });

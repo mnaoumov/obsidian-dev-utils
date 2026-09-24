@@ -38,6 +38,11 @@ import {
   ensureNonNullable
 } from '../type-guards.ts';
 import { archivePluginDemoVault } from './demo-vault.ts';
+import {
+  findForbiddenPatternMatches,
+  FORBIDDEN_PATTERNS_FILE_ENV_VARIABLE,
+  readForbiddenPatterns
+} from './forbidden-patterns.ts';
 import { readdirPosix } from './fs.ts';
 import { gate } from './gate.ts';
 import { editJson } from './json.ts';
@@ -922,6 +927,40 @@ export function validate(versionUpdateType: string): void {
 }
 
 /**
+ * Refuses a changelog whose NEW section matches one of the maintainer's own unpublished forbidden patterns.
+ *
+ * Every commit subject since the last tag ships verbatim into the new section, so a subject that carries
+ * vocabulary private to the maintainer — an internal tracker id, a private project short name — lands in a
+ * checked-in, published file inside the release commit, where nothing ever looks at it again. The list of what
+ * counts as private cannot live in this library or in the repository without publishing the very thing it
+ * protects, so it comes from the file {@link FORBIDDEN_PATTERNS_FILE_ENV_VARIABLE} names, and this is a no-op
+ * wherever that is not configured.
+ *
+ * Like {@link assertChangelogHasNoMergeSubjects}, only the section being published is scanned, and the throw
+ * comes before anything is written.
+ *
+ * @param changelogContent - The full composed `CHANGELOG.md` content.
+ * @param version - The version whose section is about to be published.
+ * @returns A {@link Promise} that resolves when the section is clean.
+ */
+async function assertChangelogHasNoForbiddenPatterns(changelogContent: string, version: string): Promise<void> {
+  const patterns = await readForbiddenPatterns();
+  const matches = findForbiddenPatternMatches(extractChangelogSection(changelogContent, version), patterns);
+
+  if (matches.length === 0) {
+    return;
+  }
+
+  throw new Error(
+    `The ${version} section of ${ObsidianPluginRepoPaths.ChangelogMd} matches a pattern from the file`
+      + ` ${FORBIDDEN_PATTERNS_FILE_ENV_VARIABLE} names:\n`
+      + `${matches.map(({ line, match }) => `${line}    <- ${match}`).join('\n')}\n`
+      + 'Nothing has been written yet. Supply release notes that say the same thing without it, with'
+      + ' `--changelog-file <path>`, or remove it at the interactive review, and re-run the release.'
+  );
+}
+
+/**
  * Refuses a changelog whose NEW section still carries an entry that reads as a merge subject git wrote itself.
  *
  * The convention this enforces is that a non-ff merge takes the same Conventional-Commits subject as the branch
@@ -1309,6 +1348,7 @@ async function prepareChangelog(newVersion: string, options: UpdateChangelogOpti
   // the interactive review does — and the review is precisely what `--no-changelog-editing` skips. Nothing has been
   // written to the repository yet either, so the throw leaves the working tree pristine and the release re-runnable.
   assertChangelogHasNoMergeSubjects(settledChangeLog, newVersion);
+  await assertChangelogHasNoForbiddenPatterns(settledChangeLog, newVersion);
   return settledChangeLog;
 }
 
