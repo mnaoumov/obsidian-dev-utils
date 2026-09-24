@@ -61,7 +61,23 @@ describe('ObsidianPluginVitestConfigContext', () => {
     expect(context.androidTimeoutInMilliseconds).toBe(60_000);
     expect(context.bigTimeoutInMilliseconds).toBe(45_000);
     expect(context.hookTimeoutMultiplier).toBe(4);
-    expect(context.performanceTimeoutInMilliseconds).toBe(600_000);
+    expect(context.performanceEvalCapInMilliseconds).toBe(600_000);
+    expect(context.performanceTimeoutInMilliseconds).toBe(615_000);
+  });
+
+  /*
+   * The raise three plugins used to hand-write in their own `editContext`: without it a perf suite's
+   * single long evaluation dies at the transport's 30 s default, inside a 600 s test budget.
+   */
+  it('should raise the performance project per-eval cap and keep its budget clear of it', () => {
+    const context = new ObsidianPluginVitestConfigContext();
+    expect(context.desktopPerformance.environmentOptions).toEqual({
+      obsidianTransport: {
+        commandTimeoutInMilliseconds: 600_000,
+        type: 'obsidian-cdp'
+      }
+    });
+    expect(context.desktopPerformance.testTimeout).toBeGreaterThan(context.performanceEvalCapInMilliseconds);
   });
 
   /*
@@ -84,7 +100,7 @@ describe('ObsidianPluginVitestConfigContext', () => {
     expect(context.noApp.hookTimeout).toBe(180_000);
     expect(context.desktop.hookTimeout).toBe(180_000);
     expect(context.android.hookTimeout).toBe(240_000);
-    expect(context.desktopPerformance.hookTimeout).toBe(600_000);
+    expect(context.desktopPerformance.hookTimeout).toBe(615_000);
   });
 
   it('should collect the cross-platform suites in both platform projects', () => {

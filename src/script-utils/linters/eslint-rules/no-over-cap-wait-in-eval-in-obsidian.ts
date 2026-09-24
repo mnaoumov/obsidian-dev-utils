@@ -18,6 +18,17 @@
  * is why the harness is a required peer of this library rather than an optional one: the shared ESLint
  * config loads this rule, so every consuming repo resolves it at lint time.
  *
+ * ONE KIND OF FILE DEFAULTS HIGHER: a `*.desktop-performance.integration.test.ts` is measured against
+ * `PERFORMANCE_EVAL_CAP_IN_MILLISECONDS` (600 000), the per-eval cap the shared vitest config gives the
+ * `integration-tests:desktop-performance` project, imported from that same module rather than restated.
+ * That raise is a deliberate BUDGET: a perf suite's measurement is one long in-page evaluation, and its
+ * files run on no other project. Every other file keeps the single transport default, and that is the
+ * convention rather than a gap: a repo that raises its own desktop `commandTimeoutInMilliseconds` is
+ * setting a backstop, NOT a budget a closure may spend, so the rule does not read that raise and keeps
+ * enforcing 30 000 against it. A cross-platform suite could not spend it anyway: Appium caps every
+ * closure at 30 000 whatever a desktop raise says. An explicit `capInMilliseconds` still overrides both
+ * defaults, for every file the rule is configured on.
+ *
  * A closure declaring a 30 000 ms `waitUntil`, or two 20 000 ms ones, therefore cannot
  * succeed on any machine slow enough to need the time it asks for. The fix is to move the
  * waiting to Node: `pollInObsidian` runs a SHORT DOM-reading `poll` closure repeatedly,
@@ -114,6 +125,11 @@ import type {
 } from 'eslint';
 
 import { DEFAULT_EVAL_CAP_IN_MILLISECONDS } from 'obsidian-integration-testing';
+
+import {
+  DESKTOP_PERFORMANCE_TEST_FILE_SUFFIX,
+  PERFORMANCE_EVAL_CAP_IN_MILLISECONDS
+} from '../../test-runners/performance-eval-cap.ts';
 
 /**
  * Message ID reported when an in-Obsidian closure declares more waiting than the transport's cap allows.
@@ -264,7 +280,10 @@ type LoopStatement = TSESTree.DoWhileStatement | TSESTree.ForStatement | TSESTre
 export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
   create(context) {
     const options = context.options[0] as CapOptions | undefined;
-    const capInMilliseconds = options?.capInMilliseconds ?? DEFAULT_EVAL_CAP_IN_MILLISECONDS;
+    const defaultCapInMilliseconds = context.filename.endsWith(DESKTOP_PERFORMANCE_TEST_FILE_SUFFIX)
+      ? PERFORMANCE_EVAL_CAP_IN_MILLISECONDS
+      : DEFAULT_EVAL_CAP_IN_MILLISECONDS;
+    const capInMilliseconds = options?.capInMilliseconds ?? defaultCapInMilliseconds;
     const callGraph: CallGraph = {
       callCountByCalleeNodeByCallerNode: new Map<HelperFunction, Map<HelperFunction, number>>(),
       stateByClosureNode: new Map<ClosureFunction, ClosureState>(),
