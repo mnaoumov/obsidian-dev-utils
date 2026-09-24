@@ -43,6 +43,16 @@ interface BrowserProcess extends Partial<NodeJS.Process> {
   browser: boolean;
 }
 
+/**
+ * The slice of the `Symbol` constructor {@link ensureDisposeSymbols} reads and writes, with the two dispose
+ * symbols optional because an engine without Explicit Resource Management does not have them.
+ */
+interface DisposeSymbolHost {
+  asyncDispose?: symbol;
+  dispose?: symbol;
+  for: (key: string) => symbol;
+}
+
 interface EsmModule {
   __esModule: boolean;
   default: unknown;
@@ -107,6 +117,31 @@ export function ensureBrowserProcess(): void {
 }
 
 /**
+ * Makes `Symbol.dispose` and `Symbol.asyncDispose` exist, falling back to the registry symbols esbuild's
+ * `using` helpers look up.
+ *
+ * @param symbolConstructor - The `Symbol` constructor to patch. Defaults to the ambient one; the parameter
+ * exists so a test can hand in an engine that lacks the well-known symbols.
+ *
+ * @remarks
+ * Serialized into the emitted banner. A disposable declares its method under the LITERAL key
+ * `[Symbol.dispose]`, while esbuild lowers every `using` to a lookup through `__knownSymbol('dispose')`,
+ * which falls back to `Symbol.for('Symbol.dispose')` when the engine has no well-known symbol. On such an
+ * engine the literal key evaluates to `undefined`, the method lands under the string `"undefined"`, and
+ * every `using` of it throws `Object not disposable`. Filling the well-known slot with that same registry
+ * symbol makes both sides name one key on every engine. A host that already has the symbol is left
+ * untouched: `??=` never reaches the assignment, which the host's non-writable property would refuse.
+ *
+ * The default names `Symbol` bare on purpose: it exists on every engine this runs on, and a bare reference
+ * resolves against whatever scope the banner is evaluated in, exactly as the bundle's own
+ * `[Symbol.dispose]` keys do.
+ */
+export function ensureDisposeSymbols(symbolConstructor: DisposeSymbolHost = Symbol): void {
+  symbolConstructor.asyncDispose ??= symbolConstructor.for('Symbol.asyncDispose');
+  symbolConstructor.dispose ??= symbolConstructor.for('Symbol.dispose');
+}
+
+/**
  * Returns its argument unchanged.
  *
  * @param $unknown - The value to return.
@@ -129,6 +164,7 @@ export function keepName($unknown: unknown): unknown {
  * - Replaces instances of `import(dot)meta(dot)url` with a Node.js-compatible `__filename` alternative.
  * - Modifies the `sourceMappingURL` comment to ensure compatibility with Obsidian's plugin system.
  * - Adds a basic `process` object to the global scope if `process` is referenced but not defined.
+ * - Fills in `Symbol.dispose` / `Symbol.asyncDispose` on engines that lack them, so `using` works there.
  *
  * @param isEsm - Whether the build is for an ESM format.
  * @returns An esbuild `Plugin` object that handles the preprocessing.
@@ -204,6 +240,7 @@ export function preprocessPlugin(isEsm?: boolean): Plugin {
 function initCjs(): void {
   // eslint-disable-next-line obsidianmd/no-global-this -- Actively use globalThis.
   const globalThisRecord = globalThis as GenericObject;
+  ensureDisposeSymbols();
   globalThisRecord['__name'] ??= keepName;
   const originalRequire = require as (NodeJS.Require & Partial<RequirePatched> | undefined);
   if (originalRequire && !originalRequire.__isPatched) {
@@ -283,6 +320,7 @@ function initCjs(): void {
 }
 
 function initEsm(): void {
+  ensureDisposeSymbols();
   ensureBrowserProcess();
 }
 
@@ -299,7 +337,7 @@ function initEsm(): void {
  * @returns The banner source to prepend to the emitted bundle.
  */
 function makeBanner(isEsm: boolean | undefined): string {
-  const shims = isEsm ? [ensureBrowserProcess] : [ensureBrowserProcess, keepName];
+  const shims = isEsm ? [ensureDisposeSymbols, ensureBrowserProcess] : [ensureDisposeSymbols, ensureBrowserProcess, keepName];
   const init = isEsm ? initEsm : initCjs;
   return `\n(function () {\n${shims.map(String).join('\n\n')}\n\n(${String(init)})();\n})();\n`;
 }
