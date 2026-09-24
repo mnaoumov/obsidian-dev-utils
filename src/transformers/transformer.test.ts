@@ -210,6 +210,11 @@ describe('Transformer (via DoubleTransformer)', () => {
       const result = transformer.transformObjectRecursively({ items: [] });
       expect(result).toEqual({ items: [] });
     });
+
+    it('should omit a key whose transformed value is undefined', () => {
+      const result = transformer.transformObjectRecursively({ a: 1, b: undefined });
+      expect(Object.keys(result)).toEqual(['a']);
+    });
   });
 });
 

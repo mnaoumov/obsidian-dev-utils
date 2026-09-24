@@ -22,6 +22,17 @@ vi.mock('../../../debug.ts', () => ({
   getLibDebugger: vi.fn(() => vi.fn())
 }));
 
+class JsonRoundTripDataHandler implements DataHandler {
+  public loadData = vi.fn(() => Promise.resolve(this.json === null ? null : JSON.parse(this.json)));
+
+  public saveData = vi.fn((data: unknown) => {
+    this.json = JSON.stringify(data) ?? null;
+    return noopAsync();
+  });
+
+  public constructor(private json: null | string) {}
+}
+
 class MockDataHandler implements DataHandler {
   public loadData = vi.fn(() => Promise.resolve(this.data));
 
@@ -39,6 +50,20 @@ class MockDataHandler implements DataHandler {
   public constructor(data: unknown) {
     this._data = data;
   }
+}
+
+class SettingsWithPrivateField {
+  public name = 'default';
+
+  public get secret(): string {
+    return this._secret;
+  }
+
+  public set secret(value: string) {
+    this._secret = value;
+  }
+
+  private _secret = 'hidden';
 }
 
 class TestSettings {
@@ -188,6 +213,22 @@ describe('PluginSettingsComponentBase', () => {
     await component.saveToFile();
 
     expect(dataHandler.saveData).not.toHaveBeenCalled();
+  });
+
+  it('should not write data.json again when loading the record it wrote, with a private field', async () => {
+    const dataHandler = new JsonRoundTripDataHandler(null);
+    const component = new PluginSettingsComponentBase({
+      dataHandler,
+      pluginEventSource: createMockPluginEventSource(),
+      pluginSettingsClass: SettingsWithPrivateField
+    });
+    await component.loadWithPromises();
+    expect(dataHandler.saveData).toHaveBeenCalledOnce();
+
+    await component.loadFromFile(false);
+    await component.loadFromFile(false);
+
+    expect(dataHandler.saveData).toHaveBeenCalledOnce();
   });
 
   it('should trigger loadSettings event on load', async () => {
