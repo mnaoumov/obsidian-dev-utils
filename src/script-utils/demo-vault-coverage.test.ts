@@ -252,6 +252,25 @@ describe('DemoVaultCoverageChecker', () => {
     expect(members.all).toEqual([...members.methods, ...members.properties]);
   });
 
+  it('reads a readonly property signature, whether its type is a function type or not', () => {
+    writeFixtureFile(
+      root,
+      'src/readonly-style.ts',
+      `export interface ReadonlyStyle {
+  readonly callback: (value: string) => void;
+  readonly optionalCallback?: () => void;
+  readonly label: string;
+  readonly optionalLabel?: number;
+  readonlyValue: boolean;
+}
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const members = checker.getInterfaceMembers({ interfaceName: 'ReadonlyStyle', sourcePath: 'src/readonly-style.ts' });
+    expect(members.methods).toEqual(['callback', 'optionalCallback']);
+    expect(members.properties).toEqual(['label', 'optionalLabel', 'readonlyValue']);
+  });
+
   it('parses class members, tolerating modifiers and excluding non-public ones', () => {
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });
     const members = checker.getInterfaceMembers({ interfaceName: 'DemoSettings', sourcePath: 'src/settings.ts' });

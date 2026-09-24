@@ -1085,8 +1085,10 @@ function isNonPublicMember(modifiers: string): boolean {
   return /\b(?:private|protected)\b/.test(modifiers);
 }
 
+// `readonly` is the only modifier a property signature takes, and a method signature takes none — TypeScript
+// rejects `readonly foo(): void;` — so the method-signature regex needs no counterpart.
 function matchPropertySignatures(interfaceBody: string): RegExpExecArray[] {
-  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:\s*/gm)];
+  return [...interfaceBody.matchAll(/^ {2}(?:readonly\s+)?(?<name>\w+)\??:\s*/gm)];
 }
 
 function parseMembers(keyword: string, body: string): InterfaceMembers {
