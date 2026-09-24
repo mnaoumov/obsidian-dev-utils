@@ -16,6 +16,8 @@
 - chore(nano-staged): lint staged .astro files before a commit
 - feat(vitest-config)!: run every plugin's unit tests on the VM pool
 
+Added after the fact: the `feat(vitest-config)!` entry above is a BREAKING change, so this release should have been `106.0.0` rather than a minor, and every consumer on a caret range took the move to the VM pool with no version signal. It is published and cannot be unpublished. `npm run version` now refuses a bump lower than the commits since the last tag force, so a break can no longer ship without a version signal.
+
 ## 105.0.0
 
 - refactor!: take method-signature-style back to its property default
