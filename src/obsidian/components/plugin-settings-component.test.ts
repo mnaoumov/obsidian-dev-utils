@@ -14,6 +14,7 @@ import {
   noop,
   noopAsync
 } from '../../function.ts';
+import { castTo } from '../../object-utils.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { PluginSettingsComponentBase } from './plugin-settings-component.ts';
 
@@ -97,16 +98,32 @@ describe('PluginSettingsComponentBase', () => {
     expect(component.settings.name).toBe('loaded');
   });
 
-  it('should handle null data on load', async () => {
-    const component = createComponent(new MockDataHandler(null));
+  it('should write the default record when data is null on load', async () => {
+    const dataHandler = new MockDataHandler(null);
+    const component = createComponent(dataHandler);
     await component.loadWithPromises();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
+    expect(dataHandler.saveData).toHaveBeenCalledOnce();
+    expect(dataHandler.data).toStrictEqual({ count: 0, name: 'default' });
   });
 
-  it('should handle undefined data on load', async () => {
-    const component = createComponent(new MockDataHandler(undefined));
+  it('should write the default record when data is undefined on load', async () => {
+    const dataHandler = new MockDataHandler(undefined);
+    const component = createComponent(dataHandler);
     await component.loadWithPromises();
     expect(component.settings).toEqual({ count: 0, name: 'default' });
+    expect(dataHandler.saveData).toHaveBeenCalledOnce();
+    expect(dataHandler.data).toStrictEqual({ count: 0, name: 'default' });
+  });
+
+  it('should not rewrite the default record it wrote itself', async () => {
+    const dataHandler = new MockDataHandler(null);
+    const component = createComponent(dataHandler);
+    await component.loadWithPromises();
+
+    await component.loadFromFile(false);
+
+    expect(dataHandler.saveData).toHaveBeenCalledOnce();
   });
 
   it('should handle non-object data on load', async () => {
@@ -322,6 +339,35 @@ describe('PluginSettingsComponentBase', () => {
     });
     await component.loadWithPromises();
     expect(component.settings.name).toBe('migrated');
+  });
+
+  it('should keep the default when a legacy converter assigns undefined', async () => {
+    class LegacySettings {
+      public oldName = '';
+    }
+
+    class LegacyComponent extends PluginSettingsComponentBase<TestSettings> {
+      protected override registerLegacySettingsConverters(): void {
+        super.registerLegacySettingsConverters();
+        this.registerLegacySettingsConverter(
+          LegacySettings,
+          (legacy) => {
+            // An unconditional assignment from a key the record does not carry.
+            legacy.name = castTo<string>(legacy.oldName);
+          }
+        );
+      }
+    }
+
+    const dataHandler = new MockDataHandler(null);
+    const component = new LegacyComponent({
+      dataHandler,
+      pluginEventSource: createMockPluginEventSource(),
+      pluginSettingsClass: TestSettings
+    });
+    await component.loadWithPromises();
+    expect(component.settings.name).toBe('default');
+    expect(dataHandler.data).toStrictEqual({ count: 0, name: 'default' });
   });
 
   it('should delete legacy keys that are not in current settings', async () => {
@@ -585,6 +631,15 @@ describe('PluginSettingsComponentBase', () => {
 
     it('should leave an already-empty file alone', async () => {
       const dataHandler = new MockDataHandler({});
+      const component = createEmptyComponent(dataHandler);
+
+      await component.loadWithPromises();
+
+      expect(dataHandler.saveData).not.toHaveBeenCalled();
+    });
+
+    it('should not create a file when nothing is stored', async () => {
+      const dataHandler = new MockDataHandler(null);
       const component = createEmptyComponent(dataHandler);
 
       await component.loadWithPromises();
