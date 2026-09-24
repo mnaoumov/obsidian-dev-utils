@@ -328,16 +328,15 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     this.currentState = this.createDefaultState();
 
     try {
-      if (data === undefined || data === null) {
-        return;
-      }
-
-      if (typeof data !== 'object') {
+      if (data !== undefined && data !== null && typeof data !== 'object') {
         console.error(`Invalid settings from data.json. Expected Object, got: ${typeof data}`);
         return;
       }
 
-      const rawRecord = data as GenericObject;
+      // Nothing stored is read as an empty record rather than skipped, so the save below writes the full
+      // default record. Without it a user who never changed a setting has no `data.json` at all, looks
+      // exactly like a fresh install, and silently picks up every default a later release changes.
+      const rawRecord = (data ?? {}) as GenericObject;
       const parsedSettings = await this.rawRecordToSettings(rawRecord);
       const validationResult = await this.validate(parsedSettings);
 
@@ -737,6 +736,12 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
     for (const [propertyName, value] of Object.entries(rawRecord)) {
       if (!this.isValidPropertyName(propertyName)) {
         getLibDebugger('PluginSettingsComponentBase:rawRecordToSettings')(`Unknown property: ${propertyName}`);
+        continue;
+      }
+
+      // JSON cannot hold `undefined`, so only a legacy converter produces it. Keep the default rather than
+      // letting a converter that assigned a key it had nothing for wipe it out.
+      if (value === undefined) {
         continue;
       }
 
