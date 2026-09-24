@@ -10,7 +10,8 @@
  * The offset-range cases confirm the range filter against positions produced by Obsidian's own parser
  * rather than hand-built fixtures, and pin the contract a selection command depends on: a range taken
  * from an UNSAVED editor buffer is valid, because the buffer is flushed to disk before the content is
- * read.
+ * read. The last of them pins the range reaching `editLinks` through `updateLinksInFile`, the wrapper a
+ * plugin actually calls, so an out-of-range link is proved to survive a real conversion.
  */
 
 /// <reference types="obsidian-integration-testing/vitest/typings" />
@@ -36,6 +37,13 @@ interface OffsetRangeFromEditorResult {
   readonly diskAfterEdit: string;
   readonly selectedEndOffset: number;
   readonly selectedStartOffset: number;
+}
+
+/**
+ * Result of the `updateLinksInFile` selection-scope test.
+ */
+interface UpdateLinksInFileResult {
+  readonly diskAfterEdit: string;
 }
 
 describe('file:// link normalization', () => {
@@ -146,5 +154,46 @@ describe('offset range', () => {
     expect(result.selectedStartOffset).toBe(17);
     expect(result.selectedEndOffset).toBe(26);
     expect(result.diskAfterEdit).toBe('# note\n[[alpha]] [[new-bravo]] [[charlie]]\n');
+  });
+
+  /*
+   * `updateLinksInFile` is the function a plugin actually calls to convert the links in a note, and it
+   * reaches the range filter only by forwarding the param on to `editLinks`. The unit suite pins the
+   * forward against a hand-built cache; this pins it end to end, against Obsidian's own parser and its own
+   * link generator, so an out-of-range link is proved to survive a real conversion rather than a mocked one.
+   */
+  it('should leave a link outside the range untouched when updateLinksInFile converts a selection', async () => {
+    const { diskAfterEdit } = await evalInObsidian<Record<string, never>, UpdateLinksInFileResult>({
+      async callback({ app, lib: { LinkStyle, updateLinksInFile } }) {
+        const targetPath = 'selection-scope.md';
+        const alphaPath = 'alpha.md';
+        const charliePath = 'charlie.md';
+        const content = '[[alpha]] [[charlie]]\n';
+
+        const alphaFile = await app.vault.create(alphaPath, '# alpha\n');
+        const charlieFile = await app.vault.create(charliePath, '# charlie\n');
+        const file = await app.vault.create(targetPath, content);
+        try {
+          // `[[alpha]]` spans exactly 0-9; `[[charlie]]` starts at 10 and is therefore wholly outside.
+          await updateLinksInFile({
+            app,
+            linkStyle: LinkStyle.Markdown,
+            newSourcePathOrFile: file,
+            offsetRange: { endOffset: '[[alpha]]'.length, startOffset: 0 },
+            pluginNoticeComponent: null,
+            resourceLockComponent: null,
+            timeoutInMilliseconds: 10_000
+          });
+
+          return { diskAfterEdit: await app.vault.adapter.read(targetPath) };
+        } finally {
+          await app.fileManager.trashFile(file);
+          await app.fileManager.trashFile(alphaFile);
+          await app.fileManager.trashFile(charlieFile);
+        }
+      }
+    });
+
+    expect(diskAfterEdit).toBe('[alpha](alpha.md) [[charlie]]\n');
   });
 });
