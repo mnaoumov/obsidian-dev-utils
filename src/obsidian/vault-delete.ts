@@ -131,7 +131,8 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
     /* v8 ignore stop */
     const listedFiles = await listSafe(params.app, file);
     for (const child of [...listedFiles.files, ...listedFiles.folders]) {
-      canDelete &&= isGoneFromParent(
+      // Every child is visited even once the folder itself is known to stay: `canDelete &&= await …` would skip the call.
+      const isChildGone = isGoneFromParent(
         await deleteIfNotUsed(normalizeOptionalProperties<DeleteIfNotUsedParams>({
           app: params.app,
           deleteAbstractFile: params.deleteAbstractFile,
@@ -144,6 +145,7 @@ export async function deleteIfNotUsed(params: DeleteIfNotUsedParams): Promise<De
           shouldProtectIfStillUsed: params.shouldProtectIfStillUsed
         }))
       );
+      canDelete &&= isChildGone;
     }
 
     canDelete &&= await isEmptyFolder(params.app, file);
