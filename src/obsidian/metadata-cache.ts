@@ -39,6 +39,7 @@ import {
   getFileOrNull,
   getFolder,
   getPath,
+  isCanvasFile,
   isFile
 } from './file-system.ts';
 import {
@@ -419,6 +420,13 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
           return false;
         }
 
+        // A canvas holder cannot be checked against its text. Its file-node references carry no position, and
+        // Obsidian reports a text-node embed with a position into that node's own text, not into the canvas JSON,
+        // so slicing the file at it never gives the link back and the retry would never end.
+        if (isCanvasFile(note)) {
+          continue;
+        }
+
         await saveNote(app, note);
         abortSignal.throwIfAborted();
 
@@ -446,7 +454,7 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
             const linkWithOffsets = toFrontmatterLinkCacheWithOffsets(link);
             actualLink = propertyValue.slice(linkWithOffsets.startOffset, linkWithOffsets.endOffset);
           } else {
-            return true;
+            continue;
           }
           if (actualLink !== link.original) {
             return false;
