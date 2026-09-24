@@ -24,6 +24,16 @@ export const obsidianDevUtilsConfig: MarkdownlintCli2ConfigSchema = {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       siblings_only: true
     },
+    'MD025': {
+      // `MD025` counts a front matter `title` property as the document's top-level heading, so a note carrying
+      // both that property and an `# H1` is reported as having two. In an Obsidian vault that premise is false:
+      // Obsidian titles a note by its FILENAME and does nothing with a `title` property, so a vault that uses
+      // one as a name-bearing property would trip this rule on every note that is not wrong. Emptying
+      // `front_matter_title` disables only the front matter half of the rule — two `# H1`s in one document are
+      // still reported, which is the half worth keeping.
+      // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
+      front_matter_title: ''
+    },
     'MD052': {
       // eslint-disable-next-line camelcase -- That's how it is defined in the schema.
       ignored_labels: [
