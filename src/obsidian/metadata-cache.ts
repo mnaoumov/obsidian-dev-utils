@@ -33,6 +33,7 @@ import { getNestedPropertyValue } from '../object-utils.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
+import { getIndexedBacklinksForFile } from './backlink-index.ts';
 import {
   getFile,
   getFileOrNull,
@@ -369,6 +370,11 @@ export async function ensureMetadataCacheReady(app: App): Promise<void> {
  * Retrieves the backlinks for a file or path.
  * NOTE: The file may be non-existent.
  *
+ * When a backlink-cache plugin has grafted its {@link GetBacklinksForFileSafeWrapper.safe} overload onto
+ * `MetadataCache.getBacklinksForFile`, that patched method answers. Otherwise the answer comes from a backlink
+ * index whose cost is proportional to the candidate notes rather than to every reference in the vault, and which
+ * gives the same references Obsidian's own `getBacklinksForFile` gives.
+ *
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file object.
  * @returns The backlinks for the file.
@@ -376,7 +382,7 @@ export async function ensureMetadataCacheReady(app: App): Promise<void> {
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
   const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   using _registration = registerFiles(app, [file]);
-  return app.metadataCache.getBacklinksForFile(file);
+  return hasBacklinkCacheSafeOverload(app) ? app.metadataCache.getBacklinksForFile(file) : getIndexedBacklinksForFile(app, file);
 }
 
 /**
@@ -781,6 +787,10 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
 
 function getRegisteredFilesCounts(): Map<string, number> {
   return getObsidianDevUtilsState('registeredFilesCounts', new Map<string, number>()).value;
+}
+
+function hasBacklinkCacheSafeOverload(app: App): boolean {
+  return !!(app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
 }
 
 function parseExternalBodyLinks(content: string, cache: CachedMetadata): ParseLinkReference[] {

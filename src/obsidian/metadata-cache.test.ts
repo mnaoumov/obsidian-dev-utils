@@ -45,6 +45,7 @@ import {
 } from '../type-guards.ts';
 import { ValueWrapper } from '../value-wrapper.ts';
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
+import { getIndexedBacklinksForFile } from './backlink-index.ts';
 import {
   getFile,
   getFileOrNull
@@ -87,6 +88,10 @@ vi.mock('../obsidian-dev-utils-state.ts', () => ({
 
 vi.mock('../obsidian/async-with-notice.ts', () => ({
   retryWithTimeoutNotice: vi.fn()
+}));
+
+vi.mock('./backlink-index.ts', () => ({
+  getIndexedBacklinksForFile: vi.fn()
 }));
 
 vi.mock('../obsidian/vault.ts', () => ({
@@ -164,6 +169,7 @@ beforeEach(() => {
 });
 
 const mockedGetFile = vi.mocked(getFile);
+const mockedGetIndexedBacklinksForFile = vi.mocked(getIndexedBacklinksForFile);
 const mockedGetFileOrNull = vi.mocked(getFileOrNull);
 const mockedSaveNote = vi.mocked(saveNote);
 const mockedRetryWithTimeoutNotice = vi.mocked(retryWithTimeoutNotice);
@@ -777,14 +783,29 @@ describe('getBacklinksForFileOrPath', () => {
     });
   });
 
-  it('should call getBacklinksForFile and return result', () => {
-    const mockBacklinks = { data: new Map() };
+  it('should answer from the backlink index when no backlink-cache plugin is present', () => {
+    const mockBacklinks = castTo<ReturnType<typeof getIndexedBacklinksForFile>>({ data: new Map() });
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(mockBacklinks as ReturnType<typeof app.metadataCache.getBacklinksForFile>);
+    mockedGetIndexedBacklinksForFile.mockReturnValue(mockBacklinks);
 
     const result = getBacklinksForFileOrPath(app, 'test.md');
 
-    expect(app.metadataCache.getBacklinksForFile).toHaveBeenCalled();
+    expect(mockedGetIndexedBacklinksForFile).toHaveBeenCalledWith(app, expect.objectContaining({ path: 'test.md' }));
+    expect(app.metadataCache.getBacklinksForFile).not.toHaveBeenCalled();
+    expect(result).toBe(mockBacklinks);
+  });
+
+  it('should defer to the patched getBacklinksForFile when a backlink-cache plugin grafted its safe overload', () => {
+    const mockBacklinks = castTo<ReturnType<typeof app.metadataCache.getBacklinksForFile>>({ data: new Map() });
+
+    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(mockBacklinks);
+    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = vi.fn();
+    mockedGetIndexedBacklinksForFile.mockClear();
+
+    const result = getBacklinksForFileOrPath(app, 'test.md');
+
+    expect(app.metadataCache.getBacklinksForFile).toHaveBeenCalledWith(expect.objectContaining({ path: 'test.md' }));
+    expect(mockedGetIndexedBacklinksForFile).not.toHaveBeenCalled();
     expect(result).toBe(mockBacklinks);
   });
 });
@@ -1005,7 +1026,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFunction();
     const backlinksDict = createBacklinksDict({});
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(backlinksDict);
+    mockedGetIndexedBacklinksForFile.mockReturnValue(backlinksDict);
 
     const result = await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
     expect(result).toBe(backlinksDict);
@@ -1015,7 +1036,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFunction();
     const referenceLink = makeReferenceCache('[[target]]', 10);
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(null);
@@ -1028,7 +1049,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFunction();
     const referenceLink = makeReferenceCache('[[target]]', 10);
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
@@ -1045,7 +1066,7 @@ describe('getBacklinksForFileSafe', () => {
       keys: (): string[] => ['source.md']
     };
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(castTo<ReturnType<typeof app.metadataCache.getBacklinksForFile>>(backlinksDict));
+    mockedGetIndexedBacklinksForFile.mockReturnValue(castTo<ReturnType<typeof app.metadataCache.getBacklinksForFile>>(backlinksDict));
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
     mockedReadSafe.mockResolvedValue('some content');
     mockedParseFrontmatter.mockReturnValue({});
@@ -1059,7 +1080,7 @@ describe('getBacklinksForFileSafe', () => {
     const content = '0123456789[[target]]more text';
     const referenceLink = makeReferenceCache('[[target]]', 10);
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
@@ -1080,7 +1101,7 @@ describe('getBacklinksForFileSafe', () => {
     const content = '0123456789XXMISMATCHX more text';
     const referenceLink = makeReferenceCache('[[target]]', 10);
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [referenceLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
@@ -1095,7 +1116,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFunction();
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [fmLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
@@ -1115,7 +1136,7 @@ describe('getBacklinksForFileSafe', () => {
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [fmLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
@@ -1135,7 +1156,7 @@ describe('getBacklinksForFileSafe', () => {
     });
     const fmLink = makeFrontmatterLink('target-note', 'aliases');
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [fmLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
@@ -1150,7 +1171,7 @@ describe('getBacklinksForFileSafe', () => {
     setupRetryToInvokeOperationFunction();
     const unknownLink = { link: 'something', original: 'something' };
 
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
       createBacklinksDict({ 'source.md': [unknownLink] })
     );
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
