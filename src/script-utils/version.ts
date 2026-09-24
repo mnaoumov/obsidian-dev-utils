@@ -1155,6 +1155,11 @@ async function getBumpFloor(commitRange: string): Promise<BumpFloor> {
  * line and a coined word is told about both at once, in one round of the review, rather than fixing one and
  * being sent back for the other.
  *
+ * Each half runs only where the project defines the script it stands for, just as {@link gate} runs that script
+ * only where it is defined. A project with no `spellcheck` has no spelling configuration either, so `cspell` would
+ * judge its release notes against the stock dictionaries alone and refuse the release over the plugin's own name:
+ * a check the project never adopted, enforced only at release time.
+ *
  * @param changelogContent - The full composed `CHANGELOG.md` content.
  * @param version - The version whose section is about to be published.
  * @returns A {@link Promise} that resolves to the findings, or an empty array when the section is clean.
@@ -1162,15 +1167,21 @@ async function getBumpFloor(commitRange: string): Promise<BumpFloor> {
 async function getChangelogSectionFindings(changelogContent: string, version: string): Promise<ChangelogFinding[]> {
   const content = toChangelogSectionDocument(changelogContent, version);
   const filePath = resolvePathFromRootSafe({ path: ObsidianPluginRepoPaths.ChangelogMd });
+  const packageJson = await readPackageJson();
+  const scriptNames = Object.keys(packageJson.scripts ?? {});
 
-  const markdownlintFindings = await lintMarkdownContent({
-    content,
-    filePath
-  });
-  const spellingFindings = await spellcheckContent({
-    content,
-    filePath
-  });
+  const markdownlintFindings = scriptNames.includes(LINT_MD_SCRIPT_NAME)
+    ? await lintMarkdownContent({
+      content,
+      filePath
+    })
+    : [];
+  const spellingFindings = scriptNames.includes(SPELLCHECK_SCRIPT_NAME)
+    ? await spellcheckContent({
+      content,
+      filePath
+    })
+    : [];
 
   return [
     ...markdownlintFindings.map((text) => ({

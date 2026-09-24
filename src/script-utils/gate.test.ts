@@ -86,16 +86,30 @@ describe('gate', () => {
     ]);
   });
 
-  it('should require the always-defined scripts and treat the rest as optional', async () => {
+  it('should require only the build and treat every check as optional', async () => {
     await gate();
-    expect(mockNpmRun.mock.calls.map((call) => call[0])).toEqual([
+    expect(mockNpmRun.mock.calls.map((call) => call[0])).toEqual(['build']);
+    expect(mockNpmRunOptional.mock.calls.map((call) => call[0])).toEqual([
+      'format:check',
+      'spellcheck',
+      'lint:md',
+      'lint',
+      'find-overexposed',
+      'test:coverage'
+    ]);
+  });
+
+  // A project that chose no formatter, spell checker, markdown linter or linter has none of those scripts, and
+  // `npm run version` used to die on the first one it lacked. Skipping one must not end the gate early either.
+  it('should carry on past every check the project does not define', async () => {
+    skipScripts('format:check', 'spellcheck', 'lint:md', 'lint');
+    await gate();
+    expect(ranScripts).toEqual([
       'format:check',
       'spellcheck',
       'lint:md',
       'build',
-      'lint'
-    ]);
-    expect(mockNpmRunOptional.mock.calls.map((call) => call[0])).toEqual([
+      'lint',
       'find-overexposed',
       'test:coverage'
     ]);
@@ -174,9 +188,9 @@ describe('gate', () => {
   });
 
   it('should propagate a failing step and skip the rest', async () => {
-    mockNpmRun.mockImplementation((script: string) => {
+    mockNpmRunOptional.mockImplementation((script: string) => {
       ranScripts.push(script);
-      return script === 'spellcheck' ? Promise.reject(new Error('Unknown word')) : noopAsync();
+      return script === 'spellcheck' ? Promise.reject(new Error('Unknown word')) : Promise.resolve(NpmRunOptionalResult.Success);
     });
     await expect(gate()).rejects.toThrow('Unknown word');
     expect(ranScripts).toEqual(['format:check', 'spellcheck']);
@@ -188,7 +202,7 @@ describe('gate lockfile check', () => {
     await gate();
     expect(mockAssertPackageLockIntegrity).toHaveBeenCalledOnce();
     const [lockCheckOrder] = mockAssertPackageLockIntegrity.mock.invocationCallOrder;
-    const [firstScriptOrder] = mockNpmRun.mock.invocationCallOrder;
+    const [firstScriptOrder] = mockNpmRunOptional.mock.invocationCallOrder;
     expect(lockCheckOrder).toBeLessThan(firstScriptOrder ?? 0);
   });
 
