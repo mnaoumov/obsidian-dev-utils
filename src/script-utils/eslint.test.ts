@@ -90,6 +90,22 @@ describe('lint', () => {
     expect(call[0]).not.toContain('--fix');
   });
 
+  it('should make a warning fail the run, on the plain and the --fix run alike', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint();
+    await lint({ shouldFix: true });
+    expect(mockExecFromRoot.mock.calls[0]?.[0]).toEqual(['eslint', '--max-warnings', '0', '--no-warn-ignored', { batchedArguments: ['.'] }]);
+    expect(mockExecFromRoot.mock.calls[1]?.[0]).toEqual(['eslint', '--max-warnings', '0', '--no-warn-ignored', '--fix', { batchedArguments: ['.'] }]);
+  });
+
+  it('should keep the warning flags out of the batched arguments, so every batch of a split command line gets them', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint({ paths: ['a.ts', 'b.ts'] });
+    const [command] = mockExecFromRoot.mock.calls[0] as [unknown[]];
+    expect(command.at(-1)).toEqual({ batchedArguments: ['a.ts', 'b.ts'] });
+    expect(command.slice(0, -1)).toEqual(['eslint', '--max-warnings', '0', '--no-warn-ignored']);
+  });
+
   it('should copy default config when no config file exists', async () => {
     mockExistsSync.mockReturnValue(false);
     mockGetRootFolder.mockReturnValue('/pkg');

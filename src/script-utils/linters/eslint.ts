@@ -26,6 +26,26 @@ import {
 } from '../root.ts';
 
 /**
+ * The flags that make a WARNING count as a finding, passed on every run.
+ *
+ * ESLint exits `0` when a run reported warnings and no errors, so without `--max-warnings 0` the gate reads a
+ * warning as a clean tree: `lint` prints it, returns success, and CI, the pre-commit hook and every sweep
+ * agree the tree is clean. A warning that nothing ever fails on is a warning that stands for ever, and the
+ * fleet has carried several that each needed a person rather than a gate to notice them.
+ *
+ * It is passed unconditionally and there is no option to raise it: a ceiling a repo can raise is a gate
+ * somebody turns off. It is passed on the `--fix` runs too, because whatever is left after fixing is exactly
+ * what the no-fix run would have judged, so the two cannot disagree about what counts. It is a static command
+ * part rather than a batched argument, so every batch of a split command line carries it.
+ *
+ * `--no-warn-ignored` has to travel with it. The pre-commit hook hands ESLint explicit file lists, and ESLint
+ * reports an explicitly passed, globally ignored path (a `templates/` file, say) as a WARNING rather than
+ * skipping it. Under `--max-warnings 0` that warning alone would fail the commit, although it says nothing
+ * about the code.
+ */
+const ESLINT_WARNINGS_AS_FINDINGS_ARGUMENTS: readonly string[] = ['--max-warnings', '0', '--no-warn-ignored'];
+
+/**
  * Parameters for the {@link lint} function.
  */
 export interface LintOptions {
@@ -76,5 +96,10 @@ export async function lint(options?: LintOptions): Promise<void> {
   /* v8 ignore start -- The paths-provided branch is only exercised by consumer projects passing file lists. */
   const targets = paths?.length ? paths : [ObsidianPluginRepoPaths.CurrentFolder];
   /* v8 ignore stop */
-  await execFromRoot([...resolveToolCommand({ tool: 'eslint' }), ...(shouldFix ? ['--fix'] : []), { batchedArguments: targets }]);
+  await execFromRoot([
+    ...resolveToolCommand({ tool: 'eslint' }),
+    ...ESLINT_WARNINGS_AS_FINDINGS_ARGUMENTS,
+    ...(shouldFix ? ['--fix'] : []),
+    { batchedArguments: targets }
+  ]);
 }
