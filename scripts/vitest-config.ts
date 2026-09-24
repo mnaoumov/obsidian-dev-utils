@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
-import { INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS } from '../src/script-utils/test-runners/vitest-config.ts';
+import {
+  DEFAULT_VITEST_REPORTERS,
+  INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
+} from '../src/script-utils/test-runners/vitest-config.ts';
 
 const SHARED_RESOLVE = {
   alias: {
@@ -272,6 +275,15 @@ export const config = defineConfig({
           testTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS
         }
       }
-    ]
+    ],
+    /*
+     * The same pin every repo on this toolchain takes, imported from the shared module this repo
+     * PUBLISHES rather than restated, because this config predates that module and does not go through
+     * `defineObsidianPluginVitestConfig`. Without it vitest resolves the reporter differently for a
+     * developer and for an AI coding session, and the session gets no per-file line at all. See
+     * `DEFAULT_VITEST_REPORTERS` for the measurement, and for why nothing here reports the file a dead
+     * pool worker took with it: vitest 5 names it already.
+     */
+    reporters: [...DEFAULT_VITEST_REPORTERS]
   }
 });

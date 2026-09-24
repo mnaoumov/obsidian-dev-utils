@@ -27,6 +27,7 @@ import {
 import { createVitest } from 'vitest/node';
 
 import {
+  DEFAULT_VITEST_REPORTERS,
   defineObsidianPluginVitestConfig,
   INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS,
   ObsidianPluginVitestConfigContext
@@ -114,6 +115,30 @@ describe('ObsidianPluginVitestConfigContext', () => {
     expect(context.globalStubTestFiles).toEqual([]);
   });
 
+  /*
+   * Backs the `@default` tag on `reporters`, and the pin's whole reason: vitest resolves an unset
+   * `reporters` to `isAgent ? 'minimal' : 'default'`, so without this the SAME command prints a line
+   * per test file for a developer and not one for an AI coding session, whose `AI_AGENT` variable makes
+   * `isAgent` true. Measured on this repo, 2026-09-23: 46 per-file lines pinned, 0 unset.
+   */
+  it('should pin the default reporter rather than leave it to vitest', () => {
+    const context = new ObsidianPluginVitestConfigContext();
+    expect(context.reporters).toEqual(['default']);
+    expect(DEFAULT_VITEST_REPORTERS).toEqual(['default']);
+  });
+
+  /*
+   * The member is documented as one a caller PUSHES onto, so it has to be a copy: a shared array would
+   * let one plugin’s `editContext` reach the exported constant and, through it, every other context
+   * built in the same process — which is what this repo’s own test run does.
+   */
+  it('should give each context its own reporters array', () => {
+    const context = new ObsidianPluginVitestConfigContext();
+    context.reporters.push('junit');
+    expect(new ObsidianPluginVitestConfigContext().reporters).toEqual(['default']);
+    expect(DEFAULT_VITEST_REPORTERS).toEqual(['default']);
+  });
+
   it('should not pin an Obsidian version when the environment variable is unset', () => {
     const context = new ObsidianPluginVitestConfigContext();
     expect(context.desktop.environmentOptions).toBeUndefined();
@@ -143,6 +168,20 @@ describe('defineObsidianPluginVitestConfig', () => {
   it('should declare the standard projects in order', () => {
     const config = defineObsidianPluginVitestConfig();
     expect(config.test?.projects).toMatchObject(STANDARD_PROJECT_NAMES.map((name) => ({ test: { name } })));
+  });
+
+  it('should emit the pinned reporters', () => {
+    const config = defineObsidianPluginVitestConfig();
+    expect(config.test?.reporters).toEqual(['default']);
+  });
+
+  it('should reflect a reporter added through the context', () => {
+    const config = defineObsidianPluginVitestConfig({
+      editContext(context) {
+        context.reporters.push('junit');
+      }
+    });
+    expect(config.test?.reporters).toEqual(['default', 'junit']);
   });
 
   it('should alias obsidian to the mocks in the unit project only', () => {
