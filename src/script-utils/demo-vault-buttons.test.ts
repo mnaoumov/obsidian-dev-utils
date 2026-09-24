@@ -22,8 +22,10 @@ import type { DemoVaultButtonResult } from './demo-vault-buttons.ts';
 import {
   assertClickBudgetsFitTransportCap,
   countRenderedButtons,
+  findDuplicateCaptions,
   formatFailures,
   listNotesWithButtons,
+  listRenderedButtonCaptions,
   selectUnexpectedFailures
 } from './demo-vault-buttons.ts';
 
@@ -52,8 +54,8 @@ describe('listNotesWithButtons', () => {
     writeNote('02 Two.md', `# Two\n\n${button('Bravo')}\n\n${button('Charlie')}\n`);
 
     expect(listNotesWithButtons(demoVaultPath, new Set())).toEqual([
-      { buttonCount: 1, name: '01 One.md' },
-      { buttonCount: 2, name: '02 Two.md' }
+      { buttonCount: 1, captions: ['Alpha'], name: '01 One.md' },
+      { buttonCount: 2, captions: ['Bravo', 'Charlie'], name: '02 Two.md' }
     ]);
   });
 
@@ -82,8 +84,8 @@ describe('listNotesWithButtons', () => {
     writeNote('03 Split/09 Split by headings.md', `# Split\n\n${button('Bravo')}\n\n${button('Charlie')}\n`);
 
     expect(listNotesWithButtons(demoVaultPath, new Set())).toEqual([
-      { buttonCount: 1, name: '01 Merge/02 Merge folder.md' },
-      { buttonCount: 2, name: '03 Split/09 Split by headings.md' }
+      { buttonCount: 1, captions: ['Alpha'], name: '01 Merge/02 Merge folder.md' },
+      { buttonCount: 2, captions: ['Bravo', 'Charlie'], name: '03 Split/09 Split by headings.md' }
     ]);
   });
 
@@ -127,7 +129,7 @@ describe('listNotesWithButtons', () => {
   it('does not count a code-button sample nested in a longer fence', () => {
     writeNote('01 One.md', `# One\n\n${button('Alpha')}\n\n\`\`\`\`markdown\n${button('Sample')}\n\`\`\`\`\n`);
 
-    expect(listNotesWithButtons(demoVaultPath, new Set())).toEqual([{ buttonCount: 1, name: '01 One.md' }]);
+    expect(listNotesWithButtons(demoVaultPath, new Set())).toEqual([{ buttonCount: 1, captions: ['Alpha'], name: '01 One.md' }]);
   });
 
   it('returns the notes sorted by name', () => {
@@ -310,5 +312,63 @@ describe('selectUnexpectedFailures', () => {
       selectUnexpectedFailures('01 One.md', results, [{ captionIncludes: 'on error only', note: '02 Two.md', status: 'error' }])
         .map((result) => result.caption)
     ).toContain('Run on error only');
+  });
+});
+
+describe('listRenderedButtonCaptions', () => {
+  function fence(...configLines: string[]): string {
+    return ['```code-button', '---', ...configLines, '---', 'noop();', '```'].join('\n');
+  }
+
+  it('lists the captions of the rendered buttons in source order, skipping the fences that render none', () => {
+    const raw = fence('caption: Raw', 'isRaw: true');
+    const sample = ['````markdown', button('Sample'), '````'].join('\n');
+
+    expect(listRenderedButtonCaptions([button('Alpha'), raw, sample, button('Bravo')].join('\n\n'))).toEqual(['Alpha', 'Bravo']);
+  });
+
+  it('gives a fence naming no caption CodeScript Toolkit\'s default, which is what its button shows', () => {
+    expect(listRenderedButtonCaptions(fence('isRaw: false'))).toEqual(['(no caption)']);
+    expect(listRenderedButtonCaptions(['```code-button', 'noop();', '```'].join('\n'))).toEqual(['(no caption)']);
+  });
+
+  it('reads the caption from the config block only, not from the code demonstrating it', () => {
+    const source = ['```code-button', '---', 'isRaw: false', '---', 'caption: In the code', '```'].join('\n');
+
+    expect(listRenderedButtonCaptions(source)).toEqual(['(no caption)']);
+  });
+
+  it('unquotes a single-quoted or double-quoted caption', () => {
+    expect(listRenderedButtonCaptions(fence('caption: \'It\'\'s here: now\''))).toEqual(['It\'s here: now']);
+    expect(listRenderedButtonCaptions(fence(String.raw`caption: "Say \"hi\""`))).toEqual(['Say "hi"']);
+  });
+
+  it('keeps a double-quoted caption it cannot parse as written between its quotes', () => {
+    expect(listRenderedButtonCaptions(fence(String.raw`caption: "C:\query"`))).toEqual([String.raw`C:\query`]);
+  });
+
+  it('reads the config of a fence indented under a list item, whose content CommonMark strips of that indentation', () => {
+    function indent(text: string): string {
+      return `   ${text.replaceAll('\n', '\n   ')}`;
+    }
+    const source = ['1. Step', '', indent(button('Alpha')), '', indent(fence('caption: Raw', 'isRaw: true'))].join('\n');
+
+    expect(listRenderedButtonCaptions(source)).toEqual(['Alpha']);
+  });
+
+  it('drops a trailing comment from a plain caption and trims it', () => {
+    expect(listRenderedButtonCaptions(fence('caption:   Where would a pasted image go now?   # asked twice'))).toEqual([
+      'Where would a pasted image go now?'
+    ]);
+  });
+});
+
+describe('findDuplicateCaptions', () => {
+  it('is empty when every caption is distinct', () => {
+    expect(findDuplicateCaptions(['Alpha', 'Bravo'])).toEqual([]);
+  });
+
+  it('names each repeated caption once, in order of its first repeat', () => {
+    expect(findDuplicateCaptions(['Alpha', 'Bravo', 'Bravo', 'Alpha', 'Bravo', 'Charlie'])).toEqual(['Bravo', 'Alpha']);
   });
 });

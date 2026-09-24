@@ -89,6 +89,11 @@ export interface DemoVaultNote {
   readonly buttonCount: number;
 
   /**
+   * The captions of those buttons, in source order, as read by {@link listRenderedButtonCaptions}.
+   */
+  readonly captions: readonly string[];
+
+  /**
    * The note's file name, relative to the demo vault root.
    */
   readonly name: string;
@@ -228,10 +233,16 @@ const OUTPUT_EXCERPT_LENGTH = 400;
 const DEFAULT_EXCLUDED_NOTES = ['README.md'];
 
 // A fence line: its marker run (three or more backticks or tildes) and whatever follows it.
-const FENCE_REG_EXP = /^\s*(?<marker>`{3,}|~{3,})(?<info>.*)$/;
+const FENCE_REG_EXP = /^(?<indent>\s*)(?<marker>`{3,}|~{3,})(?<info>.*)$/;
 const CODE_BUTTON_FENCE_INFO = 'code-button';
 const FRONT_MATTER_DELIMITER = '---';
 const RAW_MODE_CONFIG_REG_EXP = /^isRaw:\s*true\s*$/m;
+const CAPTION_CONFIG_REG_EXP = /^caption:(?<value>.*)$/m;
+const PLAIN_SCALAR_COMMENT_REG_EXP = /\s+#.*$/;
+const SINGLE_QUOTED_SCALAR_REG_EXP = /^'(?<content>.*)'$/;
+const DOUBLE_QUOTED_SCALAR_REG_EXP = /^"(?<content>.*)"$/;
+// CodeScript Toolkit's own default, which a fence naming no caption renders.
+const DEFAULT_CODE_BUTTON_CAPTION = '(no caption)';
 
 // The rendered-button selector is `:scope .block-language-code-button button.mod-cta`. It is written
 // out at each use site rather than held in a constant here: every closure below is serialized with
@@ -296,47 +307,29 @@ export function assertClickBudgetsFitTransportCap(timeouts: ClickButtonTimeouts)
  * @returns How many buttons it renders.
  */
 export function countRenderedButtons(source: string): number {
-  let count = 0;
-  let openMarker = '';
-  let isCodeButtonFence = false;
-  let fenceBody: string[] = [];
+  return listRenderedButtonCaptions(source).length;
+}
 
-  function closeFence(): void {
-    if (isCodeButtonFence && !isRawFence(fenceBody)) {
-      count++;
+/**
+ * Finds the captions declared by more than one button.
+ *
+ * The suite addresses a button by its caption — it collects the captions that mounted and clicks the
+ * button carrying each one — so two buttons sharing a caption collapse into one: the second is never
+ * clicked, and the note reads as declaring a button that never rendered.
+ *
+ * @param captions - A note's button captions.
+ * @returns Each caption occurring more than once, listed once, in order of first repeat.
+ */
+export function findDuplicateCaptions(captions: readonly string[]): string[] {
+  const seenCaptions = new Set<string>();
+  const duplicateCaptions = new Set<string>();
+  for (const caption of captions) {
+    if (seenCaptions.has(caption)) {
+      duplicateCaptions.add(caption);
     }
-    openMarker = '';
+    seenCaptions.add(caption);
   }
-
-  for (const line of source.split(/\r?\n/)) {
-    const match = FENCE_REG_EXP.exec(line);
-    const marker = match?.groups?.['marker'] ?? '';
-    const info = (match?.groups?.['info'] ?? '').trim();
-
-    if (openMarker === '') {
-      if (match) {
-        openMarker = marker;
-        isCodeButtonFence = info === CODE_BUTTON_FENCE_INFO;
-        fenceBody = [];
-      }
-      continue;
-    }
-
-    // Anything else while a fence is open is its content — which is exactly how a ````markdown sample
-    // holds a ```code-button.
-    if (marker.startsWith(openMarker.charAt(0)) && marker.length >= openMarker.length && info === '') {
-      closeFence();
-      continue;
-    }
-
-    fenceBody.push(line);
-  }
-
-  if (openMarker !== '') {
-    closeFence();
-  }
-
-  return count;
+  return [...duplicateCaptions];
 }
 
 /**
@@ -358,6 +351,65 @@ export function formatFailures(noteName: string, failures: readonly DemoVaultBut
     .map((failure) => `  - "${failure.caption}" [${failure.status}]: ${failure.output.replaceAll(/\s+/g, ' ').trim()}`)
     .join('\n');
   return `${String(failures.length)} button(s) in ${noteName} did not run cleanly:\n${details}`;
+}
+
+/**
+ * Lists the captions of the buttons a note's source will actually render, in source order.
+ *
+ * Which fences render a button is decided exactly as {@link countRenderedButtons} describes. A caption is
+ * read from the fence's own config block; a fence naming none takes CodeScript Toolkit's default,
+ * `(no caption)`, which is what its button then shows.
+ *
+ * @param source - The note's markdown.
+ * @returns The captions, one per rendered button.
+ */
+export function listRenderedButtonCaptions(source: string): string[] {
+  const captions: string[] = [];
+  let openMarker = '';
+  let isCodeButtonFence = false;
+  let fenceBody: string[] = [];
+  let fenceIndentLength = 0;
+
+  function closeFence(): void {
+    if (isCodeButtonFence && !isRawFence(fenceBody)) {
+      captions.push(readCaption(fenceBody));
+    }
+    openMarker = '';
+  }
+
+  for (const line of source.split(/\r?\n/)) {
+    const match = FENCE_REG_EXP.exec(line);
+    const indent = match?.groups?.['indent'] ?? '';
+    const marker = match?.groups?.['marker'] ?? '';
+    const info = (match?.groups?.['info'] ?? '').trim();
+
+    if (openMarker === '') {
+      if (match) {
+        openMarker = marker;
+        isCodeButtonFence = info === CODE_BUTTON_FENCE_INFO;
+        fenceBody = [];
+        fenceIndentLength = indent.length;
+      }
+      continue;
+    }
+
+    // Anything else while a fence is open is its content — which is exactly how a ````markdown sample
+    // holds a ```code-button.
+    if (marker.startsWith(openMarker.charAt(0)) && marker.length >= openMarker.length && info === '') {
+      closeFence();
+      continue;
+    }
+
+    // CommonMark strips up to the opening fence's indentation from each content line, so a fence nested in
+    // a list item carries its `caption:` / `isRaw:` keys at column 0 like any other.
+    fenceBody.push(line.slice(Math.min(fenceIndentLength, line.length - line.trimStart().length)));
+  }
+
+  if (openMarker !== '') {
+    closeFence();
+  }
+
+  return captions;
 }
 
 /**
@@ -393,12 +445,60 @@ export function selectUnexpectedFailures(
  * @returns Whether the fence renders no button.
  */
 function isRawFence(fenceBody: readonly string[]): boolean {
+  const config = readConfigBlock(fenceBody);
+  return config !== null && RAW_MODE_CONFIG_REG_EXP.test(config);
+}
+
+/**
+ * Reads the caption a `code-button` fence's own config block gives its button.
+ *
+ * A deliberately small reading of YAML — a plain, single-quoted or double-quoted scalar on the `caption:`
+ * line — since the value only ever names a button. A value it cannot read exactly, such as a block
+ * scalar, is returned as written: that can make one caption read wrong, but it cannot make two
+ * different ones compare equal.
+ *
+ * @param fenceBody - The fence's lines, without the fence markers.
+ * @returns The caption.
+ */
+function readCaption(fenceBody: readonly string[]): string {
+  const config = readConfigBlock(fenceBody);
+  const rawValue = config === null ? undefined : CAPTION_CONFIG_REG_EXP.exec(config)?.groups?.['value'];
+  if (rawValue === undefined) {
+    return DEFAULT_CODE_BUTTON_CAPTION;
+  }
+
+  const value = rawValue.trim();
+  const singleQuotedContent = SINGLE_QUOTED_SCALAR_REG_EXP.exec(value)?.groups?.['content'];
+  if (singleQuotedContent !== undefined) {
+    return singleQuotedContent.replaceAll('\'\'', '\'');
+  }
+  const doubleQuotedContent = DOUBLE_QUOTED_SCALAR_REG_EXP.exec(value)?.groups?.['content'];
+  if (doubleQuotedContent !== undefined) {
+    try {
+      return JSON.parse(value) as string;
+    } catch {
+      return doubleQuotedContent;
+    }
+  }
+  return value.replace(PLAIN_SCALAR_COMMENT_REG_EXP, '');
+}
+
+/**
+ * Reads a `code-button` fence's leading `---` config block.
+ *
+ * Only the leading block counts, so a `---` block written inside a button's CODE is not mistaken for the
+ * button's own config.
+ *
+ * @param fenceBody - The fence's lines, without the fence markers.
+ * @returns The block's content, or `null` when the fence opens with no terminated block.
+ */
+function readConfigBlock(fenceBody: readonly string[]): null | string {
   if (fenceBody[0]?.trim() !== FRONT_MATTER_DELIMITER) {
-    return false;
+    return null;
   }
 
   const endIndex = fenceBody.findIndex((line, index) => index > 0 && line.trim() === FRONT_MATTER_DELIMITER);
-  return endIndex !== -1 && RAW_MODE_CONFIG_REG_EXP.test(fenceBody.slice(1, endIndex).join('\n'));
+  return endIndex === -1 ? null : fenceBody.slice(1, endIndex).join('\n');
 }
 
 /**
@@ -447,9 +547,9 @@ export function listNotesWithButtons(
         continue;
       }
 
-      const buttonCount = countRenderedButtons(readFileSync(join(folder, entry.name), 'utf-8'));
-      if (buttonCount > 0) {
-        notes.push({ buttonCount, name: relativePath });
+      const captions = listRenderedButtonCaptions(readFileSync(join(folder, entry.name), 'utf-8'));
+      if (captions.length > 0) {
+        notes.push({ buttonCount: captions.length, captions, name: relativePath });
       }
     }
   }
@@ -504,12 +604,26 @@ export function registerDemoVaultButtonSuite(options: RegisterDemoVaultButtonSui
 
     for (const note of notes) {
       it(`runs every code button in ${note.name}`, async () => {
+        // Checked from the source, before anything is opened: buttons are addressed by caption, so a
+        // shared one would otherwise surface below as a button that "never rendered".
+        const duplicateCaptions = findDuplicateCaptions(note.captions);
+        expect(
+          duplicateCaptions,
+          `${note.name} declares more than one button captioned ${duplicateCaptions.map((caption) => `"${caption}"`).join(', ')}. `
+            + 'This suite addresses a button by its caption, so only the first of them could ever be clicked. Give each button a distinct caption.'
+        ).toEqual([]);
+
         const captions = await openNoteAndListButtonCaptions(note, settleTimeoutInMilliseconds);
         // Reading view mounts a note's leading sections more than once while it settles, so the DOM can
         // hold several elements per fence. The captions are deduplicated, and the assertion is that at
         // least as many DISTINCT buttons rendered as the source declares — a fence that silently stayed
         // A plain code block is the failure this catches.
-        expect(captions.length, `${note.name} declares ${String(note.buttonCount)} button(s) but only ${String(captions.length)} rendered`)
+        const missingCaptions = note.captions.filter((caption) => !captions.includes(caption));
+        expect(
+          captions.length,
+          `${note.name} declares ${String(note.buttonCount)} button(s) but only ${String(captions.length)} rendered; `
+            + `never seen: ${missingCaptions.map((caption) => `"${caption}"`).join(', ')}`
+        )
           .toBeGreaterThanOrEqual(note.buttonCount);
 
         const results: DemoVaultButtonResult[] = [];
