@@ -226,6 +226,32 @@ describe('DemoVaultCoverageChecker', () => {
     expect(members.all).toEqual(['doThing', 'doOther', 'readonlyProp']);
   });
 
+  it('counts a property signature with a function type as a method', () => {
+    writeFixtureFile(
+      root,
+      'src/property-style.ts',
+      `export interface PropertyStyle {
+  plain: (value: string) => void;
+  optional?: () => Promise<void>;
+  generic: <T extends object = object>(params: T) => Promise<null | T>;
+  nestedCallback: (callback: (error: Error) => void) => void;
+  multiLine: (
+    first: string,
+    second: number
+  ) => void;
+  grouped: (string | number)[];
+  label: string;
+  unbalanced: (value: string
+}
+`
+    );
+    const checker = new DemoVaultCoverageChecker({ rootFolder: root });
+    const members = checker.getInterfaceMembers({ interfaceName: 'PropertyStyle', sourcePath: 'src/property-style.ts' });
+    expect(members.methods).toEqual(['plain', 'optional', 'generic', 'nestedCallback', 'multiLine']);
+    expect(members.properties).toEqual(['grouped', 'label', 'unbalanced']);
+    expect(members.all).toEqual([...members.methods, ...members.properties]);
+  });
+
   it('parses class members, tolerating modifiers and excluding non-public ones', () => {
     const checker = new DemoVaultCoverageChecker({ rootFolder: root });
     const members = checker.getInterfaceMembers({ interfaceName: 'DemoSettings', sourcePath: 'src/settings.ts' });
