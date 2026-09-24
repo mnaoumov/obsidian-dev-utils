@@ -1,5 +1,8 @@
 .obsidian-dev-utils {
-  .multiple-dropdown-component {
+  // Compound, not nested: `addPluginCssClasses` puts `obsidian-dev-utils` and `multiple-dropdown-component` on the
+  // SAME element (the setting's control container), so a descendant selector matched nothing and every multiple
+  // dropdown rendered one row tall — Obsidian's `.dropdown` height, with no popup behind it to pick from.
+  &.multiple-dropdown-component {
     select,
     select:focus,
     .dropdown {
@@ -7,8 +10,8 @@
       padding-top: 3px;
 
       option:checked {
-        background-color: #1967d2;
-        color: #fff;
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
       }
     }
   }
