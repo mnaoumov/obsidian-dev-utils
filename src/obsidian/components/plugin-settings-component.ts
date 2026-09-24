@@ -194,7 +194,8 @@ type ValidationResult<PluginSettings extends object> = Partial<Record<StringKeys
  * Base class for plugin settings components.
  *
  * Manages settings data, persistence, validation, and events.
- * Plugin authors extend this class and implement {@link createDefaultSettings}.
+ * Plugin authors extend this class and pass their settings class as
+ * {@link PluginSettingsComponentBaseConstructorParams.pluginSettingsClass}, whose default-constructed instance supplies the defaults.
  *
  * @typeParam PluginSettings - The plugin settings type.
  */
