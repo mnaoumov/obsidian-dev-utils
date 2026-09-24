@@ -1,5 +1,10 @@
 // @vitest-environment jsdom
-import { Notice } from 'obsidian';
+import type { Mock } from 'vitest';
+
+import {
+  App,
+  Notice
+} from 'obsidian-test-mocks/obsidian';
 import {
   afterEach,
   beforeEach,
@@ -10,14 +15,14 @@ import {
 } from 'vitest';
 
 import type { CustomStackTraceErrorConstructorParams } from '../error.ts';
-import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
+import type {
+  PluginNoticeComponentDelayedNotice,
+  PluginNoticeComponentShowNoticeAfterDelayParams
+} from './components/plugin-notice-component.ts';
 import type { LoopBuildNoticeMessageParams } from './loop.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
-import {
-  invokeAsyncSafely,
-  requestAnimationFrameAsync
-} from '../async.ts';
+import { requestAnimationFrameAsync } from '../async.ts';
 import { getLibDebugger } from '../debug.ts';
 import {
   emitAsyncErrorEvent,
@@ -31,6 +36,8 @@ import { castTo } from '../object-utils.ts';
 import { strictProxy } from '../strict-proxy.ts';
 import { mockImplementation } from '../test-helpers/mock-implementation.ts';
 import { assertNonNullable } from '../type-guards.ts';
+import { resolveValue } from '../value-provider.ts';
+import { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 import { loop } from './loop.ts';
 import { addPluginCssClasses } from './plugin/plugin-context.ts';
 
@@ -79,10 +86,40 @@ vi.mock('../obsidian/plugin/plugin-context.ts', () => ({
   addPluginCssClasses: vi.fn()
 }));
 
-function createMockPluginNoticeComponent(): PluginNoticeComponent {
-  return strictProxy<PluginNoticeComponent>({
-    showNotice: () => new Notice('', 0)
-  });
+interface FakePluginNoticeComponent {
+  readonly delayedNotice: PluginNoticeComponentDelayedNotice;
+  readonly dispose: Mock<() => void>;
+  readonly pluginNoticeComponent: PluginNoticeComponent;
+  readonly setContent: Mock<(content: DocumentFragment | string) => void>;
+  readonly showNoticeAfterDelay: Mock<(params: PluginNoticeComponentShowNoticeAfterDelayParams) => PluginNoticeComponentDelayedNotice>;
+}
+
+function createFakePluginNoticeComponent(): FakePluginNoticeComponent {
+  const dispose = vi.fn<() => void>();
+  const setContent = vi.fn<(content: DocumentFragment | string) => void>();
+  const delayedNotice: PluginNoticeComponentDelayedNotice = {
+    setContent,
+    [Symbol.dispose]: dispose
+  };
+  const showNoticeAfterDelay = vi.fn<(params: PluginNoticeComponentShowNoticeAfterDelayParams) => PluginNoticeComponentDelayedNotice>(
+    () => delayedNotice
+  );
+  return {
+    delayedNotice,
+    dispose,
+    pluginNoticeComponent: strictProxy<PluginNoticeComponent>({ showNoticeAfterDelay }),
+    setContent,
+    showNoticeAfterDelay
+  };
+}
+
+/**
+ * Resolves the content the loop handed to `showNoticeAfterDelay`, as the component does once the delay elapses.
+ */
+async function resolveNoticeContent(fake: FakePluginNoticeComponent): Promise<DocumentFragment | string> {
+  const params = fake.showNoticeAfterDelay.mock.calls[0]?.[0];
+  assertNonNullable(params);
+  return await resolveValue(params.content, {});
 }
 
 function sleepImmediate(_ms: number): Promise<void> {
@@ -107,15 +144,18 @@ describe('loop', () => {
     const processItem = vi.fn();
     const buildNoticeMessage = vi.fn();
 
+    const fake = createFakePluginNoticeComponent();
+
     await loop({
       buildNoticeMessage,
       items: [],
-      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+      pluginNoticeComponent: fake.pluginNoticeComponent,
       processItem
     });
 
     expect(processItem).not.toHaveBeenCalled();
     expect(buildNoticeMessage).not.toHaveBeenCalled();
+    expect(fake.dispose).toHaveBeenCalledTimes(1);
   });
 
   it('should call processItem for each item', async () => {
@@ -244,21 +284,17 @@ describe('loop', () => {
   });
 
   it('should not show notice when shouldShowNotice is false', async () => {
+    const fake = createFakePluginNoticeComponent();
+
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
-      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+      pluginNoticeComponent: fake.pluginNoticeComponent,
       processItem: vi.fn(),
       shouldShowNotice: false
     });
 
-    expect(vi.mocked(invokeAsyncSafely)).toHaveBeenCalledTimes(1);
-
-    const showNoticeFunction = vi.mocked(invokeAsyncSafely).mock.calls[0]?.[0] as (() => Promise<void>) | undefined;
-    expect(showNoticeFunction).toBeDefined();
-    if (showNoticeFunction) {
-      await showNoticeFunction();
-    }
+    expect(fake.showNoticeAfterDelay).not.toHaveBeenCalled();
   });
 
   it('should call getStackTrace at the beginning', async () => {
@@ -400,12 +436,14 @@ describe('loop', () => {
   });
 
   it('should respect custom options', async () => {
+    const fake = createFakePluginNoticeComponent();
+
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
       noticeBeforeShownTimeoutInMilliseconds: 1000,
       noticeMinTimeoutInMilliseconds: 5000,
-      pluginNoticeComponent: strictProxy<PluginNoticeComponent>({}),
+      pluginNoticeComponent: fake.pluginNoticeComponent,
       processItem: vi.fn(),
       progressBarTitle: 'Custom Title',
       shouldContinueOnError: false,
@@ -414,7 +452,7 @@ describe('loop', () => {
       uiUpdateThresholdInMilliseconds: 200
     });
 
-    expect(invokeAsyncSafely).toHaveBeenCalledTimes(1);
+    expect(fake.showNoticeAfterDelay).toHaveBeenCalledWith(expect.objectContaining({ delayInMilliseconds: 1000 }));
   });
 
   it('should use default abortSignal from abortSignalNever when none provided', async () => {
@@ -557,103 +595,129 @@ describe('loop', () => {
     vi.mocked(performance.now).mockRestore();
   });
 
-  it('should set notice message when shouldShowProgressBar is false and notice exists', async () => {
-    // Make invokeAsyncSafely actually await the function so the notice gets created
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
-      await $function();
-    });
-
-    vi.spyOn(Notice.prototype, 'setMessage');
+  it('should show the progress bar through a delayed notice and dispose it when the loop completes', async () => {
+    const fake = createFakePluginNoticeComponent();
+    const contents: (DocumentFragment | string)[] = [];
 
     await loop({
-      buildNoticeMessage: vi.fn(() => 'progress message'),
+      buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b'],
-      pluginNoticeComponent: createMockPluginNoticeComponent(),
-      processItem: vi.fn(),
-      shouldShowNotice: true,
+      pluginNoticeComponent: fake.pluginNoticeComponent,
+      processItem: async (item) => {
+        if (item === 'a') {
+          contents.push(await resolveNoticeContent(fake));
+        }
+      },
+      progressBarTitle: 'My Progress'
+    });
+
+    expect(fake.showNoticeAfterDelay).toHaveBeenCalledWith(expect.objectContaining({ delayInMilliseconds: 500 }));
+    expect(contents).toHaveLength(1);
+    const fragment = castTo<DocumentFragment>(contents[0]);
+    expect(fragment.textContent).toBe('My Progress');
+    expect(fragment.querySelector('progress')).not.toBeNull();
+    // The progress bar reports the current state, so the lazily built content never needs replacing.
+    expect(fake.setContent).not.toHaveBeenCalled();
+    expect(fake.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('should update the notice with each message once it is shown when shouldShowProgressBar is false', async () => {
+    const fake = createFakePluginNoticeComponent();
+    const contents: (DocumentFragment | string)[] = [];
+
+    await loop({
+      buildNoticeMessage: vi.fn((params: LoopBuildNoticeMessageParams<string>) => `msg ${params.item}`),
+      items: ['a', 'b', 'c'],
+      pluginNoticeComponent: fake.pluginNoticeComponent,
+      processItem: async (item) => {
+        if (item === 'b') {
+          contents.push(await resolveNoticeContent(fake));
+        }
+      },
       shouldShowProgressBar: false
     });
 
-    // Notice.setMessage should have been called with the string message (not a fragment)
-    expect(vi.mocked(Notice.prototype.setMessage)).toHaveBeenCalledWith('progress message');
-    vi.mocked(Notice.prototype.setMessage).mockRestore();
+    // Before the delay elapses there is no notice to update: the content provider picks up the latest message.
+    expect(contents).toEqual(['msg b']);
+    expect(fake.setContent.mock.calls).toEqual([['msg c']]);
+    expect(fake.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('should return early from showNotice when shouldShowProgressBar is false', async () => {
-    // Make invokeAsyncSafely actually await so the notice is created
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
-      await $function();
-    });
-
-    vi.spyOn(Notice.prototype, 'setMessage');
+  it('should dispose the notice when the loop is aborted', async () => {
+    const fake = createFakePluginNoticeComponent();
+    const controller = new AbortController();
 
     await loop({
+      abortSignal: controller.signal,
+      buildNoticeMessage: vi.fn(() => 'msg'),
+      items: ['a', 'b'],
+      pluginNoticeComponent: fake.pluginNoticeComponent,
+      processItem: () => {
+        controller.abort();
+      }
+    });
+
+    expect(fake.dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('should dispose the notice when the loop fails', async () => {
+    const fake = createFakePluginNoticeComponent();
+
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+
+    await expect(loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a'],
-      pluginNoticeComponent: createMockPluginNoticeComponent(),
-      processItem: vi.fn(),
-      shouldShowNotice: true,
-      shouldShowProgressBar: false
-    });
+      pluginNoticeComponent: fake.pluginNoticeComponent,
+      processItem: vi.fn().mockRejectedValue(new Error('fail')),
+      shouldContinueOnError: false
+    })).rejects.toThrow('loop failed');
 
-    // When shouldShowProgressBar is false, notice is created but setMessage with
-    // fragment is NOT called (it returns early). setMessage is only called with
-    // the string message for each item.
-    for (const call of vi.mocked(Notice.prototype.setMessage).mock.calls) {
-      expect(typeof call[0]).toBe('string');
-    }
-
-    vi.mocked(Notice.prototype.setMessage).mockRestore();
+    expect(fake.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it('should set progress bar message when shouldShowProgressBar is true and notice exists', async () => {
-    // Make invokeAsyncSafely actually await the function so the notice gets created
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure notice is created before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
-      await $function();
-    });
-
-    vi.spyOn(Notice.prototype, 'setMessage');
-
-    await loop({
-      buildNoticeMessage: vi.fn(() => 'msg'),
-      items: ['a', 'b'],
-      pluginNoticeComponent: createMockPluginNoticeComponent(),
-      processItem: vi.fn(),
-      progressBarTitle: 'My Progress',
-      shouldShowNotice: true,
-      shouldShowProgressBar: true
-    });
-
-    // With the progress bar enabled, setMessage is called with the fragment containing the progress bar
-    const fragmentCalls = vi.mocked(Notice.prototype.setMessage).mock.calls.filter((call) => typeof call[0] !== 'string');
-    expect(fragmentCalls.length).toBeGreaterThanOrEqual(1);
-    vi.mocked(Notice.prototype.setMessage).mockRestore();
-  });
-
-  it('should not create a notice when pluginNoticeComponent is null', async () => {
-    // Make invokeAsyncSafely actually await the function so showNotice runs to completion
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises -- Must be async to ensure showNotice runs before loop iterates.
-    vi.mocked(invokeAsyncSafely).mockImplementation(async ($function: () => unknown) => {
-      await $function();
-    });
-
-    vi.spyOn(Notice.prototype, 'setMessage');
+  it('should not show a notice when pluginNoticeComponent is null', async () => {
+    const processItem = vi.fn();
 
     await loop({
       buildNoticeMessage: vi.fn(() => 'msg'),
       items: ['a', 'b'],
       pluginNoticeComponent: null,
-      processItem: vi.fn(),
-      progressBarTitle: 'My Progress',
-      shouldShowNotice: true,
-      shouldShowProgressBar: true
+      processItem,
+      shouldShowProgressBar: false
     });
 
-    // With no component, no Notice is ever constructed, so setMessage is never called.
-    expect(vi.mocked(Notice.prototype.setMessage)).not.toHaveBeenCalled();
-    vi.mocked(Notice.prototype.setMessage).mockRestore();
+    expect(processItem).toHaveBeenCalledTimes(2);
+  });
+
+  it('should keep the progress notice on screen for a run that outlasts the default notice duration', async () => {
+    vi.useFakeTimers();
+    const pluginNoticeComponent = new PluginNoticeComponent({
+      app: App.createConfigured__().asOriginalType__(),
+      pluginName: 'Plugin'
+    });
+    const noticeConstructorSpy = vi.spyOn(Notice.prototype, 'constructor__');
+    const hideSpy = vi.spyOn(Notice.prototype, 'hide');
+    const LONGER_THAN_DEFAULT_NOTICE_DURATION_IN_MILLISECONDS = 10_000;
+
+    await loop({
+      buildNoticeMessage: vi.fn(() => 'msg'),
+      items: ['a', 'b'],
+      pluginNoticeComponent,
+      processItem: async () => {
+        await vi.advanceTimersByTimeAsync(LONGER_THAN_DEFAULT_NOTICE_DURATION_IN_MILLISECONDS);
+        // The notice must still be up while the loop runs.
+        expect(hideSpy).not.toHaveBeenCalled();
+      }
+    });
+
+    expect(noticeConstructorSpy).toHaveBeenCalledTimes(1);
+    // The argument, not `duration__`: the mock records an omitted duration as 0, which would hide the defect. A zero
+    // duration is Obsidian's never-auto-hide form; omitted, the notice vanishes a few seconds into the run.
+    expect(noticeConstructorSpy.mock.calls[0]?.[1]).toBe(0);
+    expect(hideSpy).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 });
