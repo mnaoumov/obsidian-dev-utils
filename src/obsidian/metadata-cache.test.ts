@@ -124,6 +124,7 @@ vi.mock('../obsidian/file-system.ts', () => ({
   }),
   getFolder: vi.fn((params: GetFolderParams) => ({ children: [], deleted: false, path: params.pathOrFolder })),
   getPath: vi.fn((_app: unknown, pathOrFile: unknown) => typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as PathHolder).path),
+  isCanvasFile: vi.fn((pathOrFile: unknown) => (typeof pathOrFile === 'string' ? pathOrFile : (pathOrFile as PathHolder).path).endsWith('.canvas')),
   isFile: vi.fn((file: unknown) => file !== null && typeof file === 'object' && 'name' in (file as GenericObject) && !('children' in (file as GenericObject)))
 }));
 
@@ -1162,6 +1163,50 @@ describe('getBacklinksForFileSafe', () => {
     mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'source.md' }));
     mockedReadSafe.mockResolvedValue('---\naliases: different\n---');
     mockedParseFrontmatter.mockReturnValue(castTo<ReturnType<typeof parseFrontmatter>>({ aliases: 'different-value' }));
+
+    await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
+    expect(operationResult).toBe(false);
+  });
+
+  it('should succeed without reading a canvas whose text-node reference precedes its file-node one', async () => {
+    let operationResult: boolean | undefined;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFunction = params.operationFunction;
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+      operationResult = await operationFunction(abortSignal);
+    });
+    const textNodeReference = makeReferenceCache('![[a/img.png]]', 0);
+    const fileNodeReference = { key: 'nodes.1.file', link: 'a/img.png', original: 'a/img.png' };
+
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
+      createBacklinksDict({ 'board.canvas': [textNodeReference, fileNodeReference] })
+    );
+    mockedGetFileOrNull.mockReturnValue(castTo<ReturnType<typeof getFileOrNull>>({ path: 'board.canvas' }));
+    mockedReadSafe.mockResolvedValue('{"nodes":[{"id":"0","type":"text","text":"![[a/img.png]]"}]}');
+
+    const result = await getBacklinksForFileSafe({ app, pathOrFile: 'a/img.png' });
+    expect(operationResult).toBe(true);
+    expect(result.keys()).toEqual(['board.canvas']);
+    expect(mockedReadSafe).not.toHaveBeenCalled();
+    expect(mockedSaveNote).not.toHaveBeenCalled();
+  });
+
+  it('should keep checking later notes after a link that is neither reference nor frontmatter', async () => {
+    let operationResult: boolean | undefined;
+    mockedRetryWithTimeoutNotice.mockImplementation(async (params: RetryWithTimeoutNoticeParams) => {
+      const operationFunction = params.operationFunction;
+      const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+      operationResult = await operationFunction(abortSignal);
+    });
+    const unknownLink = { link: 'something', original: 'something' };
+    const staleLink = makeReferenceCache('[[target]]', 10);
+
+    mockedGetIndexedBacklinksForFile.mockReturnValue(
+      createBacklinksDict({ 'first.md': [unknownLink], 'second.md': [staleLink] })
+    );
+    mockedGetFileOrNull.mockImplementation((params: GetFileOrNullParams) => castTo<ReturnType<typeof getFileOrNull>>({ path: params.pathOrFile }));
+    mockedReadSafe.mockResolvedValue('0123456789XXMISMATCHX more text');
+    mockedParseFrontmatter.mockReturnValue({});
 
     await getBacklinksForFileSafe({ app, pathOrFile: 'target.md' });
     expect(operationResult).toBe(false);
