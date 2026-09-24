@@ -28,7 +28,10 @@ import type {
   UpdateLinksInFileParams
 } from './link.ts';
 import type { CachedMetadataEx } from './metadata-cache.ts';
-import type { CanvasReference } from './reference.ts';
+import type {
+  CanvasReference,
+  OffsetRange
+} from './reference.ts';
 import type { ResourceLockComponent } from './resource-lock.ts';
 
 import { CallbackDisposable } from '../disposable.ts';
@@ -783,6 +786,15 @@ describe('splitSubpath (additional edge cases)', () => {
     });
   });
 });
+
+/**
+ * A cache of two real `file://` markdown links, plus the range that contains the second one and nothing
+ * else — the fixture the `file://` wrapper-forwarding cases are built on.
+ */
+interface FileUrlLinkCaseFixture {
+  readonly cache: CachedMetadataEx;
+  readonly secondLinkRange: OffsetRange;
+}
 
 /**
  * The subset of {@link UpdateLinksInFileParams} that shapes the emitted link, as opposed to naming what is linked.
@@ -2337,6 +2349,203 @@ describe('app-dependent functions', () => {
         })).rejects.toThrow('must not be less than the start offset');
 
         expect(applyFileChanges).not.toHaveBeenCalled();
+      });
+    });
+
+    /*
+     * These pin the forwarding through the four wrappers over `editLinks` / `editLinksInContent`. Both
+     * wrappers over `editLinks` forwarded the range at runtime long before their params interfaces declared
+     * it, and neither forward was pinned by anything: a refactor of either spread to explicit destructuring
+     * would have dropped the range silently, and a consumer converting a selection would have rewritten the
+     * WHOLE note instead, with no compile error and no test failure.
+     *
+     * The assertion is the set of links that reached the converter, read off the changes the provider
+     * returns. The cache positions are self-consistent and deliberately unrelated to the content string,
+     * which only has to match what the vault holds so the staleness check inside `editLinks` passes.
+     */
+    describe('wrapper forwarding', () => {
+      const RANGE_AROUND_B = { endOffset: 11, startOffset: 6 };
+
+      function captureContentChanges(): FileChange[] {
+        const captured: FileChange[] = [];
+        vi.mocked(applyContentChanges).mockImplementation(
+          async ({ changesProvider, content }) => {
+            if (typeof changesProvider === 'function') {
+              const changes = await (changesProvider as () => Promise<FileChange[] | null>)();
+              captured.push(...changes ?? []);
+            }
+            return content;
+          }
+        );
+        return captured;
+      }
+
+      function captureFileChanges(): FileChange[] {
+        const captured: FileChange[] = [];
+        vi.mocked(applyFileChanges).mockImplementation(
+          async ({ changesProvider }) => {
+            if (typeof changesProvider !== 'function') {
+              return;
+            }
+
+            const abortSignal = strictProxy<AbortSignal>({ throwIfAborted: vi.fn() });
+            const changes = await resolveValue(changesProvider, { abortSignal, content: CONTENT });
+            captured.push(...changes ?? []);
+          }
+        );
+        return captured;
+      }
+
+      /**
+       * Two `file://` markdown links parsed by the real parser, so the references carry real positions and
+       * the `file://` converter recognizes them.
+       */
+      function createTwoFileUrlLinkCache(): FileUrlLinkCaseFixture {
+        const content = '[a](file:///F:%5Cx.txt) [b](file:///F:%5Cy.txt)';
+        const externalLinks = parseLinks(content)
+          .filter((parseLinkResult) => parseLinkResult.isExternal)
+          .map((parseLinkResult) => toParseLinkReference({ content, parseLinkResult }));
+        const secondLink = ensureNonNullable(externalLinks[1]);
+        return {
+          cache: castTo<CachedMetadataEx>({
+            externalLinks,
+            features: [
+              CachedMetadataExFeature.Native,
+              CachedMetadataExFeature.ExternalLinks,
+              CachedMetadataExFeature.FrontmatterExternalLinks,
+              CachedMetadataExFeature.MultiValueFrontmatterExternalLinks
+            ],
+            frontmatterExternalLinks: [],
+            links: undefined,
+            multiValueFrontmatterExternalLinks: [],
+            sections: undefined
+          }),
+          secondLinkRange: { endOffset: secondLink.position.end.offset, startOffset: secondLink.position.start.offset }
+        };
+      }
+
+      it('should forward the offset range from updateLinksInFile', async () => {
+        const changes = captureFileChanges();
+        vi.mocked(getCacheSafe).mockResolvedValue(createThreeLinkCache());
+
+        await updateLinksInFile({
+          app,
+          newSourcePathOrFile: 'note.md',
+          offsetRange: RANGE_AROUND_B,
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[[b]]']);
+      });
+
+      it('should visit every link when updateLinksInFile omits the offset range', async () => {
+        const changes = captureFileChanges();
+        vi.mocked(getCacheSafe).mockResolvedValue(createThreeLinkCache());
+
+        await updateLinksInFile({
+          app,
+          newSourcePathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[[a]]', '[[b]]', '[[c]]']);
+      });
+
+      it('should forward the offset range from updateLinksInContent', async () => {
+        const changes = captureContentChanges();
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+
+        await updateLinksInContent({
+          app,
+          content: CONTENT,
+          newSourcePathOrFile: 'note.md',
+          offsetRange: RANGE_AROUND_B
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[[b]]']);
+      });
+
+      it('should visit every link when updateLinksInContent omits the offset range', async () => {
+        const changes = captureContentChanges();
+        vi.mocked(parseMetadata).mockResolvedValue(createThreeLinkCache());
+
+        await updateLinksInContent({
+          app,
+          content: CONTENT,
+          newSourcePathOrFile: 'note.md'
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[[a]]', '[[b]]', '[[c]]']);
+      });
+
+      it('should forward the offset range from updateFileUrlLinksInFile', async () => {
+        const { cache, secondLinkRange } = createTwoFileUrlLinkCache();
+        const changes = captureFileChanges();
+        vi.mocked(getCacheSafe).mockResolvedValue(cache);
+
+        await updateFileUrlLinksInFile({
+          app,
+          offsetRange: secondLinkRange,
+          pathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[b](file:///F:%5Cy.txt)']);
+      });
+
+      it('should visit every link when updateFileUrlLinksInFile omits the offset range', async () => {
+        const { cache } = createTwoFileUrlLinkCache();
+        const changes = captureFileChanges();
+        vi.mocked(getCacheSafe).mockResolvedValue(cache);
+
+        await updateFileUrlLinksInFile({
+          app,
+          pathOrFile: 'note.md',
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[a](file:///F:%5Cx.txt)', '[b](file:///F:%5Cy.txt)']);
+      });
+
+      it('should forward the offset range from updateFileUrlLinksInContent', async () => {
+        const { cache, secondLinkRange } = createTwoFileUrlLinkCache();
+        const changes = captureContentChanges();
+        vi.mocked(parseMetadata).mockResolvedValue(cache);
+
+        await updateFileUrlLinksInContent({
+          app,
+          content: CONTENT,
+          offsetRange: secondLinkRange
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[b](file:///F:%5Cy.txt)']);
+      });
+
+      it('should visit every link when updateFileUrlLinksInContent omits the offset range', async () => {
+        const { cache } = createTwoFileUrlLinkCache();
+        const changes = captureContentChanges();
+        vi.mocked(parseMetadata).mockResolvedValue(cache);
+
+        await updateFileUrlLinksInContent({
+          app,
+          content: CONTENT
+        });
+
+        expect(changes.map((change) => change.oldContent)).toEqual(['[a](file:///F:%5Cx.txt)', '[b](file:///F:%5Cy.txt)']);
+      });
+
+      it('should reject an invalid offset range passed to a wrapper', async () => {
+        await expect(updateLinksInFile({
+          app,
+          newSourcePathOrFile: 'note.md',
+          offsetRange: { endOffset: 5, startOffset: 10 },
+          pluginNoticeComponent: null,
+          resourceLockComponent
+        })).rejects.toThrow('must not be less than the start offset');
       });
     });
   });

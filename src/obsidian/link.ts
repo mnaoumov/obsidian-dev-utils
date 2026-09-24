@@ -958,6 +958,21 @@ export interface UpdateFileUrlLinksInContentParams {
   readonly content: string;
 
   /**
+   * A range within {@link UpdateFileUrlLinksInContentParams.content}, in character offsets, restricting
+   * the pass to the links inside it. When omitted, every link is visited.
+   *
+   * A link is normalized only when it is **fully contained** in the range; one that merely overlaps it is
+   * left alone, because rewriting part of a link corrupts it. Both bounds are inclusive, so a range whose
+   * offsets coincide exactly with a link's does include that link.
+   *
+   * A reference that carries no position within the content — a frontmatter link, a multi-link frontmatter
+   * value entry, or any canvas reference — is never in range and is skipped whenever a range is supplied.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
+
+  /**
    * Whether to emit the normalized links with angle brackets and raw spaces instead of `%20`-encoding.
    *
    * @default `false`
@@ -973,6 +988,27 @@ export interface UpdateFileUrlLinksInFileParams extends ProcessOptions {
    * An Obsidian app instance.
    */
   readonly app: App;
+
+  /**
+   * A range within the file's content, in character offsets, restricting the pass to the links inside it.
+   * When omitted, every link is visited.
+   *
+   * A link is normalized only when it is **fully contained** in the range; one that merely overlaps it is
+   * left alone, because rewriting part of a link corrupts it. Both bounds are inclusive, so a range whose
+   * offsets coincide exactly with a link's does include that link.
+   *
+   * A reference that carries no position within the file's content — a frontmatter link, a multi-link
+   * frontmatter value entry, or any canvas reference — is never in range and is skipped whenever a range is
+   * supplied.
+   *
+   * The offsets are into the content this function reads from the vault. Before reading, it saves any
+   * unsaved editor buffer for the file, so a range taken from an open editor via `Editor.posToOffset` is
+   * valid. The caller owns only the case where the buffer changes between computing the range and this
+   * call.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
 
   /**
    * The path or file to normalize the `file://` links in.
@@ -1153,6 +1189,27 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
    * A file to update the links in.
    */
   readonly newSourcePathOrFile: PathOrFile;
+
+  /**
+   * A range within the file's content, in character offsets, restricting the pass to the links inside it.
+   * When omitted, every link is visited.
+   *
+   * A link is updated only when it is **fully contained** in the range; one that merely overlaps it is left
+   * alone, because rewriting part of a link corrupts it. Both bounds are inclusive, so a range whose
+   * offsets coincide exactly with a link's does include that link.
+   *
+   * A reference that carries no position within the file's content — a frontmatter link, a multi-link
+   * frontmatter value entry, or any canvas reference — is never in range and is skipped whenever a range is
+   * supplied.
+   *
+   * The offsets are into the content this function reads from the vault. Before reading, it saves any
+   * unsaved editor buffer for the file, so a range taken from an open editor via `Editor.posToOffset` is
+   * valid. The caller owns only the case where the buffer changes between computing the range and this
+   * call.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
 
   /**
    * An old path of the file.
@@ -1462,6 +1519,21 @@ interface UpdateLinksInContentParams {
    * A new source path or file.
    */
   readonly newSourcePathOrFile: PathOrFile;
+
+  /**
+   * A range within {@link UpdateLinksInContentParams.content}, in character offsets, restricting the pass
+   * to the links inside it. When omitted, every link is visited.
+   *
+   * A link is updated only when it is **fully contained** in the range; one that merely overlaps it is left
+   * alone, because rewriting part of a link corrupts it. Both bounds are inclusive, so a range whose
+   * offsets coincide exactly with a link's does include that link.
+   *
+   * A reference that carries no position within the content — a frontmatter link, a multi-link frontmatter
+   * value entry, or any canvas reference — is never in range and is skipped whenever a range is supplied.
+   *
+   * @default `undefined`
+   */
+  readonly offsetRange?: OffsetRange;
 
   /**
    * An old source path or file.
@@ -2055,12 +2127,13 @@ export function splitSubpath(link: string): SplitSubpathResult {
  * @returns A {@link Promise} that resolves to the content with normalized `file://` links.
  */
 export async function updateFileUrlLinksInContent(params: UpdateFileUrlLinksInContentParams): Promise<string> {
-  const { app, content, shouldUseAngleBrackets = false } = params;
+  const { app, content, offsetRange, shouldUseAngleBrackets = false } = params;
   return await editLinksInContent(normalizeOptionalProperties<EditLinksInContentParams>({
     abortSignal: params.abortSignal,
     app,
     content,
     linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
+    offsetRange,
     shouldEditExternalLinks: true,
     shouldEditFrontmatterExternalLinks: true,
     shouldEditMultiValueFrontmatterExternalLinks: true
@@ -2077,19 +2150,22 @@ export async function updateFileUrlLinksInContent(params: UpdateFileUrlLinksInCo
 export async function updateFileUrlLinksInFile(params: UpdateFileUrlLinksInFileParams): Promise<void> {
   const {
     app,
+    offsetRange,
     pathOrFile,
     shouldUseAngleBrackets = false,
     ...options
   } = params;
-  await editLinks({
+  await editLinks(normalizeOptionalProperties<EditLinksParams>({
     app,
     linkConverter: (link) => normalizeFileUrlLink(link, shouldUseAngleBrackets),
+    // Forwarded by name rather than through `options`, so a later refactor cannot drop it silently.
+    offsetRange,
     pathOrFile,
     shouldEditExternalLinks: true,
     shouldEditFrontmatterExternalLinks: true,
     shouldEditMultiValueFrontmatterExternalLinks: true,
     ...options
-  });
+  }));
 }
 
 /**
@@ -2202,6 +2278,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
     linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
+    offsetRange,
     oldSourcePathOrFile,
     shouldEscapeAlias,
     shouldIncludeAttachmentExtensionToEmbedAlias,
@@ -2212,7 +2289,7 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
     shouldUseLeadingSlashForAbsolutePaths
   } = params;
 
-  return await editLinksInContent({
+  return await editLinksInContent(normalizeOptionalProperties<EditLinksInContentParams>({
     app,
     content,
     linkConverter: (link) => {
@@ -2234,8 +2311,9 @@ export async function updateLinksInContent(params: UpdateLinksInContentParams): 
           shouldUseLeadingDotForRelativePaths,
           shouldUseLeadingSlashForAbsolutePaths
         }));
-    }
-  });
+    },
+    offsetRange
+  }));
 }
 
 /**
@@ -2251,6 +2329,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
     linkPathStyle,
     linkStyle,
     newSourcePathOrFile,
+    offsetRange,
     oldSourcePathOrFile,
     shouldEscapeAlias,
     shouldIncludeAttachmentExtensionToEmbedAlias,
@@ -2265,7 +2344,7 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
     return;
   }
 
-  await editLinks({
+  await editLinks(normalizeOptionalProperties<EditLinksParams>({
     ...params,
     linkConverter: (link) => {
       const isEmbedLink = hasEmbedSyntax(link.original);
@@ -2287,8 +2366,10 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
           shouldUseLeadingSlashForAbsolutePaths
         }));
     },
+    // Named beside the `...params` spread, so a later refactor to explicit forwarding cannot drop it silently.
+    offsetRange,
     pathOrFile: newSourcePathOrFile
-  });
+  }));
 }
 
 function defaultLinkIdentityKeyProvider(link: Reference): string {
