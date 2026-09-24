@@ -11,6 +11,7 @@ import { manifestName } from './manifest-name.ts';
 import { manifestSchema } from './manifest-schema.ts';
 import { noAsyncCallbackToUnsafeReturn } from './no-async-callback-to-unsafe-return.ts';
 import { noOverCapWaitInEvalInObsidian } from './no-over-cap-wait-in-eval-in-obsidian.ts';
+import { noUnresolvedJsdocLink } from './no-unresolved-jsdoc-link.ts';
 import { noUntrustedInputEvents } from './no-untrusted-input-events.ts';
 import { noUnusedParamsMembers } from './no-unused-params-members.ts';
 import { noUsedUnderscoreVariables } from './no-used-underscore-variables.ts';
@@ -32,6 +33,7 @@ export const obsidianDevUtilsPlugin: ESLint.Plugin = {
     'manifest-schema': manifestSchema,
     'no-async-callback-to-unsafe-return': noAsyncCallbackToUnsafeReturn,
     'no-over-cap-wait-in-eval-in-obsidian': noOverCapWaitInEvalInObsidian,
+    'no-unresolved-jsdoc-link': noUnresolvedJsdocLink,
     'no-untrusted-input-events': noUntrustedInputEvents,
     'no-unused-params-members': noUnusedParamsMembers,
     'no-used-underscore-variables': noUsedUnderscoreVariables,

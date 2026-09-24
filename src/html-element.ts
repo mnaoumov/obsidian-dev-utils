@@ -71,7 +71,7 @@ export async function createDivAsync(
  * @param o - The element information.
  * @param callback - The callback to call when the element is created.
  * @returns A {@link Promise} that resolves to the element.
- * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#createEl} (or createSvg, correspondingly).
+ * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link createEl} (or createSvg, correspondingly).
  */
 export async function createElAsync<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -120,7 +120,7 @@ export async function createSpanAsync(
  * @param o - The svg information.
  * @param callback - The callback to call when the svg is created.
  * @returns A {@link Promise} that resolves to the svg.
- * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link obsidian#createSvg} (or createEl, correspondingly).
+ * @remarks Not refactored to parameter-object pattern, to keep the parity with {@link createSvg} (or createEl, correspondingly).
  */
 export async function createSvgAsync<K extends keyof SVGElementTagNameMap>(
   tag: K,

@@ -320,7 +320,7 @@ export function renderTypeWithLinks(typeText: string, allTypes: Map<string, Type
 }
 
 /**
-Resolve {@link Name} and {@link Name | display text} tags in description text
+Resolve `@link` tags, with or without a `| display text` part, in description text
 */
 export function resolveLinks(text: string, allTypes: Map<string, TypeInfo>, selfNamespace?: string): string {
   return text.replaceAll(/\{@link\s+(?<target>[^|}]+?)(?:\s*\|\s*(?<display>[^}]+?))?\}/g, (...$arguments) => {

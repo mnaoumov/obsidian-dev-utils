@@ -652,6 +652,11 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
          * otherwise be enforced nowhere.
          */
         'obsidian-dev-utils/no-over-cap-wait-in-eval-in-obsidian': 'error',
+        /*
+         * Measured over 32 plugins built on this config before it was turned on (2026-09-24): 29 had no finding,
+         * the other three had 8 between them, every one a genuinely dead link.
+         */
+        'obsidian-dev-utils/no-unresolved-jsdoc-link': 'error',
         'obsidian-dev-utils/no-unused-params-members': 'error',
         'obsidian-dev-utils/no-used-underscore-variables': 'error',
         'obsidian-dev-utils/params-options-name-match': 'error',
