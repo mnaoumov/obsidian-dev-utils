@@ -87,8 +87,10 @@ export interface GateOptions {
  * through the package manager, so a project overriding one of these scripts gets its own version, and each
  * step carries its own environment off switch.
  *
- * The steps that are run with {@link npmRunOptional} are skipped when the project does not define them; the
- * rest are required. The test step is the one place that reads that skip: `test:coverage` is preferred, and
+ * Every step but `build` is run with {@link npmRunOptional}, so it is skipped when the project does not define
+ * it: a project that chose no formatter, spell checker, markdown linter or linter has nothing to check there,
+ * and requiring those scripts made `npm run version` die on its first step in exactly those projects. `build`
+ * stays required, because a release with nothing built has nothing to ship. The test step is the one place that reads that skip: `test:coverage` is preferred, and
  * `test` runs only as its fallback, so the suite is never run twice. The unit tests stay ahead of
  * `test:integration` for the same fastest-first reason — a broken unit test should fail before an
  * integration suite is started, not after.
@@ -108,9 +110,9 @@ export async function gate(options: GateOptions = {}): Promise<void> {
       await assertPackageLockIntegrity();
     }
 
-    await npmRun('format:check');
-    await npmRun('spellcheck');
-    await npmRun('lint:md');
+    await npmRunOptional('format:check');
+    await npmRunOptional('spellcheck');
+    await npmRunOptional('lint:md');
   }
 
   if (shouldBuild) {
@@ -121,7 +123,7 @@ export async function gate(options: GateOptions = {}): Promise<void> {
     return;
   }
 
-  await npmRun('lint');
+  await npmRunOptional('lint');
   await npmRunOptional('find-overexposed');
 
   if (await npmRunOptional('test:coverage') === NpmRunOptionalResult.Skipped) {

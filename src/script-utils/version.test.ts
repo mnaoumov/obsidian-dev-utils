@@ -167,6 +167,11 @@ const MARKDOWNLINT_FINDINGS = ['CHANGELOG.md:5 error no-soft-break-in-paragraph 
 // The word is assembled rather than written out for the same reason its sibling suite assembles one: this file
 // is read by `spellcheck` too, and a literal unknown word here is the very defect the check exists to catch.
 const SPELLING_FINDINGS = [`CHANGELOG.md:5:11 - Unknown word (${['lint', 'able'].join('')})`];
+// The two scripts whose checks the settled changelog is held to. A project defining neither skips both checks.
+const CHANGELOG_CHECK_SCRIPTS = {
+  'lint:md': 'jiti scripts/lint-md.ts',
+  'spellcheck': 'jiti scripts/spellcheck.ts'
+};
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -184,6 +189,7 @@ beforeEach(() => {
   mockArchivePluginDemoVault.mockResolvedValue(null);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockExistsSync.mockReturnValue(false);
+  mockReadPackageJson.mockResolvedValue({ scripts: CHANGELOG_CHECK_SCRIPTS });
   mockLintMarkdownContent.mockResolvedValue([]);
   mockSpellcheckContent.mockResolvedValue([]);
   mockReadForbiddenPatterns.mockResolvedValue([]);
@@ -1249,6 +1255,28 @@ describe('updateChangelog', () => {
     expect(mockSpellcheckContent).toHaveBeenCalledTimes(1);
   });
 
+  // A project that chose no spell checker has no spelling configuration, so `cspell` would judge its notes against
+  // the stock dictionaries alone. The gate skips a check the project does not define, and so does this.
+  it('should skip the spelling check in a project that defines no spellcheck script', async () => {
+    mockReadPackageJson.mockResolvedValue({ scripts: { 'lint:md': CHANGELOG_CHECK_SCRIPTS['lint:md'] } });
+    mockReadFile.mockResolvedValue('- A note nobody can spell\n');
+    mockSpellcheckContent.mockResolvedValue(SPELLING_FINDINGS);
+    await updateChangelog('1.0.0', { changelogFilePath: '/notes.md' });
+    expect(mockSpellcheckContent).not.toHaveBeenCalled();
+    expect(mockLintMarkdownContent).toHaveBeenCalledOnce();
+  });
+
+  it('should skip both checks in a project that defines no scripts at all', async () => {
+    mockReadPackageJson.mockResolvedValue({});
+    mockReadFile.mockResolvedValue('- A hard-wrapped note nobody can spell\n');
+    mockLintMarkdownContent.mockResolvedValue(MARKDOWNLINT_FINDINGS);
+    mockSpellcheckContent.mockResolvedValue(SPELLING_FINDINGS);
+    await updateChangelog('1.0.0', { changelogFilePath: '/notes.md' });
+    expect(mockLintMarkdownContent).not.toHaveBeenCalled();
+    expect(mockSpellcheckContent).not.toHaveBeenCalled();
+    expect(mockWriteFile).toHaveBeenCalledWith('/root/CHANGELOG.md', expect.stringContaining('## 1.0.0'), 'utf-8');
+  });
+
   it('should re-open the review with the spelling findings and accept the text they fixed', async () => {
     stubReviewReturning(
       '# CHANGELOG\n\n## 1.0.0\n\n- A note nobody can spell\n',
@@ -1392,11 +1420,11 @@ describe('updateVersion', () => {
     setupFullMocks();
     mockReaddirPosix.mockResolvedValue([]);
     await updateVersion('patch');
-    expect(mockNpmRun).toHaveBeenCalledWith('format:check');
-    expect(mockNpmRun).toHaveBeenCalledWith('spellcheck');
-    expect(mockNpmRun).toHaveBeenCalledWith('lint:md');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('format:check');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('spellcheck');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('lint:md');
     expect(mockNpmRun).toHaveBeenCalledWith('build');
-    expect(mockNpmRun).toHaveBeenCalledWith('lint');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('lint');
     expect(mockNpmRunOptional).toHaveBeenCalledWith('find-overexposed');
     expect(mockNpmRunOptional).toHaveBeenCalledWith('test:coverage');
     expect(mockEditPackageJson).toHaveBeenCalled();
@@ -1416,7 +1444,6 @@ describe('updateVersion', () => {
     await updateVersion('patch', { shouldRunChecks: false });
     expect(mockNpmRun).toHaveBeenCalledWith('build');
     expect(mockNpmRun).not.toHaveBeenCalledWith('lint');
-    expect(mockNpmRun).not.toHaveBeenCalledWith('format:check');
     expect(mockNpmRunOptional).not.toHaveBeenCalled();
     expect(mockExecFromRoot).not.toHaveBeenCalledWith('git status --porcelain --untracked-files=all', expect.any(Object));
     expect(mockEditPackageJson).toHaveBeenCalled();
@@ -1427,7 +1454,7 @@ describe('updateVersion', () => {
     mockReaddirPosix.mockResolvedValue([]);
     await updateVersion('patch', { shouldBuild: false });
     expect(mockNpmRun).not.toHaveBeenCalledWith('build');
-    expect(mockNpmRun).toHaveBeenCalledWith('lint');
+    expect(mockNpmRunOptional).toHaveBeenCalledWith('lint');
     expect(mockNpmRunOptional).toHaveBeenCalledWith('find-overexposed');
     expect(mockEditPackageJson).toHaveBeenCalled();
   });
