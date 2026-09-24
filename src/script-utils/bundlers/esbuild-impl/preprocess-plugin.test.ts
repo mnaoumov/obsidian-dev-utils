@@ -3,6 +3,12 @@ import type {
   PluginBuild
 } from 'esbuild';
 
+import { build as bundle } from 'esbuild';
+import { join } from 'node:path';
+import {
+  createContext,
+  runInContext
+} from 'node:vm';
 import {
   afterEach,
   describe,
@@ -16,6 +22,7 @@ import type { GenericObject } from '../../../type-guards.ts';
 import { ensureGenericObject } from '../../../type-guards.ts';
 import {
   ensureBrowserProcess,
+  ensureDisposeSymbols,
   keepName,
   preprocessPlugin
 } from './preprocess-plugin.ts';
@@ -215,5 +222,135 @@ describe('preprocessPlugin', () => {
     expect(plugin.setup(build)).toBeUndefined();
 
     expect(build.initialOptions.banner?.['js']).toMatch(/^\/\/ existing/);
+  });
+});
+
+describe('ensureDisposeSymbols', () => {
+  type DisposeSymbolHost = NonNullable<Parameters<typeof ensureDisposeSymbols>[0]>;
+
+  function makeSymbolWithoutDisposeSymbols(): DisposeSymbolHost {
+    return { for: (key: string) => Symbol.for(key) };
+  }
+
+  it('fills in the registry symbols esbuild looks up when the engine lacks the well-known ones', () => {
+    const symbolConstructor = makeSymbolWithoutDisposeSymbols();
+
+    ensureDisposeSymbols(symbolConstructor);
+
+    expect(symbolConstructor.dispose).toBe(Symbol.for('Symbol.dispose'));
+    expect(symbolConstructor.asyncDispose).toBe(Symbol.for('Symbol.asyncDispose'));
+  });
+
+  it('keeps well-known symbols the engine already has', () => {
+    const hostDispose = Symbol('host dispose');
+    const hostAsyncDispose = Symbol('host asyncDispose');
+    const symbolConstructor = {
+      ...makeSymbolWithoutDisposeSymbols(),
+      asyncDispose: hostAsyncDispose,
+      dispose: hostDispose
+    };
+
+    ensureDisposeSymbols(symbolConstructor);
+
+    expect(symbolConstructor.dispose).toBe(hostDispose);
+    expect(symbolConstructor.asyncDispose).toBe(hostAsyncDispose);
+  });
+
+  it('leaves the ambient Symbol untouched on an engine that has the well-known symbols', () => {
+    const { asyncDispose, dispose } = Symbol;
+
+    ensureDisposeSymbols();
+
+    expect(Symbol.dispose).toBe(dispose);
+    expect(Symbol.asyncDispose).toBe(asyncDispose);
+  });
+});
+
+describe('using a library disposable on an engine without Symbol.dispose', () => {
+  /**
+   * Replaces the context's `Symbol` with a copy that lacks the two dispose symbols, which is how an engine
+   * that has not shipped Explicit Resource Management looks to a bundle. The real well-known properties
+   * are non-configurable, so they can be neither deleted nor hidden behind a `Proxy`.
+   */
+  const HIDE_DISPOSE_SYMBOLS = `
+    const realSymbol = Symbol;
+    const engineSymbol = function Symbol(description) {
+      return realSymbol(description);
+    };
+    for (const key of Reflect.ownKeys(realSymbol)) {
+      if (key !== 'dispose' && key !== 'asyncDispose' && key !== 'prototype') {
+        Object.defineProperty(engineSymbol, key, { ...Object.getOwnPropertyDescriptor(realSymbol, key), configurable: true });
+      }
+    }
+    globalThis.Symbol = engineSymbol;
+  `;
+
+  const ENTRY = `
+    import { AsyncCallbackDisposable, CallbackDisposable } from './disposable.ts';
+    globalThis.probe = { disposed: false, error: null, asyncDisposed: false, asyncError: null };
+    try {
+      using _disposable = new CallbackDisposable({ callback: () => { globalThis.probe.disposed = true; } });
+    } catch (error) {
+      globalThis.probe.error = String(error);
+    }
+    globalThis.probe.asyncDone = (async () => {
+      try {
+        await using _asyncDisposable = new AsyncCallbackDisposable({ callback: async () => { globalThis.probe.asyncDisposed = true; } });
+      } catch (error) {
+        globalThis.probe.asyncError = String(error);
+      }
+    })();
+  `;
+
+  interface Probe {
+    asyncDisposed: boolean;
+    asyncDone: Promise<void>;
+    asyncError: null | string;
+    disposed: boolean;
+    error: null | string;
+  }
+
+  async function runOnEngineWithoutDisposeSymbols(plugins: Plugin[]): Promise<Probe> {
+    const result = await bundle({
+      bundle: true,
+      format: 'iife',
+      logLevel: 'silent',
+      plugins,
+      stdin: {
+        contents: ENTRY,
+        loader: 'ts',
+        // eslint-disable-next-line unicorn/name-replacements -- esbuild's own option name.
+        resolveDir: join(import.meta.dirname, '../../..')
+      },
+      target: 'es2022',
+      write: false
+    });
+    // The cjs banner patches the module-scoped `require` a CommonJS bundle has, so the context supplies one.
+    const context = createContext({ require: () => undefined });
+    runInContext(HIDE_DISPOSE_SYMBOLS, context);
+    runInContext(result.outputFiles[0]?.text ?? '', context);
+    const probe = ensureGenericObject(context)['probe'] as Probe;
+    await probe.asyncDone;
+    return probe;
+  }
+
+  it('reproduces the failure without the banner, so the simulated engine really lacks the symbols', async () => {
+    const probe = await runOnEngineWithoutDisposeSymbols([]);
+
+    expect(probe.error).toContain('Object not disposable');
+    expect(probe.asyncError).toContain('Object not disposable');
+    expect(probe.disposed).toBe(false);
+  });
+
+  it.each([
+    ['esm', true],
+    ['cjs', false]
+  ])('disposes through the %s banner', async (_format, isEsm) => {
+    const probe = await runOnEngineWithoutDisposeSymbols([preprocessPlugin(isEsm)]);
+
+    expect(probe.error).toBeNull();
+    expect(probe.asyncError).toBeNull();
+    expect(probe.disposed).toBe(true);
+    expect(probe.asyncDisposed).toBe(true);
   });
 });
