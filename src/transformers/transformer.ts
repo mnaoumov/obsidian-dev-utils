@@ -140,6 +140,13 @@ export abstract class Transformer {
     for (const childKey of getAllKeys(value)) {
       const childValue = value[childKey];
       const transformedChildValue = this.transformValueRecursively(childValue, childKey);
+      // JSON cannot hold `undefined`, so a key kept with that value vanishes on the first save and makes the
+      // saved record differ from the one it was built from -- which is what made every settings load rewrite
+      // `data.json`. `SkipPrivatePropertyTransformer` returns `undefined` for every `_`-prefixed key.
+      if (transformedChildValue === undefined) {
+        continue;
+      }
+
       record[childKey] = transformedChildValue;
     }
 
