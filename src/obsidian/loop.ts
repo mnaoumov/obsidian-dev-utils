@@ -6,15 +6,10 @@
 
 import type { Promisable } from 'type-fest';
 
-import { Notice } from 'obsidian';
-
 import type { PluginNoticeComponent } from './components/plugin-notice-component.ts';
 
 import { abortSignalNever } from '../abort-controller.ts';
-import {
-  invokeAsyncSafely,
-  requestAnimationFrameAsync
-} from '../async.ts';
+import { requestAnimationFrameAsync } from '../async.ts';
 import { getLibDebugger } from '../debug.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
@@ -165,78 +160,84 @@ export async function loop<T>(params: LoopParams<T>): Promise<void> {
 
   const items = fullOptions.items;
   let iterationCount = 0;
-  let notice = null as Notice | null;
-  let isDone = false;
-  invokeAsyncSafely(() => showNotice());
 
-  const noticeMinTimeoutPromise = sleep(fullOptions.noticeMinTimeoutInMilliseconds);
   const progressBarEl = createEl('progress');
   addPluginCssClasses(progressBarEl, 'loop');
   progressBarEl.max = items.length;
 
+  // The content provider is resolved only once the delay elapses, so it doubles as the notice-was-shown signal.
+  let isNoticeShown = false as boolean;
+  let latestMessage = '';
+  // A delayed notice stays until it is disposed. Obsidian's default duration would hide it a few seconds into a
+  // long run while the loop carries on.
+  const delayedNotice = fullOptions.shouldShowNotice
+    ? params.pluginNoticeComponent?.showNoticeAfterDelay({
+      content: () => {
+        isNoticeShown = true;
+        return fullOptions.shouldShowProgressBar ? buildProgressBarFragment() : latestMessage;
+      },
+      delayInMilliseconds: fullOptions.noticeBeforeShownTimeoutInMilliseconds
+    }) ?? null
+    : null;
+
+  const noticeMinTimeoutPromise = sleep(fullOptions.noticeMinTimeoutInMilliseconds);
   let lastUIUpdateTimestamp = performance.now();
 
-  for (const item of items) {
-    if (fullOptions.abortSignal.aborted) {
-      notice?.hide();
-      return;
-    }
-    iterationCount++;
-    const iterationString = `# ${String(iterationCount)} / ${String(items.length)}`;
-    const message = fullOptions.buildNoticeMessage({ item, iterationString });
-    if (!fullOptions.shouldShowProgressBar) {
-      notice?.setMessage(message);
-    }
-    getLibDebugger('Loop')(message);
-
-    try {
-      if (performance.now() - lastUIUpdateTimestamp > fullOptions.uiUpdateThresholdInMilliseconds) {
-        await requestAnimationFrameAsync();
-        lastUIUpdateTimestamp = performance.now();
+  try {
+    for (const item of items) {
+      if (fullOptions.abortSignal.aborted) {
+        return;
       }
-      await fullOptions.processItem(item);
-    } catch (error) {
-      console.error('Error processing item', item);
-      if (!fullOptions.shouldContinueOnError) {
-        notice?.hide();
-        throw new CustomStackTraceError({
-          cause: error,
-          message: 'loop failed',
-          stackTrace
-        });
+      iterationCount++;
+      const iterationString = `# ${String(iterationCount)} / ${String(items.length)}`;
+      const message = fullOptions.buildNoticeMessage({ item, iterationString });
+      if (!fullOptions.shouldShowProgressBar) {
+        latestMessage = message;
+        if (isNoticeShown) {
+          delayedNotice?.setContent(message);
+        }
       }
+      getLibDebugger('Loop')(message);
 
-      emitAsyncErrorEvent(
-        new CustomStackTraceError({
-          cause: error,
-          message: ASYNC_WRAPPER_ERROR_MESSAGE,
-          stackTrace
-        })
-      );
-    }
-    progressBarEl.value++;
-  }
-  if (notice) {
-    await noticeMinTimeoutPromise;
-  }
-  notice?.hide();
-  isDone = true;
+      try {
+        if (performance.now() - lastUIUpdateTimestamp > fullOptions.uiUpdateThresholdInMilliseconds) {
+          await requestAnimationFrameAsync();
+          lastUIUpdateTimestamp = performance.now();
+        }
+        await fullOptions.processItem(item);
+      } catch (error) {
+        console.error('Error processing item', item);
+        if (!fullOptions.shouldContinueOnError) {
+          throw new CustomStackTraceError({
+            cause: error,
+            message: 'loop failed',
+            stackTrace
+          });
+        }
 
-  async function showNotice(): Promise<void> {
-    if (!fullOptions.shouldShowNotice) {
-      return;
+        emitAsyncErrorEvent(
+          new CustomStackTraceError({
+            cause: error,
+            message: ASYNC_WRAPPER_ERROR_MESSAGE,
+            stackTrace
+          })
+        );
+      }
+      progressBarEl.value++;
     }
-    await sleep(fullOptions.noticeBeforeShownTimeoutInMilliseconds);
-    if (isDone) {
-      return;
+    if (isNoticeShown) {
+      await noticeMinTimeoutPromise;
     }
-    notice = params.pluginNoticeComponent?.showNotice('', {}) ?? null;
-    if (!fullOptions.shouldShowProgressBar) {
-      return;
-    }
+  } finally {
+    // Disposed by an explicit call rather than a `using` declaration: `using` looks the method up under a different
+    // key than the handle is built with on an engine lacking `Symbol.dispose`, and `loop()` runs on every platform.
+    delayedNotice?.[Symbol.dispose]();
+  }
+
+  function buildProgressBarFragment(): DocumentFragment {
     const fragment = createFragment();
     fragment.createDiv({ text: fullOptions.progressBarTitle });
     fragment.append(progressBarEl);
-    notice?.setMessage(fragment);
+    return fragment;
   }
 }
