@@ -144,6 +144,10 @@ vi.mock('./linters/markdownlint-content.ts', () => ({
   lintMarkdownContent: mockLintMarkdownContent
 }));
 
+vi.mock('./package-lock-integrity.ts', () => ({
+  assertPackageLockIntegrity: noopAsync
+}));
+
 vi.mock('../script-utils/npm-run.ts', async (importOriginal) => {
   const $module = await importOriginal<typeof import('./npm-run.ts')>();
   return {

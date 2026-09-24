@@ -27,11 +27,19 @@
 
 import { parseArgs } from 'node:util';
 
+import { isEnvVariableOff } from './env-toggle.ts';
 import {
   npmRun,
   npmRunOptional,
   NpmRunOptionalResult
 } from './npm-run.ts';
+import { assertPackageLockIntegrity } from './package-lock-integrity.ts';
+
+/**
+ * The off switch for the lockfile check. The check is no npm script, so npm cannot derive a switch from a
+ * script name for it, but the name follows the same pattern.
+ */
+const PACKAGE_LOCK_INTEGRITY_ENV_VARIABLE = 'PACKAGE_LOCK_INTEGRITY';
 
 /**
  * Options for {@link gate}.
@@ -73,7 +81,8 @@ export interface GateOptions {
 /**
  * Runs the verification sequence that `npm run version` runs as its preflight.
  *
- * The order is deliberate: the checks that finish in seconds (`format:check`, `spellcheck`, `lint:md`) run
+ * The order is deliberate. The lockfile check ({@link assertPackageLockIntegrity}) comes first, because it
+ * is an in-process JSON read that takes well under a second. Then come the checks that finish in seconds (`format:check`, `spellcheck`, `lint:md`) run
  * first, so a typo fails the gate immediately instead of after the coverage run. Each step is dispatched
  * through the package manager, so a project overriding one of these scripts gets its own version, and each
  * step carries its own environment off switch.
@@ -95,6 +104,10 @@ export async function gate(options: GateOptions = {}): Promise<void> {
   } = options;
 
   if (shouldRunChecks) {
+    if (!isEnvVariableOff(PACKAGE_LOCK_INTEGRITY_ENV_VARIABLE)) {
+      await assertPackageLockIntegrity();
+    }
+
     await npmRun('format:check');
     await npmRun('spellcheck');
     await npmRun('lint:md');
