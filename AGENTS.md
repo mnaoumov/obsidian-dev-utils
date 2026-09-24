@@ -456,6 +456,14 @@ export function myFunction(param: Type): ReturnType {
 - **When the retired id may be dropped is written down on the constant, not here**, so the decision sits where the next session reading that id will be standing. The short form: not before Advanced Metadata Cache is in the community registry, not within twelve months of Backlink Cache's final handover release, and not in a minor. Removing a plugin from the registry blocks new installs and uninstalls nothing, so the old id keeps a live user base for as long as those users do not act.
 - (cannot be forced by ESLint — a rule cannot tell which of the two questions about the cache a call site is asking)
 
+### L28. Per-file backlink lookups go through the backlink index, never through Obsidian's `getBacklinksForFile` directly
+
+- **Obsidian's `metadataCache.getBacklinksForFile` walks the whole vault on every call**: `iterateAllRefs` plus one `getFirstLinkpathDest` per reference, ~115 ms at 100k references. Called once per file — a folder rename, a delete sweep, `deleteIfNotUsed` — that is how a 1000-note folder rename in a 50k-note vault took 924 s. `getBacklinksForFileOrPath` (and so `getBacklinksForFileSafe`, `deleteIfNotUsed` and every consumer) therefore answers from `getIndexedBacklinksForFile` (`src/obsidian/backlink-index.ts`), which resolves only the notes holding a reference whose last linkpath segment matches the file's name. The file header states why the answer is identical; `backlink-index.obsidian.integration.test.ts` compares it against the real method for every file, and goes red when the name-key rule is broken. A new per-file lookup calls the helper, not the Obsidian method.
+- **A backlink-cache plugin's patched method still wins.** When the `.safe` overload is grafted on (see **L27**), `getBacklinksForFileOrPath` calls the patched `getBacklinksForFile`, exactly as `getBacklinksForFileSafe` already preferred `.safe`.
+- **The index lives in the realm-global shared-state bag, under a VERSIONED key (`backlinkIndexesByAppV1`), as plain maps and sets.** One index per `App` is shared by every plugin bundling this library, so what is stored there is a cross-version wire format in the **L9** sense: no class instance, and a change to what a name key MEANS moves to a new key rather than reinterpreting the old one.
+- **The only observable difference is ORDER**: the file itself first, then the candidates in index order, where Obsidian lists notes in `fileCache` order. Nothing here depends on it; a consumer asserting a key order against the old walk would.
+- (cannot be forced by ESLint — a `no-restricted-properties` entry on `getBacklinksForFile` is possible, but the helper itself and the `.safe` branch legitimately call it)
+
 ## Testing
 
 ### Goals
