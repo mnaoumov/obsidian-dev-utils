@@ -193,6 +193,28 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
       js: banner
     },
     bundle: true,
+    /*
+     * `conditions`, `mainFields` and `platform` are one decision, read together.
+     *
+     * The bundle is ONE `main.js` loaded both in Electron on desktop and in a bare WebView on a phone, so a
+     * dependency must resolve to its browser build. esbuild ADDS a condition of its own for `platform: 'node'`
+     * (`node`) and for `platform: 'browser'` (`browser`), and a `conditions` list cannot take one away. With
+     * `platform: 'node'` the effective set was `{ browser, node, import/require, default }`, so a package whose
+     * `exports` map lists `node` before `browser` shipped its Node build to phones — `fflate`'s `esm/index.mjs`
+     * opens with `createRequire` from `module`, which threw at load on mobile.
+     *
+     * `platform: 'neutral'` adds no platform condition, leaving exactly `browser` from the list below. It is
+     * chosen over `platform: 'browser'` because that one also changes what this bundle has always relied on:
+     * it defines `process.env.NODE_ENV` and applies a package's `browser` field remapping (which can stub a
+     * Node builtin to an empty object, breaking a dependency's desktop-only path). `mainFields` restates the
+     * `node` platform's default, because `neutral` has none of its own. Node builtins are marked external by name
+     * below — `node:*` included, since only `platform: 'node'` marks that prefix external by itself.
+     *
+     * Measured over 31 plugins built on this library, 2026-09-23, against `platform: 'node'`: the only modules
+     * that change are `vfile`, `unist-util-visit-parents` and `yaml` (each now takes its browser build instead
+     * of one importing `node:process` / `node:path` / `node:url`) and `esm-env`'s Node flag, which now reads
+     * false. Everything else in every bundle is identical up to identifier renaming.
+     */
     conditions: ['browser'],
     entryPoints: [
       ensureNonNullable(
@@ -216,14 +238,16 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
       '@lezer/lr',
       'esbuild',
       'eslint',
-      ...builtinModules
+      ...builtinModules,
+      'node:*'
     ],
     format: 'cjs',
     keepNames: true,
     logLevel: 'info',
+    mainFields: ['main', 'module'],
     minify: isProductionBuild,
     outfile: distPath,
-    platform: 'node',
+    platform: 'neutral',
     plugins: [
       customEsbuildOptionsPlugin(params.customizeEsbuildOptions?.bind(params)),
       svelteWrapperPlugin(isProductionBuild),
