@@ -103,6 +103,18 @@ describe('ObsidianPluginVitestConfigContext', () => {
     expect(context.desktopPerformance.hookTimeout).toBe(615_000);
   });
 
+  it('should refuse a stale build before the harness loads it, in every project that loads the plugin', () => {
+    const context = new ObsidianPluginVitestConfigContext();
+    const expected = [
+      'obsidian-dev-utils/script-utils/test-runners/stale-build-global-setup',
+      'obsidian-integration-testing/vitest-global-setup-plugin'
+    ];
+    expect(context.desktop.globalSetup).toEqual(expected);
+    expect(context.desktopPerformance.globalSetup).toEqual(expected);
+    expect(context.android.globalSetup).toEqual(expected);
+    expect(context.noApp.globalSetup).toBeUndefined();
+  });
+
   it('should collect the cross-platform suites in both platform projects', () => {
     const context = new ObsidianPluginVitestConfigContext();
     expect(context.desktop.include).toEqual([

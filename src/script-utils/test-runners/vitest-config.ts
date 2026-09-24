@@ -138,6 +138,14 @@ const NO_APP_TEST_FILES = 'src/**/*.no-app.integration.test.ts';
 const UNIT_TEST_FILES = 'src/**/*.test.ts';
 const UNIT_TEST_GLOBAL_STUBS_PROJECT_NAME = 'unit-tests:global-stubs';
 
+/*
+ * Runs before the harness's own setup in every project that loads the plugin from `dist/build/main.js`,
+ * and refuses to start when that build is missing or older than the source. A plugin's
+ * `test:integration*` scripts call vitest directly and never build, so without it a session that edits
+ * `src/` and runs one integration project tests the previous build and reads the result as a defect.
+ */
+const STALE_BUILD_GLOBAL_SETUP = 'obsidian-dev-utils/script-utils/test-runners/stale-build-global-setup';
+
 const OBSIDIAN_VERSION_ENV_VARIABLE_NAME = 'OBSIDIAN_VERSION';
 const SHARED_EXCLUDE = ['node_modules', 'dist'];
 
@@ -184,7 +192,7 @@ export class ObsidianPluginVitestConfigContext {
       }
     },
     fileParallelism: false,
-    globalSetup: ['obsidian-integration-testing/vitest-global-setup-plugin'],
+    globalSetup: [STALE_BUILD_GLOBAL_SETUP, 'obsidian-integration-testing/vitest-global-setup-plugin'],
     hookTimeout: ANDROID_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
     include: [ANDROID_TEST_FILES, CROSS_PLATFORM_TEST_FILES],
     name: 'integration-tests:android',
@@ -228,7 +236,7 @@ export class ObsidianPluginVitestConfigContext {
   public readonly desktop: ObsidianPluginVitestProjectConfig = {
     environment: 'node',
     fileParallelism: false,
-    globalSetup: ['obsidian-integration-testing/vitest-global-setup-plugin'],
+    globalSetup: [STALE_BUILD_GLOBAL_SETUP, 'obsidian-integration-testing/vitest-global-setup-plugin'],
     hookTimeout: INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS * HOOK_TIMEOUT_MULTIPLIER,
     include: [DESKTOP_TEST_FILES, CROSS_PLATFORM_TEST_FILES],
     name: 'integration-tests:desktop',
@@ -268,7 +276,7 @@ export class ObsidianPluginVitestConfigContext {
       }
     },
     fileParallelism: false,
-    globalSetup: ['obsidian-integration-testing/vitest-global-setup-plugin'],
+    globalSetup: [STALE_BUILD_GLOBAL_SETUP, 'obsidian-integration-testing/vitest-global-setup-plugin'],
     hookTimeout: PERFORMANCE_TIMEOUT_IN_MILLISECONDS,
     include: [DESKTOP_PERFORMANCE_TEST_FILES],
     name: 'integration-tests:desktop-performance',
