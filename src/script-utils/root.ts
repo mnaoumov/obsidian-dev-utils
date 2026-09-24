@@ -81,7 +81,8 @@ export interface ToRelativeFromRootParams {
  * @param options - The options for the execution.
  * @returns A {@link Promise} that resolves with the output of the command.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
- *         The error message includes the exit code and stderr.
+ *         The error message includes the exit code, the command, stderr, and stdout (or a note that it was
+ *         printed), and says when the child crashed or was killed rather than exiting on its own.
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
@@ -94,7 +95,8 @@ export async function execFromRoot(command: CommandPart[] | string, options?: Ex
  * @returns A {@link Promise} that resolves with ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
- *         The error message includes the exit code and stderr.
+ *         The error message includes the exit code, the command, stderr, and stdout (or a note that it was
+ *         printed), and says when the child crashed or was killed rather than exiting on its own.
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
@@ -107,7 +109,8 @@ export function execFromRoot(command: CommandPart[] | string, options: ExecDetai
  * @returns A {@link Promise} that resolves with the output of the command or an ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
- *         The error message includes the exit code and stderr.
+ *         The error message includes the exit code, the command, stderr, and stdout (or a note that it was
+ *         printed), and says when the child crashed or was killed rather than exiting on its own.
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
