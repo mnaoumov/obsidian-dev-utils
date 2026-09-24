@@ -784,11 +784,7 @@ export function isChild(params: IsChildParams): boolean {
   const childPath = getPath(app, childPathOrFile);
   const parentPath = getPath(app, parentPathOrFile);
 
-  if (childPath === parentPath) {
-    return false;
-  }
-
-  return parentPath === '/' ? true : childPath.startsWith(`${parentPath}/`);
+  return childPath !== parentPath && (parentPath === '/' || childPath.startsWith(`${parentPath}/`));
 }
 
 /**

@@ -420,5 +420,5 @@ function isTemplaterApi(value: unknown): value is TemplaterApi {
   }
 
   const functionsGenerator: unknown = value.functions_generator;
-  return typeof functionsGenerator !== 'object' || functionsGenerator === null ? false : 'generate_object' in functionsGenerator && typeof functionsGenerator.generate_object === 'function';
+  return typeof functionsGenerator === 'object' && functionsGenerator !== null && 'generate_object' in functionsGenerator && typeof functionsGenerator.generate_object === 'function';
 }

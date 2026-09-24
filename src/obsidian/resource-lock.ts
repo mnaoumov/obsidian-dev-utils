@@ -903,7 +903,7 @@ class ResourceLockManager {
    * @returns `true` to reject the mutation, `false` to allow it.
    */
   private shouldBlockMutation(app: App, path: string): boolean {
-    return this.isMutationBlockedByAncestor(app, path) ? !this.isBypassed(app, path) : false;
+    return this.isMutationBlockedByAncestor(app, path) && !this.isBypassed(app, path);
   }
 
   private unlockConfirmMessage(app: App, path: string): DocumentFragment {

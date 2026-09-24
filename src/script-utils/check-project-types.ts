@@ -181,5 +181,5 @@ export function toCanonical(fileName: string): string {
 }
 
 function shouldKeepDiagnosticByFile(diagnostic: Diagnostic, shouldKeepFile: (fileName: string) => boolean): boolean {
-  return diagnostic.file ? shouldKeepFile(toCanonical(diagnostic.file.fileName)) : true;
+  return !diagnostic.file || shouldKeepFile(toCanonical(diagnostic.file.fileName));
 }

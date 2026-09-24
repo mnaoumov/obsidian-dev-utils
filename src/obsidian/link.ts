@@ -2698,7 +2698,7 @@ function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: Tab
   }
   /* v8 ignore stop */
 
-  return UNESCAPED_WIKILINK_DIVIDER_REGEXP.test(fileChange.newContent) ? tablePositions.some((tablePosition) => tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end) : false;
+  return UNESCAPED_WIKILINK_DIVIDER_REGEXP.test(fileChange.newContent) && tablePositions.some((tablePosition) => tablePosition.start <= fileChange.reference.position.start.offset && fileChange.reference.position.end.offset <= tablePosition.end);
 }
 
 function shouldUseWikilinkStyle(params: ShouldUseWikilinkStyleParams): boolean {

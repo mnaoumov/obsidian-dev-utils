@@ -143,10 +143,9 @@ function checkIsJpeg(bytes: Uint8Array): boolean {
 
 function checkIsMetadataSegment(bytes: Uint8Array, offset: number, marker: number | undefined): boolean {
   const payloadOffset = offset + SEGMENT_HEADER_SIZE;
-  if (marker === APP1_MARKER) {
-    return checkMatchesHeader(bytes, payloadOffset, EXIF_HEADER) || checkMatchesHeader(bytes, payloadOffset, XMP_HEADER);
-  }
-  return marker === APP2_MARKER ? checkMatchesHeader(bytes, payloadOffset, ICC_PROFILE_HEADER) : false;
+  return marker === APP1_MARKER
+    ? checkMatchesHeader(bytes, payloadOffset, EXIF_HEADER) || checkMatchesHeader(bytes, payloadOffset, XMP_HEADER)
+    : marker === APP2_MARKER && checkMatchesHeader(bytes, payloadOffset, ICC_PROFILE_HEADER);
 }
 
 function checkMatchesHeader(bytes: Uint8Array, offset: number, header: string): boolean {

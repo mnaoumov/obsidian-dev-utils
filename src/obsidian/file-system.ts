@@ -485,11 +485,7 @@ export function doesExist(params: DoesExistParams): boolean {
     isCaseInsensitive,
     pathOrFile: path
   }));
-  if (!abstractFile) {
-    return false;
-  }
-
-  return type === undefined ? true : getFileSystemType(abstractFile) === type;
+  return abstractFile !== null && (type === undefined || getFileSystemType(abstractFile) === type);
 }
 
 /**

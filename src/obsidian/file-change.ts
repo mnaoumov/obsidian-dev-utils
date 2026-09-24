@@ -828,9 +828,6 @@ function sortAndFilterChanges(changes: FileChange[]): FileChange[] {
 
   // Filter out duplicate and no-op changes
   return changes.filter((change, index) => {
-    if (change.oldContent === change.newContent) {
-      return false;
-    }
-    return index === 0 ? true : !isDeepEqual(change, changes[index - 1]);
+    return change.oldContent !== change.newContent && (index === 0 || !isDeepEqual(change, changes[index - 1]));
   });
 }

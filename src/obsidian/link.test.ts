@@ -1298,7 +1298,7 @@ describe('app-dependent functions', () => {
 
     it('should use ObsidianSettingsDefault link path style with absolute format', () => {
       app.vault.getConfig = vi.fn((key: string) => {
-        return key === 'newLinkFormat' ? 'absolute' : false;
+        return key === 'newLinkFormat' && 'absolute';
       });
       const result = generateMarkdownLink({
         app,
@@ -1312,7 +1312,7 @@ describe('app-dependent functions', () => {
 
     it('should use ObsidianSettingsDefault link path style with relative format', () => {
       app.vault.getConfig = vi.fn((key: string) => {
-        return key === 'newLinkFormat' ? 'relative' : false;
+        return key === 'newLinkFormat' && 'relative';
       });
       const result = generateMarkdownLink({
         app,
@@ -1349,7 +1349,7 @@ describe('app-dependent functions', () => {
 
     it('should throw for invalid ObsidianSettingsDefault new link format', () => {
       app.vault.getConfig = vi.fn((key: string) => {
-        return key === 'newLinkFormat' ? 'invalid-format' : false;
+        return key === 'newLinkFormat' && 'invalid-format';
       });
       expect(() =>
         generateMarkdownLink({

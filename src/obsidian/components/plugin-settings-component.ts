@@ -715,7 +715,7 @@ export class PluginSettingsComponentBase<PluginSettings extends object> extends 
   }
 
   private isValidPropertyName(property: unknown): property is PropertyNames<PluginSettings> {
-    return typeof property === 'string' ? (this.propertyNames as string[]).includes(property) : false;
+    return typeof property === 'string' && (this.propertyNames as string[]).includes(property);
   }
 
   private markLoadedFromFile(): void {
