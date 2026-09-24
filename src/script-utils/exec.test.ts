@@ -510,6 +510,54 @@ describe('exec', () => {
     }
   });
 
+  it.each([
+    {
+      expected: { exitCode: 3_221_225_477, exitSignal: null },
+      label: 'a crash in a later batch outranks findings in an earlier one',
+      results: [[1, null], [3_221_225_477, null], [1, null]] as const
+    },
+    {
+      expected: { exitCode: null, exitSignal: 'SIGKILL' },
+      label: 'a signal in a later batch outranks findings in an earlier one',
+      results: [[1, null], [null, 'SIGKILL'], [0, null]] as const
+    },
+    {
+      expected: { exitCode: 3_221_225_477, exitSignal: null },
+      label: 'an earlier crash is not displaced by later findings',
+      results: [[3_221_225_477, null], [1, null], [null, 'SIGKILL']] as const
+    }
+  ])('should aggregate batches so that $label', async ({ expected, results }) => {
+    const originalPlatform = process.platform;
+    Object.defineProperty(process, 'platform', { value: 'win32' });
+    try {
+      const longArgument = 'x'.repeat(4000);
+      let callIndex = 0;
+      mockSpawn.mockImplementation(() => {
+        const child = createMockChild();
+        const result = results[callIndex];
+        assertNonNullable(result);
+        callIndex++;
+        // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
+        setTimeout(() => {
+          child.stdout.end();
+          child.stderr.end();
+          child.emit('close', result[0], result[1]);
+        }, 0);
+        return child;
+      });
+
+      const result = await exec(['eslint', { batchedArguments: [longArgument, longArgument, longArgument] }], {
+        isQuiet: true,
+        shouldIgnoreExitCode: true,
+        shouldIncludeDetails: true
+      });
+
+      expect(result).toMatchObject(expected);
+    } finally {
+      Object.defineProperty(process, 'platform', { value: originalPlatform });
+    }
+  });
+
   it('should resolve with stdout on successful command', async () => {
     const child = createMockChild();
     mockSpawn.mockReturnValue(child);
@@ -649,6 +697,143 @@ describe('exec', () => {
     child.emit('close', null, 'SIGTERM');
 
     await expect(promise).rejects.toThrow('exit code (null)');
+  });
+
+  describe('failure classification', () => {
+    interface FailingRun {
+      readonly command?: string;
+      readonly exitCode: null | number;
+      readonly exitSignal?: NodeJS.Signals | null;
+      readonly isInteractive?: boolean;
+      readonly isQuiet?: boolean;
+      readonly stderr?: string;
+      readonly stdout?: string;
+    }
+
+    async function getFailureMessage(run: FailingRun): Promise<string> {
+      mockSpawn.mockImplementation(() => {
+        const child = createMockChild();
+        // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
+        setTimeout(() => {
+          child.stdout.end(run.stdout ?? '');
+          child.stderr.end(run.stderr ?? '');
+          // eslint-disable-next-line obsidianmd/prefer-window-timers -- Node-only test environment; activeWindow is not available.
+          setTimeout(() => {
+            child.emit('close', run.exitCode, run.exitSignal ?? null);
+          }, 0);
+        }, 0);
+        return child;
+      });
+
+      try {
+        await exec(run.command ?? 'eslint .', {
+          isInteractive: run.isInteractive ?? false,
+          isQuiet: run.isQuiet ?? true
+        });
+      } catch (error) {
+        assertNonNullable(error);
+        return (error as Error).message;
+      }
+      throw new Error('Expected exec to reject');
+    }
+
+    it('should name a silent access violation a crash and say it is not a finding', async () => {
+      const message = await getFailureMessage({ exitCode: 3_221_225_477 });
+      expect(message).toBe([
+        'Command failed with exit code 3221225477 (NTSTATUS 0xC0000005 STATUS_ACCESS_VIOLATION)',
+        'Command: eslint .',
+        'The child process crashed before writing anything to stdout or stderr. This is not a failure the tool reported (not a lint finding, not a type error): re-run the command.'
+      ].join('\n'));
+    });
+
+    it('should read a signed NTSTATUS the same as the unsigned one', async () => {
+      const message = await getFailureMessage({ exitCode: -1_073_741_819 });
+      expect(message).toContain('(NTSTATUS 0xC0000005 STATUS_ACCESS_VIOLATION)');
+      expect(message).toContain('crashed before writing anything');
+    });
+
+    it('should show an unnamed NTSTATUS in hex', async () => {
+      const message = await getFailureMessage({ exitCode: 0xC0_00_01_42 });
+      expect(message).toContain('(NTSTATUS 0xC0000142)');
+      expect(message).toContain('The child process crashed before');
+    });
+
+    it('should call a Ctrl+C exit an interruption, not a crash', async () => {
+      const message = await getFailureMessage({ exitCode: 0xC0_00_01_3A });
+      expect(message).toContain('STATUS_CONTROL_C_EXIT');
+      expect(message).toContain('The child process was interrupted before writing anything');
+    });
+
+    it('should say the output may be incomplete when a crashed child had written something', async () => {
+      const message = await getFailureMessage({ exitCode: 3_221_225_477, stderr: 'partial' });
+      expect(message).toContain('The child process crashed rather than exiting on its own, so any output it wrote may be incomplete.');
+      expect(message).toContain('stderr:\npartial');
+      expect(message).not.toContain('re-run');
+    });
+
+    it('should not claim an interactive child wrote nothing, since its output was never captured', async () => {
+      const message = await getFailureMessage({ exitCode: 3_221_225_477, isInteractive: true });
+      expect(message).toContain('so any output it wrote may be incomplete');
+    });
+
+    it.each([
+      ['process.exit(-1)', 0xFF_FF_FF_FF],
+      ['process.exit(-1), signed', -1],
+      ['an unhandled C++ exception', 0xE0_6D_73_63],
+      ['an ordinary finding count', 1]
+    ])('should not classify %s as an NTSTATUS crash', async (_label, exitCode) => {
+      const message = await getFailureMessage({ exitCode, stderr: 'found problems' });
+      expect(message).not.toContain('NTSTATUS');
+      expect(message).not.toContain('The child process');
+      expect(message.startsWith(`Command failed with exit code ${String(exitCode)}\n`)).toBe(true);
+    });
+
+    it('should name the signal that killed a child and call a silent one not a finding', async () => {
+      const message = await getFailureMessage({ exitCode: null, exitSignal: 'SIGSEGV' });
+      expect(message).toBe([
+        'Command failed with exit code (null), terminated by signal SIGSEGV',
+        'Command: eslint .',
+        'The child process was killed by SIGSEGV before writing anything to stdout or stderr. This is not a failure the tool reported (not a lint finding, not a type error): re-run the command.'
+      ].join('\n'));
+    });
+
+    it('should carry stdout in full when quiet mode hid it', async () => {
+      const message = await getFailureMessage({ exitCode: 1, stdout: 'a.ts\n  1:1 error' });
+      expect(message).toBe([
+        'Command failed with exit code 1',
+        'Command: eslint .',
+        'stdout:\na.ts\n  1:1 error'
+      ].join('\n'));
+    });
+
+    it('should only count the stdout lines when they were already printed', async () => {
+      const message = await getFailureMessage({ exitCode: 1, isQuiet: false, stderr: 'oops', stdout: 'a\nb' });
+      expect(message).toBe([
+        'Command failed with exit code 1',
+        'Command: eslint .',
+        'stdout: 2 line(s), printed above.',
+        'stderr:\noops'
+      ].join('\n'));
+    });
+
+    it('should truncate a long command in the message', async () => {
+      const command = `eslint ${'x'.repeat(1000)}`;
+      const message = await getFailureMessage({ command, exitCode: 1 });
+      expect(message).toContain(`Command: ${command.slice(0, 500)}…\n`.trimEnd());
+      expect(message).not.toContain(command);
+    });
+
+    it('should name the command a spawn error came from and keep the original as its cause', async () => {
+      const child = createMockChild();
+      mockSpawn.mockReturnValue(child);
+      const spawnError = new Error('spawn ENOENT');
+
+      const promise = exec('missing-tool --flag', { isQuiet: true });
+      child.emit('error', spawnError);
+
+      await expect(promise).rejects.toThrow('Could not run command: missing-tool --flag\nspawn ENOENT');
+      await expect(promise).rejects.toMatchObject({ cause: spawnError });
+    });
   });
 
   it('should write stdin to child process', async () => {

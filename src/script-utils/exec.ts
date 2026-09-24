@@ -205,7 +205,8 @@ export function buildChildEnv(baseEnv: NodeJS.ProcessEnv, allowedNodeEnvironment
  * @param options - The options for the execution.
  * @returns A {@link Promise} that resolves with the output of the command.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
- *         The error message includes the exit code and stderr.
+ *         The error message includes the exit code, the command, stderr, and stdout (or a note that it was
+ *         printed), and says when the child crashed or was killed rather than exiting on its own.
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
@@ -218,7 +219,8 @@ export async function exec(command: CommandPart[] | string, options?: ExecSimple
  * @returns A {@link Promise} that resolves with ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
- *         The error message includes the exit code and stderr.
+ *         The error message includes the exit code, the command, stderr, and stdout (or a note that it was
+ *         printed), and says when the child crashed or was killed rather than exiting on its own.
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
@@ -231,7 +233,8 @@ export function exec(command: CommandPart[] | string, options: ExecDetailedOptio
  * @returns A {@link Promise} that resolves with the output of the command or an ExecResult object.
  *          The ExecResult object contains the exit code, exit signal, stderr, and stdout.
  * @throws If the command fails with a non-zero exit code and ignoreExitCode is `false`.
- *         The error message includes the exit code and stderr.
+ *         The error message includes the exit code, the command, stderr, and stdout (or a note that it was
+ *         printed), and says when the child crashed or was killed rather than exiting on its own.
  *         If an error occurs during the execution and ignoreExitCode is `true`,
  *         the error is resolved with the stdout and stderr.
  */
@@ -354,7 +357,17 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 
     child.on('close', (exitCode, exitSignal) => {
       if (exitCode !== 0 && !ignoreExitCode) {
-        reject(new Error(`Command failed with exit code ${exitCode ? String(exitCode) : '(null)'}\n${stderr}`));
+        reject(
+          new Error(describeExitFailure({
+            command,
+            exitCode,
+            exitSignal,
+            isInteractive,
+            isQuiet: quiet,
+            stderr,
+            stdout
+          }))
+        );
         return;
       }
 
@@ -372,7 +385,7 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 
     child.on('error', (error) => {
       if (!ignoreExitCode) {
-        reject(error);
+        reject(new Error(`Could not run command: ${truncateCommand(command)}\n${error.message}`, { cause: error }));
         return;
       }
 
@@ -406,6 +419,29 @@ function execString(params: ExecStringParams): Promise<ExecResult | string> {
 const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
 
 /**
+ * The longest command a failure message quotes before truncating it. A batched command can run to several
+ * thousand characters of paths, which would bury the one line of the message that says what went wrong.
+ */
+const MAX_COMMAND_LENGTH_IN_MESSAGE = 500;
+
+/**
+ * Names of the Windows NTSTATUS codes a crashed child most often exits with, for the failure message. A code
+ * outside this list is still recognized as an NTSTATUS failure (see {@link toNtStatus}) and shown in hex; the
+ * name is a courtesy, not the classification.
+ */
+const NTSTATUS_NAMES: ReadonlyMap<string, string> = new Map([
+  ['0xC0000005', 'STATUS_ACCESS_VIOLATION'],
+  ['0xC0000017', 'STATUS_NO_MEMORY'],
+  ['0xC000001D', 'STATUS_ILLEGAL_INSTRUCTION'],
+  ['0xC0000094', 'STATUS_INTEGER_DIVIDE_BY_ZERO'],
+  ['0xC00000FD', 'STATUS_STACK_OVERFLOW'],
+  ['0xC0000135', 'STATUS_DLL_NOT_FOUND'],
+  ['0xC000013A', 'STATUS_CONTROL_C_EXIT'],
+  ['0xC0000374', 'STATUS_HEAP_CORRUPTION'],
+  ['0xC0000409', 'STATUS_STACK_BUFFER_OVERRUN']
+]);
+
+/**
  * Characters held back from the Windows command-line budget when sizing an {@link ExecArgument} batch, to
  * cover expansions that happen INSIDE the command we spawn and are therefore invisible from here.
  *
@@ -426,6 +462,46 @@ const LOCAL_STORAGE_NODE_OPTION = '--localstorage-file=:memory:';
  * if the symptom returns.
  */
 const WINDOWS_CHILD_EXPANSION_RESERVE = 2048;
+
+/**
+ * Parameters for {@link describeExitFailure}.
+ */
+interface DescribeExitFailureParams {
+  /**
+   * The command that was executed.
+   */
+  readonly command: string;
+
+  /**
+   * The exit code the child reported, or `null` when it did not exit on its own.
+   */
+  readonly exitCode: null | number;
+
+  /**
+   * The signal that terminated the child, if any.
+   */
+  readonly exitSignal: NodeJS.Signals | null;
+
+  /**
+   * Whether the child's stdio was attached to the terminal, so nothing was captured.
+   */
+  readonly isInteractive: boolean;
+
+  /**
+   * Whether the child's output was suppressed, so the user has not seen it.
+   */
+  readonly isQuiet: boolean;
+
+  /**
+   * The captured standard error.
+   */
+  readonly stderr: string;
+
+  /**
+   * The captured standard output.
+   */
+  readonly stdout: string;
+}
 
 /**
  * Parameters for {@link executeBatches}.
@@ -497,6 +573,64 @@ function buildCommandLine($arguments: string[]): string {
 }
 
 /**
+ * Builds the message a failed command rejects with, saying not only THAT it failed but HOW.
+ *
+ * The message used to be `Command failed with exit code <n>` plus stderr, whatever the code. So a child that
+ * crashed before writing a byte and a linter that found real problems read the same, differing only in a
+ * number nobody reads as a status: a Windows access violation arrives as `exit code 3221225477` with nothing
+ * after it, and whoever reads it goes looking for a finding that does not exist. This is the last point that
+ * can tell the two apart — the `.cmd` shim is spawned directly, so the child's raw code is visible here, while
+ * an `npm run` layer further out is known to launder it into a plain `1`.
+ *
+ * Two signals are read, and their conjunction is what earns the word "crashed": the termination was abnormal
+ * (an NTSTATUS error code, or a signal), and neither stream carried anything. A tool failing on its own terms
+ * says something; a child that died mid-instruction does not. The CAUSE of such a crash is not this
+ * function's business, so the message only names it and says what to do.
+ *
+ * The `Command failed with exit code <n>` prefix is kept, so a caller matching on it still matches.
+ *
+ * @param params - The parameters describing the failed execution.
+ * @returns The failure message.
+ */
+function describeExitFailure(params: DescribeExitFailureParams): string {
+  const { command, exitCode, exitSignal, isInteractive, isQuiet, stderr, stdout } = params;
+  const ntStatus = toNtStatus(exitCode);
+
+  let status = `exit code ${exitCode === null ? '(null)' : String(exitCode)}`;
+  let abnormalReason: null | string = null;
+  if (ntStatus !== null) {
+    const HEX_RADIX = 16;
+    const hex = `0x${ntStatus.toString(HEX_RADIX).toUpperCase()}`;
+    const name = NTSTATUS_NAMES.get(hex);
+    status += ` (NTSTATUS ${name ? `${hex} ${name}` : hex})`;
+    abnormalReason = name === 'STATUS_CONTROL_C_EXIT' ? 'was interrupted' : 'crashed';
+  } else if (exitSignal !== null) {
+    status += `, terminated by signal ${exitSignal}`;
+    abnormalReason = `was killed by ${exitSignal}`;
+  }
+
+  const lines = [`Command failed with ${status}`, `Command: ${truncateCommand(command)}`];
+
+  if (abnormalReason !== null) {
+    lines.push(
+      !isInteractive && stdout === '' && stderr === ''
+        ? `The child process ${abnormalReason} before writing anything to stdout or stderr. This is not a failure the tool reported (not a lint finding, not a type error): re-run the command.`
+        : `The child process ${abnormalReason} rather than exiting on its own, so any output it wrote may be incomplete.`
+    );
+  }
+
+  if (stdout !== '') {
+    lines.push(isQuiet ? `stdout:\n${stdout}` : `stdout: ${String(stdout.split('\n').length)} line(s), printed above.`);
+  }
+
+  if (stderr !== '') {
+    lines.push(`stderr:\n${stderr}`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
  * Executes batched commands sequentially and concatenates their output.
  *
  * `execString` returns a `string` or an {@link ExecResult} depending on `options.shouldIncludeDetails`, so
@@ -505,7 +639,10 @@ function buildCommandLine($arguments: string[]): string {
  *
  * A batch that exits non-zero normally rejects; it only reaches here when `shouldIgnoreExitCode` asked for
  * it to be reported instead. The first such failure is what the aggregate reports, so splitting a command
- * into batches cannot turn a failure into a success.
+ * into batches cannot turn a failure into a success — except that an abnormal termination (a crash, a
+ * signal) in a later batch outranks an ordinary failure in an earlier one. Otherwise a crash in batch 2 after
+ * real findings in batch 1 would aggregate to the findings' exit code, and a caller classifying the result
+ * would never learn that part of the input was not checked at all.
  *
  * Silent batches contribute nothing to the joined output. `execString` already trims each result's trailing
  * newline, so joining empty ones back in would reintroduce exactly the blank-line noise it removed — a
@@ -533,12 +670,15 @@ async function executeBatches(params: ExecuteBatchesParams): Promise<ExecResult 
 
     pushIfNotEmpty(stdoutParts, result.stdout);
     pushIfNotEmpty(stderrParts, result.stderr);
-    failure ??= result.exitCode === 0 ? null : result;
+    if (result.exitCode !== 0 && (failure === null || (!isAbnormalTermination(failure) && isAbnormalTermination(result)))) {
+      failure = result;
+    }
   }
 
   return options.shouldIncludeDetails
     ? {
-      exitCode: failure?.exitCode ?? 0,
+      // Not `failure?.exitCode ?? 0`: a batch killed by a signal has a `null` code, which `??` would report as success.
+      exitCode: failure === null ? 0 : failure.exitCode,
       exitSignal: failure?.exitSignal ?? null,
       stderr: stderrParts.join('\n'),
       stdout: stdoutParts.join('\n')
@@ -683,6 +823,17 @@ function handleBatchedCommand(parts: CommandPart[], options: ExecOptions): Promi
 }
 
 /**
+ * Checks whether a result records an abnormal termination — an NTSTATUS error code or a signal — rather than
+ * the child exiting on its own with a code of its choosing.
+ *
+ * @param result - The result to check.
+ * @returns Whether the child terminated abnormally.
+ */
+function isAbnormalTermination(result: ExecResult): boolean {
+  return result.exitSignal !== null || toNtStatus(result.exitCode) !== null;
+}
+
+/**
  * Checks if a command part is an {@link ExecArgument}.
  *
  * @param part - The command part to check.
@@ -744,4 +895,41 @@ function spawnViaShell(params: SpawnViaShellParams): ChildProcess {
     shell: true,
     stdio
   });
+}
+
+/**
+ * Reads an exit code as a Windows NTSTATUS error, if it is one.
+ *
+ * A crashed process on Windows exits with the NTSTATUS of the exception that killed it, and a `.cmd` shim
+ * forwards its inner process's code, so a crashed `node.exe` arrives here intact — `0xC0000005` as
+ * `3221225477`. The test is the NTSTATUS layout rather than a bare `>= 0xC0000000`: the top two bits are the
+ * error severity and the next one is the customer flag, which must be clear. That keeps out two codes a bare
+ * range would misread — `process.exit(-1)`, which Windows reports as `0xFFFFFFFF`, and the `0xE06D7363` of an
+ * unhandled C++ exception, which is a crash but not an NTSTATUS. A signed reading of the same code is accepted
+ * too. No linter, compiler or test runner returns a code of this shape as a count of findings.
+ *
+ * @param exitCode - The exit code the child reported.
+ * @returns The code as an unsigned NTSTATUS, or `null` when it is not an NTSTATUS error.
+ */
+function toNtStatus(exitCode: null | number): null | number {
+  if (exitCode === null || !Number.isSafeInteger(exitCode)) {
+    return null;
+  }
+
+  // Error severity (top two bits set) with the customer bit clear is exactly the range [0xC0000000, 0xE0000000).
+  const NTSTATUS_ERROR_START = 0xC0_00_00_00;
+  const NTSTATUS_ERROR_END = 0xE0_00_00_00;
+  const UINT32_RANGE = 0x1_00_00_00_00;
+  const unsigned = exitCode < 0 ? exitCode + UINT32_RANGE : exitCode;
+  return unsigned >= NTSTATUS_ERROR_START && unsigned < NTSTATUS_ERROR_END ? unsigned : null;
+}
+
+/**
+ * Shortens a command for quoting in an error message, keeping its start, which names the program.
+ *
+ * @param command - The command to shorten.
+ * @returns The command, cut to {@link MAX_COMMAND_LENGTH_IN_MESSAGE} characters plus an ellipsis when longer.
+ */
+function truncateCommand(command: string): string {
+  return command.length > MAX_COMMAND_LENGTH_IN_MESSAGE ? `${command.slice(0, MAX_COMMAND_LENGTH_IN_MESSAGE)}…` : command;
 }
