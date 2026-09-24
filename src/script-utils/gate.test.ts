@@ -14,9 +14,11 @@ import {
 import { NpmRunOptionalResult } from './npm-run.ts';
 
 const {
+  mockAssertPackageLockIntegrity,
   mockNpmRun,
   mockNpmRunOptional
 } = vi.hoisted(() => ({
+  mockAssertPackageLockIntegrity: vi.fn<() => Promise<void>>(),
   mockNpmRun: vi.fn<(script: string) => Promise<void>>(),
   mockNpmRunOptional: vi.fn<(script: string) => Promise<NpmRunOptionalResult>>()
 }));
@@ -30,6 +32,10 @@ vi.mock('./npm-run.ts', async (importOriginal) => {
   };
 });
 
+vi.mock('./package-lock-integrity.ts', () => ({
+  assertPackageLockIntegrity: mockAssertPackageLockIntegrity
+}));
+
 /**
  * The scripts the gate ran, in the order it ran them, regardless of which of the two runners dispatched
  * each one. The order across the two runners is what most of these assertions are about, so it is recorded
@@ -39,7 +45,9 @@ let ranScripts: string[] = [];
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.unstubAllEnvs();
   ranScripts = [];
+  mockAssertPackageLockIntegrity.mockImplementation(noopAsync);
   mockNpmRun.mockImplementation((script: string) => {
     ranScripts.push(script);
     return noopAsync();
@@ -172,6 +180,34 @@ describe('gate', () => {
     });
     await expect(gate()).rejects.toThrow('Unknown word');
     expect(ranScripts).toEqual(['format:check', 'spellcheck']);
+  });
+});
+
+describe('gate lockfile check', () => {
+  it('should check the lockfile before the first script', async () => {
+    await gate();
+    expect(mockAssertPackageLockIntegrity).toHaveBeenCalledOnce();
+    const [lockCheckOrder] = mockAssertPackageLockIntegrity.mock.invocationCallOrder;
+    const [firstScriptOrder] = mockNpmRun.mock.invocationCallOrder;
+    expect(lockCheckOrder).toBeLessThan(firstScriptOrder ?? 0);
+  });
+
+  it('should not check the lockfile when the checks are off', async () => {
+    await gate({ shouldRunChecks: false });
+    expect(mockAssertPackageLockIntegrity).not.toHaveBeenCalled();
+  });
+
+  it('should not check the lockfile when PACKAGE_LOCK_INTEGRITY is off', async () => {
+    vi.stubEnv('PACKAGE_LOCK_INTEGRITY', '0');
+    await gate();
+    expect(mockAssertPackageLockIntegrity).not.toHaveBeenCalled();
+    expect(ranScripts[0]).toBe('format:check');
+  });
+
+  it('should run no script when the lockfile check fails', async () => {
+    mockAssertPackageLockIntegrity.mockRejectedValue(new Error('no integrity'));
+    await expect(gate()).rejects.toThrow('no integrity');
+    expect(ranScripts).toEqual([]);
   });
 });
 
