@@ -22,6 +22,7 @@ import {
   readFile,
   rm
 } from 'node:fs/promises';
+import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 
 import { assertMobileLoadableBundle } from './assert-mobile-loadable-bundle.ts';
@@ -65,6 +66,10 @@ export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPlu
 
   await build({
     bundle: true,
+    // Resolve dependencies exactly as `buildObsidianPlugin` does for a consumer (see the comment beside its
+    // `conditions` option): browser builds, never a Node one, since this bundle is the worst-case consumer the
+    // mobile-load check below stands in for.
+    conditions: ['browser'],
     entryPoints: [join(PLUGIN_DIR, 'main.ts')],
     external: [
       'obsidian',
@@ -72,12 +77,15 @@ export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPlu
       '@codemirror/language',
       '@codemirror/state',
       '@codemirror/view',
-      '@lezer/common'
+      '@lezer/common',
+      ...builtinModules,
+      'node:*'
     ],
     format: 'cjs',
     logLevel: 'info',
+    mainFields: ['main', 'module'],
     outfile: mainJsPath,
-    platform: 'node',
+    platform: 'neutral',
     sourcemap: (params.shouldGenerateSourceMap ?? true) ? 'inline' : false,
     target: 'ES2022'
   });
