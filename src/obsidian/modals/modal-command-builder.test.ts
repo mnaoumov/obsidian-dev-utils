@@ -302,7 +302,7 @@ describe('ModalCommandBuilder', () => {
       expect(onInit).toHaveBeenCalledWith(expect.any(DropdownComponent));
     });
 
-    it('should call onChange when dropdown value changes via setValue', () => {
+    it('should call onChange when the user picks a dropdown value', () => {
       const onChange = vi.fn();
       let capturedDropdown: DropdownComponent | undefined;
       builder.addDropDown({
@@ -318,9 +318,10 @@ describe('ModalCommandBuilder', () => {
       const modal = createMockModal();
       builder.build(modal);
 
-      // Trigger change via setValue which invokes the onChange callback
-      expect(capturedDropdown).toBeDefined();
-      capturedDropdown?.setValue('b');
+      // As in Obsidian, `setValue` alone fires no change handler: the user's pick is the `change` event.
+      const dropdown = ensureNonNullable(capturedDropdown);
+      dropdown.setValue('b');
+      dropdown.selectEl.dispatchEvent(new Event('change'));
       expect(onChange).toHaveBeenCalledWith('b');
     });
 
