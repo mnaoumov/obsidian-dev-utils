@@ -1,5 +1,7 @@
 .obsidian-dev-utils {
-  &progress.loop {
+  // Not `&progress`: that APPENDS the element name to the parent class, producing one long class that matches
+  // nothing. The element type has to lead the compound selector instead.
+  @at-root progress#{&}.loop {
     min-width: 200px;
   }
 }
