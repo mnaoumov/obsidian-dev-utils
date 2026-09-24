@@ -101,6 +101,25 @@ ruleTester.run('no-over-cap-wait-in-eval-in-obsidian', toRuleTesterModule(noOver
       options: [{ capInMilliseconds: 10_000 }]
     },
     {
+      code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: 600_000 }); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      filename: 'src/a.desktop-performance.integration.test.ts',
+      name: 'a perf suite declaring exactly the performance project cap'
+    },
+    {
+      code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: 315_000 }); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      filename: 'src/a.desktop.integration.test.ts',
+      name: 'a perf-sized wait in an ordinary desktop suite, whose raised cap is a backstop rather than a budget'
+    },
+    {
+      code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: 315_000 }); } });',
+      errors: [{ messageId: MESSAGE_ID }],
+      filename: 'src/a.desktop-performance.integration.test.ts',
+      name: 'a perf suite under an explicit capInMilliseconds, which overrides the per-file default',
+      options: [{ capInMilliseconds: 30_000 }]
+    },
+    {
       code: 'evalInObsidian({ async callback() { const deadline = Date.now() + 30000; while (Date.now() < deadline) { await sleep(100); } } });',
       errors: [{ messageId: MESSAGE_ID }],
       name: 'a Date deadline loop, whose whole budget is charged once however short its poll interval'
@@ -225,6 +244,11 @@ ruleTester.run('no-over-cap-wait-in-eval-in-obsidian', toRuleTesterModule(noOver
     {
       code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: 20000 }); } });',
       name: 'a wait under the cap'
+    },
+    {
+      code: 'evalInObsidian({ async callback({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: 315_000 }); } });',
+      filename: 'src/a.desktop-performance.integration.test.ts',
+      name: 'a perf suite spending its project\'s raised cap, which is a budget there and nowhere else'
     },
     {
       code: 'async function run({ lib: { waitUntil } }) { await waitUntil({ timeoutInMilliseconds: 60000 }); }',

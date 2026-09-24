@@ -27,6 +27,11 @@ import process from 'node:process';
 import { DEFAULT_EVAL_CAP_IN_MILLISECONDS } from 'obsidian-integration-testing';
 import { defineConfig } from 'vitest/config';
 
+import {
+  DESKTOP_PERFORMANCE_TEST_FILE_SUFFIX,
+  PERFORMANCE_EVAL_CAP_IN_MILLISECONDS
+} from './performance-eval-cap.ts';
+
 /**
  * The `test` section of a single vitest project entry.
  */
@@ -106,7 +111,13 @@ const TRANSPORT_EVAL_CAP_MARGIN_IN_MILLISECONDS = 15_000;
  */
 const ANDROID_TIMEOUT_IN_MILLISECONDS = 60_000;
 const HOOK_TIMEOUT_MULTIPLIER = 4;
-const PERFORMANCE_TIMEOUT_IN_MILLISECONDS = 600_000;
+
+/*
+ * The performance project's budget clears its own per-eval cap by the same margin, for the same reason
+ * the regular budget clears the transport default: an equal budget lets vitest's anonymous timeout win
+ * the race against the cap's own `EvalCapExceededError`.
+ */
+const PERFORMANCE_TIMEOUT_IN_MILLISECONDS = PERFORMANCE_EVAL_CAP_IN_MILLISECONDS + TRANSPORT_EVAL_CAP_MARGIN_IN_MILLISECONDS;
 
 /**
  * The per-test budget of the regular integration projects, in milliseconds.
@@ -120,7 +131,7 @@ export const INTEGRATION_TEST_TIMEOUT_IN_MILLISECONDS = DEFAULT_EVAL_CAP_IN_MILL
 const ANDROID_TEST_FILES = 'src/**/*.android.integration.test.ts';
 const CROSS_PLATFORM_TEST_FILES = 'src/**/*.cross-platform.integration.test.ts';
 const DECLARATION_FILES = 'src/**/*.d.ts';
-const DESKTOP_PERFORMANCE_TEST_FILES = 'src/**/*.desktop-performance.integration.test.ts';
+const DESKTOP_PERFORMANCE_TEST_FILES = `src/**/*${DESKTOP_PERFORMANCE_TEST_FILE_SUFFIX}`;
 const DESKTOP_TEST_FILES = 'src/**/*.desktop.integration.test.ts';
 const INTEGRATION_TEST_FILES = 'src/**/*.integration.test.ts';
 const NO_APP_TEST_FILES = 'src/**/*.no-app.integration.test.ts';
@@ -236,12 +247,26 @@ export class ObsidianPluginVitestConfigContext {
    * vault is the wrong one. The 600 s below is a timeout, not a duration — measured end to end, most perf
    * suites finish in seconds, and only one that generates tens of thousands of notes takes minutes.
    *
+   * Its CDP transport's per-eval cap is raised to 600 s as well (the budget clears it by the usual
+   * margin), because a perf suite's whole measurement is typically ONE long in-page evaluation, which the
+   * transport's 30 s default killed as a bare `CDP command timed out … Runtime.evaluate` naming neither the
+   * wait nor the assertion. Three plugins had each hand-written this raise in their own `editContext`
+   * before it moved here. Unlike a raised desktop cap, which is a backstop rather than a budget a closure
+   * may spend, this one IS a budget: `no-over-cap-wait-in-eval-in-obsidian` reads it for these files and
+   * for no other.
+   *
    * No routine command runs them, but something does: a weekly sweep runs every plugin's
    * `test:integration:desktop:performance`, which is also how to reach them by hand. Adding them to that
    * aggregate is drift, not a gap to close.
    */
   public readonly desktopPerformance: ObsidianPluginVitestProjectConfig = {
     environment: 'node',
+    environmentOptions: {
+      obsidianTransport: {
+        commandTimeoutInMilliseconds: PERFORMANCE_EVAL_CAP_IN_MILLISECONDS,
+        type: 'obsidian-cdp'
+      }
+    },
     fileParallelism: false,
     globalSetup: ['obsidian-integration-testing/vitest-global-setup-plugin'],
     hookTimeout: PERFORMANCE_TIMEOUT_IN_MILLISECONDS,
@@ -290,11 +315,22 @@ export class ObsidianPluginVitestConfigContext {
   };
 
   /**
+   * The per-eval cap the performance integration project gives its CDP transport, in milliseconds.
+   *
+   * @default `600000`
+   */
+  public readonly performanceEvalCapInMilliseconds = PERFORMANCE_EVAL_CAP_IN_MILLISECONDS;
+
+  /**
    * The per-test budget of the performance integration project, in milliseconds. A performance vault is
    * pre-populated with tens of thousands of notes before Obsidian opens, so both its setup and its tests
    * need far more time than the regular integration projects.
    *
-   * @default `600000`
+   * Like the regular budget, it CLEARS the project's per-eval cap
+   * ({@link ObsidianPluginVitestConfigContext.performanceEvalCapInMilliseconds}) rather than matching it,
+   * so an evaluation that outruns the cap reports itself instead of dying as vitest's anonymous timeout.
+   *
+   * @default `615000`
    */
   public readonly performanceTimeoutInMilliseconds = PERFORMANCE_TIMEOUT_IN_MILLISECONDS;
 
