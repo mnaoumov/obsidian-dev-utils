@@ -266,7 +266,13 @@ describe('ensureDisposeSymbols', () => {
   });
 });
 
-describe('using a library disposable on an engine without Symbol.dispose', () => {
+/*
+ * Each case bundles a real slice of the library with esbuild, which takes from half a second alone to past vitest's
+ * 5 s default under the full suite's load (measured 2026-09-24: 456 ms solo, a timeout in two full runs).
+ */
+const BUNDLING_TEST_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+describe('using a library disposable on an engine without Symbol.dispose', { timeout: BUNDLING_TEST_TIMEOUT_IN_MILLISECONDS }, () => {
   /**
    * Replaces the context's `Symbol` with a copy that lacks the two dispose symbols, which is how an engine
    * that has not shipped Explicit Resource Management looks to a bundle. The real well-known properties
