@@ -105,6 +105,14 @@ const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
 const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
 
 /**
+ * The link identity key provider each snapshot was built with. Kept beside the snapshot rather than in it, so a
+ * snapshot stays a plain map and the one function that keyed it is also the one that looks it up — passing a
+ * provider to only one of {@link buildBacklinksSnapshot} and {@link editBacklinksSnapshot} used to leave every
+ * link unmatched, and the edit rewrote nothing without a word.
+ */
+const snapshotLinkIdentityKeyProviders = new WeakMap<BacklinksSnapshot<unknown>, (link: Reference) => string>();
+
+/**
  * A style of the link path.
  */
 export enum LinkPathStyle {
@@ -250,9 +258,12 @@ export interface BuildBacklinksSnapshotParams<TPayload> {
   /**
    * Computes the identity key of a link.
    *
-   * Must be the same function passed to {@link editBacklinksSnapshot}, or no link will ever match.
+   * The snapshot remembers it, so {@link editBacklinksSnapshot} looks the links up with the same function
+   * without being told. When {@link BuildBacklinksSnapshotParams.target} was built with a provider, omitting
+   * this reuses that one, and passing a different one throws: a snapshot keyed by two functions matches
+   * nothing.
    *
-   * @default `JSON.stringify`
+   * @default the provider `target` was built with, else `JSON.stringify`
    */
   readonly linkIdentityKeyProvider?: (link: Reference) => string;
 
@@ -462,9 +473,12 @@ export interface EditBacklinksSnapshotParams<TPayload> extends EditBacklinksSnap
   /**
    * Computes the identity key of a link.
    *
-   * Must be the same function passed to {@link buildBacklinksSnapshot}, or no link will ever match.
+   * Leave it out for a snapshot made by {@link buildBacklinksSnapshot}: the snapshot carries the provider it was
+   * built with, and that one is used. Passing a different one throws, because the snapshot is keyed by the
+   * other and not a single link would match — the edit would complete and rewrite nothing. It is needed only
+   * for a snapshot assembled by hand.
    *
-   * @default `JSON.stringify`
+   * @default the provider the snapshot was built with, else `JSON.stringify`
    */
   readonly linkIdentityKeyProvider?: (link: Reference) => string;
 
@@ -1454,6 +1468,26 @@ interface LinkConfig {
 }
 
 /**
+ * Params for {@link resolveSnapshotLinkIdentityKeyProvider}.
+ */
+interface ResolveSnapshotLinkIdentityKeyProviderParams {
+  /**
+   * The public function asking, named in the error.
+   */
+  readonly callerName: string;
+
+  /**
+   * The provider the caller passed, if any.
+   */
+  readonly explicitLinkIdentityKeyProvider: ((link: Reference) => string) | undefined;
+
+  /**
+   * The snapshot whose recorded provider wins when the caller passed none.
+   */
+  readonly snapshot: BacklinksSnapshot<unknown>;
+}
+
+/**
  * Params for {@link shouldUseWikilinkStyle}.
  */
 interface ShouldUseWikilinkStyleParams {
@@ -1631,13 +1665,19 @@ interface UpdateLinksInContentParams {
 export function buildBacklinksSnapshot<TPayload>(params: BuildBacklinksSnapshotParams<TPayload>): MutableBacklinksSnapshot<TPayload> {
   const {
     backlinks,
-    linkIdentityKeyProvider = defaultLinkIdentityKeyProvider,
+    linkIdentityKeyProvider: explicitLinkIdentityKeyProvider,
     pathRemapper,
     payloadProvider,
     target
   } = params;
 
   const snapshot = target ?? new Map<string, Map<string, TPayload>>();
+  const linkIdentityKeyProvider = resolveSnapshotLinkIdentityKeyProvider({
+    callerName: 'buildBacklinksSnapshot',
+    explicitLinkIdentityKeyProvider,
+    snapshot
+  });
+  snapshotLinkIdentityKeyProviders.set(snapshot, linkIdentityKeyProvider);
 
   for (const backlinkPath of backlinks.keys()) {
     const newBacklinkPath = pathRemapper?.(backlinkPath) ?? backlinkPath;
@@ -1731,12 +1771,17 @@ export async function editBacklinksSnapshot<TPayload>(params: EditBacklinksSnaps
   const {
     app,
     linkConverter,
-    linkIdentityKeyProvider = defaultLinkIdentityKeyProvider,
+    linkIdentityKeyProvider: explicitLinkIdentityKeyProvider,
     linkUpdateProgressReporter,
     shouldVisitUnmatchedLinks = false,
     snapshot,
     ...options
   } = params;
+  const linkIdentityKeyProvider = resolveSnapshotLinkIdentityKeyProvider({
+    callerName: 'editBacklinksSnapshot',
+    explicitLinkIdentityKeyProvider,
+    snapshot
+  });
 
   const backlinkNotePaths = [...snapshot.keys()];
   let processed = 0;
@@ -2689,6 +2734,21 @@ function resolveFinalLinkPathStyleFromObsidianSettings(app: App): FinalLinkPathS
       assertNever(newLinkFormat);
     }
   }
+}
+
+function resolveSnapshotLinkIdentityKeyProvider(params: ResolveSnapshotLinkIdentityKeyProviderParams): (link: Reference) => string {
+  const { callerName, explicitLinkIdentityKeyProvider, snapshot } = params;
+  const recordedLinkIdentityKeyProvider = snapshotLinkIdentityKeyProviders.get(snapshot);
+  if (
+    explicitLinkIdentityKeyProvider && recordedLinkIdentityKeyProvider
+    && explicitLinkIdentityKeyProvider !== recordedLinkIdentityKeyProvider
+  ) {
+    throw new Error(
+      `${callerName} was passed a linkIdentityKeyProvider that differs from the one the snapshot was built with. `
+        + 'The snapshot is keyed by the other, so no link would match. Omit the parameter to use the snapshot\'s own.'
+    );
+  }
+  return explicitLinkIdentityKeyProvider ?? recordedLinkIdentityKeyProvider ?? defaultLinkIdentityKeyProvider;
 }
 
 function shouldEscapeWikilinkDivider(fileChange: FileChange, tablePositions: TablePosition[]): boolean {

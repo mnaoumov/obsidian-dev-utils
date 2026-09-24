@@ -976,7 +976,6 @@ class RenameHandler {
             shouldUpdateFileNameAlias: settings.shouldUpdateFileNameAliases
           }));
         },
-        linkIdentityKeyProvider: getLinkIdentityKey,
         linkUpdateProgressReporter: this.linkUpdateProgressReporter ?? undefined,
         pluginNoticeComponent,
         resourceLockComponent: this.resourceLockComponent,
