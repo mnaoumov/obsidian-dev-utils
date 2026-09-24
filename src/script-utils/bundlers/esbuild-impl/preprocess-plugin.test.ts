@@ -167,7 +167,7 @@ describe('preprocessPlugin', () => {
     vi.stubGlobal('process', hostProcess);
     vi.stubGlobal('__name', undefined);
     vi.stubGlobal('__extractDefault', undefined);
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func, obsidianmd/rule-custom-message -- Evaluating the emitted banner is the point of this check.
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func -- Evaluating the emitted banner is the point of this check.
     const runEmittedBanner = new Function('require', banner);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- `Function` is untyped by construction; the banner takes a single `require` argument.
     runEmittedBanner(() => undefined);

@@ -185,7 +185,7 @@ export function createFunction<TFunction extends GenericFunction>(
   params: CreateFunctionArgumentlessParams & Partial<CreateFunctionParams<TFunction>>
 ): TFunction {
   const argumentNames = params.argumentNames ?? [];
-  // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval, obsidianmd/rule-custom-message -- Need function constructor
+  // eslint-disable-next-line no-new-func, @typescript-eslint/no-implied-eval -- Need function constructor
   return new Function(...argumentNames, params.functionBody) as TFunction;
 }
 
