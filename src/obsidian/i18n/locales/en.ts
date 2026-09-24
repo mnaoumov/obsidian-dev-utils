@@ -68,6 +68,9 @@ export const en = {
     queue: {
       flushQueue: 'Flush queue'
     },
+    releaseNotes: {
+      title: '{{pluginName}} release notes'
+    },
     renameDeleteHandler: {
       handleDelete: 'Handle delete: {{filePath}}',
       handleOrphanedRenames: 'Handle orphaned renames',
