@@ -2751,6 +2751,42 @@ describe('app-dependent functions', () => {
       expect([...(snapshot.get('note.md') ?? new Map<string, undefined>()).keys()]).toEqual(['[[a]]']);
     });
 
+    it('should key a merged target by the provider it was first built with', () => {
+      function linkIdentityKeyProvider(link: Reference): string {
+        return link.original;
+      }
+
+      const snapshot = buildBacklinksSnapshot<undefined>({
+        backlinks: new Map([['note.md', [linkToA]]]),
+        linkIdentityKeyProvider,
+        payloadProvider: () => undefined
+      });
+      buildBacklinksSnapshot<undefined>({
+        backlinks: new Map([['note.md', [linkToB]]]),
+        payloadProvider: () => undefined,
+        target: snapshot
+      });
+
+      expect([...(snapshot.get('note.md') ?? new Map<string, undefined>()).keys()]).toEqual(['[[a]]', '[[b]]']);
+    });
+
+    it('should throw when merging into a target built with a different provider', () => {
+      const snapshot = buildBacklinksSnapshot<undefined>({
+        backlinks: new Map([['note.md', [linkToA]]]),
+        linkIdentityKeyProvider: (link) => link.original,
+        payloadProvider: () => undefined
+      });
+
+      expect(() =>
+        buildBacklinksSnapshot<undefined>({
+          backlinks: new Map([['note.md', [linkToB]]]),
+          linkIdentityKeyProvider: (link) => link.link,
+          payloadProvider: () => undefined,
+          target: snapshot
+        })
+      ).toThrow('buildBacklinksSnapshot was passed a linkIdentityKeyProvider that differs');
+    });
+
     it('should still record a holder that has no links', () => {
       const snapshot = buildBacklinksSnapshot<undefined>({
         backlinks: new Map<string, never[]>([['note.md', []]]),
@@ -2903,6 +2939,61 @@ describe('app-dependent functions', () => {
           linkIdentityKeyProvider,
           payloadProvider: () => undefined
         })
+      });
+
+      expect(linkConverter).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reuse the provider the snapshot was built with when none is passed', async () => {
+      mockFileWithLinks([linkToA]);
+      const linkConverter = vi.fn(() => '[[a-new]]');
+
+      await editBacklinksSnapshot<undefined>({
+        app,
+        linkConverter,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot: buildBacklinksSnapshot<undefined>({
+          // A DIFFERENT object with the same `original`: only the build-side provider can match it.
+          backlinks: new Map([['note.md', [{ ...linkToA, displayText: 'something else' }]]]),
+          linkIdentityKeyProvider: (link) => link.original,
+          payloadProvider: () => undefined
+        })
+      });
+
+      expect(linkConverter).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw when passed a provider that differs from the snapshot\'s', async () => {
+      mockFileWithLinks([linkToA]);
+      const linkConverter = vi.fn(() => '[[a-new]]');
+
+      await expect(editBacklinksSnapshot<undefined>({
+        app,
+        linkConverter,
+        linkIdentityKeyProvider: (link) => link.link,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot: buildBacklinksSnapshot<undefined>({
+          backlinks: new Map([['note.md', [linkToA]]]),
+          linkIdentityKeyProvider: (link) => link.original,
+          payloadProvider: () => undefined
+        })
+      })).rejects.toThrow('editBacklinksSnapshot was passed a linkIdentityKeyProvider that differs');
+      expect(linkConverter).not.toHaveBeenCalled();
+    });
+
+    it('should use a passed provider for a snapshot assembled by hand', async () => {
+      mockFileWithLinks([linkToA]);
+      const linkConverter = vi.fn(() => '[[a-new]]');
+
+      await editBacklinksSnapshot<undefined>({
+        app,
+        linkConverter,
+        linkIdentityKeyProvider: (link) => link.original,
+        pluginNoticeComponent: null,
+        resourceLockComponent,
+        snapshot: new Map([['note.md', new Map([['[[a]]', undefined]])]])
       });
 
       expect(linkConverter).toHaveBeenCalledTimes(1);
