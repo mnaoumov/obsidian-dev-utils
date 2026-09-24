@@ -205,6 +205,9 @@ interface IsSuitableCodeBlockParams {
 /**
  * Gets the information about a code block in a Markdown section.
  *
+ * This is NOT a pure read: it calls {@link saveNote} on the source note first, which saves any open
+ * editor view of that note that has unsaved changes.
+ *
  * @param params - The parameters for the function.
  * @returns The information about the code block in the Markdown section.
  */

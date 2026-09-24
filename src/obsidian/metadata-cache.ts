@@ -382,6 +382,13 @@ export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): Cus
 /**
  * Retrieves the backlinks for a file safely.
  *
+ * This is NOT a pure read. When no backlink-cache plugin supplies the `safe` overload, it verifies
+ * each backlink against the note's current text, and to do that it calls {@link saveNote} on every
+ * note that links to the file, which saves any open editor view of those notes that has unsaved
+ * changes. Call it from an explicit user action. Do not call it from an automatic trigger (a vault or
+ * metadata event, a save or render patch) that only decides whether to act. There, a forced save can
+ * race another plugin's in-flight editor change.
+ *
  * @param params - The parameters for retrieving the backlinks.
  * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
  */
@@ -455,6 +462,15 @@ export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafePar
 /**
  * Retrieves the cached metadata for a given file or path.
  *
+ * This is NOT a pure read: before it reads the cache, it calls {@link saveNote}, which saves any
+ * open editor view of the note that has unsaved changes. That save is why the cache matches what the
+ * user sees, and why a command that rewrites the note can use this safely without its rewrite being
+ * clobbered. It is also a write on the note. So do not call this from an automatic trigger (a vault
+ * or metadata event, a save or render patch, a layout hook) that only decides whether to act: a
+ * forced save one tick after another plugin has dispatched a change into the editor can leave
+ * Obsidian's editor rendering stale state. A read-only probe on the note's current text should use
+ * {@link parseMetadata} on that text instead. It needs no view, no cache and no save.
+ *
  * @param app - The Obsidian app instance.
  * @param fileOrPath - The file or path to retrieve the metadata for.
  * @param options - The parse options controlling which additional links to parse.
@@ -504,6 +520,9 @@ export async function getCacheSafe(app: App, fileOrPath: PathOrFile, options: Ge
 
 /**
  * Retrieves the front matter from the metadata cache safely.
+ *
+ * It reads through {@link getCacheSafe}, so it saves any open editor view of the note that has
+ * unsaved changes. See {@link getCacheSafe} for when that save matters and what to use instead.
  *
  * @typeParam CustomFrontmatter - The type of custom front matter.
  * @param app - The Obsidian app instance.
