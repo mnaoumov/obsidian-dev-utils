@@ -845,6 +845,8 @@ export function registerDemoVaultCoverageSuite(params: RegisterDemoVaultCoverage
 
 const CLASS_MEMBER_MODIFIERS = String.raw`(?:(?:public|private|protected|readonly|static|abstract|override)\s+)*`;
 const ABSOLUTE_URL_REG_EXP = /^[a-z][\w+.-]*:/i;
+const ARROW_REG_EXP = /^\s*=>/;
+const FUNCTION_TYPE_PARAMETERS_REG_EXP = /^<[^>]*>\s*/;
 const ANGLE_BRACKETS_REG_EXP = /^<|>$/g;
 const CODE_FENCE_REG_EXP = /^\s*(?:```|~~~)/;
 const DEFAULT_EXCLUDED_NOTES = ['README.md'];
@@ -986,12 +988,23 @@ function extractEnumMemberNames(enumBody: string): string[] {
   return [...enumBody.matchAll(/^ {2}(?<name>\w+)/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
 }
 
+// A method is callable surface however it is written: a method signature (`foo(bar: string): void;`) or a
+// property signature whose type is a function type (`foo: (bar: string) => void;`). The shared ESLint config
+// runs `@typescript-eslint/method-signature-style` at its `property` default, so `lint:fix` rewrites the
+// first shape into the second — reading only the first reported zero methods for every such interface.
 function extractMethodNames(interfaceBody: string): string[] {
-  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)(?:<[^>]*>)?\(/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
+  const methodSignatureNames = [...interfaceBody.matchAll(/^ {2}(?<name>\w+)(?:<[^>]*>)?\(/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
+  const functionPropertyNames = matchPropertySignatures(interfaceBody)
+    .filter((match) => isFunctionType(interfaceBody, match))
+    .map((match) => getMandatoryNamedGroup(match, 'name'));
+  return [...methodSignatureNames, ...functionPropertyNames];
 }
 
+// Every property signature whose type is not a function type, so methods and properties stay a partition.
 function extractPropertyNames(interfaceBody: string): string[] {
-  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:/gm)].map((match) => getMandatoryNamedGroup(match, 'name'));
+  return matchPropertySignatures(interfaceBody)
+    .filter((match) => !isFunctionType(interfaceBody, match))
+    .map((match) => getMandatoryNamedGroup(match, 'name'));
 }
 
 // The line numbers carrying a wikilink that is navigation rather than sample text.
@@ -1043,8 +1056,37 @@ function hasWikilink(content: string): boolean {
   return findWikilinkLineIndexes(content).length > 0;
 }
 
+// Whether the property signature's type, starting right after its `:`, is a function type: an optional type
+// parameter list, a parameter list, then `=>`. The parameter list is walked by bracket depth rather than by a
+// regular expression, so a parenthesized non-function type (`(string | number)[]`) and a parameter whose own
+// type holds parentheses (`(callback: () => void) => void`) are both read correctly, across lines too.
+function isFunctionType(interfaceBody: string, match: RegExpExecArray): boolean {
+  let index = match.index + match[0].length;
+  index += FUNCTION_TYPE_PARAMETERS_REG_EXP.exec(interfaceBody.slice(index))?.[0].length ?? 0;
+  if (interfaceBody[index] !== '(') {
+    return false;
+  }
+  let depth = 0;
+  for (; index < interfaceBody.length; index++) {
+    const character = interfaceBody[index];
+    if (character === '(') {
+      depth++;
+    } else if (character === ')') {
+      depth--;
+      if (depth === 0) {
+        return ARROW_REG_EXP.test(interfaceBody.slice(index + 1));
+      }
+    }
+  }
+  return false;
+}
+
 function isNonPublicMember(modifiers: string): boolean {
   return /\b(?:private|protected)\b/.test(modifiers);
+}
+
+function matchPropertySignatures(interfaceBody: string): RegExpExecArray[] {
+  return [...interfaceBody.matchAll(/^ {2}(?<name>\w+)\??:\s*/gm)];
 }
 
 function parseMembers(keyword: string, body: string): InterfaceMembers {
