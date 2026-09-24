@@ -374,4 +374,48 @@ describe('deleteIfNotUsed', () => {
     expect(mocks.trashSafe).toHaveBeenCalledWith(app, folder);
     expect(mocks.trashSafe).not.toHaveBeenCalledWith(app, childFile);
   });
+
+  it('should keep visiting a folder\'s children after the first one it keeps', async () => {
+    const folder = TFolder.create__(castTo(app.vault), 'folder').asOriginalType2__();
+    const keptFile = TFile.create__(castTo(app.vault), 'folder/kept.png').asOriginalType2__();
+    const unusedFile = TFile.create__(castTo(app.vault), 'folder/unused.png').asOriginalType2__();
+
+    mocks.getAbstractFileOrNull.mockImplementation((params: GetAbstractFileOrNullParams) => params.pathOrFile);
+    // The children are walked in listing order: the kept file first, then the unused one.
+    mocks.getBacklinksForFileSafe
+      .mockResolvedValueOnce({ clear: vi.fn(), count: vi.fn(() => 1), keys: vi.fn((): string[] => ['other1.md']) })
+      .mockResolvedValueOnce({ clear: vi.fn(), count: vi.fn(() => 0), keys: vi.fn((): string[] => []) });
+    mocks.listSafe.mockResolvedValue({ files: [keptFile, unusedFile], folders: [] });
+    mocks.isEmptyFolder.mockResolvedValue(false);
+
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: folder
+    });
+
+    expect(result).toBe(DeleteIfNotUsedResult.NotDeleted);
+    expect(mocks.trashSafe).toHaveBeenCalledWith(app, unusedFile);
+    expect(mocks.trashSafe).not.toHaveBeenCalledWith(app, keptFile);
+    expect(mocks.trashSafe).not.toHaveBeenCalledWith(app, folder);
+  });
+
+  it('should still delete unused children when shouldDeleteEmptyFolders is false', async () => {
+    const folder = TFolder.create__(castTo(app.vault), 'folder').asOriginalType2__();
+    const unusedFile = TFile.create__(castTo(app.vault), 'folder/unused.png').asOriginalType2__();
+
+    mocks.getAbstractFileOrNull.mockImplementation((params: GetAbstractFileOrNullParams) => params.pathOrFile);
+    mocks.getBacklinksForFileSafe.mockResolvedValue({ clear: vi.fn(), count: vi.fn(() => 0), keys: vi.fn((): string[] => []) });
+    mocks.listSafe.mockResolvedValue({ files: [unusedFile], folders: [] });
+    mocks.isEmptyFolder.mockResolvedValue(true);
+
+    const result = await deleteIfNotUsed({
+      app,
+      pathOrFile: folder,
+      shouldDeleteEmptyFolders: false
+    });
+
+    expect(result).toBe(DeleteIfNotUsedResult.NotDeleted);
+    expect(mocks.trashSafe).toHaveBeenCalledWith(app, unusedFile);
+    expect(mocks.trashSafe).not.toHaveBeenCalledWith(app, folder);
+  });
 });
