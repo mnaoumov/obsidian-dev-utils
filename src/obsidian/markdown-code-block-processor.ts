@@ -9,8 +9,12 @@
 import type {
   App,
   MarkdownPostProcessorContext,
-  MarkdownSectionInformation
+  MarkdownSectionInformation,
+  TFile
 } from 'obsidian';
+
+import { ViewType } from '@obsidian-typings/obsidian-public-latest/implementations';
+import { MarkdownView } from 'obsidian';
 
 import type { ValueProvider } from '../value-provider.ts';
 import type { CodeBlockMarkdownInformation } from './code-block-markdown-information.ts';
@@ -156,6 +160,23 @@ interface CreateMarkdownInfoFromMatchParams {
   readonly textLineOffsets: ReadonlyMap<number, number>;
 }
 
+interface FindCodeBlockMarkdownInfoParams {
+  /**
+   * The element the code block was rendered into.
+   */
+  readonly el: HTMLElement;
+
+  /**
+   * The note text to locate the code block in.
+   */
+  readonly noteContent: string;
+
+  /**
+   * The source of the code block.
+   */
+  readonly source: string;
+}
+
 interface InsertTextParams {
   /**
    * The content to insert the text into.
@@ -205,8 +226,10 @@ interface IsSuitableCodeBlockParams {
 /**
  * Gets the information about a code block in a Markdown section.
  *
- * This is NOT a pure read: it calls {@link saveNote} on the source note first, which saves any open
- * editor view of that note that has unsaved changes.
+ * This is a pure read, safe to call while a code block renders. It locates the block in the text the
+ * user sees: the view data of an open markdown view of the source note when there is one, because
+ * an unsaved edit there is what the block was rendered from, and the file's content otherwise. It
+ * never saves the note.
  *
  * @param params - The parameters for the function.
  * @returns The information about the code block in the Markdown section.
@@ -218,90 +241,9 @@ export async function getCodeBlockMarkdownInfo(params: GetCodeBlockMarkdownInfoP
   assertNonNullable(sourceFile, `Source file ${context.sourcePath} not found.`);
 
   await requestAnimationFrameAsync();
-  await saveNote(app, sourceFile);
 
-  let markdownInfo: CodeBlockMarkdownInformation | null = null;
-
-  await invokeWithFileSystemLock({
-    $function(noteContent) {
-      const noteContentLf = ensureLfEndings(noteContent);
-
-      const approximateSectionInfo: MarkdownSectionInformation = {
-        lineEnd: noteContentLf.split('\n').length - 1,
-        lineStart: 0,
-        text: noteContentLf
-      };
-
-      approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
-
-      if (
-        !hasSingleOccurrence({
-          $string: noteContentLf,
-          searchValue: approximateSectionInfo.text
-        })
-      ) {
-        return;
-      }
-
-      const sourceLf = ensureLfEndings(source);
-
-      const sectionOffset = noteContentLf.indexOf(approximateSectionInfo.text);
-      const linesBeforeSectionCount = noteContentLf.slice(0, sectionOffset).split('\n').length - 1;
-
-      const isInCallout = !!el.parentElement?.classList.contains('callout-content');
-
-      const language = getLanguageFromElement(el);
-      const sourceLines = sourceLf.split('\n');
-
-      const textLines = approximateSectionInfo.text.split('\n');
-      const textLineOffsets = new Map<number, number>([[linesBeforeSectionCount, sectionOffset]]);
-
-      let lastTextLineOffset = sectionOffset;
-      for (const [index, textLine_] of textLines.entries()) {
-        const textLine = textLine_;
-        const lineOffset = lastTextLineOffset + textLine.length + 1;
-        textLineOffsets.set(linesBeforeSectionCount + index + 1, lineOffset);
-        lastTextLineOffset = lineOffset;
-      }
-
-      const potentialCodeBlockTextLines = textLines.map((line, index) => approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : '');
-      const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
-
-      const REG_EXP = createCodeBlockRegExp();
-
-      for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
-        if (!isSuitableCodeBlock({ isInCallout, language, match, sourceLf })) {
-          continue;
-        }
-
-        if (markdownInfo) {
-          return;
-        }
-
-        markdownInfo = createMarkdownInfoFromMatch({
-          approximateSectionInfo,
-          linesBeforeSectionCount,
-          match,
-          noteContent,
-          potentialCodeBlockText,
-          sourceLinesCount: sourceLines.length,
-          textLineOffsets
-        });
-      }
-
-      if (!markdownInfo || (noteContentLf === noteContent)) {
-        return;
-      }
-
-      const lfOffsetMapper = getLfNormalizedOffsetToOriginalOffsetMapper(noteContent);
-      markdownInfo.positionInNote.start.offset = lfOffsetMapper(markdownInfo.positionInNote.start.offset);
-      markdownInfo.positionInNote.end.offset = lfOffsetMapper(markdownInfo.positionInNote.end.offset);
-    },
-    app,
-    pathOrFile: sourceFile
-  });
-
-  return markdownInfo;
+  const noteContent = getOpenMarkdownViewData(app, sourceFile) ?? await app.vault.read(sourceFile);
+  return findCodeBlockMarkdownInfo({ el, noteContent, source });
 }
 
 /**
@@ -316,7 +258,7 @@ export async function insertAfterCodeBlock(params: InsertCodeBlockParams): Promi
   await process({
     app,
     async newContentProvider({ content }) {
-      const markdownInfo = await getCodeBlockMarkdownInfo(params);
+      const markdownInfo = await getCodeBlockMarkdownInfoAfterSave(params);
       assertNonNullable(markdownInfo, 'Could not uniquely identify the code block.');
 
       if (content !== markdownInfo.noteContent) {
@@ -349,7 +291,7 @@ export async function insertBeforeCodeBlock(params: InsertCodeBlockParams): Prom
   await process({
     app,
     async newContentProvider({ content }) {
-      const markdownInfo = await getCodeBlockMarkdownInfo(params);
+      const markdownInfo = await getCodeBlockMarkdownInfoAfterSave(params);
       if (!markdownInfo) {
         throw new Error('Could not uniquely identify the code block.');
       }
@@ -399,7 +341,7 @@ export async function replaceCodeBlock(params: ReplaceCodeBlockParams): Promise<
     async newContentProvider({ abortSignal, content }) {
       abortSignal = abortSignalAny(abortSignal, params.abortSignal);
       abortSignal.throwIfAborted();
-      const markdownInfo = await getCodeBlockMarkdownInfo(params);
+      const markdownInfo = await getCodeBlockMarkdownInfoAfterSave(params);
       if (!markdownInfo) {
         throw new Error('Could not uniquely identify the code block.');
       }
@@ -495,9 +437,131 @@ function createMarkdownInfoFromMatch(params: CreateMarkdownInfoFromMatchParams):
   };
 }
 
+function findCodeBlockMarkdownInfo(params: FindCodeBlockMarkdownInfoParams): CodeBlockMarkdownInformation | null {
+  const { el, noteContent, source } = params;
+  const noteContentLf = ensureLfEndings(noteContent);
+
+  const approximateSectionInfo: MarkdownSectionInformation = {
+    lineEnd: noteContentLf.split('\n').length - 1,
+    lineStart: 0,
+    text: noteContentLf
+  };
+
+  approximateSectionInfo.text = ensureLfEndings(approximateSectionInfo.text);
+
+  if (
+    !hasSingleOccurrence({
+      $string: noteContentLf,
+      searchValue: approximateSectionInfo.text
+    })
+  ) {
+    return null;
+  }
+
+  const sourceLf = ensureLfEndings(source);
+
+  const sectionOffset = noteContentLf.indexOf(approximateSectionInfo.text);
+  const linesBeforeSectionCount = noteContentLf.slice(0, sectionOffset).split('\n').length - 1;
+
+  const isInCallout = !!el.parentElement?.classList.contains('callout-content');
+
+  const language = getLanguageFromElement(el);
+  const sourceLines = sourceLf.split('\n');
+
+  const textLines = approximateSectionInfo.text.split('\n');
+  const textLineOffsets = new Map<number, number>([[linesBeforeSectionCount, sectionOffset]]);
+
+  let lastTextLineOffset = sectionOffset;
+  for (const [index, textLine_] of textLines.entries()) {
+    const textLine = textLine_;
+    const lineOffset = lastTextLineOffset + textLine.length + 1;
+    textLineOffsets.set(linesBeforeSectionCount + index + 1, lineOffset);
+    lastTextLineOffset = lineOffset;
+  }
+
+  const potentialCodeBlockTextLines = textLines.map((line, index) => approximateSectionInfo.lineStart <= index && index <= approximateSectionInfo.lineEnd ? line : '');
+  const potentialCodeBlockText = potentialCodeBlockTextLines.join('\n');
+
+  const REG_EXP = createCodeBlockRegExp();
+
+  let markdownInfo: CodeBlockMarkdownInformation | null = null;
+
+  for (const match of potentialCodeBlockText.matchAll(REG_EXP)) {
+    if (!isSuitableCodeBlock({ isInCallout, language, match, sourceLf })) {
+      continue;
+    }
+
+    if (markdownInfo) {
+      return markdownInfo;
+    }
+
+    markdownInfo = createMarkdownInfoFromMatch({
+      approximateSectionInfo,
+      linesBeforeSectionCount,
+      match,
+      noteContent,
+      potentialCodeBlockText,
+      sourceLinesCount: sourceLines.length,
+      textLineOffsets
+    });
+  }
+
+  if (!markdownInfo || (noteContentLf === noteContent)) {
+    return markdownInfo;
+  }
+
+  const lfOffsetMapper = getLfNormalizedOffsetToOriginalOffsetMapper(noteContent);
+  markdownInfo.positionInNote.start.offset = lfOffsetMapper(markdownInfo.positionInNote.start.offset);
+  markdownInfo.positionInNote.end.offset = lfOffsetMapper(markdownInfo.positionInNote.end.offset);
+  return markdownInfo;
+}
+
+/**
+ * The flushing counterpart of {@link getCodeBlockMarkdownInfo}, for the write helpers only.
+ *
+ * It saves the note first and reads the file, because a write helper compares the returned
+ * `noteContent` against the file content {@link process} hands it: text taken from a dirty editor
+ * would never match, and the provider would ask for a retry forever. A write is about to happen
+ * anyway, so the save is not a write on an automatic trigger.
+ *
+ * @param params - The parameters for the function.
+ * @returns The information about the code block, located in the saved file content.
+ */
+async function getCodeBlockMarkdownInfoAfterSave(params: GetCodeBlockMarkdownInfoParams): Promise<CodeBlockMarkdownInformation | null> {
+  const { app, context, el, source } = params;
+
+  const sourceFile = getFileOrNull({ app, pathOrFile: context.sourcePath });
+  assertNonNullable(sourceFile, `Source file ${context.sourcePath} not found.`);
+
+  await requestAnimationFrameAsync();
+  await saveNote(app, sourceFile);
+
+  let markdownInfo: CodeBlockMarkdownInformation | null = null;
+
+  await invokeWithFileSystemLock({
+    $function(noteContent) {
+      markdownInfo = findCodeBlockMarkdownInfo({ el, noteContent, source });
+    },
+    app,
+    pathOrFile: sourceFile
+  });
+
+  return markdownInfo;
+}
+
 function getLanguageFromElement(element: HTMLElement): string {
   const BLOCK_LANGUAGE_PREFIX = 'block-language-';
   return [...element.classList].find((cls) => cls.startsWith(BLOCK_LANGUAGE_PREFIX))?.slice(BLOCK_LANGUAGE_PREFIX.length) ?? '';
+}
+
+function getOpenMarkdownViewData(app: App, file: TFile): null | string {
+  for (const leaf of app.workspace.getLeavesOfType(ViewType.Markdown)) {
+    if (leaf.view instanceof MarkdownView && leaf.view.file?.path === file.path) {
+      return leaf.view.getViewData();
+    }
+  }
+
+  return null;
 }
 
 function insertText(params: InsertTextParams): string {
