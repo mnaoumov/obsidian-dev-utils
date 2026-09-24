@@ -21,8 +21,10 @@ import type { DemoVaultButtonResult } from './demo-vault-buttons.ts';
 
 import {
   assertClickBudgetsFitTransportCap,
+  countRenderedButtons,
   formatFailures,
-  listNotesWithButtons
+  listNotesWithButtons,
+  selectUnexpectedFailures
 } from './demo-vault-buttons.ts';
 
 let demoVaultPath: string;
@@ -112,6 +114,22 @@ describe('listNotesWithButtons', () => {
     expect(listNotesWithButtons(demoVaultPath, new Set()).map((note) => note.name)).toEqual(['01 One.md']);
   });
 
+  it('skips an excluded folder by its name or by its path', () => {
+    writeNote('01 One.md', `# One\n\n${button('Alpha')}\n`);
+    writeNote('08 Other plugins/01 Dataview.md', `# Dataview\n\n${button('Bravo')}\n`);
+    writeNote('09 Group/Nested/01 Deep.md', `# Deep\n\n${button('Charlie')}\n`);
+    writeNote('09 Group/02 Shallow.md', `# Shallow\n\n${button('Delta')}\n`);
+
+    expect(listNotesWithButtons(demoVaultPath, new Set(), new Set(['08 Other plugins', '09 Group/Nested'])).map((note) => note.name))
+      .toEqual(['01 One.md', '09 Group/02 Shallow.md']);
+  });
+
+  it('does not count a code-button sample nested in a longer fence', () => {
+    writeNote('01 One.md', `# One\n\n${button('Alpha')}\n\n\`\`\`\`markdown\n${button('Sample')}\n\`\`\`\`\n`);
+
+    expect(listNotesWithButtons(demoVaultPath, new Set())).toEqual([{ buttonCount: 1, name: '01 One.md' }]);
+  });
+
   it('returns the notes sorted by name', () => {
     writeNote('02 Two.md', button('Bravo'));
     writeNote('01 One.md', button('Alpha'));
@@ -184,5 +202,113 @@ describe('formatFailures', () => {
     // The output is collapsed onto one line so a multi-line stack stays readable in the reporter.
     expect(message).toContain('- "Alpha" [error]: Error: boom at somewhere');
     expect(message).toContain('- "Bravo" [timeout]:');
+  });
+});
+
+describe('countRenderedButtons', () => {
+  it('counts every top-level code-button fence', () => {
+    expect(countRenderedButtons([button('Alpha'), 'Prose.', button('Bravo')].join('\n\n'))).toBe(2);
+  });
+
+  it('counts nothing in a note without fences', () => {
+    expect(countRenderedButtons('# Title\n\nJust prose.\n')).toBe(0);
+  });
+
+  it('ignores a code-button fence nested in a longer backtick fence, which is a sample shown to the reader', () => {
+    const source = ['````markdown', button('Sample'), '````', '', button('Real')].join('\n');
+
+    expect(countRenderedButtons(source)).toBe(1);
+  });
+
+  it('ignores a code-button fence nested in a tilde fence, whatever its length', () => {
+    const source = ['~~~markdown', button('Sample'), '~~~', '', button('Real')].join('\n');
+
+    expect(countRenderedButtons(source)).toBe(1);
+  });
+
+  it('does not close a backtick fence on a tilde run, or a long fence on a shorter one', () => {
+    const source = ['````markdown', '~~~', '```', button('Sample'), '````', button('Real')].join('\n');
+
+    expect(countRenderedButtons(source)).toBe(1);
+  });
+
+  it('does not close a fence on a marker line carrying an info string', () => {
+    const source = ['```code-button', '```js', 'noop();', '```'].join('\n');
+
+    expect(countRenderedButtons(source)).toBe(1);
+  });
+
+  it('ignores a fence of another language', () => {
+    expect(countRenderedButtons(['```js', 'noop();', '```', button('Real')].join('\n'))).toBe(1);
+  });
+
+  it('ignores a code-button fence carrying legacy arguments, which renders an error banner and no button', () => {
+    expect(countRenderedButtons(['```code-button "Run" raw', 'noop();', '```'].join('\n'))).toBe(0);
+  });
+
+  it('ignores an isRaw fence, which renders no button element', () => {
+    const raw = ['```code-button', '---', 'isRaw: true', '---', 'noop();', '```'].join('\n');
+
+    expect(countRenderedButtons([raw, button('Real')].join('\n\n'))).toBe(1);
+  });
+
+  it('counts a fence whose isRaw is false', () => {
+    expect(countRenderedButtons(['```code-button', '---', 'isRaw: false', '---', 'noop();', '```'].join('\n'))).toBe(1);
+  });
+
+  it('reads isRaw from the config block only, not from the code demonstrating it', () => {
+    const source = ['```code-button', '---', 'caption: Demo', '---', 'isRaw: true', '```'].join('\n');
+
+    expect(countRenderedButtons(source)).toBe(1);
+  });
+
+  it('counts a fence whose body opens with no config block, or an unterminated one', () => {
+    expect(countRenderedButtons(['```code-button', 'isRaw: true', '```'].join('\n'))).toBe(1);
+    expect(countRenderedButtons(['```code-button', '---', 'isRaw: true', '```'].join('\n'))).toBe(1);
+  });
+
+  it('counts a fence left open at the end of the note, which CommonMark runs to the end and still renders', () => {
+    expect(countRenderedButtons(['```code-button', 'noop();'].join('\n'))).toBe(1);
+  });
+
+  it('reads CRLF line endings', () => {
+    expect(countRenderedButtons(button('Alpha').replaceAll('\n', '\r\n'))).toBe(1);
+  });
+});
+
+describe('selectUnexpectedFailures', () => {
+  const results: DemoVaultButtonResult[] = [
+    { caption: 'Works', output: '', status: 'ok' },
+    { caption: 'Run on error only', output: '', status: 'error' },
+    { caption: 'shouldShowSystemMessages=false', output: '', status: 'timeout' },
+    { caption: 'Broken', output: '', status: 'unknown' }
+  ];
+
+  it('returns every non-ok result when nothing is expected', () => {
+    expect(selectUnexpectedFailures('01 One.md', results, []).map((result) => result.caption))
+      .toEqual(['Run on error only', 'shouldShowSystemMessages=false', 'Broken']);
+  });
+
+  it('drops a result matching an expected note, caption substring and status', () => {
+    expect(
+      selectUnexpectedFailures('01 One.md', results, [
+        { captionIncludes: 'on error only', note: '01 One.md', status: 'error' },
+        { captionIncludes: 'shouldShowSystemMessages', note: '01 One.md', status: 'timeout' }
+      ]).map((result) => result.caption)
+    ).toEqual(['Broken']);
+  });
+
+  it('keeps a result whose status differs from the expected one', () => {
+    expect(
+      selectUnexpectedFailures('01 One.md', results, [{ captionIncludes: 'on error only', note: '01 One.md', status: 'timeout' }])
+        .map((result) => result.caption)
+    ).toContain('Run on error only');
+  });
+
+  it('keeps a result expected in another note', () => {
+    expect(
+      selectUnexpectedFailures('01 One.md', results, [{ captionIncludes: 'on error only', note: '02 Two.md', status: 'error' }])
+        .map((result) => result.caption)
+    ).toContain('Run on error only');
   });
 });
