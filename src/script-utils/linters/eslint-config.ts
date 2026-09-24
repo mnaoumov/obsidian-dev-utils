@@ -44,6 +44,7 @@ import { noRestrictedSyntaxRuleEntries } from './eslint-no-restricted-syntax.ts'
 import { jsonPlugin } from './eslint-rules/manifest-helpers.ts';
 import { obsidianDevUtilsPlugin } from './eslint-rules/obsidian-dev-utils-plugin.ts';
 import { CLAUDE_WORKTREES_IGNORE_GLOB } from './lint-ignores.ts';
+import { stripOwnedRuleCustomMessageEntries } from './obsidianmd-rule-custom-message.ts';
 
 /**
  * The parameters for defining ESLint configurations.
@@ -667,11 +668,17 @@ function getObsidianDevUtilsPluginConfigs(context: EslintConfigContext): Linter.
 function getObsidianLintConfigs(context: EslintConfigContext): Linter.Config[] {
   const obsidianRecommendedConfigs = obsidianmd.configs.recommended;
 
+  /*
+   * A builtin this config sets itself must not ALSO run through `obsidianmd/rule-custom-message`, or a consumer's own
+   * `'no-console': 'off'` is inert and every console line is reported twice. See `obsidianmd-rule-custom-message.ts`.
+   */
+  const ownedRuleNames = new Set(getEslintConfigs(context).flatMap((config) => Object.keys(config.rules ?? {})));
+
   const scopedObsidianRecommendedConfigs = obsidianRecommendedConfigs.map((config) => {
     return config.files?.includes('package.json')
       ? config
       : {
-        ...config,
+        ...stripOwnedRuleCustomMessageEntries({ config, ownedRuleNames }),
         files: context.sourceFiles
       };
   });
