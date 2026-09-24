@@ -167,11 +167,9 @@ class EmptyFrontmatterValueRemover {
       return this.shouldRemoveNulls;
     }
 
-    if (Array.isArray(value)) {
-      return value.length === 0 && this.shouldRemoveEmptyArrays;
-    }
-
-    return checkIsPlainObject(value) ? Object.keys(value).length === 0 && this.shouldRemoveEmptyObjects : false;
+    return Array.isArray(value)
+      ? value.length === 0 && this.shouldRemoveEmptyArrays
+      : checkIsPlainObject(value) && Object.keys(value).length === 0 && this.shouldRemoveEmptyObjects;
   }
 
   private joinKeyPath(keyPath: string, key: string): string {

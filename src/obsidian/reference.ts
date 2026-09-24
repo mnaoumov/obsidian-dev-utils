@@ -128,7 +128,7 @@ export function isCanvasTextNodeReference(reference: Reference): reference is Ca
  * @returns Whether the reference is fully contained within the offset range.
  */
 export function isReferenceInOffsetRange(reference: Reference, offsetRange: OffsetRange): boolean {
-  return isReferenceCache(reference) ? offsetRange.startOffset <= reference.position.start.offset && reference.position.end.offset <= offsetRange.endOffset : false;
+  return isReferenceCache(reference) && offsetRange.startOffset <= reference.position.start.offset && reference.position.end.offset <= offsetRange.endOffset;
 }
 
 /**

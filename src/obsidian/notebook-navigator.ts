@@ -175,8 +175,7 @@ function isNotebookNavigatorApi(value: unknown): value is NotebookNavigatorApi {
   }
 
   const menus: unknown = value.menus;
-  return typeof menus !== 'object' || menus === null
-    ? false
-    : 'registerFileMenu' in menus && typeof menus.registerFileMenu === 'function'
-      && 'registerFolderMenu' in menus && typeof menus.registerFolderMenu === 'function';
+  return typeof menus === 'object' && menus !== null
+    && 'registerFileMenu' in menus && typeof menus.registerFileMenu === 'function'
+    && 'registerFolderMenu' in menus && typeof menus.registerFolderMenu === 'function';
 }

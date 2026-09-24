@@ -249,7 +249,7 @@ export function isLoaded(element: Element): boolean {
   }
 
   if (isInstanceOf(element, win.HTMLLinkElement)) {
-    return element.rel === 'stylesheet' ? element.sheet !== null : true;
+    return element.rel !== 'stylesheet' || element.sheet !== null;
   }
 
   if (isInstanceOf(element, win.HTMLObjectElement)) {

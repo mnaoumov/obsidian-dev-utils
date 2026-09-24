@@ -149,11 +149,8 @@ interface ReportSoftBreaksParams {
  * @returns `true` if the break is explicit.
  */
 function checkIsExplicitBreak(previousToken: MicromarkToken | undefined): boolean {
-  if (!previousToken) {
-    return false;
-  }
-
-  return EXPLICIT_BREAK_TOKEN_TYPES.has(previousToken.type) ? true : previousToken.type === HTML_TEXT_TOKEN_TYPE && BR_HTML_TEXT_REG_EXP.test(previousToken.text);
+  return previousToken !== undefined
+    && (EXPLICIT_BREAK_TOKEN_TYPES.has(previousToken.type) || (previousToken.type === HTML_TEXT_TOKEN_TYPE && BR_HTML_TEXT_REG_EXP.test(previousToken.text)));
 }
 
 /**

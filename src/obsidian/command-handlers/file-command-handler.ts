@@ -181,13 +181,11 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
       leaf,
       source
     } = params;
-    return isFile(abstractFile)
-      ? this.shouldAddToFileMenu({
-        file: abstractFile,
-        leaf,
-        source
-      })
-      : false;
+    return isFile(abstractFile) && this.shouldAddToFileMenu({
+      file: abstractFile,
+      leaf,
+      source
+    });
   }
 
   /**
@@ -203,13 +201,11 @@ export abstract class FileCommandHandler extends AbstractFileCommandHandler {
       leaf,
       source
     } = params;
-    return abstractFiles.some((f) => !isFile(f))
-      ? false
-      : this.shouldAddToFilesMenu({
-        files: asArrayOfFiles(abstractFiles),
-        leaf,
-        source
-      });
+    return abstractFiles.every((f) => isFile(f)) && this.shouldAddToFilesMenu({
+      files: asArrayOfFiles(abstractFiles),
+      leaf,
+      source
+    });
   }
 
   /**

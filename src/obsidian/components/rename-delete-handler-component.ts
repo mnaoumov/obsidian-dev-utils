@@ -719,7 +719,8 @@ class FileManagerRunAsyncLinkUpdatePatchComponent extends MonkeyAroundComponent 
           return true;
         }
 
-        return !this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas) || hasBacklinkCachePlugin(this.app) ? false : (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION) || (linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION);
+        return this.app.internalPlugins.getEnabledPluginById(InternalPluginName.Canvas) !== null && !hasBacklinkCachePlugin(this.app)
+          && (linkUpdate.sourceFile.extension === CANVAS_FILE_EXTENSION || linkUpdate.resolvedFile.extension === CANVAS_FILE_EXTENSION);
       }
     );
   }

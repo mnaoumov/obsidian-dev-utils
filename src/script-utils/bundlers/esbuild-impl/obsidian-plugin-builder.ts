@@ -261,7 +261,7 @@ export async function buildObsidianPlugin(params: BuildObsidianPluginParams): Pr
       ...params.customEsbuildPlugins ?? [],
       copyToObsidianPluginsFolderPlugin({ distFolder, isProductionBuild, obsidianConfigFolder, pluginName })
     ],
-    sourcemap: isProductionBuild ? false : 'inline',
+    sourcemap: !isProductionBuild && 'inline',
     target: 'ES2022',
     treeShaking: true
   };
