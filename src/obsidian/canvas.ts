@@ -8,13 +8,14 @@ import type { App } from 'obsidian';
 import type { CanvasData } from 'obsidian/canvas.d.ts';
 
 import type { PathOrFile } from './file-system.ts';
+import type { CachedMetadataEx } from './metadata-cache.ts';
 import type {
   CanvasFileNodeReference,
   CanvasReference,
   CanvasTextNodeReference
 } from './reference.ts';
 
-import { fixFrontmatterMarkdownLinks } from './link.ts';
+import { ensureNonNullable } from '../type-guards.ts';
 import {
   getLinks,
   parseMetadata
@@ -60,6 +61,7 @@ export async function getCanvasReferences(app: App, pathOrFile: PathOrFile): Pro
     };
 
   const references: CanvasReference[] = [];
+  const hasFrontmatterMarkdownLinksPlugin = !!app.plugins.getPlugin('frontmatter-markdown-links');
 
   for (const [nodeIndex, node] of canvasData.nodes.entries()) {
     switch (node.type) {
@@ -76,9 +78,9 @@ export async function getCanvasReferences(app: App, pathOrFile: PathOrFile): Pro
         break;
       }
       case 'text': {
-        const metadata = await parseMetadata(app, node.text);
-        if (app.plugins.getPlugin('frontmatter-markdown-links')) {
-          fixFrontmatterMarkdownLinks(metadata);
+        const metadata = await parseMetadata(app, node.text, { shouldParseMultiValueFrontmatterLinks: hasFrontmatterMarkdownLinksPlugin });
+        if (hasFrontmatterMarkdownLinksPlugin) {
+          contributeMultiValueFrontmatterLinks(metadata);
         }
         const links = getLinks({ cache: metadata });
         for (const [linkIndex, link] of links.entries()) {
@@ -102,4 +104,32 @@ export async function getCanvasReferences(app: App, pathOrFile: PathOrFile): Pro
   }
 
   return references;
+}
+
+/**
+ * Makes the one change to a canvas text node's metadata that the Frontmatter Markdown Links plugin makes to a
+ * note's cache, so a text node reads its links as a note with the same text would.
+ *
+ * Obsidian itself reads a property whose WHOLE value is one internal link, markdown links included, so the plugin
+ * contributes only the links embedded in a multi-link value (`[A](a.md), [B](b.md)`) and replaces whatever Obsidian
+ * recorded under the same key. A text node is parsed outside the metadata cache, where the plugin never sees it,
+ * so the same step is repeated here.
+ *
+ * @param metadata - The text node's metadata, parsed with multi-value frontmatter links, so
+ * `multiValueFrontmatterLinks` is always set.
+ */
+function contributeMultiValueFrontmatterLinks(metadata: CachedMetadataEx): void {
+  const contributedLinks = ensureNonNullable(metadata.multiValueFrontmatterLinks);
+  if (contributedLinks.length === 0) {
+    return;
+  }
+
+  const contributedKeys = new Set(contributedLinks.map((link) => link.key));
+  // A contributed link means the note has a frontmatter record, and Obsidian assigns `frontmatterLinks` beside it.
+  /* v8 ignore next -- Never nullish when a link was contributed; the `?? []` is defensive. */
+  const nativeLinks = metadata.frontmatterLinks ?? [];
+  metadata.frontmatterLinks = [
+    ...nativeLinks.filter((link) => !contributedKeys.has(link.key)),
+    ...contributedLinks
+  ];
 }

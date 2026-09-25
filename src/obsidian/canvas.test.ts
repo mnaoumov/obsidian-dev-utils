@@ -90,23 +90,13 @@ describe('getCanvasReferences', () => {
 
   const FRONTMATTER_MARKDOWN_LINK_TEXT = '---\nlink: "[My Note](my-note.md)"\n---\nbody';
 
-  // Obsidian's own metadata parse reads an internal markdown link in a property, so the plugin is not what finds it.
-  it('should surface a text-node frontmatter markdown link when the frontmatter-markdown-links plugin is absent', async () => {
-    const app = createApp(toCanvasJson([{ id: '1', text: FRONTMATTER_MARKDOWN_LINK_TEXT, type: 'text' }]));
-    const references = await getCanvasReferences(app, CANVAS_PATH);
-    expect(references).toHaveLength(1);
-    expect(references[0]).toMatchObject({
-      key: 'nodes.0.text.0',
-      link: 'my-note.md',
-      original: '[My Note](my-note.md)'
-    });
-  });
-
-  it('should surface a text-node frontmatter markdown link when the frontmatter-markdown-links plugin is present', async () => {
-    const app = createApp(
-      toCanvasJson([{ id: '1', text: FRONTMATTER_MARKDOWN_LINK_TEXT, type: 'text' }]),
-      ['frontmatter-markdown-links']
-    );
+  // Obsidian's own metadata parse reads a property whose whole value is one internal markdown link, so the plugin
+  // changes nothing about it: the reference is Obsidian's, `displayText` included, with and without the plugin.
+  it.each([
+    { installedPluginIds: [] },
+    { installedPluginIds: ['frontmatter-markdown-links'] }
+  ])('should surface a text-node single-value frontmatter markdown link as Obsidian reads it (plugins: $installedPluginIds)', async ({ installedPluginIds }) => {
+    const app = createApp(toCanvasJson([{ id: '1', text: FRONTMATTER_MARKDOWN_LINK_TEXT, type: 'text' }]), installedPluginIds);
     const references = await getCanvasReferences(app, CANVAS_PATH);
     expect(references).toHaveLength(1);
     expect(references[0]).toMatchObject({
@@ -115,6 +105,48 @@ describe('getCanvasReferences', () => {
       link: 'my-note.md',
       nodeIndex: 0,
       original: '[My Note](my-note.md)',
+      originalReference: {
+        displayText: 'My Note',
+        key: 'link',
+        link: 'my-note.md',
+        original: '[My Note](my-note.md)'
+      },
+      type: 'text'
+    });
+  });
+
+  const MULTI_VALUE_FRONTMATTER_LINK_TEXT = '---\nrelated: "[[a]] and [B](b.md)"\n---\nbody';
+
+  // A value holding SEVERAL links is the one shape the plugin adds, so without it the text node reads only what
+  // Obsidian reads: its markdown-link pattern, anchored to the whole value, takes `[a]] and [B` as the text of ONE link.
+  it('should read a multi-value frontmatter property as Obsidian does when the frontmatter-markdown-links plugin is absent', async () => {
+    const app = createApp(toCanvasJson([{ id: '1', text: MULTI_VALUE_FRONTMATTER_LINK_TEXT, type: 'text' }]));
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toHaveLength(1);
+    expect(references[0]).toHaveProperty('originalReference', {
+      displayText: '[a]] and [B',
+      key: 'related',
+      link: 'b.md',
+      original: '[[a]] and [B](b.md)'
+    });
+  });
+
+  it('should surface each multi-value frontmatter link when the frontmatter-markdown-links plugin is present', async () => {
+    const app = createApp(
+      toCanvasJson([{ id: '1', text: MULTI_VALUE_FRONTMATTER_LINK_TEXT, type: 'text' }]),
+      ['frontmatter-markdown-links']
+    );
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references.map((reference) => reference.link)).toEqual(['a', 'b.md']);
+    expect(references[1]).toMatchObject({
+      key: 'nodes.0.text.1',
+      original: '[[a]] and [B](b.md)',
+      originalReference: {
+        endOffset: 19,
+        key: 'related',
+        original: '[[a]] and [B](b.md)',
+        startOffset: 10
+      },
       type: 'text'
     });
   });
@@ -189,5 +221,29 @@ describe('getCanvasReferences rewrite round-trip via applyFileChanges', () => {
     const updated = JSON.parse(updatedContent) as ParsedCanvas;
     expect(updated.nodes[0]?.file).toBe('new.md');
     expect(updated.nodes[1]?.text).toBe('![[new.png]]');
+  });
+
+  it('should rewrite one link of a multi-value frontmatter property in a text node, leaving the rest of the value', async () => {
+    const app = createApp(
+      toCanvasJson([{ id: '1', text: '---\nrelated: "[[a]] and [B](b.md)"\n---\nbody', type: 'text' }]),
+      ['frontmatter-markdown-links']
+    );
+
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    const reference = references.find((candidate) => candidate.link === 'b.md');
+    assertNonNullable(reference);
+
+    await applyFileChanges({
+      app,
+      changesProvider: [referenceToFileChange(reference, '[B](c.md)')],
+      pathOrFile: CANVAS_PATH,
+      pluginNoticeComponent: null,
+      resourceLockComponent
+    });
+
+    const updatedContent = await readSafe(app, CANVAS_PATH);
+    assertNonNullable(updatedContent);
+    const updated = JSON.parse(updatedContent) as ParsedCanvas;
+    expect(updated.nodes[0]?.text).toContain('[[a]] and [B](c.md)');
   });
 });
