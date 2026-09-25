@@ -63,6 +63,10 @@ describe('preserveFrontmatterFormatting', () => {
       expect(spliceRaw('\n', { title: 'New' })).toBeNull();
     });
 
+    it('should decline a block with no line between its delimiters, the one block that does not end in a newline', () => {
+      expect(preserveFrontmatterFormatting(`${OPENING_DELIMITER}${CLOSING_DELIMITER_AND_BODY}`, { title: 'New' })).toBeNull();
+    });
+
     it('should decline a block whose body is a scalar', () => {
       expect(spliceRaw('just text\n', { title: 'New' })).toBeNull();
     });
@@ -274,6 +278,17 @@ describe('preserveFrontmatterFormatting', () => {
       expect(spliceMutated('a: 1\n', (frontmatter) => {
         frontmatter['added'] = undefined;
       })).toBe('a: 1\n');
+    });
+
+    it('should keep the closing delimiter on its own line when the last key is removed', () => {
+      const note = makeNote('a: 1\nb: 2\n');
+      const frontmatter = parseFrontmatter(note);
+      delete frontmatter['b'];
+      expect(preserveFrontmatterFormatting(note, frontmatter)).toBe(makeNote('a: 1\n'));
+    });
+
+    it('should keep every key on its own line when the former last key moves first', () => {
+      expect(spliceRaw('b: 2\nc: 3\na: 1\n', { a: 1, b: 2, c: 3 })).toBe('a: 1\nb: 2\nc: 3\n');
     });
 
     it('should remove a key together with the comment that introduced it', () => {

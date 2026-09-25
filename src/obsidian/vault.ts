@@ -681,6 +681,8 @@ export async function getOrCreateAbstractFileSafe(params: GetOrCreateAbstractFil
 
   switch (type) {
     case FileSystemType.File: {
+      // `vault.create` does not create missing parent folders; the adapter refuses the write.
+      await createFolderSafe(app, parentFolderPath(path));
       return await app.vault.create(path, '');
     }
     case FileSystemType.Folder: {

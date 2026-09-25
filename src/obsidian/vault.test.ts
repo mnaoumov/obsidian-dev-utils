@@ -766,6 +766,12 @@ describe('getOrCreateAbstractFileSafe', () => {
     expect(result).toBeDefined();
   });
 
+  it('should create the missing parent folders of a new file', async () => {
+    const result = await getOrCreateAbstractFileSafe({ app, path: 'missing/nested/new-file.md', type: FileSystemType.File });
+    expect(result.path).toBe('missing/nested/new-file.md');
+    expect(app.vault.getFolderByPath('missing/nested')).not.toBeNull();
+  });
+
   it('should return existing folder if it exists', async () => {
     const mockFolder = TFolder.create__(mockApp.vault, 'existing-folder');
     mockApp.vault.setVaultAbstractFile__('existing-folder', mockFolder);
