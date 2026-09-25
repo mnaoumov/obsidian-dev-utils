@@ -9,7 +9,9 @@ import type {
   PrismModule,
   PrismTokenObject
 } from '@obsidian-typings/obsidian-public-latest';
+import type { TokenStream } from 'prismjs';
 
+import prismjs from 'prismjs';
 import {
   beforeEach,
   describe,
@@ -48,10 +50,26 @@ const JAVASCRIPT_GRAMMAR: Grammar = { keyword: /\bconst\b/ };
 const FORMAT_OBJECT_PATTERN = /\{[^{}]*\}/;
 
 /**
+ * The real Prism module, which Obsidian also ships, so a grammar can be judged by what it actually highlights.
+ *
+ * The package is CommonJS, so only its default export reaches an ESM import at runtime.
+ */
+const REAL_PRISM: typeof prismjs = prismjs;
+
+/**
+ * A format half that is a JavaScript object whose strings may carry braces, anchored as an `inside` entry is.
+ */
+const QUOTED_FORMAT_OBJECT_PATTERN = /^\{(?:[^{}"]|"(?:\\.|[^"\\])*")*\}/;
+
+/**
  * The grammar `obsidian-email-to-vault` registered before this component existed.
  *
  * Asserting against it is what makes "the shared component leaves a scalar consumer unchanged" a test rather
  * than a claim, so a future change to the default shape cannot land silently.
+ *
+ * The one deliberate difference is that the three delimiters are anchored (`/^\{\{/`, `/^:/`, `/\}\}$/`). For a
+ * scalar placeholder that highlights the same text; it matters only for a structured format, where an
+ * unanchored delimiter matched inside the format half.
  */
 const EMAIL_TO_VAULT_GRAMMAR: Grammar = {
   expression: {
@@ -60,7 +78,7 @@ const EMAIL_TO_VAULT_GRAMMAR: Grammar = {
       /* eslint-disable perfectionist/sort-objects -- Mirrors the order the plugin declared, which Prism treats as behavior. */
       prefix: {
         alias: 'regex',
-        pattern: /\{\{/
+        pattern: /^\{\{/
       },
       token: {
         alias: 'number',
@@ -68,7 +86,7 @@ const EMAIL_TO_VAULT_GRAMMAR: Grammar = {
       },
       formatDelimiter: {
         alias: 'regex',
-        pattern: /:/
+        pattern: /^:/
       },
       format: {
         alias: 'string',
@@ -76,7 +94,7 @@ const EMAIL_TO_VAULT_GRAMMAR: Grammar = {
       },
       suffix: {
         alias: 'regex',
-        pattern: /\}\}/
+        pattern: /\}\}$/
       }
       /* eslint-enable perfectionist/sort-objects -- Mirrors the order the plugin declared, which Prism treats as behavior. */
     },
@@ -89,7 +107,8 @@ const EMAIL_TO_VAULT_GRAMMAR: Grammar = {
  *
  * The plugin spelled its closing delimiter `/}\}/`, leaving the first brace unescaped. That is the same
  * language as `/\}\}/` — an unescaped `}` outside a quantifier is a literal — so the component emits the
- * escaped form and this expectation follows it. The difference is in the pattern's source text only.
+ * escaped form and this expectation follows it. The difference is in the pattern's source text only. The
+ * delimiters are anchored, as in {@link EMAIL_TO_VAULT_GRAMMAR}.
  */
 const ADVANCED_NOTE_COMPOSER_GRAMMAR: Grammar = {
   expression: {
@@ -98,7 +117,7 @@ const ADVANCED_NOTE_COMPOSER_GRAMMAR: Grammar = {
       /* eslint-disable perfectionist/sort-objects -- Mirrors the order the plugin declared, which Prism treats as behavior. */
       prefix: {
         alias: 'regex',
-        pattern: /\{\{/
+        pattern: /^\{\{/
       },
       token: {
         alias: 'number',
@@ -106,7 +125,7 @@ const ADVANCED_NOTE_COMPOSER_GRAMMAR: Grammar = {
       },
       formatDelimiter: {
         alias: 'regex',
-        pattern: /:/
+        pattern: /^:/
       },
       format: {
         alias: 'string',
@@ -114,7 +133,7 @@ const ADVANCED_NOTE_COMPOSER_GRAMMAR: Grammar = {
       },
       suffix: {
         alias: 'regex',
-        pattern: /\}\}/
+        pattern: /\}\}$/
       }
       /* eslint-enable perfectionist/sort-objects -- Mirrors the order the plugin declared, which Prism treats as behavior. */
     },
@@ -242,6 +261,62 @@ describe('TemplatesLanguageComponent', () => {
     });
   });
 
+  describe('extent pattern', () => {
+    it('should drop the anchors of an anchored format half but keep an escaped dollar', async () => {
+      await loadComponent({
+        formatSource: { pattern: /^[a-z]+\$/ },
+        language: TEST_LANGUAGE
+      });
+
+      const grammar = castTo<PlaceholderEntries>(prism.languages[TEST_LANGUAGE]);
+      expect(grammar.expressionWithFormat.pattern.source).toBe(String.raw`\{\{[a-zA-Z0-9_]+:[a-z]+\$\}\}`);
+    });
+
+    it('should drop a trailing anchor of a format half', async () => {
+      await loadComponent({
+        formatSource: { pattern: /[a-z]+$/ },
+        language: TEST_LANGUAGE
+      });
+
+      const grammar = castTo<PlaceholderEntries>(prism.languages[TEST_LANGUAGE]);
+      expect(grammar.expressionWithFormat.pattern.source).toBe(String.raw`\{\{[a-zA-Z0-9_]+:[a-z]+\}\}`);
+    });
+  });
+
+  describe('highlighting through real Prism', () => {
+    beforeEach(() => {
+      loadPrismMock.mockResolvedValue(castTo<PrismModule>(REAL_PRISM));
+    });
+
+    it('should read only the first colon of a structured format as the delimiter', async () => {
+      const tokens = await tokenizeWithStructuredFormat('{{date:{ format: "YYYY" }}}');
+
+      expect(countTokens(tokens, 'formatDelimiter')).toBe(1);
+      expect(getTokenTexts(tokens, 'format')).toEqual(['{ format: "YYYY" }']);
+    });
+
+    it('should leave a placeholder nested in a format string to the javascript grammar', async () => {
+      const tokens = await tokenizeWithStructuredFormat('{{prompt:{ defaultValueTemplate: "{{originalAttachmentFileName}}" }}}');
+
+      expect(countTokens(tokens, 'prefix')).toBe(1);
+      expect(countTokens(tokens, 'suffix')).toBe(1);
+      expect(getTokenTexts(tokens, 'token')).toEqual(['prompt']);
+      expect(getTokenTexts(tokens, 'string')).toEqual(['"{{originalAttachmentFileName}}"']);
+    });
+
+    it('should highlight a scalar format as before', async () => {
+      const component = await loadComponent({ language: TEST_LANGUAGE });
+      const tokens = REAL_PRISM.tokenize('{{date:YYYY-MM-DD}}', castTo<Grammar>(REAL_PRISM.languages[TEST_LANGUAGE]));
+      component.unload();
+
+      expect(getTokenTexts(tokens, 'prefix')).toEqual(['{{']);
+      expect(getTokenTexts(tokens, 'token')).toEqual(['date']);
+      expect(getTokenTexts(tokens, 'formatDelimiter')).toEqual([':']);
+      expect(getTokenTexts(tokens, 'format')).toEqual(['YYYY-MM-DD']);
+      expect(getTokenTexts(tokens, 'suffix')).toEqual(['}}']);
+    });
+  });
+
   describe('extraGrammar', () => {
     it('should merge extra top-level entries into the grammar', async () => {
       await loadComponent({
@@ -268,6 +343,51 @@ describe('TemplatesLanguageComponent', () => {
 });
 
 /**
+ * Counts the tokens of a type anywhere in a token stream, nested ones included.
+ *
+ * @param stream - The token stream.
+ * @param type - The token type.
+ * @returns The count.
+ */
+function countTokens(stream: TokenStream, type: string): number {
+  return getTokenTexts(stream, type).length;
+}
+
+/**
+ * Gets the plain text a token stream covers.
+ *
+ * @param stream - The token stream.
+ * @returns The text.
+ */
+function getText(stream: TokenStream): string {
+  if (typeof stream === 'string') {
+    return stream;
+  }
+
+  return Array.isArray(stream) ? stream.map((item) => getText(item)).join('') : getText(stream.content);
+}
+
+/**
+ * Collects the text of every token of a type anywhere in a token stream, nested ones included.
+ *
+ * @param stream - The token stream.
+ * @param type - The token type.
+ * @returns The texts, in document order.
+ */
+function getTokenTexts(stream: TokenStream, type: string): string[] {
+  if (typeof stream === 'string') {
+    return [];
+  }
+
+  if (Array.isArray(stream)) {
+    return stream.flatMap((item) => getTokenTexts(item, type));
+  }
+
+  const nestedTexts = getTokenTexts(stream.content, type);
+  return stream.type === type ? [getText(stream.content), ...nestedTexts] : nestedTexts;
+}
+
+/**
  * Creates the component and awaits its asynchronous load, so the registration is observable.
  *
  * @param params - The parameters for the component.
@@ -277,4 +397,24 @@ async function loadComponent(params: TemplatesLanguageComponentConstructorParams
   const component = new TemplatesLanguageComponent(params);
   await component.loadWithPromises();
   return component;
+}
+
+/**
+ * Tokenizes a text with a language whose format half is a JavaScript object, through the real Prism.
+ *
+ * @param text - The text.
+ * @returns The token stream.
+ */
+async function tokenizeWithStructuredFormat(text: string): Promise<TokenStream> {
+  const component = await loadComponent({
+    formatSource: (params) => ({
+      alias: 'language-javascript',
+      inside: params.requirePrismLanguage('javascript'),
+      pattern: QUOTED_FORMAT_OBJECT_PATTERN
+    }),
+    language: TEST_LANGUAGE
+  });
+  const tokens = REAL_PRISM.tokenize(text, castTo<Grammar>(REAL_PRISM.languages[TEST_LANGUAGE]));
+  component.unload();
+  return tokens;
 }

@@ -110,8 +110,12 @@ const DEFAULT_TOKEN_PATTERN = /^[a-zA-Z0-9_]+/;
 
 /**
  * The `:` separating a token from its format.
+ *
+ * The three delimiter patterns are anchored because Prism tries every `inside` entry at every position of the
+ * text still unclaimed, not only at its edges. Unanchored, a structured format's own `:` read as a second
+ * delimiter, and a `{{` / `}}` nested in its string read as another placeholder's.
  */
-const FORMAT_DELIMITER_PATTERN = /:/;
+const FORMAT_DELIMITER_PATTERN = /^:/;
 
 /**
  * A whole placeholder, lazily matched so adjacent placeholders do not merge into one.
@@ -119,14 +123,14 @@ const FORMAT_DELIMITER_PATTERN = /:/;
 const PLACEHOLDER_PATTERN = /\{\{.+?\}\}/;
 
 /**
- * The opening `{{`.
+ * The opening `{{`, anchored at the start of the placeholder.
  */
-const PREFIX_PATTERN = /\{\{/;
+const PREFIX_PATTERN = /^\{\{/;
 
 /**
- * The closing `}}`.
+ * The closing `}}`, anchored at the end of the placeholder.
  */
-const SUFFIX_PATTERN = /\}\}/;
+const SUFFIX_PATTERN = /\}\}$/;
 
 /**
  * Registers a Prism language highlighting the `{{token}}` / `{{token:format}}` placeholders of a plugin's
@@ -281,13 +285,30 @@ export class TemplatesLanguageComponent extends SyntaxHighlightingComponent {
 /**
  * Builds a placeholder extent pattern from the parts that sit between the delimiters.
  *
- * A part anchored with a leading `^` — as a pattern meant for a nested `inside` entry is — is spliced in
- * without that anchor, since it lands in the middle of the built pattern rather than at its start.
+ * A part anchored with a leading `^` or a trailing `$` — as a pattern meant for a nested `inside` entry is — is
+ * spliced in without that anchor, since it lands in the middle of the built pattern rather than at its edge.
+ * The delimiters themselves are such parts.
  *
  * @param parts - The patterns between the opening `{{` and the closing `}}`.
  * @returns The pattern.
  */
 function buildPattern(parts: readonly RegExp[]): RegExp {
-  const body = parts.map((part) => part.source.startsWith('^') ? part.source.slice(1) : part.source).join('');
-  return new RegExp(`${PREFIX_PATTERN.source}${body}${SUFFIX_PATTERN.source}`);
+  return new RegExp([PREFIX_PATTERN, ...parts, SUFFIX_PATTERN].map((part) => getUnanchoredSource(part)).join(''));
+}
+
+/**
+ * Gets the source of a pattern without its leading `^` or its trailing unescaped `$`.
+ *
+ * @param pattern - The pattern.
+ * @returns The unanchored source.
+ */
+function getUnanchoredSource(pattern: RegExp): string {
+  let source = pattern.source;
+  if (source.startsWith('^')) {
+    source = source.slice(1);
+  }
+  if (source.endsWith('$') && !source.endsWith(String.raw`\$`)) {
+    source = source.slice(0, -1);
+  }
+  return source;
 }
