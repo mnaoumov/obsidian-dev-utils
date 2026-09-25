@@ -29,6 +29,10 @@ import {
 import { trimEnd } from '../string.ts';
 import { ensureNonNullable } from '../type-guards.ts';
 import { getCaseInsensitiveFileIndex } from './case-insensitive-file-index.ts';
+import {
+  checkPropertyEntryMatches,
+  isPropertyEntry
+} from './property-entry.ts';
 
 /**
  * A file extension for `base` files.
@@ -326,8 +330,19 @@ export interface GetMarkdownFilesParams {
  */
 export interface IsTreatedAsAttachmentParams {
   /**
-   * The extensions that mark a file as an attachment, e.g. `['.excalidraw.md']`. Each entry is normalized before matching: surrounding whitespace is trimmed,
-   * a single leading dot is enforced, and the comparison is case-insensitive. Empty entries are ignored.
+   * The Obsidian app instance, which lets a `property:` entry of {@link attachmentExtensions} read the file's frontmatter from the metadata cache.
+   * Without it, `property:` entries match nothing and only the extension entries are evaluated.
+   */
+  readonly app?: App;
+
+  /**
+   * The entries that mark a file as an attachment, e.g. `['.excalidraw.md', 'property:excalidraw-plugin']`.
+   *
+   * An extension entry is normalized before matching: surrounding whitespace is trimmed, a single leading dot is enforced, and the comparison is
+   * case-insensitive. Empty entries are ignored.
+   *
+   * A `property:name` entry matches a markdown file whose frontmatter has `name`, and `property:name=value` one whose `name` renders as `value` — the
+   * same syntax note priorities use. It is evaluated only when {@link app} is given.
    */
   readonly attachmentExtensions: readonly string[];
 
@@ -351,6 +366,21 @@ export type PathOrFile = string | TFile;
  * A path or a folder.
  */
 export type PathOrFolder = string | TFolder;
+
+/**
+ * Parameters for {@link getCachedFrontmatter}.
+ */
+interface GetCachedFrontmatterParams {
+  /**
+   * The Obsidian App instance.
+   */
+  readonly app: App;
+
+  /**
+   * The path or file whose frontmatter to read.
+   */
+  readonly pathOrFile: PathOrAbstractFile;
+}
 
 /**
  * Parameters for {@link getFileInternal}.
@@ -937,11 +967,17 @@ export function isNote(pathOrFile: null | PathOrAbstractFile): boolean {
  * Obsidian reports such a file's extension as `md`, so a caller that wants to tell a drawing apart from a note has to match the full multi-part extension
  * (`.excalidraw.md`) against the file name. Which extensions count is the caller's configuration, not this library's — only the matching rule is shared.
  *
+ * A drawing can also be recognized by its frontmatter, the way Excalidraw itself recognizes one (`excalidraw-plugin: parsed`), through a
+ * `property:name[=value]` entry. That answer comes from the metadata cache, which can be cold at startup or right after the file is created, so an
+ * uncached file answers "no match" and is treated as a note. That is the conservative side for every current caller: a note is not moved as an
+ * attachment, and it spares its folder from a delete sweep.
+ *
  * @param params - The path or file to classify and the configured attachment extensions.
  * @returns A boolean indicating whether the file should be treated as an attachment.
  */
 export function isTreatedAsAttachment(params: IsTreatedAsAttachmentParams): boolean {
   const {
+    app,
     attachmentExtensions,
     pathOrFile
   } = params;
@@ -951,6 +987,14 @@ export function isTreatedAsAttachment(params: IsTreatedAsAttachmentParams): bool
 
   const lowerCaseName = getName(pathOrFile).toLowerCase();
   return attachmentExtensions.some((extension) => {
+    const trimmedEntry = extension.trim();
+    if (isPropertyEntry(trimmedEntry)) {
+      return !!app && isMarkdownFile(pathOrFile) && checkPropertyEntryMatches({
+        entry: trimmedEntry,
+        frontmatter: getCachedFrontmatter({ app, pathOrFile })
+      });
+    }
+
     // Enforcing a single leading dot is what keeps the match on an extension boundary.
     // A bare `raw.md` would otherwise match `sketch.excalidraw.md`, which is never what a caller means.
     const normalizedExtension = extension.trim().replace(/^\.+/, '').toLowerCase();
@@ -972,6 +1016,11 @@ export function trimMarkdownExtension(file: TAbstractFile): string {
       suffix: `.${MARKDOWN_FILE_EXTENSION}`
     })
     : file.path;
+}
+
+function getCachedFrontmatter(params: GetCachedFrontmatterParams): null | Readonly<Record<string, unknown>> {
+  const file = getAbstractFileOrNull(params);
+  return isFile(file) ? params.app.metadataCache.getFileCache(file)?.frontmatter ?? null : null;
 }
 
 function getFileInternal(params: GetFileInternalParams): null | TAbstractFile {

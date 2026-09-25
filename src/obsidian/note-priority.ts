@@ -19,11 +19,13 @@
  */
 
 import { isValidRegExp } from '../reg-exp.ts';
+import {
+  checkPropertyEntryMatches,
+  isPropertyEntry
+} from './property-entry.ts';
 
-const PROPERTY_PREFIX = 'property:';
 const REG_EXP_DELIMITER = '/';
 const EXTENSION_PREFIX = '.';
-const PROPERTY_VALUE_SEPARATOR = '=';
 
 /**
  * Why the priority list did not settle which note owns an attachment.
@@ -242,8 +244,8 @@ function checkEntryMatches(entry: string, params: FindNotePriorityRankParams): b
     return false;
   }
 
-  if (entry.startsWith(PROPERTY_PREFIX)) {
-    return checkPropertyMatches(entry.slice(PROPERTY_PREFIX.length), params.frontmatter);
+  if (isPropertyEntry(entry)) {
+    return checkPropertyEntryMatches({ entry, frontmatter: params.frontmatter });
   }
 
   if (entry.length > 1 && entry.startsWith(REG_EXP_DELIMITER) && entry.endsWith(REG_EXP_DELIMITER)) {
@@ -258,26 +260,4 @@ function checkEntryMatches(entry: string, params: FindNotePriorityRankParams): b
 
   const prefix = entry.endsWith('/') ? entry : `${entry}/`;
   return params.notePath === entry || params.notePath.startsWith(prefix);
-}
-
-function checkPropertyMatches(specifier: string, frontmatter: null | Readonly<Record<string, unknown>>): boolean {
-  if (!frontmatter) {
-    return false;
-  }
-
-  const separatorIndex = specifier.indexOf(PROPERTY_VALUE_SEPARATOR);
-  if (separatorIndex === -1) {
-    return Object.hasOwn(frontmatter, specifier);
-  }
-
-  const propertyName = specifier.slice(0, separatorIndex);
-  const expectedValue = specifier.slice(separatorIndex + 1);
-  if (!Object.hasOwn(frontmatter, propertyName)) {
-    return false;
-  }
-
-  const actualValue = frontmatter[propertyName];
-  // Frontmatter values are whatever YAML produced, so compare their rendering rather than requiring a
-  // string. An array matches when any of its entries does, which is how tag-like properties read.
-  return Array.isArray(actualValue) ? actualValue.some((item) => String(item) === expectedValue) : String(actualValue) === expectedValue;
 }

@@ -14,7 +14,8 @@ import {
   beforeEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import { noopAsync } from '../function.ts';
@@ -409,6 +410,70 @@ describe('isTreatedAsAttachment', () => {
 
   it('should return false for null', () => {
     expect(isTreatedAsAttachment({ attachmentExtensions: ['.excalidraw.md'], pathOrFile: null })).toBe(false);
+  });
+
+  describe('property entries', () => {
+    const DRAWING_PATH = 'Docs/drawing.md';
+    const NOTE_PATH = 'Docs/note.md';
+
+    beforeEach(async () => {
+      app = App.createConfigured__({
+        files: {
+          'Docs/data.txt': '',
+          [DRAWING_PATH]: '---\nexcalidraw-plugin: parsed\n---\n',
+          [NOTE_PATH]: '# Note\n'
+        }
+      }).asOriginalType__();
+      await noopAsync();
+    });
+
+    it('should match a markdown file that has the property', () => {
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: DRAWING_PATH })).toBe(true);
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: [' property:excalidraw-plugin '], pathOrFile: getFile({ app, pathOrFile: DRAWING_PATH }) }))
+        .toBe(true);
+    });
+
+    it('should not match a markdown file that lacks the property', () => {
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: NOTE_PATH })).toBe(false);
+    });
+
+    it('should compare a property value when one is given', () => {
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin=parsed'], pathOrFile: DRAWING_PATH })).toBe(true);
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin=raw'], pathOrFile: DRAWING_PATH })).toBe(false);
+    });
+
+    it('should not evaluate a property entry for a non-markdown file', () => {
+      const getFileCacheSpy = vi.spyOn(app.metadataCache, 'getFileCache');
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: 'Docs/data.txt' })).toBe(false);
+      expect(getFileCacheSpy).not.toHaveBeenCalled();
+    });
+
+    it('should not match a property entry when no app is given', () => {
+      expect(isTreatedAsAttachment({ attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: DRAWING_PATH })).toBe(false);
+    });
+
+    it('should not match a property entry when the metadata cache is cold', () => {
+      vi.spyOn(app.metadataCache, 'getFileCache').mockReturnValue(null);
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: DRAWING_PATH })).toBe(false);
+    });
+
+    it('should not match a property entry for a path that does not exist', () => {
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: 'Docs/missing.md' })).toBe(false);
+    });
+
+    it('should never read a property entry as an extension', () => {
+      expect(isTreatedAsAttachment({ attachmentExtensions: ['property:md'], pathOrFile: 'Docs/x.property:md' })).toBe(false);
+    });
+
+    it('should keep matching extension entries alongside property entries', () => {
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin', '.excalidraw.md'], pathOrFile: 'Docs/sketch.excalidraw.md' }))
+        .toBe(true);
+    });
+
+    it('should not match a folder', () => {
+      const folder = app.vault.getFolderByPath('Docs');
+      expect(isTreatedAsAttachment({ app, attachmentExtensions: ['property:excalidraw-plugin'], pathOrFile: folder })).toBe(false);
+    });
   });
 });
 
