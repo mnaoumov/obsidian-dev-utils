@@ -1,5 +1,56 @@
 # CHANGELOG
 
+## 107.0.0
+
+- feat(obsidian)!: remove the deprecated fixFrontmatterMarkdownLinks
+- feat(obsidian): deprecate fixFrontmatterMarkdownLinks
+- test(path-settings): wait for the typed value, not for any saved record
+- fix(obsidian): wait for the whole component tree before a layout-ready handler
+- fix(obsidian): locate an empty link label relative to its own node
+- fix(obsidian): anchor the templates language delimiters
+- test(frontmatter-formatting): give the differential fuzz room past the 5 s default
+- fix(obsidian): refuse a code block that appears twice in the note
+- feat(markdown): make the file-explorer reveal awaitable
+- chore(deps): move obsidian-test-mocks to ^7.0.0
+- fix(canvas): mirror only the multi-value links the frontmatter plugin adds
+- chore(deps)!: move obsidian-integration-testing to ^17.0.1, peer range included
+- fix(transformers): omit a key whose transformed value is undefined
+- fix(gate): skip a check whose script the project does not define
+- fix(metadata-cache): stop getBacklinksForFileSafe retrying forever on a canvas
+- fix(vault-delete): visit every child of a folder in deleteIfNotUsed
+- fix(styles): make the multiple-dropdown and loop selectors match their elements
+- feat(metadata-cache): answer per-file backlink lookups from a backlink index
+- feat(components): add ReleaseNotesComponent that names its plugin
+- fix(link): key a backlink snapshot's edit by the provider it was built with
+- feat(eslint-rules): report a {@link} whose target no longer resolves
+- fix(plugin-settings): write the default record when no data.json exists
+- fix(demo-vault-coverage): read readonly interface property signatures
+- fix(markdown-code-block-processor): stop getCodeBlockMarkdownInfo saving the note
+- test: move the unit suite onto obsidian-test-mocks 6.1.0
+- feat(gate): refuse a package-lock entry with no resolved or integrity
+- fix(deps): restore the lockfile's missing resolved and integrity fields
+- fix(demo-vault-buttons): name a caption two buttons share, not a button never rendered
+- feat(commitlint): refuse a commit message matching the forbidden-patterns list
+- fix(esbuild): make `using` work on engines without Symbol.dispose
+- fix(error): keep the error message on engines whose stack carries no header line
+- feat(components): add CorePluginToggleComponent for core plugin enable/disable edges
+- feat(eslint)!: fail lint on a warning
+- feat(vitest-config): refuse to run integration tests against a stale plugin build
+- fix(eslint-config): let a consumer's no-console setting reach the console check
+- feat(exec): say when a child crashed instead of reporting an ordinary exit code
+- feat(nano-staged-config): partition spellcheck so it never reads a file being rewritten
+- fix(loop): keep the progress notice on screen for the whole run
+- feat(vitest-config): give desktop-performance a 600 s eval cap and lint perf suites against it
+- fix(demo-vault): count only the code buttons a note renders, and add the options a docs vault needs
+- feat(obsidian): add normalizeLinkName, the one definition of when two link names match
+- fix(markdownlint): stop MD025 counting a front matter title property as a heading
+- feat(version): refuse a changelog section matching the maintainer's unpublished forbidden patterns
+- fix(deps): raise eslint-plugin-unicorn to 76, whose early-exit fixers stop emitting a tab
+- docs: fix two {@link} tags left behind by renames
+- fix(demo-vault-coverage): count function-typed property signatures as methods
+- fix(esbuild)!: stop resolving dependencies to their Node builds in plugin bundles
+- docs(metadata-cache): warn that the read-named helpers save dirty editor views
+
 ## 106.0.0
 
 - feat(deps)!: move the obsidian-integration-testing peer range to ^16.0.0
