@@ -19,6 +19,15 @@ import {
 import type { GenericObject } from '../type-guards.ts';
 
 /**
+ * What the `afterReveal` case reports back: the order the reveal and the hook ran in, and whether the
+ * focus the hook moved was still where it put it once the explorer had had its frames.
+ */
+interface AfterRevealResult {
+  readonly events: readonly string[];
+  readonly isLeafStillActive: boolean;
+}
+
+/**
  * What every folder-link case reports back: what the click opened, and what it highlighted.
  */
 interface ClickResult {
@@ -556,6 +565,85 @@ describe('markdown', () => {
       });
 
       expect(result.revealedPaths).toStrictEqual(['rif-file.md']);
+    });
+
+    it('should call afterReveal only once the explorer has finished revealing, so focus moved there sticks', async () => {
+      const result = await evalInObsidian<FolderNoteInput, AfterRevealResult>({
+        async callback({
+          app,
+          folderPath,
+          lib: {
+            ensureNonNullable,
+            invokeAsyncSafely,
+            renderInternalLink,
+            requestAnimationFrameAsync,
+            waitUntil
+          }
+        }) {
+          const events: string[] = [];
+          const fileExplorer = ensureNonNullable(app.internalPlugins.getEnabledPluginById('file-explorer'));
+          // Typed `void`, returns a promise at runtime.
+          const originalRevealInFolder: (this: unknown, abstractFile: TAbstractFile) => unknown = fileExplorer.revealInFolder;
+          function restore(): void {
+            fileExplorer.revealInFolder = originalRevealInFolder;
+          }
+          fileExplorer.revealInFolder = (abstractFile: TAbstractFile): void => {
+            events.push('reveal started');
+            const revealResult = originalRevealInFolder.call(fileExplorer, abstractFile);
+            invokeAsyncSafely(async () => {
+              await revealResult;
+              events.push('reveal settled');
+            });
+          };
+
+          const file = await app.vault.create(`${folderPath}.md`, '');
+          const leaf = app.workspace.getLeaf('tab');
+          await leaf.openFile(file);
+
+          try {
+            const aEl = await renderInternalLink({
+              afterReveal: () => {
+                events.push('afterReveal');
+                app.workspace.setActiveLeaf(leaf, { focus: true });
+              },
+              app,
+              pathOrAbstractFile: file,
+              shouldRevealFile: true
+            });
+            document.body.append(aEl);
+            aEl.click();
+            await waitUntil({
+              message: 'afterReveal should have been called',
+              predicate: () => events.includes('afterReveal')
+            });
+            aEl.detach();
+
+            // Give the explorer every chance to take the focus back.
+            for (let frame = 0; frame < 3; frame++) {
+              await requestAnimationFrameAsync();
+            }
+
+            return {
+              events,
+              // eslint-disable-next-line @typescript-eslint/no-deprecated -- `activeLeaf` is exactly what `setActiveLeaf` and the explorer fight over.
+              isLeafStillActive: app.workspace.activeLeaf === leaf
+            };
+          } finally {
+            restore();
+            leaf.detach();
+            // eslint-disable-next-line obsidianmd/prefer-file-manager-trash-file -- Permanent cleanup in tests.
+            await app.vault.delete(file);
+          }
+        },
+        input: {
+          folderPath: 'rif-after-reveal',
+          nothingOpensTimeoutInMilliseconds: NOTHING_OPENS_TIMEOUT_IN_MILLISECONDS,
+          shouldHideFolderNote: false
+        }
+      });
+
+      expect(result.events).toStrictEqual(['reveal started', 'reveal settled', 'afterReveal']);
+      expect(result.isLeafStillActive).toBe(true);
     });
   });
 });
