@@ -22,7 +22,6 @@ import {
   parseLinktext
 } from 'obsidian';
 
-import type { GenericObject } from '../type-guards.ts';
 import type { MaybeReturn } from '../type.ts';
 import type { FileChange } from './file-change.ts';
 import type {
@@ -1309,26 +1308,6 @@ export interface UpdateLinksInFileParams extends ProcessOptions {
 }
 
 /**
- * Parameters for {@link fixFrontmatterMarkdownLinksImpl}.
- */
-interface FixFrontmatterMarkdownLinksImplParams {
-  /**
-   * The metadata cache to fix the frontmatter markdown links in.
-   */
-  readonly cache: CachedMetadata;
-
-  /**
-   * The key path of the current value within the frontmatter.
-   */
-  readonly key: string;
-
-  /**
-   * The current frontmatter value to inspect.
-   */
-  readonly value: unknown;
-}
-
-/**
  * Params for {@link generateLinkText}.
  */
 interface GenerateLinkTextParams {
@@ -1945,24 +1924,6 @@ export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
 }
 
 /**
- * Fixes the frontmatter markdown links in the provided metadata cache.
- *
- * Obsidian's own frontmatter reader already caches a whole-value internal markdown link, and where the two
- * disagree this helper is the wrong one: it takes the unescaped alias as `displayText` rather than the raw
- * bracket text, and it accepts a `<Note: x.md>` target Obsidian rejects as non-internal.
- *
- * @param cache - The metadata cache to fix the frontmatter markdown links in.
- * @returns Whether the frontmatter markdown links were fixed.
- * @deprecated Obsidian caches these links itself. For several links in one value, use
- * `parseFrontmatterLinks(frontmatter).multiValueFrontmatterLinks` from `obsidian-dev-utils/obsidian/parse-link`.
- * Will be removed in the next major version.
- */
-// eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was fixed.
-export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
-  return fixFrontmatterMarkdownLinksImpl({ cache, key: '', value: cache.frontmatter });
-}
-
-/**
  * Generates a markdown link based on the provided parameters.
  *
  * @param params - The parameters for generating the markdown link.
@@ -2426,54 +2387,6 @@ export async function updateLinksInFile(params: UpdateLinksInFileParams): Promis
 
 function defaultLinkIdentityKeyProvider(link: Reference): string {
   return JSON.stringify(link);
-}
-
-// eslint-disable-next-line unicorn/consistent-boolean-name -- Mirrors the exported function it implements.
-function fixFrontmatterMarkdownLinksImpl(params: FixFrontmatterMarkdownLinksImplParams): boolean {
-  const {
-    cache,
-    key,
-    value
-  } = params;
-  if (typeof value === 'string') {
-    const parseLinkResult = parseLink(value);
-    if (!parseLinkResult || parseLinkResult.isWikilink || parseLinkResult.isExternal) {
-      return false;
-    }
-
-    cache.frontmatterLinks ??= [];
-    let link = cache.frontmatterLinks.find((frontmatterLink) => frontmatterLink.key === key);
-
-    if (!link) {
-      link = {
-        key,
-        link: '',
-        original: ''
-      };
-      cache.frontmatterLinks.push(link);
-    }
-
-    link.link = parseLinkResult.url;
-    link.original = value;
-    if (parseLinkResult.alias !== undefined) {
-      link.displayText = parseLinkResult.alias;
-    }
-
-    return true;
-  }
-
-  if (typeof value !== 'object' || value === null) {
-    return false;
-  }
-
-  let hasFrontmatterLinks = false;
-
-  for (const [childKey, childValue] of Object.entries(value as GenericObject)) {
-    const hasChildFrontmatterLinks = fixFrontmatterMarkdownLinksImpl({ cache, key: key ? `${key}.${childKey}` : childKey, value: childValue });
-    hasFrontmatterLinks ||= hasChildFrontmatterLinks;
-  }
-
-  return hasFrontmatterLinks;
 }
 
 function generateLinkText(params: GenerateLinkTextParams): string {
