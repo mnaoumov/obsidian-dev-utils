@@ -44,6 +44,7 @@ import {
 import { normalizeOptionalProperties } from '../object-utils.ts';
 import { isUrl } from '../url.ts';
 import { MonkeyAroundComponent } from './components/monkey-around-component.ts';
+import { revealInFileExplorer } from './file-explorer.ts';
 import {
   getAbstractFileOrNull,
   getPath,
@@ -238,6 +239,16 @@ export interface RenderInternalLinkFolderNoteOptions {
  * Parameters for {@link renderInternalLink}.
  */
 export interface RenderInternalLinkParams {
+  /**
+   * Called after a click has revealed the link's destination in the file explorer, once the explorer has
+   * finished taking the focus for it — so this is where a caller moves the focus somewhere else.
+   *
+   * Awaited, and called only for a click that reveals: always for a folder link, and for a file link only
+   * with {@link RenderInternalLinkParams.shouldRevealFile} and a destination that exists. With the file
+   * explorer disabled it is still called, right away, since there is then nothing to wait for.
+   */
+  readonly afterReveal?: () => Promise<void> | void;
+
   /**
    * The Obsidian app instance.
    */
@@ -541,11 +552,20 @@ export async function renderExternalLink(params: RenderExternalLinkParams): Prom
  */
 export async function renderInternalLink(params: RenderInternalLinkParams): Promise<HTMLAnchorElement> {
   const {
+    afterReveal,
     app,
     folderNote,
     pathOrAbstractFile,
     shouldRevealFile
   } = params;
+
+  // A DOM listener cannot await, so the reveal, and the hook ordered after it, run detached.
+  function reveal(abstractFileToReveal: TAbstractFile): void {
+    invokeAsyncSafely(async () => {
+      await revealInFileExplorer({ abstractFile: abstractFileToReveal, app });
+      await afterReveal?.();
+    });
+  }
   const abstractFile = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
   const path = getPath(app, pathOrAbstractFile);
   const displayText = params.displayText ?? path;
@@ -555,7 +575,7 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
         $event.preventDefault();
         const config = resolveFolderNoteConfig({ app, ...folderNote });
         const folderNoteFile = resolveFolderNote({ app, config, folder: abstractFile });
-        revealInFileExplorer(app, folderNoteFile && !config.isHidden ? folderNoteFile : abstractFile);
+        reveal(folderNoteFile && !config.isHidden ? folderNoteFile : abstractFile);
         if (folderNoteFile) {
           // A DOM listener cannot await, and the open has to outlive this handler: it settles first, for
           // the click that lands right as an operation finishes writing.
@@ -583,7 +603,7 @@ export async function renderInternalLink(params: RenderInternalLinkParams): Prom
       // one CREATES the note it names.
       const file = getAbstractFileOrNull({ app, pathOrFile: pathOrAbstractFile });
       if (isFile(file)) {
-        revealInFileExplorer(app, file);
+        reveal(file);
       }
     });
   }
@@ -619,16 +639,6 @@ function addCopyMenuItem(menu: Menu, targetEl: HTMLElement): void {
 async function openAfterSettling(app: App, file: TFile): Promise<void> {
   await sleep({ milliseconds: DELAY_BEFORE_OPEN_IN_MILLISECONDS });
   await app.workspace.getLeaf().openFile(file, { active: true });
-}
-
-/**
- * Highlights a file or folder in the file explorer, when that core plugin is enabled.
- *
- * @param app - The Obsidian app instance.
- * @param abstractFile - The file or folder to reveal.
- */
-function revealInFileExplorer(app: App, abstractFile: TAbstractFile): void {
-  app.internalPlugins.getEnabledPluginById(InternalPluginName.FileExplorer)?.revealInFolder(abstractFile);
 }
 
 /* v8 ignore stop */
