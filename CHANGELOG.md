@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 107.1.0
+
+- feat(obsidian): match property entries in isTreatedAsAttachment
+- feat(commitlint): spellcheck the commit header before it can reach a changelog
+- test(obsidian): assert the loop progress notice duration directly
+
 ## 107.0.0
 
 - feat(obsidian)!: remove the deprecated fixFrontmatterMarkdownLinks
