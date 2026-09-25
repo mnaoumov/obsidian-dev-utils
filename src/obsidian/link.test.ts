@@ -56,6 +56,7 @@ import {
   editLinks,
   editLinksInContent,
   extractLinkFile,
+  // eslint-disable-next-line import-x/no-deprecated -- The deprecated function is still tested until it is removed.
   fixFrontmatterMarkdownLinks,
   generateMarkdownLink,
   generateRawMarkdownLink,
@@ -401,6 +402,7 @@ describe('hasLeadingSlash', () => {
   });
 });
 
+/* eslint-disable @typescript-eslint/no-deprecated, import-x/no-deprecated -- The deprecated `fixFrontmatterMarkdownLinks` is the subject of this suite until it is removed. */
 describe('fixFrontmatterMarkdownLinks', () => {
   describe('should detect a markdown link in frontmatter string and add it to frontmatterLinks', () => {
     const cache: CachedMetadata = castTo<CachedMetadata>({
@@ -659,6 +661,7 @@ describe('fixFrontmatterMarkdownLinks', () => {
     expect(wereLinksFixed).toBe(false);
   });
 });
+/* eslint-enable @typescript-eslint/no-deprecated, import-x/no-deprecated -- End of the deprecated `fixFrontmatterMarkdownLinks` suite. */
 
 describe('generateRawMarkdownLink (additional edge cases)', () => {
   describe('should generate a wikilink with isEmbed false explicitly', () => {
