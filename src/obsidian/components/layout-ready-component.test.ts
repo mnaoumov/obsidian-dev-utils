@@ -16,6 +16,7 @@ import {
 import { noop } from '../../function.ts';
 import { strictProxy } from '../../strict-proxy.ts';
 import { AllWindowsEventComponent } from './all-windows-event-component.ts';
+import { ComponentEx } from './component-ex.ts';
 import {
   CallbackLayoutReadyComponent,
   LayoutReadyComponent
@@ -278,6 +279,50 @@ describe('LayoutReadyComponent', () => {
     // The resumed body unwinds at addChild with a SilentError, so the registration never happens and no
     // unhandled async error is emitted — the shared setup fails the test if one were.
     expect(order).toEqual(['started', 'resumed']);
+    vi.useRealTimers();
+  });
+
+  it('should wait for a sibling still loading under the same parent (enabled after layout is ready)', async () => {
+    vi.useFakeTimers();
+    const { app, triggerLayoutReady } = createMockApp();
+    let openLoadGate!: () => void;
+    const loadGate = new Promise<void>((resolve) => {
+      openLoadGate = resolve;
+    });
+
+    // Models the plugin's settings component: its async load reads `data.json`, and until it settles every
+    // setting reads as its default.
+    class SettingsLikeComponent extends ComponentEx {
+      public value = 'default';
+
+      public override async onloadAsync(): Promise<void> {
+        await loadGate;
+        this.value = 'stored';
+      }
+    }
+
+    // Children added to an already-loaded parent, as `PluginBase` adds them to its wrapper: each starts loading
+    // at once, so the layout-ready child is live while its sibling is still reading.
+    const parent = new ComponentEx();
+    parent.load();
+    const settingsComponent = parent.addChild(new SettingsLikeComponent());
+    const observedValues: string[] = [];
+    parent.addChild(
+      new CallbackLayoutReadyComponent(app, () => {
+        observedValues.push(settingsComponent.value);
+      })
+    );
+
+    // Layout-ready fires right after the load, as it does for a plugin enabled once the layout is up.
+    triggerLayoutReady();
+    await vi.runAllTimersAsync();
+
+    expect(observedValues).toEqual([]);
+
+    openLoadGate();
+    await vi.runAllTimersAsync();
+
+    expect(observedValues).toEqual(['stored']);
     vi.useRealTimers();
   });
 

@@ -34,7 +34,7 @@ export class LayoutReadyComponent extends ComponentEx {
           return;
         }
 
-        const inFlightLoadPromise = this.getInFlightLoadPromise();
+        const inFlightLoadPromise = this.getInFlightAncestryLoadPromise();
         if (!inFlightLoadPromise) {
           // A failed load (e.g. a synchronously-throwing child, or an async load that already settled with an
           // error) leaves no in-flight promise but a recorded failure. Skip `onLayoutReady` — a failed load is
@@ -45,10 +45,12 @@ export class LayoutReadyComponent extends ComponentEx {
           return;
         }
 
-        // Loaded after the layout was already ready: `onload` has run but the async load (`onloadAsync` and
-        // children) may still be in flight. Wait for it before running `onLayoutReady`, otherwise the handler
-        // races the load and can observe half-initialized state (e.g. a startup script that has not finished
-        // loading yet). Skip if the component was unloaded during the wait, or if the load ultimately failed.
+        // Loaded after the layout was already ready: `onload` has run but the async load may still be in flight —
+        // this component's own (`onloadAsync` and children) and, just as often, a SIBLING's. The usual sibling is
+        // the plugin's settings component, still reading `data.json`, so a handler that ran now would read every
+        // setting as its default. That is the path a runtime enable, an update and a lazy plugin loader all take.
+        // So wait for the load of every `ComponentEx` ancestor, which under `PluginBase` is the whole plugin.
+        // Skip if the component was unloaded during the wait, or if its own load ultimately failed.
         invokeAsyncSafely(async () => {
           await inFlightLoadPromise;
           if (this._loaded && !this.hasLoadErrors()) {

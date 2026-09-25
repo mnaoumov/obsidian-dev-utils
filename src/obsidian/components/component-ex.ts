@@ -29,6 +29,7 @@ export class ComponentEx extends Component implements Disposable {
   private hasBeenLoaded = false;
   private loadErrors: Error[] = [];
   private loadPromise: null | Promise<void> = null;
+  private parentComponent: ComponentEx | null = null;
 
   /**
    * Adds a child component.
@@ -55,6 +56,9 @@ export class ComponentEx extends Component implements Disposable {
 
     this._children.push(component);
     this.childrenSet.add(component);
+    if (component instanceof ComponentEx) {
+      component.parentComponent = this;
+    }
 
     if (this._loaded) {
       this.appendEagerLoadStep(this.extractLoadPromisable(component));
@@ -175,6 +179,9 @@ export class ComponentEx extends Component implements Disposable {
   public override removeChild<TComponent extends Component>(component: TComponent): TComponent {
     super.removeChild(component);
     this.childrenSet.delete(component);
+    if (component instanceof ComponentEx && component.parentComponent === this) {
+      component.parentComponent = null;
+    }
     return component;
   }
 
@@ -214,13 +221,37 @@ export class ComponentEx extends Component implements Disposable {
   }
 
   /**
+   * Returns a {@link Promise} that settles once neither this component nor any {@link ComponentEx} ancestor has a load
+   * in flight, or `null` when none of them has one right now.
+   *
+   * {@link getInFlightLoadPromise} covers this component's OWN load only. A sibling this component depends on — most
+   * often the owning plugin's settings component, which reads `data.json` asynchronously — is outside it, but it is
+   * inside the load of a shared ancestor. Waiting for every ancestor therefore waits for the whole tree the component
+   * was loaded as part of: under `PluginBase` the chain ends at the plugin's universal wrapper, whose load covers the
+   * dependency gate, the feature surface and `onloadImpl`.
+   *
+   * The chain is followed through {@link ComponentEx} parents only. A plain {@link Component} anywhere between this
+   * component and an ancestor ends it, because a plain component records no parent and exposes no load promise.
+   *
+   * Never await this from inside a load step of one of those ancestors: the ancestor's load would then be waiting for
+   * itself. It is meant for work scheduled OUTSIDE the load, such as a layout-ready handler.
+   *
+   * @returns The promise, or `null` if nothing in the ancestry is loading.
+   */
+  protected getInFlightAncestryLoadPromise(): null | Promise<void> {
+    return this.findInFlightAncestryLoadPromise() ? this.waitForAncestryLoad() : null;
+  }
+
+  /**
    * Returns the component's in-flight load {@link Promise} (its {@link onloadAsync} plus children), or `null` when
    * nothing is loading — either the component loaded fully synchronously or its async load has already settled.
    *
    * Lets a caller scheduled while the component is still loading await the async load tail before acting, instead of
-   * racing it. The motivating case is a layout-ready handler (see `LayoutReadyComponent`) that fires because the
-   * component was loaded after the workspace layout was already ready: {@link Component.onload} has run (so `_loaded`
-   * is set) but {@link onloadAsync} may not have finished.
+   * racing it: {@link Component.onload} has run (so `_loaded` is set) but {@link onloadAsync} may not have finished.
+   *
+   * It covers this component's OWN load only. A caller that also depends on a sibling's state — a layout-ready handler
+   * reading settings is the common one — wants {@link getInFlightAncestryLoadPromise}, which `LayoutReadyComponent`
+   * uses.
    *
    * @returns The in-flight load promise, or `null` if no load is in flight.
    */
@@ -347,6 +378,10 @@ export class ComponentEx extends Component implements Disposable {
     return component instanceof ComponentEx ? component.loadWithPromises() : component.load() as Promisable<void>;
   }
 
+  private findInFlightAncestryLoadPromise(): null | Promise<void> {
+    return this.loadPromise ?? this.parentComponent?.findInFlightAncestryLoadPromise() ?? null;
+  }
+
   private resetLoadState(): void {
     this.loadErrors = [];
     this.loadPromise = null;
@@ -372,5 +407,19 @@ export class ComponentEx extends Component implements Disposable {
       }
     });
     this.loadPromise = loadPromiseWithReset;
+  }
+
+  /**
+   * Awaits in-flight loads in the ancestry until none is left.
+   *
+   * Looped rather than awaited once, because an ancestor's load can grow while it is being awaited: a child added
+   * to an already-loaded component appends its async tail to that component's load promise.
+   */
+  private async waitForAncestryLoad(): Promise<void> {
+    let loadPromise = this.findInFlightAncestryLoadPromise();
+    while (loadPromise) {
+      await loadPromise;
+      loadPromise = this.findInFlightAncestryLoadPromise();
+    }
   }
 }
