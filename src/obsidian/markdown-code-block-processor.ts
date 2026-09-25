@@ -492,7 +492,8 @@ function findCodeBlockMarkdownInfo(params: FindCodeBlockMarkdownInfoParams): Cod
     }
 
     if (markdownInfo) {
-      return markdownInfo;
+      // A second identical block: the element cannot say which one it was rendered from.
+      return null;
     }
 
     markdownInfo = createMarkdownInfoFromMatch({
