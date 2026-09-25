@@ -1020,3 +1020,30 @@ describe('parseFrontmatterLinks', () => {
     expect(result.frontmatterExternalLinks).toHaveLength(0);
   });
 });
+
+describe('parseLinks empty-label markdown links', () => {
+  const NOTE_PREFIX = '---\ntitle: note\n---\n\nSome text before the link.\n\n';
+  // The first url makes `decodeURIComponent` throw on its bare `%`; the second decodes `%20` if the angle brackets are missed.
+  const URLS = ['Notion%20export/100% done.png', 'Notion%20export/page 1.png'];
+  const cases = URLS.flatMap((url) =>
+    ['', '!'].flatMap((embedPrefix) =>
+      ['', NOTE_PREFIX].map((prefix) => ({
+        embedPrefix,
+        prefix,
+        url
+      }))
+    )
+  );
+
+  it.each(cases)('should keep the url of $embedPrefix[](<$url>) at offset $prefix.length', ({ embedPrefix, prefix, url }) => {
+    const raw = `${embedPrefix}[](<${url}>)`;
+    const [result] = parseLinks(`${prefix}${raw} and after.`);
+    assertNonNullable(result);
+    expect(result.raw).toBe(raw);
+    expect(result.startOffset).toBe(prefix.length);
+    expect(result.isEmbed).toBe(embedPrefix === '!');
+    expect(result.hasAngleBrackets).toBe(true);
+    expect(result.url).toBe(url);
+    expect(result.alias).toBeUndefined();
+  });
+});

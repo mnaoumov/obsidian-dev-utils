@@ -710,12 +710,14 @@ function parseLinkNode(node: Link, $string: string): ParseLinkResult {
   const LINK_ALIAS_SUFFIX = '](';
   const LINK_SUFFIX = ')';
   const raw = getRawLink(node, $string);
-  // eslint-disable-next-line unicorn/better-dom-traversing -- `node` is an mdast node, not a DOM node. It has no `firstElementChild`; the rule matches the `.children[0]` shape without checking what it is on.
-  const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? 1;
-  const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? 1;
   const position = ensureNonNullable(node.position);
   const nodeEndOffset = ensureNonNullable(position.end.offset);
   const nodeStartOffset = ensureNonNullable(position.start.offset);
+  // An empty label (`[](...)`) has no children, so it starts and ends just after the node's own `[`. An embed's `!` is outside the node, since `parseLinks` masks it before parsing.
+  const emptyAliasOffset = nodeStartOffset + 1;
+  // eslint-disable-next-line unicorn/better-dom-traversing -- `node` is an mdast node, not a DOM node. It has no `firstElementChild`; the rule matches the `.children[0]` shape without checking what it is on.
+  const aliasNodeStartOffset = node.children[0]?.position?.start.offset ?? emptyAliasOffset;
+  const aliasNodeEndOffset = node.children.at(-1)?.position?.end.offset ?? emptyAliasOffset;
   const rawUrl = $string.slice(aliasNodeEndOffset + LINK_ALIAS_SUFFIX.length, nodeEndOffset - LINK_SUFFIX.length);
   const hasAngleBrackets = hasAngleBracketsInLink({
     raw,
