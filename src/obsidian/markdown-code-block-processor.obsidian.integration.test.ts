@@ -26,6 +26,12 @@ interface DirtyEditorResult {
   readonly startLine: null | number;
 }
 
+interface DuplicateCodeBlockResult {
+  readonly diskContent: string;
+  readonly isLocated: boolean;
+  readonly replaceErrorMessages: string[];
+}
+
 interface ReadNoteContent {
   content: string;
 }
@@ -122,6 +128,66 @@ describe('markdown-code-block-processor', () => {
     // Located in the editor's text, where the unsaved line moved the block down by one.
     expect(result.editorContent).toBe(`added line\n${savedContent}`);
     expect(result.startLine).toBe(3);
+  });
+
+  it('should not identify a code block that appears twice, and refuse to write to either copy', async () => {
+    const noteContent = `${dedent`
+      # Note
+
+      \`\`\`js
+      console.log(1);
+      \`\`\`
+
+      \`\`\`js
+      console.log(1);
+      \`\`\`
+    `}\n`;
+    const result = await evalInObsidian({
+      async callback({ app, lib: { castTo, getCodeBlockMarkdownInfo, replaceCodeBlock }, noteContent: content }): Promise<DuplicateCodeBlockResult> {
+        const notePath = 'code-block-duplicate.md';
+        await app.vault.create(notePath, content);
+        try {
+          const params = {
+            app,
+            context: castTo<Parameters<typeof getCodeBlockMarkdownInfo>[0]['context']>({ sourcePath: notePath }),
+            el: createDiv({ cls: 'block-language-js' }),
+            source: 'console.log(1);'
+          };
+          const markdownInfo = await getCodeBlockMarkdownInfo(params);
+
+          const replaceErrorMessages: string[] = [];
+          try {
+            await replaceCodeBlock({
+              ...params,
+              codeBlockProvider: '```js\nconsole.log(2);\n```',
+              resourceLockComponent: null
+            });
+          } catch (error) {
+            // The write runs under a timeout wrapper, so the refusal arrives as a cause.
+            let current: unknown = error;
+            while (current instanceof Error) {
+              replaceErrorMessages.push(current.message);
+              current = current.cause;
+            }
+          }
+
+          return {
+            diskContent: await app.vault.adapter.read(notePath),
+            isLocated: markdownInfo !== null,
+            replaceErrorMessages
+          };
+        } finally {
+          if (await app.vault.adapter.exists(notePath)) {
+            await app.vault.adapter.trashLocal(notePath);
+          }
+        }
+      },
+      input: { noteContent }
+    });
+
+    expect(result.isLocated).toBe(false);
+    expect(result.replaceErrorMessages).toContain('Could not uniquely identify the code block.');
+    expect(result.diskContent).toBe(noteContent);
   });
 
   it('should save a dirty editor and then replace the code block', async () => {
