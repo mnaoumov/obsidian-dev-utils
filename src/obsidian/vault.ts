@@ -555,13 +555,16 @@ export async function createTemporaryFolder(app: App, path: string): Promise<() 
 /**
  * Deletes an empty folder.
  *
+ * A folder the vault index still holds but the disk has already lost is not empty: it is nothing to delete, so it
+ * is left alone rather than handed to the trash as a missing path.
+ *
  * @param app - The application instance.
  * @param pathOrFolder - The folder to delete.
  * @returns A {@link Promise} that resolves when the folder is deleted.
  */
 export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFolder): Promise<void> {
   const folder = getFolderOrNull({ app, pathOrFolder });
-  if (!folder || !await isEmptyFolder(app, folder)) {
+  if (!folder || !await isExistingEmptyFolder(app, folder)) {
     return;
   }
   await trashSafe(app, folder);
@@ -569,6 +572,8 @@ export async function deleteEmptyFolder(app: App, pathOrFolder: null | PathOrFol
 
 /**
  * Removes empty folder hierarchy starting from the given folder.
+ *
+ * The walk stops at the first folder that is not empty or no longer exists on disk.
  *
  * @param app - The application instance.
  * @param pathOrFolder - The folder to start removing empty hierarchy from.
@@ -578,7 +583,7 @@ export async function deleteEmptyFolderHierarchy(app: App, pathOrFolder: null | 
   let folder = getFolderOrNull({ app, pathOrFolder });
 
   while (folder) {
-    if (!await isEmptyFolder(app, folder)) {
+    if (!await isExistingEmptyFolder(app, folder)) {
       return;
     }
     const parent = folder.parent;
@@ -1103,4 +1108,19 @@ async function invokeFileActionSafe(params: InvokeFileActionSafeParams): Promise
     }
     throw error;
   }
+}
+
+/**
+ * Checks if a folder exists on disk and is empty.
+ *
+ * {@link isEmptyFolder} calls a missing path empty, which is wrong for a caller about to delete it: the vault index
+ * can still hold a folder the disk has already lost, because the index drops it later, from the file watcher.
+ *
+ * @param app - The application instance.
+ * @param folder - The folder to check.
+ * @returns A {@link Promise} that resolves to `true` when the folder exists on disk and is empty.
+ */
+async function isExistingEmptyFolder(app: App, folder: TFolder): Promise<boolean> {
+  const stats = await app.vault.adapter.stat(folder.path);
+  return stats?.type === 'folder' && await isEmptyFolder(app, folder);
 }
