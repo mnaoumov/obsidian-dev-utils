@@ -22,6 +22,17 @@ import { assertNonNullable } from '../../type-guards.ts';
 import { ComponentEx } from './component-ex.ts';
 
 // eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
+class AncestryProbeComponentEx extends ComponentEx {
+  public probeInFlightAncestryLoadPromise(): null | Promise<void> {
+    return this.getInFlightAncestryLoadPromise();
+  }
+
+  public probeInFlightLoadPromise(): null | Promise<void> {
+    return this.getInFlightLoadPromise();
+  }
+}
+
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
 class LifecycleGuardsComponentEx extends ComponentEx {
   public invokeEnsureLoaded(): void {
     this.ensureLoaded();
@@ -575,6 +586,167 @@ describe('ComponentEx', () => {
 
       component.unload();
       expect(disposeMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getInFlightAncestryLoadPromise', () => {
+    interface Gate {
+      open: () => void;
+      promise: Promise<void>;
+    }
+
+    function createGate(): Gate {
+      let open!: () => void;
+      const promise = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      return { open, promise };
+    }
+
+    it('should leave getInFlightLoadPromise scoped to the component own load', async () => {
+      const gate = createGate();
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+
+      expect(child.probeInFlightLoadPromise()).toBeNull();
+      expect(child.probeInFlightAncestryLoadPromise()).not.toBeNull();
+      gate.open();
+      await parent.loadWithPromises();
+    });
+
+    it('should return null when nothing in the ancestry is loading', () => {
+      const parent = new ComponentEx();
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+
+      expect(child.probeInFlightAncestryLoadPromise()).toBeNull();
+    });
+
+    it('should wait for a sibling load that its parent is still running', async () => {
+      const gate = createGate();
+      const order: string[] = [];
+      const parent = new ComponentEx();
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      const sibling = parent.addChild(new TestComponentEx());
+      sibling.asyncLoadFunction.mockImplementation(async () => {
+        await gate.promise;
+        order.push('sibling');
+      });
+      parent.load();
+
+      const promise = child.probeInFlightAncestryLoadPromise();
+      assertNonNullable(promise);
+      const settled = promise.then(() => {
+        order.push('ancestry');
+      });
+
+      await noopAsync();
+      expect(order).toEqual([]);
+
+      gate.open();
+      await settled;
+      expect(order).toEqual(['sibling', 'ancestry']);
+    });
+
+    it('should wait for the load of a grandparent', async () => {
+      const gate = createGate();
+      const grandparent = new TestComponentEx();
+      grandparent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const parent = grandparent.addChild(new ComponentEx());
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      grandparent.load();
+
+      const promise = child.probeInFlightAncestryLoadPromise();
+      assertNonNullable(promise);
+      let isSettled = false;
+      const settled = promise.then(() => {
+        isSettled = true;
+      });
+
+      await noopAsync();
+      expect(isSettled).toBe(false);
+
+      gate.open();
+      await settled;
+      expect(isSettled).toBe(true);
+    });
+
+    it('should keep waiting when an ancestor load grows while it is awaited', async () => {
+      const firstGate = createGate();
+      const secondGate = createGate();
+      const order: string[] = [];
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockImplementation(async () => {
+        await firstGate.promise;
+        order.push('first');
+      });
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+
+      const promise = child.probeInFlightAncestryLoadPromise();
+      assertNonNullable(promise);
+      const settled = promise.then(() => {
+        order.push('ancestry');
+      });
+
+      const lateSibling = new TestComponentEx();
+      lateSibling.asyncLoadFunction.mockImplementation(async () => {
+        await secondGate.promise;
+        order.push('second');
+      });
+
+      firstGate.open();
+      await firstGate.promise;
+      // Appended while the first load is being awaited, after it has already chained its reset.
+      await noopAsync();
+      parent.addChild(lateSibling);
+
+      secondGate.open();
+      await settled;
+      expect(order).toEqual(['first', 'second', 'ancestry']);
+    });
+
+    it('should stop following a parent the component was removed from', async () => {
+      const gate = createGate();
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+      parent.removeChild(child);
+
+      expect(child.probeInFlightAncestryLoadPromise()).toBeNull();
+      gate.open();
+      await parent.loadWithPromises();
+    });
+
+    it('should keep the new parent when an old parent removes a re-parented component', async () => {
+      const gate = createGate();
+      const oldParent = new ComponentEx();
+      const newParent = new TestComponentEx();
+      newParent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const child = oldParent.addChild(new AncestryProbeComponentEx());
+      newParent.addChild(child);
+      newParent.load();
+      oldParent.removeChild(child);
+
+      expect(child.probeInFlightAncestryLoadPromise()).not.toBeNull();
+      gate.open();
+      await newParent.loadWithPromises();
+    });
+
+    it('should not follow a plain Component parent', async () => {
+      const gate = createGate();
+      const grandparent = new TestComponentEx();
+      grandparent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const plainParent = grandparent.addChild(new Component());
+      const child = plainParent.addChild(new AncestryProbeComponentEx());
+      grandparent.load();
+
+      expect(child.probeInFlightAncestryLoadPromise()).toBeNull();
+      gate.open();
+      await grandparent.loadWithPromises();
     });
   });
 });
