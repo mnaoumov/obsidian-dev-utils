@@ -1263,6 +1263,15 @@ describe('deleteEmptyFolder', () => {
     await deleteEmptyFolder(app, 'my-folder');
     expect(app.fileManager.trashFile).toHaveBeenCalled();
   });
+
+  it('should not delete an indexed folder that is already gone from disk', async () => {
+    mockApp = App.createConfigured__({ files: { 'my-folder/': '' } });
+    app = mockApp.asOriginalType__();
+    vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue(null);
+    await deleteEmptyFolder(app, 'my-folder');
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
+  });
 });
 
 describe('deleteEmptyFolderHierarchy', () => {
@@ -1292,6 +1301,15 @@ describe('deleteEmptyFolderHierarchy', () => {
     vi.spyOn(app.vault.adapter, 'list').mockResolvedValue({ files: [], folders: [] });
     await deleteEmptyFolderHierarchy(app, 'parent/child');
     expect(app.fileManager.trashFile).toHaveBeenCalled();
+  });
+
+  it('should not walk up from an indexed folder that is already gone from disk', async () => {
+    mockApp = App.createConfigured__({ files: { 'parent/child/': '' } });
+    app = mockApp.asOriginalType__();
+    vi.spyOn(app.fileManager, 'trashFile');
+    vi.spyOn(app.vault.adapter, 'stat').mockResolvedValue(null);
+    await deleteEmptyFolderHierarchy(app, 'parent/child');
+    expect(app.fileManager.trashFile).not.toHaveBeenCalled();
   });
 });
 
