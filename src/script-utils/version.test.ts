@@ -35,6 +35,7 @@ import {
 
 const {
   mockArchivePluginDemoVault,
+  mockCloseReleasedIssues,
   mockCp,
   mockCreateInterface,
   mockEditJson,
@@ -57,6 +58,7 @@ const {
   mockWriteFile
 } = vi.hoisted(() => ({
   mockArchivePluginDemoVault: vi.fn(),
+  mockCloseReleasedIssues: vi.fn(),
   mockCp: vi.fn(),
   mockCreateInterface: vi.fn(),
   mockEditJson: vi.fn(),
@@ -144,6 +146,10 @@ vi.mock('./linters/markdownlint-content.ts', () => ({
   lintMarkdownContent: mockLintMarkdownContent
 }));
 
+vi.mock('./released-issues.ts', () => ({
+  closeReleasedIssues: mockCloseReleasedIssues
+}));
+
 vi.mock('./package-lock-integrity.ts', () => ({
   assertPackageLockIntegrity: noopAsync
 }));
@@ -187,6 +193,7 @@ beforeEach(() => {
   mockNpmRunOptional.mockResolvedValue(undefined);
   mockWriteFile.mockResolvedValue(undefined);
   mockArchivePluginDemoVault.mockResolvedValue(null);
+  mockCloseReleasedIssues.mockResolvedValue([]);
   mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
   mockExistsSync.mockReturnValue(false);
   mockReadPackageJson.mockResolvedValue({ scripts: CHANGELOG_CHECK_SCRIPTS });
@@ -746,6 +753,37 @@ describe('publishGitHubRelease', () => {
       (call: unknown[]) => Array.isArray(call[0]) && (call[0] as string[]).includes('gh')
     ) as [string[], unknown] | undefined;
     expect(ghReleaseCall?.[0]).not.toContain('--prerelease');
+  });
+
+  it('should close the released issues after the release is created', async () => {
+    setupReleaseNotesMocks();
+    mockReaddirPosix.mockResolvedValue(['main.js']);
+    mockExistsSync.mockReturnValue(true);
+    mockCloseReleasedIssues.mockImplementation(() => {
+      expect(getGhReleaseArguments()).toBeDefined();
+      return Promise.resolve([]);
+    });
+    await publishGitHubRelease('1.0.0', true);
+    expect(mockCloseReleasedIssues).toHaveBeenCalledWith({ newVersion: '1.0.0' });
+  });
+
+  it('should not close the released issues when shouldCloseReleasedIssues is false', async () => {
+    setupReleaseNotesMocks();
+    mockReaddirPosix.mockResolvedValue(['main.js']);
+    mockExistsSync.mockReturnValue(true);
+    await publishGitHubRelease('1.0.0', true, { shouldCloseReleasedIssues: false });
+    expect(mockCloseReleasedIssues).not.toHaveBeenCalled();
+  });
+
+  it('should warn and not throw when closing the released issues fails', async () => {
+    setupReleaseNotesMocks();
+    mockReaddirPosix.mockResolvedValue(['main.js']);
+    mockExistsSync.mockReturnValue(true);
+    mockCloseReleasedIssues.mockRejectedValue(new Error('gh is offline'));
+    const warnSpy = vi.spyOn(console, 'warn');
+    await publishGitHubRelease('1.0.0', true);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('The 1.0.0 release is published, but closing the issues it carries failed'));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('gh is offline'));
   });
 });
 
@@ -1322,6 +1360,7 @@ describe('parseVersionArgs', () => {
     expect(options).toEqual({
       shouldArchiveDemoVault: true,
       shouldBuild: true,
+      shouldCloseReleasedIssues: true,
       shouldEditChangelog: true,
       shouldRelease: true,
       shouldRunChecks: true,
@@ -1339,6 +1378,7 @@ describe('parseVersionArgs', () => {
       '--no-checks',
       '--no-commit-verification',
       '--no-demo-vault',
+      '--no-issue-closing',
       '--no-release'
     ]);
     expect(versionUpdateType).toBe('patch');
@@ -1347,6 +1387,7 @@ describe('parseVersionArgs', () => {
       minAppVersion: '1.9.0',
       shouldArchiveDemoVault: false,
       shouldBuild: false,
+      shouldCloseReleasedIssues: false,
       shouldEditChangelog: false,
       shouldRelease: false,
       shouldRunChecks: false,
@@ -1436,6 +1477,20 @@ describe('updateVersion', () => {
     const prepareRelease = vi.fn().mockResolvedValue(undefined);
     await updateVersion('patch', { prepareGitHubRelease: prepareRelease });
     expect(prepareRelease).toHaveBeenCalledWith('1.0.1');
+  });
+
+  it('should close the released issues by default', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch');
+    expect(mockCloseReleasedIssues).toHaveBeenCalledWith({ newVersion: '1.0.1' });
+  });
+
+  it('should not close the released issues when shouldCloseReleasedIssues is false', async () => {
+    setupFullMocks();
+    mockReaddirPosix.mockResolvedValue([]);
+    await updateVersion('patch', { shouldCloseReleasedIssues: false });
+    expect(mockCloseReleasedIssues).not.toHaveBeenCalled();
   });
 
   it('should skip the verification checks but still build when shouldRunChecks is false', async () => {

@@ -55,6 +55,7 @@ import {
   readPackageJson
 } from './npm.ts';
 import { ObsidianDevUtilsRepoPaths } from './obsidian-dev-utils-repo-paths.ts';
+import { closeReleasedIssues } from './released-issues.ts';
 import {
   execFromRoot,
   resolvePathFromRootSafe
@@ -86,6 +87,20 @@ export interface ParsedVersionArguments {
    * The positional version update type argument, or `undefined` if none was provided.
    */
   readonly versionUpdateType: string | undefined;
+}
+
+/**
+ * Options for {@link publishGitHubRelease}.
+ */
+export interface PublishGitHubReleaseOptions {
+  /**
+   * Whether to close the issues the release carries once it is published: every issue a commit since the previous
+   * tag names with a closing keyword (`fixes #12`) is closed with a `Fixed in` / `Implemented in` comment linking
+   * the release. See {@link closeReleasedIssues}.
+   *
+   * @default `true`
+   */
+  readonly shouldCloseReleasedIssues?: boolean;
 }
 
 /**
@@ -170,6 +185,14 @@ export interface UpdateVersionOptions {
    * @default `true`
    */
   readonly shouldBuild?: boolean;
+
+  /**
+   * Whether to close the issues the release carries once it is published. See
+   * {@link PublishGitHubReleaseOptions.shouldCloseReleasedIssues}.
+   *
+   * @default `true`
+   */
+  readonly shouldCloseReleasedIssues?: boolean;
 
   /**
    * Whether to open the generated changelog in the editor for an interactive review.
@@ -676,6 +699,7 @@ export async function gitPush(): Promise<void> {
  * - `--no-checks` — skip the clean-repo check, format, spellcheck, lint, over-exposure analysis, and tests (the build still runs).
  * - `--no-commit-verification` — pass `--no-verify` to the release commit, skipping the pre-commit hook.
  * - `--no-demo-vault` — skip archiving the plugin's demo vault (`demo-vault/`) as a release artifact.
+ * - `--no-issue-closing` — do not close the issues the release carries once it is published.
  * - `--no-release` — run all local steps but skip the push and the GitHub release.
  *
  * @param $arguments - The command-line arguments to parse (typically `process.argv.slice(2)`).
@@ -694,6 +718,7 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
       'no-checks': { type: 'boolean' },
       'no-commit-verification': { type: 'boolean' },
       'no-demo-vault': { type: 'boolean' },
+      'no-issue-closing': { type: 'boolean' },
       'no-release': { type: 'boolean' }
     }
   });
@@ -704,6 +729,7 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
       minAppVersion: values['min-app-version'],
       shouldArchiveDemoVault: !(values['no-demo-vault'] ?? false),
       shouldBuild: !(values['no-build'] ?? false),
+      shouldCloseReleasedIssues: !(values['no-issue-closing'] ?? false),
       shouldEditChangelog: !(values['no-changelog-editing'] ?? false),
       shouldRelease: !(values['no-release'] ?? false),
       shouldRunChecks: !(values['no-checks'] ?? false),
@@ -718,11 +744,17 @@ export function parseVersionArguments($arguments: string[]): ParsedVersionArgume
  *
  * Handles the creation of a release and uploading files for either an Obsidian plugin or another project.
  *
+ * Once the release exists, the issues it carries are closed with a link to it (see {@link closeReleasedIssues}),
+ * unless {@link PublishGitHubReleaseOptions.shouldCloseReleasedIssues} is `false`. A failure there is reported and
+ * does not fail the release, which is already published.
+ *
  * @param newVersion - The new version number for the release.
  * @param isObsidianPlugin - A boolean indicating if the project is an Obsidian plugin.
+ * @param options - The {@link PublishGitHubReleaseOptions}.
  * @returns A {@link Promise} that resolves when the release has been published.
  */
-export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean): Promise<void> {
+export async function publishGitHubRelease(newVersion: string, isObsidianPlugin: boolean, options: PublishGitHubReleaseOptions = {}): Promise<void> {
+  const { shouldCloseReleasedIssues = true } = options;
   let filePaths: string[];
 
   if (isObsidianPlugin) {
@@ -755,6 +787,16 @@ export async function publishGitHubRelease(newVersion: string, isObsidianPlugin:
     isQuiet: true,
     stdin: await getReleaseNotes(newVersion)
   });
+
+  if (!shouldCloseReleasedIssues) {
+    return;
+  }
+
+  try {
+    await closeReleasedIssues({ newVersion });
+  } catch (error) {
+    console.warn(`The ${newVersion} release is published, but closing the issues it carries failed: ${errorToString(error)}`);
+  }
 }
 
 /**
@@ -792,6 +834,7 @@ export async function updateChangelog(newVersion: string, options: UpdateChangel
  * 9. Updates version in files, then writes the settled changelog.
  * 10. Adds updated files to Git, tags the commit, and pushes to the repository.
  * 11. If an Obsidian plugin, copies the updated manifest and publishes a GitHub release.
+ * 12. Closes the issues the release carries, with a link to it.
  *
  * @param versionUpdateType - The type of version update to perform (major, minor, patch, premajor, preminor, prepatch, prerelease, or x.y.z[-suffix]).
  * @param options - The {@link UpdateVersionOptions} controlling the release behavior.
@@ -804,6 +847,7 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
     prepareGitHubRelease,
     shouldArchiveDemoVault = true,
     shouldBuild = true,
+    shouldCloseReleasedIssues = true,
     shouldEditChangelog = true,
     shouldRelease = true,
     shouldRunChecks = true,
@@ -884,7 +928,7 @@ export async function updateVersion(versionUpdateType?: string, options: UpdateV
   if (isObsidianPlugin && shouldArchiveDemoVault) {
     await archivePluginDemoVault();
   }
-  await publishGitHubRelease(newVersion, isObsidianPlugin);
+  await publishGitHubRelease(newVersion, isObsidianPlugin, { shouldCloseReleasedIssues });
 }
 
 /**
