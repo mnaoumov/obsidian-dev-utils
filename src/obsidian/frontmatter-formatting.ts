@@ -327,15 +327,6 @@ function createMapItem(key: string, value: unknown, indent: number): CST.Collect
   return fragment.trimEnd() === EMPTY_MAPPING_FRAGMENT ? null : liftFragmentItem(fragment, indent, true);
 }
 
-function createNewlineToken(): CST.SourceToken {
-  return {
-    indent: 0,
-    offset: -1,
-    source: '\n',
-    type: 'newline'
-  };
-}
-
 function createSeqItem(value: unknown, indent: number): CST.CollectionItem {
   return liftFragmentItem(stringify([value], OBSIDIAN_STRINGIFY_OPTIONS), indent, true);
 }
@@ -491,10 +482,9 @@ function emitSeqItem(value: unknown, indent: number, shouldPreferFlow: boolean):
 /**
  * Makes the merged items of a collection joinable again, whatever the merge did to their order.
  *
- * Two things can go wrong and both are invisible in the item tokens themselves. An item that was not first can carry
- * the blank line that separated it from its predecessor, which becomes a leading blank line once it IS first. And the
- * last item of a block whose source had no final newline carries none, so anything moved after it would be written on
- * the same line.
+ * An item that was not first can carry the blank line that separated it from its predecessor, which becomes a leading
+ * blank line once it IS first, and nothing in the item tokens themselves shows it. Every item already ends in its own
+ * newline, because Obsidian's front matter block always ends in one, so reordering never joins two items on one line.
  *
  * @param items - The merged items, mutated in place.
  */
@@ -502,14 +492,6 @@ function finalizeItems(items: CST.CollectionItem[]): void {
   const firstItem = castTo<CST.CollectionItem>(items[0]);
   while (firstItem.start[0]?.type === 'newline') {
     firstItem.start.shift();
-  }
-
-  for (let index = 1; index < items.length; index++) {
-    if (CST.stringify(castTo<CST.CollectionItem>(items[index - 1])).endsWith('\n')) {
-      continue;
-    }
-
-    castTo<CST.CollectionItem>(items[index]).start.unshift(createNewlineToken());
   }
 }
 
@@ -692,10 +674,9 @@ function spliceFrontmatterBody(source: string, newFrontmatter: object): null | s
   // `CST.stringify(contents.srcToken)` alone silently drops both.
   const emittedBody = tokens.map((token) => CST.stringify(token)).join('');
 
-  // The replaced region has to end the way it began, or the closing `---` moves off its own line — in whichever
-  // direction. An emitted fragment always ends in a newline, so appending one to a block that had none would gain a
-  // blank line, and a block that had one whose last key was dropped would lose it.
-  const splicedBody = emittedBody.replace(TRAILING_NEWLINE_REG_EXP, '') + (source.endsWith('\n') ? '\n' : '');
+  // The replaced region has to end in exactly one newline, as Obsidian's front matter block always does, or the closing
+  // `---` moves off its own line. A block whose last key was dropped can emit none, so it is normalized, not trusted.
+  const splicedBody = `${emittedBody.replace(TRAILING_NEWLINE_REG_EXP, '')}\n`;
 
   return checkIsSemanticMatch(splicedBody, newFrontmatter) ? splicedBody : null;
 }

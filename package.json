@@ -790,7 +790,7 @@
     "moment": "^2.31.0",
     "nano-staged": "^1.0.2",
     "obsidian-integration-testing": "^17.0.1",
-    "obsidian-test-mocks": "^6.1.0",
+    "obsidian-test-mocks": "^7.0.0",
     "satori": "^0.33.4",
     "satteri": "^0.10.5",
     "starlight-github-alerts": "^0.4.0",
