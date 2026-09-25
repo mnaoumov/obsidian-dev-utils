@@ -714,9 +714,10 @@ describe('loop', () => {
     });
 
     expect(noticeConstructorSpy).toHaveBeenCalledTimes(1);
-    // The argument, not `duration__`: the mock records an omitted duration as 0, which would hide the defect. A zero
-    // duration is Obsidian's never-auto-hide form; omitted, the notice vanishes a few seconds into the run.
-    expect(noticeConstructorSpy.mock.calls[0]?.[1]).toBe(0);
+    // `constructor__` runs on the notice being built, so its recorded `this` is that notice.
+    const notice = castTo<Notice | undefined>(noticeConstructorSpy.mock.contexts[0]);
+    assertNonNullable(notice);
+    expect(notice.duration__).toBe(0);
     expect(hideSpy).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
