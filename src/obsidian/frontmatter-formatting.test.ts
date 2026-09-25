@@ -388,7 +388,14 @@ describe('preserveFrontmatterFormatting', () => {
   });
 });
 
-describe('the differential fuzz', () => {
+/*
+ * Each seed runs its full mutation count, which takes about a third of a second alone and crossed vitest's 5 s
+ * default under a loaded `test:coverage` (measured 2026-09-24: 267-373 ms solo, a 5561 ms timeout under load). The
+ * mutation count is the regression net, so the budget grows instead of the count shrinking.
+ */
+const DIFFERENTIAL_FUZZ_TEST_TIMEOUT_IN_MILLISECONDS = 30_000;
+
+describe('the differential fuzz', { timeout: DIFFERENTIAL_FUZZ_TEST_TIMEOUT_IN_MILLISECONDS }, () => {
   const SEEDS = [1, 2];
   const ITERATIONS_PER_SEED = 500;
   const SEED_MULTIPLIER = 7919;
