@@ -170,7 +170,8 @@ describe('PathSettings', () => {
             await type(textAreaEl, reportedRegExp.slice(0, length));
           }
 
-          await waitUntilOrGiveUp(() => savedData !== null);
+          // The first load already wrote the default record, so a non-null `savedData` says nothing yet: wait for the typed value itself.
+          await waitUntilOrGiveUp(() => getSavedExcludePaths()?.includes(reportedRegExp) === true);
 
           const validationMessageForCompletedRegExp = textAreaEl.validationMessage;
           const isInboxNoteIgnored = settingsComponent.settings.isPathIgnored('Inbox/note.md');
@@ -181,7 +182,7 @@ describe('PathSettings', () => {
           return {
             asyncErrors,
             isInboxNoteIgnored,
-            savedExcludePaths: (savedData as null | Record<string, unknown>)?.['excludePaths'],
+            savedExcludePaths: getSavedExcludePaths(),
             shownNoticeMessages: noticeComponent.shownNoticeMessages,
             validationMessageForCompletedRegExp,
             validationMessageForInvalidRegExp: textAreaEl.validationMessage
@@ -193,6 +194,11 @@ describe('PathSettings', () => {
           noticeComponent.unload();
           tab.containerEl.remove();
           settingsComponent.unload();
+        }
+
+        function getSavedExcludePaths(): undefined | unknown[] {
+          const excludePaths = (savedData as null | Record<string, unknown>)?.['excludePaths'];
+          return Array.isArray(excludePaths) ? excludePaths : undefined;
         }
 
         async function type(textAreaEl: HTMLTextAreaElement, value: string): Promise<void> {
