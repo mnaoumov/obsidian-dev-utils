@@ -1947,8 +1947,15 @@ export function extractLinkFile(params: ExtractLinkFileParams): null | TFile {
 /**
  * Fixes the frontmatter markdown links in the provided metadata cache.
  *
+ * Obsidian's own frontmatter reader already caches a whole-value internal markdown link, and where the two
+ * disagree this helper is the wrong one: it takes the unescaped alias as `displayText` rather than the raw
+ * bracket text, and it accepts a `<Note: x.md>` target Obsidian rejects as non-internal.
+ *
  * @param cache - The metadata cache to fix the frontmatter markdown links in.
  * @returns Whether the frontmatter markdown links were fixed.
+ * @deprecated Obsidian caches these links itself. For several links in one value, use
+ * `parseFrontmatterLinks(frontmatter).multiValueFrontmatterLinks` from `obsidian-dev-utils/obsidian/parse-link`.
+ * Will be removed in the next major version.
  */
 // eslint-disable-next-line unicorn/consistent-boolean-name -- The name states the action; the boolean only reports whether anything was fixed.
 export function fixFrontmatterMarkdownLinks(cache: CachedMetadata): boolean {
