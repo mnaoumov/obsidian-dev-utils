@@ -23,6 +23,9 @@
  * Outside one they throw a message saying so, rather than silently doing nothing — a no-op would recreate
  * exactly the false-confidence failure trusted input exists to end. Consumers wanting the platform-correct
  * helper should import the {@link ../trusted-input.ts | trusted-input} facade instead of this module.
+ *
+ * The params are forwarded untouched, `window` included, so the harness's own refusal of any window but
+ * the main one applies here too: Obsidian Mobile has no popout windows to send input to.
  */
 
 import type {

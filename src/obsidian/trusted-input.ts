@@ -28,6 +28,11 @@
  * mobile: a touch screen has no persistent pointer and `:hover` has no touch equivalent. They throw
  * rather than no-op, because a silent no-op is exactly the false confidence trusted input exists to end.
  * Gate those on `Platform.isDesktopApp`, or drive the element with {@link clickElement} instead.
+ *
+ * **Every Obsidian window is its own target.** A popout is a separate Electron web contents, so input sent
+ * to the main window never reaches it. {@link pressKey}, {@link clickMouse} and {@link moveMouse} take an
+ * optional `window` (the main window by default); the element and editor helpers use the window that owns
+ * their element or editor. Mobile has no popouts, so any window but the main one throws there.
  */
 
 import { Platform } from 'obsidian';

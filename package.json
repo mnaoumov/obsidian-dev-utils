@@ -790,7 +790,7 @@
     "jsdom": "^30.1.0",
     "moment": "^2.31.0",
     "nano-staged": "^1.0.2",
-    "obsidian-integration-testing": "^17.0.1",
+    "obsidian-integration-testing": "^17.3.0",
     "obsidian-test-mocks": "^7.0.0",
     "prismjs": "^1.30.0",
     "satori": "^0.33.4",
@@ -803,7 +803,7 @@
     "vitest": "^5.0.1"
   },
   "peerDependencies": {
-    "obsidian-integration-testing": "^17.0.1"
+    "obsidian-integration-testing": "^17.3.0"
   },
   "peerDependenciesMeta": {
     "obsidian-integration-testing": {
