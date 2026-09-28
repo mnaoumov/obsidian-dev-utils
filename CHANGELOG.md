@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 107.2.0
+
+- feat(script-utils): close the issues a release carries from publishGitHubRelease
+- fix(obsidian): skip a folder already gone from disk in deleteEmptyFolder
+
 ## 107.1.0
 
 - feat(obsidian): match property entries in isTreatedAsAttachment
