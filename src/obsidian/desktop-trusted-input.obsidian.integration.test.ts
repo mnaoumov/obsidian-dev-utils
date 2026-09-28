@@ -154,4 +154,127 @@ describe('trusted click helpers', () => {
 
     expect(result).toEqual({ isTrusted: false, type: 'click' });
   });
+
+  /*
+   * Every Obsidian popout is its own Electron web contents, so input sent through the main window's never
+   * reaches it. `lib` here is this library's own flat barrel, so these cases drive THIS library's copies of
+   * the helpers, not the harness's. Each case opens its own popout and detaches its leaf afterwards, which
+   * closes the window.
+   */
+  describe('popout windows', () => {
+    it('should press a key in the window it is given, and the main window by default', async () => {
+      const result = await evalInObsidian<Record<string, never>, Record<string, string[]>>({
+        async callback({ app, lib: { pressKey, waitUntil } }) {
+          const leaf = app.workspace.openPopoutLeaf();
+          try {
+            const popoutWindow = leaf.getContainer().win;
+            await waitUntil({ message: 'the popout to load', predicate: () => popoutWindow.document.readyState === 'complete' });
+
+            const keys: Record<string, string[]> = { main: [], popout: [] };
+            function recordMain(event: KeyboardEvent): void {
+              keys['main']?.push(`${event.key}:${String(event.isTrusted)}`);
+            }
+            function recordPopout(event: KeyboardEvent): void {
+              keys['popout']?.push(`${event.key}:${String(event.isTrusted)}`);
+            }
+
+            document.addEventListener('keydown', recordMain, { capture: true });
+            popoutWindow.document.addEventListener('keydown', recordPopout, { capture: true });
+            try {
+              await pressKey({ key: 'Escape', window: popoutWindow });
+              await waitUntil({ message: 'the key in the popout', predicate: () => keys['popout']?.length === 1 });
+              await pressKey({ key: 'Escape' });
+              await waitUntil({ message: 'the key in the main window', predicate: () => keys['main']?.length === 1 });
+              return keys;
+            } finally {
+              document.removeEventListener('keydown', recordMain, { capture: true });
+              popoutWindow.document.removeEventListener('keydown', recordPopout, { capture: true });
+            }
+          } finally {
+            leaf.detach();
+          }
+        }
+      });
+
+      expect(result).toStrictEqual({ main: ['Escape:true'], popout: ['Escape:true'] });
+    });
+
+    it('should type into an editor in a popout', async () => {
+      const content = await evalInObsidian<Record<string, never>, string>({
+        async callback({ app, lib: { typeIntoEditor, waitUntil }, obsidianModule: { MarkdownView } }) {
+          const path = `desktop-trusted-input-popout-${String(Date.now())}.md`;
+          const file = await app.vault.create(path, '# note\n');
+          const leaf = app.workspace.openPopoutLeaf();
+          try {
+            await leaf.openFile(file);
+            const view = leaf.view;
+            if (!(view instanceof MarkdownView)) {
+              throw new TypeError(`The popout opened a ${view.getViewType()} view, not a markdown one.`);
+            }
+
+            await waitUntil({ message: 'the popout to load', predicate: () => leaf.getContainer().doc.readyState === 'complete' });
+            await typeIntoEditor({ editor: view.editor, text: 'typed' });
+            return view.editor.getValue();
+          } finally {
+            leaf.detach();
+            await app.fileManager.trashFile(file);
+          }
+        }
+      });
+
+      expect(content).toBe('# note\ntyped');
+    });
+
+    it('should click an element in a popout in that popout', async () => {
+      const result = await evalInObsidian<Record<string, never>, TrustedClickResult[]>({
+        async callback({ app, lib: { clickElement, waitUntil } }) {
+          const leaf = app.workspace.openPopoutLeaf();
+          try {
+            const popoutDocument = leaf.getContainer().doc;
+            await waitUntil({ message: 'the popout to load', predicate: () => popoutDocument.readyState === 'complete' });
+
+            const target = popoutDocument.body.createDiv();
+            target.setCssStyles({ height: '80px', left: '24px', position: 'fixed', top: '120px', width: '160px', zIndex: '2147483647' });
+            const observed: TrustedClickResult[] = [];
+            target.addEventListener('click', (event: MouseEvent) => {
+              observed.push({ isTrusted: event.isTrusted, type: event.type });
+            });
+
+            await clickElement({ element: target });
+            await waitUntil({ message: 'the click in the popout', predicate: () => observed.length > 0 });
+            return observed;
+          } finally {
+            leaf.detach();
+          }
+        }
+      });
+
+      expect(result).toStrictEqual([{ isTrusted: true, type: 'click' }]);
+    });
+
+    // An iframe's window has no Electron bridge, so there is no web contents to inject into. Saying so beats
+    // delivering the key to the main window, which is what the helper would otherwise have done.
+    it('should refuse a window that has no Electron bridge', async () => {
+      const message = await evalInObsidian<Record<string, never>, string>({
+        async callback({ lib: { pressKey } }) {
+          const frame = document.body.createEl('iframe');
+          try {
+            const frameWindow = frame.contentWindow;
+            if (!frameWindow) {
+              throw new Error('The iframe has no window.');
+            }
+
+            await pressKey({ key: 'Escape', window: frameWindow });
+            return '';
+          } catch (error) {
+            return error instanceof Error ? error.message : String(error);
+          } finally {
+            frame.remove();
+          }
+        }
+      });
+
+      expect(message).toContain('no Electron bridge');
+    });
+  });
 });

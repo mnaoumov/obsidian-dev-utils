@@ -52,10 +52,33 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function createElement(rect: DOMRect, doesMatchHover: () => boolean): HTMLElement {
+function createDocument(defaultView: null | Window): Document {
+  return strictProxy<Document>({ defaultView: castTo<Document['defaultView']>(defaultView) });
+}
+
+function createEditor(overrides: Partial<EditorOriginal>, defaultView: null | Window = window): EditorOriginal {
+  return strictProxy<EditorOriginal>({
+    cm: castTo<EditorOriginal['cm']>({ dom: { ownerDocument: createDocument(defaultView) } }),
+    ...overrides
+  });
+}
+
+function createElement(rect: DOMRect, doesMatchHover: () => boolean, defaultView: null | Window = window): HTMLElement {
   return strictProxy<HTMLElement>({
     getBoundingClientRect: (): DOMRect => rect,
-    matches: (selector: string): boolean => selector === ':hover' && doesMatchHover()
+    matches: (selector: string): boolean => selector === ':hover' && doesMatchHover(),
+    ownerDocument: createDocument(defaultView)
+  });
+}
+
+// A popout window: its own `electron` bridge answers with its own web contents.
+function createPopoutWindow(popoutSendInputEvent: ReturnType<typeof vi.fn>): Window {
+  return strictProxy<Window>({
+    electron: castTo<Window['electron']>({
+      remote: {
+        getCurrentWebContents: (): StubbedWebContents => ({ sendInputEvent: popoutSendInputEvent })
+      }
+    })
   });
 }
 
@@ -168,7 +191,7 @@ describe('typeIntoEditor', () => {
 
   it('should focus, press each key, and resolve once the document reflects the input', async () => {
     let value = 'start';
-    const editor = strictProxy<EditorOriginal>({
+    const editor = createEditor({
       focus: vi.fn(),
       getLine: (): string => value,
       getValue: (): string => value,
@@ -188,7 +211,7 @@ describe('typeIntoEditor', () => {
   });
 
   it('should stop polling after the timeout when the document never updates', async () => {
-    const editor = strictProxy<EditorOriginal>({
+    const editor = createEditor({
       focus: vi.fn(),
       getLine: (): string => 'start',
       getValue: (): string => 'start',
@@ -275,5 +298,115 @@ describe('unhoverElement', () => {
 
     // The move is injected once; only the `:hover` check is polled.
     expect(sendInputEvent).toHaveBeenCalledExactlyOnceWith({ type: 'mouseMove', x: 4, y: 5 });
+  });
+});
+
+/*
+ * Every Obsidian popout is its own Electron web contents, and `remote.getCurrentWebContents()` answers for
+ * the window whose bridge it is called through. So input aimed at a popout has to go through the popout's
+ * own bridge; the main window's would deliver it to the main window instead.
+ */
+describe('popout windows', () => {
+  let popoutSendInputEvent: ReturnType<typeof vi.fn>;
+  let popoutWindow: Window;
+
+  beforeEach(() => {
+    vi.spyOn(Platform, 'isMacOS', 'get').mockReturnValue(false);
+    popoutSendInputEvent = vi.fn();
+    popoutWindow = createPopoutWindow(popoutSendInputEvent);
+  });
+
+  it('should press a key in the window it is given', async () => {
+    await pressKey({ key: 'Escape', window: popoutWindow });
+    expect(popoutSendInputEvent).toHaveBeenCalledTimes(3);
+    expect(sendInputEvent).not.toHaveBeenCalled();
+  });
+
+  it('should press a key in the main window when given the main window', async () => {
+    await pressKey({ key: 'Escape', window });
+    expect(sendInputEvent).toHaveBeenCalledTimes(3);
+  });
+
+  it('should click and move in the window it is given', async () => {
+    await clickMouse({ window: popoutWindow, x: 1, y: 2 });
+    await moveMouse({ window: popoutWindow, x: 3, y: 4 });
+    expect(popoutSendInputEvent).toHaveBeenCalledTimes(4);
+    expect(popoutSendInputEvent).toHaveBeenLastCalledWith({ type: 'mouseMove', x: 3, y: 4 });
+    expect(sendInputEvent).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a window that has no Electron bridge', async () => {
+    const frameWindow = strictProxy<Window>({ electron: castTo<Window['electron']>(undefined) });
+    await expect(pressKey({ key: 'Escape', window: frameWindow })).rejects.toThrow('no Electron bridge');
+    expect(sendInputEvent).not.toHaveBeenCalled();
+  });
+
+  it('should click an element in the window that owns it', async () => {
+    const element = createElement(createRect({ height: 10, left: 0, top: 0, width: 10 }), () => false, popoutWindow);
+    await clickElement({ element });
+    expect(popoutSendInputEvent).toHaveBeenNthCalledWith(1, { modifiers: [], type: 'mouseMove', x: 5, y: 5 });
+    expect(sendInputEvent).not.toHaveBeenCalled();
+  });
+
+  it('should fall back to the main window for an element whose document has no window', async () => {
+    const element = createElement(createRect({ height: 10, left: 0, top: 0, width: 10 }), () => false, null);
+    await clickElement({ element });
+    expect(sendInputEvent).toHaveBeenCalledTimes(3);
+  });
+
+  it('should hover and unhover an element in the window that owns it', async () => {
+    let isHovering = true;
+    const element = createElement(createRect({ height: 10, left: 5, right: 15, top: 0, width: 10 }), () => isHovering, popoutWindow);
+    await hoverElement({ element });
+    isHovering = false;
+    await unhoverElement({ element });
+    expect(popoutSendInputEvent).toHaveBeenNthCalledWith(1, { type: 'mouseMove', x: 10, y: 5 });
+    expect(popoutSendInputEvent).toHaveBeenNthCalledWith(2, { type: 'mouseMove', x: 4, y: 5 });
+    expect(sendInputEvent).not.toHaveBeenCalled();
+  });
+
+  describe('typeIntoEditor', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    it('should type into an editor in the window that owns it', async () => {
+      let value = 'start';
+      const editor = createEditor({
+        focus: vi.fn(),
+        getLine: (): string => value,
+        getValue: (): string => value,
+        lastLine: (): number => 0,
+        setCursor: vi.fn()
+      }, popoutWindow);
+
+      const promise = typeIntoEditor({ editor, text: 'a' });
+      await vi.advanceTimersByTimeAsync(FOCUS_SETTLE_DELAY_IN_MILLISECONDS);
+      value = 'started';
+      await vi.advanceTimersByTimeAsync(INPUT_POLL_INTERVAL_IN_MILLISECONDS);
+      await promise;
+
+      expect(popoutSendInputEvent).toHaveBeenCalledTimes(3);
+      expect(sendInputEvent).not.toHaveBeenCalled();
+    });
+
+    it('should type into the main window when the editor document has no window', async () => {
+      let value = 'start';
+      const editor = createEditor({
+        focus: vi.fn(),
+        getLine: (): string => value,
+        getValue: (): string => value,
+        lastLine: (): number => 0,
+        setCursor: vi.fn()
+      }, null);
+
+      const promise = typeIntoEditor({ editor, text: 'a' });
+      await vi.advanceTimersByTimeAsync(FOCUS_SETTLE_DELAY_IN_MILLISECONDS);
+      value = 'started';
+      await vi.advanceTimersByTimeAsync(INPUT_POLL_INTERVAL_IN_MILLISECONDS);
+      await promise;
+
+      expect(sendInputEvent).toHaveBeenCalledTimes(3);
+    });
   });
 });

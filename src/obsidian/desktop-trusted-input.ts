@@ -37,6 +37,9 @@ export interface ClickElementParams {
 
   /**
    * The element to click. The pointer is moved to its center.
+   *
+   * The input goes to the window that owns the element (its `ownerDocument.defaultView`), so an element in
+   * a popout is driven in that popout with no extra parameter.
    */
   readonly element: HTMLElement;
 
@@ -69,6 +72,18 @@ export interface ClickMouseParams {
   readonly modifiers?: readonly Modifier[];
 
   /**
+   * The Obsidian window to click in: the main window or a popout. Pass the window that owns the target,
+   * e.g. `leaf.view.containerEl.win` for a popout leaf. Each Obsidian window is its own Electron web
+   * contents, so a click sent to one never reaches another, and the coordinates are in the named window's
+   * viewport.
+   *
+   * **On mobile** there are no popouts, so any window but the main one throws.
+   *
+   * @default the main window (`window`)
+   */
+  readonly window?: Window;
+
+  /**
    * The x coordinate (web-contents DIP) to click at.
    */
   readonly x: number;
@@ -85,6 +100,9 @@ export interface ClickMouseParams {
 export interface HoverElementParams {
   /**
    * The element to hover. The pointer is moved to its center.
+   *
+   * The input goes to the window that owns the element (its `ownerDocument.defaultView`), so an element in
+   * a popout is driven in that popout with no extra parameter.
    */
   readonly element: HTMLElement;
 }
@@ -98,6 +116,16 @@ export type MouseButton = NonNullable<ElectronMouseInputEvent['button']>;
  * Parameters for {@link moveMouse}.
  */
 export interface MoveMouseParams {
+  /**
+   * The Obsidian window to move the pointer in: the main window or a popout. Each Obsidian window is its
+   * own Electron web contents with its own pointer, and the coordinates are in the named window's viewport.
+   *
+   * Mobile has no pointer to move, so {@link moveMouse} throws there whatever this is.
+   *
+   * @default the main window (`window`)
+   */
+  readonly window?: Window;
+
   /**
    * The x coordinate (web-contents DIP) to move the pointer to.
    */
@@ -126,6 +154,18 @@ export interface PressKeyParams {
    * @default `[]`
    */
   readonly modifiers?: readonly Modifier[];
+
+  /**
+   * The Obsidian window to press the key in: the main window or a popout. Pass the window that owns the
+   * focused target, e.g. `leaf.view.containerEl.win` for a popout leaf. Each Obsidian window is its own
+   * Electron web contents, so the key goes to the DOM-focused element of the window named here, whichever
+   * window the OS has focused, and never reaches another window.
+   *
+   * **On mobile** there are no popouts, so any window but the main one throws.
+   *
+   * @default the main window (`window`)
+   */
+  readonly window?: Window;
 }
 
 /**
@@ -135,6 +175,9 @@ export interface TypeIntoEditorParams {
   /**
    * The editor to type into. It is focused (caret moved to the end of the document) before the keystrokes
    * are injected.
+   *
+   * The keystrokes go to the window that owns the editor, so an editor in a popout is typed into in that
+   * popout with no extra parameter.
    */
   readonly editor: Editor;
 
@@ -151,6 +194,9 @@ export interface UnhoverElementParams {
   /**
    * The element to move the pointer away from. The pointer is moved to a point just outside its bounding
    * box.
+   *
+   * The input goes to the window that owns the element (its `ownerDocument.defaultView`), so an element in
+   * a popout is driven in that popout with no extra parameter.
    */
   readonly element: HTMLElement;
 }
@@ -211,11 +257,13 @@ const SINGLE_CLICK_COUNT = 1;
 export async function clickElement(params: ClickElementParams): Promise<void> {
   const { button = 'left', element, modifiers = [] } = params;
 
-  // Viewport coords equal web-contents DIP coords for the full-window `BrowserWindow`.
+  // Viewport coords equal web-contents DIP coords for the full-window `BrowserWindow`. The rect is in the
+  // viewport of the window that owns the element, so the click goes to that window.
   const rect = element.getBoundingClientRect();
   await clickMouse({
     button,
     modifiers,
+    window: getElementWindow(element),
     x: rect.left + rect.width / CENTER_DIVISOR,
     y: rect.top + rect.height / CENTER_DIVISOR
   });
@@ -249,7 +297,7 @@ export async function clickMouse(params: ClickMouseParams): Promise<void> {
   const electronModifiers = toElectronModifiers(modifiers);
   const roundedX = Math.round(x);
   const roundedY = Math.round(y);
-  const webContents = getWebContents();
+  const webContents = getTargetWebContents(params.window);
 
   webContents.sendInputEvent({ modifiers: electronModifiers, type: 'mouseMove', x: roundedX, y: roundedY });
   webContents.sendInputEvent({
@@ -288,7 +336,11 @@ export async function hoverElement(params: HoverElementParams): Promise<void> {
 
   // Viewport coords equal web-contents DIP coords for the full-window `BrowserWindow`.
   const rect = element.getBoundingClientRect();
-  await moveMouse({ x: rect.left + rect.width / CENTER_DIVISOR, y: rect.top + rect.height / CENTER_DIVISOR });
+  await moveMouse({
+    window: getElementWindow(element),
+    x: rect.left + rect.width / CENTER_DIVISOR,
+    y: rect.top + rect.height / CENTER_DIVISOR
+  });
 
   // Poll until the real `:hover` state has actually taken, instead of a fixed settle.
   const startTime = Date.now();
@@ -319,7 +371,7 @@ export async function hoverElement(params: HoverElementParams): Promise<void> {
  */
 // eslint-disable-next-line @typescript-eslint/require-await -- The `async` is the cross-platform contract, not an implementation need: the mobile twin awaits a host round-trip, this one has nothing to await.
 export async function moveMouse(params: MoveMouseParams): Promise<void> {
-  getWebContents().sendInputEvent({ type: 'mouseMove', x: Math.round(params.x), y: Math.round(params.y) });
+  getTargetWebContents(params.window).sendInputEvent({ type: 'mouseMove', x: Math.round(params.x), y: Math.round(params.y) });
 }
 
 /**
@@ -341,7 +393,7 @@ export async function pressKey(params: PressKeyParams): Promise<void> {
   const { key, modifiers = [] } = params;
 
   const electronModifiers = toElectronModifiers(modifiers);
-  const webContents = getWebContents();
+  const webContents = getTargetWebContents(params.window);
 
   // A trusted key press is keyDown -> char -> keyUp: the full real key pipeline.
   webContents.sendInputEvent({ keyCode: key, modifiers: electronModifiers, type: 'keyDown' });
@@ -365,6 +417,7 @@ export async function typeIntoEditor(params: TypeIntoEditorParams): Promise<void
 
   const { editor, text } = params;
   const valueBeforeTyping = editor.getValue();
+  const targetWindow = getEditorWindow(editor);
 
   // Focus the editor and place the caret at the end of the document.
   editor.focus();
@@ -376,7 +429,7 @@ export async function typeIntoEditor(params: TypeIntoEditorParams): Promise<void
 
   // Typing is pressing each character key in turn.
   for (const char of text) {
-    await pressKey({ key: char });
+    await pressKey({ key: char, window: targetWindow });
   }
 
   // Poll until the document reflects the input or the timeout elapses, instead of a fixed settle.
@@ -418,7 +471,7 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
     ? Math.floor(rect.left) - OUTSIDE_OFFSET_IN_PIXELS
     : Math.ceil(rect.right) + OUTSIDE_OFFSET_IN_PIXELS;
   const y = rect.top + rect.height / CENTER_DIVISOR;
-  await moveMouse({ x, y });
+  await moveMouse({ window: getElementWindow(element), x, y });
 
   // Poll until the real `:hover` state has actually cleared, instead of a fixed settle.
   const startTime = Date.now();
@@ -434,8 +487,38 @@ export async function unhoverElement(params: UnhoverElementParams): Promise<void
   }
 }
 
-function getWebContents(): CurrentWebContents {
-  return window.electron.remote.getCurrentWebContents();
+// The window that owns an editor's DOM, so typing into an editor in a popout goes to that popout.
+function getEditorWindow(editor: Editor): Window {
+  return editor.cm.dom.ownerDocument.defaultView ?? window;
+}
+
+// The window that owns an element, which is the window its viewport coordinates belong to.
+function getElementWindow(element: Element): Window {
+  return element.ownerDocument.defaultView ?? window;
+}
+
+/*
+ * The Electron web contents trusted input is injected into. Every Obsidian window, the main one and each
+ * popout, is its own web contents, and `remote.getCurrentWebContents()` answers for the window whose
+ * `electron` bridge it is called through. So asking the TARGET window's own bridge is what aims the input
+ * there; asking the main window's always delivered it to the main window, whatever the caller meant.
+ * A window with no bridge (an iframe's) throws: falling back to the main window would be exactly that
+ * misdirection.
+ */
+function getTargetWebContents(targetWindow: undefined | Window): CurrentWebContents {
+  if (targetWindow === undefined || targetWindow === window) {
+    return window.electron.remote.getCurrentWebContents();
+  }
+
+  const { electron } = targetWindow as Partial<Pick<Window, 'electron'>>;
+  if (!electron) {
+    throw new Error(
+      'Trusted input cannot reach this window: it has no Electron bridge (`window.electron`). '
+        + 'Pass an Obsidian window, the main one or a popout (`leaf.view.containerEl.win`), not an iframe\'s.'
+    );
+  }
+
+  return electron.remote.getCurrentWebContents();
 }
 
 // Maps Obsidian's `Modifier` names to Electron's lowercase `sendInputEvent` modifier names.
