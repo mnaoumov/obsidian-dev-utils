@@ -795,7 +795,6 @@
     "prismjs": "^1.30.0",
     "satori": "^0.33.4",
     "satteri": "^0.10.5",
-    "starlight-github-alerts": "^0.4.0",
     "ts-declaration-location": "^1.0.7",
     "ts-morph": "^28.0.0",
     "typedoc-plugin-mdn-links": "^5.1.1",

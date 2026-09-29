@@ -7,8 +7,8 @@ import {
   readFileSync
 } from 'node:fs';
 import { resolve } from 'node:path';
-import starlightGitHubAlerts from 'starlight-github-alerts';
 
+import { satteriGitHubAlerts } from './scripts/docs-gen/helpers/satteri-plugins/satteri-github-alerts.ts';
 import { satteriRelativeLinks } from './scripts/docs-gen/helpers/satteri-plugins/satteri-relative-links.ts';
 
 // The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/src`
@@ -31,7 +31,6 @@ export default defineConfig({
         baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/edit/main/'
       },
       favicon: '/favicon.svg',
-      plugins: [starlightGitHubAlerts()],
       routeMiddleware: './docs/src/route-data.ts',
       sidebar: [
         {
@@ -50,7 +49,9 @@ export default defineConfig({
     // Astro 7.3 made Sätteri the default Markdown processor; `markdown.remarkPlugins` now runs only on the
     // `unified` processor from `@astrojs/markdown-remark`, which Astro no longer installs. Naming the
     // Sätteri processor here keeps the pipeline on it, carrying the link rewrite as one of its mdast plugins.
-    processor: satteri({ mdastPlugins: [satteriRelativeLinks(BASE)] })
+    // The GitHub-alert conversion rides here too, ahead of the asides plugin Starlight appends after these:
+    // `starlight-github-alerts` cannot find that plugin on Starlight 0.42 and silently skipped every page.
+    processor: satteri({ mdastPlugins: [satteriGitHubAlerts(), satteriRelativeLinks(BASE)] })
   },
   // eslint-disable-next-line unicorn/name-replacements -- `outDir` is an Astro config key.
   outDir: './docs/dist',
