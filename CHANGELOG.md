@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 107.3.0
+
+- feat(obsidian): merge delivering trusted input to a popout window, not always the main one
+
 ## 107.2.0
 
 - feat(script-utils): close the issues a release carries from publishGitHubRelease
