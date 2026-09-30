@@ -50,6 +50,20 @@ declare global {
     greetV2(): null | string;
 
     /**
+     * Says whether the feature surface gated on the provider is loaded right now.
+     *
+     * @returns Whether the gate is open.
+     */
+    isGatedSurfaceLoaded(): boolean;
+
+    /**
+     * Reads what the gate has announced so far.
+     *
+     * @returns The text of every notice the gate showed, oldest first.
+     */
+    readGateNotices(): string[];
+
+    /**
      * Calls through the handle stashed by {@link PluginApiIntegrationTestProbe.cacheCurrentApi}.
      *
      * @returns What the call produced, or the error it threw.

@@ -70,6 +70,17 @@
  * therefore caught the moment it is enabled or disabled. One that is not — an old release predating the
  * broadcast, or a plugin by another author entirely — is caught at the next load, which is when its
  * manifest is read.
+ *
+ * ## Why a loss is announced late
+ *
+ * Obsidian updates an enabled plugin by reloading it: the old copy unloads, the new one loads. For the
+ * moment in between the provider's API is revoked, so every dependent sees its dependency go away and
+ * come back. The feature surface still comes down at once — the dependency really is gone for that
+ * moment — but the notice waits {@link LOSS_ANNOUNCEMENT_GRACE_PERIOD_IN_MILLISECONDS}, and a loss that
+ * healed in the meantime is never announced. Without that, updating one plugin put a "no longer
+ * available" notice on screen in every plugin depending on it, describing a state that no longer held by
+ * the time the user read it. A loss the user caused on purpose — disabling or uninstalling the
+ * dependency — outlasts the window and is announced as before, only a few seconds later.
  */
 
 import type {
@@ -112,6 +123,14 @@ import {
 import { registerAsyncEvent } from './async-events-component.ts';
 import { ComponentEx } from './component-ex.ts';
 import { CallbackLayoutReadyComponent } from './layout-ready-component.ts';
+
+/**
+ * How long a gate that closed while the plugin was running waits before saying so.
+ *
+ * Long enough to cover Obsidian reloading a plugin to apply its update, short enough that a user who
+ * disabled the dependency by hand still connects the notice to what they just did.
+ */
+const LOSS_ANNOUNCEMENT_GRACE_PERIOD_IN_MILLISECONDS = 5000;
 
 /**
  * How badly two plugins running side by side goes wrong, and therefore what this one does about it.
@@ -304,6 +323,7 @@ export class PluginGateComponent extends ComponentEx {
   private isFeatureSurfaceLoaded = false;
   private isLayoutReady = false;
   private readonly loadFeatureSurface: () => Promise<void>;
+  private lossAnnouncementTimerId: null | number = null;
   private readonly plugin: Plugin;
   private readonly pluginNoticeComponent: PluginNoticeComponent;
   private readonly unloadFeatureSurface: () => void;
@@ -393,6 +413,7 @@ export class PluginGateComponent extends ComponentEx {
     );
 
     this.register(() => {
+      this.cancelLossAnnouncement();
       this.hideBlockedSettingTab();
     });
   }
@@ -422,6 +443,25 @@ export class PluginGateComponent extends ComponentEx {
     }
   }
 
+  /**
+   * Says what went away while the plugin was running, now that the grace period is over.
+   *
+   * Re-reads the gate rather than trusting what closed it, so a dependency that went away during the
+   * window is announced with the rest. One that came back in time never gets here: the gate reopening
+   * cancels the timer.
+   */
+  private announceLoss(): void {
+    this.lossAnnouncementTimerId = null;
+
+    for (const dependency of this.getUnsatisfiedDependencies()) {
+      this.pluginNoticeComponent.showNotice(this.createDependencyLostMessage(dependency));
+    }
+
+    for (const conflict of this.getActiveConflicts(PluginConflictSeverity.Block)) {
+      this.pluginNoticeComponent.showNotice(this.createConflictAppearedMessage(conflict));
+    }
+  }
+
   private announceWarnings(): void {
     // A warning describes two plugins that are both RUNNING, so it is pointless while this one is blocked
     // — and it waits for layout-ready for the same reason the blocked notice does.
@@ -437,6 +477,15 @@ export class PluginGateComponent extends ComponentEx {
       this.announcedWarningPluginIds.add(conflict.pluginId);
       this.pluginNoticeComponent.showNotice(this.createConflictWarningMessage(conflict));
     }
+  }
+
+  private cancelLossAnnouncement(): void {
+    if (this.lossAnnouncementTimerId === null) {
+      return;
+    }
+
+    window.clearTimeout(this.lossAnnouncementTimerId);
+    this.lossAnnouncementTimerId = null;
   }
 
   private createBlockedMessage(dependency: PluginDependency): DocumentFragment {
@@ -565,6 +614,7 @@ export class PluginGateComponent extends ComponentEx {
     const blockingConflicts = this.getActiveConflicts(PluginConflictSeverity.Block);
 
     if (unsatisfiedDependencies.length === 0 && blockingConflicts.length === 0) {
+      this.cancelLossAnnouncement();
       this.hideBlockedSettingTab();
       this.hasAnnouncedBlocked = false;
 
@@ -583,14 +633,12 @@ export class PluginGateComponent extends ComponentEx {
 
       // A gate that closes while the plugin is RUNNING is the case worth being loud about: the user just
       // did something, and the consequence is immediate and invisible without this. Announced regardless
-      // of layout readiness, because a running plugin means the layout is long since ready.
-      for (const dependency of unsatisfiedDependencies) {
-        this.pluginNoticeComponent.showNotice(this.createDependencyLostMessage(dependency));
-      }
-
-      for (const conflict of blockingConflicts) {
-        this.pluginNoticeComponent.showNotice(this.createConflictAppearedMessage(conflict));
-      }
+      // of layout readiness, because a running plugin means the layout is long since ready — but only
+      // once the grace period has shown the loss is not an update reloading the provider (see the file
+      // header).
+      this.lossAnnouncementTimerId = window.setTimeout(() => {
+        this.announceLoss();
+      }, LOSS_ANNOUNCEMENT_GRACE_PERIOD_IN_MILLISECONDS);
 
       this.hasAnnouncedBlocked = true;
       this.showBlockedSettingTab(unsatisfiedDependencies, blockingConflicts);
