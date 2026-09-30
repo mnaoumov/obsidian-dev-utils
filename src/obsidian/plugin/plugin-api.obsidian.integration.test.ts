@@ -30,6 +30,17 @@ import {
 
 const WAIT_TIMEOUT_IN_MILLISECONDS = 10_000;
 
+// Past the gate's 5 s loss-announcement grace period, with room for the timer to be late.
+const LOSS_GRACE_PERIOD_SETTLE_IN_MILLISECONDS = 6000;
+
+/**
+ * What the dependency-gate probe reports back.
+ */
+interface GateProbe {
+  readonly isGatedSurfaceLoaded: boolean;
+  readonly newNotices: readonly string[];
+}
+
 /**
  * What the disable/enable probe reports back, gathered in one closure so the whole cycle runs inside a single
  * evaluation and the assertions live on the Node side.
@@ -190,5 +201,98 @@ describe('cross-copy plugin API registry', () => {
     expect(probe.cachedAfterRevoke).toContain(PLUGIN_API_PROVIDER_PLUGIN_ID);
     expect(probe.cachedStillRevokedAfterReEnable).toContain('PluginApiRevokedError');
     expect(probe.greetingAfterReEnable).toBe('v2.0.0: world');
+  });
+});
+
+describe('a plugin gate depending on a plugin from another library copy', () => {
+  beforeEach(async () => {
+    await evalInObsidian({
+      async callback({ app, lib: { waitUntil }, providerPluginId, waitTimeoutInMilliseconds }): Promise<void> {
+        if (!app.plugins.enabledPlugins.has(providerPluginId)) {
+          await app.plugins.enablePlugin(providerPluginId);
+        }
+
+        await waitUntil({
+          message: 'the gate on the provider to open',
+          predicate: (): boolean => window.__pluginApiIntegrationTestProbe?.isGatedSurfaceLoaded() === true,
+          timeoutInMilliseconds: waitTimeoutInMilliseconds
+        });
+      },
+      input: {
+        providerPluginId: PLUGIN_API_PROVIDER_PLUGIN_ID,
+        waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+      }
+    });
+  });
+
+  it('should say nothing when the provider is reloaded, as Obsidian does to apply its update', async () => {
+    const probe = await evalInObsidian({
+      async callback({ app, lib: { waitUntil }, providerPluginId, settleInMilliseconds, waitTimeoutInMilliseconds }): Promise<GateProbe> {
+        const testProbe = window.__pluginApiIntegrationTestProbe;
+        if (!testProbe) {
+          throw new Error('The plugin-API consumer plugin did not install its probe.');
+        }
+
+        const noticeCountBefore = testProbe.readGateNotices().length;
+
+        // Exactly what Obsidian does after installing an update to an enabled plugin.
+        await app.plugins.disablePlugin(providerPluginId);
+        await app.plugins.enablePlugin(providerPluginId);
+        await waitUntil({
+          message: 'the gate on the provider to reopen after the reload',
+          predicate: (): boolean => testProbe.isGatedSurfaceLoaded(),
+          timeoutInMilliseconds: waitTimeoutInMilliseconds
+        });
+
+        // Nothing to wait FOR: the assertion is that nothing arrives, so outlast the grace period.
+        await sleep(settleInMilliseconds);
+
+        return {
+          isGatedSurfaceLoaded: testProbe.isGatedSurfaceLoaded(),
+          newNotices: testProbe.readGateNotices().slice(noticeCountBefore)
+        };
+      },
+      input: {
+        providerPluginId: PLUGIN_API_PROVIDER_PLUGIN_ID,
+        settleInMilliseconds: LOSS_GRACE_PERIOD_SETTLE_IN_MILLISECONDS,
+        waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+      }
+    });
+
+    expect(probe.isGatedSurfaceLoaded).toBe(true);
+    expect(probe.newNotices).toEqual([]);
+  });
+
+  it('should still announce a provider that stays gone', async () => {
+    const probe = await evalInObsidian({
+      async callback({ app, lib: { waitUntil }, providerPluginId, waitTimeoutInMilliseconds }): Promise<GateProbe> {
+        const testProbe = window.__pluginApiIntegrationTestProbe;
+        if (!testProbe) {
+          throw new Error('The plugin-API consumer plugin did not install its probe.');
+        }
+
+        const noticeCountBefore = testProbe.readGateNotices().length;
+
+        await app.plugins.disablePlugin(providerPluginId);
+        await waitUntil({
+          message: 'the gate to announce the lost provider',
+          predicate: (): boolean => testProbe.readGateNotices().length > noticeCountBefore,
+          timeoutInMilliseconds: waitTimeoutInMilliseconds
+        });
+
+        return {
+          isGatedSurfaceLoaded: testProbe.isGatedSurfaceLoaded(),
+          newNotices: testProbe.readGateNotices().slice(noticeCountBefore)
+        };
+      },
+      input: {
+        providerPluginId: PLUGIN_API_PROVIDER_PLUGIN_ID,
+        waitTimeoutInMilliseconds: WAIT_TIMEOUT_IN_MILLISECONDS
+      }
+    });
+
+    expect(probe.isGatedSurfaceLoaded).toBe(false);
+    expect(probe.newNotices).toHaveLength(1);
+    expect(probe.newNotices[0]).toContain('Plugin API Provider is no longer available');
   });
 });

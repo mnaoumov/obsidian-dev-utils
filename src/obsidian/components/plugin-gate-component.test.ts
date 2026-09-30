@@ -89,6 +89,9 @@ const HOST_PLUGIN_ID = 'host-plugin';
 
 const HOST_PLUGIN_NAME = 'Host Plugin';
 
+// Mirrors the component's private grace period; a test that waits less than this sees no announcement.
+const LOSS_GRACE_PERIOD_IN_MILLISECONDS = 5000;
+
 const WARNING_CONFLICT: PluginConflict = {
   conflictingVersionRange: '>=0.0.0',
   pluginId: 'overlapping-plugin',
@@ -268,13 +271,21 @@ describe('with an unsatisfied dependency', () => {
 });
 
 describe('when a satisfied dependency goes away', () => {
-  it('should unload the feature surface and say so immediately', async () => {
+  it('should unload the feature surface at once, and say so once the grace period is over', async () => {
     const { showNotice, unloadFeatureSurface } = await createLoadedComponent();
 
     apiRefValue = null;
     await fireApiRefChange();
 
     expect(unloadFeatureSurface).toHaveBeenCalledTimes(1);
+    expect(addSettingTab).toHaveBeenCalledTimes(1);
+    expect(showNotice).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(LOSS_GRACE_PERIOD_IN_MILLISECONDS - 1);
+    expect(showNotice).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(showNotice).toHaveBeenCalledTimes(1);
     expectNoticeText(
       showNotice,
       `${DEPENDENCY.pluginName} is no longer available, so ${HOST_PLUGIN_NAME} has stopped working. Bring it back to resume.`
@@ -299,12 +310,41 @@ describe('when a satisfied dependency goes away', () => {
 
     apiRefValue = null;
     await fireApiRefChange();
+    await waitOutLossGracePeriod();
     apiRefValue = {};
     await fireApiRefChange();
     apiRefValue = null;
     await fireApiRefChange();
+    await waitOutLossGracePeriod();
 
     expect(showNotice).toHaveBeenCalledTimes(2);
+  });
+
+  it('should say nothing when the dependency comes back within the grace period, as it does when Obsidian updates it', async () => {
+    const { loadFeatureSurface, showNotice, unloadFeatureSurface } = await createLoadedComponent();
+
+    // Obsidian applies a plugin update by unloading the old copy and loading the new one, so the API is
+    // revoked and re-published moments apart.
+    apiRefValue = null;
+    await fireApiRefChange();
+    apiRefValue = {};
+    await fireApiRefChange();
+    await waitOutLossGracePeriod();
+
+    expect(unloadFeatureSurface).toHaveBeenCalledTimes(1);
+    expect(loadFeatureSurface).toHaveBeenCalledTimes(2);
+    expect(showNotice).not.toHaveBeenCalled();
+  });
+
+  it('should say nothing when it is unloaded within the grace period', async () => {
+    const { component, showNotice } = await createLoadedComponent();
+
+    apiRefValue = null;
+    await fireApiRefChange();
+    component.unload();
+    await waitOutLossGracePeriod();
+
+    expect(showNotice).not.toHaveBeenCalled();
   });
 });
 
@@ -581,6 +621,9 @@ describe('when a conflict appears while the plugin is running', () => {
     await fireLifecycleEvent(PLUGIN_LOADED_EVENT_NAME, BLOCKING_CONFLICT.pluginId);
 
     expect(unloadFeatureSurface).toHaveBeenCalledTimes(1);
+    expect(showNotice).not.toHaveBeenCalled();
+
+    await waitOutLossGracePeriod();
     expectNoticeText(
       showNotice,
       `${BLOCKING_CONFLICT.pluginName} is now enabled, so ${HOST_PLUGIN_NAME} has stopped working. Update or disable it to resume.`
@@ -713,7 +756,9 @@ async function fireLifecycleEvent(name: string, pluginId: string): Promise<void>
     callback(payload);
   }
 
-  await vi.runAllTimersAsync();
+  // Only what is due now: running every timer would also fire the loss-announcement grace period, which
+  // is exactly what the tests of that period need to control.
+  await vi.advanceTimersByTimeAsync(0);
 }
 
 function installPlugin(pluginId: string, version: string): void {
@@ -722,4 +767,8 @@ function installPlugin(pluginId: string, version: string): void {
     version
   });
   enabledPlugins.add(pluginId);
+}
+
+async function waitOutLossGracePeriod(): Promise<void> {
+  await vi.advanceTimersByTimeAsync(LOSS_GRACE_PERIOD_IN_MILLISECONDS);
 }

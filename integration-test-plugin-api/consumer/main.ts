@@ -10,13 +10,19 @@
 
 /// <reference path="../global.d.ts" />
 
+import type { Notice } from 'obsidian';
+
 import { Plugin } from 'obsidian';
 
+import type { PluginNoticeComponentShowNoticeOptions } from '../../src/obsidian/components/plugin-notice-component.ts';
 import type { PluginApiRef } from '../../src/obsidian/plugin/plugin-api.ts';
 import type { GreeterApi } from '../shared.ts';
 
 import { getDebugController } from '../../src/debug.ts';
+import { noopAsync } from '../../src/function.ts';
 import { castTo } from '../../src/object-utils.ts';
+import { PluginGateComponent } from '../../src/obsidian/components/plugin-gate-component.ts';
+import { PluginNoticeComponent } from '../../src/obsidian/components/plugin-notice-component.ts';
 import { watchPluginApi } from '../../src/obsidian/plugin/plugin-api.ts';
 import {
   GREETER_CONTRACT,
@@ -27,6 +33,31 @@ const PLUGIN_API_DEBUG_NAMESPACE = 'obsidian-dev-utils:PluginApi';
 
 // A number where the contract says string. The provider's published input schema is what rejects it.
 const WRONGLY_TYPED_ARGUMENT = 42;
+
+/**
+ * A notice component that also keeps the text of every notice it is asked to show.
+ *
+ * Recording at the source rather than sampling the DOM: a notice replaces the previous one and fades on its
+ * own, so what is on screen when the test looks says nothing about what was shown before it.
+ */
+class RecordingPluginNoticeComponent extends PluginNoticeComponent {
+  /**
+   * The text of every notice shown, oldest first.
+   */
+  public readonly messages: string[] = [];
+
+  /**
+   * Records the message, then shows it as usual.
+   *
+   * @param message - The message to display.
+   * @param options - The options for displaying the notice.
+   * @returns The notice object.
+   */
+  public override showNotice(message: DocumentFragment | string, options?: PluginNoticeComponentShowNoticeOptions): Notice {
+    this.messages.push(typeof message === 'string' ? message : message.textContent);
+    return super.showNotice(message, options);
+  }
+}
 
 /**
  * Watches the provider's API at two version ranges and publishes a probe for the test to drive.
@@ -44,6 +75,35 @@ export default class PluginApiConsumerPlugin extends Plugin {
   public override onload(): void {
     const refV1 = this.watch('^1');
     const refV2 = this.watch('^2');
+
+    // The provider declared as a mandatory dependency too, gated exactly as a `PluginBase` gates one, so
+    // the test can reload the provider the way Obsidian applies an update and read what the gate said.
+    const pluginNoticeComponent = new RecordingPluginNoticeComponent({
+      app: this.app,
+      pluginName: this.manifest.name
+    });
+    this.addChild(pluginNoticeComponent);
+    let isGatedSurfaceLoaded = false;
+    this.addChild(
+      new PluginGateComponent({
+        conflicts: [],
+        dependencies: [{
+          apiVersionRange: '^2',
+          pluginId: PROVIDER_PLUGIN_ID,
+          pluginName: 'Plugin API Provider',
+          reason: 'Greets people.'
+        }],
+        loadFeatureSurface: async (): Promise<void> => {
+          isGatedSurfaceLoaded = true;
+          await noopAsync();
+        },
+        plugin: this,
+        pluginNoticeComponent,
+        unloadFeatureSurface: (): void => {
+          isGatedSurfaceLoaded = false;
+        }
+      })
+    );
 
     window.__pluginApiIntegrationTestProbe = {
       cacheCurrentApi: (): void => {
@@ -64,6 +124,8 @@ export default class PluginApiConsumerPlugin extends Plugin {
       },
       greetV1: (): null | string => refV1.value?.greet('world') ?? null,
       greetV2: (): null | string => refV2.value?.greet('world') ?? null,
+      isGatedSurfaceLoaded: (): boolean => isGatedSurfaceLoaded,
+      readGateNotices: (): string[] => [...pluginNoticeComponent.messages],
       readCachedApi: (): CachedApiProbeResult => callSafely(() => this.cachedApi?.greet('cached') ?? null)
     };
 
