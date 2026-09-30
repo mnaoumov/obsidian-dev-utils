@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 107.3.1
+
+- fix(obsidian): merge waiting out a plugin update before announcing a lost dependency
+- fix(docs): merge rendering GitHub alerts as Starlight asides again
+
 ## 107.3.0
 
 - feat(obsidian): merge delivering trusted input to a popout window, not always the main one
