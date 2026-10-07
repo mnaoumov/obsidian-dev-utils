@@ -1047,3 +1047,97 @@ describe('parseLinks empty-label markdown links', () => {
     expect(result.alias).toBeUndefined();
   });
 });
+
+/* eslint-disable unicorn/prefer-https -- Obsidian opens a `www.` autolink literal with `http://`, which is the value under test. */
+describe('parseLinks (GFM extended www. autolink literals)', () => {
+  it.each([
+    { expectedRaw: 'www.google.com', expectedUrl: 'http://www.google.com', text: 'www.google.com' },
+    { expectedRaw: '<www.google.com>', expectedUrl: 'http://www.google.com', text: '<www.google.com>' },
+    { expectedRaw: 'www.example.com', expectedUrl: 'http://www.example.com', text: 'www.example.com.' },
+    { expectedRaw: 'www.example.com', expectedUrl: 'http://www.example.com', text: '(www.example.com)' },
+    { expectedRaw: 'www.example.com/a_(b)', expectedUrl: 'http://www.example.com/a_(b)', text: 'see www.example.com/a_(b)).' },
+    { expectedRaw: 'www.example.com/a', expectedUrl: 'http://www.example.com/a', text: '*www.example.com/a&amp;*' },
+    { expectedRaw: 'www.a_b.example.com', expectedUrl: 'http://www.a_b.example.com', text: '_www.a_b.example.com_' },
+    { expectedRaw: 'www.bü.com', expectedUrl: 'http://www.bü.com', text: '~www.bü.com~' }
+  ])('should parse $text as an external link', ({ expectedRaw, expectedUrl, text }) => {
+    const results = parseLinks(text);
+    expect(results).toHaveLength(1);
+    const [result] = results;
+    assertNonNullable(result);
+    expect(result.raw).toBe(expectedRaw);
+    expect(text.slice(result.startOffset, result.endOffset)).toBe(expectedRaw);
+    expect(result.url).toBe(expectedUrl);
+    expect(result.encodedUrl).toBe(expectedUrl);
+    expect(result.isExternal).toBe(true);
+    expect(result.isFileUrl).toBe(false);
+    expect(result.isEmbed).toBe(false);
+    expect(result.isWikilink).toBe(false);
+    expect(result.hasAngleBrackets).toBe(expectedRaw.startsWith('<'));
+    expect(result.alias).toBeUndefined();
+  });
+
+  it.each([
+    '<example.com>',
+    '<ftp.example.com>',
+    'www.',
+    '2www.example.com',
+    'x.www.example.com',
+    'www.example.a_b',
+    'www.a_b.com',
+    '`www.example.com`'
+  ])('should not parse %s as a link', (text) => {
+    expect(parseLinks(text)).toEqual([]);
+  });
+
+  it('should keep the offsets of a literal among other text and links', () => {
+    const text = 'See [[note]] and www.example.com, or <www.google.com> too.';
+    const results = parseLinks(text);
+    expect(results.map((result) => result.raw)).toEqual(['[[note]]', 'www.example.com', '<www.google.com>']);
+    for (const result of results) {
+      expect(text.slice(result.startOffset, result.endOffset)).toBe(result.raw);
+    }
+  });
+
+  it('should not report a www. literal inside a URL with a scheme twice', () => {
+    expect(parseLinks('https://www.example.com').map((result) => result.raw)).toEqual(['https://www.example.com']);
+    expect(parseLinks('x:(www.example.com)').map((result) => result.raw)).toEqual(['x:(www.example.com)']);
+  });
+
+  it('should not report brackets that do not close right after the literal', () => {
+    const [result] = parseLinks('<www.example.com.>');
+    assertNonNullable(result);
+    expect(result.raw).toBe('www.example.com');
+    expect(result.hasAngleBrackets).toBe(false);
+  });
+
+  it.each(['www.google.com', '<www.google.com>', 'www.example.com.', '(www.example.com)'])(
+    'should rebuild %s with an alias as an external link',
+    (text) => {
+      const [result] = parseLinks(text);
+      assertNonNullable(result);
+      const rebuilt = parseLink(`[alias](${result.url})`);
+      assertNonNullable(rebuilt);
+      expect(rebuilt.isExternal).toBe(true);
+      expect(rebuilt.url).toBe(result.url);
+      expect(rebuilt.alias).toBe('alias');
+    }
+  );
+
+  it('should parse a whole literal through parseLink', () => {
+    expect(parseLink('<www.google.com>')?.url).toBe('http://www.google.com');
+  });
+
+  it('should skip literals when turned off', () => {
+    expect(parseLinks('www.google.com <www.google.com>', { shouldRecognizeWwwAutolinkLiterals: false })).toEqual([]);
+    expect(parseLink('www.google.com', { shouldRecognizeWwwAutolinkLiterals: false })).toBeNull();
+  });
+
+  it('should not treat a scheme-less frontmatter value as a link', () => {
+    expect(parseFrontmatterLinks({ multi: 'www.a.com www.b.com', single: 'www.google.com' })).toEqual({
+      frontmatterExternalLinks: [],
+      multiValueFrontmatterExternalLinks: [],
+      multiValueFrontmatterLinks: []
+    });
+  });
+});
+/* eslint-enable unicorn/prefer-https -- The `www.` autolink literal cases end here. */
