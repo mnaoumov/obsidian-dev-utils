@@ -39,6 +39,35 @@ const SPECIAL_MARKDOWN_LINK_SYMBOLS_REGEX = /[\\[\]<>_*~=`$]/g;
 const WIKILINK_DIVIDER = '|';
 
 /**
+ * Matches a candidate GFM extended `www.` autolink literal: `www.` at the start of the text or after
+ * whitespace, `*`, `_`, `~`, `(` or `<`, running up to the next whitespace, `<` or `>`. GFM itself
+ * keeps a closing `>` in the literal (Obsidian renders `<www.example.com>` with an href ending in
+ * `%3E`); stopping before it is deliberate, so the brackets can be reported around the literal instead.
+ */
+const WWW_AUTOLINK_LITERAL_CANDIDATE_REG_EXP = /(?<=^|[\s(*<_~])www\.[^\s<>]*/g;
+
+/**
+ * Matches the domain of a GFM extended `www.` autolink literal: segments of letters, digits,
+ * underscores and hyphens separated by periods.
+ */
+const WWW_AUTOLINK_LITERAL_DOMAIN_REG_EXP = /^www(?:\.[\p{L}\p{N}_-]+)+/u;
+
+/**
+ * The characters GFM drops from the end of an extended autolink.
+ */
+const WWW_AUTOLINK_LITERAL_TRAILING_PUNCTUATION = new Set(['_', ',', ':', '!', '?', '.', '*', '~']);
+
+/**
+ * Matches an entity reference at the end of an extended autolink, which GFM drops.
+ */
+const TRAILING_ENTITY_REFERENCE_REG_EXP = /&[\dA-Za-z]+;$/;
+
+/**
+ * The scheme Obsidian opens a GFM extended `www.` autolink literal with.
+ */
+const WWW_AUTOLINK_LITERAL_SCHEME = 'http://';
+
+/**
  * The result of parsing the links from a note's frontmatter via {@link parseFrontmatterLinks}. Internal
  * single-link frontmatter values are omitted, as Obsidian natively caches them.
  */
@@ -87,6 +116,11 @@ export interface ParseLinkFrontmatterReferenceWithOffsets extends ParseLinkFront
    */
   startOffset: number;
 }
+
+/**
+ * Options for {@link parseLink}. The same as {@link ParseLinksOptions}.
+ */
+export type ParseLinkOptions = ParseLinksOptions;
 
 /**
  * A {@link ReferenceCache} for a link parsed from content via {@link parseLinks}. It carries the full
@@ -230,6 +264,20 @@ export interface ParseLinkResult {
 }
 
 /**
+ * Options for {@link parseLinks}.
+ */
+export interface ParseLinksOptions {
+  /**
+   * Whether to recognize GFM extended `www.` autolink literals (`www.example.com`, also inside
+   * `<...>`) as external links, as Obsidian does in a note's body. Obsidian does not link them in
+   * frontmatter values, so {@link parseFrontmatterLinks} turns this off.
+   *
+   * Defaults to `true`.
+   */
+  readonly shouldRecognizeWwwAutolinkLiterals?: boolean;
+}
+
+/**
  * Params for {@link toParseLinkReference}.
  */
 export interface ToParseLinkReferenceParams {
@@ -324,6 +372,11 @@ interface ExtractTextLinksParams {
   readonly endOffset: number;
 
   /**
+   * Whether to recognize GFM extended `www.` autolink literals.
+   */
+  readonly shouldRecognizeWwwAutolinkLiterals: boolean;
+
+  /**
    * A start offset of the text part in the string.
    */
   readonly startOffset: number;
@@ -406,7 +459,8 @@ class FrontmatterLinksParser {
 
   private parseValue(value: unknown, key: string): void {
     if (typeof value === 'string') {
-      const parseLinkResults = parseLinks(value);
+      // Obsidian links a scheme-less `www.` literal in the body only, never in a frontmatter value.
+      const parseLinkResults = parseLinks(value, { shouldRecognizeWwwAutolinkLiterals: false });
       const isSingleLink = parseLinkResults[0]?.raw === value;
       for (const parseLinkResult of parseLinkResults) {
         this.categorize({ isSingleLink, key, parseLinkResult, value });
@@ -479,20 +533,31 @@ export function parseFrontmatterLinks(frontmatter: unknown): ParseFrontmatterLin
  * Parses a link into its components.
  *
  * @param $string - The link to parse.
+ * @param options - The parse options.
  * @returns The parsed link.
  */
-export function parseLink($string: string): null | ParseLinkResult {
-  const links = parseLinks($string);
+export function parseLink($string: string, options?: ParseLinkOptions): null | ParseLinkResult {
+  const links = parseLinks($string, options);
   return links[0]?.raw === $string ? links[0] : null;
 }
 
 /**
  * Parses all links in a string.
  *
+ * Besides markdown links, wikilinks and autolinks, the plain text between them is scanned for bare
+ * URLs with a scheme (`https://example.com`) and, unless turned off through
+ * {@link ParseLinksOptions.shouldRecognizeWwwAutolinkLiterals}, for GFM extended `www.` autolink
+ * literals (`www.example.com`). Such a literal is reported as an external link whose `url` carries the
+ * `http://` scheme Obsidian opens it with, so a link rebuilt from it stays external: a scheme-less
+ * `[alias](www.example.com)` is an internal link in Obsidian. A literal wrapped in `<...>` reports the
+ * brackets as part of `raw`, so replacing `raw` leaves no stray bracket behind.
+ *
  * @param $string - The string to parse the links in.
+ * @param options - The parse options.
  * @returns The parsed links.
  */
-export function parseLinks($string: string): ParseLinkResult[] {
+export function parseLinks($string: string, options?: ParseLinksOptions): ParseLinkResult[] {
+  const shouldRecognizeWwwAutolinkLiterals = options?.shouldRecognizeWwwAutolinkLiterals ?? true;
   const embedSymbolOffsets = new Set<number>();
 
   const EMBED_LINK_PREFIX = '![';
@@ -559,6 +624,7 @@ export function parseLinks($string: string): ParseLinkResult[] {
     extractTextLinks({
       $string,
       endOffset: link.startOffset - 1,
+      shouldRecognizeWwwAutolinkLiterals,
       startOffset: textStartOffset,
       textLinks
     });
@@ -568,6 +634,7 @@ export function parseLinks($string: string): ParseLinkResult[] {
   extractTextLinks({
     $string,
     endOffset: $string.length - 1,
+    shouldRecognizeWwwAutolinkLiterals,
     startOffset: textStartOffset,
     textLinks
   });
@@ -623,6 +690,10 @@ export function unescapeAlias(escapedAlias: string): string {
   });
 }
 
+function countOccurrences($string: string, character: string): number {
+  return $string.split(character).length - 1;
+}
+
 function decodeUrlSafely(params: DecodeUrlSafelyParams): string {
   const { hasAngleBrackets, isExternal, url } = params;
   // `file://` URLs are external, but their percent-encoding is purely cosmetic, so decode them like
@@ -647,12 +718,13 @@ function extractAlias(params: ExtractAliasParams): string | undefined {
 }
 
 function extractTextLinks(params: ExtractTextLinksParams): void {
-  const { $string, endOffset, startOffset, textLinks } = params;
+  const { $string, endOffset, shouldRecognizeWwwAutolinkLiterals, startOffset, textLinks } = params;
   if (startOffset > endOffset) {
     return;
   }
 
   const textPart = $string.slice(startOffset, endOffset + 1);
+  const schemeLinks: ParseLinkResult[] = [];
   replaceAll({
     $string: textPart,
     replacer: ({ capturedGroupArguments: [rawUrl = ''], offset }) => {
@@ -667,7 +739,7 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
         isExternal: true,
         url: rawUrl
       });
-      textLinks.push({
+      schemeLinks.push({
         encodedUrl: encodeUrl(url),
         endOffset: startOffset + offset + rawUrl.length,
         hasAngleBrackets: false,
@@ -682,6 +754,41 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
     },
     searchValue: /(?<Url>\S+)/g
   });
+  textLinks.push(...schemeLinks);
+
+  if (!shouldRecognizeWwwAutolinkLiterals) {
+    return;
+  }
+
+  for (const match of textPart.matchAll(WWW_AUTOLINK_LITERAL_CANDIDATE_REG_EXP)) {
+    const literal = trimWwwAutolinkLiteral(match[0]);
+    if (!isValidWwwAutolinkLiteral(literal)) {
+      continue;
+    }
+
+    const literalStartOffset = startOffset + match.index;
+    const literalEndOffset = literalStartOffset + literal.length;
+    if (schemeLinks.some((link) => link.startOffset < literalEndOffset && literalStartOffset < link.endOffset)) {
+      continue;
+    }
+
+    const hasAngleBrackets = $string[literalStartOffset - 1] === '<' && $string[literalEndOffset] === '>';
+    const linkStartOffset = hasAngleBrackets ? literalStartOffset - 1 : literalStartOffset;
+    const linkEndOffset = hasAngleBrackets ? literalEndOffset + 1 : literalEndOffset;
+    const url = WWW_AUTOLINK_LITERAL_SCHEME + literal;
+    textLinks.push({
+      encodedUrl: encodeUrl(url),
+      endOffset: linkEndOffset,
+      hasAngleBrackets,
+      isEmbed: false,
+      isExternal: true,
+      isFileUrl: false,
+      isWikilink: false,
+      raw: $string.slice(linkStartOffset, linkEndOffset),
+      startOffset: linkStartOffset,
+      url
+    });
+  }
 }
 
 function getRawLink(node: Node, $string: string): string {
@@ -693,6 +800,17 @@ function hasAngleBracketsInLink(params: HasAngleBracketsInLinkParams): boolean {
   const { raw, rawUrl } = params;
   const OPEN_ANGLE_BRACKET = '<';
   return raw.startsWith(OPEN_ANGLE_BRACKET) || rawUrl.startsWith(OPEN_ANGLE_BRACKET);
+}
+
+function isValidWwwAutolinkLiteral(literal: string): boolean {
+  const domain = WWW_AUTOLINK_LITERAL_DOMAIN_REG_EXP.exec(literal)?.[0];
+  if (domain === undefined) {
+    return false;
+  }
+
+  // GFM: no underscore in the last two segments of the domain.
+  const LAST_SEGMENTS_COUNT = 2;
+  return domain.split('.').slice(-LAST_SEGMENTS_COUNT).every((segment) => !segment.includes('_'));
 }
 
 function offsetToLoc(content: string, offset: number): Loc {
@@ -764,4 +882,21 @@ function parseWikilinkNode(node: WikiLinkNode, $string: string): ParseLinkResult
     startOffset: ensureNonNullable(position.start.offset),
     url: node.value
   });
+}
+
+function trimWwwAutolinkLiteral(literal: string): string {
+  const trimmed = trimWwwAutolinkLiteralEnd(literal);
+  return trimmed === literal ? literal : trimWwwAutolinkLiteral(trimmed);
+}
+
+function trimWwwAutolinkLiteralEnd(literal: string): string {
+  const lastCharacter = literal.slice(-1);
+  if (WWW_AUTOLINK_LITERAL_TRAILING_PUNCTUATION.has(lastCharacter)) {
+    return literal.slice(0, -1);
+  }
+
+  // GFM: a closing parenthesis with no opening one to match is not part of the literal.
+  return lastCharacter === ')' && countOccurrences(literal, ')') > countOccurrences(literal, '(')
+    ? literal.slice(0, -1)
+    : literal.replace(TRAILING_ENTITY_REFERENCE_REG_EXP, '');
 }
