@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 107.4.0
+
+- feat(obsidian): merge parsing GFM `www.` autolink literals as external links
+
 ## 107.3.1
 
 - fix(obsidian): merge waiting out a plugin update before announcing a lost dependency
