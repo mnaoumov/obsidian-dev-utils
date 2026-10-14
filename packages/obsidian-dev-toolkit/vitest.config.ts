@@ -38,7 +38,6 @@ export default defineConfig({
     onConsoleLog: (): false => false,
     projects: [
       {
-        plugins: [workspaceSourcePlugin()],
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',
@@ -50,7 +49,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',
@@ -67,7 +65,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',

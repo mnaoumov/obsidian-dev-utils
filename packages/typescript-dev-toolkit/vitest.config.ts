@@ -24,7 +24,6 @@ export default defineConfig({
     onConsoleLog: (): false => false,
     projects: [
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           exclude: [...WORKSPACE_TEST_EXCLUDE, INTEGRATION_TEST_FILES, ESLINT_TYPECHECK_TEST_FILES],
@@ -34,7 +33,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           exclude: WORKSPACE_TEST_EXCLUDE,
@@ -49,7 +47,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           exclude: WORKSPACE_TEST_EXCLUDE,
