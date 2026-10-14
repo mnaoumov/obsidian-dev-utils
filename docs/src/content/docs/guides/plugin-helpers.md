@@ -30,7 +30,7 @@ description: The `PluginBase` family - notices, settings components, settings ta
 
 The links below contains the full documentation. Here in the docs we mention only the most important ones.
 
-## [PluginBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/plugin/plugin.ts)
+## [PluginBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/packages/obsidian-lib/src/plugin/plugin.ts)
 
 `PluginBase` is a base class for plugins, that has some additional useful features to standard [Obsidian Plugin class](https://docs.obsidian.md/Reference/TypeScript+API/Plugin).
 
@@ -49,7 +49,7 @@ The most important methods in the execution order:
 - `onExternalSettingsChange()` - usually you don't need to override it.
 - `onunload()` - usually you don't need to override it.
 
-## [PluginNoticeComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/plugin-notice-component.ts)
+## [PluginNoticeComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/packages/obsidian-lib/src/components/plugin-notice-component.ts)
 
 `plugin.pluginNoticeComponent` shows notices prefixed with the plugin name and tied to the plugin lifecycle. Prefer it over constructing an Obsidian `Notice` directly.
 
@@ -69,7 +69,7 @@ The implication rules are enforced — a contradictory combination throws:
 - A permanent notice must be reusable, so `isPermanent: true` together with `isReusable: false` throws.
 - A hard-to-close notice is standalone, so `requiresCloseConfirmation: true` together with `isReusable: true` throws.
 
-## [PluginSettingsComponentBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/plugin-settings-component.ts)
+## [PluginSettingsComponentBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/packages/obsidian-lib/src/components/plugin-settings-component.ts)
 
 ```ts
 export class FooPluginSettingsComponent extends PluginSettingsComponentBase<FooPluginSettings> {
@@ -83,7 +83,7 @@ The most important methods in the execution order:
 - `onLoadRecord()`
 - `onSavingRecord()`
 
-## [PluginSettingsTabBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/plugin/plugin-settings-tab.ts)
+## [PluginSettingsTabBase](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/packages/obsidian-lib/src/plugin/plugin-settings-tab.ts)
 
 ```ts
 export class FooPluginSettingsTab extends PluginSettingsTabBase<FooPluginSettings> {
@@ -156,7 +156,7 @@ The most important methods in the execution order:
 - `settingGroupEx()` / `settingEx()`
 - `bind()`
 
-## [RmdirGuardComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/rmdir-guard-component.ts)
+## [RmdirGuardComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/packages/obsidian-lib/src/components/rmdir-guard-component.ts)
 
 `app.vault.adapter.rmdir(path, recursive)` does not honor `recursive: false`, and the two adapters get it wrong in opposite directions:
 
@@ -175,7 +175,7 @@ this.addChild(new RmdirGuardComponent(this.app));
 
 Check `error.code === 'ENOTEMPTY'` rather than `instanceof` - every plugin bundles its own copy of the library, so the error may cross a copy boundary.
 
-## [SyntaxHighlightingComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/src/obsidian/components/syntax-highlighting-component.ts)
+## [SyntaxHighlightingComponent](https://github.com/mnaoumov/obsidian-dev-utils/blob/main/packages/obsidian-lib/src/components/syntax-highlighting-component.ts)
 
 `SyntaxHighlightingComponent` registers your own syntax highlighting languages and unregisters them when it is unloaded. Add it as a child of your plugin: `const syntaxHighlightingComponent = this.addChild(new SyntaxHighlightingComponent());`.
 
