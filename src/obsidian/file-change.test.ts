@@ -407,6 +407,22 @@ describe('applyContentChanges', () => {
     expect(result).toBe('Hello world');
   });
 
+  it('should ask for a retry by default when validation fails, since the file may still be catching up', async () => {
+    const changes = [makeContentChange('WRONG', 'new', 0)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content: 'Hello world', path: 'test.md' });
+    expect(result).toBeNull();
+  });
+
+  it('should reject when the signal aborts while the changes provider runs', async () => {
+    const controller = new AbortController();
+    const provider = (): FileChange[] => {
+      controller.abort(new Error('aborted'));
+      return [makeContentChange('[[old]]', '[[new]]', 6)];
+    };
+    await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: provider, content: 'Hello [[old]] world', path: 'test.md' }))
+      .rejects.toThrow('aborted');
+  });
+
   it('should filter out duplicate changes', async () => {
     const content = 'Hello [[old]] world';
     const change = makeContentChange('[[old]]', '[[new]]', 6);
@@ -645,6 +661,54 @@ describe('canvas changes via applyFileChanges', () => {
     vi.mocked(console.error).mockRestore();
   });
 
+  it('should still apply the canvas changes that follow a skipped non-canvas change', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    };
+    const changes = [makeContentChange('old', 'new', 0), makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = null;
+
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    vi.mocked(console.error).mockRestore();
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    expect(parsed['nodes']?.[0]?.['file']).toBe('new.md');
+  });
+
+  it('should reject when the signal aborts while the canvas changes provider runs', async () => {
+    const canvasContent = JSON.stringify({
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    });
+    const controller = new AbortController();
+    const provider = (): FileChange[] => {
+      controller.abort(new Error('aborted'));
+      return [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    };
+    let error: unknown = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      try {
+        await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+      } catch (caught) {
+        error = caught;
+      }
+    });
+
+    await applyFileChanges({ app, changesProvider: provider, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(error).toEqual(new Error('aborted'));
+  });
+
   it('should apply canvas text node changes using applyContentChanges', async () => {
     const canvasData = {
       edges: [],
@@ -879,7 +943,7 @@ describe('sortAndFilterChanges behavior', () => {
       makeFrontmatterChangeWithOffsets('old1', 'new1', 'myKey', 7, 11)
     ];
     const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
-    expect(result).not.toBeNull();
+    expect(result).toBe('---\nmyKey: prefix new1 new2 suffix\n---\nBody');
   });
 });
 
@@ -916,6 +980,17 @@ describe('overlapping content changes', () => {
     ];
     const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
     expect(result).toBe('XYZZZ');
+  });
+
+  it('should merge a change nested inside an earlier change that does not start at the beginning', async () => {
+    const content = '01234567';
+    // Change 1 rewrites "2345" (2-6) to "2X45"; change 2 rewrites the "4" (4-5) inside it to "Y".
+    const changes = [
+      makeContentChange('2345', '2X45', 2),
+      makeContentChange('4', 'Y', 4)
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('012XY567');
   });
 
   it('should throw on overlapping changes when the overlapping region does not match', async () => {
