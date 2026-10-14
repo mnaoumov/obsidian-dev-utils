@@ -599,11 +599,11 @@ describe('replaceAll', () => {
     expect(result).toBe('15/01/2024');
   });
 
-  it('should return the string unchanged when replacer is undefined', () => {
+  it('should return the string unchanged when replacer is undefined, even where the search value matches', () => {
     expect(replaceAll({
       $string: 'hello',
       replacer: castTo<string>(undefined),
-      searchValue: 'x'
+      searchValue: 'l'
     })).toBe('hello');
   });
 
@@ -690,6 +690,48 @@ describe('replaceAllAsync', () => {
     expect(result).toBe('');
   });
 
+  it('should expand replacement patterns in a string replacer, as String.prototype.replaceAll does', async () => {
+    const result = await replaceAllAsync({
+      $string: 'ab',
+      replacer: '[$&]',
+      searchValue: /[ab]/g
+    });
+    expect(result).toBe('[a][b]');
+  });
+
+  it('should not run the remaining replacers once the signal aborts mid-flight', async () => {
+    const controller = new AbortController();
+    const visited: string[] = [];
+
+    await expect(replaceAllAsync({
+      $string: 'abc',
+      abortSignal: controller.signal,
+      replacer: async ({ substring }) => {
+        await noopAsync();
+        visited.push(substring);
+        controller.abort(new Error('aborted'));
+        return substring.toUpperCase();
+      },
+      searchValue: /./g
+    })).rejects.toThrow('aborted');
+    expect(visited).toEqual(['a']);
+  });
+
+  it('should reject when the signal aborts during the last replacer', async () => {
+    const controller = new AbortController();
+
+    await expect(replaceAllAsync({
+      $string: 'a',
+      abortSignal: controller.signal,
+      replacer: async ({ substring }) => {
+        await noopAsync();
+        controller.abort(new Error('aborted'));
+        return substring.toUpperCase();
+      },
+      searchValue: 'a'
+    })).rejects.toThrow('aborted');
+  });
+
   it('should handle undefined replacer', async () => {
     const result = await replaceAllAsync({
       $string: 'foobar',
@@ -768,6 +810,17 @@ describe('getLfNormalizedOffsetToOriginalOffsetMapper', () => {
     [-1, -1]
   ])('should handle empty string: offset %j -> %j', (lfOffset, expected) => {
     const mapper = getLfNormalizedOffsetToOriginalOffsetMapper('');
+    expect(mapper(lfOffset)).toBe(expected);
+  });
+
+  it.each([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 4],
+    [4, 5]
+  ])(String.raw`should treat a lone CR as an ordinary character in "a\rb\r\nc": offset %j -> %j`, (lfOffset, expected) => {
+    const mapper = getLfNormalizedOffsetToOriginalOffsetMapper('a\rb\r\nc');
     expect(mapper(lfOffset)).toBe(expected);
   });
 

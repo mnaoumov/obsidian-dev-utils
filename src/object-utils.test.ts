@@ -38,6 +38,12 @@ interface NormalizeTestObject {
   b?: number;
 }
 
+interface RemoveUndefinedKeepTestObject {
+  a: number | undefined;
+  b?: number | undefined;
+  c: number;
+}
+
 interface RemoveUndefinedTestObject {
   a: number;
   b?: undefined;
@@ -177,6 +183,23 @@ describe('ObjectUtils', () => {
     ])('should return false for object vs null %j and %j', (a, b) => {
       expect(isDeepEqual(a, b)).toBe(false);
     });
+
+    it.each([
+      [undefined, {}],
+      [{}, undefined],
+      [1, { a: 1 }],
+      [{ a: 1 }, 1]
+    ])('should return false, not throw, for an object compared with a non-object %j and %j', (a, b) => {
+      expect(isDeepEqual(a, b)).toBe(false);
+    });
+
+    it('should return false for a Map whose entries are a strict subset of the other', () => {
+      expect(isDeepEqual(new Map([['a', 1]]), new Map([['a', 1], ['b', 2]]))).toBe(false);
+    });
+
+    it('should return false for a Set whose values are a strict subset of the other', () => {
+      expect(isDeepEqual(new Set([1, 2]), new Set([1, 2, 3]))).toBe(false);
+    });
   });
 
   describe('getAllKeys', () => {
@@ -187,6 +210,12 @@ describe('ObjectUtils', () => {
 
     it('should return sorted keys', () => {
       const $object = { a: 2, m: 3, z: 1 };
+      expect(getAllKeys($object)).toEqual(['a', 'm', 'z']);
+    });
+
+    it('should sort keys that were inserted out of order', () => {
+      // Built from entries so that the insertion order survives the key-sorting lint autofix.
+      const $object = Object.fromEntries([['z', 1], ['a', 2], ['m', 3]]);
       expect(getAllKeys($object)).toEqual(['a', 'm', 'z']);
     });
 
@@ -310,7 +339,14 @@ describe('ObjectUtils', () => {
     it('should remove undefined properties', () => {
       const $object: RemoveUndefinedTestObject = { a: 1, b: undefined, c: 'hello' };
       removeUndefinedProperties($object);
-      expect($object).toEqual({ a: 1, c: 'hello' });
+      expect($object).toStrictEqual({ a: 1, c: 'hello' });
+      expect(Object.keys($object)).toEqual(['a', 'c']);
+    });
+
+    it('should keep the undefined properties named in keysToKeep and remove the rest', () => {
+      const $object: RemoveUndefinedKeepTestObject = { a: undefined, b: undefined, c: 1 };
+      removeUndefinedProperties($object, ['a']);
+      expect(Object.keys($object)).toEqual(['a', 'c']);
     });
 
     it('should keep null and empty string', () => {
@@ -438,6 +474,36 @@ describe('ObjectUtils', () => {
       expect(target['locked']).toBe('original');
     });
 
+    it('should redefine a read-only property that is still configurable', () => {
+      const target: GenericObject = {};
+      Object.defineProperty(target, 'locked', { configurable: true, enumerable: true, value: 'original', writable: false });
+      assignWithNonEnumerableProperties(target, { locked: 'new' });
+      expect(target['locked']).toBe('new');
+    });
+
+    it('should give the target the methods of the source prototype', () => {
+      class Greeter {
+        public greet(): string {
+          return 'hi';
+        }
+      }
+      const target: GenericObject = {};
+      assignWithNonEnumerableProperties(target, new Greeter());
+      expect((target as Partial<Greeter>).greet?.()).toBe('hi');
+    });
+
+    it('should keep the target function\'s own prototype when the source is a function', () => {
+      function target(): void {
+        noop();
+      }
+      function source(): void {
+        noop();
+      }
+      const targetPrototype = target.prototype as unknown;
+      assignWithNonEnumerableProperties(target, source);
+      expect(target.prototype).toBe(targetPrototype);
+    });
+
     it('should silently ignore defineProperty failures', () => {
       const target: GenericObject = {};
       const source = { a: 1 };
@@ -533,6 +599,55 @@ describe('ObjectUtils', () => {
       const $object = { a: { b: { c: { d: 1 } } } };
       const json = toJson($object, { maxDepth: 1 });
       expect(json).toContain('MaxDepthLimitReached');
+    });
+
+    it('should keep insertion order of keys by default', () => {
+      const json = toJson(Object.fromEntries([['z', 1], ['a', 2]]));
+      expect(Object.keys(JSON.parse(json) as object)).toEqual(['z', 'a']);
+    });
+
+    it('should sort keys inserted out of order when enabled', () => {
+      const json = toJson(Object.fromEntries([['z', 1], ['a', 2], ['m', 3]]), { shouldSortKeys: true });
+      expect(Object.keys(JSON.parse(json) as object)).toEqual(['a', 'm', 'z']);
+    });
+
+    it('should serialize an error as a plain object by default', () => {
+      expect(toJson(new Error('test error'))).toBe('{}');
+    });
+
+    it('should not stringify non-error objects when shouldHandleErrors is enabled', () => {
+      const json = toJson({ a: 1 }, { shouldHandleErrors: true });
+      expect(JSON.parse(json)).toEqual({ a: 1 });
+    });
+
+    it('should render the default circular reference substitution', () => {
+      const $object: GenericObject = { a: 1 };
+      $object['self'] = $object;
+      const json = toJson($object, { shouldHandleCircularReferences: true });
+      expect(JSON.parse(json)).toEqual({ a: 1, self: { '[[CircularReference]]': null } });
+    });
+
+    it('should render the default max depth substitution', () => {
+      const json = toJson({ a: { b: 1 } }, { maxDepth: 0 });
+      expect(JSON.parse(json)).toEqual({ a: { '[[MaxDepthLimitReached]]': null } });
+    });
+
+    it('should pass the property key to toJSON, and an empty key at the root, as JSON.stringify does', () => {
+      const withKey = {
+        toJSON(key: string): string {
+          return `key=${key}`;
+        }
+      };
+      expect(toJson(withKey)).toBe('"key="');
+      expect(JSON.parse(toJson({ child: withKey }))).toEqual({ child: 'key=child' });
+    });
+
+    it('should not cut a root array whose depth equals maxDepth', () => {
+      expect(JSON.parse(toJson([1, 2], { maxDepth: 0 }))).toEqual([1, 2]);
+    });
+
+    it('should cut nested arrays below maxDepth', () => {
+      expect(toJson([[[1]]], { maxDepth: 1, space: 0 })).toBe('[[Array(1)]]');
     });
 
     it('should sort keys when enabled', () => {
