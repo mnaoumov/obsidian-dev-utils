@@ -1,5 +1,5 @@
-import { getNanoStagedConfig } from '../src/script-utils/nano-staged-config.ts';
-import { getPackageManagerRunCommand } from '../src/script-utils/package-manager.ts';
+import { getNanoStagedConfig } from '@mnaoumov/typescript-dev-toolkit/nano-staged-config';
+import { getPackageManagerRunCommand } from '@mnaoumov/typescript-dev-toolkit/package-manager';
 
 /*
  * The `.astro` entry is this repo's own, not the shared config's: only this repo's ESLint config loads

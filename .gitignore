@@ -31,7 +31,7 @@ docs/src/content/docs/api
 docs/src/generated-sidebar.json
 docs/public/og
 
-/src/**/index.ts
+/packages/*/src/**/index.ts
 __merged.ts
 _dependencies.ts
 
@@ -39,12 +39,12 @@ _dependencies.ts
 .tsbuildinfo/
 /.env
 
-/src/**/*.d.ts
-!/src/**/@types/**/*.d.ts
+/packages/*/src/**/*.d.ts
+!/packages/*/src/**/@types/**/*.d.ts
 
 package.json
 !/package.json
-!/patches/**/package.json
+!/packages/*/package.json
 
 .claude/settings.local.json
 

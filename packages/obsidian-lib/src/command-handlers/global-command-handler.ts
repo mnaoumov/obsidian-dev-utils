@@ -1,0 +1,71 @@
+/**
+ * @file
+ *
+ * Command handler for global (non-editor, non-file) commands.
+ */
+
+import type { Command } from 'obsidian';
+import type { Promisable } from 'type-fest';
+
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
+
+import type { CommandHandlerConstructorParams } from './command-handler.ts';
+
+import { CommandHandler } from './command-handler.ts';
+
+/**
+ * Command handler for global commands invoked from the command palette.
+ *
+ * Subclasses override {@link canExecute} and {@link execute} to provide behavior.
+ */
+export abstract class GlobalCommandHandler extends CommandHandler {
+  /**
+   * Creates a new global command handler.
+   *
+   * @param params - The parameters for the command handler.
+   */
+  // eslint-disable-next-line obsidian-dev-utils/params-options-name-match -- Inherits parent's params type.
+  public constructor(params: CommandHandlerConstructorParams) {
+    super(params);
+  }
+
+  /**
+   * Builds a plain Obsidian {@link Command} object with a `checkCallback`.
+   *
+   * @returns A new {@link Command} object.
+   */
+  public override buildCommand(): Command {
+    return {
+      checkCallback: (checking) => this.checkCallback(checking),
+      icon: this.icon,
+      id: this.id,
+      name: this.name
+    };
+  }
+
+  /**
+   * Checks whether the command can currently execute.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected canExecute(): boolean {
+    return true;
+  }
+
+  /**
+   * Executes the command.
+   */
+  protected abstract execute(): Promisable<void>;
+
+  private checkCallback(isChecking: boolean): boolean {
+    if (!this.canExecute()) {
+      return false;
+    }
+
+    if (!isChecking) {
+      invokeAsyncSafely(() => this.execute());
+    }
+
+    return true;
+  }
+}

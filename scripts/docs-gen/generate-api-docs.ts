@@ -3,16 +3,19 @@
  *
  * Custom API documentation generator for obsidian-dev-utils.
  *
- * Walks `src`, extracts every documentable exported declaration via ts-morph, and generates
- * Starlight-compatible MDX pages plus a sidebar JSON. The output tree mirrors the library's
- * module/subpath structure (a type's namespace is its source path relative to `src`).
+ * Walks every workspace package's `src`, extracts every documentable exported declaration via ts-morph, and
+ * generates Starlight-compatible MDX pages plus a sidebar JSON. The output tree mirrors the packages'
+ * module/subpath structure: a type's namespace is its package folder followed by its source path relative to that
+ * package's `src` (`typescript-lib/string`, `obsidian-lib/modals/alert`), which is also its import subpath under the
+ * `@mnaoumov` scope.
  *
- * Run directly via `jiti scripts/docs-gen/generate-api-docs.ts`. Set `DOCS_ROOT` to point at a repo
+ * Run directly via `node scripts/run.mjs scripts/docs-gen/generate-api-docs.ts`. Set `DOCS_ROOT` to point at a repo
  * root other than the current working directory.
  */
 
 import {
   existsSync,
+  readdirSync,
   readFileSync
 } from 'node:fs';
 import {
@@ -20,7 +23,10 @@ import {
   rm,
   writeFile
 } from 'node:fs/promises';
-import { join } from 'node:path';
+import {
+  join,
+  normalize
+} from 'node:path';
 import { Project } from 'ts-morph';
 
 import type {
@@ -58,13 +64,39 @@ import {
 } from './helpers/api-doc-source-processing.ts';
 import { resolveInheritedMembers } from './helpers/api-doc-type-merging.ts';
 
+/**
+ * Where a source file's namespace starts: its package, and that package's source folder.
+ */
+interface NamespaceRoot {
+  readonly packageFolder: string;
+  readonly srcDirectory: string;
+}
+
+function ensureNonNullable<T>(value: T | undefined, message: string): T {
+  if (value === undefined) {
+    throw new Error(message);
+  }
+  return value;
+}
+
 async function main(): Promise<void> {
   loadExternalTypeMaps();
 
   const rootDirectory = ROOT_DIR;
-  const srcDirectory = join(rootDirectory, 'src');
+  const packagesDirectory = join(rootDirectory, 'packages');
+  const packageFolders = readdirSync(packagesDirectory, { withFileTypes: true })
+    .filter((dirent) => dirent.isDirectory())
+    .map((dirent) => dirent.name)
+    .sort();
 
-  const entryFiles = findEntryFiles(srcDirectory);
+  const namespaceRootByEntryFile = new Map<string, NamespaceRoot>();
+  for (const packageFolder of packageFolders) {
+    const srcDirectory = join(packagesDirectory, packageFolder, 'src');
+    for (const entryFile of findEntryFiles(srcDirectory)) {
+      namespaceRootByEntryFile.set(entryFile, { packageFolder, srcDirectory });
+    }
+  }
+  const entryFiles = [...namespaceRootByEntryFile.keys()];
   console.warn(`Found ${String(entryFiles.length)} entry source files`);
 
   // Check cache — skip generation if nothing changed
@@ -85,7 +117,8 @@ async function main(): Promise<void> {
   const moduleOverviews = new Map<string, string>();
 
   for (const src of sourceFiles) {
-    const namespace = computeNamespace(srcDirectory, src.getFilePath());
+    const namespaceRoot = ensureNonNullable(namespaceRootByEntryFile.get(normalize(src.getFilePath())), `Unexpected source file: ${src.getFilePath()}`);
+    const namespace = `${namespaceRoot.packageFolder}/${computeNamespace(namespaceRoot.srcDirectory, src.getFilePath())}`;
     const overview = extractFileOverview(src);
     if (overview) {
       moduleOverviews.set(namespace, overview);

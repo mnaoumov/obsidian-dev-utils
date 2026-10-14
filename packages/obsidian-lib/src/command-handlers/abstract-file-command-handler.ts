@@ -1,0 +1,484 @@
+/**
+ * @file
+ *
+ * Command handler for abstract file commands with file/files menu integration.
+ */
+
+import type {
+  IconName,
+  Menu,
+  TAbstractFile,
+  WorkspaceLeaf
+} from 'obsidian';
+import type { Promisable } from 'type-fest';
+
+import {
+  chain,
+  convertAsyncToSync
+} from '@mnaoumov/typescript-lib/async';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+
+import type { ActiveFileProvider } from '../active-file-provider.ts';
+import type {
+  CommandHandlerConstructorParams,
+  CommandHandlerRegistrationContext
+} from './command-handler.ts';
+
+import { GlobalCommandHandler } from './global-command-handler.ts';
+
+/**
+ * Parameters for creating an abstract file command handler.
+ */
+export interface AbstractFileCommandHandlerConstructorParams extends CommandHandlerConstructorParams {
+  /**
+   * The item name to use in the single-file menu.
+   */
+  readonly fileMenuItemName?: string | undefined;
+
+  /**
+   * The section to use in the single-file menu.
+   */
+  readonly fileMenuSection?: string | undefined;
+
+  /**
+   * The icon to use in the single-file menu submenu.
+   */
+  readonly fileMenuSubmenuIcon?: IconName | undefined;
+
+  /**
+   * The item name to use in the multi-file menu.
+   */
+  readonly filesMenuItemName?: string | undefined;
+
+  /**
+   * The section to use in the multi-file menu.
+   */
+  readonly filesMenuSection?: string | undefined;
+
+  /**
+   * The icon to use in the multi-file menu submenu.
+   */
+  readonly filesMenuSubmenuIcon?: IconName | undefined;
+
+  /**
+   * Whether to add the command to a submenu.
+   *
+   * @default `false`
+   */
+  readonly shouldAddCommandToSubmenu?: boolean | undefined;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.handleAbstractFileMenu}.
+ */
+export interface AbstractFileCommandHandlerHandleAbstractFileMenuParams {
+  /**
+   * The file or folder.
+   */
+  readonly abstractFile: TAbstractFile;
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The menu to add items to.
+   */
+  readonly menu: Menu;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.handleAbstractFilesMenu}.
+ */
+export interface AbstractFileCommandHandlerHandleAbstractFilesMenuParams {
+  /**
+   * The files or folders.
+   */
+  readonly abstractFiles: TAbstractFile[];
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The menu to add items to.
+   */
+  readonly menu: Menu;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.shouldAddToAbstractFileMenu}.
+ */
+export interface AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams {
+  /**
+   * The file or folder.
+   */
+  readonly abstractFile: TAbstractFile;
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Parameters for {@link AbstractFileCommandHandler.shouldAddToAbstractFilesMenu}.
+ */
+export interface AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams {
+  /**
+   * The files or folders.
+   */
+  readonly abstractFiles: TAbstractFile[];
+
+  /**
+   * The workspace leaf, if available.
+   */
+  readonly leaf?: undefined | WorkspaceLeaf;
+
+  /**
+   * The source of the event.
+   */
+  readonly source: string;
+}
+
+/**
+ * Command handler for abstract file commands.
+ *
+ * Handles both single-file and multi-file context menus.
+ * Subclasses override {@link canExecuteAbstractFile} and {@link executeAbstractFile}.
+ */
+export abstract class AbstractFileCommandHandler extends GlobalCommandHandler {
+  /**
+   * Get the active file provider.
+   *
+   * @returns The active file provider.
+   */
+  protected get activeFileProvider(): ActiveFileProvider {
+    return ensureNonNullable(this._activeFileProvider);
+  }
+
+  /**
+   * Gets the item name to use in the single-file menu.
+   *
+   * @returns The item name, or `undefined` to use the command name.
+   */
+  protected get fileMenuItemName(): string | undefined {
+    return this._fileMenuItemName;
+  }
+
+  /**
+   * Gets the section to use in the single-file menu.
+   *
+   * @returns The section name, or `undefined` to use the plugin name.
+   */
+  protected get fileMenuSection(): string | undefined {
+    return this._fileMenuSection;
+  }
+
+  /**
+   * Gets the icon to use in the single-file menu submenu.
+   *
+   * @returns The icon, or `undefined` for no icon.
+   */
+  protected get fileMenuSubmenuIcon(): IconName | undefined {
+    return this._fileMenuSubmenuIcon;
+  }
+
+  /**
+   * Gets the item name to use in the multi-file menu.
+   *
+   * @returns The item name, or `undefined` to fall back to single-file item name.
+   */
+  protected get filesMenuItemName(): string | undefined {
+    return this._filesMenuItemName;
+  }
+
+  /**
+   * Gets the section to use in the multi-file menu.
+   *
+   * @returns The section name, or `undefined` to fall back to single-file section.
+   */
+  protected get filesMenuSection(): string | undefined {
+    return this._filesMenuSection;
+  }
+
+  /**
+   * Gets the icon to use in the multi-file menu submenu.
+   *
+   * @returns The icon, or `undefined` to fall back to single-file submenu icon.
+   */
+  protected get filesMenuSubmenuIcon(): IconName | undefined {
+    return this._filesMenuSubmenuIcon;
+  }
+
+  private _activeFileProvider?: ActiveFileProvider;
+  private readonly _fileMenuItemName?: string | undefined;
+  private readonly _fileMenuSection?: string | undefined;
+  private readonly _fileMenuSubmenuIcon?: IconName | undefined;
+  private readonly _filesMenuItemName?: string | undefined;
+  private readonly _filesMenuSection?: string | undefined;
+  private readonly _filesMenuSubmenuIcon?: IconName | undefined;
+
+  private _registrationShouldAddCommandToSubmenu?: boolean | undefined;
+  private readonly _shouldAddCommandToSubmenu?: boolean | undefined;
+
+  /**
+   * Creates a new abstract file command handler.
+   *
+   * @param params - The parameters for the abstract file command handler.
+   */
+  public constructor(params: AbstractFileCommandHandlerConstructorParams) {
+    super(params);
+    this._fileMenuItemName = params.fileMenuItemName;
+    this._fileMenuSection = params.fileMenuSection;
+    this._fileMenuSubmenuIcon = params.fileMenuSubmenuIcon;
+    this._filesMenuItemName = params.filesMenuItemName;
+    this._filesMenuSection = params.filesMenuSection;
+    this._filesMenuSubmenuIcon = params.filesMenuSubmenuIcon;
+    this._shouldAddCommandToSubmenu = params.shouldAddCommandToSubmenu;
+  }
+
+  /**
+   * Registers file-menu and files-menu event handlers.
+   *
+   * @param context - The registration context.
+   */
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
+    this._activeFileProvider = context.activeFileProvider;
+    this._registrationShouldAddCommandToSubmenu = context.shouldAddCommandToSubmenu;
+    context.menuEventRegistrar.registerFileMenuEventHandler((menu, abstractFile, source, leaf) => {
+      this.handleAbstractFileMenu({
+        abstractFile,
+        leaf,
+        menu,
+        source
+      });
+    });
+    context.menuEventRegistrar.registerFilesMenuEventHandler((menu, abstractFiles, source, leaf) => {
+      this.handleAbstractFilesMenu({
+        abstractFiles,
+        leaf,
+        menu,
+        source
+      });
+    });
+  }
+
+  /**
+   * Checks whether the command can execute from the command palette.
+   * Uses the active file as the target.
+   *
+   * @returns Whether the command can execute.
+   */
+  protected override canExecute(): boolean {
+    if (!this.shouldAddToCommandPalette()) {
+      return false;
+    }
+
+    const activeFile = this.getActiveFile();
+    return !!activeFile && this.canExecuteAbstractFile(activeFile);
+  }
+
+  /**
+   * Checks whether the command can execute for a single abstract file.
+   *
+   * @param _abstractFile - The file or folder.
+   * @returns Whether the command can execute.
+   */
+  protected canExecuteAbstractFile(_abstractFile: TAbstractFile): boolean {
+    return true;
+  }
+
+  /**
+   * Checks whether the command can execute for multiple abstract files.
+   * Default implementation checks each file individually.
+   *
+   * @param abstractFiles - The files or folders.
+   * @returns Whether the command can execute.
+   */
+  protected canExecuteAbstractFiles(abstractFiles: TAbstractFile[]): boolean {
+    return abstractFiles.length > 0 && abstractFiles.every((f) => this.canExecuteAbstractFile(f));
+  }
+
+  /**
+   * Executes the command from the command palette using the active file.
+   *
+   * @returns `Promisable<void>` that resolves when command had been executed.
+   */
+  protected override execute(): Promisable<void> {
+    const activeFile = this.getActiveFile();
+    if (activeFile) {
+      return this.executeAbstractFile(activeFile);
+    }
+  }
+
+  /**
+   * Executes the command for a single abstract file.
+   *
+   * @param abstractFile - The file or folder.
+   */
+  protected abstract executeAbstractFile(abstractFile: TAbstractFile): Promisable<void>;
+
+  /**
+   * Executes the command for multiple abstract files.
+   * Default implementation executes sequentially.
+   *
+   * @param abstractFiles - The files or folders.
+   * @returns `Promisable<void>` that resolves when all abstract files have been executed.
+   */
+  protected executeAbstractFiles(abstractFiles: TAbstractFile[]): Promisable<void> {
+    let promise: null | Promise<void> = null;
+    for (const file of abstractFiles) {
+      promise = chain(promise, () => this.executeAbstractFile(file));
+    }
+
+    if (promise) {
+      return promise;
+    }
+  }
+
+  /**
+   * Gets the active file, if any, to use as the target when executing from the command palette.
+   *
+   * @returns The active file or `null` if none is active.
+   */
+  protected getActiveFile(): null | TAbstractFile {
+    return this.activeFileProvider.getActiveFile() ?? null;
+  }
+
+  /**
+   * Gets whether to add the command to a submenu.
+   *
+   * The registration context wins over the constructor value: a menu surface that already wraps every
+   * contributed item in a plugin-titled parent entry forces this off, because a section submenu
+   * declared here would make `Menu.sort()` nest a second plugin-titled entry inside the first.
+   *
+   * @returns Whether to add to a submenu.
+   */
+  protected shouldAddCommandToSubmenu(): boolean | undefined {
+    return this._registrationShouldAddCommandToSubmenu ?? this._shouldAddCommandToSubmenu;
+  }
+
+  /**
+   * Checks whether the command should appear in the single-file context menu.
+   *
+   * @param params - The parameters for the single-file menu check.
+   * @returns Whether to add to the file menu.
+   */
+  protected shouldAddToAbstractFileMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFileMenuParams): boolean {
+    const { abstractFile: _abstractFile, leaf: _leaf, source: _source } = params;
+    return false;
+  }
+
+  /**
+   * Checks whether the command should appear in the multi-file context menu.
+   * Default implementation checks each file individually.
+   *
+   * @param params - The parameters for the multi-file menu check.
+   * @returns Whether to add to the files menu.
+   */
+  protected shouldAddToAbstractFilesMenu(params: AbstractFileCommandHandlerShouldAddToAbstractFilesMenuParams): boolean {
+    return params.abstractFiles.every((f) =>
+      this.shouldAddToAbstractFileMenu({
+        abstractFile: f,
+        leaf: params.leaf,
+        source: params.source
+      })
+    );
+  }
+
+  /**
+   * Checks whether the command should appear in the command palette.
+   *
+   * @returns Whether to add to the command palette.
+   */
+  protected shouldAddToCommandPalette(): boolean {
+    return true;
+  }
+
+  private handleAbstractFileMenu(params: AbstractFileCommandHandlerHandleAbstractFileMenuParams): void {
+    const {
+      abstractFile,
+      leaf,
+      menu,
+      source
+    } = params;
+    if (
+      !this.shouldAddToAbstractFileMenu({
+        abstractFile,
+        leaf,
+        source
+      }) || !this.canExecuteAbstractFile(abstractFile)
+    ) {
+      return;
+    }
+
+    const section = this.fileMenuSection ?? this.pluginName;
+    if (this.shouldAddCommandToSubmenu()) {
+      menu.setSectionSubmenu(section, {
+        icon: this.fileMenuSubmenuIcon ?? '',
+        title: section
+      });
+    }
+
+    menu.addItem((item) => {
+      item
+        .setTitle(this.fileMenuItemName ?? this.name)
+        .setIcon(this.icon)
+        .setSection(section)
+        .onClick(convertAsyncToSync(async () => this.executeAbstractFile(abstractFile)));
+    });
+  }
+
+  private handleAbstractFilesMenu(params: AbstractFileCommandHandlerHandleAbstractFilesMenuParams): void {
+    const {
+      abstractFiles,
+      leaf,
+      menu,
+      source
+    } = params;
+    if (
+      !this.shouldAddToAbstractFilesMenu({
+        abstractFiles,
+        leaf,
+        source
+      }) || !this.canExecuteAbstractFiles(abstractFiles)
+    ) {
+      return;
+    }
+
+    const section = this.filesMenuSection ?? this.fileMenuSection ?? this.pluginName;
+    if (this.shouldAddCommandToSubmenu()) {
+      menu.setSectionSubmenu(section, {
+        icon: this.filesMenuSubmenuIcon ?? this.fileMenuSubmenuIcon ?? '',
+        title: section
+      });
+    }
+
+    menu.addItem((item) => {
+      item
+        .setTitle(this.filesMenuItemName ?? this.fileMenuItemName ?? this.name)
+        .setIcon(this.icon)
+        .setSection(section)
+        .onClick(convertAsyncToSync(async () => this.executeAbstractFiles(abstractFiles)));
+    });
+  }
+}

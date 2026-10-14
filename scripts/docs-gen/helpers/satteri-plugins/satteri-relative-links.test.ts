@@ -1,6 +1,7 @@
 import type { Link } from 'mdast';
 import type { MdastVisitorContext } from 'satteri';
 
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { pathToFileURL } from 'node:url';
 import {
   describe,
@@ -8,7 +9,6 @@ import {
   it
 } from 'vitest';
 
-import { castTo } from '../../../../src/object-utils.ts';
 import { satteriRelativeLinks } from './satteri-relative-links.ts';
 
 describe('satteriRelativeLinks', () => {

@@ -1,0 +1,523 @@
+/**
+ * @file
+ *
+ * Resolves, searches and manages community plugins through Obsidian's public plugin registry and
+ * store-install path.
+ *
+ * Obsidian's `community-plugins.json` is the authoritative source that maps a plugin `id` to its
+ * `owner/name` GitHub repository — the plugin manifest itself carries no repository. This module uses
+ * it to search the registry, to locate a plugin's GitHub releases (e.g. to download its shipped
+ * demo-vault archive), and to install/uninstall/enable/disable an arbitrary community plugin — selected
+ * by either its `id` or its display `name` — via Obsidian's own store path (`app.plugins.installPlugin`
+ * + `enablePluginAndSave`), so any dev/deploy or tooling flow can reuse it.
+ */
+
+import type {
+  App,
+  PluginManifest
+} from 'obsidian';
+
+import { requestUrl } from 'obsidian';
+
+import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+
+/**
+ * Selects a community plugin either by its id ({@link CommunityPluginByIdRef}) or by its display name
+ * ({@link CommunityPluginByNameRef}).
+ */
+export type CommunityPluginRef = CommunityPluginByIdRef | CommunityPluginByNameRef;
+
+/**
+ * A single result of {@link searchCommunityPlugins}.
+ */
+export interface CommunityPluginSearchResult {
+  /**
+   * The plugin id.
+   */
+  readonly id: string;
+
+  /**
+   * The plugin display name.
+   */
+  readonly name: string;
+}
+
+/**
+ * Parameters for {@link configureCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type ConfigureCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef & CommunityPluginSettings;
+
+/**
+ * Parameters for {@link disableCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type DisableCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef;
+
+/**
+ * Parameters for {@link enableCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type EnableCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef;
+
+/**
+ * Parameters for {@link installCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type InstallCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef;
+
+/**
+ * Parameters for {@link installConfigureEnableCommunityPlugin}. Selects the plugin by either `pluginId`
+ * or `pluginName`; `settings` is optional (omit for a plugin that needs no configuration).
+ */
+export type InstallConfigureEnableCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef & Partial<CommunityPluginSettings>;
+
+/**
+ * Parameters for {@link toggleEnableCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type ToggleEnableCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef & CommunityPluginToggleEnableState;
+
+/**
+ * Parameters for {@link toggleInstallCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type ToggleInstallCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef & CommunityPluginToggleInstallState;
+
+/**
+ * Parameters for {@link uninstallCommunityPlugin}. Selects the plugin by either `pluginId` or
+ * `pluginName`.
+ */
+export type UninstallCommunityPluginParams = CommunityPluginOperationContext & CommunityPluginRef;
+
+/**
+ * Selects a community plugin by its id.
+ */
+interface CommunityPluginByIdRef {
+  /**
+   * The plugin id.
+   */
+  readonly pluginId: string;
+}
+
+/**
+ * Selects a community plugin by its display name (as listed in Obsidian's community registry).
+ */
+interface CommunityPluginByNameRef {
+  /**
+   * The plugin display name.
+   */
+  readonly pluginName: string;
+}
+
+/**
+ * A single entry in Obsidian's `community-plugins.json` registry.
+ */
+interface CommunityPluginEntry {
+  /**
+   * The plugin author.
+   */
+  readonly author: string;
+
+  /**
+   * The plugin description.
+   */
+  readonly description: string;
+
+  /**
+   * The plugin id.
+   */
+  readonly id: string;
+
+  /**
+   * The plugin display name.
+   */
+  readonly name: string;
+
+  /**
+   * The plugin's `owner/name` GitHub repository.
+   */
+  readonly repo: string;
+}
+
+/**
+ * The Obsidian app instance a community-plugin operation runs against.
+ */
+interface CommunityPluginOperationContext {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+}
+
+/**
+ * The settings to merge into a community plugin's `data.json`.
+ */
+interface CommunityPluginSettings {
+  /**
+   * The settings object shallow-merged over the plugin's existing `data.json` (the file is created if
+   * absent).
+   */
+  readonly settings: object;
+}
+
+/**
+ * The desired enabled state for {@link toggleEnableCommunityPlugin}.
+ */
+interface CommunityPluginToggleEnableState {
+  /**
+   * The desired enabled state: `true` enables the plugin, `false` disables it.
+   */
+  readonly isEnabled: boolean;
+}
+
+/**
+ * The desired installed state for {@link toggleInstallCommunityPlugin}.
+ */
+interface CommunityPluginToggleInstallState {
+  /**
+   * The desired installed state: `true` installs the plugin, `false` uninstalls it.
+   */
+  readonly isInstalled: boolean;
+}
+
+/**
+ * The one method {@link configureCommunityPlugin} needs from a plugin's settings component to configure
+ * it live. Declared structurally rather than importing `PluginSettingsComponent`, so a plugin built on
+ * any version of it -- or on its own equivalent -- is configurable without a shared nominal type.
+ */
+interface EditableSettingsComponent {
+  editAndSave: (settingsEditor: (settings: object) => void) => Promise<void>;
+}
+
+/**
+ * The subset of a GitHub release we read.
+ */
+interface GitHubRelease {
+  /**
+   * The release tag, a bare version such as `1.2.3`.
+   */
+  readonly tag_name: string;
+}
+
+const COMMUNITY_PLUGINS_STATE_KEY = 'communityPluginEntriesPromise';
+const COMMUNITY_PLUGINS_URL = 'https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugins.json';
+const DATA_JSON_INDENT = 2;
+
+/**
+ * The result of {@link configureCommunityPlugin}.
+ */
+export enum ConfigureCommunityPluginResult {
+  /**
+   * The settings were applied through the running plugin's own settings component, which both updated
+   * them in memory and persisted them. The plugin is already using them, so it must NOT be reloaded.
+   */
+  AppliedLive = 'appliedLive',
+
+  /**
+   * The settings were already present in the plugin's `data.json`, so nothing was written.
+   */
+  Skipped = 'skipped',
+
+  /**
+   * The settings were merged into the plugin's `data.json`, which was written.
+   */
+  Success = 'success'
+}
+
+/**
+ * Configures a community plugin, preferring the running plugin's own settings component over its
+ * `data.json`.
+ *
+ * When the plugin is loaded AND exposes a `pluginSettingsComponent` with an `editAndSave` method, the
+ * settings are shallow-merged through it: they take effect immediately and are persisted, so the plugin
+ * needs no reload and {@link ConfigureCommunityPluginResult.AppliedLive} is returned. This is what lets a
+ * plugin's own script reconfigure it without the disable/enable cycle that would tear down the very code
+ * doing the reconfiguring. Note that this path runs the plugin's setting validators, so an invalid value
+ * is replaced by its default rather than written through verbatim.
+ *
+ * Otherwise the settings are written into the plugin's `data.json`, shallow-merged over any existing
+ * settings (creating the file if absent). Writing settings BEFORE the plugin is enabled makes it load
+ * already configured, with no reload. A no-op write is skipped: when the merge changes nothing, the file
+ * is left untouched and {@link ConfigureCommunityPluginResult.Skipped} is returned, so a caller can avoid
+ * reloading an already-correctly-configured plugin.
+ *
+ * @param params - The {@link ConfigureCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves to {@link ConfigureCommunityPluginResult.AppliedLive} if the
+ * running plugin applied them itself (no reload needed), {@link ConfigureCommunityPluginResult.Success} if
+ * the `data.json` content changed (and was written), or {@link ConfigureCommunityPluginResult.Skipped} if
+ * the settings were already present (nothing written).
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function configureCommunityPlugin(params: ConfigureCommunityPluginParams): Promise<ConfigureCommunityPluginResult> {
+  const { app, settings } = params;
+  const pluginId = await resolveCommunityPluginId(params);
+
+  const settingsComponent = getSettingsComponent(app.plugins.plugins[pluginId]);
+  if (checkHasEditAndSave(settingsComponent)) {
+    await settingsComponent.editAndSave((pluginSettings) => {
+      Object.assign(pluginSettings, settings);
+    });
+    return ConfigureCommunityPluginResult.AppliedLive;
+  }
+
+  const dataPath = `${app.vault.configDir}/plugins/${pluginId}/data.json`;
+
+  let data: object = {};
+  if (await app.vault.adapter.exists(dataPath)) {
+    const parsed: unknown = JSON.parse(await app.vault.adapter.read(dataPath));
+    if (parsed !== null && typeof parsed === 'object') {
+      data = parsed;
+    }
+  }
+
+  const serializedBefore = JSON.stringify(data);
+  Object.assign(data, settings);
+  if (JSON.stringify(data) === serializedBefore) {
+    return ConfigureCommunityPluginResult.Skipped;
+  }
+
+  const serialized = String(JSON.stringify(data, null, DATA_JSON_INDENT));
+  await app.vault.adapter.write(dataPath, `${serialized}\n`);
+  return ConfigureCommunityPluginResult.Success;
+}
+
+/**
+ * Disables a community plugin (persisting the change) if it is currently enabled. Idempotent — a no-op
+ * when the plugin is already disabled.
+ *
+ * @param params - The {@link DisableCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin is disabled.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function disableCommunityPlugin(params: DisableCommunityPluginParams): Promise<void> {
+  const { app } = params;
+  const pluginId = await resolveCommunityPluginId(params);
+  if (!app.plugins.enabledPlugins.has(pluginId)) {
+    return;
+  }
+  await app.plugins.disablePluginAndSave(pluginId);
+}
+
+/**
+ * Enables a community plugin (persisting the change) if it is not already enabled. Idempotent — a no-op
+ * when the plugin is already enabled.
+ *
+ * @param params - The {@link EnableCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin is enabled.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function enableCommunityPlugin(params: EnableCommunityPluginParams): Promise<void> {
+  const { app } = params;
+  const pluginId = await resolveCommunityPluginId(params);
+  if (app.plugins.enabledPlugins.has(pluginId)) {
+    return;
+  }
+  await app.plugins.enablePluginAndSave(pluginId);
+}
+
+/**
+ * Resolves the `owner/name` GitHub repository of a community plugin from Obsidian's public
+ * `community-plugins.json` registry.
+ *
+ * The registry is fetched once and cached on the shared plugin state for subsequent calls; a failed
+ * fetch is not cached, so a later call retries.
+ *
+ * @param pluginId - The plugin id to look up.
+ * @returns A {@link Promise} resolving to the plugin's `owner/name` repository, or `null` if the
+ * plugin is not listed in the registry.
+ */
+export async function getCommunityPluginRepo(pluginId: string): Promise<null | string> {
+  const entries = await getCommunityPluginEntries();
+  const entry = entries.find((candidate) => candidate.id === pluginId);
+  return entry?.repo ?? null;
+}
+
+/**
+ * Resolves the latest release version (the release `tag_name`, a bare version such as `1.2.3`) of a
+ * GitHub repository.
+ *
+ * @param repo - The `owner/name` GitHub repository.
+ * @returns A {@link Promise} resolving to the latest release version.
+ */
+export async function getLatestReleaseVersion(repo: string): Promise<string> {
+  const response = await requestUrl(`https://api.github.com/repos/${repo}/releases/latest`);
+  const release = response.json as GitHubRelease;
+  return release.tag_name;
+}
+
+/**
+ * Installs a community plugin from the official store if it is not already installed. Idempotent — a
+ * no-op when the plugin is already installed. Resolves the plugin's repository from Obsidian's
+ * community registry, reads the latest release version and its manifest, and installs it through
+ * Obsidian's own `installPlugin` path.
+ *
+ * @param params - The {@link InstallCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin is installed.
+ * @throws If the plugin is not listed in Obsidian's community plugins registry.
+ */
+export async function installCommunityPlugin(params: InstallCommunityPluginParams): Promise<void> {
+  const { app } = params;
+  const pluginId = await resolveCommunityPluginId(params);
+  if (Object.hasOwn(app.plugins.manifests, pluginId)) {
+    return;
+  }
+
+  const repo = await getCommunityPluginRepo(pluginId);
+  if (!repo) {
+    throw new Error(`Plugin '${pluginId}' was not found in the Obsidian community plugins registry.`);
+  }
+
+  const version = await getLatestReleaseVersion(repo);
+  const manifest = await getPluginManifest(repo, version);
+  await app.plugins.installPlugin(repo, version, manifest);
+}
+
+/**
+ * Installs a community plugin, writes its settings, THEN enables it — in that order — so the plugin
+ * loads already configured (a plugin enabled before it is configured runs its `onload` with default
+ * settings and does nothing useful). If the plugin is already enabled and the settings changed, it is
+ * disabled and re-enabled so the new settings take effect. `settings` is optional: omit it for a plugin
+ * that needs no configuration. Composes {@link installCommunityPlugin}, {@link configureCommunityPlugin},
+ * {@link enableCommunityPlugin} and {@link disableCommunityPlugin}.
+ *
+ * @param params - The {@link InstallConfigureEnableCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin is installed, configured and enabled.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function installConfigureEnableCommunityPlugin(params: InstallConfigureEnableCommunityPluginParams): Promise<void> {
+  const { app, settings } = params;
+  await installCommunityPlugin(params);
+  const didSettingsChange = settings ? await configureCommunityPlugin({ ...params, settings }) === ConfigureCommunityPluginResult.Success : false;
+  const pluginId = await resolveCommunityPluginId(params);
+  if (!app.plugins.enabledPlugins.has(pluginId)) {
+    await enableCommunityPlugin(params);
+  } else if (didSettingsChange) {
+    await disableCommunityPlugin(params);
+    await enableCommunityPlugin(params);
+  }
+}
+
+/**
+ * Searches Obsidian's public community plugins registry, returning the id and display name of every
+ * plugin whose id, name, author or description contains the query (case-insensitive). An empty query
+ * matches every plugin.
+ *
+ * @param query - The search query.
+ * @returns A {@link Promise} resolving to the matching plugins' {@link CommunityPluginSearchResult}s.
+ */
+export async function searchCommunityPlugins(query: string): Promise<CommunityPluginSearchResult[]> {
+  const entries = await getCommunityPluginEntries();
+  const normalizedQuery = query.toLowerCase();
+  return entries
+    .filter((entry) =>
+      entry.id.toLowerCase().includes(normalizedQuery)
+      || entry.name.toLowerCase().includes(normalizedQuery)
+      || entry.author.toLowerCase().includes(normalizedQuery)
+      || entry.description.toLowerCase().includes(normalizedQuery)
+    )
+    .map((entry) => ({
+      id: entry.id,
+      name: entry.name
+    }));
+}
+
+/**
+ * Enables or disables a community plugin to match the desired state. Delegates to
+ * {@link enableCommunityPlugin} / {@link disableCommunityPlugin}, so it is idempotent.
+ *
+ * @param params - The {@link ToggleEnableCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin matches the desired enabled state.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function toggleEnableCommunityPlugin(params: ToggleEnableCommunityPluginParams): Promise<void> {
+  if (params.isEnabled) {
+    await enableCommunityPlugin(params);
+  } else {
+    await disableCommunityPlugin(params);
+  }
+}
+
+/**
+ * Installs or uninstalls a community plugin to match the desired state. Delegates to
+ * {@link installCommunityPlugin} / {@link uninstallCommunityPlugin}, so it is idempotent.
+ *
+ * @param params - The {@link ToggleInstallCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin matches the desired installed state.
+ * @throws If installing and the plugin is not listed in Obsidian's community plugins registry.
+ */
+export async function toggleInstallCommunityPlugin(params: ToggleInstallCommunityPluginParams): Promise<void> {
+  if (params.isInstalled) {
+    await installCommunityPlugin(params);
+  } else {
+    await uninstallCommunityPlugin(params);
+  }
+}
+
+/**
+ * Uninstalls a community plugin if it is currently installed. Idempotent — a no-op when the plugin is
+ * not installed.
+ *
+ * @param params - The {@link UninstallCommunityPluginParams}.
+ * @returns A {@link Promise} that resolves once the plugin is uninstalled.
+ * @throws If selected by `pluginName` and the name is not listed in Obsidian's community plugins registry.
+ */
+export async function uninstallCommunityPlugin(params: UninstallCommunityPluginParams): Promise<void> {
+  const { app } = params;
+  const pluginId = await resolveCommunityPluginId(params);
+  if (!Object.hasOwn(app.plugins.manifests, pluginId)) {
+    return;
+  }
+  await app.plugins.uninstallPlugin(pluginId);
+}
+
+// Whether a plugin's `pluginSettingsComponent` can configure itself in place. Structural rather than an
+// `instanceof`: the plugin was loaded from its own bundle, so even a plugin built on this very library
+// carries its own copy of the class and would fail an identity check.
+function checkHasEditAndSave(settingsComponent: unknown): settingsComponent is EditableSettingsComponent {
+  return typeof settingsComponent === 'object'
+    && settingsComponent !== null
+    && 'editAndSave' in settingsComponent
+    && typeof settingsComponent.editAndSave === 'function';
+}
+
+async function fetchCommunityPluginEntries(): Promise<CommunityPluginEntry[]> {
+  const response = await requestUrl(COMMUNITY_PLUGINS_URL);
+  return response.json as CommunityPluginEntry[];
+}
+
+async function getCommunityPluginEntries(): Promise<CommunityPluginEntry[]> {
+  const cache = getObsidianDevUtilsState<null | Promise<CommunityPluginEntry[]>>(COMMUNITY_PLUGINS_STATE_KEY, null);
+  cache.value ??= fetchCommunityPluginEntries();
+
+  try {
+    return await cache.value;
+  } catch (error) {
+    cache.value = null;
+    throw error;
+  }
+}
+
+async function getPluginManifest(repo: string, version: string): Promise<PluginManifest> {
+  const response = await requestUrl(`https://github.com/${repo}/releases/download/${version}/manifest.json`);
+  return response.json as PluginManifest;
+}
+
+// Reads a loaded plugin's `pluginSettingsComponent`, or `null` when it has none. Takes `unknown` because
+// A plugin is under no obligation to expose one, so there is no type to narrow from.
+function getSettingsComponent(plugin: unknown): unknown {
+  return typeof plugin !== 'object' || plugin === null || !('pluginSettingsComponent' in plugin) ? null : plugin.pluginSettingsComponent;
+}
+
+async function resolveCommunityPluginId(reference: CommunityPluginRef): Promise<string> {
+  if ('pluginId' in reference) {
+    return reference.pluginId;
+  }
+
+  const entries = await getCommunityPluginEntries();
+  const entry = entries.find((candidate) => candidate.name === reference.pluginName);
+  if (!entry) {
+    throw new Error(`Plugin named '${reference.pluginName}' was not found in the Obsidian community plugins registry.`);
+  }
+  return entry.id;
+}

@@ -1,0 +1,184 @@
+/**
+ * @file
+ *
+ * Contains utility functions for file system operations.
+ */
+
+import type {
+  Dirent,
+  ObjectEncodingOptions,
+  PathLike
+} from 'node:fs';
+
+import {
+  toPosixBuffer,
+  toPosixPath
+} from '@mnaoumov/typescript-lib/path';
+import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { readdir } from 'node:fs/promises';
+
+/**
+ * Options for controlling the format of the result when returning buffers.
+ *
+ * `directory` is used instead of `folder` to preserve compatibility with `node:fs` module.
+ */
+export type BufferResultOptions = 'buffer' | BufferResultObjectOptions;
+
+/**
+ * Options for controlling the format of the result when returning Dirent objects.
+ */
+export type DirentResultOptions = DirentResultBaseOptions & ObjectEncodingOptions;
+
+/**
+ * Options for controlling the format of the result when returning strings.
+ */
+export type StringResultOptions =
+  | ObjectEncodingOptions & StringResultBaseOptions
+  | undefined;
+
+interface BufferResultObjectOptions {
+  /**
+   * Should be set to "buffer" to return buffers.
+   */
+  readonly encoding: 'buffer';
+
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
+  readonly recursive?: boolean;
+
+  /**
+   * Should be set to `false` to return buffers.
+   */
+  readonly withFileTypes?: false;
+}
+
+/**
+ * Common options for controlling the format of the result.
+ */
+interface CommonOptions {
+  /**
+   * Encoding to use when returning strings.
+   */
+  readonly encoding?: 'buffer' | NodeJS.BufferEncoding;
+
+  /**
+   * Set `true` to return Dirent objects or `false` to return strings or buffers.
+   */
+  readonly withFileTypes?: boolean;
+}
+
+interface DirentResultBaseOptions {
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
+  readonly recursive?: boolean;
+
+  /**
+   * Should be set to `true` to return Dirent objects.
+   */
+  readonly withFileTypes: true;
+}
+
+interface StringResultBaseOptions {
+  /**
+   * Whether to include subdirectories when reading the directory. If not provided, defaults to `false`.
+   */
+  readonly recursive?: boolean;
+
+  /**
+   * Should be set to `false` to return strings.
+   */
+  readonly withFileTypes?: false;
+}
+
+/**
+ * Reads the contents of a directory and returns an array of strings with POSIX paths.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result. If not provided, returns strings.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted file paths.
+ */
+export async function readdirPosix(path: PathLike, options?: StringResultOptions): Promise<string[]>;
+/**
+ * Reads the contents of a directory and returns an array of buffers with POSIX paths.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result. Specify "buffer" to return buffers.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted buffers.
+ */
+export async function readdirPosix(path: PathLike, options: BufferResultOptions): Promise<Buffer[]>;
+/**
+ * Reads the contents of a directory and returns an array of Dirent objects with POSIX paths.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result. Specify `withFileTypes: true` to return Dirent objects.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted Dirent objects.
+ */
+export async function readdirPosix(path: PathLike, options: DirentResultOptions): Promise<Dirent[]>;
+/**
+ * Reads the contents of a directory and converts file paths or buffer results to POSIX format.
+ *
+ * @param path - The path to the directory.
+ * @param options - Options to control the format of the result.
+ * @returns A {@link Promise} that resolves with an array of POSIX-formatted file paths, buffers, or Dirent objects.
+ */
+export async function readdirPosix(
+  path: PathLike,
+  options: BufferResultOptions | DirentResultOptions | StringResultOptions = {}
+): Promise<Buffer[] | Dirent[] | string[]> {
+  if (isStringResultOptions(options)) {
+    const paths = await readdir(path, options);
+    return paths.map((entryPath) => toPosixPath(entryPath));
+  }
+
+  if (isBufferResultOptions(options)) {
+    const buffers = await readdir(path, options);
+    return buffers.map((buffer) => toPosixBuffer(buffer));
+  }
+
+  const dirents = await readdir(path, options);
+  for (const dirent of dirents) {
+    dirent.name = toPosixPath(dirent.name);
+    dirent.parentPath = toPosixPath(dirent.parentPath);
+  }
+
+  return dirents;
+}
+
+/**
+ * Type guard to check if the options are for returning buffers.
+ *
+ * @param options - The options to check.
+ * @returns `true` if the options are for returning buffers, otherwise `false`.
+ */
+function isBufferResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is BufferResultOptions {
+  assertNonNullable(options);
+
+  if (options === 'buffer') {
+    return true;
+  }
+
+  const commonOptions = options as CommonOptions;
+
+  // The encoding check never fails in practice: isStringResultOptions already handles non-buffer encoding before this is called.
+  return commonOptions.withFileTypes !== true && commonOptions.encoding === 'buffer';
+}
+
+/**
+ * Type guard to check if the options are for returning strings.
+ *
+ * @param options - The options to check.
+ * @returns `true` if the options are for returning strings, otherwise `false`.
+ */
+function isStringResultOptions(options: BufferResultOptions | DirentResultOptions | StringResultOptions): options is StringResultOptions {
+  assertNonNullable(options);
+
+  if (options === 'buffer') {
+    return false;
+  }
+
+  const commonOptions = options as CommonOptions;
+
+  return !((commonOptions.encoding === 'buffer') || (commonOptions.withFileTypes === true));
+}

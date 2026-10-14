@@ -1,0 +1,752 @@
+/**
+ * @file
+ *
+ * Tests for {@link ComponentEx}.
+ */
+
+import { dispose } from '@mnaoumov/typescript-lib/disposable';
+import {
+  ErrorWrapper,
+  SilentError
+} from '@mnaoumov/typescript-lib/error';
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
+import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { Component } from 'obsidian';
+import {
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { ComponentEx } from './component-ex.ts';
+
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
+class AncestryProbeComponentEx extends ComponentEx {
+  public probeInFlightAncestryLoadPromise(): null | Promise<void> {
+    return this.getInFlightAncestryLoadPromise();
+  }
+
+  public probeInFlightLoadPromise(): null | Promise<void> {
+    return this.getInFlightLoadPromise();
+  }
+}
+
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
+class LifecycleGuardsComponentEx extends ComponentEx {
+  public invokeEnsureLoaded(): void {
+    this.ensureLoaded();
+  }
+
+  public invokeIsUnloaded(): boolean {
+    return this.isUnloaded();
+  }
+}
+
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
+class SyncComponentEx extends ComponentEx {
+  public onloadCalled = false;
+
+  public override onload(): void {
+    this.onloadCalled = true;
+  }
+}
+
+// eslint-disable-next-line obsidian-dev-utils/require-component-suffix -- Testing ComponentEx.
+class TestComponentEx extends ComponentEx {
+  public asyncLoadFunction = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+
+  public override async onloadAsync(): Promise<void> {
+    await this.asyncLoadFunction();
+  }
+}
+
+describe('ComponentEx', () => {
+  describe('load', () => {
+    it('should set _loaded and call onload', () => {
+      const component = new SyncComponentEx();
+      component.load();
+      expect(component._loaded).toBe(true);
+      expect(component.onloadCalled).toBe(true);
+    });
+
+    it('should not load twice', () => {
+      const component = new SyncComponentEx();
+      component.load();
+      component.onloadCalled = false;
+      component.load();
+      expect(component.onloadCalled).toBe(false);
+    });
+
+    it('should chain onloadAsync when overridden', async () => {
+      const component = new TestComponentEx();
+      await component.loadWithPromises();
+      expect(component.asyncLoadFunction).toHaveBeenCalledOnce();
+    });
+
+    it('should load children sequentially', async () => {
+      const parent = new TestComponentEx();
+      const child1 = new TestComponentEx();
+      const child2 = new TestComponentEx();
+      parent.addChild(child1);
+      parent.addChild(child2);
+
+      await parent.loadWithPromises();
+
+      expect(child1.asyncLoadFunction).toHaveBeenCalledOnce();
+      expect(child2.asyncLoadFunction).toHaveBeenCalledOnce();
+      expect(child1._loaded).toBe(true);
+      expect(child2._loaded).toBe(true);
+    });
+
+    it('should load plain Component children', () => {
+      const parent = new SyncComponentEx();
+      const child = new Component();
+      const loadSpy = vi.spyOn(child, 'load');
+      parent.addChild(child);
+
+      parent.load();
+
+      expect(loadSpy).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('loadWithPromises', () => {
+    it('should return null for fully synchronous component', () => {
+      const component = new SyncComponentEx();
+      const result = component.loadWithPromises();
+      expect(result).toBeNull();
+    });
+
+    it('should return a Promise for async component', () => {
+      const component = new TestComponentEx();
+      const result = component.loadWithPromises();
+      expect(result).toBeInstanceOf(Promise);
+    });
+
+    it('should reject with an AggregateError holding the onloadAsync failure', async () => {
+      const error = new Error('load failed');
+      const component = new TestComponentEx();
+      component.asyncLoadFunction.mockRejectedValue(error);
+
+      const promise = component.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error_: unknown) => error_);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.errors).toEqual([error]);
+      }
+    });
+
+    it('should keep a child load failure grouped in its own AggregateError', async () => {
+      const childError = new Error('child failed');
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockResolvedValue(undefined);
+      const child = new TestComponentEx();
+      child.asyncLoadFunction.mockRejectedValue(childError);
+      parent.addChild(child);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (!(rejection instanceof AggregateError)) {
+        return;
+      }
+      expect(rejection.errors).toHaveLength(1);
+      const [childAggregate] = rejection.errors;
+      expect(childAggregate).toBeInstanceOf(AggregateError);
+      if (!(childAggregate instanceof AggregateError)) {
+        return;
+      }
+      expect(childAggregate.errors).toEqual([childError]);
+    });
+
+    it('should keep each child failure grouped in its own AggregateError', async () => {
+      const parent = new ComponentEx();
+      const child1 = new TestComponentEx();
+      child1.asyncLoadFunction.mockRejectedValue(new Error('error 1'));
+      const child2 = new TestComponentEx();
+      child2.asyncLoadFunction.mockRejectedValue(new Error('error 2'));
+      parent.addChild(child1);
+      parent.addChild(child2);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (!(rejection instanceof AggregateError)) {
+        return;
+      }
+      expect(rejection.errors).toHaveLength(2);
+      const messages = rejection.errors.map((childAggregate: unknown) =>
+        childAggregate instanceof AggregateError && childAggregate.errors[0] instanceof Error
+          ? childAggregate.errors[0].message
+          : 'unexpected'
+      );
+      expect(messages).toEqual(['error 1', 'error 2']);
+    });
+
+    it('should name a lone failure in the AggregateError message, rather than leaving it empty', async () => {
+      const component = new TestComponentEx();
+      component.asyncLoadFunction.mockRejectedValue(new Error('load failed'));
+
+      const promise = component.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.message).toBe('load failed');
+      }
+    });
+
+    it('should carry a child failure message up through the grouping aggregate', async () => {
+      const parent = new ComponentEx();
+      const child = new TestComponentEx();
+      child.asyncLoadFunction.mockRejectedValue(new Error('child failed'));
+      parent.addChild(child);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.message).toBe('child failed');
+      }
+    });
+
+    it('should count several child failures rather than promote one of them', async () => {
+      const parent = new ComponentEx();
+      const child1 = new TestComponentEx();
+      child1.asyncLoadFunction.mockRejectedValue(new Error('error 1'));
+      const child2 = new TestComponentEx();
+      child2.asyncLoadFunction.mockRejectedValue(new Error('error 2'));
+      parent.addChild(child1);
+      parent.addChild(child2);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (rejection instanceof AggregateError) {
+        expect(rejection.message).toBe('2 error(s) occurred');
+      }
+    });
+
+    it('should wrap a non-Error throwable via ErrorWrapper', async () => {
+      const component = new TestComponentEx();
+      component.asyncLoadFunction.mockRejectedValue('string failure');
+
+      const promise = component.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (!(rejection instanceof AggregateError)) {
+        return;
+      }
+      const [firstError] = rejection.errors;
+      expect(firstError).toBeInstanceOf(ErrorWrapper);
+      if (!(firstError instanceof ErrorWrapper)) {
+        return;
+      }
+      expect(firstError.cause).toBe('string failure');
+    });
+
+    it('should reset its load promise after settling', async () => {
+      const component = new TestComponentEx();
+      await component.loadWithPromises();
+      expect(component.loadWithPromises()).toBeNull();
+    });
+
+    it('should reject with an AggregateError when a child throws synchronously during load', async () => {
+      const parent = new ComponentEx();
+      const child = new Component();
+      vi.spyOn(child, 'load').mockImplementation(() => {
+        throw new Error('sync load failed');
+      });
+      parent.addChild(child);
+
+      const promise = parent.loadWithPromises();
+      assertNonNullable(promise);
+      const rejection = await promise.catch((error: unknown) => error);
+      expect(rejection).toBeInstanceOf(AggregateError);
+      if (!(rejection instanceof AggregateError)) {
+        return;
+      }
+      expect(rejection.errors).toHaveLength(1);
+      const [firstError] = rejection.errors;
+      expect(firstError).toBeInstanceOf(Error);
+      if (!(firstError instanceof Error)) {
+        return;
+      }
+      expect(firstError.message).toBe('sync load failed');
+    });
+  });
+
+  describe('onloadAsync', () => {
+    it('should return noopAsyncSingletonPromise by default', () => {
+      const component = new ComponentEx();
+      const result1 = component.onloadAsync();
+      const result2 = component.onloadAsync();
+      expect(result1).toBe(result2);
+    });
+  });
+
+  describe('addChild', () => {
+    it('should add component to children', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      const returned = parent.addChild(child);
+
+      expect(returned).toBe(child);
+      expect(parent._children).toContain(child);
+    });
+
+    it('should chain loading when added after parent is loaded', async () => {
+      const parent = new TestComponentEx();
+      await parent.loadWithPromises();
+
+      const child = new TestComponentEx();
+      parent.addChild(child);
+
+      // loadPromise is extended — need to wait for it
+      await vi.waitFor(() => {
+        expect(child.asyncLoadFunction).toHaveBeenCalledOnce();
+      });
+    });
+
+    it('should not load child immediately when parent is not loaded', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+
+      expect(child._loaded).toBe(false);
+    });
+
+    it('should load a child synchronously even while the parent async load is in flight', () => {
+      const parent = new TestComponentEx();
+      parent.load();
+
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+
+      expect(child._loaded).toBe(true);
+    });
+
+    it('should chain an async child added while the parent async load is in flight', async () => {
+      const parent = new TestComponentEx();
+      parent.load();
+
+      const child = new TestComponentEx();
+      parent.addChild(child);
+
+      await parent.loadWithPromises();
+      expect(child.asyncLoadFunction).toHaveBeenCalledOnce();
+    });
+
+    it('should throw a SilentError and add nothing when the parent is already unloaded', () => {
+      const parent = new SyncComponentEx();
+      parent.load();
+      parent.unload();
+
+      const child = new SyncComponentEx();
+
+      expect(() => {
+        parent.addChild(child);
+      }).toThrow(SilentError);
+      expect(parent._children).not.toContain(child);
+      expect(child._loaded).toBe(false);
+    });
+
+    it('should accept a child again after the parent is reloaded', () => {
+      const parent = new SyncComponentEx();
+      parent.load();
+      parent.unload();
+      parent.load();
+
+      const child = new SyncComponentEx();
+
+      expect(parent.addChild(child)).toBe(child);
+      expect(child._loaded).toBe(true);
+    });
+  });
+
+  describe('ensureLoaded', () => {
+    it('should throw a loud Error when the component was never loaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).toThrow('Component is not loaded');
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).not.toThrow(SilentError);
+    });
+
+    it('should not throw when the component is loaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).not.toThrow();
+    });
+
+    it('should throw a SilentError when the component is already unloaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      component.unload();
+
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).toThrow(SilentError);
+      expect(() => {
+        component.invokeEnsureLoaded();
+      }).toThrow('Component is already unloaded');
+    });
+  });
+
+  describe('isUnloaded', () => {
+    it('should be false before the first load', () => {
+      expect(new LifecycleGuardsComponentEx().invokeIsUnloaded()).toBe(false);
+    });
+
+    it('should be false while loaded', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      expect(component.invokeIsUnloaded()).toBe(false);
+    });
+
+    it('should be true after unload', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      component.unload();
+      expect(component.invokeIsUnloaded()).toBe(true);
+    });
+
+    it('should be false again after a reload', () => {
+      const component = new LifecycleGuardsComponentEx();
+      component.load();
+      component.unload();
+      component.load();
+      expect(component.invokeIsUnloaded()).toBe(false);
+    });
+  });
+
+  describe('hasChild', () => {
+    it('should report a direct child', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+
+      expect(parent.hasChild(child)).toBe(true);
+    });
+
+    it('should not report a component that was never added', () => {
+      const parent = new SyncComponentEx();
+
+      expect(parent.hasChild(new SyncComponentEx())).toBe(false);
+    });
+
+    it('should stop reporting a child once it is removed', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+      parent.removeChild(child);
+
+      expect(parent.hasChild(child)).toBe(false);
+    });
+
+    it('should report only DIRECT children, so a caller can tell which of several parents owns one', () => {
+      const grandparent = new SyncComponentEx();
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      grandparent.addChild(parent);
+      parent.addChild(child);
+
+      expect(grandparent.hasChild(child)).toBe(false);
+      expect(parent.hasChild(child)).toBe(true);
+    });
+  });
+
+  describe('removeChild', () => {
+    it('should remove component from children and childrenSet', () => {
+      const parent = new SyncComponentEx();
+      const child = new SyncComponentEx();
+      parent.addChild(child);
+      parent.load();
+
+      expect(parent._children).toContain(child);
+
+      const returned = parent.removeChild(child);
+      expect(returned).toBe(child);
+      expect(parent._children).not.toContain(child);
+    });
+
+    it('should skip loading removed child in chain', async () => {
+      const parent = new TestComponentEx();
+      const child = new TestComponentEx();
+      parent.addChild(child);
+
+      // Remove the child before parent loads
+      parent.removeChild(child);
+
+      await parent.loadWithPromises();
+
+      // Child should not have been loaded
+      expect(child.asyncLoadFunction).not.toHaveBeenCalled();
+    });
+
+    it('should skip loading child removed during async chain', async () => {
+      const parent = new ComponentEx();
+      const child1 = new TestComponentEx();
+      const child2 = new TestComponentEx();
+
+      child1.asyncLoadFunction.mockImplementation(async () => {
+        await noopAsync();
+        // Remove child2 while child1 is loading
+        parent.removeChild(child2);
+      });
+
+      parent.addChild(child1);
+      parent.addChild(child2);
+
+      await parent.loadWithPromises();
+
+      expect(child1.asyncLoadFunction).toHaveBeenCalledOnce();
+      expect(child2.asyncLoadFunction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Symbol.dispose', () => {
+    it('should call unload', () => {
+      const component = new SyncComponentEx();
+      component.load();
+      expect(component._loaded).toBe(true);
+
+      dispose(component);
+      expect(component._loaded).toBe(false);
+    });
+  });
+
+  describe('chain', () => {
+    it('should handle PromiseLike that is not a Promise', async () => {
+      const parent = new ComponentEx();
+      const child = new Component();
+      const thenable: PromiseLike<void> = {
+        // eslint-disable-next-line unicorn/no-thenable -- A hand-built thenable is the subject of this test, not an accident.
+        async then(resolve) {
+          await resolve?.();
+        }
+      };
+      // eslint-disable-next-line @typescript-eslint/no-invalid-void-type, no-restricted-syntax -- We need to bypass type system to return `Promise<void>`.
+      vi.spyOn(child, 'load').mockReturnValue(thenable as unknown as void);
+      parent.addChild(child);
+
+      const result = parent.loadWithPromises();
+      expect(result).toBeInstanceOf(Promise);
+      await result;
+    });
+
+    it('should chain multiple async operations sequentially', async () => {
+      const order: number[] = [];
+      const parent = new ComponentEx();
+
+      const child1 = new TestComponentEx();
+      child1.asyncLoadFunction.mockImplementation(async () => {
+        await noopAsync();
+        order.push(1);
+      });
+
+      const child2 = new TestComponentEx();
+      child2.asyncLoadFunction.mockImplementation(async () => {
+        await noopAsync();
+        order.push(2);
+      });
+
+      parent.addChild(child1);
+      parent.addChild(child2);
+
+      await parent.loadWithPromises();
+      expect(order).toEqual([1, 2]);
+    });
+  });
+
+  describe('registerDisposable', () => {
+    it('should return the same disposable and dispose it on unload', () => {
+      const component = new SyncComponentEx();
+      component.load();
+      const disposeMock = vi.fn();
+      const disposable: Disposable = { [Symbol.dispose]: disposeMock };
+
+      const returned = component.registerDisposable(disposable);
+
+      expect(returned).toBe(disposable);
+      expect(disposeMock).not.toHaveBeenCalled();
+
+      component.unload();
+      expect(disposeMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getInFlightAncestryLoadPromise', () => {
+    interface Gate {
+      open: () => void;
+      promise: Promise<void>;
+    }
+
+    function createGate(): Gate {
+      let open!: () => void;
+      const promise = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      return { open, promise };
+    }
+
+    it('should leave getInFlightLoadPromise scoped to the component own load', async () => {
+      const gate = createGate();
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+
+      expect(child.probeInFlightLoadPromise()).toBeNull();
+      expect(child.probeInFlightAncestryLoadPromise()).not.toBeNull();
+      gate.open();
+      await parent.loadWithPromises();
+    });
+
+    it('should return null when nothing in the ancestry is loading', () => {
+      const parent = new ComponentEx();
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+
+      expect(child.probeInFlightAncestryLoadPromise()).toBeNull();
+    });
+
+    it('should wait for a sibling load that its parent is still running', async () => {
+      const gate = createGate();
+      const order: string[] = [];
+      const parent = new ComponentEx();
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      const sibling = parent.addChild(new TestComponentEx());
+      sibling.asyncLoadFunction.mockImplementation(async () => {
+        await gate.promise;
+        order.push('sibling');
+      });
+      parent.load();
+
+      const promise = child.probeInFlightAncestryLoadPromise();
+      assertNonNullable(promise);
+      const settled = promise.then(() => {
+        order.push('ancestry');
+      });
+
+      await noopAsync();
+      expect(order).toEqual([]);
+
+      gate.open();
+      await settled;
+      expect(order).toEqual(['sibling', 'ancestry']);
+    });
+
+    it('should wait for the load of a grandparent', async () => {
+      const gate = createGate();
+      const grandparent = new TestComponentEx();
+      grandparent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const parent = grandparent.addChild(new ComponentEx());
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      grandparent.load();
+
+      const promise = child.probeInFlightAncestryLoadPromise();
+      assertNonNullable(promise);
+      let isSettled = false;
+      const settled = promise.then(() => {
+        isSettled = true;
+      });
+
+      await noopAsync();
+      expect(isSettled).toBe(false);
+
+      gate.open();
+      await settled;
+      expect(isSettled).toBe(true);
+    });
+
+    it('should keep waiting when an ancestor load grows while it is awaited', async () => {
+      const firstGate = createGate();
+      const secondGate = createGate();
+      const order: string[] = [];
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockImplementation(async () => {
+        await firstGate.promise;
+        order.push('first');
+      });
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+
+      const promise = child.probeInFlightAncestryLoadPromise();
+      assertNonNullable(promise);
+      const settled = promise.then(() => {
+        order.push('ancestry');
+      });
+
+      const lateSibling = new TestComponentEx();
+      lateSibling.asyncLoadFunction.mockImplementation(async () => {
+        await secondGate.promise;
+        order.push('second');
+      });
+
+      firstGate.open();
+      await firstGate.promise;
+      // Appended while the first load is being awaited, after it has already chained its reset.
+      await noopAsync();
+      parent.addChild(lateSibling);
+
+      secondGate.open();
+      await settled;
+      expect(order).toEqual(['first', 'second', 'ancestry']);
+    });
+
+    it('should stop following a parent the component was removed from', async () => {
+      const gate = createGate();
+      const parent = new TestComponentEx();
+      parent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const child = parent.addChild(new AncestryProbeComponentEx());
+      parent.load();
+      parent.removeChild(child);
+
+      expect(child.probeInFlightAncestryLoadPromise()).toBeNull();
+      gate.open();
+      await parent.loadWithPromises();
+    });
+
+    it('should keep the new parent when an old parent removes a re-parented component', async () => {
+      const gate = createGate();
+      const oldParent = new ComponentEx();
+      const newParent = new TestComponentEx();
+      newParent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const child = oldParent.addChild(new AncestryProbeComponentEx());
+      newParent.addChild(child);
+      newParent.load();
+      oldParent.removeChild(child);
+
+      expect(child.probeInFlightAncestryLoadPromise()).not.toBeNull();
+      gate.open();
+      await newParent.loadWithPromises();
+    });
+
+    it('should not follow a plain Component parent', async () => {
+      const gate = createGate();
+      const grandparent = new TestComponentEx();
+      grandparent.asyncLoadFunction.mockReturnValue(gate.promise);
+      const plainParent = grandparent.addChild(new Component());
+      const child = plainParent.addChild(new AncestryProbeComponentEx());
+      grandparent.load();
+
+      expect(child.probeInFlightAncestryLoadPromise()).toBeNull();
+      gate.open();
+      await grandparent.loadWithPromises();
+    });
+  });
+});

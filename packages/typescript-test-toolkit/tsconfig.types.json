@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "resolveJsonModule": true
+  },
+  "exclude": [
+    "./src/**/*.test.ts",
+    "./src/test-helpers/**"
+  ],
+  "include": [
+    "../typescript-lib/src/**/@types/**/*.d.ts",
+    "./src/**/*.ts"
+  ]
+}

@@ -134,8 +134,8 @@ export function getDisplayName(name: string, info: TypeInfo): string {
  * Emit the import statement for a documented export.
  *
  * The subpath equals the type's namespace (its source path relative to `src`), so
- * `src/string.ts` → `obsidian-dev-utils/string`, `src/obsidian/modals/alert.ts` →
- * `obsidian-dev-utils/obsidian/modals/alert`.
+ * `packages/typescript-lib/src/string.ts` → `@mnaoumov/typescript-lib/string`, `packages/obsidian-lib/src/modals/alert.ts` →
+ * `@mnaoumov/obsidian-lib/modals/alert`.
  *
  * Interfaces / type aliases / enums are imported with `import type`; classes / functions /
  * variables with a value `import`.
@@ -143,7 +143,7 @@ export function getDisplayName(name: string, info: TypeInfo): string {
 export function getImportStatement(info: TypeInfo): string | undefined {
   const isTypeOnly = ['enum', 'interface', 'type'].includes(info.kind);
   const importKeyword = isTypeOnly ? 'import type' : 'import';
-  return `${importKeyword} { ${info.name} } from 'obsidian-dev-utils/${info.namespace}';`;
+  return `${importKeyword} { ${info.name} } from '@mnaoumov/${info.namespace}';`;
 }
 
 export function getNamespaceDirectory(namespace: string): string {

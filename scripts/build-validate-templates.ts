@@ -15,8 +15,8 @@
  * carries nothing else and the check stays fast and leak-free.
  */
 
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { execFromRoot } from '../src/script-utils/root.ts';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { execFromRoot } from '@mnaoumov/typescript-dev-toolkit/root';
 
 await wrapCliTask(async () => {
   await execFromRoot('tsc --project ./tsconfig.templates.json');

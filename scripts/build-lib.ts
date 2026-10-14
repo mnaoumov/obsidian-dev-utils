@@ -1,21 +1,20 @@
 import type { BuildOptions } from 'esbuild';
 
-import { context } from 'esbuild';
-
-import {
-  join,
-  normalizeIfRelative
-} from '../src/path.ts';
-import { changeExtensionPlugin } from '../src/script-utils/bundlers/esbuild-impl/change-extension-plugin.ts';
-import { fixEsmPlugin } from '../src/script-utils/bundlers/esbuild-impl/fix-esm-plugin.ts';
 import {
   banner,
   invokeEsbuild
-} from '../src/script-utils/bundlers/esbuild-impl/obsidian-plugin-builder.ts';
-import { preprocessPlugin } from '../src/script-utils/bundlers/esbuild-impl/preprocess-plugin.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { readdirPosix } from '../src/script-utils/fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+} from '@mnaoumov/obsidian-dev-toolkit/bundlers/esbuild-impl/obsidian-plugin-builder';
+import { preprocessPlugin } from '@mnaoumov/obsidian-dev-toolkit/bundlers/esbuild-impl/preprocess-plugin';
+import { changeExtensionPlugin } from '@mnaoumov/typescript-dev-toolkit/bundlers/esbuild-impl/change-extension-plugin';
+import { fixEsmPlugin } from '@mnaoumov/typescript-dev-toolkit/bundlers/esbuild-impl/fix-esm-plugin';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { readdirPosix } from '@mnaoumov/typescript-dev-toolkit/fs';
+import { RepoPaths } from '@mnaoumov/typescript-dev-toolkit/repo-paths';
+import {
+  join,
+  normalizeIfRelative
+} from '@mnaoumov/typescript-lib/path';
+import { context } from 'esbuild';
 
 await wrapCliTask(async () => {
   const libFiles = await getLibFiles();
@@ -24,7 +23,7 @@ await wrapCliTask(async () => {
 });
 
 async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
-  const extension = format === 'cjs' ? ObsidianDevUtilsRepoPaths.CjsExtension : ObsidianDevUtilsRepoPaths.MjsExtension;
+  const extension = format === 'cjs' ? RepoPaths.CjsExtension : RepoPaths.MjsExtension;
   const buildOptions: BuildOptions = {
     banner: {
       js: banner
@@ -33,7 +32,7 @@ async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
     entryPoints: libFiles,
     format,
     logLevel: 'info',
-    outdir: join(ObsidianDevUtilsRepoPaths.DistLib, format),
+    outdir: join(RepoPaths.DistLib, format),
     platform: 'node',
     plugins: [
       preprocessPlugin(format === 'esm'),
@@ -51,11 +50,11 @@ async function build(libFiles: string[], format: 'cjs' | 'esm'): Promise<void> {
 }
 
 async function getLibFiles(): Promise<string[]> {
-  let files = await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true });
-  files = files.map((file) => normalizeIfRelative(join(ObsidianDevUtilsRepoPaths.Src, file)));
+  let files = await readdirPosix(RepoPaths.Src, { recursive: true });
+  files = files.map((file) => normalizeIfRelative(join(RepoPaths.Src, file)));
   files = files.filter((file) =>
-    file.endsWith(ObsidianDevUtilsRepoPaths.TsExtension) && !file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) && !file.endsWith('.test.ts')
-    && !file.includes(`/${ObsidianDevUtilsRepoPaths.TestHelpers}/`)
+    file.endsWith(RepoPaths.TsExtension) && !file.endsWith(RepoPaths.DtsExtension) && !file.endsWith('.test.ts')
+    && !file.includes(`/${RepoPaths.TestHelpers}/`)
   );
   return files;
 }

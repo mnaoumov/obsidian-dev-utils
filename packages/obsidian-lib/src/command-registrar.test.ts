@@ -1,0 +1,46 @@
+/**
+ * @file
+ *
+ * Tests for {@link PluginCommandRegistrar}.
+ */
+
+import type {
+  Command as CommandOriginal,
+  Plugin as PluginOriginal
+} from 'obsidian';
+
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import {
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { PluginCommandRegistrar } from './command-registrar.ts';
+
+describe('PluginCommandRegistrar', () => {
+  it('should delegate addCommand to the plugin', () => {
+    const addCommand = vi.fn();
+    const plugin = strictProxy<PluginOriginal>({ addCommand });
+    const registrar = new PluginCommandRegistrar(plugin);
+    const command = strictProxy<CommandOriginal>({
+      id: 'test-command',
+      name: 'Test Command'
+    });
+
+    registrar.addCommand(command);
+
+    expect(addCommand).toHaveBeenCalledWith(command);
+  });
+
+  it('should delegate removeCommand to the plugin', () => {
+    const removeCommand = vi.fn();
+    const plugin = strictProxy<PluginOriginal>({ removeCommand });
+    const registrar = new PluginCommandRegistrar(plugin);
+
+    registrar.removeCommand('test-command');
+
+    expect(removeCommand).toHaveBeenCalledWith('test-command');
+  });
+});

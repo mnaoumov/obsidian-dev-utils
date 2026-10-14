@@ -1,0 +1,515 @@
+{
+  "name": "@mnaoumov/obsidian-lib",
+  "version": "107.4.1",
+  "description": "Runtime library for Obsidian plugin development: plugin base classes, components, settings, modals, vault and metadata helpers.",
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin"
+  ],
+  "homepage": "https://github.com/mnaoumov/obsidian-dev-utils/tree/main/packages/obsidian-lib#readme",
+  "bugs": {
+    "url": "https://github.com/mnaoumov/obsidian-dev-utils/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mnaoumov/obsidian-dev-utils.git",
+    "directory": "packages/obsidian-lib"
+  },
+  "license": "MIT",
+  "author": "Michael Naumov",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@mnaoumov/source": "./src/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/index.d.mts",
+        "default": "./dist/lib/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/index.d.cts",
+        "default": "./dist/lib/cjs/index.cjs"
+      }
+    },
+    "./*": {
+      "@mnaoumov/source": "./src/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/*.d.mts",
+        "default": "./dist/lib/esm/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/*.d.cts",
+        "default": "./dist/lib/cjs/*.cjs"
+      }
+    },
+    "./@types/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/*.d.cts"
+      }
+    },
+    "./@types/dataview": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/index.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/index.d.cts"
+      }
+    },
+    "./@types/dataview/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/*.d.cts"
+      }
+    },
+    "./@types/dataview/api/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/api/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/api/*.d.cts"
+      }
+    },
+    "./@types/dataview/data-import/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/data-import/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/data-import/*.d.cts"
+      }
+    },
+    "./@types/dataview/data-import/web-worker/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/data-import/web-worker/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/data-import/web-worker/*.d.cts"
+      }
+    },
+    "./@types/dataview/data-index": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/data-index/index.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/data-index/index.d.cts"
+      }
+    },
+    "./@types/dataview/data-index/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/data-index/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/data-index/*.d.cts"
+      }
+    },
+    "./@types/dataview/data-model/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/data-model/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/data-model/*.d.cts"
+      }
+    },
+    "./@types/dataview/data-model/serialized/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/data-model/serialized/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/data-model/serialized/*.d.cts"
+      }
+    },
+    "./@types/dataview/expression/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/expression/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/expression/*.d.cts"
+      }
+    },
+    "./@types/dataview/query/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/query/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/query/*.d.cts"
+      }
+    },
+    "./@types/dataview/typings/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/typings/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/typings/*.d.cts"
+      }
+    },
+    "./@types/dataview/ui/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/ui/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/ui/*.d.cts"
+      }
+    },
+    "./@types/dataview/ui/export/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/ui/export/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/ui/export/*.d.cts"
+      }
+    },
+    "./@types/dataview/ui/views/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/ui/views/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/ui/views/*.d.cts"
+      }
+    },
+    "./@types/dataview/util/*": {
+      "import": {
+        "types": "./dist/lib/esm/@types/dataview/util/*.d.mts"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/@types/dataview/util/*.d.cts"
+      }
+    },
+    "./codemirror": {
+      "@mnaoumov/source": "./src/codemirror/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/codemirror/index.d.mts",
+        "default": "./dist/lib/esm/codemirror/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/codemirror/index.d.cts",
+        "default": "./dist/lib/cjs/codemirror/index.cjs"
+      }
+    },
+    "./codemirror/*": {
+      "@mnaoumov/source": "./src/codemirror/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/codemirror/*.d.mts",
+        "default": "./dist/lib/esm/codemirror/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/codemirror/*.d.cts",
+        "default": "./dist/lib/cjs/codemirror/*.cjs"
+      }
+    },
+    "./command-handlers": {
+      "@mnaoumov/source": "./src/command-handlers/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/command-handlers/index.d.mts",
+        "default": "./dist/lib/esm/command-handlers/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/command-handlers/index.d.cts",
+        "default": "./dist/lib/cjs/command-handlers/index.cjs"
+      }
+    },
+    "./command-handlers/*": {
+      "@mnaoumov/source": "./src/command-handlers/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/command-handlers/*.d.mts",
+        "default": "./dist/lib/esm/command-handlers/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/command-handlers/*.d.cts",
+        "default": "./dist/lib/cjs/command-handlers/*.cjs"
+      }
+    },
+    "./components": {
+      "@mnaoumov/source": "./src/components/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/components/index.d.mts",
+        "default": "./dist/lib/esm/components/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/components/index.d.cts",
+        "default": "./dist/lib/cjs/components/index.cjs"
+      }
+    },
+    "./components/*": {
+      "@mnaoumov/source": "./src/components/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/components/*.d.mts",
+        "default": "./dist/lib/esm/components/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/components/*.d.cts",
+        "default": "./dist/lib/cjs/components/*.cjs"
+      }
+    },
+    "./constructors": {
+      "@mnaoumov/source": "./src/constructors/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/constructors/index.d.mts",
+        "default": "./dist/lib/esm/constructors/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/constructors/index.d.cts",
+        "default": "./dist/lib/cjs/constructors/index.cjs"
+      }
+    },
+    "./constructors/*": {
+      "@mnaoumov/source": "./src/constructors/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/constructors/*.d.mts",
+        "default": "./dist/lib/esm/constructors/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/constructors/*.d.cts",
+        "default": "./dist/lib/cjs/constructors/*.cjs"
+      }
+    },
+    "./i18n": {
+      "@mnaoumov/source": "./src/i18n/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/i18n/index.d.mts",
+        "default": "./dist/lib/esm/i18n/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/i18n/index.d.cts",
+        "default": "./dist/lib/cjs/i18n/index.cjs"
+      }
+    },
+    "./i18n/*": {
+      "@mnaoumov/source": "./src/i18n/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/i18n/*.d.mts",
+        "default": "./dist/lib/esm/i18n/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/i18n/*.d.cts",
+        "default": "./dist/lib/cjs/i18n/*.cjs"
+      }
+    },
+    "./i18n/locales": {
+      "@mnaoumov/source": "./src/i18n/locales/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/i18n/locales/index.d.mts",
+        "default": "./dist/lib/esm/i18n/locales/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/i18n/locales/index.d.cts",
+        "default": "./dist/lib/cjs/i18n/locales/index.cjs"
+      }
+    },
+    "./i18n/locales/*": {
+      "@mnaoumov/source": "./src/i18n/locales/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/i18n/locales/*.d.mts",
+        "default": "./dist/lib/esm/i18n/locales/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/i18n/locales/*.d.cts",
+        "default": "./dist/lib/cjs/i18n/locales/*.cjs"
+      }
+    },
+    "./modals": {
+      "@mnaoumov/source": "./src/modals/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/modals/index.d.mts",
+        "default": "./dist/lib/esm/modals/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/modals/index.d.cts",
+        "default": "./dist/lib/cjs/modals/index.cjs"
+      }
+    },
+    "./modals/*": {
+      "@mnaoumov/source": "./src/modals/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/modals/*.d.mts",
+        "default": "./dist/lib/esm/modals/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/modals/*.d.cts",
+        "default": "./dist/lib/cjs/modals/*.cjs"
+      }
+    },
+    "./plugin": {
+      "@mnaoumov/source": "./src/plugin/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/plugin/index.d.mts",
+        "default": "./dist/lib/esm/plugin/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/plugin/index.d.cts",
+        "default": "./dist/lib/cjs/plugin/index.cjs"
+      }
+    },
+    "./plugin/*": {
+      "@mnaoumov/source": "./src/plugin/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/plugin/*.d.mts",
+        "default": "./dist/lib/esm/plugin/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/plugin/*.d.cts",
+        "default": "./dist/lib/cjs/plugin/*.cjs"
+      }
+    },
+    "./popovers": {
+      "@mnaoumov/source": "./src/popovers/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/popovers/index.d.mts",
+        "default": "./dist/lib/esm/popovers/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/popovers/index.d.cts",
+        "default": "./dist/lib/cjs/popovers/index.cjs"
+      }
+    },
+    "./popovers/*": {
+      "@mnaoumov/source": "./src/popovers/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/popovers/*.d.mts",
+        "default": "./dist/lib/esm/popovers/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/popovers/*.d.cts",
+        "default": "./dist/lib/cjs/popovers/*.cjs"
+      }
+    },
+    "./react": {
+      "@mnaoumov/source": "./src/react/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/react/index.d.mts",
+        "default": "./dist/lib/esm/react/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/react/index.d.cts",
+        "default": "./dist/lib/cjs/react/index.cjs"
+      }
+    },
+    "./react/*": {
+      "@mnaoumov/source": "./src/react/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/react/*.d.mts",
+        "default": "./dist/lib/esm/react/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/react/*.d.cts",
+        "default": "./dist/lib/cjs/react/*.cjs"
+      }
+    },
+    "./setting-components": {
+      "@mnaoumov/source": "./src/setting-components/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/setting-components/index.d.mts",
+        "default": "./dist/lib/esm/setting-components/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/setting-components/index.d.cts",
+        "default": "./dist/lib/cjs/setting-components/index.cjs"
+      }
+    },
+    "./setting-components/*": {
+      "@mnaoumov/source": "./src/setting-components/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/setting-components/*.d.mts",
+        "default": "./dist/lib/esm/setting-components/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/setting-components/*.d.cts",
+        "default": "./dist/lib/cjs/setting-components/*.cjs"
+      }
+    },
+    "./transformers": {
+      "@mnaoumov/source": "./src/transformers/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/transformers/index.d.mts",
+        "default": "./dist/lib/esm/transformers/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/transformers/index.d.cts",
+        "default": "./dist/lib/cjs/transformers/index.cjs"
+      }
+    },
+    "./transformers/*": {
+      "@mnaoumov/source": "./src/transformers/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/transformers/*.d.mts",
+        "default": "./dist/lib/esm/transformers/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/transformers/*.d.cts",
+        "default": "./dist/lib/cjs/transformers/*.cjs"
+      }
+    }
+  },
+  "files": [
+    "**/package.json",
+    "dist/",
+    "!dist/*.tgz",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/run.mjs ../../scripts/build.ts",
+    "build:clean": "node ../../scripts/run.mjs ../../scripts/build-clean.ts",
+    "build:compile": "node ../../scripts/run.mjs ../../scripts/build-compile.ts",
+    "build:compile:typescript": "node ../../scripts/run.mjs ../../scripts/build-compile-typescript.ts",
+    "build:generate-exports": "node ../../scripts/run.mjs ../../scripts/build-generate-exports.ts",
+    "build:generate-index": "node ../../scripts/run.mjs ../../scripts/build-generate-index.ts",
+    "build:generate-merged": "node ../../scripts/run.mjs ../../scripts/build-generate-merged.ts --include typescript-lib",
+    "build:lib": "node ../../scripts/run.mjs ../../scripts/build-lib.ts",
+    "build:stamp-generated": "node ../../scripts/run.mjs ../../scripts/build-stamp-generated.ts",
+    "build:styles": "node ../../scripts/run.mjs ../../scripts/build-styles.ts",
+    "build:types": "node ../../scripts/run.mjs ../../scripts/build-types.ts",
+    "build:validate-declarations": "node ../../scripts/run.mjs ../../scripts/build-validate-declarations.ts",
+    "find-overexposed": "node ../../scripts/run.mjs ../../scripts/find-overexposed.ts",
+    "find-overexposed:fix": "node ../../scripts/run.mjs ../../scripts/find-overexposed-fix.ts",
+    "test": "node ../../scripts/run.mjs ../../scripts/package-test.ts",
+    "test:coverage": "node ../../scripts/run.mjs ../../scripts/package-test-coverage.ts",
+    "test:integration": "node ../../scripts/run.mjs ../../scripts/package-test-integration.ts integration-tests obsidian-integration-tests",
+    "test:watch": "node ../../scripts/run.mjs ../../scripts/package-test-watch.ts"
+  },
+  "dependencies": {
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "@lezer/common": "1.5.2",
+    "@mnaoumov/typescript-lib": "107.4.1",
+    "@obsidian-typings/obsidian-public-latest": "^6.37.0",
+    "@standard-schema/spec": "^1.1.0",
+    "@types/luxon": "^3.7.5",
+    "@types/parsimmon": "^1.10.9",
+    "@types/react": "^19.3.0",
+    "compare-versions": "^6.1.1",
+    "i18next": "^26.4.2",
+    "localforage": "^1.10.0",
+    "monkey-around": "^3.0.0",
+    "obsidian": "^1.13.1",
+    "preact": "^10.29.8",
+    "react": "^19.3.0",
+    "remark": "^15.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-wiki-link": "^2.0.1",
+    "type-fest": "^5.10.0",
+    "unist-util-visit": "^5.1.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@mnaoumov/obsidian-dev-toolkit": "107.4.1",
+    "@mnaoumov/typescript-test-toolkit": "107.4.1",
+    "@types/prismjs": "^1.26.6",
+    "dedent": "^1.7.2",
+    "fflate": "^0.8.3",
+    "jsdom": "^30.1.0",
+    "obsidian-integration-testing": "^17.3.0",
+    "obsidian-test-mocks": "^7.0.0",
+    "prismjs": "^1.30.0",
+    "sass": "^1.104.1",
+    "vitest": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

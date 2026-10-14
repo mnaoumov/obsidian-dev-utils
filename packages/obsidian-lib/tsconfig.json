@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": [
+      "@obsidian-typings/obsidian-public-latest",
+      "@total-typescript/ts-reset",
+      "node"
+    ]
+  },
+  "include": [
+    "../typescript-lib/src/**/@types/**/*.d.ts",
+    "../typescript-test-toolkit/src/**/@types/**/*.d.ts",
+    "./src/**/*.ts",
+    "./integration-test-plugin-api/**/*.ts",
+    "./vitest.config.ts"
+  ]
+}

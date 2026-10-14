@@ -1,0 +1,1062 @@
+import type { GenericObject } from '@mnaoumov/typescript-lib/type-guards';
+// @vitest-environment jsdom
+import type {
+  App as AppOriginal,
+  Reference
+} from 'obsidian';
+
+import { printError } from '@mnaoumov/typescript-lib/error';
+import { noop } from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { resolveValue } from '@mnaoumov/typescript-lib/value-provider';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import type { FileChange } from './file-change.ts';
+import type { ResourceLockComponent } from './resource-lock.ts';
+import type {
+  ContentArguments,
+  ProcessParams
+} from './vault.ts';
+
+import { getObsidianLibDebugger } from './debug.ts';
+import {
+  applyContentChanges,
+  applyFileChanges,
+  isCanvasChange,
+  isCanvasFileNodeChange,
+  isCanvasTextNodeChange,
+  isContentChange,
+  isFrontmatterChange,
+  isFrontmatterChangeWithOffsets,
+  toFrontmatterChangeWithOffsets
+} from './file-change.ts';
+import { isCanvasFile } from './file-system.ts';
+import { parseFrontmatter } from './frontmatter.ts';
+import { process } from './vault.ts';
+
+interface PathHolder {
+  path: string;
+}
+
+vi.mock('./debug.ts', () => ({
+  getObsidianLibDebugger: vi.fn(() => vi.fn())
+}));
+
+vi.mock('@mnaoumov/typescript-lib/error', () => ({
+  printError: vi.fn()
+}));
+
+vi.mock('./file-system.ts', () => ({
+  getPath: vi.fn((_app: unknown, p: unknown) => typeof p === 'string' ? p : (p as PathHolder).path),
+  isCanvasFile: vi.fn(() => false)
+}));
+
+vi.mock('./frontmatter.ts', async (importOriginal) => {
+  const original = await importOriginal<typeof import('./frontmatter.ts')>();
+  return {
+    ...original,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Spy wrapper passes through to original implementation.
+    parseFrontmatter: vi.fn((...$arguments: Parameters<typeof original.parseFrontmatter>) => original.parseFrontmatter(...$arguments))
+  };
+});
+
+vi.mock('./vault.ts', () => ({
+  process: vi.fn(async (params: ProcessParams) => {
+    const controller = new AbortController();
+    await resolveValue(params.newContentProvider, { abortSignal: controller.signal, content: 'test content' });
+  })
+}));
+
+const resourceLockComponent = strictProxy<ResourceLockComponent>({
+  lockForPath: () => ({ [Symbol.dispose]: noop })
+});
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
+
+// --- Helper factories ---
+
+function makeCanvasFileNodeChange(
+  oldContent: string,
+  newContent: string,
+  nodeIndex: number
+): FileChange {
+  return {
+    newContent,
+    oldContent,
+    reference: {
+      displayText: oldContent,
+      isCanvas: true,
+      key: 'file',
+      link: oldContent,
+      nodeIndex,
+      original: oldContent,
+      type: 'file'
+    } as Reference
+  };
+}
+
+function makeCanvasTextNodeChange(
+  oldContent: string,
+  newContent: string,
+  nodeIndex: number,
+  originalReferenceStartOffset: number
+): FileChange {
+  return {
+    newContent,
+    oldContent,
+    reference: {
+      displayText: oldContent,
+      isCanvas: true,
+      key: 'text',
+      link: oldContent,
+      nodeIndex,
+      original: oldContent,
+      originalReference: {
+        link: oldContent,
+        original: oldContent,
+        position: {
+          end: { col: 0, line: 0, offset: originalReferenceStartOffset + oldContent.length },
+          start: { col: 0, line: 0, offset: originalReferenceStartOffset }
+        }
+      },
+      type: 'text'
+    } as Reference
+  };
+}
+
+function makeContentChange(
+  oldContent: string,
+  newContent: string,
+  startOffset: number
+): FileChange {
+  return {
+    newContent,
+    oldContent,
+    reference: {
+      link: oldContent,
+      original: oldContent,
+      position: {
+        end: { col: 0, line: 0, offset: startOffset + oldContent.length },
+        start: { col: 0, line: 0, offset: startOffset }
+      }
+    } as Reference
+  };
+}
+
+function makeFrontmatterChange(
+  oldContent: string,
+  newContent: string,
+  key: string
+): FileChange {
+  return {
+    newContent,
+    oldContent,
+    reference: {
+      displayText: oldContent,
+      key,
+      link: oldContent,
+      original: oldContent
+    } as Reference
+  };
+}
+
+function makeFrontmatterChangeWithOffsets(
+  oldContent: string,
+  newContent: string,
+  key: string,
+  startOffset: number,
+  endOffset: number
+): FileChange {
+  return {
+    newContent,
+    oldContent,
+    reference: {
+      displayText: oldContent,
+      endOffset,
+      key,
+      link: oldContent,
+      original: oldContent,
+      startOffset
+    } as Reference
+  };
+}
+
+// --- Type guard tests ---
+
+describe('isCanvasChange', () => {
+  it('should return true for a canvas file node change', () => {
+    const change = makeCanvasFileNodeChange('old.md', 'new.md', 0);
+    expect(isCanvasChange(change)).toBe(true);
+  });
+
+  it('should return true for a canvas text node change', () => {
+    const change = makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0);
+    expect(isCanvasChange(change)).toBe(true);
+  });
+
+  it('should return false for a content change', () => {
+    const change = makeContentChange('[[old]]', '[[new]]', 0);
+    expect(isCanvasChange(change)).toBe(false);
+  });
+
+  it('should return false for a frontmatter change', () => {
+    const change = makeFrontmatterChange('old', 'new', 'aliases');
+    expect(isCanvasChange(change)).toBe(false);
+  });
+});
+
+describe('isCanvasFileNodeChange', () => {
+  it('should return true for a canvas file node change', () => {
+    const change = makeCanvasFileNodeChange('old.md', 'new.md', 0);
+    expect(isCanvasFileNodeChange(change)).toBe(true);
+  });
+
+  it('should return false for a canvas text node change', () => {
+    const change = makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0);
+    expect(isCanvasFileNodeChange(change)).toBe(false);
+  });
+
+  it('should return false for a content change', () => {
+    const change = makeContentChange('[[old]]', '[[new]]', 0);
+    expect(isCanvasFileNodeChange(change)).toBe(false);
+  });
+});
+
+describe('isCanvasTextNodeChange', () => {
+  it('should return true for a canvas text node change', () => {
+    const change = makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0);
+    expect(isCanvasTextNodeChange(change)).toBe(true);
+  });
+
+  it('should return false for a canvas file node change', () => {
+    const change = makeCanvasFileNodeChange('old.md', 'new.md', 0);
+    expect(isCanvasTextNodeChange(change)).toBe(false);
+  });
+
+  it('should return false for a content change', () => {
+    const change = makeContentChange('[[old]]', '[[new]]', 0);
+    expect(isCanvasTextNodeChange(change)).toBe(false);
+  });
+});
+
+describe('isContentChange', () => {
+  it('should return true for a reference with position', () => {
+    const change = makeContentChange('[[old]]', '[[new]]', 0);
+    expect(isContentChange(change)).toBe(true);
+  });
+
+  it('should return false for a frontmatter change', () => {
+    const change = makeFrontmatterChange('old', 'new', 'aliases');
+    expect(isContentChange(change)).toBe(false);
+  });
+
+  it('should return false for a canvas change', () => {
+    const change = makeCanvasFileNodeChange('old.md', 'new.md', 0);
+    expect(isContentChange(change)).toBe(false);
+  });
+});
+
+describe('isFrontmatterChange', () => {
+  it('should return true for a frontmatter link cache reference', () => {
+    const change = makeFrontmatterChange('old', 'new', 'aliases');
+    expect(isFrontmatterChange(change)).toBe(true);
+  });
+
+  it('should return false for a content change', () => {
+    const change = makeContentChange('[[old]]', '[[new]]', 0);
+    expect(isFrontmatterChange(change)).toBe(false);
+  });
+
+  it('should return true for a frontmatter change with offsets (it is also a frontmatter change)', () => {
+    const change = makeFrontmatterChangeWithOffsets('old', 'new', 'aliases', 0, 3);
+    expect(isFrontmatterChange(change)).toBe(true);
+  });
+});
+
+describe('isFrontmatterChangeWithOffsets', () => {
+  it('should return true when reference has startOffset and endOffset', () => {
+    const change = makeFrontmatterChangeWithOffsets('old', 'new', 'aliases', 0, 3);
+    expect(isFrontmatterChangeWithOffsets(change)).toBe(true);
+  });
+
+  it('should return false for a frontmatter change without offsets', () => {
+    const change = makeFrontmatterChange('old', 'new', 'aliases');
+    expect(isFrontmatterChangeWithOffsets(change)).toBe(false);
+  });
+
+  it('should return false for a content change', () => {
+    const change = makeContentChange('[[old]]', '[[new]]', 0);
+    expect(isFrontmatterChangeWithOffsets(change)).toBe(false);
+  });
+});
+
+// --- toFrontmatterChangeWithOffsets ---
+
+describe('toFrontmatterChangeWithOffsets', () => {
+  it('should return the same change if it already has offsets', () => {
+    const change = makeFrontmatterChangeWithOffsets('old', 'new', 'aliases', 5, 8);
+    const result = toFrontmatterChangeWithOffsets(castTo<Parameters<typeof toFrontmatterChangeWithOffsets>[0]>(change));
+    expect(result).toBe(change);
+  });
+
+  it('should convert a frontmatter change without offsets by adding startOffset=0 and endOffset=original.length', () => {
+    const change = makeFrontmatterChange('hello', 'world', 'aliases');
+    const result = toFrontmatterChangeWithOffsets(castTo<Parameters<typeof toFrontmatterChangeWithOffsets>[0]>(change));
+    expect(isFrontmatterChangeWithOffsets(result)).toBe(true);
+    expect(result.reference.startOffset).toBe(0);
+    expect(result.reference.endOffset).toBe(5);
+  });
+
+  it('should preserve all original properties on the converted change', () => {
+    const change = makeFrontmatterChange('link-value', 'new-value', 'myKey');
+    const result = toFrontmatterChangeWithOffsets(castTo<Parameters<typeof toFrontmatterChangeWithOffsets>[0]>(change));
+    expect(result.newContent).toBe('new-value');
+    expect(result.oldContent).toBe('link-value');
+    expect(result.reference.key).toBe('myKey');
+  });
+});
+
+// --- applyContentChanges ---
+
+describe('applyContentChanges', () => {
+  let signal: AbortSignal;
+
+  beforeEach(() => {
+    signal = new AbortController().signal;
+  });
+
+  it('should return null when changesProvider returns null', async () => {
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: null, content: 'some content', path: 'test.md' });
+    expect(result).toBeNull();
+  });
+
+  it('should return null when changesProvider function returns null', async () => {
+    const provider = vi.fn().mockReturnValue(null);
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: provider, content: 'some content', path: 'test.md' });
+    expect(result).toBeNull();
+  });
+
+  it('should apply a single content change', async () => {
+    const content = 'Hello [[old-link]] world';
+    const changes = [makeContentChange('[[old-link]]', '[[new-link]]', 6)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('Hello [[new-link]] world');
+  });
+
+  it('should apply multiple non-overlapping content changes', async () => {
+    const content = 'A [[first]] B [[second]] C';
+    const changes = [
+      makeContentChange('[[first]]', '[[one]]', 2),
+      makeContentChange('[[second]]', '[[two]]', 14)
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('A [[one]] B [[two]] C');
+  });
+
+  it('should handle no-op changes (old === new) by filtering them out', async () => {
+    const content = 'Hello [[same]] world';
+    const changes = [makeContentChange('[[same]]', '[[same]]', 6)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('Hello [[same]] world');
+  });
+
+  it('should handle content changes sorted out of order', async () => {
+    const content = 'A [[second]] B [[first]] C';
+    // Provide changes in reverse order; the function should sort them
+    const changes = [
+      makeContentChange('[[first]]', '[[one]]', 15),
+      makeContentChange('[[second]]', '[[two]]', 2)
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('A [[two]] B [[one]] C');
+  });
+
+  it('should handle abort signal that is already aborted', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const changes = [makeContentChange('old', 'new', 0)];
+    await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: changes, content: 'old content', path: 'test.md' }))
+      .rejects.toThrow();
+  });
+
+  it('should return null when content validation fails and shouldRetryOnInvalidChanges is true', async () => {
+    const content = 'Hello world';
+    // Create a change with wrong oldContent that does not match content at the offset
+    const changes = [makeContentChange('WRONG', 'new', 0)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
+    expect(result).toBeNull();
+  });
+
+  it('should return original content when validation fails and shouldRetryOnInvalidChanges is false', async () => {
+    const content = 'Hello world';
+    const changes = [makeContentChange('WRONG', 'new', 0)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: false });
+    expect(result).toBe('Hello world');
+  });
+
+  it('should ask for a retry by default when validation fails, since the file may still be catching up', async () => {
+    const changes = [makeContentChange('WRONG', 'new', 0)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content: 'Hello world', path: 'test.md' });
+    expect(result).toBeNull();
+  });
+
+  it('should reject when the signal aborts while the changes provider runs', async () => {
+    const controller = new AbortController();
+    function provider(): FileChange[] {
+      controller.abort(new Error('aborted'));
+      return [makeContentChange('[[old]]', '[[new]]', 6)];
+    }
+    await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: provider, content: 'Hello [[old]] world', path: 'test.md' }))
+      .rejects.toThrow('aborted');
+  });
+
+  it('should reject rather than ask for a retry when the signal aborts while the changes provider declines', async () => {
+    const controller = new AbortController();
+    function provider(): null {
+      controller.abort(new Error('aborted'));
+      return null;
+    }
+    await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: provider, content: 'Hello world', path: 'test.md' }))
+      .rejects.toThrow('aborted');
+  });
+
+  it('should filter out duplicate changes', async () => {
+    const content = 'Hello [[old]] world';
+    const change = makeContentChange('[[old]]', '[[new]]', 6);
+    const changes = [change, { ...change, newContent: '[[new]]', oldContent: '[[old]]', reference: { ...change.reference } }];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('Hello [[new]] world');
+  });
+
+  it('should apply a change at the beginning of the content', async () => {
+    const content = '[[old]] rest of text';
+    const changes = [makeContentChange('[[old]]', '[[new]]', 0)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('[[new]] rest of text');
+  });
+
+  it('should apply a change at the end of the content', async () => {
+    const content = 'some text [[old]]';
+    const changes = [makeContentChange('[[old]]', '[[new]]', 10)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('some text [[new]]');
+  });
+
+  it('should handle empty content with no changes', async () => {
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: [], content: '', path: 'test.md' });
+    expect(result).toBe('');
+  });
+
+  it('should accept a function as changesProvider', async () => {
+    const content = 'Hello [[old]] world';
+
+    const provider = vi.fn(({ content: c }: ContentArguments) => {
+      expect(c).toBe(content);
+      return [makeContentChange('[[old]]', '[[new]]', 6)];
+    });
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: provider, content, path: 'test.md' });
+    expect(result).toBe('Hello [[new]] world');
+    expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it('should handle frontmatter changes', async () => {
+    const content = '---\naliases: old-alias\n---\nBody text';
+    const changes = [makeFrontmatterChange('old-alias', 'new-alias', 'aliases')];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).not.toBeNull();
+    expect(result).toContain('new-alias');
+  });
+
+  it('should handle frontmatter changes with offsets', async () => {
+    const content = '---\naliases: old-alias\n---\nBody text';
+    const changes = [makeFrontmatterChangeWithOffsets('old-alias', 'new-alias', 'aliases', 0, 9)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).not.toBeNull();
+    expect(result).toContain('new-alias');
+  });
+
+  it('should handle content without frontmatter and frontmatter changes gracefully', async () => {
+    // Content without frontmatter delimiters. getFrontMatterInfo returns exists: false.
+    // parseFrontmatter returns {}. The frontmatter change will fail validation because
+    // getNestedPropertyValue({}, 'aliases') returns undefined, not matching 'old'.
+    const content = 'no frontmatter here';
+    const changes = [makeFrontmatterChange('old', 'new', 'aliases')];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
+    // Validation fails because frontmatter key doesn't exist -> returns null
+    expect(result).toBeNull();
+  });
+
+  it('should handle mixed content and frontmatter changes', async () => {
+    // Compute the offset: '---\n' (4) + 'aliases: old-alias\n' (19) + '---\n' (4) = 27 + 'Hello ' (6) = 33
+    const content = '---\naliases: old-alias\n---\nHello [[old]] world';
+    const changes = [
+      makeContentChange('[[old]]', '[[new]]', 33),
+      makeFrontmatterChange('old-alias', 'new-alias', 'aliases')
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).not.toBeNull();
+    expect(result).toContain('[[new]]');
+    expect(result).toContain('new-alias');
+  });
+});
+
+// --- applyFileChanges ---
+
+describe('applyFileChanges', () => {
+  beforeEach(() => {
+    vi.mocked(process).mockClear();
+    vi.mocked(isCanvasFile).mockReturnValue(false);
+  });
+
+  it('should call process with the correct arguments', async () => {
+    const changes: FileChange[] = [];
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.md', pluginNoticeComponent: null, resourceLockComponent });
+    expect(process).toHaveBeenCalledTimes(1);
+    const params = vi.mocked(process).mock.calls[0]?.[0];
+    expect(params?.app).toBe(app);
+    expect(params?.pathOrFile).toBe('test.md');
+    expect(params?.newContentProvider).toBeInstanceOf(Function);
+  });
+
+  it('should pass processOptions to process', async () => {
+    const options = { timeoutInMilliseconds: 3000 };
+    await applyFileChanges({ app, changesProvider: [], pathOrFile: 'test.md', pluginNoticeComponent: null, resourceLockComponent, ...options });
+    const params = vi.mocked(process).mock.calls[0]?.[0];
+    expect(params?.app).toBe(app);
+    expect(params?.pathOrFile).toBe('test.md');
+    expect(params?.timeoutInMilliseconds).toBe(3000);
+  });
+
+  it('should invoke applyContentChanges for non-canvas files', async () => {
+    vi.mocked(isCanvasFile).mockReturnValue(false);
+    const changes = [makeContentChange('test', 'replaced', 0)];
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: 'test content' });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.md', pluginNoticeComponent: null, resourceLockComponent });
+    expect(process).toHaveBeenCalled();
+  });
+
+  it('should invoke applyCanvasChanges for canvas files', async () => {
+    vi.mocked(isCanvasFile).mockReturnValue(true);
+    const canvasContent = JSON.stringify({
+      edges: [],
+      nodes: [{ file: 'old.md', id: 'node1', type: 'file' }]
+    });
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'drawing.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(process).toHaveBeenCalled();
+  });
+});
+
+// --- Canvas change application (via applyFileChanges) ---
+
+describe('canvas changes via applyFileChanges', () => {
+  beforeEach(() => {
+    vi.mocked(isCanvasFile).mockReturnValue(true);
+  });
+
+  it('should apply canvas file node changes', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    };
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).not.toBeNull();
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    const nodes = parsed['nodes'];
+    assertNonNullable(nodes);
+    const firstNode = nodes[0];
+    assertNonNullable(firstNode);
+    expect(firstNode['file']).toBe('new.md');
+  });
+
+  it('should leave the content unchanged for canvas file node change with content mismatch', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ file: 'different.md', id: '1', type: 'file' }]
+    };
+    const canvasContent = JSON.stringify(canvasData);
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBe(canvasContent);
+  });
+
+  it('should leave the content unchanged when canvas node index is out of bounds', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    };
+    const canvasContent = JSON.stringify(canvasData);
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 5)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBe(canvasContent);
+  });
+
+  it('should return null when changesProvider returns null for canvas', async () => {
+    let resultContent: null | string = 'not null';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: '{}' });
+    });
+
+    await applyFileChanges({ app, changesProvider: null, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBeNull();
+  });
+
+  it('should skip non-canvas changes in canvas mode and log error', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: []
+    };
+    const changes = [makeContentChange('old', 'new', 0)];
+
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(vi.mocked(console.error)).toHaveBeenCalled();
+    vi.mocked(console.error).mockRestore();
+  });
+
+  it('should still apply the canvas changes that follow a skipped non-canvas change', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    };
+    const changes = [makeContentChange('old', 'new', 0), makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = null;
+
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    vi.mocked(console.error).mockRestore();
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    expect(parsed['nodes']?.[0]?.['file']).toBe('new.md');
+  });
+
+  it('should hand the canvas content to a changes provider function', async () => {
+    const canvasContent = JSON.stringify({
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    });
+    const provider = vi.fn(({ content }: ContentArguments): FileChange[] => {
+      expect(content).toBe(canvasContent);
+      return [];
+    });
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: provider, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it('should reject when the signal aborts while the canvas changes provider runs', async () => {
+    const canvasContent = JSON.stringify({
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    });
+    const controller = new AbortController();
+    function provider(): FileChange[] {
+      controller.abort(new Error('aborted'));
+      return [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    }
+    let error: unknown = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      try {
+        await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+      } catch (error_) {
+        error = error_;
+      }
+    });
+
+    await applyFileChanges({ app, changesProvider: provider, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(error).toEqual(new Error('aborted'));
+  });
+
+  it('should apply canvas text node changes using applyContentChanges', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: 'Hello [[old]] world', type: 'text' }]
+    };
+    const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 6)];
+    let resultContent: null | string = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).not.toBeNull();
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    const nodes = parsed['nodes'];
+    assertNonNullable(nodes);
+    const firstNode = nodes[0];
+    assertNonNullable(firstNode);
+    expect(firstNode['text']).toBe('Hello [[new]] world');
+  });
+
+  it('should apply multiple canvas text node changes on the same node', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: 'Hello [[old]] and [[other]]', type: 'text' }]
+    };
+    const changes = [
+      makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 6),
+      makeCanvasTextNodeChange('[[other]]', '[[replaced]]', 0, 18)
+    ];
+    let resultContent: null | string = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).not.toBeNull();
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    const nodes = parsed['nodes'];
+    assertNonNullable(nodes);
+    const firstNode = nodes[0];
+    assertNonNullable(firstNode);
+    expect(firstNode['text']).toContain('[[new]]');
+    expect(firstNode['text']).toContain('[[replaced]]');
+  });
+
+  it('should preserve the escaped wikilink divider when a canvas text node embed is inside a table', async () => {
+    const nodeText = String.raw`| ![[old.png\|500]] |`;
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: nodeText, type: 'text' }]
+    };
+    // The regenerated link uses an unescaped divider; the escaping must be restored so the table
+    // and the embed size survive.
+    const changes = [makeCanvasTextNodeChange(String.raw`![[old.png\|500]]`, '![[new.png|500]]', 0, 2)];
+    let resultContent: null | string = null;
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: JSON.stringify(canvasData) });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    assertNonNullable(resultContent);
+    const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
+    const nodes = parsed['nodes'];
+    assertNonNullable(nodes);
+    const firstNode = nodes[0];
+    assertNonNullable(firstNode);
+    expect(firstNode['text']).toBe(String.raw`| ![[new.png\|500]] |`);
+  });
+
+  it('should skip the rewrite for invalid JSON canvas content instead of throwing', async () => {
+    const canvasContent = 'not valid json';
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    // Invalid JSON parses to `{}` (no `nodes`/`edges` arrays); the guard skips the rewrite so the
+    // malformed object is never written back to disk (previously this threw a TypeError).
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBe(canvasContent);
+  });
+
+  it('should skip the rewrite when the canvas has no edges array', async () => {
+    // `nodes` is an array but `edges` is missing (a partial canvas still being initialized).
+    const canvasContent = JSON.stringify({ nodes: [{ file: 'old.md', id: '1', type: 'file' }] });
+    const changes = [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    // The original content, returned unchanged: nothing is written, and the operation is NOT retried.
+    // A `null` here would spin forever, as the refusal is permanent for this content.
+    expect(resultContent).toBe(canvasContent);
+  });
+
+  it('should leave the content unchanged when canvas text node text is not a string', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: 123, type: 'text' }]
+    };
+    const canvasContent = JSON.stringify(canvasData);
+    const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(resultContent).toBe(canvasContent);
+    expect(vi.mocked(console.error)).toHaveBeenCalled();
+    vi.mocked(console.error).mockRestore();
+  });
+
+  it('should leave the content unchanged when a canvas text node change no longer matches', async () => {
+    const canvasData = {
+      edges: [],
+      nodes: [{ id: '1', text: 'Hello world', type: 'text' }]
+    };
+    const canvasContent = JSON.stringify(canvasData);
+    // `'Hello world'.slice(0, 7)` is `'Hello w'`, not `'[[old]]'`, so the inner `applyContentChanges`
+    // rejects the change and returns its retry sentinel.
+    const changes = [makeCanvasTextNodeChange('[[old]]', '[[new]]', 0, 0)];
+    let resultContent: null | string = 'sentinel';
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      resultContent = await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: changes, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    // The original content, returned unchanged: nothing is written, and the operation is NOT retried.
+    expect(resultContent).toBe(canvasContent);
+    // The regression this guards: the sentinel used to be assigned onto the node and serialized.
+    expect(resultContent).not.toContain('"text": null');
+  });
+});
+
+// --- Validation edge cases ---
+
+describe('validateChanges edge cases', () => {
+  let signal: AbortSignal;
+
+  beforeEach(() => {
+    signal = new AbortController().signal;
+  });
+
+  it('should return null when frontmatter change with offsets has content mismatch', async () => {
+    const content = '---\naliases: correct-value\n---\nBody';
+    const changes = [makeFrontmatterChangeWithOffsets('WRONG', 'new', 'aliases', 0, 5)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
+    expect(result).toBeNull();
+  });
+
+  it('should return null when frontmatter change with offsets targets non-string property', async () => {
+    // parseFrontmatter will parse "count: 42" as number, not string
+    const content = '---\ncount: 42\n---\nBody';
+    const changes = [makeFrontmatterChangeWithOffsets('42', 'new', 'count', 0, 2)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
+    expect(result).toBeNull();
+  });
+
+  it('should return null when frontmatter change (without offsets) has content mismatch', async () => {
+    const content = '---\naliases: actual-value\n---\nBody';
+    const changes = [makeFrontmatterChange('WRONG', 'new', 'aliases')];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
+    expect(result).toBeNull();
+  });
+});
+
+// --- sortAndFilterChanges behavior (tested through applyContentChanges) ---
+
+describe('sortAndFilterChanges behavior', () => {
+  let signal: AbortSignal;
+
+  beforeEach(() => {
+    signal = new AbortController().signal;
+  });
+
+  it('should sort content changes before frontmatter changes', async () => {
+    // Offset: '---\n' (4) + 'aliases: old-alias\n' (19) + '---\n' (4) = 27 + 'Hello ' (6) = 33
+    const content = '---\naliases: old-alias\n---\nHello [[old]] world';
+    const contentChange = makeContentChange('[[old]]', '[[new]]', 33);
+    const fmChange = makeFrontmatterChange('old-alias', 'new-alias', 'aliases');
+    // Provide frontmatter first, content second
+    const changes = [fmChange, contentChange];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).not.toBeNull();
+    expect(result).toContain('[[new]]');
+    expect(result).toContain('new-alias');
+  });
+
+  it('should sort frontmatter changes by key', async () => {
+    const content = '---\nalpha: old-a\nbeta: old-b\n---\nBody';
+    const changes = [
+      makeFrontmatterChange('old-b', 'new-b', 'beta'),
+      makeFrontmatterChange('old-a', 'new-a', 'alpha')
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).not.toBeNull();
+    expect(result).toContain('new-a');
+    expect(result).toContain('new-b');
+  });
+
+  it('should sort frontmatter changes with offsets by key and then by startOffset', async () => {
+    const content = '---\nmyKey: prefix old1 old2 suffix\n---\nBody';
+    // Parsed value of myKey is "prefix old1 old2 suffix"
+    // "old1" starts at index 7, "old2" starts at index 12
+    const changes = [
+      makeFrontmatterChangeWithOffsets('old2', 'new2', 'myKey', 12, 16),
+      makeFrontmatterChangeWithOffsets('old1', 'new1', 'myKey', 7, 11)
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('---\nmyKey: prefix new1 new2 suffix\n---\nBody');
+  });
+});
+
+// --- getObsidianLibDebugger usage ---
+
+describe('debug logging', () => {
+  it('should call getObsidianLibDebugger for validation', async () => {
+    const signal = new AbortController().signal;
+    const content = 'Hello world';
+    const changes = [makeContentChange('MISMATCH', 'new', 0)];
+    await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md', shouldRetryOnInvalidChanges: true });
+    expect(getObsidianLibDebugger).toHaveBeenCalledWith('FileChange:validateChanges');
+  });
+});
+
+// --- Overlapping content changes ---
+
+describe('overlapping content changes', () => {
+  let signal: AbortSignal;
+
+  beforeEach(() => {
+    signal = new AbortController().signal;
+  });
+
+  it('should merge overlapping changes when the overlapping region matches', async () => {
+    const content = 'ABCDE';
+    // Change 1: replace full "ABCDE" (0-5) with "XYCDE"
+    // Change 2: replace "CDE" (2-5) with "ZZZ"
+    // after Change 1 is applied, the new content has "CDE" at positions 2-5,
+    // which matches Change 2's oldContent → merge succeeds
+    const changes = [
+      makeContentChange('ABCDE', 'XYCDE', 0),
+      makeContentChange('CDE', 'ZZZ', 2)
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('XYZZZ');
+  });
+
+  it('should merge a change nested inside an earlier change that does not start at the beginning', async () => {
+    const content = '01234567';
+    // Change 1 rewrites "2345" (2-6) to "2X45"; change 2 rewrites the "4" (4-5) inside it to "Y".
+    const changes = [
+      makeContentChange('2345', '2X45', 2),
+      makeContentChange('4', 'Y', 4)
+    ];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(result).toBe('012XY567');
+  });
+
+  it('should throw on overlapping changes when the overlapping region does not match', async () => {
+    const content = 'ABCDE';
+    // Change 1: replace "ABCDE" (0-5) with "VWXYZ"
+    // Change 2: replace "CDE" (2-5) with "ZZZ"
+    // after Change 1, positions 2-5 contain "XYZ", not "CDE" → throws
+    const changes = [
+      makeContentChange('ABCDE', 'VWXYZ', 0),
+      makeContentChange('CDE', 'ZZZ', 2)
+    ];
+    vi.spyOn(console, 'error').mockImplementation(() => {
+      noop();
+    });
+    await expect(applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' }))
+      .rejects.toThrow('Overlapping changes');
+    vi.mocked(console.error).mockRestore();
+  });
+});
+
+// --- parseFrontmatterSafely catch block ---
+
+describe('frontmatter parsing failure', () => {
+  it('should call printError and return null when parseFrontmatter throws', async () => {
+    const signal = new AbortController().signal;
+    vi.mocked(parseFrontmatter).mockImplementationOnce(() => {
+      throw new Error('bad yaml');
+    });
+    // Content changes only (no frontmatter changes), so validation passes
+    // '---\n' (4) + 'bad: yaml\n' (10) + '---\n' (4) + 'Hello ' (6) = offset 24
+    const content = '---\nbad: yaml\n---\nHello [[old]] world';
+    const changes = [makeContentChange('[[old]]', '[[new]]', 24)];
+    const result = await applyContentChanges({ abortSignal: signal, changesProvider: changes, content, path: 'test.md' });
+    expect(printError).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'Frontmatter parsing failed in test.md'
+    }));
+    // Content changes still apply since validation passes for them
+    expect(result).toBe('---\nbad: yaml\n---\nHello [[new]] world');
+  });
+});

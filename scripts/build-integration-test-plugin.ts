@@ -1,10 +1,11 @@
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { ObsidianPluginRepoPaths } from '@mnaoumov/obsidian-dev-toolkit/obsidian-plugin-repo-paths';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+
 import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plugin.ts';
 
 await wrapCliTask(async () => {
   await buildIntegrationTestPlugin({
-    outDirectory: ObsidianDevUtilsRepoPaths.DistIntegrationTestPlugin,
+    outDirectory: ObsidianPluginRepoPaths.DistIntegrationTestPlugin,
     shouldGenerateSourceMap: false
   });
 });

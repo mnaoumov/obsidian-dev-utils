@@ -1,0 +1,281 @@
+/**
+ * @file
+ *
+ * Component that suggests installing another community plugin the host plugin needs in order to offer
+ * some of its behavior.
+ *
+ * A suggestion is not a dependency — but a dependency is now a thing this library HAS, so the choice
+ * between them is a real one. Use a suggestion when the other plugin ADDS something: the host keeps
+ * working without it, simply unable to offer whatever that plugin owns, and this component asks once
+ * whether the user would like it installed. Use `PluginGateComponent` when the host's advertised
+ * behavior is not there at all without the other plugin.
+ *
+ * This file used to argue the stronger position — that requiring another plugin should not exist, because
+ * "inventing one by refusing to load would punish the user for something they never agreed to". That was
+ * wrong about which option punishes the user, and the counter-case is worth keeping rather than quietly
+ * deleting. A load-bearing plugin the user cannot identify is not a neutral outcome: months later they
+ * meet it in their plugin list, nothing in Obsidian's manifest format says anything depends on it, they
+ * remove it, and the damage surfaces weeks after that with no way to connect the two. Beside that, a
+ * mandatory dependency that stays enabled-but-inert, names what it is waiting for, installs it in one
+ * click and resumes without a restart is not a punishment — it is the same information, delivered while
+ * the user can still act on it.
+ *
+ * The ask is surfaced twice, deliberately, because the two placements answer different questions:
+ * a notice on load ("you are missing something you probably want") and a settings-tab banner ("the
+ * settings you came looking for live in another plugin"). Declining silences only the notice — a user
+ * who opens the settings tab is asking about the feature right then, so the banner stays.
+ */
+
+import type { App } from 'obsidian';
+import type { Promisable } from 'type-fest';
+
+import { convertAsyncToSync } from '@mnaoumov/typescript-lib/async';
+import { ButtonComponent } from 'obsidian';
+
+import type { PluginNoticeComponent } from './plugin-notice-component.ts';
+import type { PluginSettingsComponentBase } from './plugin-settings-component.ts';
+
+import { CssClass } from '../css-class.ts';
+import { t } from '../i18n/i18n.ts';
+import {
+  getInstalledPluginState,
+  installAndEnablePlugin,
+  InstalledPluginState
+} from '../plugin/plugin-install-state.ts';
+import { ComponentEx } from './component-ex.ts';
+import { CallbackLayoutReadyComponent } from './layout-ready-component.ts';
+
+/**
+ * How the suggested plugin is currently present in the vault.
+ *
+ * The same three states a mandatory dependency is in, so this is {@link InstalledPluginState} under the
+ * name this component has always used — one enum, so a caller holding a state from either component can
+ * compare it against either name.
+ */
+export const SuggestedPluginState = InstalledPluginState;
+
+/**
+ * Parameters for the {@link PluginSuggestionComponent} constructor.
+ */
+export interface PluginSuggestionComponentConstructorParams {
+  /**
+   * The Obsidian app instance.
+   */
+  readonly app: App;
+
+  /**
+   * Whether the user has already declined this suggestion.
+   *
+   * Storage belongs to the host plugin (typically one of its settings), because this component has no
+   * `data.json` of its own and a decline has to outlive a reload.
+   *
+   * Only ever called once {@link pluginSettingsComponent} reports its settings loaded, so an implementation
+   * reading a setting is guaranteed to read the stored value rather than its default.
+   *
+   * @returns `true` when the suggestion has been declined.
+   */
+  readonly isSuggestionDeclined: () => boolean;
+
+  /**
+   * The notice component of the plugin making the suggestion, used to show the suggestion and its
+   * outcome.
+   */
+  readonly pluginNoticeComponent: PluginNoticeComponent;
+
+  /**
+   * The settings component holding whatever {@link isSuggestionDeclined} reads.
+   *
+   * Taken as a whole component rather than as a bare "ready" flag so the host cannot forget to wire the
+   * wait: the notice is decided only after this component has read `data.json`. See
+   * {@link PluginSettingsComponentBase.whenLoadedFromFile} for why the read cannot simply happen at
+   * layout-ready.
+   */
+  readonly pluginSettingsComponent: PluginSettingsComponentBase<object>;
+
+  /**
+   * The localized sentence explaining what the host plugin cannot do without the suggested plugin. The
+   * host plugin owns this string: only it knows which of its features are affected.
+   */
+  readonly reason: string;
+
+  /**
+   * Records the user's answer to the suggestion.
+   *
+   * @param isDeclined - `true` when the user declined.
+   * @returns A {@link Promise} that resolves once the answer is persisted.
+   */
+  readonly setSuggestionDeclined: (isDeclined: boolean) => Promisable<void>;
+
+  /**
+   * The id of the suggested plugin, as listed in Obsidian's community plugin registry.
+   */
+  readonly suggestedPluginId: string;
+
+  /**
+   * The display name of the suggested plugin, shown to the user.
+   */
+  readonly suggestedPluginName: string;
+}
+
+/**
+ * How the suggested plugin is currently present in the vault.
+ */
+export type SuggestedPluginState = InstalledPluginState;
+
+/**
+ * Suggests installing another community plugin, via a load-time notice and a settings-tab banner.
+ */
+export class PluginSuggestionComponent extends ComponentEx {
+  private readonly app: App;
+  private readonly isSuggestionDeclined: () => boolean;
+  private readonly pluginNoticeComponent: PluginNoticeComponent;
+  private readonly pluginSettingsComponent: PluginSettingsComponentBase<object>;
+  private readonly reason: string;
+  private readonly setSuggestionDeclined: (isDeclined: boolean) => Promisable<void>;
+  private readonly suggestedPluginId: string;
+  private readonly suggestedPluginName: string;
+
+  /**
+   * Creates an instance of {@link PluginSuggestionComponent}.
+   *
+   * @param params - The constructor parameters.
+   */
+  public constructor(params: PluginSuggestionComponentConstructorParams) {
+    super();
+    this.app = params.app;
+    this.pluginNoticeComponent = params.pluginNoticeComponent;
+    this.pluginSettingsComponent = params.pluginSettingsComponent;
+    this.reason = params.reason;
+    this.suggestedPluginId = params.suggestedPluginId;
+    this.suggestedPluginName = params.suggestedPluginName;
+    this.isSuggestionDeclined = params.isSuggestionDeclined;
+    this.setSuggestionDeclined = params.setSuggestionDeclined;
+  }
+
+  /**
+   * Resolves how the suggested plugin is currently present in the vault.
+   *
+   * @returns The {@link SuggestedPluginState}.
+   */
+  public getSuggestedPluginState(): SuggestedPluginState {
+    return getInstalledPluginState({
+      app: this.app,
+      pluginId: this.suggestedPluginId
+    });
+  }
+
+  /**
+   * Installs (when needed) and enables the suggested plugin, reporting the outcome as a notice.
+   *
+   * @returns A {@link Promise} that resolves once the plugin is enabled, or once the failure has been
+   * reported.
+   */
+  public async installAndEnableSuggestedPlugin(): Promise<void> {
+    if (this.getSuggestedPluginState() === SuggestedPluginState.Enabled) {
+      return;
+    }
+
+    await installAndEnablePlugin({
+      app: this.app,
+      pluginId: this.suggestedPluginId,
+      pluginName: this.suggestedPluginName,
+      pluginNoticeComponent: this.pluginNoticeComponent
+    });
+
+    // Only after the install actually succeeded — `installAndEnablePlugin` rethrows on failure, so a
+    // failed attempt leaves a previous decline standing rather than silently clearing it.
+    await this.setSuggestionDeclined(false);
+  }
+
+  /**
+   * Loads the component, showing the suggestion notice once the layout is ready AND the host's settings
+   * have been read from disk.
+   *
+   * Both waits matter, and neither implies the other:
+   *
+   * - Layout-ready, because plugins load in an unspecified order, so the suggested plugin may well be
+   *   enabled a moment after this one. Checking earlier would suggest installing something the user
+   *   already has.
+   * - Settings-loaded, because {@link PluginSuggestionComponentConstructorParams.isSuggestionDeclined}
+   *   reads a setting of the host, and the host's settings component is a SIBLING whose own async load is
+   *   still in flight here. On a layout that is already ready — a runtime enable from the Community
+   *   Plugins tab, or a re-enable after an update — the layout-ready callback fires immediately, so the
+   *   read would see the default `false` and ask again a user who has already declined.
+   */
+  public override onload(): void {
+    this.addChild(
+      new CallbackLayoutReadyComponent(this.app, async () => {
+        await this.pluginSettingsComponent.whenLoadedFromFile();
+        if (this.isUnloaded()) {
+          return;
+        }
+
+        this.showSuggestionNotice();
+      })
+    );
+  }
+
+  /**
+   * Renders the suggestion banner into a settings-tab container, with a button that installs and enables
+   * the suggested plugin.
+   *
+   * Renders nothing when the suggested plugin is already enabled. Unlike the notice, the banner ignores a
+   * previous decline — the user is looking at these settings right now, which is a fresher signal than an
+   * answer they gave earlier.
+   *
+   * @param containerEl - The element to render the banner into.
+   */
+  public renderBanner(containerEl: HTMLElement): void {
+    const state = this.getSuggestedPluginState();
+    if (state === SuggestedPluginState.Enabled) {
+      return;
+    }
+
+    const bannerEl = containerEl.createDiv({
+      cls: [CssClass.LibraryName, CssClass.PluginSuggestionBanner]
+    });
+    bannerEl.createDiv({ text: this.reason });
+
+    new ButtonComponent(bannerEl)
+      .setButtonText(this.getActionButtonText(state))
+      .setCta()
+      .onClick(convertAsyncToSync(async () => {
+        await this.installAndEnableSuggestedPlugin();
+      }));
+  }
+
+  private getActionButtonText(state: SuggestedPluginState): string {
+    return t(($) =>
+      state === SuggestedPluginState.InstalledButDisabled
+        ? $.obsidianDevUtils.pluginSuggestion.enable
+        : $.obsidianDevUtils.pluginSuggestion.install
+    );
+  }
+
+  private showSuggestionNotice(): void {
+    const state = this.getSuggestedPluginState();
+    if (state === SuggestedPluginState.Enabled || this.isSuggestionDeclined()) {
+      return;
+    }
+
+    const fragment = createFragment((fragmentEl) => {
+      fragmentEl.createDiv({ text: this.reason });
+      const buttonsEl = fragmentEl.createDiv();
+
+      new ButtonComponent(buttonsEl)
+        .setButtonText(this.getActionButtonText(state))
+        .setCta()
+        .onClick(convertAsyncToSync(async () => {
+          await this.installAndEnableSuggestedPlugin();
+        }));
+
+      new ButtonComponent(buttonsEl)
+        .setButtonText(t(($) => $.obsidianDevUtils.pluginSuggestion.notNow))
+        .onClick(convertAsyncToSync(async () => {
+          await this.setSuggestionDeclined(true);
+        }));
+    });
+
+    this.pluginNoticeComponent.showNotice(fragment, { shouldHideOnClick: false });
+  }
+}

@@ -5,13 +5,13 @@ import type {
 } from 'mdast';
 import type { MdastVisitorContext } from 'satteri';
 
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import {
   describe,
   expect,
   it
 } from 'vitest';
 
-import { castTo } from '../../../../src/object-utils.ts';
 import { satteriGitHubAlerts } from './satteri-github-alerts.ts';
 
 describe('satteriGitHubAlerts', () => {

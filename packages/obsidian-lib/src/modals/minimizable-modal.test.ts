@@ -1,0 +1,558 @@
+// @vitest-environment jsdom
+
+import type { App as AppOriginal } from 'obsidian';
+
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { Modal } from 'obsidian';
+import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { CssClass } from '../css-class.ts';
+import { MinimizableModal } from './minimizable-modal.ts';
+
+interface AppWithSettingsModal {
+  setting: SettingsPopoutModalDouble;
+}
+
+class OpenTrackingModal extends Modal {
+  public wasOpened = false;
+
+  public override onOpen(): void {
+    this.wasOpened = true;
+  }
+}
+
+class SettingsPopoutModalDouble extends Modal {
+  public wasWindowCreated = false;
+
+  public override open(): void {
+    // Mimic Obsidian's Settings popout modal: its own open() creates the (popout) window BEFORE
+    // delegating to Modal.prototype.open to render into it. Blocking must happen here — guarding only
+    // the delegated Modal.prototype.open (the generic modal guard) would still create the empty window.
+    this.wasWindowCreated = true;
+    super.open();
+  }
+}
+
+class TrackingModal extends Modal {
+  public wasClosed = false;
+
+  public override onClose(): void {
+    this.wasClosed = true;
+  }
+}
+
+let app: AppOriginal;
+let settingsModal: SettingsPopoutModalDouble;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+  // The strict-proxy mock App does not model `app.setting`; wire a popout-mimicking settings modal so
+  // the peek-lock's settings guard has something real to patch (mirroring Obsidian's `app.setting`).
+  settingsModal = new SettingsPopoutModalDouble(app);
+  castTo<AppWithSettingsModal>(app).setting = settingsModal;
+});
+
+afterEach(() => {
+  activeDocument.body.empty();
+});
+
+function clickOn(el: HTMLElement): MouseEvent {
+  const $event = new MouseEvent('click', { bubbles: true, cancelable: true });
+  el.dispatchEvent($event);
+  return $event;
+}
+
+function getBar(): HTMLElement | null {
+  return activeDocument.body.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBar}`);
+}
+
+function getCancelButton(): HTMLElement | null {
+  return getBar()?.querySelector<HTMLElement>(`.${CssClass.CancelButton}`) ?? null;
+}
+
+function getMinimizeButton(modal: Modal): HTMLElement {
+  const buttonEl = modal.modalEl.querySelector<HTMLElement>(`.${CssClass.MinimizeButton}`);
+  assertNonNullable(buttonEl);
+  return buttonEl;
+}
+
+describe('MinimizableModal', () => {
+  describe('setup', () => {
+    it('should expose the wrapped modal', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      expect(minimizable.modal).toBe(modal);
+    });
+
+    it('should apply the minimizable-modal css class', () => {
+      const modal = new Modal(app);
+      new MinimizableModal(modal);
+      expect(modal.containerEl.hasClass(CssClass.MinimizableModal)).toBe(true);
+    });
+
+    it('should add a minimize button', () => {
+      const modal = new Modal(app);
+      new MinimizableModal(modal);
+      expect(modal.modalEl.querySelector(`.${CssClass.MinimizeButton}`)).not.toBeNull();
+    });
+
+    it('should not be minimized initially', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      expect(minimizable.isMinimized).toBe(false);
+    });
+  });
+
+  describe('minimize', () => {
+    it('should hide the modal and show a bar with the title and a restore button', () => {
+      const modal = new Modal(app);
+      modal.setTitle('Working');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      expect(minimizable.isMinimized).toBe(true);
+      expect(modal.containerEl.style.display).toBe('none');
+      expect(getMinimizeButton(modal).style.display).toBe('none');
+
+      const bar = getBar();
+      assertNonNullable(bar);
+      expect(bar.querySelector(`.${CssClass.MinimizedModalBarTitle}`)?.textContent).toBe('Working');
+      expect(bar.querySelector(`.${CssClass.RestoreButton}`)).not.toBeNull();
+    });
+
+    it('should be a no-op when already minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      minimizable.minimize();
+
+      expect(activeDocument.body.querySelectorAll(`.${CssClass.MinimizedModalBar}`)).toHaveLength(1);
+    });
+
+    it('should minimize when the minimize button is clicked', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      getMinimizeButton(modal).click();
+
+      expect(minimizable.isMinimized).toBe(true);
+      expect(getBar()).not.toBeNull();
+    });
+
+    it('should pop the modal scope on minimize so mouse inspection is not fought by the focus trap', () => {
+      const modal = new Modal(app);
+      const popScopeSpy = vi.spyOn(app.keymap, 'popScope');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      expect(popScopeSpy).toHaveBeenCalledWith(modal.scope);
+    });
+  });
+
+  describe('restore', () => {
+    it('should remove the bar and show the modal and minimize button', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+      minimizable.restore();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      expect(modal.containerEl.style.display).toBe('');
+      expect(getMinimizeButton(modal).style.display).toBe('');
+    });
+
+    it('should be a no-op when not minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.restore();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+
+    it('should push the modal scope back when restored so the modal blocks the app again', () => {
+      const modal = new Modal(app);
+      const pushScopeSpy = vi.spyOn(app.keymap, 'pushScope');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+      minimizable.restore();
+
+      expect(pushScopeSpy).toHaveBeenCalledWith(modal.scope);
+    });
+
+    it('should restore when the restore button is clicked', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const bar = getBar();
+      assertNonNullable(bar);
+      const restoreButtonEl = bar.querySelector<HTMLElement>(`.${CssClass.RestoreButton}`);
+      assertNonNullable(restoreButtonEl);
+      restoreButtonEl.click();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+
+    it('should restore when the bar itself is clicked', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const bar = getBar();
+      assertNonNullable(bar);
+      bar.click();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+
+    it('should restore when the bar title is clicked', () => {
+      const modal = new Modal(app);
+      modal.setTitle('Working');
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      const bar = getBar();
+      assertNonNullable(bar);
+      const titleEl = bar.querySelector<HTMLElement>(`.${CssClass.MinimizedModalBarTitle}`);
+      assertNonNullable(titleEl);
+      titleEl.click();
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+  });
+
+  describe('cancel button', () => {
+    it('should show a cancel button on the bar by default', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      expect(getCancelButton()).not.toBeNull();
+    });
+
+    it('should close the modal (not merely restore it) when the cancel button is clicked', () => {
+      const modal = new TrackingModal(app);
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      const cancelButtonEl = getCancelButton();
+      assertNonNullable(cancelButtonEl);
+      cancelButtonEl.click();
+
+      expect(modal.wasClosed).toBe(true);
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+    });
+
+    it('should not show a cancel button when shouldShowCancelButton is false', () => {
+      const minimizable = new MinimizableModal(new Modal(app), { shouldShowCancelButton: false });
+      minimizable.minimize();
+
+      expect(getCancelButton()).toBeNull();
+      // The restore button is still there — only the cancel button is opted out.
+      expect(getBar()?.querySelector(`.${CssClass.RestoreButton}`)).not.toBeNull();
+    });
+  });
+
+  describe('background click', () => {
+    it('should minimize instead of closing when the background is clicked', () => {
+      const modal = new TrackingModal(app);
+      const minimizable = new MinimizableModal(modal);
+
+      const $event = clickOn(modal.bgEl);
+
+      expect(minimizable.isMinimized).toBe(true);
+      expect(modal.wasClosed).toBe(false);
+      expect(getBar()).not.toBeNull();
+      // Obsidian's own `bgEl` listener is stopped outright; the prevented default is what additionally
+      // satisfies the `defaultPrevented` guard in `Modal.onClickOutside`.
+      expect($event.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should not minimize when a click lands inside the modal', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      const contentButtonEl = modal.contentEl.createEl('button');
+
+      const $event = clickOn(contentButtonEl);
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      expect($event.defaultPrevented).toBe(false);
+    });
+
+    it('should not minimize when a drag out of the modal fires the click on the container', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+
+      // Selecting text inside the modal and releasing over the background fires the `click` on their
+      // common ancestor. Obsidian does not dismiss on that gesture, so it must not minimize either.
+      const $event = clickOn(modal.containerEl);
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      expect($event.defaultPrevented).toBe(false);
+    });
+
+    it('should leave the background click to Obsidian when shouldMinimizeOnClickOutside is false', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal, { shouldMinimizeOnClickOutside: false });
+
+      const $event = clickOn(modal.bgEl);
+
+      expect(minimizable.isMinimized).toBe(false);
+      expect(getBar()).toBeNull();
+      // Untouched, so Obsidian's native close-on-background-click still runs in the real app.
+      expect($event.defaultPrevented).toBe(false);
+    });
+
+    it('should be inert when the background is clicked while already minimized', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+
+      const $event = clickOn(modal.bgEl);
+
+      expect(minimizable.isMinimized).toBe(true);
+      expect($event.defaultPrevented).toBe(false);
+      expect(activeDocument.body.querySelectorAll(`.${CssClass.MinimizedModalBar}`)).toHaveLength(1);
+
+      minimizable.restore();
+    });
+  });
+
+  describe('close', () => {
+    it('should remove the minimized bar and reset state when the modal closes', () => {
+      const modal = new Modal(app);
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+      modal.onClose();
+
+      expect(getBar()).toBeNull();
+      expect(minimizable.isMinimized).toBe(false);
+    });
+
+    it('should not throw when the modal closes while not minimized', () => {
+      const modal = new Modal(app);
+      new MinimizableModal(modal);
+      modal.onClose();
+      expect(getBar()).toBeNull();
+    });
+
+    it('should still run the wrapped modal original onClose', () => {
+      const modal = new TrackingModal(app);
+      const minimizable = new MinimizableModal(modal);
+      minimizable.minimize();
+      modal.onClose();
+
+      expect(modal.wasClosed).toBe(true);
+      expect(getBar()).toBeNull();
+    });
+  });
+
+  describe('content', () => {
+    it('should render arbitrary content into contentEl', () => {
+      const modal = new Modal(app);
+      modal.contentEl.createEl('a', { text: 'Note link' });
+      expect(modal.contentEl.querySelector('a')?.textContent).toBe('Note link');
+    });
+  });
+
+  describe('peek-only lock', () => {
+    it('should block opening another modal while minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const other = new OpenTrackingModal(app);
+      other.open();
+      expect(other.wasOpened).toBe(false);
+
+      minimizable.restore();
+    });
+
+    it('should not block the minimized modal itself from opening', () => {
+      const inner = new OpenTrackingModal(app);
+      const minimizable = new MinimizableModal(inner);
+      minimizable.minimize();
+
+      inner.open();
+      expect(inner.wasOpened).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should allow opening modals again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      minimizable.restore();
+
+      const other = new OpenTrackingModal(app);
+      other.open();
+      expect(other.wasOpened).toBe(true);
+    });
+
+    it('should self-heal a stale lock whose bar left the DOM without restore or close', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      // Simulate a teardown that removes the bar without going through restore()/close().
+      getBar()?.remove();
+
+      const other = new OpenTrackingModal(app);
+      other.open();
+      expect(other.wasOpened).toBe(true);
+    });
+
+    it('should stop suppressing input once a stale lock self-heals without restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      // The input suppressors stay installed until the peek-lock component unloads. Removing the bar
+      // without restore()/close() leaves them installed while the lock self-heals (isPeekLocked() prunes
+      // the disconnected entry), so a suppressed event type must now pass through instead of blocking.
+      getBar()?.remove();
+
+      const contextMenuEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(contextMenuEvent);
+      expect(contextMenuEvent.defaultPrevented).toBe(false);
+    });
+
+    it('should block a command-key keydown while minimized and allow it again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const blockedEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'p' });
+      activeDocument.body.dispatchEvent(blockedEvent);
+      expect(blockedEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+
+      const allowedEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'p' });
+      activeDocument.body.dispatchEvent(allowedEvent);
+      expect(allowedEvent.defaultPrevented).toBe(false);
+    });
+
+    it('should let navigation keys through while minimized so the user can still inspect content', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const navigationKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'];
+      for (const key of navigationKeys) {
+        const navEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key });
+        activeDocument.body.dispatchEvent(navEvent);
+        expect(navEvent.defaultPrevented, `${key} should not be blocked`).toBe(false);
+      }
+
+      // Ctrl + a navigation key is still navigation (e.g. Ctrl+Home) and must pass through.
+      const ctrlNavEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ctrlKey: true, key: 'Home' });
+      activeDocument.body.dispatchEvent(ctrlNavEvent);
+      expect(ctrlNavEvent.defaultPrevented).toBe(false);
+
+      // A bare modifier press does nothing on its own, so it must not be blocked (no spurious beep).
+      const shiftEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Shift' });
+      activeDocument.body.dispatchEvent(shiftEvent);
+      expect(shiftEvent.defaultPrevented).toBe(false);
+
+      minimizable.restore();
+    });
+
+    it('should block Shift+navigation (text selection) while minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const shiftArrowEvent = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'ArrowDown', shiftKey: true });
+      activeDocument.body.dispatchEvent(shiftArrowEvent);
+      expect(shiftArrowEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should block editor text input (beforeinput) while minimized', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const blockedEvent = new InputEvent('beforeinput', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(blockedEvent);
+      expect(blockedEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+    });
+
+    it('should block the context menu while minimized and allow it again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      const blockedEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(blockedEvent);
+      expect(blockedEvent.defaultPrevented).toBe(true);
+
+      minimizable.restore();
+
+      const allowedEvent = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      activeDocument.body.dispatchEvent(allowedEvent);
+      expect(allowedEvent.defaultPrevented).toBe(false);
+    });
+
+    it('should flash the bar on a blocked attempt and clear the flash when the animation ends', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      const bar = getBar();
+      assertNonNullable(bar);
+      expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(false);
+
+      activeDocument.body.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'a' }));
+      expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(true);
+
+      bar.dispatchEvent(new Event('animationend'));
+      expect(bar.hasClass(CssClass.MinimizedModalBarAttention)).toBe(false);
+
+      minimizable.restore();
+    });
+  });
+
+  describe('settings popout lock', () => {
+    it('should block opening the settings popout window while minimized so no empty settings window appears', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+
+      app.setting.open();
+      // The settings modal's own open() — which would create the (empty) popout window — never runs.
+      expect(settingsModal.wasWindowCreated).toBe(false);
+
+      minimizable.restore();
+    });
+
+    it('should open the settings popout again after restore', () => {
+      const minimizable = new MinimizableModal(new Modal(app));
+      minimizable.minimize();
+      minimizable.restore();
+
+      app.setting.open();
+      expect(settingsModal.wasWindowCreated).toBe(true);
+    });
+
+    it('should keep the settings blocked until the last of several minimized modals restores', () => {
+      const first = new MinimizableModal(new Modal(app));
+      const second = new MinimizableModal(new Modal(app));
+      first.minimize();
+      second.minimize();
+
+      // Restoring only the first must NOT lift the lock — the second is still minimized.
+      first.restore();
+      app.setting.open();
+      expect(settingsModal.wasWindowCreated).toBe(false);
+
+      // Restoring the last minimized modal lifts the lock, so settings opens normally again.
+      second.restore();
+      app.setting.open();
+      expect(settingsModal.wasWindowCreated).toBe(true);
+    });
+  });
+});

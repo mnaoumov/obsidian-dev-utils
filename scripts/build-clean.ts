@@ -1,32 +1,27 @@
-import { rm } from 'node:fs/promises';
-
+import { buildClean } from '@mnaoumov/typescript-dev-toolkit/build';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { readdirPosix } from '@mnaoumov/typescript-dev-toolkit/fs';
+import { RepoPaths } from '@mnaoumov/typescript-dev-toolkit/repo-paths';
 import {
   basename,
   join
-} from '../src/path.ts';
-import { buildClean } from '../src/script-utils/build.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { readdirPosix } from '../src/script-utils/fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+} from '@mnaoumov/typescript-lib/path';
+import { rm } from 'node:fs/promises';
 
 await wrapCliTask(async () => {
   await buildClean();
-  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-    if (basename(file) === ObsidianDevUtilsRepoPaths.IndexTs as string) {
-      await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
+  for (const file of await readdirPosix(RepoPaths.Src, { recursive: true })) {
+    if (basename(file) === RepoPaths.IndexTs as string) {
+      await rm(join(RepoPaths.Src, file));
     }
 
-    if (file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) && !file.split('/').includes(ObsidianDevUtilsRepoPaths.Types)) {
-      await rm(join(ObsidianDevUtilsRepoPaths.Src, file));
+    if (file.endsWith(RepoPaths.DtsExtension) && !file.split('/').includes(RepoPaths.Types)) {
+      await rm(join(RepoPaths.Src, file));
     }
   }
 
-  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.CurrentFolder, { recursive: true })) {
-    /*
-     * The `Patches` exclusion: a patched copy of a third-party package needs its own hand-written manifest — without
-     * one, Node resolves the wrapper against this repo's `"type": "module"` and refuses to run its `require()`.
-     */
-    if ((basename(file) !== ObsidianDevUtilsRepoPaths.PackageJson as string) || (file === ObsidianDevUtilsRepoPaths.PackageJson as string) || file.startsWith(ObsidianDevUtilsRepoPaths.NodeModules) || file.startsWith(ObsidianDevUtilsRepoPaths.Patches)) {
+  for (const file of await readdirPosix(RepoPaths.CurrentFolder, { recursive: true })) {
+    if ((basename(file) !== RepoPaths.PackageJson as string) || (file === RepoPaths.PackageJson as string) || file.startsWith(RepoPaths.NodeModules)) {
       continue;
     }
 

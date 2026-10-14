@@ -1,0 +1,107 @@
+// @vitest-environment jsdom
+
+import type { App as AppOriginal } from 'obsidian';
+import type { ButtonComponent } from 'obsidian-test-mocks/obsidian';
+
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/test-helpers/mock-implementation';
+import { ButtonComponent as ButtonComponentOriginal } from 'obsidian';
+import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { confirm } from './confirm.ts';
+
+let app: AppOriginal;
+
+beforeEach(() => {
+  app = App.createConfigured__().asOriginalType__();
+});
+
+vi.mock('../css-class.ts', () => ({
+  CssClass: {
+    CancelButton: 'cancel-button',
+    ConfirmModal: 'confirm-modal',
+    OkButton: 'ok-button'
+  }
+}));
+
+vi.mock('../i18n/i18n.ts', () => ({
+  t: vi.fn((selector: unknown) => {
+    if (typeof selector === 'function') {
+      const proxy: unknown = new Proxy({}, { get: (): unknown => proxy });
+      (selector as (root: unknown) => unknown)(proxy);
+    }
+    return 'mock-translation';
+  })
+}));
+
+vi.mock('../plugin/plugin-context.ts', () => ({
+  addPluginCssClasses: vi.fn()
+}));
+
+describe('confirm', () => {
+  const buttonInstances: ButtonComponentOriginal[] = [];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    buttonInstances.length = 0;
+    mockImplementation({
+      $object: ButtonComponentOriginal.prototype,
+      impl: function impl(this: ButtonComponentOriginal, originalImplementation, containerEl: HTMLElement): ButtonComponentOriginal {
+        originalImplementation.call(this, containerEl);
+        buttonInstances.push(this);
+        return this;
+      },
+      method: 'constructor2__'
+    });
+  });
+
+  it('should resolve false when modal is closed without confirming', async () => {
+    const isConfirmed = await confirm({
+      app,
+      message: 'Are you sure?'
+    });
+    expect(isConfirmed).toBe(false);
+  });
+
+  it('should resolve true when OK button is clicked', async () => {
+    const resultPromise = confirm({
+      app,
+      message: 'Continue?'
+    });
+    // onOpen has run synchronously - buttons are created.
+    // Simulate OK button click via microtask (runs before setTimeout auto-close).
+    queueMicrotask(() => {
+      const okButton = buttonInstances[0];
+      castTo<ButtonComponent>(okButton).simulateClick__();
+    });
+    const isConfirmed = await resultPromise;
+    expect(isConfirmed).toBe(true);
+  });
+
+  it('should accept custom button texts and title', async () => {
+    const isConfirmed = await confirm({
+      app,
+      cancelButtonText: 'No',
+      message: 'Continue?',
+      okButtonText: 'Yes',
+      title: 'Confirm Action'
+    });
+    expect(typeof isConfirmed).toBe('boolean');
+  });
+
+  it('should accept custom css class', async () => {
+    const isConfirmed = await confirm({
+      app,
+      cssClasses: ['custom-confirm'],
+      message: 'Continue?'
+    });
+    expect(typeof isConfirmed).toBe('boolean');
+  });
+});

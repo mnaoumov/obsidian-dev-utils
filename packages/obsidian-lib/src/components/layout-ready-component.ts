@@ -1,0 +1,95 @@
+/**
+ * @file
+ *
+ * Interface for components that need to perform work when the workspace layout is ready.
+ */
+
+import type { App } from 'obsidian';
+import type { Promisable } from 'type-fest';
+
+import { invokeAsyncSafely } from '@mnaoumov/typescript-lib/async';
+import { noop } from '@mnaoumov/typescript-lib/function';
+
+import { ComponentEx } from './component-ex.ts';
+
+/**
+ * A component that executes a callback function when the Obsidian layout becomes ready.
+ */
+export class LayoutReadyComponent extends ComponentEx {
+  /**
+   * Creates a new LayoutReadyComponent instance.
+   *
+   * @param app - The Obsidian App instance.
+   */
+  public constructor(protected readonly app: App) {
+    super();
+  }
+
+  /**
+   * Loads the component and registers the layout ready handler.
+   */
+  public override onload(): void {
+    this.app.workspace.onLayoutReady(() => {
+      window.setTimeout(() => {
+        if (!this._loaded) {
+          return;
+        }
+
+        const inFlightLoadPromise = this.getInFlightAncestryLoadPromise();
+        if (!inFlightLoadPromise) {
+          // A failed load (e.g. a synchronously-throwing child, or an async load that already settled with an
+          // error) leaves no in-flight promise but a recorded failure. Skip `onLayoutReady` — a failed load is
+          // exactly the half-initialized state it must not observe.
+          if (!this.hasLoadErrors()) {
+            invokeAsyncSafely(this.onLayoutReady.bind(this));
+          }
+          return;
+        }
+
+        // Loaded after the layout was already ready: `onload` has run but the async load may still be in flight —
+        // this component's own (`onloadAsync` and children) and, just as often, a SIBLING's. The usual sibling is
+        // the plugin's settings component, still reading `data.json`, so a handler that ran now would read every
+        // setting as its default. That is the path a runtime enable, an update and a lazy plugin loader all take.
+        // So wait for the load of every `ComponentEx` ancestor, which under `PluginBase` is the whole plugin.
+        // Skip if the component was unloaded during the wait, or if its own load ultimately failed.
+        invokeAsyncSafely(async () => {
+          await inFlightLoadPromise;
+          if (this._loaded && !this.hasLoadErrors()) {
+            await this.onLayoutReady();
+          }
+        });
+      }, 0);
+    });
+  }
+
+  /**
+   * Executes when the Obsidian layout becomes ready.
+   */
+  protected onLayoutReady(): Promisable<void> {
+    noop();
+  }
+}
+
+/**
+ * A {@link LayoutReadyComponent} subclass that invokes a provided callback function when the layout becomes ready.
+ */
+export class CallbackLayoutReadyComponent extends LayoutReadyComponent {
+  /**
+   * Creates a new CallbackLayoutReadyComponent instance.
+   *
+   * @param app - The Obsidian App instance.
+   * @param callback - The callback to invoke when layout is ready.
+   */
+  public constructor(app: App, protected readonly callback: () => Promisable<void>) {
+    super(app);
+  }
+
+  /**
+   * Executes when the Obsidian layout becomes ready.
+   *
+   * @returns The result of invoking the callback.
+   */
+  protected override onLayoutReady(): Promisable<void> {
+    return this.callback();
+  }
+}

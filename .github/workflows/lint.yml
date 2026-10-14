@@ -7,7 +7,7 @@ name: Lint
 # `npm run version`'s preflight — was red on every fresh clone.
 #
 # The build is not decoration. `lint` is type-aware, and part of the types it reads are generated: the
-# `src/**/index.ts` barrels and the `.d.ts` files beside them are gitignored build outputs, so linting a
+# `packages/*/src/**/index.ts` barrels and the `.d.ts` files beside them are gitignored build outputs, so linting a
 # clone that has never been built reports hundreds of "error typed value" failures that say nothing about
 # the source. Building first is the order `npm run gate` and the release preflight already use.
 #

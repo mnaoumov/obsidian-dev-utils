@@ -1,8 +1,13 @@
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { test } from '../src/script-utils/test-runners/vitest.ts';
+/**
+ * @file
+ *
+ * Runs every integration test in the repository, package by package.
+ */
+
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+
+import { runInWorkspaces } from './helpers/workspaces.ts';
 
 await wrapCliTask(async () => {
-  await test({
-    projects: ['integration-tests', 'obsidian-integration-tests']
-  });
+  await runInWorkspaces('test:integration');
 });

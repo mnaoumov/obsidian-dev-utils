@@ -16,13 +16,14 @@
 import type { PopulateFilesParams } from 'obsidian-integration-testing';
 import type { TestProject } from 'vitest/node';
 
-import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
-
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { ObsidianPluginRepoPaths } from '@mnaoumov/obsidian-dev-toolkit/obsidian-plugin-repo-paths';
 import {
   getIntegrationTestPluginPopulate,
   OBSIDIAN_DEV_UTILS_INTEGRATION_TEST_PLUGIN_ID
-} from '../src/script-utils/test-runners/integration-test-plugin.ts';
+} from '@mnaoumov/obsidian-dev-toolkit/test-runners/integration-test-plugin';
+import { join } from 'node:path';
+import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
+
 import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plugin.ts';
 
 const setupPair = createSetup({
@@ -40,7 +41,8 @@ const setupPair = createSetup({
  */
 export async function setup(project: TestProject): Promise<void> {
   await buildIntegrationTestPlugin({
-    outDirectory: ObsidianDevUtilsRepoPaths.DistIntegrationTestPlugin,
+    // Into obsidian-dev-toolkit, the package that ships it and whose getIntegrationTestPluginPopulate reads it.
+    outDirectory: join(import.meta.dirname, '../packages/obsidian-dev-toolkit', ObsidianPluginRepoPaths.DistIntegrationTestPlugin),
     shouldGenerateSourceMap: false
   });
   await setupPair.setup(project);

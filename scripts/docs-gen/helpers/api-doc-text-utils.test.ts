@@ -59,8 +59,8 @@ describe('api-doc text utilities', () => {
   it('renders API display and import metadata', () => {
     const typeInfo = createTypeInfo({ kind: 'interface', name: 'Alpha', namespace: 'obsidian/alpha', typeParameters: ['T extends Base', 'U'] });
     expect(getDisplayName('Alpha', typeInfo)).toBe('Alpha<T, U>');
-    expect(getImportStatement(typeInfo)).toBe('import type { Alpha } from \'obsidian-dev-utils/obsidian/alpha\';');
-    expect(getImportStatement(createTypeInfo({ kind: 'function', name: 'bravo', namespace: 'bravo' }))).toBe('import { bravo } from \'obsidian-dev-utils/bravo\';');
+    expect(getImportStatement(typeInfo)).toBe('import type { Alpha } from \'@mnaoumov/obsidian/alpha\';');
+    expect(getImportStatement(createTypeInfo({ kind: 'function', name: 'bravo', namespace: 'bravo' }))).toBe('import { bravo } from \'@mnaoumov/bravo\';');
   });
 
   it('normalizes type and description text for generated pages', () => {

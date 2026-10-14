@@ -1,0 +1,249 @@
+// @vitest-environment jsdom
+
+import type {
+  App as AppOriginal,
+  Plugin as PluginOriginal
+} from 'obsidian';
+
+import { noop } from '@mnaoumov/typescript-lib/function';
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  describe,
+  expect,
+  it
+} from 'vitest';
+
+import type { ResourceLockComponent } from './resource-lock.ts';
+
+import { getCanvasReferences } from './canvas.ts';
+import { applyFileChanges } from './file-change.ts';
+import { referenceToFileChange } from './reference.ts';
+import { readSafe } from './vault.ts';
+
+interface ParsedCanvas {
+  nodes: ParsedCanvasNode[];
+}
+
+interface ParsedCanvasNode {
+  file?: string;
+  text?: string;
+}
+
+const CANVAS_PATH = 'drawing.canvas';
+
+function createApp(canvasContent: string, installedPluginIds: string[] = []): AppOriginal {
+  const appMock = App.createConfigured__({
+    files: { [CANVAS_PATH]: canvasContent }
+  });
+  for (const id of installedPluginIds) {
+    // The code under test only asks whether the plugin is installed, so an empty stand-in carries every
+    // member it reads.
+    appMock.plugins.registerPlugin__(id, castTo<PluginOriginal>({}));
+  }
+  return appMock.asOriginalType__();
+}
+
+function toCanvasJson(nodes: unknown[]): string {
+  return JSON.stringify({ edges: [], nodes });
+}
+
+describe('getCanvasReferences', () => {
+  it('should extract a file node reference', async () => {
+    const app = createApp(toCanvasJson([{ file: 'old.md', id: '1', type: 'file' }]));
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toEqual([{
+      isCanvas: true,
+      key: 'nodes.0.file',
+      link: 'old.md',
+      nodeIndex: 0,
+      original: 'old.md',
+      type: 'file'
+    }]);
+  });
+
+  it('should extract a text node reference for each embedded link', async () => {
+    const app = createApp(toCanvasJson([{ id: '1', text: '![[a.png]]\n[[b]]', type: 'text' }]));
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toHaveLength(2);
+    expect(references[0]).toMatchObject({
+      isCanvas: true,
+      key: 'nodes.0.text.0',
+      link: 'a.png',
+      nodeIndex: 0,
+      original: '![[a.png]]',
+      type: 'text'
+    });
+    expect(references[1]).toMatchObject({
+      isCanvas: true,
+      key: 'nodes.0.text.1',
+      link: 'b',
+      nodeIndex: 0,
+      original: '[[b]]',
+      type: 'text'
+    });
+    // The `originalReference` is the parsed body reference (with real positions) used to rewrite the embed.
+    expect(references[0]).toHaveProperty('originalReference.link', 'a.png');
+  });
+
+  const FRONTMATTER_MARKDOWN_LINK_TEXT = '---\nlink: "[My Note](my-note.md)"\n---\nbody';
+
+  // Obsidian's own metadata parse reads a property whose whole value is one internal markdown link, so the plugin
+  // changes nothing about it: the reference is Obsidian's, `displayText` included, with and without the plugin.
+  it.each([
+    { installedPluginIds: [] },
+    { installedPluginIds: ['frontmatter-markdown-links'] }
+  ])('should surface a text-node single-value frontmatter markdown link as Obsidian reads it (plugins: $installedPluginIds)', async ({ installedPluginIds }) => {
+    const app = createApp(toCanvasJson([{ id: '1', text: FRONTMATTER_MARKDOWN_LINK_TEXT, type: 'text' }]), installedPluginIds);
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toHaveLength(1);
+    expect(references[0]).toMatchObject({
+      isCanvas: true,
+      key: 'nodes.0.text.0',
+      link: 'my-note.md',
+      nodeIndex: 0,
+      original: '[My Note](my-note.md)',
+      originalReference: {
+        displayText: 'My Note',
+        key: 'link',
+        link: 'my-note.md',
+        original: '[My Note](my-note.md)'
+      },
+      type: 'text'
+    });
+  });
+
+  const MULTI_VALUE_FRONTMATTER_LINK_TEXT = '---\nrelated: "[[a]] and [B](b.md)"\n---\nbody';
+
+  // A value holding SEVERAL links is the one shape the plugin adds, so without it the text node reads only what
+  // Obsidian reads: its markdown-link pattern, anchored to the whole value, takes `[a]] and [B` as the text of ONE link.
+  it('should read a multi-value frontmatter property as Obsidian does when the frontmatter-markdown-links plugin is absent', async () => {
+    const app = createApp(toCanvasJson([{ id: '1', text: MULTI_VALUE_FRONTMATTER_LINK_TEXT, type: 'text' }]));
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toHaveLength(1);
+    expect(references[0]).toHaveProperty('originalReference', {
+      displayText: '[a]] and [B',
+      key: 'related',
+      link: 'b.md',
+      original: '[[a]] and [B](b.md)'
+    });
+  });
+
+  it('should surface each multi-value frontmatter link when the frontmatter-markdown-links plugin is present', async () => {
+    const app = createApp(
+      toCanvasJson([{ id: '1', text: MULTI_VALUE_FRONTMATTER_LINK_TEXT, type: 'text' }]),
+      ['frontmatter-markdown-links']
+    );
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references.map((reference) => reference.link)).toEqual(['a', 'b.md']);
+    expect(references[1]).toMatchObject({
+      key: 'nodes.0.text.1',
+      original: '[[a]] and [B](b.md)',
+      originalReference: {
+        endOffset: 19,
+        key: 'related',
+        original: '[[a]] and [B](b.md)',
+        startOffset: 10
+      },
+      type: 'text'
+    });
+  });
+
+  it('should extract references from mixed nodes and ignore unsupported node types', async () => {
+    const app = createApp(toCanvasJson([
+      { file: 'old.md', id: '1', type: 'file' },
+      { id: 'g', type: 'group' },
+      { id: '2', text: '![[c.png]]', type: 'text' }
+    ]));
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references.map((reference) => reference.key)).toEqual(['nodes.0.file', 'nodes.2.text.0']);
+  });
+
+  it('should return an empty array when the canvas has no nodes property', async () => {
+    const app = createApp(JSON.stringify({ edges: [] }));
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toEqual([]);
+  });
+
+  it('should return an empty array when the canvas JSON is null', async () => {
+    const app = createApp('null');
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toEqual([]);
+  });
+
+  it('should return an empty array for malformed JSON', async () => {
+    const app = createApp('not a canvas {');
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    expect(references).toEqual([]);
+  });
+
+  it('should return an empty array when the file is missing', async () => {
+    const app = createApp(toCanvasJson([]));
+    const references = await getCanvasReferences(app, 'missing.canvas');
+    expect(references).toEqual([]);
+  });
+});
+
+describe('getCanvasReferences rewrite round-trip via applyFileChanges', () => {
+  const resourceLockComponent = strictProxy<ResourceLockComponent>({
+    lockForPath: () => ({ [Symbol.dispose]: noop })
+  });
+
+  it('should rewrite both file-node and text-node references', async () => {
+    const app = createApp(toCanvasJson([
+      { file: 'old.md', id: '1', type: 'file' },
+      { id: '2', text: '![[old.png]]', type: 'text' }
+    ]));
+
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    const fileReference = references.find((reference) => reference.type === 'file');
+    const textReference = references.find((reference) => reference.type === 'text');
+    assertNonNullable(fileReference);
+    assertNonNullable(textReference);
+
+    const changes = [
+      referenceToFileChange(fileReference, 'new.md'),
+      referenceToFileChange(textReference, '![[new.png]]')
+    ];
+
+    await applyFileChanges({
+      app,
+      changesProvider: changes,
+      pathOrFile: CANVAS_PATH,
+      pluginNoticeComponent: null,
+      resourceLockComponent
+    });
+
+    const updatedContent = await readSafe(app, CANVAS_PATH);
+    assertNonNullable(updatedContent);
+    const updated = JSON.parse(updatedContent) as ParsedCanvas;
+    expect(updated.nodes[0]?.file).toBe('new.md');
+    expect(updated.nodes[1]?.text).toBe('![[new.png]]');
+  });
+
+  it('should rewrite one link of a multi-value frontmatter property in a text node, leaving the rest of the value', async () => {
+    const app = createApp(
+      toCanvasJson([{ id: '1', text: '---\nrelated: "[[a]] and [B](b.md)"\n---\nbody', type: 'text' }]),
+      ['frontmatter-markdown-links']
+    );
+
+    const references = await getCanvasReferences(app, CANVAS_PATH);
+    const reference = references.find((candidate) => candidate.link === 'b.md');
+    assertNonNullable(reference);
+
+    await applyFileChanges({
+      app,
+      changesProvider: [referenceToFileChange(reference, '[B](c.md)')],
+      pathOrFile: CANVAS_PATH,
+      pluginNoticeComponent: null,
+      resourceLockComponent
+    });
+
+    const updatedContent = await readSafe(app, CANVAS_PATH);
+    assertNonNullable(updatedContent);
+    const updated = JSON.parse(updatedContent) as ParsedCanvas;
+    expect(updated.nodes[0]?.text).toContain('[[a]] and [B](c.md)');
+  });
+});

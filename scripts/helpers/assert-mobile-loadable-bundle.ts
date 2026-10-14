@@ -21,13 +21,12 @@
  * point: platform-only work is allowed, evaluating it at load time is not.
  */
 
+import { noop } from '@mnaoumov/typescript-lib/function';
 import { builtinModules } from 'node:module';
 import {
   createContext,
   runInContext
 } from 'node:vm';
-
-import { noop } from '../../src/function.ts';
 
 /**
  * Parameters for {@link assertMobileLoadableBundle}.

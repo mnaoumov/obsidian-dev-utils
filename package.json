@@ -1,10 +1,8 @@
 {
-  "name": "obsidian-dev-utils",
+  "name": "obsidian-dev-utils-workspace",
   "version": "107.4.1",
-  "description": "This is the collection of useful functions that you can use for your Obsidian plugin development.",
-  "keywords": [
-    "obsidian"
-  ],
+  "private": true,
+  "description": "Workspace root of the @mnaoumov TypeScript and Obsidian packages.",
   "homepage": "https://github.com/mnaoumov/obsidian-dev-utils#readme",
   "bugs": {
     "url": "https://github.com/mnaoumov/obsidian-dev-utils/issues"
@@ -16,679 +14,36 @@
   "license": "MIT",
   "author": "Michael Naumov",
   "type": "module",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/lib/esm/index.d.mts",
-        "default": "./dist/lib/esm/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/index.d.cts",
-        "default": "./dist/lib/cjs/index.cjs"
-      }
-    },
-    "./*": {
-      "import": {
-        "types": "./dist/lib/esm/*.d.mts",
-        "default": "./dist/lib/esm/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/*.d.cts",
-        "default": "./dist/lib/cjs/*.cjs"
-      }
-    },
-    "./@types/*": {
-      "import": {
-        "types": "./dist/lib/esm/@types/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/@types/*.d.cts"
-      }
-    },
-    "./codemirror": {
-      "import": {
-        "types": "./dist/lib/esm/codemirror/index.d.mts",
-        "default": "./dist/lib/esm/codemirror/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/codemirror/index.d.cts",
-        "default": "./dist/lib/cjs/codemirror/index.cjs"
-      }
-    },
-    "./codemirror/*": {
-      "import": {
-        "types": "./dist/lib/esm/codemirror/*.d.mts",
-        "default": "./dist/lib/esm/codemirror/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/codemirror/*.d.cts",
-        "default": "./dist/lib/cjs/codemirror/*.cjs"
-      }
-    },
-    "./obsidian": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/index.cjs"
-      }
-    },
-    "./obsidian/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/*.cjs"
-      }
-    },
-    "./obsidian/@types/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/index.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/index.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/api/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/api/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/api/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/data-import/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/data-import/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/data-import/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/data-import/web-worker/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/data-import/web-worker/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/data-import/web-worker/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/data-index": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/data-index/index.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/data-index/index.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/data-index/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/data-index/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/data-index/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/data-model/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/data-model/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/data-model/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/data-model/serialized/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/data-model/serialized/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/data-model/serialized/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/expression/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/expression/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/expression/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/query/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/query/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/query/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/typings/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/typings/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/typings/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/ui/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/ui/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/ui/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/ui/export/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/ui/export/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/ui/export/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/ui/views/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/ui/views/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/ui/views/*.d.cts"
-      }
-    },
-    "./obsidian/@types/dataview/util/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/@types/dataview/util/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/@types/dataview/util/*.d.cts"
-      }
-    },
-    "./obsidian/command-handlers": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/command-handlers/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/command-handlers/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/command-handlers/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/command-handlers/index.cjs"
-      }
-    },
-    "./obsidian/command-handlers/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/command-handlers/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/command-handlers/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/command-handlers/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/command-handlers/*.cjs"
-      }
-    },
-    "./obsidian/components": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/components/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/components/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/components/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/components/index.cjs"
-      }
-    },
-    "./obsidian/components/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/components/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/components/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/components/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/components/*.cjs"
-      }
-    },
-    "./obsidian/constructors": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/constructors/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/constructors/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/constructors/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/constructors/index.cjs"
-      }
-    },
-    "./obsidian/constructors/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/constructors/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/constructors/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/constructors/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/constructors/*.cjs"
-      }
-    },
-    "./obsidian/i18n": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/i18n/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/i18n/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/i18n/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/i18n/index.cjs"
-      }
-    },
-    "./obsidian/i18n/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/i18n/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/i18n/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/i18n/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/i18n/*.cjs"
-      }
-    },
-    "./obsidian/i18n/locales": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/i18n/locales/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/i18n/locales/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/i18n/locales/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/i18n/locales/index.cjs"
-      }
-    },
-    "./obsidian/i18n/locales/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/i18n/locales/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/i18n/locales/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/i18n/locales/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/i18n/locales/*.cjs"
-      }
-    },
-    "./obsidian/modals": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/modals/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/modals/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/modals/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/modals/index.cjs"
-      }
-    },
-    "./obsidian/modals/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/modals/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/modals/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/modals/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/modals/*.cjs"
-      }
-    },
-    "./obsidian/plugin": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/plugin/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/plugin/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/plugin/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/plugin/index.cjs"
-      }
-    },
-    "./obsidian/plugin/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/plugin/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/plugin/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/plugin/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/plugin/*.cjs"
-      }
-    },
-    "./obsidian/popovers": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/popovers/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/popovers/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/popovers/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/popovers/index.cjs"
-      }
-    },
-    "./obsidian/popovers/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/popovers/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/popovers/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/popovers/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/popovers/*.cjs"
-      }
-    },
-    "./obsidian/react": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/react/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/react/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/react/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/react/index.cjs"
-      }
-    },
-    "./obsidian/react/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/react/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/react/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/react/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/react/*.cjs"
-      }
-    },
-    "./obsidian/setting-components": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/setting-components/index.d.mts",
-        "default": "./dist/lib/esm/obsidian/setting-components/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/setting-components/index.d.cts",
-        "default": "./dist/lib/cjs/obsidian/setting-components/index.cjs"
-      }
-    },
-    "./obsidian/setting-components/*": {
-      "import": {
-        "types": "./dist/lib/esm/obsidian/setting-components/*.d.mts",
-        "default": "./dist/lib/esm/obsidian/setting-components/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/obsidian/setting-components/*.d.cts",
-        "default": "./dist/lib/cjs/obsidian/setting-components/*.cjs"
-      }
-    },
-    "./script-utils": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/index.cjs"
-      }
-    },
-    "./script-utils/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/*.cjs"
-      }
-    },
-    "./script-utils/bundlers": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/bundlers/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/bundlers/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/bundlers/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/bundlers/index.cjs"
-      }
-    },
-    "./script-utils/bundlers/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/bundlers/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/bundlers/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/bundlers/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/bundlers/*.cjs"
-      }
-    },
-    "./script-utils/bundlers/esbuild-impl": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/bundlers/esbuild-impl/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/bundlers/esbuild-impl/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/bundlers/esbuild-impl/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/bundlers/esbuild-impl/index.cjs"
-      }
-    },
-    "./script-utils/bundlers/esbuild-impl/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/bundlers/esbuild-impl/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/bundlers/esbuild-impl/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/bundlers/esbuild-impl/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/bundlers/esbuild-impl/*.cjs"
-      }
-    },
-    "./script-utils/formatters": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/formatters/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/formatters/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/formatters/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/formatters/index.cjs"
-      }
-    },
-    "./script-utils/formatters/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/formatters/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/formatters/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/formatters/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/formatters/*.cjs"
-      }
-    },
-    "./script-utils/linters": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/index.cjs"
-      }
-    },
-    "./script-utils/linters/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/*.cjs"
-      }
-    },
-    "./script-utils/linters/eslint-rules": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/eslint-rules/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/eslint-rules/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/eslint-rules/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/eslint-rules/index.cjs"
-      }
-    },
-    "./script-utils/linters/eslint-rules/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/eslint-rules/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/eslint-rules/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/eslint-rules/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/eslint-rules/*.cjs"
-      }
-    },
-    "./script-utils/linters/eslint-types/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/eslint-types/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/eslint-types/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/eslint-types/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/eslint-types/*.cjs"
-      }
-    },
-    "./script-utils/linters/eslint-types/@types/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/eslint-types/@types/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/eslint-types/@types/*.d.cts"
-      }
-    },
-    "./script-utils/linters/markdownlint-rules": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/markdownlint-rules/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/markdownlint-rules/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/index.cjs"
-      }
-    },
-    "./script-utils/linters/markdownlint-rules/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/markdownlint-rules/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/markdownlint-rules/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/markdownlint-rules/*.cjs"
-      }
-    },
-    "./script-utils/linters/markdownlint-types/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/markdownlint-types/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/linters/markdownlint-types/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/markdownlint-types/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/linters/markdownlint-types/*.cjs"
-      }
-    },
-    "./script-utils/linters/markdownlint-types/@types/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/linters/markdownlint-types/@types/*.d.mts"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/linters/markdownlint-types/@types/*.d.cts"
-      }
-    },
-    "./script-utils/test-runners": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/test-runners/index.d.mts",
-        "default": "./dist/lib/esm/script-utils/test-runners/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/test-runners/index.d.cts",
-        "default": "./dist/lib/cjs/script-utils/test-runners/index.cjs"
-      }
-    },
-    "./script-utils/test-runners/*": {
-      "import": {
-        "types": "./dist/lib/esm/script-utils/test-runners/*.d.mts",
-        "default": "./dist/lib/esm/script-utils/test-runners/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/script-utils/test-runners/*.d.cts",
-        "default": "./dist/lib/cjs/script-utils/test-runners/*.cjs"
-      }
-    },
-    "./transformers": {
-      "import": {
-        "types": "./dist/lib/esm/transformers/index.d.mts",
-        "default": "./dist/lib/esm/transformers/index.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/transformers/index.d.cts",
-        "default": "./dist/lib/cjs/transformers/index.cjs"
-      }
-    },
-    "./transformers/*": {
-      "import": {
-        "types": "./dist/lib/esm/transformers/*.d.mts",
-        "default": "./dist/lib/esm/transformers/*.mjs"
-      },
-      "require": {
-        "types": "./dist/lib/cjs/transformers/*.d.cts",
-        "default": "./dist/lib/cjs/transformers/*.cjs"
-      }
-    }
-  },
-  "main": "./dist/lib/cjs/index.cjs",
-  "module": "./dist/lib/esm/index.mjs",
-  "types": "./dist/lib/cjs/index.d.cts",
-  "files": [
-    "**/package.json",
-    "CHANGELOG.md",
-    "dist/",
-    "!dist/*.tgz",
-    "!dist/dev/",
-    "LICENSE",
-    "README.md"
+  "workspaces": [
+    "packages/typescript-lib",
+    "packages/typescript-test-toolkit",
+    "packages/typescript-dev-toolkit",
+    "packages/obsidian-lib",
+    "packages/obsidian-dev-toolkit"
   ],
   "scripts": {
-    "build": "jiti scripts/build.ts",
-    "build:clean": "jiti scripts/build-clean.ts",
-    "build:compile": "jiti scripts/build-compile.ts",
-    "build:compile:svelte": "jiti scripts/build-compile-svelte.ts",
-    "build:compile:typescript": "jiti scripts/build-compile-typescript.ts",
-    "build:demo-vault-helper": "jiti scripts/build-demo-vault-helper.ts",
-    "build:generate-exports": "jiti scripts/build-generate-exports.ts",
-    "build:generate-index": "jiti scripts/build-generate-index.ts",
-    "build:generate-merged": "jiti scripts/build-generate-merged.ts",
-    "build:integration-test-plugin": "jiti scripts/build-integration-test-plugin.ts",
-    "build:lib": "jiti scripts/build-lib.ts",
-    "build:stamp-generated": "jiti scripts/build-stamp-generated.ts",
-    "build:styles": "jiti scripts/build-styles.ts",
-    "build:templates": "jiti scripts/build-templates.ts",
-    "build:types": "jiti scripts/build-types.ts",
-    "build:validate-declarations": "jiti scripts/build-validate-declarations.ts",
-    "build:validate-templates": "jiti scripts/build-validate-templates.ts",
-    "commit": "jiti scripts/commit.ts",
-    "docs:build": "jiti scripts/docs-build.ts",
-    "docs:dev": "jiti scripts/docs-dev.ts",
-    "docs:preview": "jiti scripts/docs-preview.ts",
-    "find-overexposed": "jiti scripts/find-overexposed.ts",
-    "find-overexposed:fix": "jiti scripts/find-overexposed-fix.ts",
-    "format": "jiti scripts/format.ts",
-    "format:check": "jiti scripts/format-check.ts",
-    "gate": "jiti scripts/gate.ts",
-    "lint": "jiti scripts/lint.ts",
-    "lint:fix": "jiti scripts/lint-fix.ts",
-    "lint:md": "jiti scripts/lint-md.ts",
-    "lint:md:fix": "jiti scripts/lint-md-fix.ts",
-    "prepare": "jiti scripts/prepare.ts",
-    "publish:npm": "jiti scripts/publish-npm.ts",
-    "spellcheck": "jiti scripts/spellcheck.ts",
-    "test": "jiti scripts/test.ts",
-    "test:coverage": "jiti scripts/test-coverage.ts",
-    "test:integration": "jiti scripts/test-integration.ts",
-    "test:watch": "jiti scripts/test-watch.ts",
-    "version": "jiti scripts/version.ts"
+    "build": "node scripts/run.mjs scripts/build-workspaces.ts",
+    "build:compile": "node scripts/run.mjs scripts/build-compile-typescript.ts",
+    "commit": "node scripts/run.mjs scripts/commit.ts",
+    "docs:build": "node scripts/run.mjs scripts/docs-build.ts",
+    "docs:dev": "node scripts/run.mjs scripts/docs-dev.ts",
+    "docs:preview": "node scripts/run.mjs scripts/docs-preview.ts",
+    "find-overexposed": "node scripts/run.mjs scripts/workspaces-run.ts find-overexposed",
+    "find-overexposed:fix": "node scripts/run.mjs scripts/workspaces-run.ts find-overexposed:fix",
+    "format": "node scripts/run.mjs scripts/format.ts",
+    "format:check": "node scripts/run.mjs scripts/format-check.ts",
+    "gate": "node scripts/run.mjs scripts/gate.ts",
+    "lint": "node scripts/run.mjs scripts/lint.ts",
+    "lint:fix": "node scripts/run.mjs scripts/lint-fix.ts",
+    "lint:md": "node scripts/run.mjs scripts/lint-md.ts",
+    "lint:md:fix": "node scripts/run.mjs scripts/lint-md-fix.ts",
+    "prepare": "node scripts/run.mjs scripts/prepare.ts",
+    "publish:npm": "node scripts/run.mjs scripts/publish-npm.ts",
+    "spellcheck": "node scripts/run.mjs scripts/spellcheck.ts",
+    "test": "node scripts/run.mjs scripts/test.ts",
+    "test:coverage": "node scripts/run.mjs scripts/test-coverage.ts",
+    "test:integration": "node scripts/run.mjs scripts/test-integration.ts",
+    "version": "node scripts/run.mjs scripts/version.ts"
   },
   "overrides": {
     "@puppeteer/browsers": "^3.2.2",
@@ -704,17 +59,25 @@
     "smol-toml": "^1.8.0",
     "typescript": "$typescript"
   },
-  "dependencies": {
+  "devDependencies": {
+    "@astrojs/markdown-satteri": "^0.4.1",
+    "@astrojs/starlight": "^0.42.2",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@commitlint/types": "^21.2.0",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
     "@eslint/config-helpers": "^0.7.0",
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^2.1.0",
+    "@jest/globals": "^30.5.2",
     "@lezer/common": "1.5.2",
     "@obsidian-typings/obsidian-public-latest": "^6.37.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@standard-schema/spec": "^1.1.0",
     "@stylistic/eslint-plugin": "^5.10.0",
+    "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/strictest": "^2.0.8",
     "@types/babel__core": "^7.20.5",
     "@types/eslint": "^9.6.1",
@@ -722,92 +85,75 @@
     "@types/node": "^26.6.2",
     "@types/parsimmon": "^1.10.9",
     "@types/path-browserify": "^1.0.3",
+    "@types/prismjs": "^1.26.6",
     "@types/pug": "^2.0.10",
     "@types/react": "^19.3.0",
     "@types/semver": "^7.8.0",
+    "@typescript-eslint/eslint-plugin": "^8.71.2",
+    "@typescript-eslint/parser": "^8.71.2",
+    "@typescript-eslint/rule-tester": "^8.71.2",
+    "@typescript-eslint/utils": "^8.71.2",
+    "@vitest/coverage-v8": "^5.0.1",
+    "astro": "^7.3.3",
+    "better-typescript-lib": "^2.12.0",
     "compare-versions": "^6.1.1",
     "cspell": "^10.3.3",
+    "czg": "^1.14.0",
     "debug": "^4.4.3",
+    "dedent": "^1.7.2",
     "dprint": "^0.57.4",
     "esbuild": "^0.28.2",
     "esbuild-sass-plugin": "^3.7.0",
     "esbuild-svelte": "^0.9.5",
     "eslint": "^10.11.0",
     "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-jsdoc": "^64.5.4",
+    "eslint-plugin-n": "^18.3.0",
     "eslint-plugin-obsidianmd": "^0.4.2",
     "eslint-plugin-perfectionist": "^5.11.1",
     "eslint-plugin-tsdoc": "^0.5.3",
     "eslint-plugin-unicorn": "^76.0.0",
     "fflate": "^0.8.3",
+    "husky": "^9.1.7",
     "i18next": "^26.4.2",
     "jiti": "^2.7.0",
+    "jsdom": "^30.1.0",
     "localforage": "^1.10.0",
     "markdownlint": "^0.41.1",
     "markdownlint-cli2": "^0.23.2",
     "markdownlint-rule-relative-links": "^5.1.2",
+    "moment": "^2.31.0",
     "monkey-around": "^3.0.0",
+    "nano-staged": "^1.0.2",
     "obsidian": "^1.13.1",
+    "obsidian-integration-testing": "^17.3.0",
+    "obsidian-test-mocks": "^7.0.0",
     "path-browserify": "^1.0.1",
     "postcss": "^8.5.28",
     "postcss-modules": "^9.0.1",
     "preact": "^10.29.8",
+    "prismjs": "^1.30.0",
     "react": "^19.3.0",
     "remark": "^15.0.1",
     "remark-parse": "^11.0.0",
     "remark-wiki-link": "^2.0.1",
     "sass": "^1.104.1",
+    "satori": "^0.33.4",
+    "satteri": "^0.10.5",
     "semver": "^7.8.5",
     "svelte-check": "^4.7.6",
     "svelte-preprocess": "^6.0.5",
-    "type-fest": "^5.10.0",
-    "typescript": "6.0.3",
-    "yaml": "^2.9.1"
-  },
-  "devDependencies": {
-    "@astrojs/markdown-satteri": "^0.4.1",
-    "@astrojs/starlight": "^0.42.2",
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
-    "@commitlint/types": "^21.2.0",
-    "@jest/globals": "^30.5.2",
-    "@resvg/resvg-js": "^2.6.2",
-    "@total-typescript/ts-reset": "^0.6.1",
-    "@types/prismjs": "^1.26.6",
-    "@typescript-eslint/eslint-plugin": "^8.71.2",
-    "@typescript-eslint/parser": "^8.71.2",
-    "@typescript-eslint/rule-tester": "^8.71.2",
-    "@vitest/coverage-v8": "^5.0.1",
-    "astro": "^7.3.3",
-    "better-typescript-lib": "^2.12.0",
-    "czg": "^1.14.0",
-    "dedent": "^1.7.2",
-    "eslint-plugin-astro": "^3.2.1",
-    "eslint-plugin-n": "^18.3.0",
-    "husky": "^9.1.7",
-    "jsdom": "^30.1.0",
-    "moment": "^2.31.0",
-    "nano-staged": "^1.0.2",
-    "obsidian-integration-testing": "^17.3.0",
-    "obsidian-test-mocks": "^7.0.0",
-    "prismjs": "^1.30.0",
-    "satori": "^0.33.4",
-    "satteri": "^0.10.5",
     "ts-declaration-location": "^1.0.7",
     "ts-morph": "^28.0.0",
+    "type-fest": "^5.10.0",
     "typedoc-plugin-mdn-links": "^5.1.1",
+    "typescript": "6.0.3",
     "typescript-eslint": "^8.71.2",
     "unist-util-visit": "^5.1.0",
-    "vitest": "^5.0.1"
-  },
-  "peerDependencies": {
-    "obsidian-integration-testing": "^17.3.0"
-  },
-  "peerDependenciesMeta": {
-    "obsidian-integration-testing": {
-      "optional": true
-    }
+    "vitest": "^5.0.1",
+    "yaml": "^2.9.1"
   },
   "engines": {
     "node": ">=22.0.0"

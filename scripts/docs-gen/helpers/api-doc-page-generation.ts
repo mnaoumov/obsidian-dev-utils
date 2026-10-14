@@ -61,8 +61,8 @@ const JSON_INDENT = 2;
 // Serves both as the root API page's prose and (stripped) as its `description` frontmatter.
 // Sharing one constant keeps the page and its OG card from drifting apart.
 const API_INDEX_INTRO =
-  'The complete API reference for `obsidian-dev-utils`, generated from the library\'s TSDoc. '
-  + 'Each module below maps to an import subpath (e.g. the `string` module is `obsidian-dev-utils/string`).';
+  'The complete API reference for the `@mnaoumov` TypeScript and Obsidian packages, generated from their TSDoc. '
+  + 'Each module below maps to an import subpath (e.g. the `typescript-lib/string` module is `@mnaoumov/typescript-lib/string`).';
 
 /**
 Append backlinks to overview pages and write all files. Keyed by qualified `${namespace}#${name}`.

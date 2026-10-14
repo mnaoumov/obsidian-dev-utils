@@ -15,6 +15,7 @@
  * It also restores the ACTIVE WINDOW after every test — see the `afterEach` below.
  */
 
+import { registerIntegrationTestLibResolver } from '@mnaoumov/obsidian-dev-toolkit/test-runners/integration-test-plugin';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { evalInObsidian } from 'obsidian-integration-testing';
@@ -22,8 +23,6 @@ import {
   afterEach,
   beforeAll
 } from 'vitest';
-
-import { registerIntegrationTestLibResolver } from '../src/script-utils/test-runners/integration-test-plugin.ts';
 
 registerIntegrationTestLibResolver();
 

@@ -25,6 +25,18 @@ import type {
   TypeChecker
 } from 'typescript';
 
+import { parseTsConfig } from '@mnaoumov/typescript-dev-toolkit/check-project-types';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { generate } from '@mnaoumov/typescript-dev-toolkit/code-generator';
+import { readdirPosix } from '@mnaoumov/typescript-dev-toolkit/fs';
+import { RepoPaths } from '@mnaoumov/typescript-dev-toolkit/repo-paths';
+import {
+  basename,
+  join,
+  relative
+} from '@mnaoumov/typescript-lib/path';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import process from 'node:process';
 import {
   createProgram,
   isExportSpecifier,
@@ -33,16 +45,6 @@ import {
 
 import type { ModuleSupersession } from './helpers/module-supersession.ts';
 
-import {
-  basename,
-  join,
-  relative
-} from '../src/path.ts';
-import { parseTsConfig } from '../src/script-utils/check-project-types.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { generate } from '../src/script-utils/code-generator.ts';
-import { readdirPosix } from '../src/script-utils/fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import {
   findExportNameCollisions,
   formatExportNameCollisions
@@ -53,17 +55,25 @@ import {
   formatIncompleteFacades,
   toSupersededModules
 } from './helpers/module-supersession.ts';
+import { WorkspaceRepoPaths } from './helpers/workspace-repo-paths.ts';
 
 const SKIP_DIRS = new Set<string>([
-  ObsidianDevUtilsRepoPaths.ScriptUtils,
-  ObsidianDevUtilsRepoPaths.Styles,
-  ObsidianDevUtilsRepoPaths.TestHelpers,
-  ObsidianDevUtilsRepoPaths.Types
+  RepoPaths.Styles,
+  RepoPaths.TestHelpers,
+  RepoPaths.Types
 ]);
 
-const MERGED_BASENAME = basename(ObsidianDevUtilsRepoPaths.MergedTs, ObsidianDevUtilsRepoPaths.TsExtension);
+const MERGED_BASENAME = basename(WorkspaceRepoPaths.MergedTs, RepoPaths.TsExtension);
 
-const SRC_DIR = ObsidianDevUtilsRepoPaths.Src as string;
+const SRC_DIR = RepoPaths.Src as string;
+
+/**
+ * Sibling workspace packages whose leaf modules join the flat barrel too, named by `--include <package>`. The
+ * `lib` bag of an `evalInObsidian` closure is meant to reach every helper a plugin can import, and a plugin imports
+ * the generic helpers from `@mnaoumov/typescript-lib`, not from this package.
+ */
+const [, , ...cliArguments] = process.argv;
+const INCLUDED_PACKAGES = parseIncludedPackages(cliArguments);
 
 /**
 The first module to export a given value name, and the symbol it resolves to (for collision detection).
@@ -75,6 +85,9 @@ interface ExportOrigin {
 
 await wrapCliTask(async () => {
   const leafFiles = await collectLeafFiles(SRC_DIR);
+  for (const packageName of INCLUDED_PACKAGES) {
+    leafFiles.push(...await collectLeafFiles(toIncludedSourceFolder(packageName)));
+  }
   leafFiles.sort();
 
   await generateMerged(leafFiles);
@@ -145,7 +158,7 @@ function compareCaseInsensitive(a: string, b: string): number {
 }
 
 async function generateMerged(leafFiles: string[]): Promise<void> {
-  const { options } = parseTsConfig(join(import.meta.dirname, '..', ObsidianDevUtilsRepoPaths.TsConfigJson));
+  const { options } = parseTsConfig(RepoPaths.TsConfigJson);
   const program = createProgram({
     options: {
       ...options,
@@ -252,19 +265,41 @@ async function generateMerged(leafFiles: string[]): Promise<void> {
     lines.push(`} from '${moduleSpecifier}';`);
   }
 
-  await generate(join(SRC_DIR, ObsidianDevUtilsRepoPaths.MergedTs), lines);
+  await generate(join(SRC_DIR, WorkspaceRepoPaths.MergedTs), lines);
 }
 
 function isLeafFile(name: string): boolean {
   // The last clause: the flat barrel must not re-export from itself.
-  return !(!name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension) || name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) || (name === ObsidianDevUtilsRepoPaths.IndexTs as string) || name.endsWith('.test.ts') || name === 'setup.ts' || name.endsWith('-setup.ts') || basename(name, ObsidianDevUtilsRepoPaths.TsExtension) === MERGED_BASENAME);
+  return !(!name.endsWith(RepoPaths.TsExtension) || name.endsWith(RepoPaths.DtsExtension) || (name === RepoPaths.IndexTs as string) || name.endsWith('.test.ts') || name === 'setup.ts' || name.endsWith('-setup.ts') || basename(name, RepoPaths.TsExtension) === MERGED_BASENAME);
 }
 
 function isTypeOnlyExport(exportSymbol: TsSymbol): boolean {
   return (exportSymbol.declarations ?? []).some((declaration) => isExportSpecifier(declaration) && (declaration.isTypeOnly || declaration.parent.parent.isTypeOnly));
 }
 
+function parseIncludedPackages($arguments: string[]): string[] {
+  const packageNames: string[] = [];
+  for (const [index, argument] of $arguments.entries()) {
+    if (argument === '--include') {
+      packageNames.push(ensureNonNullable($arguments[index + 1], '`--include` needs a package name.'));
+    }
+  }
+  return packageNames;
+}
+
+function toIncludedSourceFolder(packageName: string): string {
+  return join('..', packageName, RepoPaths.Src);
+}
+
 function toModuleSpecifier(file: string): string {
+  for (const packageName of INCLUDED_PACKAGES) {
+    const includedSourceFolder = toIncludedSourceFolder(packageName);
+    const prefix = `${includedSourceFolder}/`;
+    if (file.startsWith(prefix)) {
+      const subpath = file.slice(prefix.length);
+      return `@mnaoumov/${packageName}/${subpath.replace(/\.ts$/, '')}`;
+    }
+  }
   const relativePath = relative(SRC_DIR, file).replaceAll('\\', '/');
   return `./${relativePath}`;
 }

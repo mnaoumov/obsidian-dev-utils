@@ -1,4 +1,18 @@
-import { readFileSync } from 'node:fs';
+import { parseTsConfig } from '@mnaoumov/typescript-dev-toolkit/check-project-types';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { readdirPosix } from '@mnaoumov/typescript-dev-toolkit/fs';
+import { RepoPaths } from '@mnaoumov/typescript-dev-toolkit/repo-paths';
+import { execFromRoot } from '@mnaoumov/typescript-dev-toolkit/root';
+import {
+  basename,
+  dirname,
+  join
+} from '@mnaoumov/typescript-lib/path';
+import { replaceAll } from '@mnaoumov/typescript-lib/string';
+import {
+  existsSync,
+  readFileSync
+} from 'node:fs';
 import {
   mkdir,
   readFile,
@@ -6,29 +20,11 @@ import {
 } from 'node:fs/promises';
 import { relative } from 'node:path';
 
-import {
-  basename,
-  dirname,
-  join
-} from '../src/path.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { readdirPosix } from '../src/script-utils/fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
-import { execFromRoot } from '../src/script-utils/root.ts';
-import { replaceAll } from '../src/string.ts';
-
-interface TsconfigCompilerOptions {
-  readonly lib?: string[];
-  readonly types?: string[];
-}
-
-interface TsconfigJson {
-  compilerOptions?: TsconfigCompilerOptions;
-}
-
 const REFERENCE_LIB_REG_EXP = /\/\/\/ <reference lib="(?<Lib>[^"]+)" \/>/gm;
 const DECLARATION_REFERENCE_TYPES = new Set(['node']);
-const LIBRARY_FILE_NAME = 'library';
+// The declaration every other one references for the package's `lib` and `types` directives: `library` where the
+// package has one, otherwise the generated `index`, which every package has.
+const LIBRARY_FILE_NAME = existsSync(join(RepoPaths.Src, 'library.ts')) ? 'library' : 'index';
 
 // A bare-specifier (non-relative) type-only import, e.g. `import type { Promisable } from 'type-fest';`.
 const BARE_TYPE_IMPORT_REG_EXP = /^import type (?<Clause>.+?) from '(?<Specifier>[^.'][^']*)';$/gm;
@@ -45,20 +41,20 @@ await wrapCliTask(async () => {
   const DYNAMIC_IMPORT_REG_EXP = /import\((?<Quote>['"])(?<ImportPath>.+?)\.ts\k<Quote>\)/gm;
 
   const allLibs = await collectAllLibs();
-  const allTypes = await collectAllTypes();
+  const allTypes = collectAllTypes();
 
-  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-    if (!file.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) || file.startsWith(ObsidianDevUtilsRepoPaths.TestHelpers)) {
+  for (const file of await readdirPosix(RepoPaths.Src, { recursive: true })) {
+    if (!file.endsWith(RepoPaths.DtsExtension) || file.startsWith(RepoPaths.TestHelpers)) {
       continue;
     }
 
     const folder = dirname(file);
-    const name = basename(file, ObsidianDevUtilsRepoPaths.DtsExtension);
-    const fullSourcePath = join(ObsidianDevUtilsRepoPaths.Src, file);
+    const name = basename(file, RepoPaths.DtsExtension);
+    const fullSourcePath = join(RepoPaths.Src, file);
     const content = await readFile(fullSourcePath, 'utf-8');
 
-    const ctsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, folder, name + ObsidianDevUtilsRepoPaths.DctsExtension);
-    const mtsPath = join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, folder, name + ObsidianDevUtilsRepoPaths.DmtsExtension);
+    const ctsPath = join(RepoPaths.DistLib, RepoPaths.Cjs, folder, name + RepoPaths.DctsExtension);
+    const mtsPath = join(RepoPaths.DistLib, RepoPaths.Esm, folder, name + RepoPaths.DmtsExtension);
 
     await mkdir(dirname(ctsPath), { recursive: true });
     await mkdir(dirname(mtsPath), { recursive: true });
@@ -108,10 +104,10 @@ await wrapCliTask(async () => {
       ctsContent = libDirectives + typesDirectives + ctsContent;
       mtsContent = libDirectives + typesDirectives + mtsContent;
     } else {
-      const ctsLibRef = buildReferencePathDirective(ctsPath, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.DctsExtension);
+      const ctsLibRef = buildReferencePathDirective(ctsPath, RepoPaths.Cjs, RepoPaths.DctsExtension);
       ctsContent = ctsLibRef + ctsContent;
 
-      const mtsLibRef = buildReferencePathDirective(mtsPath, ObsidianDevUtilsRepoPaths.Esm, ObsidianDevUtilsRepoPaths.DmtsExtension);
+      const mtsLibRef = buildReferencePathDirective(mtsPath, RepoPaths.Esm, RepoPaths.DmtsExtension);
       mtsContent = mtsLibRef + mtsContent;
     }
 
@@ -139,7 +135,7 @@ function buildAllReferenceTypesDirectives(types: string[]): string {
 }
 
 function buildReferencePathDirective(declarationFilePath: string, moduleDirectory: string, extension: string): string {
-  const libraryFilePath = join(ObsidianDevUtilsRepoPaths.DistLib, moduleDirectory, LIBRARY_FILE_NAME + extension);
+  const libraryFilePath = join(RepoPaths.DistLib, moduleDirectory, LIBRARY_FILE_NAME + extension);
   let relativePath = relative(dirname(declarationFilePath), libraryFilePath).replaceAll('\\', '/');
   if (!relativePath.startsWith('.')) {
     relativePath = `./${relativePath}`;
@@ -148,12 +144,13 @@ function buildReferencePathDirective(declarationFilePath: string, moduleDirector
 }
 
 async function collectAllLibs(): Promise<string[]> {
-  const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
-  const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
-  const libs = new Set((tsconfig.compilerOptions?.lib ?? []).map((lib) => lib.toLowerCase()));
+  // The RESOLVED options, because a package's `tsconfig.json` inherits `lib` from the shared base. The resolved
+  // names are file names (`lib.dom.iterable.d.ts`), so they are mapped back onto the names a directive takes.
+  const { options } = parseTsConfig(RepoPaths.TsConfigJson);
+  const libs = new Set((options.lib ?? []).map((lib) => lib.toLowerCase().replace(/^lib\./, '').replace(/\.d\.ts$/, '')));
 
-  for (const file of await readdirPosix(ObsidianDevUtilsRepoPaths.Src, { recursive: true })) {
-    const sourceFilePath = join(ObsidianDevUtilsRepoPaths.Src, file);
+  for (const file of await readdirPosix(RepoPaths.Src, { recursive: true })) {
+    const sourceFilePath = join(RepoPaths.Src, file);
     if (!file.endsWith('.ts')) {
       continue;
     }
@@ -167,10 +164,9 @@ async function collectAllLibs(): Promise<string[]> {
   return [...libs].sort();
 }
 
-async function collectAllTypes(): Promise<string[]> {
-  const tsconfigContent = await readFile('tsconfig.json', 'utf-8');
-  const tsconfig = JSON.parse(tsconfigContent) as TsconfigJson;
-  return (tsconfig.compilerOptions?.types ?? [])
+function collectAllTypes(): string[] {
+  const { options } = parseTsConfig(RepoPaths.TsConfigJson);
+  return (options.types ?? [])
     .filter((type) => DECLARATION_REFERENCE_TYPES.has(type))
     .sort();
 }
