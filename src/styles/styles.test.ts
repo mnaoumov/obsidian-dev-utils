@@ -44,6 +44,28 @@ describe('compiled styles', () => {
     }
   });
 
+  it('should not style a button outside the library UI', () => {
+    const buttonEl = document.body.createEl('button', { cls: 'other-plugin-button' });
+    try {
+      expect(selectors.filter((selector) => buttonEl.matches(selector))).toEqual([]);
+    } finally {
+      buttonEl.remove();
+    }
+  });
+
+  it('should restore the button color inside the library UI', () => {
+    const containerEl = createDiv();
+    addPluginCssClasses(containerEl);
+    const buttonEl = containerEl.createEl('button');
+    const iconButtonEl = containerEl.createEl('button', { cls: 'clickable-icon' });
+    const buttonColorSelectors = selectors.filter((selector) => selector.endsWith('button:not(.clickable-icon)'));
+    expect(buttonColorSelectors).not.toEqual([]);
+    for (const selector of buttonColorSelectors) {
+      expect(buttonEl.matches(selector)).toBe(true);
+      expect(iconButtonEl.matches(selector)).toBe(false);
+    }
+  });
+
   it('should reach the loop progress bar', () => {
     const progressBarEl = createEl('progress');
     addPluginCssClasses(progressBarEl, 'loop');

@@ -4,10 +4,13 @@
 // `--text-color` contextually per button variant (`--text-normal` by default,
 // `--text-on-accent` for `.mod-cta`, `--text-error` for `.mod-warning`), so tldraw's
 // `currentColor` discards that and breaks button contrast outside tldraw — e.g.
-// White-on-white action buttons inside a Notice. Re-assert Obsidian's own value with a
-// `body`-prefixed selector (specificity 0,1,2) so it wins over tldraw's (0,1,1) while
-// Staying correct for every button variant (it reuses the same contextual `--text-color`).
+// White-on-white action buttons inside a Notice. Re-assert Obsidian's own value inside the
+// Library's own UI (specificity 0,2,1), which wins over tldraw's (0,1,1) while staying correct
+// For every button variant (it reuses the same contextual `--text-color`).
+// It MUST stay scoped to `.obsidian-dev-utils`: an unscoped re-assert (it was `body button…`,
+// 0,1,2) lands on every button in the app and beats any other plugin's own button color
+// Written at 0,1,1, which Obsidian's own rule used to lose to (obsidian-custom-attachment-location#95).
 // Defensive workaround — remove once the upstream fix ships (tldraw/obsidian-plugin#210).
-body button:not(.clickable-icon) {
+.obsidian-dev-utils button:not(.clickable-icon) {
   color: var(--text-color);
 }
