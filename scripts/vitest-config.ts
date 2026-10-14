@@ -27,7 +27,6 @@ export const config = defineConfig({
     onConsoleLog: (): false => false,
     projects: [
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           exclude: [...WORKSPACE_TEST_EXCLUDE],
@@ -37,7 +36,6 @@ export const config = defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           exclude: [...WORKSPACE_TEST_EXCLUDE],

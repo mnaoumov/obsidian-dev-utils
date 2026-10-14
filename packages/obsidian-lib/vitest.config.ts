@@ -57,7 +57,6 @@ export default defineConfig({
     onConsoleLog: (): false => false,
     projects: [
       {
-        plugins: [workspaceSourcePlugin()],
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'jsdom',
@@ -70,7 +69,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'jsdom',
@@ -82,7 +80,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         resolve: SHARED_RESOLVE,
         test: {
           environment: 'node',
@@ -95,7 +92,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           // These share ONE Obsidian instance and mutate its global state, so they run serially in one worker.
@@ -119,7 +115,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           // Its OWN Obsidian instance and vault, so the bootstrap does not pollute the shared one.
@@ -134,7 +129,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           // Proves the CONSUMER wiring: a vault with NO plugin-under-test, the harness seeded as a consumer's
@@ -153,7 +147,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'node',
           // Two separately bundled plugins in one vault: two copies of the library share one renderer.

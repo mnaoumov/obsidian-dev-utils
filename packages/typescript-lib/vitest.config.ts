@@ -26,7 +26,6 @@ export default defineConfig({
     onConsoleLog: (): false => false,
     projects: [
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'jsdom',
           exclude: [...WORKSPACE_TEST_EXCLUDE, '**/*.integration.test.ts', ...GLOBAL_STUB_TEST_FILES],
@@ -37,7 +36,6 @@ export default defineConfig({
         }
       },
       {
-        plugins: [workspaceSourcePlugin()],
         test: {
           environment: 'jsdom',
           exclude: WORKSPACE_TEST_EXCLUDE,
