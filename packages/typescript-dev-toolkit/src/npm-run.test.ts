@@ -1,0 +1,81 @@
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import {
+  npmRun,
+  npmRunOptional,
+  NpmRunOptionalResult
+} from './npm-run.ts';
+
+const {
+  mockExecFromRoot,
+  mockGetPackageManagerRunCommand,
+  mockReadPackageJson
+} = vi.hoisted(() => ({
+  mockExecFromRoot: vi.fn(),
+  mockGetPackageManagerRunCommand: vi.fn<() => string[]>(),
+  mockReadPackageJson: vi.fn()
+}));
+
+vi.mock('./npm.ts', () => ({
+  readPackageJson: mockReadPackageJson
+}));
+
+vi.mock('./package-manager.ts', () => ({
+  getPackageManagerRunCommand: mockGetPackageManagerRunCommand
+}));
+
+vi.mock('./root.ts', () => ({
+  execFromRoot: mockExecFromRoot
+}));
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockExecFromRoot.mockResolvedValue('');
+  mockGetPackageManagerRunCommand.mockReturnValue(['npm', 'run']);
+});
+
+describe('npmRun', () => {
+  it('should run npm script when command exists in package.json', async () => {
+    mockReadPackageJson.mockResolvedValue({ scripts: { build: 'tsc' } });
+    await npmRun('build');
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['npm', 'run', 'build']);
+  });
+
+  it('should throw when command does not exist in package.json', async () => {
+    mockReadPackageJson.mockResolvedValue({ scripts: { build: 'tsc' } });
+    await expect(npmRun('lint')).rejects.toThrow('Command lint is not defined in the package.json');
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
+  });
+
+  it('should throw when scripts section is missing in package.json', async () => {
+    mockReadPackageJson.mockResolvedValue({});
+    await expect(npmRun('build')).rejects.toThrow('Command build is not defined in the package.json');
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
+  });
+});
+
+describe('npmRunOptional', () => {
+  it('should run npm script and report success when command exists in package.json', async () => {
+    mockReadPackageJson.mockResolvedValue({ scripts: { test: 'vitest' } });
+    expect(await npmRunOptional('test')).toBe(NpmRunOptionalResult.Success);
+    expect(mockExecFromRoot).toHaveBeenCalledWith(['npm', 'run', 'test']);
+  });
+
+  it('should report skipped when command does not exist in package.json', async () => {
+    mockReadPackageJson.mockResolvedValue({ scripts: { test: 'vitest' } });
+    expect(await npmRunOptional('unknown')).toBe(NpmRunOptionalResult.Skipped);
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
+  });
+
+  it('should report skipped when scripts section is missing in package.json', async () => {
+    mockReadPackageJson.mockResolvedValue({});
+    expect(await npmRunOptional('build')).toBe(NpmRunOptionalResult.Skipped);
+    expect(mockExecFromRoot).not.toHaveBeenCalled();
+  });
+});

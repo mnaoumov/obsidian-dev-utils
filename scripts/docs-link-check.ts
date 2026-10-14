@@ -11,6 +11,7 @@
  * {@link ./docs-gen/helpers/unrendered-alerts.ts}), since nothing else notices when the conversion stops.
  */
 
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
 import {
   readdir,
   readFile
@@ -22,7 +23,6 @@ import type {
   LinkCheckFileSystem
 } from './docs-gen/helpers/link-check.ts';
 
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
 import {
   collectBrokenExternalLinks,
   collectBrokenLinks,

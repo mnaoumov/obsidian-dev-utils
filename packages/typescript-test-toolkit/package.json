@@ -1,0 +1,95 @@
+{
+  "name": "@mnaoumov/typescript-test-toolkit",
+  "version": "107.4.1",
+  "description": "Generic test support for TypeScript projects: Vitest/Jest setup, async-operation tracking, strictProxy and mock helpers.",
+  "keywords": [
+    "typescript",
+    "testing",
+    "vitest",
+    "jest"
+  ],
+  "homepage": "https://github.com/mnaoumov/obsidian-dev-utils/tree/main/packages/typescript-test-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/mnaoumov/obsidian-dev-utils/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mnaoumov/obsidian-dev-utils.git",
+    "directory": "packages/typescript-test-toolkit"
+  },
+  "license": "MIT",
+  "author": "Michael Naumov",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@mnaoumov/source": "./src/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/index.d.mts",
+        "default": "./dist/lib/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/index.d.cts",
+        "default": "./dist/lib/cjs/index.cjs"
+      }
+    },
+    "./*": {
+      "@mnaoumov/source": "./src/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/*.d.mts",
+        "default": "./dist/lib/esm/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/*.d.cts",
+        "default": "./dist/lib/cjs/*.cjs"
+      }
+    }
+  },
+  "files": [
+    "**/package.json",
+    "dist/",
+    "!dist/*.tgz",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/run.mjs ../../scripts/build.ts",
+    "build:clean": "node ../../scripts/run.mjs ../../scripts/build-clean.ts",
+    "build:compile": "node ../../scripts/run.mjs ../../scripts/build-compile.ts",
+    "build:compile:typescript": "node ../../scripts/run.mjs ../../scripts/build-compile-typescript.ts",
+    "build:generate-exports": "node ../../scripts/run.mjs ../../scripts/build-generate-exports.ts",
+    "build:generate-index": "node ../../scripts/run.mjs ../../scripts/build-generate-index.ts",
+    "build:lib": "node ../../scripts/run.mjs ../../scripts/build-lib.ts",
+    "build:types": "node ../../scripts/run.mjs ../../scripts/build-types.ts",
+    "build:validate-declarations": "node ../../scripts/run.mjs ../../scripts/build-validate-declarations.ts",
+    "find-overexposed": "node ../../scripts/run.mjs ../../scripts/find-overexposed.ts",
+    "find-overexposed:fix": "node ../../scripts/run.mjs ../../scripts/find-overexposed-fix.ts",
+    "test": "node ../../scripts/run.mjs ../../scripts/package-test.ts",
+    "test:coverage": "node ../../scripts/run.mjs ../../scripts/package-test-coverage.ts",
+    "test:watch": "node ../../scripts/run.mjs ../../scripts/package-test-watch.ts"
+  },
+  "dependencies": {
+    "@mnaoumov/typescript-lib": "107.4.1"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.0",
+    "vitest": "^5.0.1"
+  },
+  "peerDependencies": {
+    "@jest/globals": "^30.5.2",
+    "vitest": "^5.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@jest/globals": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

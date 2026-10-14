@@ -1,0 +1,262 @@
+/**
+ * @file
+ *
+ * ESLint rule: require-super-call
+ *
+ * Reports an error when an `override` method does not call `super.methodName()`
+ * anywhere in its body. Overriding a method without calling `super` is almost
+ * always a mistake that silently breaks parent-class behavior (lifecycle hooks,
+ * initialization, event wiring, etc.).
+ *
+ * The super call can appear anywhere in the method body — as a standalone
+ * statement, awaited, assigned to a variable, or nested in any expression.
+ *
+ * The rule automatically skips methods where the parent implementation is
+ * `abstract`, since there is no concrete `super` to call.
+ *
+ * If the override intentionally replaces the parent implementation, disable the
+ * rule on that line with an explanatory comment.
+ */
+import type {
+  ParserServicesWithTypeInformation,
+  TSESTree
+} from '@typescript-eslint/utils';
+import type { Rule } from 'eslint';
+import type { Declaration } from 'typescript';
+
+import { assert } from '@mnaoumov/typescript-lib/type-guards';
+import {
+  canHaveModifiers,
+  getModifiers,
+  SyntaxKind
+} from 'typescript';
+
+import { toTSESTreeNode } from './ts-estree-node.ts';
+
+/**
+Message ID reported when an `override` method does not access its `super` counterpart.
+ */
+export const MESSAGE_ID = 'requireSuperCall';
+
+type MethodKind = 'get' | 'method' | 'set';
+
+interface OverrideMethodInfo {
+  hasSuperCall: boolean;
+  kind: MethodKind;
+  methodName: string;
+  node: TSESTree.MethodDefinition;
+  reportNode: Rule.Node;
+}
+
+/**
+ * ESLint rule requiring `override` methods to call `super.methodName()`, so the base implementation is not silently skipped.
+ */
+export const requireSuperCall: Rule.RuleModule = {
+  create(context) {
+    const methodStack: OverrideMethodInfo[] = [];
+
+    return {
+      'AssignmentExpression'(node: Rule.Node): void {
+        const current = methodStack.at(-1);
+        if (current?.kind !== 'set') {
+          return;
+        }
+
+        const assignNode = toTSESTreeNode(node) as TSESTree.AssignmentExpression;
+        if (isSuperPropertyAccess(assignNode.left, current.methodName)) {
+          current.hasSuperCall = true;
+        }
+      },
+      'CallExpression'(node: Rule.Node): void {
+        const current = methodStack.at(-1);
+        if (current?.kind !== 'method') {
+          return;
+        }
+
+        const callNode = toTSESTreeNode(node) as TSESTree.CallExpression;
+        if (isSuperMethodCall(callNode, current.methodName)) {
+          current.hasSuperCall = true;
+        }
+      },
+      'MemberExpression'(node: Rule.Node): void {
+        const current = methodStack.at(-1);
+        if (current?.kind !== 'get') {
+          return;
+        }
+
+        const memberNode = toTSESTreeNode(node) as TSESTree.MemberExpression;
+        if (isSuperPropertyAccess(memberNode, current.methodName)) {
+          current.hasSuperCall = true;
+        }
+      },
+      'MethodDefinition'(node: Rule.Node): void {
+        const methodNode = toTSESTreeNode(node) as TSESTree.MethodDefinition;
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
+        if (!methodNode.override || methodNode.key.type !== 'Identifier') {
+          return;
+        }
+
+        const kind = methodNode.kind === 'get' || methodNode.kind === 'set' ? methodNode.kind : 'method';
+
+        methodStack.push({
+          hasSuperCall: false,
+          kind,
+          methodName: methodNode.key.name,
+          node: methodNode,
+          reportNode: node
+        });
+      },
+      'MethodDefinition:exit'(): void {
+        const info = methodStack.at(-1);
+        if (!info) {
+          return;
+        }
+
+        methodStack.pop();
+
+        if (
+          info.hasSuperCall || isParentMethodAbstract({
+            context,
+            methodName: info.methodName,
+            methodNode: info.node
+          })
+        ) {
+          return;
+        }
+
+        context.report({
+          data: { kind: info.kind, methodName: info.methodName },
+          messageId: MESSAGE_ID,
+          node: info.reportNode
+        });
+      }
+    };
+  },
+  meta: {
+    docs: {
+      description: 'Require `override` methods to call `super.methodName()`'
+    },
+    messages: {
+      [MESSAGE_ID]: 'Override {{ kind }} `{{ methodName }}` must access `super.{{ methodName }}`.'
+    },
+    schema: [],
+    type: 'problem'
+  }
+};
+
+/**
+ * Parameters for {@link isParentMethodAbstract}.
+ */
+interface CheckIsParentMethodAbstractParams {
+  /**
+   * The ESLint rule context.
+   */
+  readonly context: Rule.RuleContext;
+
+  /**
+   * The method name to look up in the parent class.
+   */
+  readonly methodName: string;
+
+  /**
+   * The override method definition AST node.
+   */
+  readonly methodNode: TSESTree.MethodDefinition;
+}
+
+/**
+ * Checks whether a declaration has the `abstract` modifier.
+ *
+ * @param declaration - The TypeScript declaration to inspect.
+ * @returns `true` if the declaration is abstract.
+ */
+function isAbstract(declaration: Declaration): boolean {
+  assert(canHaveModifiers(declaration), 'Expected method declaration to support modifiers');
+
+  const modifiers = getModifiers(declaration);
+  return modifiers?.some(($module) => $module.kind === SyntaxKind.AbstractKeyword) ?? false;
+}
+
+/**
+ * Checks whether the parent class's version of the method is `abstract`.
+ *
+ * When type information is not available (e.g., parser configured without
+ * `projectService`), returns `false` so the rule conservatively reports.
+ *
+ * @param params - The parameters for the check.
+ * @returns `true` if the parent method is abstract.
+ */
+function isParentMethodAbstract(params: CheckIsParentMethodAbstractParams): boolean {
+  const { context, methodName, methodNode } = params;
+  const services = context.sourceCode.parserServices as Partial<ParserServicesWithTypeInformation>;
+
+  if (!services.program || !services.esTreeNodeToTSNodeMap) {
+    return false;
+  }
+
+  const checker = services.program.getTypeChecker();
+  const classDeclaration = methodNode.parent.parent;
+  const tsClassNode = services.esTreeNodeToTSNodeMap.get(classDeclaration);
+  const classType = checker.getTypeAtLocation(tsClassNode);
+  const baseTypes = classType.getBaseTypes();
+
+  if (!baseTypes) {
+    return false;
+  }
+
+  for (const baseType of baseTypes) {
+    const property = baseType.getProperty(methodName);
+
+    if (!property) {
+      continue;
+    }
+
+    const declarations = property.getDeclarations();
+
+    if (!declarations) {
+      continue;
+    }
+
+    for (const declaration of declarations) {
+      if (isAbstract(declaration)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Checks whether a call expression is `super.methodName(...)`.
+ *
+ * @param node - The call expression node.
+ * @param methodName - The expected method name.
+ * @returns `true` if the node is a matching super method call.
+ */
+function isSuperMethodCall(node: TSESTree.CallExpression, methodName: string): boolean {
+  const callee = node.callee;
+  /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
+  return callee.type === 'MemberExpression'
+    && callee.object.type === 'Super'
+    && callee.property.type === 'Identifier'
+    && callee.property.name === methodName;
+  /* eslint-enable @typescript-eslint/no-unsafe-enum-comparison -- Re-enable after multi-line string comparison block. */
+}
+
+/**
+ * Checks whether a node is a `super.propertyName` member expression.
+ *
+ * @param node - The AST node to check (MemberExpression or AssignmentExpression left-hand side).
+ * @param propertyName - The expected property name.
+ * @returns `true` if the node is a matching super property access.
+ */
+function isSuperPropertyAccess(node: TSESTree.Node, propertyName: string): boolean {
+  /* eslint-disable @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values. */
+  return node.type === 'MemberExpression'
+    && node.object.type === 'Super'
+    && node.property.type === 'Identifier'
+    && node.property.name === propertyName;
+  /* eslint-enable @typescript-eslint/no-unsafe-enum-comparison -- Re-enable after multi-line string comparison block. */
+}

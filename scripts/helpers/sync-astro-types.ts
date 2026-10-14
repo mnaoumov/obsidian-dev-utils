@@ -23,13 +23,13 @@
  * contents.
  */
 
-import { existsSync } from 'node:fs';
-
-import { ObsidianDevUtilsRepoPaths } from '../../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import {
   execFromRoot,
   resolvePathFromRootSafe
-} from '../../src/script-utils/root.ts';
+} from '@mnaoumov/typescript-dev-toolkit/root';
+import { existsSync } from 'node:fs';
+
+import { WorkspaceRepoPaths } from './workspace-repo-paths.ts';
 
 /**
  * Runs `astro sync` when Astro's generated ambient types are absent.
@@ -37,7 +37,7 @@ import {
  * @returns A {@link Promise} that resolves once the types are known to exist.
  */
 export async function syncAstroTypesIfMissing(): Promise<void> {
-  const typesPath = resolvePathFromRootSafe({ path: ObsidianDevUtilsRepoPaths.AstroGeneratedTypesDts });
+  const typesPath = resolvePathFromRootSafe({ path: WorkspaceRepoPaths.AstroGeneratedTypesDts });
   if (existsSync(typesPath)) {
     return;
   }

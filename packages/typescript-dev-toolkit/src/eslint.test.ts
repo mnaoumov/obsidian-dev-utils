@@ -1,0 +1,120 @@
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import type { ResolveToolCommandParams } from './package-manager.ts';
+import type { ResolvePathFromRootSafeParams } from './root.ts';
+
+import { lint } from './linters/eslint.ts';
+
+const {
+  mockCp,
+  mockExecFromRoot,
+  mockExistsSync,
+  mockResolvePathFromRootSafe,
+  mockResolveToolCommand
+} = vi.hoisted(() => ({
+  mockCp: vi.fn(),
+  mockExecFromRoot: vi.fn(),
+  mockExistsSync: vi.fn<(path: string) => boolean>(),
+  mockResolvePathFromRootSafe: vi.fn<(params: ResolvePathFromRootSafeParams) => string>(),
+  mockResolveToolCommand: vi.fn<(params: ResolveToolCommandParams) => string[]>()
+}));
+
+vi.mock('./root.ts', () => ({
+  execFromRoot: mockExecFromRoot,
+  resolvePathFromRootSafe: mockResolvePathFromRootSafe
+}));
+
+vi.mock('./package-manager.ts', () => ({
+  resolveToolCommand: mockResolveToolCommand
+}));
+
+vi.mock('node:fs', async (importOriginal) => {
+  const $module = await importOriginal<typeof import('node:fs')>();
+  return {
+    ...$module,
+    existsSync: mockExistsSync
+  };
+});
+
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const $module = await importOriginal<typeof import('node:fs/promises')>();
+  return {
+    ...$module,
+    cp: mockCp
+  };
+});
+
+vi.mock('@mnaoumov/typescript-lib/debug', () => ({
+  getLibDebugger: vi.fn(() => vi.fn())
+}));
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockExecFromRoot.mockResolvedValue('');
+  mockCp.mockResolvedValue(undefined);
+  mockResolvePathFromRootSafe.mockImplementation((params: ResolvePathFromRootSafeParams) => `/root/${params.path}`);
+  mockResolveToolCommand.mockImplementation((params: ResolveToolCommandParams) => [params.tool]);
+});
+
+describe('lint', () => {
+  it('should run eslint when config file exists', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint();
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['eslint', { batchedArguments: ['.'] }])
+    );
+    expect(mockCp).not.toHaveBeenCalled();
+  });
+
+  it('should pass --fix when shouldFix is true', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint({ shouldFix: true });
+    expect(mockExecFromRoot).toHaveBeenCalledWith(
+      expect.arrayContaining(['eslint', '--fix', { batchedArguments: ['.'] }])
+    );
+  });
+
+  it('should not pass --fix when shouldFix is false', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint({ shouldFix: false });
+    const call = mockExecFromRoot.mock.calls[0] as string[][];
+    expect(call[0]).not.toContain('--fix');
+  });
+
+  it('should make a warning fail the run, on the plain and the --fix run alike', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint();
+    await lint({ shouldFix: true });
+    expect(mockExecFromRoot.mock.calls[0]?.[0]).toEqual(['eslint', '--max-warnings', '0', '--no-warn-ignored', { batchedArguments: ['.'] }]);
+    expect(mockExecFromRoot.mock.calls[1]?.[0]).toEqual(['eslint', '--max-warnings', '0', '--no-warn-ignored', '--fix', { batchedArguments: ['.'] }]);
+  });
+
+  it('should keep the warning flags out of the batched arguments, so every batch of a split command line gets them', async () => {
+    mockExistsSync.mockReturnValue(true);
+    await lint({ paths: ['a.ts', 'b.ts'] });
+    const [command] = mockExecFromRoot.mock.calls[0] as [unknown[]];
+    expect(command.at(-1)).toEqual({ batchedArguments: ['a.ts', 'b.ts'] });
+    expect(command.slice(0, -1)).toEqual(['eslint', '--max-warnings', '0', '--no-warn-ignored']);
+  });
+
+  it('should copy the default config it is given when no config file exists', async () => {
+    mockExistsSync.mockReturnValue(false);
+    await lint({ defaultConfigFilePath: '/pkg/dist/templates/eslint.config.mts' });
+    expect(mockCp).toHaveBeenCalledTimes(1);
+    expect(mockCp).toHaveBeenCalledWith('/pkg/dist/templates/eslint.config.mts', '/root/eslint.config.mts');
+    expect(mockExecFromRoot).toHaveBeenCalledTimes(1);
+  });
+
+  it('should run eslint without copying anything when no config file exists and no default is given', async () => {
+    mockExistsSync.mockReturnValue(false);
+    await lint();
+    expect(mockCp).not.toHaveBeenCalled();
+    expect(mockExecFromRoot).toHaveBeenCalledTimes(1);
+  });
+});

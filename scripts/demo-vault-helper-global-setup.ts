@@ -15,6 +15,7 @@
  * start note, and resolved a probe module — all with no manual reload.
  */
 
+import type { DemoVaultHelperSettings } from '@mnaoumov/obsidian-lib/demo-vault-helper-settings';
 import type { PopulateFilesParams } from 'obsidian-integration-testing';
 import type { TestProject } from 'vitest/node';
 
@@ -28,8 +29,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { buildDemoVaultPopulate } from 'obsidian-integration-testing';
 import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
-
-import type { DemoVaultHelperSettings } from '../src/obsidian/demo-vault-helper-settings.ts';
 
 import { buildDemoVaultHelper } from './helpers/build-demo-vault-helper.ts';
 
@@ -45,7 +44,7 @@ const MODULES_ROOT = '_assets/CodeScriptToolkit';
 // CodeScript Toolkit resolves a single leading `/` against `modulesRoot`, so `/probe.ts` is `<modulesRoot>/probe.ts`.
 const PROBE_MODULE_PATH = '/probe.ts';
 
-const DIST_HELPER_DIR = join(import.meta.dirname, '../dist/demo-vault-helper');
+const DIST_HELPER_DIR = join(import.meta.dirname, '../packages/obsidian-dev-toolkit/dist/demo-vault-helper');
 
 const PROBE_MODULE = 'export const PROBE = \'ok\';\n';
 

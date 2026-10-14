@@ -1,0 +1,296 @@
+/**
+ * @file
+ *
+ * Contains utility functions for NPM package.json.
+ */
+
+import type {
+  PackageJson,
+  Promisable
+} from 'type-fest';
+
+import { normalizeOptionalProperties } from '@mnaoumov/typescript-lib/object-utils';
+import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+
+import type {
+  EditJsonParams,
+  EditJsonSyncParams
+} from './json.ts';
+import type { ResolvePathFromRootParams } from './root.ts';
+
+import {
+  editJson,
+  editJsonSync,
+  readJson,
+  readJsonSync,
+  writeJson,
+  writeJsonSync
+} from './json.ts';
+import { RepoPaths } from './repo-paths.ts';
+import { resolvePathFromRoot } from './root.ts';
+
+/**
+ * Options for {@link editNpmShrinkWrapJson}.
+ */
+export type EditNpmShrinkWrapJsonOptions = EditPackageJsonOptions;
+
+/**
+ * Options for {@link editPackageJson}.
+ */
+export interface EditPackageJsonOptions {
+  /**
+   * A current working folder where `package.json` is located.
+   */
+  readonly cwd?: string;
+
+  /**
+   * If `true`, skips editing if the file does not exist.
+   *
+   * @default `false`
+   */
+  readonly shouldSkipIfMissing?: boolean;
+}
+
+/**
+ * Options for {@link editPackageJsonSync}.
+ */
+export type EditPackageJsonSyncOptions = EditPackageJsonOptions;
+
+/**
+ * Options for {@link editPackageLockJson}.
+ */
+export type EditPackageLockJsonOptions = EditPackageJsonOptions;
+
+/**
+ * Options for {@link editPackageLockJsonSync}.
+ */
+export type EditPackageLockJsonSyncOptions = EditPackageJsonOptions;
+
+/**
+ * A type of the `package.json` file.
+ */
+
+/**
+ * A type of the `package-lock.json` file.
+ */
+export interface PackageLockJson extends Partial<PackageJson> {
+  /**
+   * Packages in the `package-lock.json` file.
+   */
+  packages?: Record<string, PackageJson>;
+}
+
+/**
+ * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
+ *
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
+ * @param options - Additional options for editing.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
+ */
+export async function editNpmShrinkWrapJson(
+  editFunction: (packageLockJson: PackageLockJson) => Promisable<void>,
+  options: EditNpmShrinkWrapJsonOptions = {}
+): Promise<void> {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFunction, path: getNpmShrinkWrapJsonPath(cwd), shouldSkipIfMissing }));
+}
+
+/**
+ * Reads, edits, and writes back the `package.json` file using the provided edit function.
+ *
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
+ * @param options - Additional options for editing.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
+ */
+export async function editPackageJson(
+  editFunction: (packageJson: PackageJson) => Promisable<void>,
+  options: EditPackageJsonOptions = {}
+): Promise<void> {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
+}
+
+/**
+ * Reads, edits, and writes back the `package.json` file using the provided edit function.
+ *
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
+ * @param options - Additional options for editing.
+ */
+export function editPackageJsonSync(
+  editFunction: (packageJson: PackageJson) => void,
+  options: EditPackageJsonSyncOptions = {}
+): void {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  editJsonSync<PackageJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageJson>>({ editFunction, path: getPackageJsonPath(cwd), shouldSkipIfMissing }));
+}
+
+/**
+ * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
+ *
+ * @param editFunction - The function to edit the parsed `PackageJson` object.
+ * @param options - Additional options for editing.
+ * @returns A {@link Promise} that resolves when the file has been edited and written.
+ */
+export async function editPackageLockJson(
+  editFunction: (packageLockJson: PackageLockJson) => Promisable<void>,
+  options: EditPackageLockJsonOptions = {}
+): Promise<void> {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  await editJson<PackageJson>(normalizeOptionalProperties<EditJsonParams<PackageJson>>({ editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
+}
+
+/**
+ * Reads, edits, and writes back the `package-lock.json` file using the provided edit function.
+ *
+ * @param editFunction - The function to edit the parsed `PackageLockJson` object.
+ * @param options - Additional options for editing.
+ */
+export function editPackageLockJsonSync(
+  editFunction: (packageLockJson: PackageLockJson) => void,
+  options: EditPackageLockJsonSyncOptions = {}
+): void {
+  const {
+    cwd,
+    shouldSkipIfMissing
+  } = options;
+  editJsonSync<PackageLockJson>(normalizeOptionalProperties<EditJsonSyncParams<PackageLockJson>>({ editFunction, path: getPackageLockJsonPath(cwd), shouldSkipIfMissing }));
+}
+
+/**
+ * Resolves the path to the `npm-shrinkwrap.json` file in the specified folder or in the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `npm-shrinkwrap.json` is located.
+ * @returns The resolved path to the `npm-shrinkwrap.json` file.
+ */
+export function getNpmShrinkWrapJsonPath(cwd?: string): string {
+  return ensureNonNullable(
+    resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path: RepoPaths.NpmShrinkwrapJson })),
+    'Could not determine the npm-shrinkwrap.json path'
+  );
+}
+
+/**
+ * Resolves the path to the `package.json` file in the specified folder or in the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `package.json` is located.
+ * @returns The resolved path to the `package.json` file.
+ */
+export function getPackageJsonPath(cwd?: string): string {
+  return ensureNonNullable(
+    resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path: RepoPaths.PackageJson })),
+    'Could not determine the package.json path'
+  );
+}
+
+/**
+ * Resolves the path to the `package-lock.json` file in the specified folder or in the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `package-lock.json` is located.
+ * @returns The resolved path to the `package-lock.json` file.
+ */
+export function getPackageLockJsonPath(cwd?: string): string {
+  return ensureNonNullable(
+    resolvePathFromRoot(normalizeOptionalProperties<ResolvePathFromRootParams>({ cwd, path: RepoPaths.PackageLockJson })),
+    'Could not determine the package-lock.json path'
+  );
+}
+
+/**
+ * Reads the `package.json` file from the specified folder or from the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `package.json` is located.
+ * @returns A {@link Promise} that resolves with the parsed `PackageJson` object.
+ */
+export async function readPackageJson(cwd?: string): Promise<PackageJson> {
+  return await readJson<PackageJson>(getPackageJsonPath(cwd));
+}
+
+/**
+ * Reads the `package.json` file from the specified folder or from the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `package.json` is located.
+ * @returns The parsed `PackageJson` object.
+ */
+export function readPackageJsonSync(cwd?: string): PackageJson {
+  return readJsonSync<PackageJson>(getPackageJsonPath(cwd));
+}
+
+/**
+ * Reads the `package-lock.json` file from the specified folder or from the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `package-lock.json` is located.
+ * @returns A {@link Promise} that resolves with the parsed `PackageJson` object.
+ */
+export async function readPackageLockJson(cwd?: string): Promise<PackageLockJson> {
+  return await readJson<PackageLockJson>(getPackageLockJsonPath(cwd));
+}
+
+/**
+ * Reads the `package-lock.json` file from the specified folder or from the root if no folder is specified.
+ *
+ * @param cwd - The current working folder where `package-lock.json` is located.
+ * @returns The parsed `PackageLockJson` object.
+ */
+export function readPackageLockJsonSync(cwd?: string): PackageLockJson {
+  return readJsonSync<PackageLockJson>(getPackageLockJsonPath(cwd));
+}
+
+/**
+ * Writes the provided `PackageJson` object to the `package.json` file in the specified folder or in the root.
+ *
+ * @param packageJson - The `PackageJson` object to write.
+ * @param cwd - The current working folder where `package.json` is located.
+ * @returns A {@link Promise} that resolves when the file has been written.
+ */
+export async function writePackageJson(packageJson: PackageJson, cwd?: string): Promise<void> {
+  await writeJson(getPackageJsonPath(cwd), packageJson);
+}
+
+/**
+ * Writes the provided `PackageJson` object to the `package.json` file in the specified folder or in the root.
+ *
+ * @param packageJson - The `PackageJson` object to write.
+ * @param cwd - The current working folder where `package.json` is located.
+ */
+export function writePackageJsonSync(packageJson: PackageJson, cwd?: string): void {
+  writeJsonSync(getPackageJsonPath(cwd), packageJson);
+}
+
+/**
+ * Writes the provided `PackageJson` object to the `package-lock.json` file in the specified folder or in the root.
+ *
+ * @param packageLockJson - The `PackageLockJson` object to write.
+ * @param cwd - The current working folder where `package-lock.json` is located.
+ * @returns A {@link Promise} that resolves when the file has been written.
+ */
+export async function writePackageLockJson(packageLockJson: PackageLockJson, cwd?: string): Promise<void> {
+  await writeJson(getPackageLockJsonPath(cwd), packageLockJson);
+}
+
+/**
+ * Writes the provided `PackageLockJson` object to the `package-lock.json` file in the specified folder or in the root.
+ *
+ * @param packageLockJson - The `PackageLockJson` object to write.
+ * @param cwd - The current working folder where `package-lock.json` is located.
+ */
+export function writePackageLockJsonSync(packageLockJson: PackageLockJson, cwd?: string): void {
+  writeJsonSync(getPackageLockJsonPath(cwd), packageLockJson);
+}
+
+// TypeScript's declaration emit adds `with { 'resolution-mode': 'import' }` to import declarations only.
+// A re-export-from would thus resolve ESM-only `type-fest` under `require` in the `.d.cts` build (TS1479).
+// Re-exporting the binding imported above keeps that resolution mode attached.
+// eslint-disable-next-line unicorn/prefer-export-from -- `export…from` re-introduces TS1479, see above.
+export type { PackageJson };

@@ -12,9 +12,8 @@
  * thousands of generated pages reference it — and run through a bounded concurrency pool.
  */
 
+import { assertNever } from '@mnaoumov/typescript-lib/type-guards';
 import { normalize } from 'node:path/posix';
-
-import { assertNever } from '../../../src/type-guards.ts';
 
 const LINK_ATTRIBUTE_REGEX = /\b(?:href|src)=(?<quote>['"])(?<value>.*?)\k<quote>/giu;
 const ID_ATTRIBUTE_REGEX = /\bid=(?<quote>['"])(?<value>.*?)\k<quote>/giu;

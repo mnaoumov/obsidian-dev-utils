@@ -1,10 +1,9 @@
-import process from 'node:process';
-
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
 import {
   gate,
   parseGateArguments
-} from '../src/script-utils/gate.ts';
+} from '@mnaoumov/typescript-dev-toolkit/gate';
+import process from 'node:process';
 
 const [, , ...$arguments] = process.argv;
 

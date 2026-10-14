@@ -1,4 +1,5 @@
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+
 import { buildDemoVaultHelper } from './helpers/build-demo-vault-helper.ts';
 
 await wrapCliTask(async () => {

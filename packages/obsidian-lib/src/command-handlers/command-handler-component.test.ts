@@ -1,0 +1,503 @@
+/**
+ * @file
+ *
+ * Tests for {@link CommandHandlerComponent}.
+ */
+
+import type { DisposableEx } from '@mnaoumov/typescript-lib/disposable';
+import type { Command } from 'obsidian';
+
+import {
+  CallbackDisposable,
+  dispose
+} from '@mnaoumov/typescript-lib/disposable';
+import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import {
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import type { ActiveFileProvider } from '../active-file-provider.ts';
+import type { CommandRegistrar } from '../command-registrar.ts';
+import type {
+  FileMenuEventHandler,
+  MenuEventRegistrar
+} from '../menu-event-registrar.ts';
+import type {
+  CommandHandlerConstructorParams,
+  CommandHandlerRegistrationContext
+} from './command-handler.ts';
+
+import { ComponentEx } from '../components/component-ex.ts';
+import { CommandHandlerComponent } from './command-handler-component.ts';
+import { CommandHandler } from './command-handler.ts';
+
+interface CreateComponentOwnedByParams {
+  readonly additionalMenuEventRegistrars?: readonly MenuEventRegistrar[] | undefined;
+  readonly commandLifetimeOwnerProvider: () => ComponentEx;
+  readonly commandRegistrar: CommandRegistrar;
+  readonly menuEventRegistrar?: MenuEventRegistrar | undefined;
+}
+
+interface TrackedMenuEventRegistrar {
+  menuDisposeSpies: ReturnType<typeof vi.fn>[];
+  registrar: MenuEventRegistrar;
+}
+
+class AllMenusRegisteringHandler extends CommandHandler {
+  public override buildCommand(): Command {
+    return {
+      icon: this.icon,
+      id: this.id,
+      name: this.name
+    };
+  }
+
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
+    context.menuEventRegistrar.registerEditorMenuEventHandler(vi.fn());
+    context.menuEventRegistrar.registerFileMenuEventHandler(vi.fn());
+    context.menuEventRegistrar.registerFilesMenuEventHandler(vi.fn());
+    context.menuEventRegistrar.registerMarkdownViewportMenuEventHandler(vi.fn());
+  }
+}
+
+class MenuRegisteringHandler extends CommandHandler {
+  public readonly menuHandler: FileMenuEventHandler = vi.fn();
+
+  public override buildCommand(): Command {
+    return {
+      icon: this.icon,
+      id: this.id,
+      name: this.name
+    };
+  }
+
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
+    context.menuEventRegistrar.registerFileMenuEventHandler(this.menuHandler);
+  }
+}
+
+class TestHandler extends CommandHandler {
+  public registeredContext?: CommandHandlerRegistrationContext;
+
+  public override buildCommand(): Command {
+    return {
+      icon: this.icon,
+      id: this.id,
+      name: this.name
+    };
+  }
+
+  public override async onRegistered(context: CommandHandlerRegistrationContext): Promise<void> {
+    await super.onRegistered(context);
+    this.registeredContext = context;
+  }
+}
+
+function createComponent(commandRegistrar: CommandRegistrar): CommandHandlerComponent {
+  return new CommandHandlerComponent({
+    activeFileProvider: createMockActiveFileProvider(),
+    commandRegistrar,
+    menuEventRegistrar: createMockMenuEventRegistrar(),
+    pluginName: 'Test Plugin'
+  });
+}
+
+function createComponentOwnedBy(params: CreateComponentOwnedByParams): CommandHandlerComponent {
+  return new CommandHandlerComponent({
+    activeFileProvider: createMockActiveFileProvider(),
+    additionalMenuEventRegistrars: params.additionalMenuEventRegistrars,
+    commandLifetimeOwnerProvider: params.commandLifetimeOwnerProvider,
+    commandRegistrar: params.commandRegistrar,
+    menuEventRegistrar: params.menuEventRegistrar ?? createMockMenuEventRegistrar(),
+    pluginName: 'Test Plugin'
+  });
+}
+
+function createComponentWith(
+  commandRegistrar: CommandRegistrar,
+  menuEventRegistrar: MenuEventRegistrar,
+  additionalMenuEventRegistrars?: readonly MenuEventRegistrar[]
+): CommandHandlerComponent {
+  return new CommandHandlerComponent({
+    activeFileProvider: createMockActiveFileProvider(),
+    additionalMenuEventRegistrars,
+    commandRegistrar,
+    menuEventRegistrar,
+    pluginName: 'Test Plugin'
+  });
+}
+
+function createMockActiveFileProvider(): ActiveFileProvider {
+  return strictProxy<ActiveFileProvider>({});
+}
+
+function createMockCommandRegistrar(): CommandRegistrar {
+  return strictProxy<CommandRegistrar>({
+    addCommand: vi.fn(),
+    removeCommand: vi.fn()
+  });
+}
+
+function createMockMenuEventRegistrar(): MenuEventRegistrar {
+  return strictProxy<MenuEventRegistrar>({});
+}
+
+function createParams(overrides?: Partial<CommandHandlerConstructorParams>): CommandHandlerConstructorParams {
+  return {
+    icon: 'test-icon',
+    id: 'test-cmd',
+    name: 'Test Command',
+    ...overrides
+  };
+}
+
+function createTrackedMenuEventRegistrar(): TrackedMenuEventRegistrar {
+  const menuDisposeSpies: ReturnType<typeof vi.fn>[] = [];
+
+  function make(): DisposableEx {
+    const spy = vi.fn();
+    menuDisposeSpies.push(spy);
+    return new CallbackDisposable({ callback: spy });
+  }
+
+  const registrar = strictProxy<MenuEventRegistrar>({
+    registerEditorMenuEventHandler: () => make(),
+    registerFileMenuEventHandler: () => make(),
+    registerFilesMenuEventHandler: () => make(),
+    registerMarkdownViewportMenuEventHandler: () => make()
+  });
+
+  return {
+    menuDisposeSpies,
+    registrar
+  };
+}
+
+describe('CommandHandlerComponent', () => {
+  it('should add the built command via the registrar when handlers are registered', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = createComponent(commandRegistrar);
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams())]);
+
+    expect(commandRegistrar.addCommand).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'test-cmd',
+        name: 'Test Command'
+      })
+    );
+  });
+
+  it('should provide registration context with activeFileProvider and menuEventRegistrar', async () => {
+    const commandHandler = new TestHandler(createParams());
+    const component = createComponent(createMockCommandRegistrar());
+
+    await component.registerCommandHandlers(() => [commandHandler]);
+    expect(commandHandler.registeredContext).toBeDefined();
+    expect(commandHandler.registeredContext?.activeFileProvider).toBeDefined();
+    expect(commandHandler.registeredContext?.menuEventRegistrar).toBeDefined();
+  });
+
+  it('should not mutate handler id/name after addCommand', async () => {
+    const addCommand = vi.fn((command: Command) => {
+      // Simulate Obsidian mutating the command.
+      command.id = 'modified-id';
+      command.name = 'Modified Name';
+    });
+    const commandRegistrar = createMockCommandRegistrar();
+    vi.mocked(commandRegistrar.addCommand).mockImplementation(addCommand);
+    const commandHandler = new TestHandler(createParams({ id: 'original-id', name: 'Original Name' }));
+    const component = createComponent(commandRegistrar);
+
+    await component.registerCommandHandlers(() => [commandHandler]);
+
+    // Handler should be unaffected.
+    expect(commandHandler.buildCommand().id).toBe('original-id');
+    expect(commandHandler.buildCommand().name).toBe('Original Name');
+  });
+
+  it('should removeCommand with the pre-registration id even after addCommand prefixes command.id', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    // Mirror Obsidian's Plugin.addCommand, which mutates command.id by prefixing it with the plugin id.
+    vi.mocked(commandRegistrar.addCommand).mockImplementation((command: Command) => {
+      command.id = `test-plugin:${command.id}`;
+    });
+    const component = createComponent(commandRegistrar);
+
+    const disposable = await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+
+    dispose(disposable);
+
+    // Plugin.removeCommand re-prefixes, so it must receive the original unprefixed id, not the mutated one.
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
+  });
+
+  it('should removeCommand on component unload', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = createComponent(commandRegistrar);
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'my-cmd' }))]);
+    component.unload();
+
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('my-cmd');
+  });
+
+  it('should dispose a command\'s menu-event registrations when the returned disposable is disposed', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    expect(menuDisposeSpies).toHaveLength(1);
+    const menuDisposeSpy = menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).not.toHaveBeenCalled();
+
+    dispose(disposable);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not dispose another command\'s menu events when one command is disposed', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    const disposableA = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'a' }))]);
+    await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams({ id: 'b' }))]);
+    expect(menuDisposeSpies).toHaveLength(2);
+    const menuDisposeSpyA = menuDisposeSpies[0];
+    const menuDisposeSpyB = menuDisposeSpies[1];
+    assertNonNullable(menuDisposeSpyA);
+    assertNonNullable(menuDisposeSpyB);
+
+    dispose(disposableA);
+    expect(menuDisposeSpyA).toHaveBeenCalledTimes(1);
+    expect(menuDisposeSpyB).not.toHaveBeenCalled();
+  });
+
+  it('should dispose a menu event registered after the returned disposable was already disposed', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+    const commandHandler = new TestHandler(createParams());
+
+    const disposable = await component.registerCommandHandlers(() => [commandHandler]);
+    dispose(disposable);
+
+    // A handler may keep its scope past `onRegistered` and register menu events later — a bridge
+    // binding at layout-ready, say — so a post-dispose registration must be disposed immediately.
+    const registeredContext = commandHandler.registeredContext;
+    assertNonNullable(registeredContext);
+    registeredContext.menuEventRegistrar.registerFileMenuEventHandler(vi.fn());
+
+    expect(menuDisposeSpies).toHaveLength(1);
+    const menuDisposeSpy = menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should reject when the factory hands out an already-registered handler instance', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
+    const sharedCommandHandler = new MenuRegisteringHandler(createParams({ id: 'shared-cmd' }));
+
+    // The additional surface re-invokes the factory, so a shared instance is registered a second time.
+    await expect(component.registerCommandHandlers(() => [sharedCommandHandler])).rejects.toThrow(
+      'Command handler \'shared-cmd\' is already registered.'
+    );
+  });
+
+  it('should still remove a command added before a failing handler when the component unloads', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const component = createComponent(commandRegistrar);
+    component.load();
+    const sharedCommandHandler = new TestHandler(createParams({ id: 'shared-cmd' }));
+
+    await expect(component.registerCommandHandlers(() => [
+      new TestHandler(createParams({ id: 'first-cmd' })),
+      sharedCommandHandler,
+      sharedCommandHandler
+    ])).rejects.toThrow('Command handler \'shared-cmd\' is already registered.');
+
+    // The batch rejected, so the caller never got a disposable — the component's own unload is what
+    // keeps the commands added before the failure from outliving it.
+    component.unload();
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('first-cmd');
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('shared-cmd');
+  });
+
+  it('should dispose editor-, file-, files-, and markdown-viewport-menu registrations for a command', async () => {
+    const { menuDisposeSpies, registrar } = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), registrar);
+
+    const disposable = await component.registerCommandHandlers(() => [new AllMenusRegisteringHandler(createParams())]);
+    expect(menuDisposeSpies).toHaveLength(4);
+    dispose(disposable);
+    for (const menuDisposeSpy of menuDisposeSpies) {
+      expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it('should build a separate handler set for every additional menu surface', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createMockMenuEventRegistrar(), [additional.registrar]);
+    const commandHandlers: TestHandler[] = [];
+    const commandHandlerFactory = vi.fn(() => {
+      const commandHandler = new TestHandler(createParams());
+      commandHandlers.push(commandHandler);
+      return [commandHandler];
+    });
+
+    await component.registerCommandHandlers(commandHandlerFactory);
+    // Once for Obsidian's own workspace events, once for the additional surface.
+    expect(commandHandlerFactory).toHaveBeenCalledTimes(2);
+    expect(commandHandlers).toHaveLength(2);
+    expect(commandHandlers[0]).not.toBe(commandHandlers[1]);
+  });
+
+  it('should add each command exactly once regardless of how many menu surfaces there are', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(commandRegistrar, createMockMenuEventRegistrar(), [additional.registrar]);
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams())]);
+    expect(commandRegistrar.addCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it('should force the section submenu off for an additional menu surface only', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createMockMenuEventRegistrar(), [additional.registrar]);
+    const commandHandlers: TestHandler[] = [];
+
+    await component.registerCommandHandlers(() => {
+      const commandHandler = new TestHandler(createParams());
+      commandHandlers.push(commandHandler);
+      return [commandHandler];
+    });
+    expect(commandHandlers).toHaveLength(2);
+    expect(commandHandlers[0]?.registeredContext?.shouldAddCommandToSubmenu).toBeUndefined();
+    expect(commandHandlers[1]?.registeredContext?.shouldAddCommandToSubmenu).toBe(false);
+  });
+
+  it('should dispose an additional surface\'s menu registrations when the returned disposable is disposed', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
+
+    const disposable = await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    expect(additional.menuDisposeSpies).toHaveLength(1);
+    const menuDisposeSpy = additional.menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).not.toHaveBeenCalled();
+
+    dispose(disposable);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should dispose an additional surface\'s menu registrations on component unload', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const component = createComponentWith(createMockCommandRegistrar(), createTrackedMenuEventRegistrar().registrar, [additional.registrar]);
+    component.load();
+
+    await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    component.unload();
+
+    const menuDisposeSpy = additional.menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should tie a command removal to the provider-supplied lifetime owner rather than to itself', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const lifetimeOwner = new ComponentEx();
+    lifetimeOwner.load();
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => lifetimeOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'owned-cmd' }))]);
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+
+    lifetimeOwner.unload();
+
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('owned-cmd');
+    // The registering component outlives the batch it registered — that asymmetry is the whole point.
+    expect(component._loaded).toBe(true);
+  });
+
+  it('should leave a command registered when the component unloads but its lifetime owner does not', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const lifetimeOwner = new ComponentEx();
+    lifetimeOwner.load();
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => lifetimeOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'owned-cmd' }))]);
+    component.unload();
+
+    // The owner is authoritative: naming one takes the registration OFF the component own unload.
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+  });
+
+  it('should re-resolve the lifetime owner on every call, so each batch lands on the owner current at the time', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const firstOwner = new ComponentEx();
+    const secondOwner = new ComponentEx();
+    firstOwner.load();
+    secondOwner.load();
+    let currentOwner = firstOwner;
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => currentOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'first-cmd' }))]);
+    currentOwner = secondOwner;
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'second-cmd' }))]);
+
+    firstOwner.unload();
+
+    // A provider answer captured once at construction would have taken both commands down together.
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('first-cmd');
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalledWith('second-cmd');
+  });
+
+  it('should let a call name its own lifetime owner, overriding the provider', async () => {
+    const commandRegistrar = createMockCommandRegistrar();
+    const providedOwner = new ComponentEx();
+    providedOwner.load();
+    const component = createComponentOwnedBy({ commandLifetimeOwnerProvider: () => providedOwner, commandRegistrar });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new TestHandler(createParams({ id: 'override-cmd' }))], { lifetimeOwner: component });
+
+    providedOwner.unload();
+    expect(commandRegistrar.removeCommand).not.toHaveBeenCalled();
+
+    component.unload();
+    expect(commandRegistrar.removeCommand).toHaveBeenCalledWith('override-cmd');
+  });
+
+  it('should tie the additional surface menu registrations to the lifetime owner too', async () => {
+    const additional = createTrackedMenuEventRegistrar();
+    const lifetimeOwner = new ComponentEx();
+    lifetimeOwner.load();
+    const component = createComponentOwnedBy({
+      additionalMenuEventRegistrars: [additional.registrar],
+      commandLifetimeOwnerProvider: () => lifetimeOwner,
+      commandRegistrar: createMockCommandRegistrar(),
+      menuEventRegistrar: createTrackedMenuEventRegistrar().registrar
+    });
+    component.load();
+
+    await component.registerCommandHandlers(() => [new MenuRegisteringHandler(createParams())]);
+    const menuDisposeSpy = additional.menuDisposeSpies[0];
+    assertNonNullable(menuDisposeSpy);
+    expect(menuDisposeSpy).not.toHaveBeenCalled();
+
+    lifetimeOwner.unload();
+
+    expect(menuDisposeSpy).toHaveBeenCalledTimes(1);
+  });
+});

@@ -1,6 +1,6 @@
-import type { MarkdownlintCli2ConfigurationSchema as MarkdownlintCli2ConfigSchema } from '../src/script-utils/linters/markdownlint-types/@types/markdownlint-cli2-config-schema.d.ts';
+import type { MarkdownlintCli2ConfigurationSchema as MarkdownlintCli2ConfigSchema } from '@mnaoumov/typescript-dev-toolkit/linters/markdownlint-types/@types/markdownlint-cli2-config-schema';
 
-import { obsidianDevUtilsConfig } from '../src/script-utils/linters/markdownlint-cli2-config.ts';
+import { obsidianDevUtilsConfig } from '@mnaoumov/typescript-dev-toolkit/linters/markdownlint-cli2-config';
 
 export const config: MarkdownlintCli2ConfigSchema = {
   ...obsidianDevUtilsConfig,

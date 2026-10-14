@@ -1,0 +1,266 @@
+{
+  "name": "@mnaoumov/obsidian-dev-toolkit",
+  "version": "107.4.1",
+  "description": "Tooling for Obsidian plugin development: esbuild plugin builder, shared ESLint/Vitest configs, demo vaults and the release script.",
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "tooling"
+  ],
+  "homepage": "https://github.com/mnaoumov/obsidian-dev-utils/tree/main/packages/obsidian-dev-toolkit#readme",
+  "bugs": {
+    "url": "https://github.com/mnaoumov/obsidian-dev-utils/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mnaoumov/obsidian-dev-utils.git",
+    "directory": "packages/obsidian-dev-toolkit"
+  },
+  "license": "MIT",
+  "author": "Michael Naumov",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@mnaoumov/source": "./src/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/index.d.mts",
+        "default": "./dist/lib/esm/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/index.d.cts",
+        "default": "./dist/lib/cjs/index.cjs"
+      }
+    },
+    "./*": {
+      "@mnaoumov/source": "./src/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/*.d.mts",
+        "default": "./dist/lib/esm/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/*.d.cts",
+        "default": "./dist/lib/cjs/*.cjs"
+      }
+    },
+    "./bundlers": {
+      "@mnaoumov/source": "./src/bundlers/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/bundlers/index.d.mts",
+        "default": "./dist/lib/esm/bundlers/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/bundlers/index.d.cts",
+        "default": "./dist/lib/cjs/bundlers/index.cjs"
+      }
+    },
+    "./bundlers/*": {
+      "@mnaoumov/source": "./src/bundlers/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/bundlers/*.d.mts",
+        "default": "./dist/lib/esm/bundlers/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/bundlers/*.d.cts",
+        "default": "./dist/lib/cjs/bundlers/*.cjs"
+      }
+    },
+    "./bundlers/esbuild-impl": {
+      "@mnaoumov/source": "./src/bundlers/esbuild-impl/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/bundlers/esbuild-impl/index.d.mts",
+        "default": "./dist/lib/esm/bundlers/esbuild-impl/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/bundlers/esbuild-impl/index.d.cts",
+        "default": "./dist/lib/cjs/bundlers/esbuild-impl/index.cjs"
+      }
+    },
+    "./bundlers/esbuild-impl/*": {
+      "@mnaoumov/source": "./src/bundlers/esbuild-impl/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/bundlers/esbuild-impl/*.d.mts",
+        "default": "./dist/lib/esm/bundlers/esbuild-impl/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/bundlers/esbuild-impl/*.d.cts",
+        "default": "./dist/lib/cjs/bundlers/esbuild-impl/*.cjs"
+      }
+    },
+    "./formatters": {
+      "@mnaoumov/source": "./src/formatters/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/formatters/index.d.mts",
+        "default": "./dist/lib/esm/formatters/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/formatters/index.d.cts",
+        "default": "./dist/lib/cjs/formatters/index.cjs"
+      }
+    },
+    "./formatters/*": {
+      "@mnaoumov/source": "./src/formatters/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/formatters/*.d.mts",
+        "default": "./dist/lib/esm/formatters/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/formatters/*.d.cts",
+        "default": "./dist/lib/cjs/formatters/*.cjs"
+      }
+    },
+    "./linters": {
+      "@mnaoumov/source": "./src/linters/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/linters/index.d.mts",
+        "default": "./dist/lib/esm/linters/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/linters/index.d.cts",
+        "default": "./dist/lib/cjs/linters/index.cjs"
+      }
+    },
+    "./linters/*": {
+      "@mnaoumov/source": "./src/linters/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/linters/*.d.mts",
+        "default": "./dist/lib/esm/linters/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/linters/*.d.cts",
+        "default": "./dist/lib/cjs/linters/*.cjs"
+      }
+    },
+    "./linters/eslint-rules": {
+      "@mnaoumov/source": "./src/linters/eslint-rules/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/linters/eslint-rules/index.d.mts",
+        "default": "./dist/lib/esm/linters/eslint-rules/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/linters/eslint-rules/index.d.cts",
+        "default": "./dist/lib/cjs/linters/eslint-rules/index.cjs"
+      }
+    },
+    "./linters/eslint-rules/*": {
+      "@mnaoumov/source": "./src/linters/eslint-rules/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/linters/eslint-rules/*.d.mts",
+        "default": "./dist/lib/esm/linters/eslint-rules/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/linters/eslint-rules/*.d.cts",
+        "default": "./dist/lib/cjs/linters/eslint-rules/*.cjs"
+      }
+    },
+    "./test-runners": {
+      "@mnaoumov/source": "./src/test-runners/index.ts",
+      "import": {
+        "types": "./dist/lib/esm/test-runners/index.d.mts",
+        "default": "./dist/lib/esm/test-runners/index.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/test-runners/index.d.cts",
+        "default": "./dist/lib/cjs/test-runners/index.cjs"
+      }
+    },
+    "./test-runners/*": {
+      "@mnaoumov/source": "./src/test-runners/*.ts",
+      "import": {
+        "types": "./dist/lib/esm/test-runners/*.d.mts",
+        "default": "./dist/lib/esm/test-runners/*.mjs"
+      },
+      "require": {
+        "types": "./dist/lib/cjs/test-runners/*.d.cts",
+        "default": "./dist/lib/cjs/test-runners/*.cjs"
+      }
+    }
+  },
+  "files": [
+    "**/package.json",
+    "dist/",
+    "!dist/*.tgz",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/run.mjs ../../scripts/build.ts",
+    "build:clean": "node ../../scripts/run.mjs ../../scripts/build-clean.ts",
+    "build:compile": "node ../../scripts/run.mjs ../../scripts/build-compile.ts",
+    "build:compile:typescript": "node ../../scripts/run.mjs ../../scripts/build-compile-typescript.ts",
+    "build:demo-vault-helper": "node ../../scripts/run.mjs ../../scripts/build-demo-vault-helper.ts",
+    "build:generate-exports": "node ../../scripts/run.mjs ../../scripts/build-generate-exports.ts",
+    "build:generate-index": "node ../../scripts/run.mjs ../../scripts/build-generate-index.ts",
+    "build:integration-test-plugin": "node ../../scripts/run.mjs ../../scripts/build-integration-test-plugin.ts",
+    "build:lib": "node ../../scripts/run.mjs ../../scripts/build-lib.ts",
+    "build:templates": "node ../../scripts/run.mjs ../../scripts/build-templates.ts",
+    "build:types": "node ../../scripts/run.mjs ../../scripts/build-types.ts",
+    "build:validate-declarations": "node ../../scripts/run.mjs ../../scripts/build-validate-declarations.ts",
+    "build:validate-templates": "node ../../scripts/run.mjs ../../scripts/build-validate-templates.ts",
+    "find-overexposed": "node ../../scripts/run.mjs ../../scripts/find-overexposed.ts",
+    "find-overexposed:fix": "node ../../scripts/run.mjs ../../scripts/find-overexposed-fix.ts",
+    "test": "node ../../scripts/run.mjs ../../scripts/package-test.ts",
+    "test:coverage": "node ../../scripts/run.mjs ../../scripts/package-test-coverage.ts",
+    "test:watch": "node ../../scripts/run.mjs ../../scripts/package-test-watch.ts"
+  },
+  "dependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "@eslint/config-helpers": "^0.7.0",
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^2.1.0",
+    "@mnaoumov/obsidian-lib": "107.4.1",
+    "@mnaoumov/typescript-dev-toolkit": "107.4.1",
+    "@mnaoumov/typescript-lib": "107.4.1",
+    "@mnaoumov/typescript-test-toolkit": "107.4.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@types/babel__core": "^7.20.5",
+    "@types/eslint": "^9.6.1",
+    "@types/pug": "^2.0.10",
+    "@typescript-eslint/utils": "^8.71.2",
+    "esbuild": "^0.28.2",
+    "esbuild-sass-plugin": "^3.7.0",
+    "eslint": "^10.11.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-jsdoc": "^64.5.4",
+    "eslint-plugin-n": "^18.3.0",
+    "eslint-plugin-obsidianmd": "^0.4.2",
+    "eslint-plugin-perfectionist": "^5.11.1",
+    "eslint-plugin-tsdoc": "^0.5.3",
+    "eslint-plugin-unicorn": "^76.0.0",
+    "fflate": "^0.8.3",
+    "obsidian": "^1.13.1",
+    "postcss": "^8.5.28",
+    "postcss-modules": "^9.0.1",
+    "sass": "^1.104.1",
+    "semver": "^7.8.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.71.2"
+  },
+  "devDependencies": {
+    "@typescript-eslint/rule-tester": "^8.71.2",
+    "obsidian-test-mocks": "^7.0.0",
+    "vitest": "^5.0.1"
+  },
+  "peerDependencies": {
+    "@jest/globals": "^30.5.2",
+    "obsidian-integration-testing": "^17.3.0",
+    "vitest": "^5.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@jest/globals": {
+      "optional": true
+    },
+    "obsidian-integration-testing": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

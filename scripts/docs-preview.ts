@@ -1,5 +1,5 @@
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { execFromRoot } from '../src/script-utils/root.ts';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { execFromRoot } from '@mnaoumov/typescript-dev-toolkit/root';
 
 await wrapCliTask(async () => {
   await execFromRoot(['astro', 'preview'], {

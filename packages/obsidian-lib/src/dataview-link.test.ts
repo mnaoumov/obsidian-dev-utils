@@ -1,0 +1,87 @@
+import type { App as AppOriginal } from 'obsidian';
+
+import { castTo } from '@mnaoumov/typescript-lib/object-utils';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
+import { App } from 'obsidian-test-mocks/obsidian';
+import {
+  describe,
+  expect,
+  it
+} from 'vitest';
+
+import type {
+  DataviewInlineApi,
+  Link
+} from './dataview.ts';
+
+import {
+  fixTitle,
+  makeLinkWithPath
+} from './dataview-link.ts';
+
+describe('makeLinkWithPath', () => {
+  it('should format link text with path', () => {
+    const link = strictProxy<Link>({
+      path: 'folder/note.md',
+      toString: (): string => '[[note]]'
+    });
+    expect(makeLinkWithPath(link)).toBe('[[note]] (folder/note.md)');
+  });
+
+  it('should handle root-level path', () => {
+    const link = strictProxy<Link>({
+      path: 'note.md',
+      toString: (): string => '[[note]]'
+    });
+    expect(makeLinkWithPath(link)).toBe('[[note]] (note.md)');
+  });
+
+  it('should handle deeply nested path', () => {
+    const link = strictProxy<Link>({
+      path: 'a/b/c/d.md',
+      toString: (): string => '[[d]]'
+    });
+    expect(makeLinkWithPath(link)).toBe('[[d]] (a/b/c/d.md)');
+  });
+});
+
+describe('fixTitle', () => {
+  function createMockDv(app: AppOriginal): DataviewInlineApi {
+    return strictProxy<DataviewInlineApi>({
+      app,
+      fileLink: (path: string, _isEmbed: boolean, title: string): Link =>
+        castTo<Link>({
+          path,
+          title
+        })
+    });
+  }
+
+  it('should use basename without extension as title for regular files', () => {
+    const app = App.createConfigured__({ files: { 'folder/note.md': '' } }).asOriginalType__();
+    const dv = createMockDv(app);
+    const result = fixTitle({ dv, pathOrFile: 'folder/note.md' });
+    expect(result).toEqual({ path: 'folder/note.md', title: 'note' });
+  });
+
+  it('should use folder name as title when isFolderNote is true', () => {
+    const app = App.createConfigured__({ files: { 'projects/my-project/my-project.md': '' } }).asOriginalType__();
+    const dv = createMockDv(app);
+    const result = fixTitle({ dv, isFolderNote: true, pathOrFile: 'projects/my-project/my-project.md' });
+    expect(result).toEqual({ path: 'projects/my-project/my-project.md', title: 'my-project' });
+  });
+
+  it('should use basename without extension when isFolderNote is false', () => {
+    const app = App.createConfigured__({ files: { 'folder/document.md': '' } }).asOriginalType__();
+    const dv = createMockDv(app);
+    const result = fixTitle({ dv, isFolderNote: false, pathOrFile: 'folder/document.md' });
+    expect(result).toEqual({ path: 'folder/document.md', title: 'document' });
+  });
+
+  it('should handle root-level files', () => {
+    const app = App.createConfigured__({ files: { 'readme.md': '' } }).asOriginalType__();
+    const dv = createMockDv(app);
+    const result = fixTitle({ dv, pathOrFile: 'readme.md' });
+    expect(result).toEqual({ path: 'readme.md', title: 'readme' });
+  });
+});

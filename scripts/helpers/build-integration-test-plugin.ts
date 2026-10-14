@@ -23,19 +23,22 @@ import {
   rm
 } from 'node:fs/promises';
 import { builtinModules } from 'node:module';
-import { join } from 'node:path';
+import {
+  join,
+  resolve
+} from 'node:path';
 
 import { assertMobileLoadableBundle } from './assert-mobile-loadable-bundle.ts';
 
 const PROJECT_ROOT = join(import.meta.dirname, '../..');
-const PLUGIN_DIR = join(PROJECT_ROOT, 'integration-test-plugin');
+const PLUGIN_DIR = join(PROJECT_ROOT, 'packages/obsidian-dev-toolkit/integration-test-plugin');
 
 /**
  * Parameters for {@link buildIntegrationTestPlugin}.
  */
 export interface BuildIntegrationTestPluginParams {
   /**
-   * Project-root-relative folder to write `main.js` and `manifest.json` into. Recreated from scratch on
+   * Folder, relative to the current working folder, to write `main.js` and `manifest.json` into. Recreated from scratch on
    * every build.
    */
   readonly outDirectory: string;
@@ -56,7 +59,7 @@ export interface BuildIntegrationTestPluginParams {
  * @param params - The parameters for building the plugin.
  */
 export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPluginParams): Promise<void> {
-  const outDirectoryPath = join(PROJECT_ROOT, params.outDirectory);
+  const outDirectoryPath = resolve(params.outDirectory);
   const mainJsPath = join(outDirectoryPath, 'main.js');
 
   if (existsSync(outDirectoryPath)) {
@@ -69,7 +72,7 @@ export async function buildIntegrationTestPlugin(params: BuildIntegrationTestPlu
     // Resolve dependencies exactly as `buildObsidianPlugin` does for a consumer (see the comment beside its
     // `conditions` option): browser builds, never a Node one, since this bundle is the worst-case consumer the
     // mobile-load check below stands in for.
-    conditions: ['browser'],
+    conditions: ['@mnaoumov/source', 'browser'],
     entryPoints: [join(PLUGIN_DIR, 'main.ts')],
     external: [
       'obsidian',

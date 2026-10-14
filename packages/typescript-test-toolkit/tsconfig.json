@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": [
+      "@total-typescript/ts-reset",
+      "node"
+    ]
+  },
+  "include": [
+    "../typescript-lib/src/**/@types/**/*.d.ts",
+    "./src/**/*.ts",
+    "./vitest.config.ts"
+  ]
+}

@@ -1,16 +1,16 @@
 import type { Dirent } from 'node:fs';
 
-import { asyncMap } from '../src/async.ts';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { generate } from '@mnaoumov/typescript-dev-toolkit/code-generator';
+import { readdirPosix } from '@mnaoumov/typescript-dev-toolkit/fs';
+import { RepoPaths } from '@mnaoumov/typescript-dev-toolkit/repo-paths';
+import { asyncMap } from '@mnaoumov/typescript-lib/async';
 import {
   basename,
   extname,
   join,
   normalizeIfRelative
-} from '../src/path.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { generate } from '../src/script-utils/code-generator.ts';
-import { readdirPosix } from '../src/script-utils/fs.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+} from '@mnaoumov/typescript-lib/path';
 
 enum GenerateIndexResult {
   Skipped = 'skipped',
@@ -18,7 +18,7 @@ enum GenerateIndexResult {
 }
 
 await wrapCliTask(async () => {
-  await generateIndex(ObsidianDevUtilsRepoPaths.Src);
+  await generateIndex(RepoPaths.Src);
 });
 
 async function generateIndex(folder: string): Promise<GenerateIndexResult> {
@@ -30,12 +30,12 @@ async function generateIndex(folder: string): Promise<GenerateIndexResult> {
     return GenerateIndexResult.Skipped;
   }
 
-  await generate(join(folder, ObsidianDevUtilsRepoPaths.IndexTs), lines);
+  await generate(join(folder, RepoPaths.IndexTs), lines);
   return GenerateIndexResult.Success;
 }
 
 async function handleDirent(folder: string, dirent: Dirent): Promise<string | undefined> {
-  if ((dirent.name === ObsidianDevUtilsRepoPaths.IndexTs as string) || dirent.name.endsWith(ObsidianDevUtilsRepoPaths.DtsExtension) || dirent.name === ObsidianDevUtilsRepoPaths.Types as string || folder.split('/').includes(ObsidianDevUtilsRepoPaths.Types) || (dirent.name === ObsidianDevUtilsRepoPaths.Styles as string) || (dirent.name === ObsidianDevUtilsRepoPaths.TestHelpers as string) || (dirent.isFile() && !dirent.name.endsWith(ObsidianDevUtilsRepoPaths.TsExtension)) || (dirent.isFile() && dirent.name.endsWith('.test.ts')) || (dirent.isFile() && (dirent.name === 'setup.ts' || dirent.name.endsWith('-setup.ts')))) {
+  if ((dirent.name === RepoPaths.IndexTs as string) || dirent.name.endsWith(RepoPaths.DtsExtension) || dirent.name === RepoPaths.Types as string || folder.split('/').includes(RepoPaths.Types) || (dirent.name === RepoPaths.Styles as string) || (dirent.name === RepoPaths.TestHelpers as string) || (dirent.isFile() && !dirent.name.endsWith(RepoPaths.TsExtension)) || (dirent.isFile() && dirent.name.endsWith('.test.ts')) || (dirent.isFile() && (dirent.name === 'setup.ts' || dirent.name.endsWith('-setup.ts')))) {
     return;
   }
 
@@ -46,7 +46,7 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     if (result !== GenerateIndexResult.Success) {
       return;
     }
-    sourceFile = normalizeIfRelative(join(dirent.name, ObsidianDevUtilsRepoPaths.IndexTs));
+    sourceFile = normalizeIfRelative(join(dirent.name, RepoPaths.IndexTs));
     name = dirent.name;
   } else {
     const extension = extname(dirent.name);
@@ -54,5 +54,5 @@ async function handleDirent(folder: string, dirent: Dirent): Promise<string | un
     sourceFile = normalizeIfRelative(dirent.name);
   }
 
-  return name === ObsidianDevUtilsRepoPaths.ScriptUtils as string ? undefined : `export * as '${name}' from '${sourceFile}';`;
+  return `export * as '${name}' from '${sourceFile}';`;
 }

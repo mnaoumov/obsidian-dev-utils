@@ -1,8 +1,15 @@
+/**
+ * @file
+ *
+ * Builds ONE workspace package: run from the package's own folder (its `build` script points here), it runs every
+ * step of the pipeline below that the package defines a script for, in order.
+ */
+
 import {
   CliTaskResult,
   wrapCliTask
-} from '../src/script-utils/cli-utils.ts';
-import { npmRun } from '../src/script-utils/npm-run.ts';
+} from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { npmRunOptional } from '@mnaoumov/typescript-dev-toolkit/npm-run';
 
 const BUILD_STEPS = [
   'build:clean',
@@ -31,7 +38,7 @@ const BUILD_STEPS = [
 await wrapCliTask(async () => {
   for (const step of BUILD_STEPS) {
     await wrapCliTask(async () => {
-      await npmRun(step);
+      await npmRunOptional(step);
       return CliTaskResult.DoNotExit();
     });
   }

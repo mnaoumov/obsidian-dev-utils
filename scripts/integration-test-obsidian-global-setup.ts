@@ -13,12 +13,12 @@
 
 import type { TestProject } from 'vitest/node';
 
+import { ObsidianPluginRepoPaths } from '@mnaoumov/obsidian-dev-toolkit/obsidian-plugin-repo-paths';
 import {
   setup as integrationSetup,
   teardown as integrationTeardown
 } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 
-import { ObsidianPluginRepoPaths } from '../src/obsidian/plugin/obsidian-plugin-repo-paths.ts';
 import { buildIntegrationTestPlugin } from './helpers/build-integration-test-plugin.ts';
 
 /**

@@ -1,11 +1,10 @@
-import process from 'node:process';
-import { parseArgs } from 'node:util';
-
 import {
   CliTaskResult,
   wrapCliTask
-} from '../src/script-utils/cli-utils.ts';
-import { validateDeclarations } from '../src/script-utils/validate-declarations.ts';
+} from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { validateDeclarations } from '@mnaoumov/typescript-dev-toolkit/validate-declarations';
+import process from 'node:process';
+import { parseArgs } from 'node:util';
 
 const [, , ...$arguments] = process.argv;
 

@@ -18,8 +18,8 @@ import {
 import { join } from 'node:path';
 
 const PROJECT_ROOT = join(import.meta.dirname, '../..');
-const PLUGIN_DIR = join(PROJECT_ROOT, 'demo-vault-helper');
-const DIST_DIR = join(PROJECT_ROOT, 'dist/demo-vault-helper');
+const PLUGIN_DIR = join(PROJECT_ROOT, 'packages/obsidian-dev-toolkit/demo-vault-helper');
+const DIST_DIR = join(PROJECT_ROOT, 'packages/obsidian-dev-toolkit/dist/demo-vault-helper');
 
 /**
  * Bundles the `demo-vault-helper` plugin into `dist/demo-vault-helper/main.js`
@@ -33,6 +33,8 @@ export async function buildDemoVaultHelper(): Promise<void> {
 
   await build({
     bundle: true,
+    // Bundles the library from its sources, as a workspace build does before any package is built.
+    conditions: ['@mnaoumov/source'],
     entryPoints: [join(PLUGIN_DIR, 'main.ts')],
     external: [
       'obsidian',

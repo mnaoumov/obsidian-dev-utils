@@ -17,15 +17,16 @@
 import type { PopulateFilesParams } from 'obsidian-integration-testing';
 import type { TestProject } from 'vitest/node';
 
+import { ObsidianPluginRepoPaths } from '@mnaoumov/obsidian-dev-toolkit/obsidian-plugin-repo-paths';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createSetup } from 'obsidian-integration-testing/vitest-global-setup-plugin';
 
-import { ObsidianPluginRepoPaths } from '../src/obsidian/plugin/obsidian-plugin-repo-paths.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
 import { buildPluginApiTestPlugins } from './helpers/build-plugin-api-test-plugins.ts';
+import { WorkspaceRepoPaths } from './helpers/workspace-repo-paths.ts';
 
-const PROJECT_ROOT = join(import.meta.dirname, '..');
+// The test-only plugins live in, and build into, the package whose integration tests use them.
+const PROJECT_ROOT = join(import.meta.dirname, '../packages/obsidian-lib');
 
 /**
  * The `manifest.id` of the consuming plugin. Kept in step with `integration-test-plugin-api/shared.ts`, which
@@ -69,8 +70,8 @@ export async function teardown(): Promise<void> {
  */
 function getPluginApiPopulate(): PopulateFilesParams {
   return {
-    ...getPluginPopulate(ObsidianDevUtilsRepoPaths.DistPluginApiTestConsumer, PLUGIN_API_CONSUMER_PLUGIN_ID),
-    ...getPluginPopulate(ObsidianDevUtilsRepoPaths.DistPluginApiTestProvider, PLUGIN_API_PROVIDER_PLUGIN_ID)
+    ...getPluginPopulate(WorkspaceRepoPaths.DistPluginApiTestConsumer, PLUGIN_API_CONSUMER_PLUGIN_ID),
+    ...getPluginPopulate(WorkspaceRepoPaths.DistPluginApiTestProvider, PLUGIN_API_PROVIDER_PLUGIN_ID)
   };
 }
 

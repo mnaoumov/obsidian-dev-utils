@@ -1,0 +1,203 @@
+/**
+ * @file
+ *
+ * Contains utility functions for enqueuing and processing functions in Obsidian.
+ */
+
+import type { ValueWrapper } from '@mnaoumov/typescript-lib/value-wrapper';
+import type { Promisable } from 'type-fest';
+
+import {
+  abortSignalAny,
+  abortSignalNever
+} from '@mnaoumov/typescript-lib/abort-controller';
+import {
+  addErrorHandler,
+  invokeAsyncSafely
+} from '@mnaoumov/typescript-lib/async';
+import { getStackTrace } from '@mnaoumov/typescript-lib/error';
+import {
+  noop,
+  noopAsync
+} from '@mnaoumov/typescript-lib/function';
+
+import { runWithTimeoutNotice } from './async-with-notice.ts';
+import { t } from './i18n/i18n.ts';
+import { invokeAsyncAndLog } from './logger.ts';
+import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+
+/**
+ * Options for the {@link addToQueueAndWait} function.
+ */
+export interface AddToQueueAndWaitParams {
+  /**
+   * Optional abort signal.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The function to add.
+   */
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<void>;
+
+  /**
+   * Optional name of the operation.
+   *
+   * @default `''`
+   */
+  readonly operationName?: string;
+
+  /**
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
+   */
+  readonly shouldShowTimeoutNotice?: boolean;
+
+  /**
+   * Optional stack trace.
+   */
+  readonly stackTrace?: string;
+
+  /**
+   * The timeout in milliseconds.
+   *
+   * @default `60000`
+   */
+  readonly timeoutInMilliseconds?: number;
+}
+
+/**
+ * Options for the {@link addToQueue} function.
+ */
+export interface AddToQueueParams {
+  /**
+   * Optional abort signal.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The function to add.
+   */
+  readonly operationFunction: (abortSignal: AbortSignal) => Promisable<void>;
+
+  /**
+   * Optional name of the operation.
+   *
+   * @default `''`
+   */
+  readonly operationName?: string;
+
+  /**
+   * Whether to show a timeout notice.
+   *
+   * @default `true`
+   */
+  readonly shouldShowTimeoutNotice?: boolean;
+
+  /**
+   * Optional stack trace.
+   */
+  readonly stackTrace?: string;
+
+  /**
+   * The timeout in milliseconds.
+   *
+   * @default `60000`
+   */
+  readonly timeoutInMilliseconds?: number;
+}
+
+interface Queue {
+  items: QueueItem[];
+  promise: Promise<void>;
+}
+
+interface QueueItem {
+  abortSignal: AbortSignal;
+  operationFunction: (abortSignal: AbortSignal) => Promisable<void>;
+  operationName: string;
+  shouldShowTimeoutNotice: boolean;
+  stackTrace: string;
+  timeoutInMilliseconds: number;
+}
+
+/**
+ * Adds an asynchronous function to be executed after the previous function completes.
+ *
+ * @param params - The parameters for the function.
+ */
+export function addToQueue(params: AddToQueueParams): void {
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
+  invokeAsyncSafely(() => addToQueueAndWait(params), stackTrace);
+}
+
+/**
+ * Adds an asynchronous function to be executed after the previous function completes and returns a {@link Promise} that resolves when the function completes.
+ *
+ * @param params - The parameters for the function.
+ */
+export async function addToQueueAndWait(params: AddToQueueAndWaitParams): Promise<void> {
+  const abortSignal = params.abortSignal ?? abortSignalNever();
+  abortSignal.throwIfAborted();
+
+  const DEFAULT_TIMEOUT_IN_MILLISECONDS = 60_000;
+  const timeoutInMilliseconds = params.timeoutInMilliseconds ?? DEFAULT_TIMEOUT_IN_MILLISECONDS;
+  const stackTrace = params.stackTrace ?? getStackTrace(1);
+  const operationName = params.operationName ?? '';
+  const queue = getQueue().value;
+  queue.items.push({
+    abortSignal,
+    operationFunction: params.operationFunction,
+    operationName,
+    shouldShowTimeoutNotice: params.shouldShowTimeoutNotice ?? true,
+    stackTrace,
+    timeoutInMilliseconds
+  });
+  queue.promise = queue.promise.then(() => processNextQueueItem());
+  await queue.promise;
+}
+
+/**
+ * Flushes the queue;
+ */
+export async function flushQueue(): Promise<void> {
+  await addToQueueAndWait({
+    operationFunction: noop,
+    operationName: t(($) => $.obsidianDevUtils.queue.flushQueue)
+  });
+}
+
+function getQueue(): ValueWrapper<Queue> {
+  return getObsidianDevUtilsState('queue', { items: [], promise: noopAsync() });
+}
+
+async function processNextQueueItem(): Promise<void> {
+  const queue = getQueue().value;
+  const item = queue.items[0];
+  /* v8 ignore start -- Defensive check; processNextQueueItem is only called after an item is pushed. */
+  if (!item) {
+    return;
+  }
+  /* v8 ignore stop */
+
+  await addErrorHandler(() =>
+    runWithTimeoutNotice({
+      context: { queuedFunction: item.operationFunction },
+      async operationFunction(abortSignal: AbortSignal): Promise<void> {
+        await invokeAsyncAndLog({
+          $function: item.operationFunction,
+          abortSignal: abortSignalAny(abortSignal, item.abortSignal),
+          stackTrace: item.stackTrace,
+          title: item.operationName || processNextQueueItem.name
+        });
+      },
+      operationName: item.operationName,
+      pluginNoticeComponent: null,
+      shouldShowTimeoutNotice: item.shouldShowTimeoutNotice,
+      stackTrace: item.stackTrace,
+      timeoutInMilliseconds: item.timeoutInMilliseconds
+    })
+  );
+  queue.items.shift();
+}

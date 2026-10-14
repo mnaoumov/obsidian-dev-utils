@@ -1,14 +1,13 @@
-import process from 'node:process';
-import { parseArgs } from 'node:util';
-
 import {
   CliTaskResult,
   wrapCliTask
-} from '../src/script-utils/cli-utils.ts';
+} from '@mnaoumov/typescript-dev-toolkit/cli-utils';
 import {
   findOverExposure,
   formatOverExposureFindings
-} from '../src/script-utils/linters/over-exposure.ts';
+} from '@mnaoumov/typescript-dev-toolkit/linters/over-exposure';
+import process from 'node:process';
+import { parseArgs } from 'node:util';
 
 const [, , ...$arguments] = process.argv;
 

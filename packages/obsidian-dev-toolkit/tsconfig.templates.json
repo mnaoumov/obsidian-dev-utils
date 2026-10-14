@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "customConditions": []
+  },
+  "include": [
+    "./templates/**/*.ts"
+  ]
+}

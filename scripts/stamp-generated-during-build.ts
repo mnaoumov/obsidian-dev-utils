@@ -10,15 +10,16 @@
  * `dist/` and nothing else, which is how `94.7.0` through `96.0.0` came to ship the placeholders literally.
  */
 
+import { readPackageJson } from '@mnaoumov/typescript-dev-toolkit/npm';
+import { RepoPaths } from '@mnaoumov/typescript-dev-toolkit/repo-paths';
+import { resolvePathFromRootSafe } from '@mnaoumov/typescript-dev-toolkit/root';
+import { join } from '@mnaoumov/typescript-lib/path';
 import {
   readFile,
   writeFile
 } from 'node:fs/promises';
 
-import { join } from '../src/path.ts';
-import { readPackageJson } from '../src/script-utils/npm.ts';
-import { ObsidianDevUtilsRepoPaths } from '../src/script-utils/obsidian-dev-utils-repo-paths.ts';
-import { resolvePathFromRootSafe } from '../src/script-utils/root.ts';
+import { WorkspaceRepoPaths } from './helpers/workspace-repo-paths.ts';
 
 /**
  * Rewrites the placeholders in the built `generated-during-build.{cjs,mjs}` with the version from
@@ -36,12 +37,12 @@ export async function stampGeneratedDuringBuild(): Promise<void> {
     throw new Error('`package.json` declares no version to stamp into the built library.');
   }
 
-  const stylesCssPath = resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.Dist, ObsidianDevUtilsRepoPaths.StylesCss) });
+  const stylesCssPath = resolvePathFromRootSafe({ path: join(RepoPaths.Dist, RepoPaths.StylesCss) });
   const styles = await readFile(stylesCssPath, 'utf-8');
 
   const generatedPaths = [
-    resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Cjs, ObsidianDevUtilsRepoPaths.GeneratedDuringBuildCjs) }),
-    resolvePathFromRootSafe({ path: join(ObsidianDevUtilsRepoPaths.DistLib, ObsidianDevUtilsRepoPaths.Esm, ObsidianDevUtilsRepoPaths.GeneratedDuringBuildMjs) })
+    resolvePathFromRootSafe({ path: join(RepoPaths.DistLib, RepoPaths.Cjs, WorkspaceRepoPaths.GeneratedDuringBuildCjs) }),
+    resolvePathFromRootSafe({ path: join(RepoPaths.DistLib, RepoPaths.Esm, WorkspaceRepoPaths.GeneratedDuringBuildMjs) })
   ];
 
   for (const generatedPath of generatedPaths) {

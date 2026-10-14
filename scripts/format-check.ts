@@ -1,7 +1,6 @@
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { format } from '@mnaoumov/typescript-dev-toolkit/formatters/dprint';
 import process from 'node:process';
-
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
-import { format } from '../src/script-utils/formatters/dprint.ts';
 
 const [, , ...paths] = process.argv;
 

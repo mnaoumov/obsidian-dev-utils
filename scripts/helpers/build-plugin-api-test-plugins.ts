@@ -13,6 +13,7 @@
  * `scripts/integration-test-plugin-api-global-setup.ts`.
  */
 
+import { ObsidianPluginRepoPaths } from '@mnaoumov/obsidian-dev-toolkit/obsidian-plugin-repo-paths';
 import { build } from 'esbuild';
 import { existsSync } from 'node:fs';
 import {
@@ -22,10 +23,10 @@ import {
 } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { ObsidianPluginRepoPaths } from '../../src/obsidian/plugin/obsidian-plugin-repo-paths.ts';
-import { ObsidianDevUtilsRepoPaths } from '../../src/script-utils/obsidian-dev-utils-repo-paths.ts';
+import { WorkspaceRepoPaths } from './workspace-repo-paths.ts';
 
-const PROJECT_ROOT = join(import.meta.dirname, '../..');
+// The test-only plugins live in, and build into, the package whose integration tests use them.
+const PROJECT_ROOT = join(import.meta.dirname, '../../packages/obsidian-lib');
 
 /**
  * One plugin to build: where its sources live, and where the bundle goes.
@@ -37,12 +38,12 @@ interface PluginApiTestPluginBuildTarget {
 
 const BUILD_TARGETS: readonly PluginApiTestPluginBuildTarget[] = [
   {
-    outDirectory: ObsidianDevUtilsRepoPaths.DistPluginApiTestConsumer,
-    sourceDirectory: ObsidianDevUtilsRepoPaths.IntegrationTestPluginApiConsumer
+    outDirectory: WorkspaceRepoPaths.DistPluginApiTestConsumer,
+    sourceDirectory: WorkspaceRepoPaths.IntegrationTestPluginApiConsumer
   },
   {
-    outDirectory: ObsidianDevUtilsRepoPaths.DistPluginApiTestProvider,
-    sourceDirectory: ObsidianDevUtilsRepoPaths.IntegrationTestPluginApiProvider
+    outDirectory: WorkspaceRepoPaths.DistPluginApiTestProvider,
+    sourceDirectory: WorkspaceRepoPaths.IntegrationTestPluginApiProvider
   }
 ];
 
@@ -71,6 +72,8 @@ async function buildTarget(target: PluginApiTestPluginBuildTarget): Promise<void
 
   await build({
     bundle: true,
+    // Bundles the library from its sources, as every build inside this repository does.
+    conditions: ['@mnaoumov/source', 'browser'],
     entryPoints: [join(sourceDirectoryPath, ObsidianPluginRepoPaths.MainTs)],
     external: [
       'obsidian',

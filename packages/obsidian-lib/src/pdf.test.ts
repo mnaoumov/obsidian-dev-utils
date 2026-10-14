@@ -1,0 +1,173 @@
+// @vitest-environment jsdom
+
+import { noopAsync } from '@mnaoumov/typescript-lib/function';
+import { ensureLoaded } from '@mnaoumov/typescript-lib/html-element';
+import { Platform } from 'obsidian';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from 'vitest';
+
+import { printToPdf } from './pdf.ts';
+
+vi.mock('@mnaoumov/typescript-lib/html-element', () => ({
+  ensureLoaded: vi.fn(async () => noopAsync())
+}));
+
+interface MockIpcRenderer {
+  once: ReturnType<typeof vi.fn>;
+  send: ReturnType<typeof vi.fn>;
+}
+
+let mockIpcRenderer: MockIpcRenderer;
+
+const HEAVY_IMPORT_TIMEOUT = 30_000;
+
+describe('printToPdf', { timeout: HEAVY_IMPORT_TIMEOUT }, () => {
+  let printDiv: HTMLDivElement;
+
+  beforeEach(() => {
+    printDiv = createDiv();
+    printDiv.remove = vi.fn() as () => void;
+    activeDocument.body.createDiv = vi.fn((): HTMLDivElement => {
+      activeDocument.body.append(printDiv);
+      return printDiv;
+    });
+
+    mockIpcRenderer = {
+      once: vi.fn(),
+      send: vi.fn()
+    };
+    vi.stubGlobal('electron', { ipcRenderer: mockIpcRenderer });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('should throw on mobile devices', async () => {
+    const isOriginallyMobile = Platform.isMobile;
+    try {
+      Platform.isMobile = true;
+
+      const element = createDiv();
+      await expect(printToPdf(element, {})).rejects.toThrow('Printing to PDF is not supported on mobile devices.');
+    } finally {
+      // eslint-disable-next-line require-atomic-updates -- Restoring a mock property in a finally block is intentional.
+      Platform.isMobile = isOriginallyMobile;
+    }
+  });
+
+  it('should create a print div and append the element', async () => {
+    // Resolve the ipcRenderer.once callback immediately
+    mockIpcRenderer.once.mockImplementation((_channel: string, resolve: () => void): void => {
+      resolve();
+    });
+
+    const element = createSpan();
+
+    await printToPdf(element, {});
+
+    expect(activeDocument.body.createDiv).toHaveBeenCalledWith('print');
+    expect(printDiv.contains(element)).toBe(true);
+  });
+
+  it('should call ensureLoaded on the print div', async () => {
+    mockIpcRenderer.once.mockImplementation((_channel: string, resolve: () => void): void => {
+      resolve();
+    });
+
+    const element = createDiv();
+
+    await printToPdf(element, {});
+
+    expect(ensureLoaded).toHaveBeenCalledWith(printDiv);
+  });
+
+  it('should send default options merged with provided options', async () => {
+    mockIpcRenderer.once.mockImplementation((_channel: string, resolve: () => void): void => {
+      resolve();
+    });
+
+    const element = createDiv();
+
+    await printToPdf(element, { filepath: 'test.pdf', landscape: true });
+
+    const DEFAULT_SCALE_FACTOR = 100;
+    expect(mockIpcRenderer.send).toHaveBeenCalledWith('print-to-pdf', {
+      filepath: 'test.pdf',
+      includeName: false,
+      landscape: true,
+      marginsType: 0,
+      open: true,
+      pageSize: 'A4',
+      scale: 1,
+      scaleFactor: DEFAULT_SCALE_FACTOR
+    });
+  });
+
+  it('should use default options when none are provided', async () => {
+    mockIpcRenderer.once.mockImplementation((_channel: string, resolve: () => void): void => {
+      resolve();
+    });
+
+    const element = createDiv();
+
+    await printToPdf(element, {});
+
+    const DEFAULT_SCALE_FACTOR = 100;
+    expect(mockIpcRenderer.send).toHaveBeenCalledWith('print-to-pdf', {
+      filepath: 'Untitled.pdf',
+      includeName: false,
+      landscape: false,
+      marginsType: 0,
+      open: true,
+      pageSize: 'A4',
+      scale: 1,
+      scaleFactor: DEFAULT_SCALE_FACTOR
+    });
+  });
+
+  it('should register once listener on the print-to-pdf channel', async () => {
+    mockIpcRenderer.once.mockImplementation((_channel: string, resolve: () => void): void => {
+      resolve();
+    });
+
+    const element = createDiv();
+
+    await printToPdf(element, {});
+
+    expect(mockIpcRenderer.once).toHaveBeenCalledWith('print-to-pdf', expect.any(Function));
+  });
+
+  it('should remove the print div after successful print', async () => {
+    mockIpcRenderer.once.mockImplementation((_channel: string, resolve: () => void): void => {
+      resolve();
+    });
+
+    const element = createDiv();
+
+    await printToPdf(element, {});
+
+    expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
+  });
+
+  it('should remove the print div even when ipcRenderer rejects', async () => {
+    mockIpcRenderer.once.mockImplementation((): void => {
+      // Do not call resolve - the promise will be rejected by send throwing
+    });
+    mockIpcRenderer.send.mockImplementation((): void => {
+      throw new Error('IPC error');
+    });
+
+    const element = createDiv();
+
+    await expect(printToPdf(element, {})).rejects.toThrow('IPC error');
+    expect(vi.mocked(printDiv.remove)).toHaveBeenCalled();
+  });
+});

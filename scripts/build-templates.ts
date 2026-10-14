@@ -1,5 +1,5 @@
-import { buildTemplates } from '../src/script-utils/build.ts';
-import { wrapCliTask } from '../src/script-utils/cli-utils.ts';
+import { buildTemplates } from '@mnaoumov/typescript-dev-toolkit/build';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
 
 await wrapCliTask(async () => {
   await buildTemplates();

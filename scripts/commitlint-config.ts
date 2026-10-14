@@ -1,1 +1,1 @@
-export { obsidianDevUtilsConfig as config } from '../src/script-utils/commitlint-config.ts';
+export { obsidianDevUtilsConfig as config } from '@mnaoumov/typescript-dev-toolkit/commitlint-config';
