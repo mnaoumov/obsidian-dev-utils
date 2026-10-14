@@ -423,6 +423,16 @@ describe('applyContentChanges', () => {
       .rejects.toThrow('aborted');
   });
 
+  it('should reject rather than ask for a retry when the signal aborts while the changes provider declines', async () => {
+    const controller = new AbortController();
+    const provider = (): null => {
+      controller.abort(new Error('aborted'));
+      return null;
+    };
+    await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: provider, content: 'Hello world', path: 'test.md' }))
+      .rejects.toThrow('aborted');
+  });
+
   it('should filter out duplicate changes', async () => {
     const content = 'Hello [[old]] world';
     const change = makeContentChange('[[old]]', '[[new]]', 6);
@@ -683,6 +693,25 @@ describe('canvas changes via applyFileChanges', () => {
     assertNonNullable(resultContent);
     const parsed = JSON.parse(resultContent) as Record<string, GenericObject[]>;
     expect(parsed['nodes']?.[0]?.['file']).toBe('new.md');
+  });
+
+  it('should hand the canvas content to a changes provider function', async () => {
+    const canvasContent = JSON.stringify({
+      edges: [],
+      nodes: [{ file: 'old.md', id: '1', type: 'file' }]
+    });
+    const provider = vi.fn(({ content }: ContentArguments): FileChange[] => {
+      expect(content).toBe(canvasContent);
+      return [];
+    });
+
+    vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
+      const controller = new AbortController();
+      await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
+    });
+
+    await applyFileChanges({ app, changesProvider: provider, pathOrFile: 'test.canvas', pluginNoticeComponent: null, resourceLockComponent });
+    expect(provider).toHaveBeenCalledOnce();
   });
 
   it('should reject when the signal aborts while the canvas changes provider runs', async () => {

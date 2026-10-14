@@ -702,6 +702,34 @@ describe('Async', () => {
       })).rejects.toThrow('Run with timeout failed');
     });
 
+    it('should carry the operation error as the cause of the rejection', async () => {
+      const operationError = new Error('operation failed');
+      await expect(runWithTimeout({
+        operationFunction: async () => {
+          await noopAsync();
+          throw operationError;
+        },
+        timeoutInMilliseconds: 5000
+      })).rejects.toMatchObject({ cause: operationError });
+    });
+
+    it('should report a timeout duration measured from the start of the run', async () => {
+      const TIMEOUT_IN_MILLISECONDS = 50;
+      let duration = -1;
+      await expect(runWithTimeout({
+        onTimeout: (context: TimeoutContext): void => {
+          duration = context.duration;
+          context.terminateOperation();
+        },
+        operationFunction: neverEnds,
+        timeoutInMilliseconds: TIMEOUT_IN_MILLISECONDS
+      })).rejects.toThrow('Run with timeout failed');
+      // A sum of two timestamps instead of their difference would be far beyond the test's own runtime.
+      const MAX_PLAUSIBLE_DURATION_IN_MILLISECONDS = 10_000;
+      expect(duration).toBeGreaterThanOrEqual(TIMEOUT_IN_MILLISECONDS - 5);
+      expect(duration).toBeLessThan(MAX_PLAUSIBLE_DURATION_IN_MILLISECONDS);
+    });
+
     it('should reject even when operationFunction resolves after being terminated by the timeout', async () => {
       // OperationFn watches the abort signal and resolves (does NOT throw) once aborted, mirroring how
       // retryWithTimeout's loop exits on abort. The timeout terminated the run, so runWithTimeout must
@@ -945,6 +973,41 @@ describe('Async', () => {
       });
 
       expect($function).toHaveBeenCalledTimes(3);
+    });
+
+    it('should wait the default 100 ms between attempts and not time out under the default 5 s budget', async () => {
+      let attempt = 0;
+      const onTimeout = vi.fn();
+      const start = performance.now();
+
+      await retryWithTimeout({
+        onTimeout,
+        operationFunction: async () => {
+          await noopAsync();
+          attempt++;
+          return attempt >= 2;
+        }
+      });
+
+      const DEFAULT_RETRY_DELAY_IN_MILLISECONDS = 100;
+      expect(performance.now() - start).toBeGreaterThanOrEqual(DEFAULT_RETRY_DELAY_IN_MILLISECONDS - 10);
+      expect(onTimeout).not.toHaveBeenCalled();
+    });
+
+    it('should not retry a throwing operation by default, and carry its error as the cause', async () => {
+      const operationError = new Error('operation failed');
+      const $function = vi.fn(async () => {
+        await noopAsync();
+        throw operationError;
+      });
+
+      const rejection = await retryWithTimeout({
+        operationFunction: $function,
+        retryOptions: { timeoutInMilliseconds: 5000 }
+      }).catch((error: unknown) => error);
+
+      expect($function).toHaveBeenCalledTimes(1);
+      expect(rejection).toMatchObject({ cause: { cause: operationError } });
     });
 
     it('should reject when timeout is reached and the while loop exits due to abort', async () => {
@@ -1313,6 +1376,27 @@ describe('Async', () => {
       disableAsyncOperationTracking();
       expect(isAsyncOperationTrackingEnabled()).toBe(false);
     });
+
+    it('should leave tracking off in a freshly loaded module, so production code carries no bookkeeping', async () => {
+      vi.resetModules();
+      const freshModule = await import('./async.ts');
+      expect(freshModule.isAsyncOperationTrackingEnabled()).toBe(false);
+    });
+
+    it('should forget operations pending when tracking was disabled, and not record ones scheduled while it was off', async () => {
+      enableAsyncOperationTracking();
+      invokeAsyncSafely(neverEnds);
+      disableAsyncOperationTracking();
+      invokeAsyncSafely(neverEnds);
+      enableAsyncOperationTracking();
+
+      const PENDING_GRACE_IN_MILLISECONDS = 100;
+      const outcome = await Promise.race([
+        waitForAllAsyncOperations().then(() => 'drained'),
+        sleep({ milliseconds: PENDING_GRACE_IN_MILLISECONDS }).then(() => 'still pending')
+      ]);
+      expect(outcome).toBe('drained');
+    });
   });
 
   describe('addErrorHandler ignore context', () => {
@@ -1355,6 +1439,31 @@ describe('Async', () => {
       });
 
       invokeAsyncSafelyAfterDelay({ asyncFunction: $function, delayInMilliseconds: 50 });
+
+      expect($function).not.toHaveBeenCalled();
+    });
+
+    it('should not invoke the function before the delay has passed', async () => {
+      const $function = vi.fn(async () => {
+        // Success
+      });
+
+      invokeAsyncSafelyAfterDelay({ asyncFunction: $function, delayInMilliseconds: 500 });
+      await sleep({ milliseconds: 50 });
+
+      expect($function).not.toHaveBeenCalled();
+    });
+
+    it('should not invoke the function when the signal aborts during the delay', async () => {
+      const controller = new AbortController();
+      const $function = vi.fn(async () => {
+        // Should not reach
+      });
+      using _ignore = startAsyncErrorIgnoreContext();
+
+      invokeAsyncSafelyAfterDelay({ abortSignal: controller.signal, asyncFunction: $function, delayInMilliseconds: 50 });
+      controller.abort(new Error('aborted'));
+      await sleep({ milliseconds: 100 });
 
       expect($function).not.toHaveBeenCalled();
     });
@@ -1552,11 +1661,23 @@ describe('Async', () => {
 
       await expect(sleep({ abortSignal: controller.signal, milliseconds: 50 })).resolves.toBeUndefined();
     });
+
+    it('should resolve when shouldThrowOnAbort is true but no abortSignal is given', async () => {
+      await expect(sleep({ milliseconds: 0, shouldThrowOnAbort: true })).resolves.toBeUndefined();
+    });
   });
 
   describe('timeout', () => {
     it('should reject with timeout error after the specified period', async () => {
       await expect(timeout({ timeoutInMilliseconds: 50 })).rejects.toThrow('Timed out in 50 milliseconds');
+    });
+
+    it('should not reject before the specified period', async () => {
+      const outcome = await Promise.race([
+        timeout({ timeoutInMilliseconds: 500 }).catch(() => 'timed out'),
+        sleep({ milliseconds: 50 }).then(() => 'still waiting')
+      ]);
+      expect(outcome).toBe('still waiting');
     });
 
     it('should throw when shouldThrowOnAbort is true and signal is aborted before timeout', async () => {
@@ -1628,6 +1749,15 @@ describe('Async', () => {
   describe('setImmediateAsync', () => {
     it('should resolve on the next immediate', async () => {
       await expect(setImmediateAsync()).resolves.toBeUndefined();
+    });
+
+    it('should resolve only after an immediate queued before it has run', async () => {
+      let didRunEarlierImmediate = false;
+      setImmediate(() => {
+        didRunEarlierImmediate = true;
+      });
+      await setImmediateAsync();
+      expect(didRunEarlierImmediate).toBe(true);
     });
   });
 
@@ -1823,6 +1953,24 @@ describe('Async', () => {
       await result;
       expect(order).toEqual([1]);
     });
+
+    it('should not run the function until the existing promise settles', async () => {
+      const $function = vi.fn(() => null);
+      const result = chain(sleep({ milliseconds: 20 }), $function);
+      expect($function).not.toHaveBeenCalled();
+      await result;
+      expect($function).toHaveBeenCalledOnce();
+    });
+
+    it('should wait for the promise returned by the chained function', async () => {
+      let didFinish = false;
+      const result = chain(noopAsync(), async () => {
+        await sleep({ milliseconds: 20 });
+        didFinish = true;
+      });
+      await result;
+      expect(didFinish).toBe(true);
+    });
   });
 
   describe('requestAnimationFrameAsync', () => {
@@ -1856,6 +2004,30 @@ describe('Async', () => {
       await requestAnimationFrameAsync(0);
 
       expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+      requestAnimationFrameSpy.mockRestore();
+    });
+
+    it('should fall back after the default 100 ms when no timeout is given and the frame never fires', async () => {
+      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(0);
+
+      const outcome = await Promise.race([
+        requestAnimationFrameAsync().then(() => 'resolved'),
+        sleep({ milliseconds: 1000 }).then(() => 'still pending')
+      ]);
+
+      expect(outcome).toBe('resolved');
+      requestAnimationFrameSpy.mockRestore();
+    });
+
+    it('should keep waiting for the frame when the fallback is disabled with 0', async () => {
+      const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(0);
+
+      const outcome = await Promise.race([
+        requestAnimationFrameAsync(0).then(() => 'resolved'),
+        sleep({ milliseconds: 50 }).then(() => 'still pending')
+      ]);
+
+      expect(outcome).toBe('still pending');
       requestAnimationFrameSpy.mockRestore();
     });
   });
