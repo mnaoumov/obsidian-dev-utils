@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 107.4.1
+
+- fix(styles): merge scoping the tldraw button color workaround to the library UI
+
 ## 107.4.0
 
 - feat(obsidian): merge parsing GFM `www.` autolink literals as external links
