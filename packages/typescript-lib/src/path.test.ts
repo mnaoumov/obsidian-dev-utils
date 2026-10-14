@@ -1,7 +1,10 @@
+import process from 'node:process';
 import {
+  afterEach,
   describe,
   expect,
-  it
+  it,
+  vi
 } from 'vitest';
 
 import {
@@ -14,6 +17,7 @@ import {
   join,
   makeFileName,
   normalizeIfRelative,
+  relative,
   resolve,
   toPosixBuffer,
   toPosixPath
@@ -159,6 +163,45 @@ describe('resolve', () => {
   it('should resolve relative segments', () => {
     const result = resolve('/foo/bar', '../baz');
     expect(result).toBe('/foo/baz');
+  });
+
+  it('should keep a Windows working folder when a relative path climbs out of it', () => {
+    vi.spyOn(process, 'cwd').mockReturnValue(String.raw`F:\dev\project`);
+    try {
+      expect(resolve('../x')).toBe('F:/dev/x');
+      expect(resolve('src')).toBe('F:/dev/project/src');
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  it('should treat a Windows drive path as absolute', () => {
+    expect(resolve('/foo', String.raw`C:\a\b`, '..', 'c')).toBe('C:/a/c');
+  });
+});
+
+describe('relative', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it.each([
+    ['/foo/bar', '/foo/baz/qux.ts', '../baz/qux.ts'],
+    ['/foo/bar', '/foo/bar', ''],
+    ['F:/foo/bar', 'F:/foo/baz', '../baz'],
+    ['f:/foo/bar', 'F:/foo/baz', '../baz'],
+    ['F:/foo', 'G:/bar', 'G:/bar']
+  ])('should compute the relative path from %s to %s -> %j', (from: string, to: string, expected: string) => {
+    expect(relative(from, to)).toBe(expected);
+  });
+
+  it.each([
+    ['/home/user/project'],
+    [String.raw`F:\dev\project`]
+  ])('should keep the slash after .. when a relative path climbs out of a relative base under cwd %s', (cwd: string) => {
+    vi.spyOn(process, 'cwd').mockReturnValue(cwd);
+    expect(relative('src', '../typescript-lib/src/x.ts')).toBe('../../typescript-lib/src/x.ts');
+    expect(relative('a/b', 'a/c')).toBe('../c');
   });
 });
 

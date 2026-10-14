@@ -11,6 +11,7 @@ import {
   replaceAll
 } from './string.ts';
 
+const WINDOWS_DRIVE_REG_EXP = /^[a-zA-Z]:\//;
 const WINDOWS_POSIX_LIKE_PATH_REG_EXP = /[a-zA-Z]:\/[^:]*$/;
 
 /**
@@ -98,15 +99,6 @@ export const normalizePath = posix.normalize;
 export const parse = posix.parse;
 
 /**
- * Returns the relative path from one path to another.
- *
- * @param from - The starting path.
- * @param to - The destination path.
- * @returns The relative path from `from` to `to`.
- */
-export const relative = posix.relative;
-
-/**
  * Parameters for {@link makeFileName}.
  */
 export interface MakeFileNameParams {
@@ -168,14 +160,45 @@ export function normalizeIfRelative(path: string): string {
 }
 
 /**
+ * Returns the relative path from one path to another.
+ *
+ * `path-browserify`'s own `relative` cannot be used directly: it resolves a relative argument against
+ * `process.cwd()`, which on Windows is `F:\...` rather than a POSIX absolute path, and its slicing then assumes a
+ * leading `/` - so `relative('src', '../x')` came back as `'../..x'`. Both arguments are resolved through
+ * {@link resolve} here instead, and rooted at `/` before the POSIX comparison.
+ *
+ * @param from - The starting path.
+ * @param to - The destination path.
+ * @returns The relative path from `from` to `to`.
+ */
+export function relative(from: string, to: string): string {
+  const resolvedFrom = resolve(from);
+  const resolvedTo = resolve(to);
+  const fromDrive = WINDOWS_DRIVE_REG_EXP.exec(resolvedFrom)?.[0].toUpperCase();
+  const toDrive = WINDOWS_DRIVE_REG_EXP.exec(resolvedTo)?.[0].toUpperCase();
+  return fromDrive === toDrive
+    ? posix.relative(toRootedPosixPath(upperCaseDrive(resolvedFrom)), toRootedPosixPath(upperCaseDrive(resolvedTo)))
+    : resolvedTo;
+}
+
+/**
  * Resolves a sequence of paths or path segments into an absolute path.
  *
  * @param pathSegments - The sequence of path segments to resolve.
  * @returns The resolved absolute path.
  */
 export function resolve(...pathSegments: string[]): string {
-  let path = posix.resolve(...pathSegments);
-  path = toPosixPath(path);
+  /*
+   * `path-browserify` treats only a leading `/` as absolute and joins `process.cwd()` in as an opaque segment, so on
+   * Windows a `..` climbing out of the working folder cancelled the whole `F:\...` cwd. Every segment is made POSIX
+   * and a drive root is given a leading `/`, which makes it a root `path-browserify` understands; the `/` is dropped
+   * again below.
+   */
+  const rootedSegments = pathSegments.map((segment) => toRootedPosixPath(segment));
+  if (rootedSegments.every((segment) => !segment.startsWith('/'))) {
+    rootedSegments.unshift(toRootedPosixPath(process.cwd()));
+  }
+  const path = posix.resolve(...rootedSegments);
   const match = WINDOWS_POSIX_LIKE_PATH_REG_EXP.exec(path);
   return match?.[0] ?? path;
 }
@@ -202,4 +225,13 @@ export function toPosixPath(path: string): string {
     replacer: '/',
     searchValue: '\\'
   });
+}
+
+function toRootedPosixPath(path: string): string {
+  const posixPath = toPosixPath(path);
+  return WINDOWS_DRIVE_REG_EXP.test(posixPath) ? `/${posixPath}` : posixPath;
+}
+
+function upperCaseDrive(path: string): string {
+  return path.replace(WINDOWS_DRIVE_REG_EXP, (drive) => drive.toUpperCase());
 }
