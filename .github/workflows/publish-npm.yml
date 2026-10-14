@@ -1,13 +1,15 @@
 name: Publish to NPM
 
-# Publishes the package to the NPM registry using npm trusted publishing (OIDC): the job trades its
-# short-lived GitHub OIDC token for a publish grant, so no NPM token exists anywhere -- not in the repo
-# secrets, not on the maintainer's machine. Provenance is generated automatically for a public package
-# published this way, so nothing has to ask for it.
+# Publishes every workspace package (`packages/*`, all at the one shared version) to the NPM registry
+# using npm trusted publishing (OIDC): the job trades its short-lived GitHub OIDC token for a publish
+# grant, so no NPM token exists anywhere -- not in the repo secrets, not on the maintainer's machine.
+# Provenance is generated automatically for a public package published this way, so nothing has to ask
+# for it. A package whose version is already on the registry is skipped, so a publish that failed half-way
+# is retried by re-running this workflow.
 #
-# The trusted publisher configured on npmjs.com (Package settings -> Trusted publisher) names THIS file
-# by its bare filename, `publish-npm.yml`, and the match is case-sensitive: renaming or moving the file
-# silently breaks publishing until the setting is updated to match.
+# EACH of the five packages needs its own trusted publisher on npmjs.com (Package settings -> Trusted
+# publisher), naming THIS file by its bare filename, `publish-npm.yml`; the match is case-sensitive, and
+# renaming or moving the file silently breaks publishing until every setting is updated to match.
 #
 # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0, both satisfied by the Node version in
 # `.nvmrc`.
