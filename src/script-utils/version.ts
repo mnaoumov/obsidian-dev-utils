@@ -438,6 +438,19 @@ export enum VersionUpdateType {
 }
 
 /**
+ * The version update types a caller names directly, keyed by their name, as opposed to the two `getVersionUpdateType` derives.
+ */
+const NAMED_VERSION_UPDATE_TYPES = new Map<string, VersionUpdateType>([
+  VersionUpdateType.Major,
+  VersionUpdateType.Minor,
+  VersionUpdateType.Patch,
+  VersionUpdateType.PreMajor,
+  VersionUpdateType.PreMinor,
+  VersionUpdateType.PrePatch,
+  VersionUpdateType.PreRelease
+].map((type) => [type, type]));
+
+/**
  * Type representing the structure of Obsidian's `desktop-releases.json` feed.
  *
  * This is the feed the desktop app itself updates from, so it is the only source that states a version
@@ -657,22 +670,12 @@ export async function getReleaseNotes(newVersion: string): Promise<string> {
  * @returns The corresponding `VersionUpdateType`.
  */
 export function getVersionUpdateType(versionUpdateType: string): VersionUpdateType {
-  const versionUpdateTypeEnum = versionUpdateType as VersionUpdateType;
-  switch (versionUpdateTypeEnum) {
-    case VersionUpdateType.Major:
-    case VersionUpdateType.Minor:
-    case VersionUpdateType.Patch:
-    case VersionUpdateType.PreMajor:
-    case VersionUpdateType.PreMinor:
-    case VersionUpdateType.PrePatch:
-    case VersionUpdateType.PreRelease: {
-      return versionUpdateTypeEnum;
-    }
-
-    default: {
-      return /^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType) ? VersionUpdateType.Manual : VersionUpdateType.Invalid;
-    }
+  const namedVersionUpdateType = NAMED_VERSION_UPDATE_TYPES.get(versionUpdateType);
+  if (namedVersionUpdateType) {
+    return namedVersionUpdateType;
   }
+
+  return /^\d+\.\d+\.\d+(?:-[\w\d.-]+)?$/.test(versionUpdateType) ? VersionUpdateType.Manual : VersionUpdateType.Invalid;
 }
 
 /**

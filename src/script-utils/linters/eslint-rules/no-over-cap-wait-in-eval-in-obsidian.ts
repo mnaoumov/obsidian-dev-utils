@@ -130,6 +130,7 @@ import {
   DESKTOP_PERFORMANCE_TEST_FILE_SUFFIX,
   PERFORMANCE_EVAL_CAP_IN_MILLISECONDS
 } from '../../test-runners/performance-eval-cap.ts';
+import { toTSESTreeNode } from './ts-estree-node.ts';
 
 /**
  * Message ID reported when an in-Obsidian closure declares more waiting than the transport's cap allows.
@@ -340,7 +341,7 @@ export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
      * @param node - The loop statement.
      */
     function chargeLoopDeadline(node: Rule.Node): void {
-      const loopNode = node as LoopStatement;
+      const loopNode = toTSESTreeNode(node) as LoopStatement;
 
       const target = findChargeTarget(loopNode);
       if (!target) {
@@ -396,7 +397,7 @@ export const noOverCapWaitInEvalInObsidian: Rule.RuleModule = {
 
     return {
       'CallExpression'(node: Rule.Node): void {
-        const callNode = node as TSESTree.CallExpression;
+        const callNode = toTSESTreeNode(node) as TSESTree.CallExpression;
 
         const target = findChargeTarget(callNode);
         if (!target) {
@@ -758,7 +759,7 @@ function readBoundExpression(node: TSESTree.Identifier, closure: EvalClosure, co
   }
 
   for (const definition of variable.defs) {
-    const definitionNode = definition.node as TSESTree.Node;
+    const definitionNode = toTSESTreeNode(definition.node);
 
     if (isVariableDeclarator(definitionNode) && definitionNode.init) {
       return definitionNode.init;
@@ -796,7 +797,7 @@ function readCalledHelperNode(callNode: TSESTree.CallExpression, closure: EvalCl
   }
 
   for (const definition of variable.defs) {
-    const functionNode = readDefinitionFunctionNode(definition.node as TSESTree.Node);
+    const functionNode = readDefinitionFunctionNode(toTSESTreeNode(definition.node));
     if (functionNode && isDeclaredInsideClosure(functionNode, closure)) {
       return functionNode;
     }

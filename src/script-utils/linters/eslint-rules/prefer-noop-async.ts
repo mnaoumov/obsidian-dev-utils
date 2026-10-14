@@ -12,6 +12,8 @@
 import type { TSESTree } from '@typescript-eslint/utils';
 import type { Rule } from 'eslint';
 
+import { toTSESTreeNode } from './ts-estree-node.ts';
+
 /**
 Message ID reported when `Promise.resolve()` is used for an async no-op instead of `noopAsync()`.
  */
@@ -24,7 +26,7 @@ export const preferNoopAsync: Rule.RuleModule = {
   create(context) {
     return {
       'CallExpression'(node: Rule.Node): void {
-        const callNode = node as TSESTree.CallExpression;
+        const callNode = toTSESTreeNode(node) as TSESTree.CallExpression;
 
         if (!isPromiseResolveWithNoArguments(callNode)) {
           return;

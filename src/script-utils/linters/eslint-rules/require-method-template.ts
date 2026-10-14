@@ -17,6 +17,7 @@ import type { Rule } from 'eslint';
 import type { Comment } from 'estree';
 
 import { getMandatoryNamedGroup } from '../../../reg-exp.ts';
+import { toTSESTreeNode } from './ts-estree-node.ts';
 
 interface JsdocSettings {
   tagNamePreference?: Record<string, string>;
@@ -44,7 +45,7 @@ export const requireMethodTemplate: Rule.RuleModule = {
 
     return {
       'MethodDefinition'(node: Rule.Node): void {
-        const methodNode = node as TSESTree.MethodDefinition;
+        const methodNode = toTSESTreeNode(node) as TSESTree.MethodDefinition;
         const functionExpression = methodNode.value;
 
         const typeParams = functionExpression.typeParameters?.params;

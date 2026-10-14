@@ -35,6 +35,8 @@ import type {
   Scope
 } from 'eslint';
 
+import { toTSESTreeNode } from './ts-estree-node.ts';
+
 /**
 Message ID reported when an integration test drives the UI with a dispatched input event.
  */
@@ -60,7 +62,7 @@ export const noUntrustedInputEvents: Rule.RuleModule = {
   create(context) {
     return {
       'CallExpression'(node: Rule.Node): void {
-        const callNode = node as TSESTree.CallExpression;
+        const callNode = toTSESTreeNode(node) as TSESTree.CallExpression;
 
         if (!isDispatchEventCall(callNode)) {
           return;
@@ -178,7 +180,7 @@ function resolveEventName(argument: TSESTree.Node, node: Rule.Node, context: Rul
   }
 
   for (const definition of variable.defs) {
-    const definitionNode = definition.node as TSESTree.Node;
+    const definitionNode = toTSESTreeNode(definition.node);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
     if (definitionNode.type !== 'VariableDeclarator' || !definitionNode.init) {
       continue;

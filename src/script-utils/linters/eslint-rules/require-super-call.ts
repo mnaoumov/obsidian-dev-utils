@@ -31,6 +31,7 @@ import {
 } from 'typescript';
 
 import { assert } from '../../../type-guards.ts';
+import { toTSESTreeNode } from './ts-estree-node.ts';
 
 /**
 Message ID reported when an `override` method does not access its `super` counterpart.
@@ -61,7 +62,7 @@ export const requireSuperCall: Rule.RuleModule = {
           return;
         }
 
-        const assignNode = node as TSESTree.AssignmentExpression;
+        const assignNode = toTSESTreeNode(node) as TSESTree.AssignmentExpression;
         if (isSuperPropertyAccess(assignNode.left, current.methodName)) {
           current.hasSuperCall = true;
         }
@@ -72,7 +73,7 @@ export const requireSuperCall: Rule.RuleModule = {
           return;
         }
 
-        const callNode = node as TSESTree.CallExpression;
+        const callNode = toTSESTreeNode(node) as TSESTree.CallExpression;
         if (isSuperMethodCall(callNode, current.methodName)) {
           current.hasSuperCall = true;
         }
@@ -83,13 +84,13 @@ export const requireSuperCall: Rule.RuleModule = {
           return;
         }
 
-        const memberNode = node as TSESTree.MemberExpression;
+        const memberNode = toTSESTreeNode(node) as TSESTree.MemberExpression;
         if (isSuperPropertyAccess(memberNode, current.methodName)) {
           current.hasSuperCall = true;
         }
       },
       'MethodDefinition'(node: Rule.Node): void {
-        const methodNode = node as TSESTree.MethodDefinition;
+        const methodNode = toTSESTreeNode(node) as TSESTree.MethodDefinition;
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison -- AST node type string literals match the TSESTree enum values.
         if (!methodNode.override || methodNode.key.type !== 'Identifier') {
