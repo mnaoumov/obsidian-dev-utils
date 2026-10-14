@@ -95,7 +95,8 @@ vi.mock('../../generated-during-build.ts', () => ({
 }));
 
 vi.mock('../../obsidian-dev-utils-state.ts', () => ({
-  getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue }))
+  getObsidianDevUtilsState: vi.fn((_key: string, defaultValue: unknown) => ({ value: defaultValue })),
+  shareTypescriptLibStateWithObsidianDevUtilsState: vi.fn()
 }));
 
 vi.mock('../css-class.ts', () => ({

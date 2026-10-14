@@ -9,8 +9,14 @@ import { Library } from './library.ts';
 describe('Library', () => {
   it('should default to empty/false before init', () => {
     expect(Library.cssClassScope).toBe('');
+    expect(Library.debugGuideUrl).toBe('');
     expect(Library.debugPrefixNamespace).toBe('');
     expect(Library.shouldPrintStackTrace).toBe(false);
+  });
+
+  it('should expose the injected debug guide URL after init', () => {
+    Library.init({ cssClassScope: 'my-plugin', debugGuideUrl: 'https://example.com/guide', debugPrefixNamespace: 'my-plugin:', shouldPrintStackTrace: true });
+    expect(Library.debugGuideUrl).toBe('https://example.com/guide');
   });
 
   it('should expose the injected params via getters after init', () => {

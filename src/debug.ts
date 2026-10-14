@@ -18,7 +18,7 @@ import {
   Library,
   LIBRARY_NAME
 } from './library.ts';
-import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+import { getTypescriptLibState } from './typescript-lib-state.ts';
 
 const NAMESPACE_SEPARATOR = ',';
 const NEGATED_NAMESPACE_PREFIX = '-';
@@ -103,7 +103,7 @@ export function getDebugController(): DebugController {
  */
 export function getDebugger(namespace: string, framesToSkip = 0): Debugger {
   const key = `${namespace}:${String(framesToSkip)}`;
-  const debuggersMap = getObsidianDevUtilsState('debuggers', new Map<string, Debugger>()).value;
+  const debuggersMap = getTypescriptLibState('debuggers', new Map<string, Debugger>()).value;
   let debuggerEx = debuggersMap.get(key);
   if (!debuggerEx) {
     debuggerEx = getSharedDebugLibInstance()(namespace);
@@ -164,7 +164,7 @@ export function showInitialDebugMessage(pluginId: string): void {
   const namespaces = getNamespaces();
   setNamespaces(pluginId);
   getDebugger(pluginId)(
-    `Debug messages for plugin ${pluginId} are ${state}. See https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/ how to ${changeAction} them.`
+    `Debug messages for plugin ${pluginId} are ${state}.${formatGuideReference(` how to ${changeAction} them`)}`
   );
   setNamespaces(namespaces);
 }
@@ -194,12 +194,16 @@ function enableNamespaces(namespaces: string | string[]): void {
   setNamespaces([...set]);
 }
 
+function formatGuideReference(suffix: string): string {
+  return Library.debugGuideUrl ? ` See ${Library.debugGuideUrl}${suffix}.` : '';
+}
+
 function getNamespaces(): string[] {
   return toArray(getSharedDebugLibInstance().load() ?? '');
 }
 
 function getSharedDebugLibInstance(): typeof debug {
-  return getObsidianDevUtilsState('debug', debug).value;
+  return getTypescriptLibState('debug', debug).value;
 }
 
 function logWithCaller(params: LogWithCallerParams): void {
@@ -238,7 +242,7 @@ function logWithCaller(params: LogWithCallerParams): void {
 function makeStackTraceError(stackTrace: string): CustomStackTraceError {
   return new CustomStackTraceError({
     cause: undefined,
-    message: 'Debug mode: intentional placeholder error. See https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/.',
+    message: `Debug mode: intentional placeholder error.${formatGuideReference('')}`,
     stackTrace
   });
 }

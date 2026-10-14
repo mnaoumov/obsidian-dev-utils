@@ -23,13 +23,17 @@ import {
   Library,
   LIBRARY_NAME
 } from '../../library.ts';
-import { getObsidianDevUtilsState } from '../../obsidian-dev-utils-state.ts';
+import {
+  getObsidianDevUtilsState,
+  shareTypescriptLibStateWithObsidianDevUtilsState
+} from '../../obsidian-dev-utils-state.ts';
 import { CssClass } from '../css-class.ts';
 
 interface PluginContextWindow {
   DEBUG: DebugController | undefined;
 }
 
+const DEBUG_GUIDE_URL = 'https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/';
 const STYLES_ID = `${LIBRARY_NAME}-styles`;
 
 /**
@@ -75,6 +79,7 @@ export function initDebugController(win: Window, component: Component): void {
 export function initPluginContext(pluginId: string): void {
   Library.init({
     cssClassScope: pluginId,
+    debugGuideUrl: DEBUG_GUIDE_URL,
     debugPrefixNamespace: `${pluginId}:`,
     shouldPrintStackTrace: true
   });
@@ -84,6 +89,10 @@ export function initPluginContext(pluginId: string): void {
   // it here so `__obsidianDevUtils.sharedAbortController.value.abort()` always resolves in the devtools
   // console, instead of throwing until some plugin happens to start an abortable operation.
   getSharedAbortController();
+
+  // The debuggers, the `debug` instance and the shared abort controller moved out of `__obsidianDevUtils`. Link them
+  // back, so plugins bundling an older copy of this library share them, and the devtools line above keeps working.
+  shareTypescriptLibStateWithObsidianDevUtilsState();
 
   const lastLibraryVersionWrapper = getObsidianDevUtilsState('lastLibraryVersion', '0.0.0');
   if (compareVersions(LIBRARY_VERSION, lastLibraryVersionWrapper.value) <= 0) {

@@ -7,8 +7,6 @@ import {
   vi
 } from 'vitest';
 
-import type { ValueWrapper } from './value-wrapper.ts';
-
 import {
   abortSignalAny,
   abortSignalNever,
@@ -22,16 +20,14 @@ import {
 } from './abort-controller.ts';
 import { dispose } from './disposable.ts';
 import { castTo } from './object-utils.ts';
-import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
-import { assertNonNullable } from './type-guards.ts';
-
-interface GlobalThisWithState {
-  __obsidianDevUtils: ObsidianDevUtilsState;
-}
-
-interface ObsidianDevUtilsState {
-  sharedAbortController: ValueWrapper<ResettableAbortController>;
-}
+import {
+  assertNonNullable,
+  ensureNonNullable
+} from './type-guards.ts';
+import {
+  getTypescriptLibStateSlot,
+  resetTypescriptLibState
+} from './typescript-lib-state.ts';
 
 describe('INFINITE_TIMEOUT', () => {
   it('should equal Number.POSITIVE_INFINITY', () => {
@@ -589,7 +585,7 @@ describe('ResettableAbortController', () => {
 
 describe('getSharedAbortController', () => {
   afterEach(() => {
-    resetObsidianDevUtilsState();
+    resetTypescriptLibState();
   });
 
   it('should return the same instance on repeat calls', () => {
@@ -598,17 +594,14 @@ describe('getSharedAbortController', () => {
 
   it('should return a new instance after the shared state is reset', () => {
     const sharedAbortController = getSharedAbortController();
-    resetObsidianDevUtilsState();
+    resetTypescriptLibState();
     expect(getSharedAbortController()).not.toBe(sharedAbortController);
   });
 
-  it('should be abortable from the devtools console via the shared state', () => {
+  it('should be abortable from the devtools console via the generic shared state', () => {
     const signal = getSharedAbortSignal();
-    // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
-    const state = (globalThis as Partial<GlobalThisWithState>).__obsidianDevUtils;
-    assertNonNullable(state);
-
-    state.sharedAbortController.value.abort();
+    const wrapper = ensureNonNullable(getTypescriptLibStateSlot().values['sharedAbortController']);
+    castTo<ResettableAbortController>(wrapper.value).abort();
 
     expect(signal.aborted).toBe(true);
     expect(getSharedAbortSignal().aborted).toBe(false);
@@ -617,7 +610,7 @@ describe('getSharedAbortController', () => {
 
 describe('getSharedAbortSignal', () => {
   afterEach(() => {
-    resetObsidianDevUtilsState();
+    resetTypescriptLibState();
   });
 
   it('should return the signal of the shared controller', () => {
