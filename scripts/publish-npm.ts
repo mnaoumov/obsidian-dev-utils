@@ -1,12 +1,20 @@
 /**
  * @file
  *
- * The NPM publish entry point `.github/workflows/publish-npm.yml` runs. It refuses for now, for the reason
- * `scripts/version.ts` gives: the workspace packages are published together, and that is not wired up yet.
+ * The NPM publish entry point `.github/workflows/publish-npm.yml` runs: publishes every workspace package at the
+ * shared version, under the `beta` dist-tag for a pre-release and `latest` otherwise.
  */
 
 import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { readPackageJson } from '@mnaoumov/typescript-dev-toolkit/npm';
+import { isPreRelease } from '@mnaoumov/typescript-dev-toolkit/version';
 
-await wrapCliTask(() => {
-  throw new Error('Publishing the workspace packages is not wired up yet: they are published together, which is a change of its own.');
+import { publishWorkspacePackages } from './helpers/workspace-release.ts';
+
+await wrapCliTask(async () => {
+  const { version } = await readPackageJson();
+  if (!version) {
+    throw new Error('The root package.json declares no version.');
+  }
+  await publishWorkspacePackages({ isBeta: isPreRelease(version) });
 });
