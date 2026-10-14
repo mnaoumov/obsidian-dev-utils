@@ -2010,12 +2010,18 @@ describe('Async', () => {
     it('should fall back after the default 100 ms when no timeout is given and the frame never fires', async () => {
       const requestAnimationFrameSpy = vi.spyOn(window, 'requestAnimationFrame').mockReturnValue(0);
 
-      const outcome = await Promise.race([
-        requestAnimationFrameAsync().then(() => 'resolved'),
+      const promise = requestAnimationFrameAsync();
+      const earlyOutcome = await Promise.race([
+        promise.then(() => 'resolved'),
+        sleep({ milliseconds: 30 }).then(() => 'still pending')
+      ]);
+      const lateOutcome = await Promise.race([
+        promise.then(() => 'resolved'),
         sleep({ milliseconds: 1000 }).then(() => 'still pending')
       ]);
 
-      expect(outcome).toBe('resolved');
+      expect(earlyOutcome).toBe('still pending');
+      expect(lateOutcome).toBe('resolved');
       requestAnimationFrameSpy.mockRestore();
     });
 

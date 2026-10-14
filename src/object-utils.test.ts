@@ -38,6 +38,12 @@ interface NormalizeTestObject {
   b?: number;
 }
 
+interface RemoveUndefinedKeepTestObject {
+  a: number | undefined;
+  b?: number | undefined;
+  c: number;
+}
+
 interface RemoveUndefinedTestObject {
   a: number;
   b?: undefined;
@@ -208,7 +214,8 @@ describe('ObjectUtils', () => {
     });
 
     it('should sort keys that were inserted out of order', () => {
-      const $object = { z: 1, a: 2, m: 3 };
+      // Built from entries so that the insertion order survives the key-sorting lint autofix.
+      const $object = Object.fromEntries([['z', 1], ['a', 2], ['m', 3]]);
       expect(getAllKeys($object)).toEqual(['a', 'm', 'z']);
     });
 
@@ -337,7 +344,7 @@ describe('ObjectUtils', () => {
     });
 
     it('should keep the undefined properties named in keysToKeep and remove the rest', () => {
-      const $object: Partial<Record<'a' | 'b' | 'c', number>> = { a: undefined, b: undefined, c: 1 };
+      const $object: RemoveUndefinedKeepTestObject = { a: undefined, b: undefined, c: 1 };
       removeUndefinedProperties($object, ['a']);
       expect(Object.keys($object)).toEqual(['a', 'c']);
     });
@@ -595,12 +602,12 @@ describe('ObjectUtils', () => {
     });
 
     it('should keep insertion order of keys by default', () => {
-      const json = toJson({ z: 1, a: 2 });
+      const json = toJson(Object.fromEntries([['z', 1], ['a', 2]]));
       expect(Object.keys(JSON.parse(json) as object)).toEqual(['z', 'a']);
     });
 
     it('should sort keys inserted out of order when enabled', () => {
-      const json = toJson({ z: 1, a: 2, m: 3 }, { shouldSortKeys: true });
+      const json = toJson(Object.fromEntries([['z', 1], ['a', 2], ['m', 3]]), { shouldSortKeys: true });
       expect(Object.keys(JSON.parse(json) as object)).toEqual(['a', 'm', 'z']);
     });
 

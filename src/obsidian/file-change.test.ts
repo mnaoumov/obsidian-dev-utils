@@ -415,20 +415,20 @@ describe('applyContentChanges', () => {
 
   it('should reject when the signal aborts while the changes provider runs', async () => {
     const controller = new AbortController();
-    const provider = (): FileChange[] => {
+    function provider(): FileChange[] {
       controller.abort(new Error('aborted'));
       return [makeContentChange('[[old]]', '[[new]]', 6)];
-    };
+    }
     await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: provider, content: 'Hello [[old]] world', path: 'test.md' }))
       .rejects.toThrow('aborted');
   });
 
   it('should reject rather than ask for a retry when the signal aborts while the changes provider declines', async () => {
     const controller = new AbortController();
-    const provider = (): null => {
+    function provider(): null {
       controller.abort(new Error('aborted'));
       return null;
-    };
+    }
     await expect(applyContentChanges({ abortSignal: controller.signal, changesProvider: provider, content: 'Hello world', path: 'test.md' }))
       .rejects.toThrow('aborted');
   });
@@ -720,17 +720,17 @@ describe('canvas changes via applyFileChanges', () => {
       nodes: [{ file: 'old.md', id: '1', type: 'file' }]
     });
     const controller = new AbortController();
-    const provider = (): FileChange[] => {
+    function provider(): FileChange[] {
       controller.abort(new Error('aborted'));
       return [makeCanvasFileNodeChange('old.md', 'new.md', 0)];
-    };
+    }
     let error: unknown = null;
 
     vi.mocked(process).mockImplementation(async ({ newContentProvider }) => {
       try {
         await resolveValue(newContentProvider, { abortSignal: controller.signal, content: canvasContent });
-      } catch (caught) {
-        error = caught;
+      } catch (error_) {
+        error = error_;
       }
     });
 
