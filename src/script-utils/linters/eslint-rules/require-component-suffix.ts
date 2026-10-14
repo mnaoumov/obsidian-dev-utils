@@ -23,6 +23,8 @@ import type {
 import type { Rule } from 'eslint';
 import type { Type } from 'typescript';
 
+import { toTSESTreeNode } from './ts-estree-node.ts';
+
 /**
 Message ID reported when a class extends `Component` but its name does not end with `Component`.
  */
@@ -198,7 +200,7 @@ function collectAncestorNames(type: Type): Set<string> {
  */
 function reportClass(params: ReportClassParams): void {
   const { checker, context, node, services } = params;
-  const classNode = node as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
+  const classNode = toTSESTreeNode(node) as TSESTree.ClassDeclaration | TSESTree.ClassExpression;
   const classId = classNode.id;
 
   /* v8 ignore start -- ESLint selector `[id]` guarantees classId is present. */

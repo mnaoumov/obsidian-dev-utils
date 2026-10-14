@@ -1067,7 +1067,7 @@ describe('app-dependent functions', () => {
       expect(() =>
         generateMarkdownLink({
           app,
-          linkStyle: 'Invalid' as LinkStyle,
+          linkStyle: castTo<LinkStyle>('Invalid'),
           sourcePathOrFile: 'note.md',
           targetPathOrFile: 'target.md'
         })
@@ -1078,7 +1078,7 @@ describe('app-dependent functions', () => {
       expect(() =>
         generateMarkdownLink({
           app,
-          linkPathStyle: 'Invalid' as LinkPathStyle,
+          linkPathStyle: castTo<LinkPathStyle>('Invalid'),
           linkStyle: LinkStyle.Wikilink,
           sourcePathOrFile: 'note.md',
           targetPathOrFile: 'target.md'

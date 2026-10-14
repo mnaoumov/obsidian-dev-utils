@@ -6,8 +6,12 @@
 
 /* v8 ignore start -- Declarative commitlint configuration; correctness is verified by running commitlint, not unit tests. */
 
-import type { UserConfig } from '@commitlint/types';
+import type {
+  RuleConfigSeverity,
+  UserConfig
+} from '@commitlint/types';
 
+import { castTo } from '../object-utils.ts';
 import {
   forbiddenPatternsPlugin,
   NO_FORBIDDEN_PATTERNS_RULE_NAME
@@ -17,7 +21,11 @@ import {
   spellcheckHeaderPlugin
 } from './commitlint-spellcheck-header.ts';
 
-const ERROR_SEVERITY = 2;
+/*
+ * `RuleConfigSeverity.Error`. The enum lives in a package this library only has as a devDependency, so its value cannot be imported at runtime.
+ */
+const ERROR_SEVERITY_LEVEL = 2;
+const ERROR_SEVERITY = castTo<RuleConfigSeverity>(ERROR_SEVERITY_LEVEL);
 
 /**
  * Commitlint configuration extending `@commitlint/config-conventional`, plus a rule refusing a message whose

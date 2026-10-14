@@ -11,6 +11,7 @@ import {
   vi
 } from 'vitest';
 
+import { castTo } from '../../../object-utils.ts';
 import { strictProxy } from '../../../strict-proxy.ts';
 import { assertNonNullable } from '../../../type-guards.ts';
 import {
@@ -78,7 +79,7 @@ function createMockRuleContext(typeCheckerOverrides: MockTypeCheckerOverrides): 
   const visitors = requireSuperCall.create(context) as Record<string, (node: Rule.Node) => void>;
 
   const methodNode = strictProxy<TSESTree.MethodDefinition>({
-    key: strictProxy<TSESTree.Identifier>({ name: 'method', type: 'Identifier' as TSESTree.Identifier['type'] }),
+    key: strictProxy<TSESTree.Identifier>({ name: 'method', type: castTo<TSESTree.Identifier['type']>('Identifier') }),
     kind: 'method',
     override: true,
     parent: { parent: classDeclaration }
@@ -236,7 +237,7 @@ describe('require-super-call (no type info)', () => {
     const visitors = requireSuperCall.create(context) as Record<string, (node: Rule.Node) => void>;
 
     const methodNode = strictProxy<TSESTree.MethodDefinition>({
-      key: strictProxy<TSESTree.Identifier>({ name: 'method', type: 'Identifier' as TSESTree.Identifier['type'] }),
+      key: strictProxy<TSESTree.Identifier>({ name: 'method', type: castTo<TSESTree.Identifier['type']>('Identifier') }),
       kind: 'method',
       override: true,
       parent: { parent: {} }

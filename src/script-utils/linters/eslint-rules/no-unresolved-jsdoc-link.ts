@@ -89,6 +89,8 @@ import {
   sys
 } from 'typescript';
 
+import { toTSESTreeNode } from './ts-estree-node.ts';
+
 /**
  * Message ID reported when a JSDoc link target does not resolve to a symbol.
  */
@@ -146,7 +148,7 @@ export const noUnresolvedJsdocLink: Rule.RuleModule = {
       Program(node): void {
         const program = services.program;
         const checker = program.getTypeChecker();
-        const tsSourceFile = services.esTreeNodeToTSNodeMap.get(node as TSESTree.Program);
+        const tsSourceFile = services.esTreeNodeToTSNodeMap.get(toTSESTreeNode(node) as TSESTree.Program);
 
         /*
          * The same link is reachable more than once: a parameter returns its own `@param` tag, which its function's

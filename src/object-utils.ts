@@ -378,7 +378,7 @@ class ToJsonConverter {
         applySubstitutions({
           functionTexts: this.functionTexts,
           index: indexString ? parseInt(indexString, 10) : 0,
-          key: key as TokenSubstitutionKey,
+          key: castTo<TokenSubstitutionKey>(key),
           substitutions: this.fullOptions.tokenSubstitutions
         }),
       searchValue: placeholderRegExp
