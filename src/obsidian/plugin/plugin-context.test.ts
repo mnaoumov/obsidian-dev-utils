@@ -57,7 +57,8 @@ vi.mock('../../generated-during-build.ts', () => ({
   LIBRARY_VERSION: '1.0.0'
 }));
 
-vi.mock('../../obsidian-dev-utils-state.ts', () => ({
+vi.mock('../../obsidian-dev-utils-state.ts', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../../obsidian-dev-utils-state.ts')>(),
   getObsidianDevUtilsState: mocks.getObsidianDevUtilsState
 }));
 
@@ -170,6 +171,7 @@ describe('initPluginContext', () => {
     expect(Library.cssClassScope).toBe('my-plugin');
     expect(Library.debugPrefixNamespace).toBe('my-plugin:');
     expect(Library.shouldPrintStackTrace).toBe(true);
+    expect(Library.debugGuideUrl).toBe('https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/');
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
   });
 
@@ -206,7 +208,8 @@ describe('initPluginContext', () => {
   // (`__obsidianDevUtils.sharedAbortController.value.abort()`). Nothing else in the library touches it, so
   // without this eager call the key would be absent until a consumer plugin happened to start an operation,
   // and the documented console line would throw instead of aborting. This asserts the console path itself,
-  // reaching the global exactly as the console does.
+  // reaching the global exactly as the console does. The controller itself lives in the generic shared state, so this
+  // also proves the plugin init links it back under `__obsidianDevUtils`.
   it('should create the shared abort controller so the console call always resolves', () => {
     // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
     delete castTo<Partial<GlobalThisWithState>>(globalThis).__obsidianDevUtils;

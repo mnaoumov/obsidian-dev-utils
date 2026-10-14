@@ -9,7 +9,7 @@ import {
   CombineDisposable
 } from './disposable.ts';
 import { noop } from './function.ts';
-import { getObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
+import { getTypescriptLibState } from './typescript-lib-state.ts';
 
 /**
  * A constant representing an infinite timeout.
@@ -158,13 +158,15 @@ export function abortSignalTimeout(timeoutInMilliseconds: number): AbortSignal {
  * It lives in the shared state, so it is reachable from the devtools console:
  *
  * ```javascript
- * __obsidianDevUtils.sharedAbortController.value.abort();
+ * globalThis[Symbol.for('@mnaoumov/typescript-lib/state')].values.sharedAbortController.value.abort();
  * ```
+ *
+ * In an Obsidian plugin the same instance is also reachable as `__obsidianDevUtils.sharedAbortController.value`.
  *
  * @returns The shared {@link ResettableAbortController}.
  */
 export function getSharedAbortController(): ResettableAbortController {
-  return getObsidianDevUtilsState('sharedAbortController', new ResettableAbortController()).value;
+  return getTypescriptLibState('sharedAbortController', new ResettableAbortController()).value;
 }
 
 /**

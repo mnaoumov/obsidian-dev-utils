@@ -378,6 +378,28 @@ describe('Debug', () => {
         Error.prepareStackTrace = originalPrepareStackTrace;
       }
     });
+
+    it('should point the placeholder error at the debug guide the host supplied', () => {
+      Library.init({ cssClassScope: '', debugGuideUrl: 'https://example.com/guide', debugPrefixNamespace: '', shouldPrintStackTrace: true });
+      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      const namespace = 'log-caller-guide';
+      debug.enable(namespace);
+      getDebugger(namespace)('guide message');
+      const stackTraceError = consoleSpy.mock.calls.flat().find((argument) => argument instanceof Error);
+      assertNonNullable(stackTraceError);
+      expect(stackTraceError.message).toBe('Debug mode: intentional placeholder error. See https://example.com/guide.');
+    });
+
+    it('should name no guide in the placeholder error when the host supplied none', () => {
+      Library.init({ cssClassScope: '', debugPrefixNamespace: '', shouldPrintStackTrace: true });
+      const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(noop);
+      const namespace = 'log-caller-no-guide';
+      debug.enable(namespace);
+      getDebugger(namespace)('no guide message');
+      const stackTraceError = consoleSpy.mock.calls.flat().find((argument) => argument instanceof Error);
+      assertNonNullable(stackTraceError);
+      expect(stackTraceError.message).toBe('Debug mode: intentional placeholder error.');
+    });
   });
 
   describe('showInitialDebugMessage', () => {
@@ -419,6 +441,25 @@ describe('Debug', () => {
       showInitialDebugMessage('temp-plugin');
       const namespaces = controller.get();
       expect(namespaces).toContain('original-ns');
+    });
+
+    it('should point at the debug guide the host supplied', () => {
+      Library.init({ cssClassScope: '', debugGuideUrl: 'https://example.com/guide', debugPrefixNamespace: '', shouldPrintStackTrace: false });
+      vi.spyOn(console, 'debug').mockImplementation(noop);
+      debug.enable('guide-plugin');
+      showInitialDebugMessage('guide-plugin');
+      // eslint-disable-next-line no-console -- Valid usage.
+      expect(vi.mocked(console.debug).mock.calls.flat().join(' ')).toContain('Debug messages for plugin guide-plugin are enabled. See https://example.com/guide how to disable them.');
+    });
+
+    it('should name no guide when the host supplied none', () => {
+      vi.spyOn(console, 'debug').mockImplementation(noop);
+      debug.enable('no-guide-plugin');
+      showInitialDebugMessage('no-guide-plugin');
+      // eslint-disable-next-line no-console -- Valid usage.
+      const allArguments = vi.mocked(console.debug).mock.calls.flat().join(' ');
+      expect(allArguments).toContain('Debug messages for plugin no-guide-plugin are enabled.');
+      expect(allArguments).not.toContain(' See ');
     });
 
     it('should restore empty namespaces after showing the message when none were set', () => {

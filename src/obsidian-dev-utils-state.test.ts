@@ -7,8 +7,14 @@ import {
 
 import {
   getObsidianDevUtilsState,
-  resetObsidianDevUtilsState
+  resetObsidianDevUtilsState,
+  shareTypescriptLibStateWithObsidianDevUtilsState
 } from './obsidian-dev-utils-state.ts';
+import {
+  getTypescriptLibState,
+  getTypescriptLibStateSlot,
+  resetTypescriptLibState
+} from './typescript-lib-state.ts';
 import { ValueWrapper } from './value-wrapper.ts';
 
 interface GlobalThisWithState {
@@ -56,5 +62,47 @@ describe('getObsidianDevUtilsState', () => {
     const second = getObsidianDevUtilsState('resettable', 'b');
     expect(second).not.toBe(first);
     expect(second.value).toBe('b');
+  });
+});
+
+describe('shareTypescriptLibStateWithObsidianDevUtilsState', () => {
+  afterEach(() => {
+    resetObsidianDevUtilsState();
+    resetTypescriptLibState();
+  });
+
+  it('should publish the generic wrappers under __obsidianDevUtils when an older copy left none there', () => {
+    const sharedAbortController = getTypescriptLibState('sharedAbortController', 'controller');
+    const debuggers = getTypescriptLibState('debuggers', 'debuggers');
+
+    shareTypescriptLibStateWithObsidianDevUtilsState();
+
+    expect(getObsidianDevUtilsState('sharedAbortController', 'other')).toBe(sharedAbortController);
+    expect(getObsidianDevUtilsState('debuggers', 'other')).toBe(debuggers);
+  });
+
+  it('should adopt the wrappers an older copy already keeps under __obsidianDevUtils', () => {
+    const legacyDebug = getObsidianDevUtilsState('debug', 'legacy');
+    getTypescriptLibState('debug', 'modern');
+
+    shareTypescriptLibStateWithObsidianDevUtilsState();
+
+    expect(getTypescriptLibState('debug', 'other')).toBe(legacyDebug);
+    expect(getObsidianDevUtilsState('debug', 'other')).toBe(legacyDebug);
+  });
+
+  it('should leave a key alone when neither side has it', () => {
+    shareTypescriptLibStateWithObsidianDevUtilsState();
+
+    expect(getTypescriptLibStateSlot().values).toStrictEqual({});
+    expect(getObsidianDevUtilsState('debug', 'fresh').value).toBe('fresh');
+  });
+
+  it('should not link a key that stayed Obsidian-specific', () => {
+    getTypescriptLibState('queue', 'generic');
+
+    shareTypescriptLibStateWithObsidianDevUtilsState();
+
+    expect(getObsidianDevUtilsState('queue', 'obsidian').value).toBe('obsidian');
   });
 });

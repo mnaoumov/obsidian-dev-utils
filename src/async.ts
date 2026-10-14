@@ -18,12 +18,11 @@ import {
   abortSignalTimeout,
   waitForAbort
 } from './abort-controller.ts';
-import { snapshot } from './array.ts';
+import { notifyAsyncOperationStarted } from './async-operation-hook.ts';
 import {
   getLibDebugger,
   printWithStackTrace
 } from './debug.ts';
-import { CallbackDisposable } from './disposable.ts';
 import {
   ASYNC_WRAPPER_ERROR_MESSAGE,
   CustomStackTraceError,
@@ -42,6 +41,44 @@ import {
   assert,
   assertNonNullable
 } from './type-guards.ts';
+
+// Re-exported so `obsidian-dev-utils/async` keeps serving them. They live in the test support now: production code
+// only reports to the hook that `async-operation-tracking.ts` installs.
+export {
+  disableAsyncOperationTracking,
+  enableAsyncOperationTracking,
+  isAsyncOperationTrackingEnabled,
+  waitForAllAsyncOperations
+} from './async-operation-tracking.ts';
+
+/**
+ * Parameters for {@link invokeAsyncSafelyAfterDelay}.
+ */
+export interface InvokeAsyncSafelyAfterDelayParams {
+  /**
+   * The abort signal to listen to.
+   */
+  readonly abortSignal?: AbortSignal;
+
+  /**
+   * The asynchronous function to invoke.
+   *
+   * @param abortSignal - The abort signal to listen to.
+   */
+  readonly asyncFunction: (abortSignal: AbortSignal) => Promisable<void>;
+
+  /**
+   * The delay in milliseconds.
+   *
+   * @default `0`
+   */
+  readonly delayInMilliseconds?: number;
+
+  /**
+   * The stack trace of the source function.
+   */
+  readonly stackTrace?: string;
+}
 
 /**
  * A type representing a function that resolves a {@link Promise}.
@@ -240,7 +277,6 @@ export function handleSilentError(error: unknown): boolean {
   getLibDebugger('Async:handleSilentError')(error);
   return true;
 }
-
 /**
  * Ignores an error that is thrown by an asynchronous function.
  *
@@ -284,66 +320,6 @@ export async function ignoreError<T>(promise: Promise<T>, fallbackValue?: T): Pr
   }
 }
 
-const pendingAsyncOperations = new Set<Promise<void>>();
-/**
-Module-level mutable state, held in one object so each mutation names it explicitly.
- */
-const moduleState = {
-  isTrackingEnabled: false
-};
-/**
- * Parameters for {@link invokeAsyncSafelyAfterDelay}.
- */
-export interface InvokeAsyncSafelyAfterDelayParams {
-  /**
-   * The abort signal to listen to.
-   */
-  readonly abortSignal?: AbortSignal;
-
-  /**
-   * The asynchronous function to invoke.
-   *
-   * @param abortSignal - The abort signal to listen to.
-   */
-  readonly asyncFunction: (abortSignal: AbortSignal) => Promisable<void>;
-
-  /**
-   * The delay in milliseconds.
-   *
-   * @default `0`
-   */
-  readonly delayInMilliseconds?: number;
-
-  /**
-   * The stack trace of the source function.
-   */
-  readonly stackTrace?: string;
-}
-
-/**
- * Disables tracking previously enabled via {@link enableAsyncOperationTracking} and forgets any currently-tracked operations.
- */
-export function disableAsyncOperationTracking(): void {
-  moduleState.isTrackingEnabled = false;
-  pendingAsyncOperations.clear();
-}
-
-/**
- * Enables tracking of fire-and-forget operations scheduled via {@link invokeAsyncSafely} (and therefore {@link convertAsyncToSync}).
- *
- * While enabled, each scheduled operation is recorded until it settles so that tests can await them all via {@link waitForAllAsyncOperations}, removing the need to override {@link invokeAsyncSafely} / {@link convertAsyncToSync} in tests.
- *
- * Tracking is disabled by default, so production code carries no bookkeeping overhead. Intended to be enabled in test environments only.
- *
- * @returns A {@link Disposable} that disables tracking again (via {@link disableAsyncOperationTracking}) when disposed, for use with `using`.
- */
-export function enableAsyncOperationTracking(): Disposable {
-  moduleState.isTrackingEnabled = true;
-  return new CallbackDisposable({
-    callback: disableAsyncOperationTracking
-  });
-}
-
 /**
  * Invokes a {@link Promise} and safely handles any errors by catching them and emitting an async error event.
  *
@@ -358,10 +334,10 @@ export function invokeAsyncSafely(asyncFunction: () => Promisable<unknown>, stac
     result = asyncFunction();
   } catch (error) {
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- Re-rejecting the original caught error as-is.
-    trackAsyncOperation(addErrorHandler(() => Promise.reject(error), stackTrace));
+    notifyAsyncOperationStarted(addErrorHandler(() => Promise.reject(error), stackTrace));
   }
   if (result instanceof Promise) {
-    trackAsyncOperation(addErrorHandler(() => result, stackTrace));
+    notifyAsyncOperationStarted(addErrorHandler(() => result, stackTrace));
   }
 }
 
@@ -382,15 +358,6 @@ export function invokeAsyncSafelyAfterDelay(params: InvokeAsyncSafelyAfterDelayP
     await sleep({ abortSignal, milliseconds: delayInMilliseconds, shouldThrowOnAbort: true });
     await asyncFunction(abortSignal);
   }, stackTrace);
-}
-
-/**
- * Checks whether async-operation tracking is currently enabled (see {@link enableAsyncOperationTracking}).
- *
- * @returns `true` if tracking is enabled, `false` otherwise.
- */
-export function isAsyncOperationTrackingEnabled(): boolean {
-  return moduleState.isTrackingEnabled;
 }
 
 /**
@@ -417,36 +384,6 @@ export async function promiseAllAsyncFnsSequentially<T>(asyncFns: (() => Promisa
  */
 export async function promiseAllSequentially<T>(promises: Promisable<T>[]): Promise<T[]> {
   return await promiseAllAsyncFnsSequentially(promises.map((promise) => () => promise));
-}
-
-/**
- * Waits for all fire-and-forget operations tracked since {@link enableAsyncOperationTracking} was called to settle.
- *
- * Operations scheduled while awaiting are also awaited, so cascading fire-and-forget chains are fully drained.
- *
- * @returns A {@link Promise} that resolves once no tracked operations remain pending.
- * @throws If tracking is not enabled. Otherwise this would silently resolve as if all operations were finished, masking a missing {@link enableAsyncOperationTracking} call.
- */
-export async function waitForAllAsyncOperations(): Promise<void> {
-  if (!moduleState.isTrackingEnabled) {
-    throw new Error('Async operation tracking is not enabled. Call enableAsyncOperationTracking() before waitForAllAsyncOperations().');
-  }
-
-  while (pendingAsyncOperations.size > 0) {
-    await Promise.allSettled(snapshot(pendingAsyncOperations));
-  }
-}
-
-function trackAsyncOperation(operation: Promise<void>): void {
-  if (!moduleState.isTrackingEnabled) {
-    return;
-  }
-
-  pendingAsyncOperations.add(operation);
-  // eslint-disable-next-line no-void -- Fire-and-forget cleanup of the settled operation.
-  void operation.finally(() => {
-    pendingAsyncOperations.delete(operation);
-  });
 }
 
 const terminateRetryErrors = new WeakSet<Error>();

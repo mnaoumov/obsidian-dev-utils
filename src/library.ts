@@ -22,6 +22,12 @@ export interface LibraryInitParams {
   readonly cssClassScope: string;
 
   /**
+   * The URL of the guide explaining how to turn debug messages on and off, named in the library's debug messages.
+   * Without one, the messages name no guide.
+   */
+  readonly debugGuideUrl?: string;
+
+  /**
    * The namespace prefix prepended to the library's debug namespaces (e.g. `${pluginId}:`).
    */
   readonly debugPrefixNamespace: string;
@@ -55,6 +61,15 @@ class LibraryContext {
    */
   public get cssClassScope(): string {
     return this.params.cssClassScope;
+  }
+
+  /**
+   * The URL of the guide explaining how to turn debug messages on and off. Empty until {@link init} is called with one.
+   *
+   * @returns The debug guide URL.
+   */
+  public get debugGuideUrl(): string {
+    return this.params.debugGuideUrl ?? '';
   }
 
   /**

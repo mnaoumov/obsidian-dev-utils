@@ -26,6 +26,9 @@
  * hooks imported from their respective frameworks.
  */
 
+// Imported through `async.ts`, which re-exports them, rather than from `async-operation-tracking.ts`: that preloads
+// `async.ts` before any test file runs, so a test's partial `vi.mock` of a module it imports (`error.ts`, say) never
+// reaches it. Suites, consumers' included, have come to rely on that.
 import {
   disableAsyncOperationTracking,
   enableAsyncOperationTracking,
@@ -43,6 +46,7 @@ import { resetObsidianDevUtilsState } from './obsidian-dev-utils-state.ts';
 import { restoreNodeWebGlobals } from './script-utils/node-web-globals.ts';
 import { installWarningsAsErrors } from './script-utils/warnings-as-errors.ts';
 import { ensureNonNullable } from './type-guards.ts';
+import { resetTypescriptLibState } from './typescript-lib-state.ts';
 
 /**
  * A test-framework lifecycle hook registrar, such as `beforeEach` or `afterEach`.
@@ -192,6 +196,7 @@ function beforeEachHandler(): void {
   const errorsBetweenTests = drainCollectedUnhandledAsyncErrors();
 
   resetObsidianDevUtilsState();
+  resetTypescriptLibState();
   Library.resetToDefault();
   enableAsyncOperationTracking();
   silenceConsole();

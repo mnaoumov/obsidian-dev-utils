@@ -42,7 +42,6 @@ import {
   toArray,
   waitForAllAsyncOperations
 } from './async.ts';
-import { dispose } from './disposable.ts';
 import {
   registerAsyncErrorEventHandler,
   SilentError,
@@ -1311,91 +1310,13 @@ describe('Async', () => {
     });
   });
 
-  describe('async operation tracking', () => {
-    afterEach(() => {
-      disableAsyncOperationTracking();
-    });
-
-    it('should wait for tracked fire-and-forget operations to settle', async () => {
-      enableAsyncOperationTracking();
-      let didComplete = false;
-      invokeAsyncSafely(async () => {
-        await noopAsync();
-        didComplete = true;
-      });
-
-      await waitForAllAsyncOperations();
-
-      expect(didComplete).toBe(true);
-    });
-
-    it('should drain operations scheduled while waiting', async () => {
-      enableAsyncOperationTracking();
-      let completedCount = 0;
-      invokeAsyncSafely(async () => {
-        await noopAsync();
-        completedCount++;
-        invokeAsyncSafely(async () => {
-          await noopAsync();
-          completedCount++;
-        });
-      });
-
-      await waitForAllAsyncOperations();
-
-      const EXPECTED_COMPLETED_COUNT = 2;
-      expect(completedCount).toBe(EXPECTED_COMPLETED_COUNT);
-    });
-
-    it('should throw when tracking is disabled instead of silently resolving', async () => {
-      disableAsyncOperationTracking();
-      await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
-    });
-
-    it('should disable tracking when the returned disposable is disposed', async () => {
-      const disposable = enableAsyncOperationTracking();
-      dispose(disposable);
-      await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
-    });
-
-    it('should keep tracking enabled inside a using scope and disable it on exit', async () => {
-      {
-        using _tracking = enableAsyncOperationTracking();
-        await expect(waitForAllAsyncOperations()).resolves.toBeUndefined();
-      }
-      await expect(waitForAllAsyncOperations()).rejects.toThrow('Async operation tracking is not enabled');
-    });
-
-    it('should report whether tracking is currently enabled', () => {
-      disableAsyncOperationTracking();
-      expect(isAsyncOperationTrackingEnabled()).toBe(false);
-
-      enableAsyncOperationTracking();
-      expect(isAsyncOperationTrackingEnabled()).toBe(true);
-
-      disableAsyncOperationTracking();
-      expect(isAsyncOperationTrackingEnabled()).toBe(false);
-    });
-
-    it('should leave tracking off in a freshly loaded module, so production code carries no bookkeeping', async () => {
-      vi.resetModules();
-      const freshModule = await import('./async.ts');
-      expect(freshModule.isAsyncOperationTrackingEnabled()).toBe(false);
-    });
-
-    it('should forget operations pending when tracking was disabled, and not record ones scheduled while it was off', async () => {
-      enableAsyncOperationTracking();
-      invokeAsyncSafely(neverEnds);
-      disableAsyncOperationTracking();
-      invokeAsyncSafely(neverEnds);
-      enableAsyncOperationTracking();
-
-      const PENDING_GRACE_IN_MILLISECONDS = 100;
-      const outcome = await Promise.race([
-        waitForAllAsyncOperations().then(() => 'drained'),
-        sleep({ milliseconds: PENDING_GRACE_IN_MILLISECONDS }).then(() => 'still pending')
-      ]);
-      expect(outcome).toBe('drained');
+  describe('async operation tracking re-exports', () => {
+    it('should keep serving the tracking functions from the async module', async () => {
+      const trackingModule = await import('./async-operation-tracking.ts');
+      expect(disableAsyncOperationTracking).toBe(trackingModule.disableAsyncOperationTracking);
+      expect(enableAsyncOperationTracking).toBe(trackingModule.enableAsyncOperationTracking);
+      expect(isAsyncOperationTrackingEnabled).toBe(trackingModule.isAsyncOperationTrackingEnabled);
+      expect(waitForAllAsyncOperations).toBe(trackingModule.waitForAllAsyncOperations);
     });
   });
 
