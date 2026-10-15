@@ -110,6 +110,12 @@ describe('defineEslintConfigs', () => {
     expect(findRuleEntry(configs, 'n/no-unsupported-features/es-builtins')).toEqual(['error', {}]);
     expect(findRuleEntry(configs, 'n/no-unsupported-features/node-builtins')).toEqual(['error', { ignores: ['Blob', 'File'] }]);
   });
+
+  it('should pin the Node version of the compatibility rules when given one', () => {
+    const configs = defineEslintConfigs({ minimumNodeVersion: '>=16.16.0' });
+    expect(findRuleEntry(configs, 'n/no-unsupported-features/es-builtins')).toEqual(['error', { version: '>=16.16.0' }]);
+    expect(findRuleEntry(configs, 'n/no-unsupported-features/node-builtins')).toEqual(['error', { ignores: ['Blob', 'File'], version: '>=16.16.0' }]);
+  });
 });
 
 describe('getTypeScriptEslintConfigs', () => {

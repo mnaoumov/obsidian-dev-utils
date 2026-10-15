@@ -79,8 +79,9 @@ export const LIBRARY_BUILD_STEPS: readonly string[] = [
 ];
 
 /**
- * The export condition that maps every subpath onto its TypeScript source, so a package can import a sibling
- * package's source before anything is built.
+ * The export condition the `obsidian-dev-utils` workspace maps every subpath onto its TypeScript source with, so a
+ * package there can import a sibling package's source before anything is built. Pass it to
+ * {@link generateLibraryExports} through {@link GenerateLibraryExportsOptions.sourceCondition}.
  */
 export const SOURCE_CONDITION = '@mnaoumov/source';
 
@@ -93,6 +94,18 @@ export interface BuildLibraryOptions {
    * environment-specific `require` patch.
    */
   readonly preprocessPluginFactory?: (isEsm: boolean) => Plugin;
+}
+
+/**
+ * Options for {@link generateLibraryExports}.
+ */
+export interface GenerateLibraryExportsOptions {
+  /**
+   * An export condition to put first in every entry, mapping the subpath onto its TypeScript source. Only a
+   * repository holding several packages that import each other needs one; nothing outside it sets the condition, and
+   * the sources it points at do not ship, so the publish has to strip it again. Omitted, the map has none.
+   */
+  readonly sourceCondition?: string | undefined;
 }
 
 type ModuleFormat = 'cjs' | 'esm';
@@ -137,6 +150,7 @@ interface BuildReferencePathDirectiveParams {
 interface SetExportParams {
   readonly exportConditions: PackageJson.ExportConditions;
   readonly isWildcard: boolean;
+  readonly sourceCondition: string | undefined;
   readonly srcFolder: string;
 }
 
@@ -243,10 +257,12 @@ export async function buildLibraryTypes(): Promise<void> {
  * Regenerates the `exports` map of the package's `package.json` from its source folders, and writes a `package.json`
  * stub per subpath for resolvers that do not read `exports`.
  *
+ * @param options - The {@link GenerateLibraryExportsOptions}.
  * @returns A {@link Promise} that resolves when the map is current.
  * @throws If the map changed, so the change gets reviewed and committed rather than shipped unseen.
  */
-export async function generateLibraryExports(): Promise<void> {
+export async function generateLibraryExports(options: GenerateLibraryExportsOptions = {}): Promise<void> {
+  const { sourceCondition } = options;
   const srcFolders: string[] = [RepoPaths.Src];
 
   for (const dirent of await readdirPosix(RepoPaths.Src, { recursive: true, withFileTypes: true })) {
@@ -272,8 +288,8 @@ export async function generateLibraryExports(): Promise<void> {
     const exportConditions: PackageJson.ExportConditions = {};
     packageJson.exports = exportConditions;
     for (const srcFolder of srcFolders) {
-      await setExport({ exportConditions, isWildcard: false, srcFolder });
-      await setExport({ exportConditions, isWildcard: true, srcFolder });
+      await setExport({ exportConditions, isWildcard: false, sourceCondition, srcFolder });
+      await setExport({ exportConditions, isWildcard: true, sourceCondition, srcFolder });
     }
 
     isChanged = !isDeepEqual(oldExports, packageJson.exports);
@@ -454,7 +470,7 @@ function isExcludedFromIndex(folder: string, dirent: Dirent): boolean {
 }
 
 async function setExport(params: SetExportParams): Promise<void> {
-  const { exportConditions, isWildcard, srcFolder } = params;
+  const { exportConditions, isWildcard, sourceCondition, srcFolder } = params;
   const importPath = replaceAll({
     $string: srcFolder,
     replacer: RepoPaths.CurrentFolder,
@@ -489,7 +505,7 @@ async function setExport(params: SetExportParams): Promise<void> {
     exportConditions[conditionPath] = {
       /* eslint-disable perfectionist/sort-objects -- Order matters once it is written to `package.json`. */
       // First, so it wins wherever it is set: inside the repository, before anything is built.
-      [SOURCE_CONDITION]: sourcePath,
+      ...(sourceCondition !== undefined && { [sourceCondition]: sourcePath }),
       import: {
         types: dmtsPath,
         default: mjsPath

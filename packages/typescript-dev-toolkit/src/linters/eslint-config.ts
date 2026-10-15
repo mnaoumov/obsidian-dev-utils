@@ -65,6 +65,13 @@ export interface DefineEslintConfigsOptions {
    * @param context - The ESLint configuration context.
    */
   readonly editContext?: (context: EslintConfigContext) => void;
+
+  /**
+   * The oldest Node version shipped source has to run on, as a semver range: a library that also runs inside an
+   * older runtime than its own tooling (an Obsidian renderer, say) names that runtime's Node here. When omitted,
+   * `eslint-plugin-n` reads the `engines` field of the project's `package.json`.
+   */
+  readonly minimumNodeVersion?: string;
 }
 
 /**
@@ -196,7 +203,10 @@ export function defineEslintConfigs(options: DefineEslintConfigsOptions = {}): L
 
   return defineConfig(
     ...getGlobalIgnoreConfigs(),
-    ...getTypeScriptEslintConfigs({ context }),
+    ...getTypeScriptEslintConfigs({
+      context,
+      ...(options.minimumNodeVersion !== undefined && { minimumNodeVersion: options.minimumNodeVersion })
+    }),
     ...customConfigs
   );
 }
