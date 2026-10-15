@@ -15,8 +15,8 @@ import {
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import { resolveValue } from '@mnaoumov/typescript-lib/value-provider';
-import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/mock-implementation';
+import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
 import {
   App,
   Notice
