@@ -1,6 +1,6 @@
 {
   "name": "@mnaoumov/typescript-dev-toolkit",
-  "version": "107.4.1",
+  "version": "1.0.0",
   "description": "Generic TypeScript project tooling: build, lint, format, spellcheck, test, gate and release scripts.",
   "keywords": [
     "typescript",
@@ -265,7 +265,7 @@
     "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
     "@eslint/config-helpers": "^0.7.0",
     "@eslint/js": "^10.0.1",
-    "@mnaoumov/typescript-lib": "107.4.1",
+    "@mnaoumov/typescript-lib": "^1.0.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^26.6.2",
@@ -294,7 +294,7 @@
     "typescript-eslint": "^8.71.2"
   },
   "devDependencies": {
-    "@mnaoumov/typescript-test-toolkit": "107.4.1",
+    "@mnaoumov/typescript-test-toolkit": "^1.0.0",
     "dedent": "^1.7.2",
     "vitest": "^5.0.1"
   },

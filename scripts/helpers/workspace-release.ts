@@ -1,18 +1,15 @@
 /**
  * @file
  *
- * The joint release of the workspace packages: one version for all five, bumped together and published together.
+ * The one-off `1.0.0` publish of the workspace packages, which ships each of them in dependency order.
  *
- * The packages share one version line on purpose (see `AGENTS.md`), so the release bumps every package and every
- * dependency one of them declares on a sibling in the same step, and the NPM publish ships each of them in
- * dependency order.
+ * Each package is released from its own repository after that (see `AGENTS.md`); this publish exists because each
+ * package's tooling depends on siblings that are not on npm yet, so only this workspace can build all five.
  */
 
 import type { PackageJson } from 'type-fest';
 
 import {
-  editPackageJson,
-  editPackageLockJson,
   readPackageJson,
   writePackageJson
 } from '@mnaoumov/typescript-dev-toolkit/npm';
@@ -48,37 +45,10 @@ export interface PublishWorkspacePackagesParams {
 export const SOURCE_EXPORT_CONDITION = '@mnaoumov/source';
 
 /**
- * The dependency maps of a `package.json` that can name a sibling workspace package.
- */
-const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const;
-
-/**
  * The license file every package's `files` list names. Only the root carries one, so it is copied in at publish
  * time.
  */
 const LICENSE_FILE_NAME = 'LICENSE';
-
-/**
- * Sets every dependency a manifest declares on one of the given packages to the given version.
- *
- * @param dependencyMaps - The manifest, or a `package-lock.json` entry, whose dependency maps are rewritten in place.
- * @param packageNames - The names of the sibling workspace packages.
- * @param version - The version to pin them to.
- */
-export function pinSiblingDependencies(dependencyMaps: Partial<Record<(typeof DEPENDENCY_FIELDS)[number], unknown>>, packageNames: ReadonlySet<string>, version: string): void {
-  for (const field of DEPENDENCY_FIELDS) {
-    const dependencies = dependencyMaps[field];
-    if (typeof dependencies !== 'object' || dependencies === null) {
-      continue;
-    }
-    const record = dependencies as Record<string, unknown>;
-    for (const name of Object.keys(record)) {
-      if (packageNames.has(name)) {
-        record[name] = version;
-      }
-    }
-  }
-}
 
 /**
  * Publishes every workspace package to NPM, in dependency order.
@@ -126,43 +96,6 @@ export async function publishWorkspacePackages(params: PublishWorkspacePackagesP
       }
     }
   }
-}
-
-/**
- * Sets the version of every workspace package, and of every dependency one of them declares on a sibling, in their
- * own manifests and in the root `package-lock.json`. The root manifest and the lockfile's root entry are the generic
- * release's job.
- *
- * @param newVersion - The version being released.
- * @returns A {@link Promise} that resolves when every file is updated.
- */
-export async function setWorkspacePackageVersions(newVersion: string): Promise<void> {
-  const folders = await getWorkspaceFolders();
-  const packageNames = new Set<string>();
-  for (const folder of folders) {
-    const { name } = await readPackageJson(folder);
-    if (name) {
-      packageNames.add(name);
-    }
-  }
-
-  for (const folder of folders) {
-    await editPackageJson((packageJson) => {
-      packageJson.version = newVersion;
-      pinSiblingDependencies(packageJson, packageNames, newVersion);
-    }, { cwd: folder });
-  }
-
-  await editPackageLockJson((packageLockJson) => {
-    for (const folder of folders) {
-      const entry = packageLockJson.packages?.[folder];
-      if (!entry) {
-        continue;
-      }
-      entry.version = newVersion;
-      pinSiblingDependencies(entry, packageNames, newVersion);
-    }
-  }, { shouldSkipIfMissing: true });
 }
 
 /**

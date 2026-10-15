@@ -9,7 +9,7 @@ import type { MockInstance } from 'vitest';
 
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
-import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/test-helpers/mock-implementation';
+import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/mock-implementation';
 import {
   ButtonComponent as ButtonComponentOriginal,
   TextComponent as TextComponentOriginal

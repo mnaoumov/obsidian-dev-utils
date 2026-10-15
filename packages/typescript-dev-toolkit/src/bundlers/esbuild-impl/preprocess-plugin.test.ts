@@ -326,8 +326,21 @@ describe('using a library disposable on an engine without Symbol.dispose', { tim
     globalThis.Symbol = engineSymbol;
   `;
 
+  /**
+   * The disposables are declared here in the shape `@mnaoumov/typescript-lib`'s are, a class method keyed by the
+   * literal `[Symbol.dispose]` / `[Symbol.asyncDispose]`. Importing the library's own would bundle its BUILT copy
+   * wherever its sources are not at hand, and that copy carries this very banner already, so the no-banner control
+   * could never fail.
+   */
   const ENTRY = `
-    import { AsyncCallbackDisposable, CallbackDisposable } from '@mnaoumov/typescript-lib/disposable';
+    class CallbackDisposable {
+      constructor({ callback }) { this.callback = callback; }
+      [Symbol.dispose]() { this.callback(); }
+    }
+    class AsyncCallbackDisposable {
+      constructor({ callback }) { this.callback = callback; }
+      async [Symbol.asyncDispose]() { await this.callback(); }
+    }
     globalThis.probe = { disposed: false, error: null, asyncDisposed: false, asyncError: null };
     try {
       using _disposable = new CallbackDisposable({ callback: () => { globalThis.probe.disposed = true; } });
@@ -354,8 +367,6 @@ describe('using a library disposable on an engine without Symbol.dispose', { tim
   async function runOnEngineWithoutDisposeSymbols(plugins: Plugin[]): Promise<Probe> {
     const result = await bundle({
       bundle: true,
-      // Bundles the library's disposables from their source, as every build inside this repository does.
-      conditions: ['@mnaoumov/source'],
       format: 'iife',
       logLevel: 'silent',
       plugins,

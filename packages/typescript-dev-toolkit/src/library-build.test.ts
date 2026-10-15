@@ -295,7 +295,7 @@ describe('generateLibraryExports', () => {
   it('regenerates the exports map and the subpath stubs, and refuses to pass while the map changed', async () => {
     await writeLibraryTree();
 
-    await expect(generateLibraryExports()).rejects.toThrow('Package exports have changed');
+    await expect(generateLibraryExports({ sourceCondition: SOURCE_CONDITION })).rejects.toThrow('Package exports have changed');
 
     const packageJson = JSON.parse(await readFile('package.json', 'utf-8')) as PackageJsonWithExports;
     expect(Object.keys(packageJson.exports)).toEqual(['.', './*', './@types/*', './no-index/*', './sub', './sub/*']);
@@ -327,6 +327,21 @@ describe('generateLibraryExports', () => {
     });
     expect(existsSync('no-index/package.json')).toBe(false);
     expect(existsSync('no-index/x/package.json')).toBe(true);
+
+    await expect(generateLibraryExports({ sourceCondition: SOURCE_CONDITION })).resolves.toBeUndefined();
+  });
+
+  it('writes no source condition when none is asked for', async () => {
+    await writeLibraryTree();
+
+    await expect(generateLibraryExports()).rejects.toThrow('Package exports have changed');
+
+    const packageJson = JSON.parse(await readFile('package.json', 'utf-8')) as PackageJsonWithExports;
+    expect(packageJson.exports['.']).toEqual({
+      import: { default: './dist/lib/esm/index.mjs', types: './dist/lib/esm/index.d.mts' },
+      require: { default: './dist/lib/cjs/index.cjs', types: './dist/lib/cjs/index.d.cts' }
+    });
+    expect(JSON.stringify(packageJson.exports)).not.toContain(SOURCE_CONDITION);
 
     await expect(generateLibraryExports()).resolves.toBeUndefined();
   });

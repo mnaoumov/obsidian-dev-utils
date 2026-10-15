@@ -1,6 +1,6 @@
 {
   "name": "@mnaoumov/obsidian-dev-toolkit",
-  "version": "107.4.1",
+  "version": "1.0.0",
   "description": "Tooling for Obsidian plugin development: esbuild plugin builder, shared ESLint/Vitest configs, demo vaults and the release script.",
   "keywords": [
     "obsidian",
@@ -204,10 +204,10 @@
   },
   "dependencies": {
     "@eslint/json": "^2.1.0",
-    "@mnaoumov/obsidian-lib": "107.4.1",
-    "@mnaoumov/typescript-dev-toolkit": "107.4.1",
-    "@mnaoumov/typescript-lib": "107.4.1",
-    "@mnaoumov/typescript-test-toolkit": "107.4.1",
+    "@mnaoumov/obsidian-lib": "^1.0.0",
+    "@mnaoumov/typescript-dev-toolkit": "^1.0.0",
+    "@mnaoumov/typescript-lib": "^1.0.0",
+    "@mnaoumov/typescript-test-toolkit": "^1.0.0",
     "@types/babel__core": "^7.20.5",
     "@types/eslint": "^9.6.1",
     "@types/pug": "^2.0.10",

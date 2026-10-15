@@ -5,34 +5,9 @@ import {
 } from 'vitest';
 
 import {
-  pinSiblingDependencies,
   SOURCE_EXPORT_CONDITION,
   toPublishedManifest
 } from './workspace-release.ts';
-
-describe('pinSiblingDependencies', () => {
-  it('pins every sibling in every dependency map and leaves third-party ranges alone', () => {
-    const manifest = {
-      dependencies: { '@mnaoumov/typescript-lib': '107.4.1', 'debug': '^4.4.3' },
-      devDependencies: { '@mnaoumov/typescript-test-toolkit': '107.4.1' },
-      peerDependencies: { vitest: '^5.0.1' }
-    };
-
-    pinSiblingDependencies(manifest, new Set(['@mnaoumov/typescript-lib', '@mnaoumov/typescript-test-toolkit']), '108.0.0');
-
-    expect(manifest).toEqual({
-      dependencies: { '@mnaoumov/typescript-lib': '108.0.0', 'debug': '^4.4.3' },
-      devDependencies: { '@mnaoumov/typescript-test-toolkit': '108.0.0' },
-      peerDependencies: { vitest: '^5.0.1' }
-    });
-  });
-
-  it('accepts a manifest with no dependency maps', () => {
-    const manifest = {};
-    pinSiblingDependencies(manifest, new Set(['@mnaoumov/typescript-lib']), '108.0.0');
-    expect(manifest).toEqual({});
-  });
-});
 
 describe('toPublishedManifest', () => {
   it('strips the source condition at every depth and keeps everything else', () => {

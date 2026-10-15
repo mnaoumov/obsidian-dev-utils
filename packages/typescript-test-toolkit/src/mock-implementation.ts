@@ -56,6 +56,9 @@ const savedOriginals = new WeakMap<object, Map<string, unknown>>();
  * Spies on a method and replaces it with an implementation that receives
  * `originalImplementation` as its first argument, followed by the real call arguments.
  *
+ * @typeParam T - The type of the object whose method is spied on.
+ * @typeParam K - The name of the method to spy on.
+ * @typeParam F - The type of the method to spy on.
  * @param params - The parameters for the spy.
  * @returns The spy instance.
  */
