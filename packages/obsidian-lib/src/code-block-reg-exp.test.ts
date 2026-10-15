@@ -58,6 +58,23 @@ describe('createCodeBlockRegExp', () => {
     ]);
   });
 
+  it('keeps the match index of a block at offset 0 and of one in mid-text', () => {
+    const text = ['```js', 'a', '```', 'text', '> ```ts', '> b', '> ```', 'tail'].join('\n');
+    const matches = [...text.matchAll(createCodeBlockRegExp())];
+    expect(matches.map((match) => [match.index, match[0]])).toEqual([
+      [0, '```js\na\n```'],
+      [text.indexOf('> ```ts'), '> ```ts\n> b\n> ```']
+    ]);
+  });
+
+  it('starts a block only at the start of a line', () => {
+    expect(parseCodeBlocks(['text ```js', 'a', '```'].join('\n'))).toEqual([]);
+  });
+
+  it('does not end a block at a closing fence followed by a carriage return', () => {
+    expect(parseCodeBlocks('```js\na\n```\r')).toEqual([]);
+  });
+
   it('matches tilde fences', () => {
     expect(parseCodeBlocks(['~~~js', 'a', '~~~'].join('\n'))).toEqual([
       { content: 'a', language: 'js' }
