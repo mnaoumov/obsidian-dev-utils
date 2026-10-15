@@ -219,7 +219,7 @@
     "eslint-plugin-obsidianmd": "^0.4.2",
     "eslint-plugin-tsdoc": "^0.5.3",
     "fflate": "^0.8.3",
-    "obsidian": "^1.13.1",
+    "obsidian": "^1.14.4",
     "postcss": "^8.5.28",
     "postcss-modules": "^9.0.1",
     "sass": "^1.104.1",

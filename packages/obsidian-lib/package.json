@@ -470,8 +470,8 @@
     "test:watch": "node ../../scripts/run.mjs ../../scripts/package-test-watch.ts"
   },
   "dependencies": {
-    "@codemirror/state": "6.5.0",
-    "@codemirror/view": "6.38.6",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.13",
     "@lezer/common": "1.5.2",
     "@mnaoumov/typescript-lib": "^1.0.0",
     "@obsidian-typings/obsidian-public-latest": "^6.37.0",
@@ -483,7 +483,7 @@
     "i18next": "^26.4.2",
     "localforage": "^1.10.0",
     "monkey-around": "^3.0.0",
-    "obsidian": "^1.13.1",
+    "obsidian": "^1.14.4",
     "preact": "^10.29.8",
     "react": "^19.3.0",
     "remark": "^15.0.1",
