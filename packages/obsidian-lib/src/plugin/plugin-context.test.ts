@@ -31,14 +31,13 @@ interface ObsidianDevUtilsState {
 }
 
 const mocks = vi.hoisted(() => ({
-  compareVersions: vi.fn((_a: string, _b: string) => 1),
   getDebugController: vi.fn(() => ({})),
-  getObsidianDevUtilsState: vi.fn(() => ({ value: '0.0.0' })),
+  injectLibraryStyles: vi.fn(),
   showInitialDebugMessage: vi.fn()
 }));
 
-vi.mock('compare-versions', () => ({
-  compareVersions: mocks.compareVersions
+vi.mock('../library-styles.ts', () => ({
+  injectLibraryStyles: mocks.injectLibraryStyles
 }));
 
 vi.mock('@mnaoumov/typescript-lib/debug-controller', () => ({}));
@@ -55,11 +54,6 @@ vi.mock('@mnaoumov/typescript-lib/debug', () => ({
 vi.mock('../generated-during-build.ts', () => ({
   LIBRARY_STYLES: '.test { color: red; }',
   LIBRARY_VERSION: '1.0.0'
-}));
-
-vi.mock('../obsidian-dev-utils-state.ts', async (importOriginal) => ({
-  ...await importOriginal<typeof import('../obsidian-dev-utils-state.ts')>(),
-  getObsidianDevUtilsState: mocks.getObsidianDevUtilsState
 }));
 
 describe('addPluginCssClasses', () => {
@@ -164,9 +158,6 @@ describe('initPluginContext', () => {
   });
 
   it('should initialize the Library and show debug message', () => {
-    mocks.compareVersions.mockReturnValue(1);
-    vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
-    vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
     initPluginContext('my-plugin');
     expect(ObsidianLibrary.cssClassScope).toBe('my-plugin');
     expect(Library.debugNamespace).toBe('obsidian-dev-utils');
@@ -176,33 +167,13 @@ describe('initPluginContext', () => {
     expect(mocks.showInitialDebugMessage).toHaveBeenCalledWith('my-plugin');
   });
 
-  it('should skip style injection when version is not newer', () => {
-    mocks.compareVersions.mockReturnValue(0);
+  it('should inject the library styles of this copy', () => {
     initPluginContext('my-plugin');
-    expect(ObsidianLibrary.cssClassScope).toBe('my-plugin');
-  });
-
-  it('should remove old styles and inject new ones when version is newer', () => {
-    mocks.compareVersions.mockReturnValue(1);
-    const oldStyleEl = strictProxy<Element>({ remove: vi.fn() });
-    vi.spyOn(document.head, 'querySelector').mockReturnValue(oldStyleEl);
-    const createElementSpy = vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
-    initPluginContext('my-plugin');
-    expect(oldStyleEl.remove).toHaveBeenCalled();
-    expect(createElementSpy).toHaveBeenCalledWith('style', {
-      attr: { id: 'obsidian-dev-utils-styles' },
-      text: '.test { color: red; }'
+    expect(mocks.injectLibraryStyles).toHaveBeenCalledWith({
+      doc: document,
+      libraryStyles: '.test { color: red; }',
+      libraryVersion: '1.0.0'
     });
-  });
-
-  it('should update lastLibraryVersion when version is newer', () => {
-    mocks.compareVersions.mockReturnValue(1);
-    const wrapper = { value: '0.0.0' };
-    mocks.getObsidianDevUtilsState.mockReturnValue(wrapper);
-    vi.spyOn(document.head, 'querySelector').mockReturnValue(null);
-    vi.spyOn(document.head, 'createEl').mockReturnValue(createEl('style'));
-    initPluginContext('my-plugin');
-    expect(wrapper.value).toBe('1.0.0');
   });
 
   // The shared abort controller is documented as callable straight from the devtools console
@@ -214,7 +185,6 @@ describe('initPluginContext', () => {
   it('should create the shared abort controller so the console call always resolves', () => {
     // eslint-disable-next-line obsidianmd/no-global-this -- The shared state intentionally lives on the realm global, which is what the documented console call reaches.
     delete castTo<Partial<GlobalThisWithState>>(globalThis).__obsidianDevUtils;
-    mocks.compareVersions.mockReturnValue(0);
 
     initPluginContext('my-plugin');
 

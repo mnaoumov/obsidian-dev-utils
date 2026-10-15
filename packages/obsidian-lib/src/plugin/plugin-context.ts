@@ -13,28 +13,24 @@ import {
   showInitialDebugMessage
 } from '@mnaoumov/typescript-lib/debug';
 import { Library } from '@mnaoumov/typescript-lib/library';
-import { compareVersions } from 'compare-versions';
 
 import { CssClass } from '../css-class.ts';
 import {
   LIBRARY_STYLES,
   LIBRARY_VERSION
 } from '../generated-during-build.ts';
+import { injectLibraryStyles } from '../library-styles.ts';
 import {
   OBSIDIAN_LIBRARY_NAME,
   ObsidianLibrary
 } from '../library.ts';
-import {
-  getObsidianDevUtilsState,
-  shareTypescriptLibStateWithObsidianDevUtilsState
-} from '../obsidian-dev-utils-state.ts';
+import { shareTypescriptLibStateWithObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 
 interface PluginContextWindow {
   DEBUG: DebugController | undefined;
 }
 
 const DEBUG_GUIDE_URL = 'https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/';
-const STYLES_ID = `${OBSIDIAN_LIBRARY_NAME}-styles`;
 
 /**
  * Sets the CSS class of an element.
@@ -95,19 +91,9 @@ export function initPluginContext(pluginId: string): void {
   // back, so plugins bundling an older copy of this library share them, and the devtools line above keeps working.
   shareTypescriptLibStateWithObsidianDevUtilsState();
 
-  const lastLibraryVersionWrapper = getObsidianDevUtilsState('lastLibraryVersion', '0.0.0');
-  if (compareVersions(LIBRARY_VERSION, lastLibraryVersionWrapper.value) <= 0) {
-    return;
-  }
-
-  lastLibraryVersionWrapper.value = LIBRARY_VERSION;
-
-  document.head.querySelector(`#${STYLES_ID}`)?.remove();
-  // eslint-disable-next-line obsidianmd/no-forbidden-elements -- We need to create a style element to apply the library styles.
-  document.head.createEl('style', {
-    attr: {
-      id: STYLES_ID
-    },
-    text: LIBRARY_STYLES
+  injectLibraryStyles({
+    doc: document,
+    libraryStyles: LIBRARY_STYLES,
+    libraryVersion: LIBRARY_VERSION
   });
 }
