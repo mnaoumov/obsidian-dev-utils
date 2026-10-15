@@ -457,7 +457,7 @@
     "build:generate-exports": "node ../../scripts/run.mjs ../../scripts/build-generate-exports.ts",
     "build:generate-index": "node ../../scripts/run.mjs ../../scripts/build-generate-index.ts",
     "build:generate-merged": "node ../../scripts/run.mjs ../../scripts/build-generate-merged.ts --include typescript-lib",
-    "build:lib": "node ../../scripts/run.mjs ../../scripts/build-lib.ts",
+    "build:lib": "node ../../scripts/run.mjs ../../scripts/build-lib-obsidian.ts",
     "build:stamp-generated": "node ../../scripts/run.mjs ../../scripts/build-stamp-generated.ts",
     "build:styles": "node ../../scripts/run.mjs ../../scripts/build-styles.ts",
     "build:types": "node ../../scripts/run.mjs ../../scripts/build-types.ts",

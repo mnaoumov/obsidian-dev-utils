@@ -5,11 +5,8 @@
  * step of the pipeline below that the package defines a script for, in order.
  */
 
-import {
-  CliTaskResult,
-  wrapCliTask
-} from '@mnaoumov/typescript-dev-toolkit/cli-utils';
-import { npmRunOptional } from '@mnaoumov/typescript-dev-toolkit/npm-run';
+import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { runBuildSteps } from '@mnaoumov/typescript-dev-toolkit/library-build';
 
 const BUILD_STEPS = [
   'build:clean',
@@ -36,10 +33,5 @@ const BUILD_STEPS = [
 ];
 
 await wrapCliTask(async () => {
-  for (const step of BUILD_STEPS) {
-    await wrapCliTask(async () => {
-      await npmRunOptional(step);
-      return CliTaskResult.DoNotExit();
-    });
-  }
+  await runBuildSteps(BUILD_STEPS);
 });

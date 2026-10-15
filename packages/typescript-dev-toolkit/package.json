@@ -298,6 +298,14 @@
     "dedent": "^1.7.2",
     "vitest": "^5.0.1"
   },
+  "peerDependencies": {
+    "vitest": "^5.0.1"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  },
   "engines": {
     "node": ">=22.0.0"
   },
