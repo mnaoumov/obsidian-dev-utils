@@ -55,6 +55,11 @@ export enum RepoPaths {
   AnyTs = '*.ts',
 
   /**
+  Any TSX file.
+   */
+  AnyTsx = '*.tsx',
+
+  /**
   Windows batch file extension.
    */
   BatExtension = '.bat',
@@ -100,6 +105,11 @@ export enum RepoPaths {
   Windows command script extension.
    */
   CommandExtension = '.cmd',
+
+  /**
+  Commitlint configuration file.
+   */
+  CommitlintConfigTs = 'commitlint.config.ts',
 
   /**
   Current folder.
@@ -278,6 +288,11 @@ export enum RepoPaths {
   MjsExtension = '.mjs',
 
   /**
+  Test mocks folder.
+   */
+  Mocks = 'src/test-helpers',
+
+  /**
   Node modules folder.
    */
   NodeModules = 'node_modules',
@@ -338,6 +353,11 @@ export enum RepoPaths {
   TestHelpers = 'test-helpers',
 
   /**
+  Tests folder.
+   */
+  Tests = '__tests__',
+
+  /**
   TypeScript configuration file.
    */
   TsConfigJson = 'tsconfig.json',
@@ -361,6 +381,11 @@ export enum RepoPaths {
   Types folder.
    */
   Types = '@types',
+
+  /**
+  Vitest configuration file.
+   */
+  VitestConfigTs = 'vitest.config.ts',
 
   /**
   Yarn lockfile.

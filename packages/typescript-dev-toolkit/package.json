@@ -262,7 +262,11 @@
   },
   "dependencies": {
     "@commitlint/types": "^21.2.0",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.8.1",
+    "@eslint/config-helpers": "^0.7.0",
+    "@eslint/js": "^10.0.1",
     "@mnaoumov/typescript-lib": "107.4.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "^26.6.2",
     "@types/semver": "^7.8.0",
@@ -273,6 +277,11 @@
     "esbuild": "^0.28.2",
     "esbuild-svelte": "^0.9.5",
     "eslint": "^10.11.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "eslint-plugin-n": "^18.3.0",
+    "eslint-plugin-perfectionist": "^5.11.1",
+    "eslint-plugin-unicorn": "^76.0.0",
     "jiti": "^2.7.0",
     "markdownlint": "^0.41.1",
     "markdownlint-cli2": "^0.23.2",
@@ -281,12 +290,12 @@
     "svelte-check": "^4.7.6",
     "svelte-preprocess": "^6.0.5",
     "type-fest": "^5.10.0",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.71.2"
   },
   "devDependencies": {
     "@mnaoumov/typescript-test-toolkit": "107.4.1",
     "dedent": "^1.7.2",
-    "typescript-eslint": "^8.71.2",
     "vitest": "^5.0.1"
   },
   "engines": {
