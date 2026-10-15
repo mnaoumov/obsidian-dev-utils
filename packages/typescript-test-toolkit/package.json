@@ -1,6 +1,6 @@
 {
   "name": "@mnaoumov/typescript-test-toolkit",
-  "version": "107.4.1",
+  "version": "1.0.0",
   "description": "Generic test support for TypeScript projects: Vitest/Jest setup, async-operation tracking, strictProxy and mock helpers.",
   "keywords": [
     "typescript",
@@ -68,7 +68,7 @@
     "test:watch": "node ../../scripts/run.mjs ../../scripts/package-test-watch.ts"
   },
   "dependencies": {
-    "@mnaoumov/typescript-lib": "107.4.1"
+    "@mnaoumov/typescript-lib": "^1.0.0"
   },
   "devDependencies": {
     "jsdom": "^30.1.0",

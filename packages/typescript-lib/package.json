@@ -1,6 +1,6 @@
 {
   "name": "@mnaoumov/typescript-lib",
-  "version": "107.4.1",
+  "version": "1.0.0",
   "description": "Generic TypeScript utilities: async helpers, errors, disposables, strings, paths, debug logging and more, usable in any TypeScript project.",
   "keywords": [
     "typescript",
@@ -102,7 +102,7 @@
     "type-fest": "^5.10.0"
   },
   "devDependencies": {
-    "@mnaoumov/typescript-test-toolkit": "107.4.1",
+    "@mnaoumov/typescript-test-toolkit": "^1.0.0",
     "fflate": "^0.8.3",
     "jsdom": "^30.1.0",
     "vitest": "^5.0.1"

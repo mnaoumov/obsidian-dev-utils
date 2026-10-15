@@ -1,6 +1,6 @@
 {
   "name": "@mnaoumov/obsidian-lib",
-  "version": "107.4.1",
+  "version": "1.0.0",
   "description": "Runtime library for Obsidian plugin development: plugin base classes, components, settings, modals, vault and metadata helpers.",
   "keywords": [
     "obsidian",
@@ -473,7 +473,7 @@
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
     "@lezer/common": "1.5.2",
-    "@mnaoumov/typescript-lib": "107.4.1",
+    "@mnaoumov/typescript-lib": "^1.0.0",
     "@obsidian-typings/obsidian-public-latest": "^6.37.0",
     "@standard-schema/spec": "^1.1.0",
     "@types/luxon": "^3.7.5",
@@ -494,8 +494,8 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@mnaoumov/obsidian-dev-toolkit": "107.4.1",
-    "@mnaoumov/typescript-test-toolkit": "107.4.1",
+    "@mnaoumov/obsidian-dev-toolkit": "^1.0.0",
+    "@mnaoumov/typescript-test-toolkit": "^1.0.0",
     "@types/prismjs": "^1.26.6",
     "dedent": "^1.7.2",
     "fflate": "^0.8.3",

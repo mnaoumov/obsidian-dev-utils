@@ -1,31 +1,18 @@
 /**
  * @file
  *
- * The release entry point of this repository: `npm run version '--' <type> [flags]`.
+ * The release entry point of this repository, retired: `npm run version` refuses to run.
  *
- * The workspace packages are released TOGETHER, one version for all five. The generic release bumps the root
- * manifest, settles the root `CHANGELOG.md`, commits, tags, pushes and creates the GitHub release;
- * `setWorkspacePackageVersions` adds every package's manifest, the sibling dependencies they pin, and their lockfile
- * entries to the same release commit. The GitHub release carries no assets: the build the preflight ran predates
- * the bump, so a tarball packed here would carry the previous version, and the packages are distributed through
- * NPM, which `.github/workflows/publish-npm.yml` publishes to from a fresh build.
+ * The five packages restarted at `1.0.0` and each one is released from its own repository. This workspace
+ * publishes `1.0.0` exactly once, by dispatching `.github/workflows/publish-npm.yml`, because each package's tooling
+ * depends on siblings that are not on npm yet. A joint release from here would set every package back onto the
+ * workspace root's `107.x` line, so it is refused rather than left to run.
  */
 
 import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
-import {
-  parseVersionArguments,
-  updateVersion
-} from '@mnaoumov/typescript-dev-toolkit/version';
-import process from 'node:process';
 
-import { setWorkspacePackageVersions } from './helpers/workspace-release.ts';
-
-await wrapCliTask(async () => {
-  const [, , ...versionArguments] = process.argv;
-  const { options, versionUpdateType } = parseVersionArguments(versionArguments);
-  await updateVersion(versionUpdateType, {
-    ...options,
-    getReleaseAssetPaths: () => Promise.resolve([]),
-    updateVersionInExtraFiles: setWorkspacePackageVersions
-  });
+await wrapCliTask(() => {
+  throw new Error(
+    'The joint workspace release is retired. Release each @mnaoumov package from its own repository; the one-off 1.0.0 publish runs by dispatching publish-npm.yml.'
+  );
 });
