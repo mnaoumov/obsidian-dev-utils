@@ -20,7 +20,7 @@ import { noopAsync } from '@mnaoumov/typescript-lib/function';
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { assertNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import { strictProxy } from '@mnaoumov/typescript-test-toolkit/strict-proxy';
-import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/test-helpers/mock-implementation';
+import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/mock-implementation';
 import { ButtonComponent as ButtonComponentClass } from 'obsidian';
 import {
   afterEach,

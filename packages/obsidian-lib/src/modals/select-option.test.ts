@@ -4,7 +4,7 @@ import type { App as AppOriginal } from 'obsidian';
 import type { ButtonComponent } from 'obsidian-test-mocks/obsidian';
 
 import { castTo } from '@mnaoumov/typescript-lib/object-utils';
-import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/test-helpers/mock-implementation';
+import { mockImplementation } from '@mnaoumov/typescript-test-toolkit/mock-implementation';
 import { ButtonComponent as ButtonComponentOriginal } from 'obsidian';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
