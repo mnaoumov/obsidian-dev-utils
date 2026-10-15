@@ -16,6 +16,7 @@ import type {
 import type { Node } from 'unist';
 
 import { normalizeOptionalProperties } from '@mnaoumov/typescript-lib/object-utils';
+import { getMandatoryNamedGroup } from '@mnaoumov/typescript-lib/reg-exp';
 import { replaceAll } from '@mnaoumov/typescript-lib/string';
 import { ensureNonNullable } from '@mnaoumov/typescript-lib/type-guards';
 import {
@@ -41,8 +42,13 @@ const WIKILINK_DIVIDER = '|';
  * whitespace, `*`, `_`, `~`, `(` or `<`, running up to the next whitespace, `<` or `>`. GFM itself
  * keeps a closing `>` in the literal (Obsidian renders `<www.example.com>` with an href ending in
  * `%3E`); stopping before it is deliberate, so the brackets can be reported around the literal instead.
+ *
+ * The preceding character is consumed and the literal captured as `Literal`, because a lookbehind is a
+ * syntax error on iOS before 16.4, below the iOS 15 Obsidian mobile still supports. Consuming it loses no
+ * candidate: a match ends before whitespace, `<`, `>` or the end, so the character a following candidate
+ * needs is never part of the previous match.
  */
-const WWW_AUTOLINK_LITERAL_CANDIDATE_REG_EXP = /(?<=^|[\s(*<_~])www\.[^\s<>]*/g;
+const WWW_AUTOLINK_LITERAL_CANDIDATE_REG_EXP = /(?:^|[\s(*<_~])(?<Literal>www\.[^\s<>]*)/g;
 
 /**
  * Matches the domain of a GFM extended `www.` autolink literal: segments of letters, digits,
@@ -759,12 +765,13 @@ function extractTextLinks(params: ExtractTextLinksParams): void {
   }
 
   for (const match of textPart.matchAll(WWW_AUTOLINK_LITERAL_CANDIDATE_REG_EXP)) {
-    const literal = trimWwwAutolinkLiteral(match[0]);
+    const candidate = getMandatoryNamedGroup(match, 'Literal');
+    const literal = trimWwwAutolinkLiteral(candidate);
     if (!isValidWwwAutolinkLiteral(literal)) {
       continue;
     }
 
-    const literalStartOffset = startOffset + match.index;
+    const literalStartOffset = startOffset + match.index + match[0].length - candidate.length;
     const literalEndOffset = literalStartOffset + literal.length;
     if (schemeLinks.some((link) => link.startOffset < literalEndOffset && literalStartOffset < link.endOffset)) {
       continue;

@@ -28,8 +28,14 @@
  * synchronous freeze — when the scan meets a fence-open with no valid closing fence before the end of the
  * note. The mandatory-newline form matches the same text linearly.
  *
+ * A block starts at the start of the text or right after a line break, which the `m` flag's `^` expresses
+ * without a lookbehind: a lookbehind is a syntax error on iOS before 16.4, below the iOS 15 that Obsidian
+ * mobile still supports, and a regex literal that cannot parse fails the whole bundle. The `m` flag's `^`
+ * also accepts as that line break a lone `\r`, which CommonMark treats as one too, and the Unicode line and
+ * paragraph separators, which no editor writes between note lines. The block end is `(?![\s\S])` rather than `$`, so the `m` flag does not let a closing fence end before a `\r`.
+ *
  * @returns A fresh global {@link RegExp} matching one fenced code block.
  */
 export function createCodeBlockRegExp(): RegExp {
-  return /(?<=^|\n)(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>\k<LinePrefix>.*(?:\n\k<LinePrefix>.*)*?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|$)/g;
+  return /^(?<LinePrefix> {0,3}(?:> {1,3})*)(?<CodeBlockStartDelimiter>(?<CodeBlockStartDelimiterChar>[`~])(?:\k<CodeBlockStartDelimiterChar>{2,}))(?<CodeBlockLanguage>\S*)(?:[ \t](?<CodeBlockArgs>.*?))?(?:\n(?<CodeBlockContent>\k<LinePrefix>.*(?:\n\k<LinePrefix>.*)*?))?\n\k<LinePrefix>(?<CodeBlockEndDelimiter>\k<CodeBlockStartDelimiter>\k<CodeBlockStartDelimiterChar>*)[ \t]*(?=\n|(?![\s\S]))/gm;
 }

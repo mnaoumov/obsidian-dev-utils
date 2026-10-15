@@ -44,6 +44,8 @@ const FORBIDDEN_WORKSPACE_IMPORTS: Readonly<Record<string, readonly string[]>> =
 
 const PACKAGE_SCOPE = '@mnaoumov';
 
+const RUNTIME_PACKAGE_FOLDERS = ['typescript-lib', 'obsidian-lib'];
+
 const SOURCE_CONDITION = '@mnaoumov/source';
 
 const WORKSPACE_PACKAGES_FOLDER = 'packages';
@@ -245,6 +247,16 @@ function getObsidianLintConfigs(): Linter.Config[] {
       },
       rules: {
         'eslint-comments/no-restricted-disable': 'off'
+      }
+    },
+    {
+      /*
+       * The root `manifest.json` is a stub saying `isDesktopOnly: true`, which the rule reads by default, so it skipped
+       * every file here. The two runtime packages also run on Obsidian mobile, whose iOS floor (15) has no lookbehind.
+       */
+      files: RUNTIME_PACKAGE_FOLDERS.map((packageFolder) => join(WORKSPACE_PACKAGES_FOLDER, packageFolder, RepoPaths.Src, RepoPaths.AnyPath, RepoPaths.AnyTs)),
+      rules: {
+        'obsidianmd/regex-lookbehind': ['error', { isDesktopOnly: false }]
       }
     }
   ]);

@@ -61,7 +61,12 @@ import {
 import { process } from './vault.ts';
 
 const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
-const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
+/**
+ * Matches a wikilink divider together with the backslash escaping it, if any. A lookbehind would say "unescaped"
+ * directly, but it is a syntax error on iOS before 16.4, below the iOS 15 Obsidian mobile still supports.
+ * Replacing every match with an escaped divider leaves an escaped one as it was and escapes a bare one.
+ */
+const OPTIONALLY_ESCAPED_WIKILINK_DIVIDER_REGEXP = /\\?\|/g;
 
 /**
  * Parameters for {@link applyContentChanges}.
@@ -547,7 +552,7 @@ async function applyCanvasChanges(params: ApplyCanvasChangesParams): Promise<nul
       // link uses an unescaped divider, so restore the escaping when the original reference had it,
       // keeping both the table and the embed size intact across the rewrite.
       const newContent = change.reference.originalReference.original.includes(ESCAPED_WIKILINK_DIVIDER)
-        ? change.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER)
+        ? change.newContent.replaceAll(OPTIONALLY_ESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER)
         : change.newContent;
       return referenceToFileChange(change.reference.originalReference, newContent);
     });

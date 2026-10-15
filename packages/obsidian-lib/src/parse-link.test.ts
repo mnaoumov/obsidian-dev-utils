@@ -1098,6 +1098,20 @@ describe('parseLinks (GFM extended www. autolink literals)', () => {
     }
   });
 
+  it('should keep the offset of a literal at offset 0 and of one in mid-text', () => {
+    expect(parseLinks('www.a.com').map((result) => [result.startOffset, result.endOffset])).toEqual([[0, 9]]);
+    expect(parseLinks('ab\nwww.a.com').map((result) => [result.startOffset, result.endOffset])).toEqual([[3, 12]]);
+  });
+
+  it('should find literals separated by the one character each needs before it', () => {
+    const text = 'www.a.com www.b.com\twww.c.com<www.d.com>';
+    const results = parseLinks(text);
+    expect(results.map((result) => result.raw)).toEqual(['www.a.com', 'www.b.com', 'www.c.com', '<www.d.com>']);
+    for (const result of results) {
+      expect(text.slice(result.startOffset, result.endOffset)).toBe(result.raw);
+    }
+  });
+
   it('should not report a www. literal inside a URL with a scheme twice', () => {
     expect(parseLinks('https://www.example.com').map((result) => result.raw)).toEqual(['https://www.example.com']);
     expect(parseLinks('x:(www.example.com)').map((result) => result.raw)).toEqual(['x:(www.example.com)']);

@@ -99,9 +99,16 @@ import {
 const ESCAPED_WIKILINK_DIVIDER = String.raw`\|`;
 
 /**
- * Regular expression for unescaped pipes.
+ * Matches a wikilink divider together with the backslash escaping it, if any. A lookbehind would say "unescaped"
+ * directly, but it is a syntax error on iOS before 16.4, below the iOS 15 Obsidian mobile still supports.
+ * Replacing every match with an escaped divider leaves an escaped one as it was and escapes a bare one.
  */
-const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?<!\\)\|/g;
+const OPTIONALLY_ESCAPED_WIKILINK_DIVIDER_REGEXP = /\\?\|/g;
+
+/**
+ * Tests for a wikilink divider no backslash escapes. Not global, so a `test` keeps no `lastIndex` between calls.
+ */
+const UNESCAPED_WIKILINK_DIVIDER_REGEXP = /(?:^|[^\\])\|/;
 
 /**
  * The link identity key provider each snapshot was built with. Kept beside the snapshot rather than in it, so a
@@ -2563,7 +2570,7 @@ async function getFileChanges(params: GetFileChangesParams): Promise<FileChange[
       }
     } else {
       if (shouldEscapeWikilinkDivider(fileChange, tablePositions)) {
-        fileChange.newContent = fileChange.newContent.replaceAll(UNESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER);
+        fileChange.newContent = fileChange.newContent.replaceAll(OPTIONALLY_ESCAPED_WIKILINK_DIVIDER_REGEXP, () => ESCAPED_WIKILINK_DIVIDER);
       }
 
       changes.push(fileChange);

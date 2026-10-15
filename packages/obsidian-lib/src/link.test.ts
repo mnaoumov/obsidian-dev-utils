@@ -1713,7 +1713,12 @@ describe('app-dependent functions', () => {
       expect(result).toBeDefined();
     });
 
-    it('should escape wikilink divider when link is inside a table', async () => {
+    it.each([
+      { convertedLink: '[[new|alias]]', expectedNewContent: String.raw`[[new\|alias]]` },
+      { convertedLink: String.raw`|[[a\|b||c]]`, expectedNewContent: String.raw`\|[[a\|b\|\|c]]` },
+      { convertedLink: String.raw`[[new\|alias]]`, expectedNewContent: String.raw`[[new\|alias]]` },
+      { convertedLink: '[[new]]', expectedNewContent: '[[new]]' }
+    ])('should escape only the bare wikilink dividers of $convertedLink inside a table', async ({ convertedLink, expectedNewContent }) => {
       vi.mocked(parseMetadata).mockResolvedValue(castTo<CachedMetadataEx>({
         embeds: undefined,
         frontmatterLinks: undefined,
@@ -1721,21 +1726,28 @@ describe('app-dependent functions', () => {
           displayText: 'target',
           link: 'target',
           original: '[[target]]',
-          position: { end: { col: 12, line: 0, offset: 12 }, start: { col: 0, line: 0, offset: 0 } }
+          position: { end: { col: 12, line: 0, offset: 12 }, start: { col: 2, line: 0, offset: 2 } }
         }],
         sections: [{
           position: { end: { col: 50, line: 0, offset: 50 }, start: { col: 0, line: 0, offset: 0 } },
           type: 'table'
         }]
       }));
-
-      const result = await editLinksInContent({
-        app,
-        content: '| [[target]] |',
-        linkConverter: () => '[[new|alias]]'
+      let capturedChanges: FileChange[] = [];
+      vi.mocked(applyContentChanges).mockImplementation(async ({ changesProvider, content }) => {
+        if (typeof changesProvider === 'function') {
+          capturedChanges = await (changesProvider as () => Promise<FileChange[]>)();
+        }
+        return content;
       });
 
-      expect(result).toBeDefined();
+      await editLinksInContent({
+        app,
+        content: '| [[target]] |',
+        linkConverter: () => convertedLink
+      });
+
+      expect(capturedChanges.map((change) => change.newContent)).toEqual([expectedNewContent]);
     });
 
     it('should handle null cache', async () => {
