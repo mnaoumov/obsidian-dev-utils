@@ -157,6 +157,28 @@ export enum PluginApiUnavailabilityReason {
 }
 
 /**
+ * Parameters for {@link findPluginApi}.
+ */
+export interface FindPluginApiParams {
+  /**
+   * The semver range of contract versions the consumer compiled against. The same rules as
+   * {@link WatchPluginApiParams.apiVersionRange} apply.
+   */
+  readonly apiVersionRange: string;
+
+  /**
+   * The contract the CONSUMER expects. When supplied, it wins over the provider's published contract, as in
+   * {@link WatchPluginApiParams.contract}.
+   */
+  readonly contract?: PluginApiContract;
+
+  /**
+   * The `manifest.id` of the providing plugin.
+   */
+  readonly pluginId: string;
+}
+
+/**
  * The contract a provider declares for its API: every key is a method the API is promising to expose, and
  * its value optionally carries the payload schemas for that method.
  *
@@ -633,6 +655,26 @@ export class PluginApiValidationError extends Error {
 }
 
 /**
+ * Looks another plugin's API up ONCE, and answers for this moment only.
+ *
+ * It applies the same selection rule as {@link watchPluginApi} and hands out the same revocable handle, but it
+ * subscribes to nothing, so it never learns that the answer changed. That makes it the right shape for a free
+ * function that has no component to own a watch and runs on a user-driven path, such as a backlink lookup made
+ * while a rename is handled. It is the wrong shape for `onload`: plugins load in an unspecified order, so a
+ * `null` there means "not yet" as often as "not installed". Code that has a component and reads the API more
+ * than once should hold a {@link watchPluginApi} ref instead.
+ *
+ * @typeParam TApi - The API type the consumer compiled against.
+ * @param params - The parameters for the lookup.
+ * @returns The API, or `null` when no live record satisfies the range and the contract.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- The consumer names the API type it compiled against, as with `watchPluginApi`; nothing in the parameters can carry it.
+export function findPluginApi<TApi extends object>(params: FindPluginApiParams): null | TApi {
+  const record = selectRecord(params);
+  return record === null ? null : castTo<TApi>(createRevocableHandle(record, params.contract));
+}
+
+/**
  * Publishes a plugin's API so other plugins can consume it, keyed by the plugin's `manifest.id` and revoked
  * automatically when the plugin unloads.
  *
@@ -672,8 +714,8 @@ export function publishPluginApi<TApi extends object>(params: PublishPluginApiPa
  * Watches another plugin's API and returns a live {@link PluginApiRef} whose {@link PluginApiRef.value} stays
  * correct across the provider's load, unload, and re-enable.
  *
- * This is the entire consumer surface. There is deliberately no synchronous "get it or `null`" probe: a probe
- * only answers "now" and never tells you when "now" changed, so calling one during `onload` reads `null` and
+ * This is the consumer surface for anything that has a component. Its one-shot sibling {@link findPluginApi}
+ * only answers "now" and never tells you when "now" changed, so calling it during `onload` reads `null` and
  * invites the conclusion "not installed". A consumer that needs a synchronous answer inside a callback whose
  * signature forbids `await` — `checkCallback(isChecking): boolean`, `canExecute()`, a settings-row `visible`
  * predicate — holds the ref (or the value it maintains) in a field and reads that, which is both cheaper and
@@ -943,10 +985,10 @@ function revokeRecord(record: PublishedPluginApiRecord): void {
  * Picks the highest published record that is live, satisfies the requested version range, and matches the
  * effective contract's shape.
  *
- * @param params - The watch parameters.
+ * @param params - The lookup parameters.
  * @returns The winning record, or `null` when none qualifies.
  */
-function selectRecord(params: WatchPluginApiParams): null | PublishedPluginApiRecord {
+function selectRecord(params: FindPluginApiParams): null | PublishedPluginApiRecord {
   const candidates = getLiveRecords(params.pluginId)
     .filter((record) => satisfiesVersion(record.apiVersion, params.apiVersionRange))
     .filter((record) => checkMatchesContractShape(record, params.contract))

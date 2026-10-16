@@ -158,7 +158,7 @@ provider may simply not have loaded yet; the value becomes non-`null` on its own
 
 The watch is scoped to the `component` you pass, so it is torn down with it.
 
-### There is deliberately no synchronous probe
+### Prefer the ref over a one-shot lookup
 
 Some Obsidian callbacks cannot `await` — `checkCallback(isChecking): boolean`, `canExecute()`, a settings-row
 `visible` predicate. The answer is not a lookup function; it is the field the ref already maintains for you:
@@ -171,6 +171,12 @@ protected canExecute(): boolean {
 
 That is free (no registry lookup per keystroke in the command palette) and it is correct across **both** edges,
 which a probe never is — a probe only ever answers "now", and never tells you when "now" changed.
+
+The one-shot lookup does exist, as `findPluginApi`, for code that has no component to own a watch: a free
+function called on a user-driven path, such as a backlink lookup made while a rename is handled. It applies the
+same selection rule and hands out the same revocable handle as `watchPluginApi`, but subscribes to nothing. Never
+call it from `onload`: plugins load in an unspecified order, so `null` there means "not yet" as often as "not
+installed".
 
 ### Version negotiation
 

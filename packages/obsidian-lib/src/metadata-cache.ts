@@ -30,6 +30,7 @@ import type {
   ParseLinkFrontmatterReferenceWithOffsets,
   ParseLinkReference
 } from './parse-link.ts';
+import type { PluginApiContract } from './plugin/plugin-api.ts';
 
 import { retryWithTimeoutNotice } from './async-with-notice.ts';
 import { getIndexedBacklinksForFile } from './backlink-index.ts';
@@ -53,6 +54,7 @@ import {
   parseLinks,
   toParseLinkReference
 } from './parse-link.ts';
+import { findPluginApi } from './plugin/plugin-api.ts';
 import { sortReferences } from './reference.ts';
 import {
   readSafe,
@@ -150,19 +152,6 @@ export interface GetBacklinksForFileSafeParams extends GetBacklinksForFileSafeOp
    * The path or file object.
    */
   readonly pathOrFile: PathOrFile;
-}
-
-/**
- * Wrapper for the getBacklinksForFile method that provides a safe overload.
- */
-export interface GetBacklinksForFileSafeWrapper {
-  /**
-   * Retrieves the backlinks for a file safely.
-   *
-   * @param pathOrFile - The path or file object.
-   * @returns A {@link Promise} that resolves to an array dictionary of backlinks.
-   */
-  safe: (pathOrFile: PathOrFile) => Promise<CustomArrayDict<Reference>>;
 }
 
 /**
@@ -295,6 +284,29 @@ export interface RegisterFileCacheForNonExistingFileParams {
 }
 
 /**
+ * The slice of Advanced Metadata Cache's published API this module calls, declared here rather than imported,
+ * because that plugin is not a dependency (rule L9 in `AGENTS.md`). Its `api.d.ts` declares the whole of it.
+ */
+interface AdvancedMetadataCacheBacklinksApi {
+  /**
+   * Answers from the plugin's backlink cache.
+   *
+   * @param pathOrFile - The path or file object.
+   * @returns The backlinks, or `null` while the plugin's `Backlinks` module is off.
+   */
+  getBacklinksForFile: (pathOrFile: PathOrFile) => CustomArrayDict<Reference> | null;
+
+  /**
+   * Answers from the plugin's backlink cache once the pending file changes have been processed.
+   *
+   * @param pathOrFile - The path or file object.
+   * @returns A {@link Promise} that resolves to the backlinks, or to `null` while the plugin's `Backlinks`
+   *   module is off.
+   */
+  getBacklinksForFileSafe: (pathOrFile: PathOrFile) => Promise<CustomArrayDict<Reference> | null>;
+}
+
+/**
  * A selector for a feature-gated link category in {@link getLinks}.
  */
 interface FeatureLinkSelector {
@@ -342,9 +354,22 @@ interface ToParsedCachedMetadataExParams {
 /**
  * The plugin id of the Advanced Metadata Cache plugin, the successor to Backlink Cache.
  *
- * Used by {@link hasBacklinkCachePlugin}. Note that {@link getBacklinksForFileSafe} does NOT need this id: it detects the cache by the {@link GetBacklinksForFileSafeWrapper.safe} overload grafted onto `MetadataCache.getBacklinksForFile`, which both plugins install and which names no plugin.
+ * Used by {@link hasBacklinkCachePlugin}, and as the provider id under which {@link getBacklinksForFileOrPath} and {@link getBacklinksForFileSafe} look up the plugin's published API.
  */
 export const ADVANCED_METADATA_CACHE_PLUGIN_ID = 'advanced-metadata-cache';
+
+/**
+ * The contract versions of Advanced Metadata Cache's API this module compiled against. `1.3.0` is the first to carry the two backlink methods.
+ */
+const ADVANCED_METADATA_CACHE_BACKLINKS_API_VERSION_RANGE = '^1.3.0';
+
+/**
+ * The members of Advanced Metadata Cache's API this module calls, so a record that lacks either is passed over.
+ */
+const ADVANCED_METADATA_CACHE_BACKLINKS_API_CONTRACT: PluginApiContract = {
+  getBacklinksForFile: {},
+  getBacklinksForFileSafe: {}
+};
 
 /**
  * The plugin id of the retired Backlink Cache plugin, superseded by {@link ADVANCED_METADATA_CACHE_PLUGIN_ID}.
@@ -371,10 +396,9 @@ export async function ensureMetadataCacheReady(app: App): Promise<void> {
  * Retrieves the backlinks for a file or path.
  * NOTE: The file may be non-existent.
  *
- * When a backlink-cache plugin has grafted its {@link GetBacklinksForFileSafeWrapper.safe} overload onto
- * `MetadataCache.getBacklinksForFile`, that patched method answers. Otherwise the answer comes from a backlink
- * index whose cost is proportional to the candidate notes rather than to every reference in the vault, and which
- * gives the same references Obsidian's own `getBacklinksForFile` gives.
+ * When Advanced Metadata Cache publishes its backlinks API and its `Backlinks` module is on, its cache answers.
+ * Otherwise the answer comes from a backlink index whose cost is proportional to the candidate notes rather than
+ * to every reference in the vault, and which gives the same references Obsidian's own `getBacklinksForFile` gives.
  *
  * @param app - The Obsidian application instance.
  * @param pathOrFile - The path or file object.
@@ -383,13 +407,15 @@ export async function ensureMetadataCacheReady(app: App): Promise<void> {
 export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): CustomArrayDict<Reference> {
   const file = getFile({ app, pathOrFile, shouldIncludeNonExisting: true });
   using _registration = registerFiles(app, [file]);
-  return hasBacklinkCacheSafeOverload(app) ? app.metadataCache.getBacklinksForFile(file) : getIndexedBacklinksForFile(app, file);
+  return findAdvancedMetadataCacheBacklinksApi()?.getBacklinksForFile(file) ?? getIndexedBacklinksForFile(app, file);
 }
 
 /**
  * Retrieves the backlinks for a file safely.
  *
- * This is NOT a pure read. When no backlink-cache plugin supplies the `safe` overload, it verifies
+ * When Advanced Metadata Cache publishes its backlinks API and its `Backlinks` module is on, that API answers.
+ *
+ * Otherwise this is NOT a pure read. It verifies
  * each backlink against the note's current text, and to do that it calls {@link saveNote} on every
  * note that links to the file, which saves any open editor view of those notes that has unsaved
  * changes. Call it from an explicit user action. Do not call it from an automatic trigger (a vault or
@@ -401,10 +427,11 @@ export function getBacklinksForFileOrPath(app: App, pathOrFile: PathOrFile): Cus
  */
 export async function getBacklinksForFileSafe(params: GetBacklinksForFileSafeParams): Promise<CustomArrayDict<Reference>> {
   const { app, pathOrFile, ...options } = params;
-  const safeOverload = (app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
-  if (safeOverload) {
-    return safeOverload(pathOrFile);
+  const cachedBacklinks = await findAdvancedMetadataCacheBacklinksApi()?.getBacklinksForFileSafe(pathOrFile);
+  if (cachedBacklinks) {
+    return cachedBacklinks;
   }
+
   let backlinks: CustomArrayDict<Reference> = new CustomArrayDictImpl<Reference>();
   await retryWithTimeoutNotice({
     async operationFunction(abortSignal) {
@@ -641,7 +668,7 @@ export function getLinks(params: GetLinksParams): Reference[] {
 /**
  * Determines whether a backlink cache plugin is currently loaded - either Advanced Metadata Cache ({@link ADVANCED_METADATA_CACHE_PLUGIN_ID}) or its retired predecessor Backlink Cache ({@link BACKLINK_CACHE_PLUGIN_ID}).
  *
- * Such a plugin grafts a drain-on-read backlink index onto the metadata cache and indexes canvas metadata, so a caller that compensates for Obsidian's own gaps can stand down while one is present. Both ids are recognized; {@link BACKLINK_CACHE_PLUGIN_ID} records when the retired one may be dropped.
+ * Such a plugin keeps a drain-on-read backlink index and indexes canvas metadata, so a caller that compensates for Obsidian's own gaps can stand down while one is present. Both ids are recognized; {@link BACKLINK_CACHE_PLUGIN_ID} records when the retired one may be dropped.
  *
  * This reads the LOADED plugin instance rather than `app.plugins.enabledPlugins`, deliberately: the question is whether the plugin's patches are in place right now, and they are not until it has loaded. Plugins load in an unspecified order, so call this from a user-driven path rather than from plugin load - see rule L25 in `AGENTS.md`.
  *
@@ -793,12 +820,16 @@ export function unregisterFiles(app: App, files: TAbstractFile[]): void {
   }
 }
 
-function getRegisteredFilesCounts(): Map<string, number> {
-  return getObsidianDevUtilsState('registeredFilesCounts', new Map<string, number>()).value;
+function findAdvancedMetadataCacheBacklinksApi(): AdvancedMetadataCacheBacklinksApi | null {
+  return findPluginApi<AdvancedMetadataCacheBacklinksApi>({
+    apiVersionRange: ADVANCED_METADATA_CACHE_BACKLINKS_API_VERSION_RANGE,
+    contract: ADVANCED_METADATA_CACHE_BACKLINKS_API_CONTRACT,
+    pluginId: ADVANCED_METADATA_CACHE_PLUGIN_ID
+  });
 }
 
-function hasBacklinkCacheSafeOverload(app: App): boolean {
-  return !!(app.metadataCache.getBacklinksForFile as Partial<GetBacklinksForFileSafeWrapper>).safe;
+function getRegisteredFilesCounts(): Map<string, number> {
+  return getObsidianDevUtilsState('registeredFilesCounts', new Map<string, number>()).value;
 }
 
 function parseExternalBodyLinks(content: string, cache: CachedMetadata): ParseLinkReference[] {
