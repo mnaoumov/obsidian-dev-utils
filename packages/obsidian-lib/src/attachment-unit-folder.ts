@@ -13,10 +13,9 @@
  * attachments over the same vault. If they each decided separately what one attachment is, a user
  * with both installed would get a folder kept whole by one and torn apart by the other.
  *
- * Which is why the designation itself is read from the vault rather than supplied per caller: pass an
- * {@link App} and {@link findAttachmentUnitFolderPath} walks with whatever an attachment-location
- * plugin published on the patched `Vault.getAvailablePathForAttachments`, so every plugin decides from
- * one answer. The explicit-predicate form remains for a caller that genuinely owns its own patterns.
+ * Which is why the designation itself is read from one shared source rather than supplied per caller: pass
+ * an {@link App} and {@link findAttachmentUnitFolderPath} walks with whatever Custom Attachment Location
+ * publishes through its plugin API, so every plugin decides from one answer. The explicit-predicate form remains for a caller that genuinely owns its own patterns.
  */
 
 import type { App } from 'obsidian';
@@ -26,12 +25,12 @@ import { dirname } from '@mnaoumov/typescript-lib/path';
 import { getCheckIsAttachmentUnitFolderFunction } from './attachment-path.ts';
 
 /**
- * Parameters for {@link findAttachmentUnitFolderPath}, reading the designation published on the vault.
+ * Parameters for {@link findAttachmentUnitFolderPath}, reading the designation Custom Attachment Location
+ * publishes through its plugin API.
  */
 export interface FindAttachmentUnitFolderPathFromAppParams {
   /**
-   * An Obsidian application instance, whose patched `Vault.getAvailablePathForAttachments` carries the
-   * designation.
+   * An Obsidian application instance.
    */
   readonly app: App;
 
@@ -97,8 +96,8 @@ export interface RebasePathOntoFolderParams {
  * The vault root is never a unit, however the patterns are written: designating it would make every
  * relocation a no-op at best and a vault-wide move at worst.
  *
- * Passing an {@link App} walks with the designation an attachment-location plugin published on the vault;
- * when nobody published one, nothing is designated and the answer is `null`.
+ * Passing an {@link App} walks with the designation Custom Attachment Location publishes through its plugin
+ * API; when nobody published one, nothing is designated and the answer is `null`.
  *
  * @param params - The parameters for finding the attachment unit folder.
  * @returns The unit folder's path, or `null` when the attachment belongs to no unit.

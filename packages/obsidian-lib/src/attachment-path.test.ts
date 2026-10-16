@@ -23,6 +23,7 @@ import type { GetAvailablePathForAttachmentsExtendedFunctionParams } from './att
 
 import {
   AttachmentPathContext,
+  CUSTOM_ATTACHMENT_LOCATION_PLUGIN_ID,
   getAttachmentFilePath,
   getAttachmentFolderPath,
   getAttachmentFolderPathSyncOrNull,
@@ -32,8 +33,24 @@ import {
   isAtProperAttachmentPath
 } from './attachment-path.ts';
 import { getFile } from './file-system.ts';
+import { findPluginApi } from './plugin/plugin-api.ts';
+
+interface IsAttachmentUnitFolderParams {
+  readonly folderPath: string;
+}
+
+vi.mock('./plugin/plugin-api.ts', () => ({
+  findPluginApi: vi.fn(() => null)
+}));
 
 const NOTE_PATH = 'Docs/note.md';
+
+const mockedFindPluginApi = vi.mocked(findPluginApi);
+
+beforeEach(() => {
+  mockedFindPluginApi.mockReset();
+  mockedFindPluginApi.mockReturnValue(null);
+});
 
 function createApp(attachmentFolderPath: string, extraFiles?: Record<string, string>): AppOriginal {
   const app = App.createConfigured__({
@@ -51,19 +68,28 @@ function createApp(attachmentFolderPath: string, extraFiles?: Record<string, str
 }
 
 /**
- * Models what an attachment-location plugin does: derive the attachment folder from the note's NAME.
+ * Models Custom Attachment Location publishing its attachment-path API through the registry.
  */
-function stubNoteNameFolder(app: AppOriginal): void {
-  const extended = vi.fn((params: GetAvailablePathForAttachmentsExtendedFunctionParams): Promise<string> => {
+function stubCustomAttachmentLocationApi(api: Partial<Record<'getAvailablePathForAttachments' | 'isAttachmentUnitFolder', Mock>>): void {
+  mockedFindPluginApi.mockReturnValue({
+    getAvailablePathForAttachments: vi.fn(),
+    isAttachmentUnitFolder: vi.fn(() => false),
+    ...api
+  });
+}
+
+/**
+ * Models what Custom Attachment Location does: derive the attachment folder from the note's NAME.
+ */
+function stubNoteNameFolder(): void {
+  const getAvailablePathForAttachmentsFromApi = vi.fn((params: GetAvailablePathForAttachmentsExtendedFunctionParams): Promise<string> => {
     const notePath = params.notePathOrFile as string;
     const noteFolderPath = dirname(notePath);
     const noteBaseName = basename(notePath, extname(notePath));
     const attachmentFileExtension = params.attachmentFileExtension ? `.${params.attachmentFileExtension}` : '';
     return Promise.resolve(`${noteFolderPath}/${noteBaseName}/${params.attachmentFileBaseName}${attachmentFileExtension}`);
   });
-  app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
-    Object.assign(vi.fn(), { extended })
-  );
+  stubCustomAttachmentLocationApi({ getAvailablePathForAttachments: getAvailablePathForAttachmentsFromApi });
 }
 
 describe('getAttachmentFolderPath', () => {
@@ -176,9 +202,9 @@ describe('getAttachmentFolderPathSyncOrNull', () => {
     expect(syncFolderPath).toBe(await getAttachmentFolderPath({ app, notePathOrFile: note }));
   });
 
-  it('should return null when an extended override owns the resolution', () => {
+  it('should return null when Custom Attachment Location owns the resolution', () => {
     const app = createApp('./');
-    stubNoteNameFolder(app);
+    stubNoteNameFolder();
     expect(getAttachmentFolderPathSyncOrNull({ app, notePathOrFile: NOTE_PATH })).toBeNull();
   });
 });
@@ -270,7 +296,7 @@ describe('getAvailablePathForAttachments', () => {
 });
 
 describe('getAttachmentFilePath', () => {
-  it('should resolve the attachment path without an extended override', async () => {
+  it('should resolve the attachment path when Custom Attachment Location publishes no API', async () => {
     const app = createApp('./assets');
     expect(
       await getAttachmentFilePath({
@@ -283,12 +309,10 @@ describe('getAttachmentFilePath', () => {
     ).toBe('Docs/assets/img.png');
   });
 
-  it('should pass the stats and a content reader of an existing attachment to the extended override', async () => {
+  it('should pass the stats and a content reader of an existing attachment to the Custom Attachment Location resolver', async () => {
     const app = createApp('./', { 'Inbox/img.png': 'CONTENT' });
     const extended = vi.fn().mockResolvedValue('Docs/img.png');
-    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
-      Object.assign(vi.fn(), { extended })
-    );
+    stubCustomAttachmentLocationApi({ getAvailablePathForAttachments: extended });
     const content = new ArrayBuffer(8);
     const readBinary = vi.fn().mockResolvedValue(content);
     app.vault.readBinary = readBinary;
@@ -317,9 +341,7 @@ describe('getAttachmentFilePath', () => {
   it('should pass no content reader for a missing attachment', async () => {
     const app = createApp('./');
     const extended = vi.fn().mockResolvedValue('Docs/img.png');
-    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
-      Object.assign(vi.fn(), { extended })
-    );
+    stubCustomAttachmentLocationApi({ getAvailablePathForAttachments: extended });
 
     await getAttachmentFilePath({
       app,
@@ -358,7 +380,7 @@ describe('hasOwnAttachmentFolder', () => {
 
   it('should return true when the folder is derived from the note name', async () => {
     const app = createApp('./');
-    stubNoteNameFolder(app);
+    stubNoteNameFolder();
     expect(
       await hasOwnAttachmentFolder({
         app,
@@ -379,9 +401,7 @@ describe('isAtProperAttachmentPath', () => {
 
   function stubProperPath(properPath: string): Mock {
     const extended = vi.fn().mockResolvedValue(properPath);
-    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
-      Object.assign(vi.fn(), { extended })
-    );
+    stubCustomAttachmentLocationApi({ getAvailablePathForAttachments: extended });
     return extended;
   }
 
@@ -447,17 +467,28 @@ describe('isAtProperAttachmentPath', () => {
 });
 
 describe('getCheckIsAttachmentUnitFolderFunction', () => {
-  it('should read the designation an attachment-location plugin published', () => {
-    const app = createApp('Files');
-    const checkIsAttachmentUnitFolder = vi.fn((folderPath: string) => folderPath === 'notes/page_files');
-    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
-      Object.assign(vi.fn(), { checkIsAttachmentUnitFolder })
-    );
-    expect(getCheckIsAttachmentUnitFolderFunction(app)).toBe(checkIsAttachmentUnitFolder);
+  it('should read the designation Custom Attachment Location publishes through its API', () => {
+    const isAttachmentUnitFolder = vi.fn((params: IsAttachmentUnitFolderParams) => params.folderPath === 'notes/page_files');
+    stubCustomAttachmentLocationApi({ isAttachmentUnitFolder });
+    const checkIsAttachmentUnitFolder = getCheckIsAttachmentUnitFolderFunction(createApp('Files'));
+    expect(checkIsAttachmentUnitFolder?.('notes/page_files')).toBe(true);
+    expect(checkIsAttachmentUnitFolder?.('notes/assets')).toBe(false);
+    expect(isAttachmentUnitFolder).toHaveBeenCalledWith({ folderPath: 'notes/page_files' });
   });
 
   it('should answer undefined when nobody published a designation', () => {
-    // Absent is the same "nobody owns this policy" answer the `extended` member gives.
+    // Absent is the same "nobody owns this policy" answer that sends the path lookup to Obsidian's own resolution.
     expect(getCheckIsAttachmentUnitFolderFunction(createApp('Files'))).toBeUndefined();
+  });
+});
+
+describe('Custom Attachment Location lookup', () => {
+  it('should ask the registry for the plugin id, contract range and both members', () => {
+    getAttachmentFolderPathSyncOrNull({ app: createApp('./'), notePathOrFile: NOTE_PATH });
+    expect(mockedFindPluginApi).toHaveBeenCalledWith({
+      apiVersionRange: '^1.3.0',
+      contract: { getAvailablePathForAttachments: {}, isAttachmentUnitFolder: {} },
+      pluginId: CUSTOM_ATTACHMENT_LOCATION_PLUGIN_ID
+    });
   });
 });

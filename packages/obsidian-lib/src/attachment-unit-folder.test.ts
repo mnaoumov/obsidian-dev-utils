@@ -2,9 +2,9 @@
 
 import type { App as AppOriginal } from 'obsidian';
 
-import { castTo } from '@mnaoumov/typescript-lib/object-utils';
 import { App } from 'obsidian-test-mocks/obsidian';
 import {
+  beforeEach,
   describe,
   expect,
   it,
@@ -15,19 +15,35 @@ import {
   findAttachmentUnitFolderPath,
   rebasePathOntoFolder
 } from './attachment-unit-folder.ts';
+import { findPluginApi } from './plugin/plugin-api.ts';
+
+interface IsAttachmentUnitFolderParams {
+  readonly folderPath: string;
+}
+
+vi.mock('./plugin/plugin-api.ts', () => ({
+  findPluginApi: vi.fn(() => null)
+}));
+
+const mockedFindPluginApi = vi.mocked(findPluginApi);
+
+beforeEach(() => {
+  mockedFindPluginApi.mockReset();
+  mockedFindPluginApi.mockReturnValue(null);
+});
 
 /**
- * Models an attachment-location plugin publishing its designation on the patched vault method.
+ * Models Custom Attachment Location publishing its designation through its plugin API.
  */
 function createApp(checkIsAttachmentUnitFolder?: (folderPath: string) => boolean): AppOriginal {
-  const app = App.createConfigured__().asOriginalType__();
   if (checkIsAttachmentUnitFolder) {
-    app.vault.getAvailablePathForAttachments = castTo<typeof app.vault.getAvailablePathForAttachments>(
-      Object.assign(vi.fn(), { checkIsAttachmentUnitFolder })
-    );
+    mockedFindPluginApi.mockReturnValue({
+      getAvailablePathForAttachments: vi.fn(),
+      isAttachmentUnitFolder: (params: IsAttachmentUnitFolderParams) => checkIsAttachmentUnitFolder(params.folderPath)
+    });
   }
 
-  return app;
+  return App.createConfigured__().asOriginalType__();
 }
 
 function matching(...unitFolderPaths: string[]): (folderPath: string) => boolean {
@@ -96,7 +112,7 @@ describe('findAttachmentUnitFolderPath', () => {
 });
 
 describe('findAttachmentUnitFolderPath with the published designation', () => {
-  it('should walk with the designation an attachment-location plugin published', () => {
+  it('should walk with the designation Custom Attachment Location published', () => {
     const app = createApp(matching('notes/page_files'));
     expect(findAttachmentUnitFolderPath({
       app,

@@ -7,8 +7,7 @@
 import type {
   App,
   FileStats,
-  TFolder,
-  Vault
+  TFolder
 } from 'obsidian';
 
 import {
@@ -29,6 +28,7 @@ import {
 } from '@obsidian-typings/obsidian-public-latest/implementations';
 
 import type { PathOrFile } from './file-system.ts';
+import type { PluginApiContract } from './plugin/plugin-api.ts';
 
 import {
   getFile,
@@ -38,6 +38,7 @@ import {
   getPath,
   MARKDOWN_FILE_EXTENSION
 } from './file-system.ts';
+import { findPluginApi } from './plugin/plugin-api.ts';
 
 /**
  * A context for an attachment path.
@@ -127,32 +128,56 @@ export interface GetAvailablePathForAttachmentsExtendedFunctionParams {
 }
 
 /**
- * {@link Vault.getAvailablePathForAttachments} extended wrapper.
+ * The slice of Custom Attachment Location's registry API this module calls, declared here rather than imported:
+ * that plugin ships its surface as a hand-written `api.d.ts`, not as a package (see rule L9 in `AGENTS.md`).
  */
-export interface GetAvailablePathForAttachmentsFunctionExtended extends GetAvailablePathForAttachmentsFunction {
+interface CustomAttachmentLocationAttachmentPathApi {
   /**
-   * Whether a folder path is designated as an attachment unit — a folder that must travel whole rather
-   * than have the linked file relocated out of it.
+   * The plugin's full attachment-path resolver.
    *
-   * Optional: an attachment-location plugin may own the resolution without designating anything, and an
-   * absent member is the same "nobody owns this policy" answer {@link GetAvailablePathForAttachmentsFunctionExtended.extended}
-   * itself gives.
-   *
-   * @param folderPath - The vault-relative path of the folder.
-   * @returns `true` if the folder is designated as an attachment unit, `false` otherwise.
+   * @param params - The same fields as {@link GetAvailablePathForAttachmentsExtendedFunctionParams}, which the
+   *   plugin declares field for field.
+   * @returns A {@link Promise} that resolves to the attachment's path from the vault root.
    */
-  checkIsAttachmentUnitFolder?: (folderPath: string) => boolean;
+  getAvailablePathForAttachments: (params: GetAvailablePathForAttachmentsExtendedFunctionParams) => Promise<string>;
 
   /**
-   * Get available path for attachments with additional params.
+   * Whether the user designated a folder an attachment unit folder. Synchronous on purpose.
    *
-   * @param params - Parameters for the get available path for attachments.
-   * @returns A {@link Promise} that resolves to the available path for attachments.
+   * @param params - The folder.
+   * @returns Whether the folder is designated.
    */
-  extended: (params: GetAvailablePathForAttachmentsExtendedFunctionParams) => Promise<string>;
+  isAttachmentUnitFolder: (params: CustomAttachmentLocationIsAttachmentUnitFolderParams) => boolean;
 }
 
-type GetAvailablePathForAttachmentsFunction = Vault['getAvailablePathForAttachments'];
+/**
+ * Parameters for {@link CustomAttachmentLocationAttachmentPathApi.isAttachmentUnitFolder}.
+ */
+interface CustomAttachmentLocationIsAttachmentUnitFolderParams {
+  /**
+   * The folder, as a vault-relative path.
+   */
+  readonly folderPath: string;
+}
+
+/**
+ * The plugin id Custom Attachment Location publishes its API under.
+ */
+export const CUSTOM_ATTACHMENT_LOCATION_PLUGIN_ID = 'obsidian-custom-attachment-location';
+
+/**
+ * The contract versions of Custom Attachment Location's API this module compiled against. `1.3.0` is the first
+ * to carry the two attachment-path methods.
+ */
+const CUSTOM_ATTACHMENT_LOCATION_ATTACHMENT_PATH_API_VERSION_RANGE = '^1.3.0';
+
+/**
+ * The members of Custom Attachment Location's API this module calls, so a record that lacks either is passed over.
+ */
+const CUSTOM_ATTACHMENT_LOCATION_ATTACHMENT_PATH_API_CONTRACT: PluginApiContract = {
+  getAvailablePathForAttachments: {},
+  isAttachmentUnitFolder: {}
+};
 
 /**
  * Dummy path.
@@ -419,8 +444,8 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
     shouldSkipDuplicateCheck
   } = params;
 
-  const extendedFunction = getExtendedFunction(app);
-  if (!extendedFunction) {
+  const customAttachmentLocationApi = findCustomAttachmentLocationApi();
+  if (!customAttachmentLocationApi) {
     // Nobody overrides the resolution, so it is entirely synchronous.
     // The same core answers `getAttachmentFolderPathSyncOrNull`, which is what keeps the two in step.
     return getAttachmentFilePathSync({
@@ -436,7 +461,7 @@ export async function getAttachmentFilePath(params: GetAttachmentFilePathParams)
   const attachmentFileBaseName = basename(attachmentPath, attachmentFileExtension);
   const attachmentFile = getFileOrNull({ app, pathOrFile: attachmentPath });
 
-  return await extendedFunction({
+  return await customAttachmentLocationApi.getAvailablePathForAttachments({
     attachmentFileBaseName,
     attachmentFileExtension: attachmentFileExtension.slice(1),
     attachmentFileStats: attachmentFile?.stat,
@@ -480,16 +505,14 @@ export async function getAttachmentFolderPath(params: GetAttachmentFolderPathPar
  * caller deciding whether to merely *offer* a command cannot await {@link getAttachmentFolderPath}. This is
  * the synchronous twin such a caller can use instead.
  *
- * The answer is `null` when it is not knowable synchronously — that is, when a plugin installed
- * {@link GetAvailablePathForAttachmentsFunctionExtended.extended} and therefore owns the resolution, which is
- * genuinely asynchronous. `null` means "ask {@link getAttachmentFolderPath}", never "there is no attachment
+ * The answer is `null` when it is not knowable synchronously — that is, when Custom Attachment Location publishes
+ * its attachment-path API and therefore owns the resolution, which is genuinely asynchronous. `null` means "ask {@link getAttachmentFolderPath}", never "there is no attachment
  * folder". Otherwise the answer is exact rather than a guess: it is produced by the very same code
  * {@link getAttachmentFolderPath} runs, whose only asynchronous step — creating a missing attachment folder —
  * is unreachable on this path.
  *
- * There is deliberately no `context` parameter: {@link AttachmentPathContext} only ever reaches an
- * {@link GetAvailablePathForAttachmentsFunctionExtended.extended} override, and this function answers `null`
- * whenever one is installed.
+ * There is deliberately no `context` parameter: {@link AttachmentPathContext} only ever reaches that plugin's
+ * resolver, and this function answers `null` whenever it is published.
  *
  * @param params - Parameters for the get attachment folder path sync or null function.
  * @returns The attachment folder path, or `null` when it can only be resolved asynchronously.
@@ -500,7 +523,7 @@ export function getAttachmentFolderPathSyncOrNull(params: GetAttachmentFolderPat
     notePathOrFile
   } = params;
 
-  return getExtendedFunction(app)
+  return findCustomAttachmentLocationApi()
     ? null
     : parentFolderPath(getAttachmentFilePathSync({
       app,
@@ -534,23 +557,29 @@ export async function getAvailablePathForAttachments(params: GetAvailablePathFor
 }
 
 /**
- * Reads the attachment-unit-folder designation an attachment-location plugin published on the vault.
+ * Reads the attachment-unit-folder designation Custom Attachment Location publishes through its plugin API.
  *
- * The designation is one plugin's setting but every relocating plugin's business, so it rides the same seam
- * that already carries that kind of answer: a member hung off the patched
- * {@link Vault.getAvailablePathForAttachments}. Reading it here rather than consulting any one plugin's
- * settings is the point — a folder kept whole by one plugin and torn apart by another is exactly the failure
+ * The designation is one plugin's setting but every relocating plugin's business, so it is read from the same
+ * API that answers the attachment path itself. Reading it here rather than having each caller look for the
+ * plugin is the point — a folder kept whole by one plugin and torn apart by another is exactly the failure
  * `findAttachmentUnitFolderPath` exists to prevent.
  *
- * `undefined` means nobody published a designation, the same "nobody owns this policy" answer the
- * {@link GetAvailablePathForAttachmentsFunctionExtended.extended} member gives. It is distinct from a
- * designation that answers `false` for every folder.
+ * `undefined` means nobody published a designation, the same "nobody owns this policy" answer that sends
+ * {@link getAttachmentFilePath} to Obsidian's own resolution. It is distinct from a designation that answers
+ * `false` for every folder.
  *
- * @param app - An Obsidian application instance.
+ * The registry is looked up once, when this is called, so a caller walking a folder's ancestors asks the same
+ * API all the way up.
+ *
+ * @param _app - An Obsidian application instance. Unused since the answer comes from the plugin API registry;
+ *   kept so existing callers compile unchanged.
  * @returns The designation predicate, or `undefined` when nobody published one.
  */
-export function getCheckIsAttachmentUnitFolderFunction(app: App): GetAvailablePathForAttachmentsFunctionExtended['checkIsAttachmentUnitFolder'] {
-  return (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFunctionExtended>).checkIsAttachmentUnitFolder;
+export function getCheckIsAttachmentUnitFolderFunction(_app: App): ((folderPath: string) => boolean) | undefined {
+  const customAttachmentLocationApi = findCustomAttachmentLocationApi();
+  return customAttachmentLocationApi
+    ? (folderPath: string): boolean => customAttachmentLocationApi.isAttachmentUnitFolder({ folderPath })
+    : undefined;
 }
 
 /**
@@ -560,8 +589,7 @@ export function getCheckIsAttachmentUnitFolderFunction(app: App): GetAvailablePa
  * would get: they differ only when the folder depends on the note's NAME. Every built-in
  * `attachmentFolderPath` mode — the vault root, a fixed folder, the note's own folder (`./`), a subfolder of
  * the note's folder (`./sub`) — is shared by every note in that folder, so it answers `false`; `true` arises
- * from a {@link GetAvailablePathForAttachmentsFunctionExtended.extended} override that derives the folder from the
- * note's name (what an attachment-location plugin produces).
+ * from Custom Attachment Location's resolver deriving the folder from the note's name.
  *
  * This is the distinction a caller needs before sweeping an attachment folder wholesale: only a
  * note-specific folder can be treated as belonging to the note.
@@ -654,8 +682,22 @@ export async function isAtProperAttachmentPath(params: IsAtProperAttachmentPathP
 }
 
 /**
- * The synchronous core of {@link getAttachmentFilePath}, reached when nobody installed
- * {@link GetAvailablePathForAttachmentsFunctionExtended.extended}.
+ * Finds Custom Attachment Location's attachment-path API in the plugin API registry. Its presence is the
+ * synchronous probe for "somebody else owns the resolution".
+ *
+ * @returns The API, or `null` when that plugin publishes no record satisfying the range and contract.
+ */
+function findCustomAttachmentLocationApi(): CustomAttachmentLocationAttachmentPathApi | null {
+  return findPluginApi<CustomAttachmentLocationAttachmentPathApi>({
+    apiVersionRange: CUSTOM_ATTACHMENT_LOCATION_ATTACHMENT_PATH_API_VERSION_RANGE,
+    contract: CUSTOM_ATTACHMENT_LOCATION_ATTACHMENT_PATH_API_CONTRACT,
+    pluginId: CUSTOM_ATTACHMENT_LOCATION_PLUGIN_ID
+  });
+}
+
+/**
+ * The synchronous core of {@link getAttachmentFilePath}, reached when Custom Attachment Location publishes no
+ * attachment-path API.
  *
  * @param params - Parameters for the get attachment file path sync function.
  * @returns The file path of the attachment.
@@ -707,17 +749,6 @@ function getAvailablePathForAttachmentsSync(params: GetAvailablePathForAttachmen
       fileExtension: attachmentFileExtension
     })
     : app.vault.getAvailablePath(prefix + attachmentFileBaseName, attachmentFileExtension);
-}
-
-/**
- * Reads the {@link GetAvailablePathForAttachmentsFunctionExtended.extended} member an attachment-location
- * plugin installs. Its presence is the synchronous probe for "somebody else owns the resolution".
- *
- * @param app - An Obsidian application instance.
- * @returns The extended function, or `undefined` when nobody installed one.
- */
-function getExtendedFunction(app: App): GetAvailablePathForAttachmentsFunctionExtended['extended'] | undefined {
-  return (app.vault.getAvailablePathForAttachments as Partial<GetAvailablePathForAttachmentsFunctionExtended>).extended;
 }
 
 /**
