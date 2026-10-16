@@ -1,9 +1,9 @@
 import { satteri } from '@astrojs/markdown-satteri';
+// eslint-disable-next-line import-x/no-rename-default -- The default export name `createPlugin` does not say which plugin.
+import sitemap from '@astrojs/sitemap';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `StarlightIntegration` is too verbose.
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 
 import { satteriGitHubAlerts } from './scripts/docs-gen/helpers/satteri-plugins/satteri-github-alerts.ts';
 import { satteriRelativeLinks } from './scripts/docs-gen/helpers/satteri-plugins/satteri-relative-links.ts';
@@ -11,12 +11,19 @@ import { satteriRelativeLinks } from './scripts/docs-gen/helpers/satteri-plugins
 // The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/src`
 // (`srcDir`) so it never collides with the library's own `src/` and `dist/`. `obsidian-dev-utils` is retired in
 // favour of the five `@mnaoumov/*` packages, each with a site of its own, so this one is a landing page pointing at
-// them plus one redirect per page the old site served (`docs/old-site-redirects.json`).
+// them plus one "this page has moved" page per page the old site served (`docs/src/pages/[...old].astro`, built from
+// `docs/old-site-redirects.json`).
 const BASE = '/obsidian-dev-utils';
+const SITE = 'https://mnaoumov.dev';
 
 export default defineConfig({
   base: BASE,
   integrations: [
+    // Starlight adds this integration itself unless one is already present. It is added here only to filter it: the
+    // landing page is the one page worth indexing, and listing the 3522 `noindex` moved pages would contradict them.
+    sitemap({
+      filter: (page): boolean => page === `${SITE}${BASE}/`
+    }),
     starlight({
       components: {
         SiteTitle: './docs/src/components/SiteTitle.astro'
@@ -49,22 +56,8 @@ export default defineConfig({
   outDir: './docs/dist',
   // eslint-disable-next-line unicorn/name-replacements -- `publicDir` is an Astro config key.
   publicDir: './docs/public',
-  redirects: getOldSiteRedirects(),
-  site: 'https://mnaoumov.dev',
+  site: SITE,
   // eslint-disable-next-line unicorn/name-replacements -- `srcDir` is an Astro config key.
   srcDir: './docs/src',
   trailingSlash: 'always'
 });
-
-/**
- * Reads the redirect map for every page the retired site served: an old path, relative to the base, to the page
- * that replaced it on one of the five package sites. The old pages no longer exist anywhere, so the map is frozen
- * data rather than something a build could derive; Astro emits a meta-refresh page for each entry, which is all
- * GitHub Pages can serve.
- *
- * @returns The redirects, keyed by old path.
- */
-function getOldSiteRedirects(): Record<string, string> {
-  const redirectsPath = resolve(import.meta.dirname, 'docs/old-site-redirects.json');
-  return JSON.parse(readFileSync(redirectsPath, 'utf-8')) as Record<string, string>;
-}
