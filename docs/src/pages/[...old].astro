@@ -1,0 +1,139 @@
+---
+/**
+ * One "this page has moved" page per page the retired site served. A bare redirect would take a reader to the new
+ * page without telling them it moved, so a bookmark or an old link in a README would never be updated. This page
+ * says so, links the new page, and redirects after a visible countdown the reader can cancel; with scripts off, a
+ * `<noscript>` refresh does the redirect. The canonical link and `noindex` move search results to the new page.
+ */
+import type { GetStaticPaths } from 'astro';
+
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+import type { MovedPage } from '../moved-pages.ts';
+
+import redirects from '../../old-site-redirects.json' with { type: 'json' };
+import {
+  getMovedPages,
+  getNoScriptRefreshHtml,
+  MOVED_PAGE_REDIRECT_DELAY_IN_SECONDS
+} from '../moved-pages.ts';
+
+interface Props {
+  movedPage: MovedPage;
+}
+
+export const getStaticPaths = (() =>
+  getMovedPages(redirects).map((movedPage) => ({
+    params: { old: movedPage.routeParameter },
+    props: { movedPage }
+  }))) satisfies GetStaticPaths;
+
+const { movedPage } = Astro.props;
+const delayInSeconds = String(MOVED_PAGE_REDIRECT_DELAY_IN_SECONDS);
+
+const PACKAGE_SITES = [
+  { description: 'everything Obsidian at runtime.', name: 'obsidian-lib' },
+  { description: 'Obsidian-plugin tooling.', name: 'obsidian-dev-toolkit' },
+  { description: 'generic runtime code.', name: 'typescript-lib' },
+  { description: 'generic test support.', name: 'typescript-test-toolkit' },
+  { description: 'generic tooling.', name: 'typescript-dev-toolkit' }
+];
+---
+
+<StarlightPage
+	frontmatter={{
+		description: `This page moved to ${movedPage.targetUrl}.`,
+		editUrl: false,
+		head: [
+			{ attrs: { href: movedPage.targetUrl, rel: 'canonical' }, tag: 'link' },
+			{ attrs: { content: movedPage.targetUrl, property: 'og:url' }, tag: 'meta' },
+			{ attrs: { content: 'noindex', name: 'robots' }, tag: 'meta' },
+			{ content: getNoScriptRefreshHtml(movedPage.targetUrl), tag: 'noscript' }
+		],
+		lastUpdated: false,
+		pagefind: false,
+		template: 'splash',
+		title: 'This page has moved'
+	}}
+>
+	<div class="moved-notice" data-delay-seconds={delayInSeconds} data-moved-to={movedPage.targetUrl}>
+		<p>
+			<code>obsidian-dev-utils</code> is retired, and this page now lives on the <code>{movedPage.packageName}</code> site as{' '}
+			<strong>{movedPage.pageName}</strong>:
+		</p>
+		<p class="moved-link"><a href={movedPage.targetUrl}>{movedPage.targetUrl}</a></p>
+		<p><strong>Please update your bookmark or link</strong> to point at the new address.</p>
+		<p class="moved-countdown" data-moved-countdown hidden>
+			Taking you there in <span data-moved-seconds>{delayInSeconds}</span> s.{' '}
+			<button type="button" data-moved-stay>Stay on this page</button>
+		</p>
+		<p data-moved-stayed hidden>Staying here. Follow the link above when you are ready.</p>
+		<noscript><p>Taking you there in {delayInSeconds} s.</p></noscript>
+	</div>
+
+	<h2>The five packages</h2>
+	<ul>
+		{
+			PACKAGE_SITES.map(({ description, name }) => (
+				<li>
+					<a href={`https://mnaoumov.dev/${name}/`}><code>@mnaoumov/{name}</code></a> — {description}
+				</li>
+			))
+		}
+	</ul>
+</StarlightPage>
+
+<script>
+	const notice = document.querySelector<HTMLElement>('[data-moved-to]');
+	const countdown = document.querySelector<HTMLElement>('[data-moved-countdown]');
+	const seconds = document.querySelector<HTMLElement>('[data-moved-seconds]');
+	const stayButton = document.querySelector<HTMLButtonElement>('[data-moved-stay]');
+	const stayed = document.querySelector<HTMLElement>('[data-moved-stayed]');
+
+	if (notice && countdown && seconds && stayButton && stayed) {
+		// Keep an old link's anchor: where the new page has that heading the reader lands on it, and otherwise the page
+		// simply opens at the top.
+		const targetUrl = (notice.dataset['movedTo'] ?? '') + globalThis.location.hash;
+		const link = notice.querySelector<HTMLAnchorElement>('.moved-link a');
+		if (link) {
+			link.href = targetUrl;
+			link.textContent = targetUrl;
+		}
+		let remainingSeconds = Number(notice.dataset['delaySeconds']);
+		countdown.hidden = false;
+
+		const intervalId = globalThis.setInterval(() => {
+			remainingSeconds--;
+			seconds.textContent = String(remainingSeconds);
+			if (remainingSeconds <= 0) {
+				globalThis.clearInterval(intervalId);
+				// `replace`, so Back returns to the page the reader came from rather than to this notice.
+				globalThis.location.replace(targetUrl);
+			}
+		}, 1000);
+
+		stayButton.addEventListener('click', () => {
+			globalThis.clearInterval(intervalId);
+			countdown.hidden = true;
+			stayed.hidden = false;
+		});
+	}
+</script>
+
+<style>
+	.moved-link {
+		font-size: var(--sl-text-xl);
+		overflow-wrap: anywhere;
+	}
+
+	.moved-countdown button {
+		margin-inline-start: 0.5rem;
+		padding: 0.25rem 0.75rem;
+		border: 1px solid var(--sl-color-accent);
+		border-radius: 0.25rem;
+		background: transparent;
+		color: var(--sl-color-text-accent);
+		font: inherit;
+		cursor: pointer;
+	}
+</style>

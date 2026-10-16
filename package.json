@@ -60,6 +60,7 @@
   },
   "devDependencies": {
     "@astrojs/markdown-satteri": "^0.4.1",
+    "@astrojs/sitemap": "^3.7.4",
     "@astrojs/starlight": "^0.42.2",
     "@codemirror/state": "6.7.6",
     "@codemirror/view": "6.43.13",
