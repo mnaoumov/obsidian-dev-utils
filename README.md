@@ -38,21 +38,13 @@ npm install obsidian-dev-utils
 
 ## Usage
 
-The full documentation — guides plus the complete, searchable **API reference** generated from the library's TSDoc — is published at [mnaoumov.dev/obsidian-dev-utils](https://mnaoumov.dev/obsidian-dev-utils/).
+The documentation moved to one site per package. Every page the old site at [mnaoumov.dev/obsidian-dev-utils](https://mnaoumov.dev/obsidian-dev-utils/) served now redirects to the page that replaced it.
 
-- [API reference](https://mnaoumov.dev/obsidian-dev-utils/api/)
-- [Commands](https://mnaoumov.dev/obsidian-dev-utils/guides/cli-commands/)
-- [Helper Functions](https://mnaoumov.dev/obsidian-dev-utils/guides/helper-functions/)
-- [Styling](https://mnaoumov.dev/obsidian-dev-utils/guides/styling/)
-- [Setting Components](https://mnaoumov.dev/obsidian-dev-utils/guides/setting-components/)
-- [Modals](https://mnaoumov.dev/obsidian-dev-utils/guides/modals/)
-- [Popovers](https://mnaoumov.dev/obsidian-dev-utils/guides/popovers/)
-- [Debugging](https://mnaoumov.dev/obsidian-dev-utils/guides/debugging/)
-- [Plugin Helpers](https://mnaoumov.dev/obsidian-dev-utils/guides/plugin-helpers/)
-- [Cross-plugin APIs](https://mnaoumov.dev/obsidian-dev-utils/guides/cross-plugin-apis/)
-- [Plugin API protocol](docs/src/content/docs/guides/plugin-api-protocol.md) — how to consume a plugin's API without using this library
-- [Demo Vault](https://mnaoumov.dev/obsidian-dev-utils/guides/demo-vault/)
-- [Testing](https://mnaoumov.dev/obsidian-dev-utils/guides/testing/)
+- [`@mnaoumov/obsidian-lib`](https://mnaoumov.dev/obsidian-lib/) — plugin helpers, modals, popovers, setting components, styling, debugging, cross-plugin APIs and the plugin API protocol.
+- [`@mnaoumov/obsidian-dev-toolkit`](https://mnaoumov.dev/obsidian-dev-toolkit/) — getting started, commands, the demo vault and testing a plugin.
+- [`@mnaoumov/typescript-lib`](https://mnaoumov.dev/typescript-lib/) — the generic helper functions.
+- [`@mnaoumov/typescript-test-toolkit`](https://mnaoumov.dev/typescript-test-toolkit/) — the generic test setup.
+- [`@mnaoumov/typescript-dev-toolkit`](https://mnaoumov.dev/typescript-dev-toolkit/) — the generic build, lint and release tooling.
 
 ## Support
 

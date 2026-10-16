@@ -2,19 +2,16 @@ import { satteri } from '@astrojs/markdown-satteri';
 // eslint-disable-next-line import-x/no-rename-default -- The default export name `StarlightIntegration` is too verbose.
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
-import {
-  existsSync,
-  readFileSync
-} from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { satteriGitHubAlerts } from './scripts/docs-gen/helpers/satteri-plugins/satteri-github-alerts.ts';
 import { satteriRelativeLinks } from './scripts/docs-gen/helpers/satteri-plugins/satteri-relative-links.ts';
 
 // The documentation site is a self-contained Astro + Starlight project. Its source lives under `docs/src`
-// (`srcDir`) so it never collides with the library's own `src/` and `dist/`. The API reference is
-// generated from the library's TSDoc by the custom generator (`scripts/docs-gen`, ts-morph) into
-// `docs/src/content/docs/api`, with a matching `docs/src/generated-sidebar.json` consumed below.
+// (`srcDir`) so it never collides with the library's own `src/` and `dist/`. `obsidian-dev-utils` is retired in
+// favour of the five `@mnaoumov/*` packages, each with a site of its own, so this one is a landing page pointing at
+// them plus one redirect per page the old site served (`docs/old-site-redirects.json`).
 const BASE = '/obsidian-dev-utils';
 
 export default defineConfig({
@@ -31,14 +28,9 @@ export default defineConfig({
         baseUrl: 'https://github.com/mnaoumov/obsidian-dev-utils/edit/main/'
       },
       favicon: '/favicon.svg',
-      routeMiddleware: './docs/src/route-data.ts',
-      sidebar: [
-        {
-          items: [{ autogenerate: { directory: 'guides' } }],
-          label: 'Guides'
-        },
-        ...getApiSidebar()
-      ],
+      // Two pages, and the second is the 404 fallback: a "next page" link from the landing page would point at it.
+      pagination: false,
+
       social: [
         { href: 'https://github.com/mnaoumov/obsidian-dev-utils', icon: 'github', label: 'GitHub' }
       ],
@@ -57,18 +49,22 @@ export default defineConfig({
   outDir: './docs/dist',
   // eslint-disable-next-line unicorn/name-replacements -- `publicDir` is an Astro config key.
   publicDir: './docs/public',
+  redirects: getOldSiteRedirects(),
   site: 'https://mnaoumov.dev',
   // eslint-disable-next-line unicorn/name-replacements -- `srcDir` is an Astro config key.
   srcDir: './docs/src',
   trailingSlash: 'always'
 });
 
-function getApiSidebar(): unknown[] {
-  const sidebarPath = resolve(import.meta.dirname, 'docs/src/generated-sidebar.json');
-  if (!existsSync(sidebarPath)) {
-    console.warn('[astro.config] generated-sidebar.json not found. Run the generator first (npm run docs:build).');
-    return [];
-  }
-  const parsed: unknown = JSON.parse(readFileSync(sidebarPath, 'utf-8'));
-  return Array.isArray(parsed) ? parsed : [];
+/**
+ * Reads the redirect map for every page the retired site served: an old path, relative to the base, to the page
+ * that replaced it on one of the five package sites. The old pages no longer exist anywhere, so the map is frozen
+ * data rather than something a build could derive; Astro emits a meta-refresh page for each entry, which is all
+ * GitHub Pages can serve.
+ *
+ * @returns The redirects, keyed by old path.
+ */
+function getOldSiteRedirects(): Record<string, string> {
+  const redirectsPath = resolve(import.meta.dirname, 'docs/old-site-redirects.json');
+  return JSON.parse(readFileSync(redirectsPath, 'utf-8')) as Record<string, string>;
 }
