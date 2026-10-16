@@ -42,8 +42,10 @@ const DOCS_OUTPUT_PATH = resolve('docs/dist').replaceAll('\\', '/');
 const SITE_BASE_URL = 'https://mnaoumov.dev/obsidian-dev-utils/';
 const EXTERNAL_LINK_TIMEOUT_IN_MILLISECONDS = 10_000;
 const EXTERNAL_LINK_CONCURRENCY = 20;
-const EXTERNAL_LINK_NETWORK_ATTEMPTS = 3;
+const EXTERNAL_LINK_ATTEMPTS = 3;
 const EXTERNAL_LINK_RETRY_DELAY_IN_MILLISECONDS = 1000;
+const HTTP_TOO_MANY_REQUESTS = 429;
+const HTTP_SERVER_ERROR_MIN = 500;
 const HTML_FILE_EXTENSION = '.html';
 
 // The host serves this page as the fallback for any missing path (with a 404 status), so it is not a
@@ -104,13 +106,14 @@ function createFileSystem(allFiles: Set<string>, pages: DocumentationPage[]): Li
 /*
  * The redirect pages link ~3500 distinct URLs on the five package sites, and at that volume a few dozen fetches die
  * on a dropped connection while the page itself serves 200 (measured 2026-10-16: 80 of 3522 in one run, every one
- * a 200 when probed). So a NETWORK failure is retried a bounded number of times; an HTTP status is final at once.
+ * a 200 when probed), and in CI GitHub Pages answers a few with a 503 instead. So a network failure, a 429 and a 5xx
+ * are retried a bounded number of times; any other status, a 404 included, is final at once.
  */
 async function fetchUrlStatus(url: string): Promise<number> {
   let status = NETWORK_FAILURE_STATUS;
-  for (let attempt = 1; attempt <= EXTERNAL_LINK_NETWORK_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= EXTERNAL_LINK_ATTEMPTS; attempt++) {
     status = await fetchUrlStatusOnce(url);
-    if (status !== NETWORK_FAILURE_STATUS) {
+    if (!isTransientStatus(status)) {
       break;
     }
 
@@ -153,6 +156,10 @@ async function getAllFiles(outputRootPath: string): Promise<Set<string>> {
   }
 
   return files;
+}
+
+function isTransientStatus(status: number): boolean {
+  return status === NETWORK_FAILURE_STATUS || status === HTTP_TOO_MANY_REQUESTS || status >= HTTP_SERVER_ERROR_MIN;
 }
 
 async function readPages(outputRootPath: string, allFiles: Set<string>): Promise<DocumentationPage[]> {
