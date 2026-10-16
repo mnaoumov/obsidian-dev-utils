@@ -73,6 +73,7 @@ import {
   parseLink,
   toParseLinkReference
 } from './parse-link.ts';
+import { findPluginApi } from './plugin/plugin-api.ts';
 import {
   readSafe,
   saveNote
@@ -92,6 +93,10 @@ vi.mock('./async-with-notice.ts', () => ({
 
 vi.mock('./backlink-index.ts', () => ({
   getIndexedBacklinksForFile: vi.fn()
+}));
+
+vi.mock('./plugin/plugin-api.ts', () => ({
+  findPluginApi: vi.fn(() => null)
 }));
 
 vi.mock('./vault.ts', () => ({
@@ -166,9 +171,12 @@ const loadedPluginIds = new Set<string>();
 
 beforeEach(() => {
   loadedPluginIds.clear();
+  mockedFindPluginApi.mockReset();
+  mockedFindPluginApi.mockReturnValue(null);
   app = createMockApp();
 });
 
+const mockedFindPluginApi = vi.mocked(findPluginApi);
 const mockedGetFile = vi.mocked(getFile);
 const mockedGetIndexedBacklinksForFile = vi.mocked(getIndexedBacklinksForFile);
 const mockedGetFileOrNull = vi.mocked(getFileOrNull);
@@ -796,18 +804,36 @@ describe('getBacklinksForFileOrPath', () => {
     expect(result).toBe(mockBacklinks);
   });
 
-  it('should defer to the patched getBacklinksForFile when a backlink-cache plugin grafted its safe overload', () => {
+  it('should answer from the Advanced Metadata Cache API when it publishes one', () => {
     const mockBacklinks = castTo<ReturnType<typeof app.metadataCache.getBacklinksForFile>>({ data: new Map() });
-
-    vi.mocked(app.metadataCache.getBacklinksForFile).mockReturnValue(mockBacklinks);
-    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = vi.fn();
+    const getBacklinksForFile = vi.fn(() => mockBacklinks);
+    mockedFindPluginApi.mockReturnValue({ getBacklinksForFile, getBacklinksForFileSafe: vi.fn() });
     mockedGetIndexedBacklinksForFile.mockClear();
 
     const result = getBacklinksForFileOrPath(app, 'test.md');
 
-    expect(app.metadataCache.getBacklinksForFile).toHaveBeenCalledWith(expect.objectContaining({ path: 'test.md' }));
+    expect(mockedFindPluginApi).toHaveBeenCalledWith(expect.objectContaining({ apiVersionRange: '^1.3.0', pluginId: ADVANCED_METADATA_CACHE_PLUGIN_ID }));
+    expect(getBacklinksForFile).toHaveBeenCalledWith(expect.objectContaining({ path: 'test.md' }));
     expect(mockedGetIndexedBacklinksForFile).not.toHaveBeenCalled();
+    expect(app.metadataCache.getBacklinksForFile).not.toHaveBeenCalled();
     expect(result).toBe(mockBacklinks);
+  });
+
+  it('should answer from the backlink index when the Advanced Metadata Cache Backlinks module is off', () => {
+    const mockBacklinks = castTo<ReturnType<typeof getIndexedBacklinksForFile>>({ data: new Map() });
+    mockedGetIndexedBacklinksForFile.mockReturnValue(mockBacklinks);
+    mockedFindPluginApi.mockReturnValue({ getBacklinksForFile: vi.fn(() => null), getBacklinksForFileSafe: vi.fn() });
+
+    expect(getBacklinksForFileOrPath(app, 'test.md')).toBe(mockBacklinks);
+  });
+
+  it('should not read a safe member grafted onto getBacklinksForFile', () => {
+    const mockBacklinks = castTo<ReturnType<typeof getIndexedBacklinksForFile>>({ data: new Map() });
+    mockedGetIndexedBacklinksForFile.mockReturnValue(mockBacklinks);
+    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = vi.fn();
+
+    expect(getBacklinksForFileOrPath(app, 'test.md')).toBe(mockBacklinks);
+    expect(app.metadataCache.getBacklinksForFile).not.toHaveBeenCalled();
   });
 });
 
@@ -994,15 +1020,35 @@ describe('getBacklinksForFileSafe', () => {
     });
   });
 
-  it('should use safe overload when available', async () => {
-    const mockResult = { get: vi.fn(), keys: vi.fn().mockReturnValue([]) };
-    const safeFunction = vi.fn().mockResolvedValue(mockResult);
-
-    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFunction;
+  it('should use the Advanced Metadata Cache API when it publishes one', async () => {
+    const mockResult = castTo<CustomArrayDict<Reference>>({ get: vi.fn(), keys: vi.fn().mockReturnValue([]) });
+    const getBacklinksForFileSafeFromApi = vi.fn().mockResolvedValue(mockResult);
+    mockedFindPluginApi.mockReturnValue({ getBacklinksForFile: vi.fn(), getBacklinksForFileSafe: getBacklinksForFileSafeFromApi });
 
     const result = await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
-    expect(safeFunction).toHaveBeenCalledWith('test.md');
+    expect(getBacklinksForFileSafeFromApi).toHaveBeenCalledWith('test.md');
+    expect(mockedRetryWithTimeoutNotice).not.toHaveBeenCalled();
     expect(result).toBe(mockResult);
+  });
+
+  it('should fall back when the Advanced Metadata Cache Backlinks module is off', async () => {
+    mockedFindPluginApi.mockReturnValue({ getBacklinksForFile: vi.fn(), getBacklinksForFileSafe: vi.fn().mockResolvedValue(null) });
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+
+    await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
+
+    expect(mockedRetryWithTimeoutNotice).toHaveBeenCalled();
+  });
+
+  it('should not call a safe member grafted onto getBacklinksForFile', async () => {
+    const safeFunction = vi.fn();
+    ensureGenericObject(app.metadataCache.getBacklinksForFile)['safe'] = safeFunction;
+    mockedRetryWithTimeoutNotice.mockResolvedValue(undefined);
+
+    await getBacklinksForFileSafe({ app, pathOrFile: 'test.md' });
+
+    expect(safeFunction).not.toHaveBeenCalled();
+    expect(mockedRetryWithTimeoutNotice).toHaveBeenCalled();
   });
 
   it('should default shouldShowTimeoutNotice to true', async () => {

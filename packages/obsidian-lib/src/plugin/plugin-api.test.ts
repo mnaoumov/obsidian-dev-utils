@@ -39,6 +39,7 @@ import type {
 import { getObsidianLibDebugger } from '../debug.ts';
 import { getObsidianDevUtilsState } from '../obsidian-dev-utils-state.ts';
 import {
+  findPluginApi,
   PluginApiPayloadKind,
   PluginApiRevokedError,
   PluginApiUnavailabilityReason,
@@ -275,6 +276,39 @@ describe('plugin-api', () => {
       };
 
       expect(harness.watch<GreeterApi>().ref.value?.greet('copy')).toBe('Foreign, copy!');
+    });
+  });
+
+  describe('findPluginApi', () => {
+    it('should return null before the provider publishes', () => {
+      createHarness();
+      expect(findPluginApi<GreeterApi>({ apiVersionRange: ANY_VERSION_RANGE, pluginId: PROVIDER_ID })).toBeNull();
+    });
+
+    it('should return the highest version satisfying the requested range', () => {
+      const harness = createHarness();
+      harness.publish({ api: createGreeterApi('One'), apiVersion: '1.0.0' });
+      harness.publish({ api: createGreeterApi('Two'), apiVersion: '1.9.0' });
+      harness.publish({ api: createGreeterApi('Three'), apiVersion: '2.0.0' });
+
+      expect(findPluginApi<GreeterApi>({ apiVersionRange: '^1', pluginId: PROVIDER_ID })?.greet('x')).toBe('Two, x!');
+    });
+
+    it('should honor the consumer contract', () => {
+      const harness = createHarness();
+      harness.publish();
+      expect(findPluginApi<GreeterApi>({ apiVersionRange: ANY_VERSION_RANGE, contract: { farewell: {} }, pluginId: PROVIDER_ID })).toBeNull();
+      expect(findPluginApi<GreeterApi>({ apiVersionRange: ANY_VERSION_RANGE, contract: { greet: {} }, pluginId: PROVIDER_ID })?.greet('y')).toBe('Hello, y!');
+    });
+
+    it('should hand out a handle that is revoked when the provider unloads', () => {
+      const harness = createHarness();
+      const unloadPlugin = harness.publish();
+      const api = findPluginApi<GreeterApi>({ apiVersionRange: ANY_VERSION_RANGE, pluginId: PROVIDER_ID });
+      unloadPlugin();
+
+      expect(() => api?.greet('z')).toThrow(PluginApiRevokedError);
+      expect(findPluginApi<GreeterApi>({ apiVersionRange: ANY_VERSION_RANGE, pluginId: PROVIDER_ID })).toBeNull();
     });
   });
 
