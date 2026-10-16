@@ -15,10 +15,6 @@ const DOCS_GENERATOR_TEST_FILES = 'scripts/docs-gen/**/*.test.ts';
 const DOCS_SITE_TEST_FILES = 'docs/src/**/*.test.ts';
 const BUILD_SCRIPT_HELPERS_TEST_FILES = 'scripts/helpers/**/*.test.ts';
 
-// Rendering an OG image to a bitmap (satori + resvg) and building a ts-morph Project are genuinely slow.
-// Under the full aggregate they lose the CPU race and the default 5000 ms times them out.
-const BIG_TIMEOUT_IN_MILLISECONDS = 30_000;
-
 export const config = defineConfig({
   plugins: [workspaceSourcePlugin()],
   test: {
@@ -41,8 +37,7 @@ export const config = defineConfig({
           exclude: [...WORKSPACE_TEST_EXCLUDE],
           include: [DOCS_GENERATOR_TEST_FILES, DOCS_SITE_TEST_FILES],
           name: 'unit-tests:docs-generator',
-          setupFiles: [],
-          testTimeout: BIG_TIMEOUT_IN_MILLISECONDS
+          setupFiles: []
         }
       }
     ],

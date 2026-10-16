@@ -32,9 +32,7 @@
     "nano-staged - .husky/pre-commit runs it; configured by .nano-staged.mjs / packages/typescript-dev-toolkit/src/nano-staged-config.ts.",
     "postcss-modules - nothing here imports it; esbuild-sass-plugin's lib/utils.d.ts does, and without it the skipLibCheck-false",
     "  re-check described under @types/babel__core reports a TS2307.",
-    "svelte-check - run as a CLI (`npx svelte-check`) by packages/typescript-dev-toolkit/src/build.ts.",
-    "typedoc-plugin-mdn-links - never imported; scripts/docs-gen/helpers/api-doc-link-rendering.ts reads",
-    "  node_modules/typedoc-plugin-mdn-links/data/web-api.json at runtime for the MDN Web API link map."
+    "svelte-check - run as a CLI (`npx svelte-check`) by packages/typescript-dev-toolkit/src/build.ts."
   ],
   "ignores": [
     "@commitlint/cli",
@@ -52,7 +50,6 @@
     "moment",
     "nano-staged",
     "postcss-modules",
-    "svelte-check",
-    "typedoc-plugin-mdn-links"
+    "svelte-check"
   ]
 }

@@ -12,6 +12,7 @@
  */
 
 import { wrapCliTask } from '@mnaoumov/typescript-dev-toolkit/cli-utils';
+import { sleep } from '@mnaoumov/typescript-lib/async';
 import {
   readdir,
   readFile
@@ -41,6 +42,8 @@ const DOCS_OUTPUT_PATH = resolve('docs/dist').replaceAll('\\', '/');
 const SITE_BASE_URL = 'https://mnaoumov.dev/obsidian-dev-utils/';
 const EXTERNAL_LINK_TIMEOUT_IN_MILLISECONDS = 10_000;
 const EXTERNAL_LINK_CONCURRENCY = 20;
+const EXTERNAL_LINK_NETWORK_ATTEMPTS = 3;
+const EXTERNAL_LINK_RETRY_DELAY_IN_MILLISECONDS = 1000;
 const HTML_FILE_EXTENSION = '.html';
 
 // The host serves this page as the fallback for any missing path (with a 404 status), so it is not a
@@ -98,7 +101,26 @@ function createFileSystem(allFiles: Set<string>, pages: DocumentationPage[]): Li
   };
 }
 
+/*
+ * The redirect pages link ~3500 distinct URLs on the five package sites, and at that volume a few dozen fetches die
+ * on a dropped connection while the page itself serves 200 (measured 2026-10-16: 80 of 3522 in one run, every one
+ * a 200 when probed). So a NETWORK failure is retried a bounded number of times; an HTTP status is final at once.
+ */
 async function fetchUrlStatus(url: string): Promise<number> {
+  let status = NETWORK_FAILURE_STATUS;
+  for (let attempt = 1; attempt <= EXTERNAL_LINK_NETWORK_ATTEMPTS; attempt++) {
+    status = await fetchUrlStatusOnce(url);
+    if (status !== NETWORK_FAILURE_STATUS) {
+      break;
+    }
+
+    await sleep({ milliseconds: EXTERNAL_LINK_RETRY_DELAY_IN_MILLISECONDS * attempt });
+  }
+
+  return status;
+}
+
+async function fetchUrlStatusOnce(url: string): Promise<number> {
   const controller = new AbortController();
   const timeoutId = globalThis.setTimeout(() => {
     controller.abort();

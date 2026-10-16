@@ -1,6 +1,7 @@
 {
   "version": "0.2",
   "ignorePaths": [
+    "docs/old-site-redirects.json",
     "docs/src/components",
     "docs/src/styles",
     "scripts/docs-gen"
@@ -177,7 +178,6 @@
     "Reinitiate",
     "Remapper",
     "Repr",
-    "resvg",
     "rethrowing",
     "rgba",
     "satteri",
