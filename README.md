@@ -2,39 +2,47 @@
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![NPM package](https://badge.fury.io/js/obsidian-dev-utils.svg)](https://www.npmjs.com/package/obsidian-dev-utils) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-dev-utils)](https://github.com/mnaoumov/obsidian-dev-utils/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-dev-utils/total)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
 
-`Obsidian Dev Utils` is a collection of essential functions and utilities designed to streamline your Obsidian plugin development process. Whether you're building a plugin from scratch or enhancing an existing one, these utilities are here to simplify your workflow.
+> [!WARNING]
+> `obsidian-dev-utils` is retired and receives no further releases. Use [`@mnaoumov/obsidian-lib`](https://www.npmjs.com/package/@mnaoumov/obsidian-lib) for the plugin runtime and [`@mnaoumov/obsidian-dev-toolkit`](https://www.npmjs.com/package/@mnaoumov/obsidian-dev-toolkit) for the build, lint, test and release tooling. The import map below says where each module went.
+
+`Obsidian Dev Utils` was a collection of functions and utilities for Obsidian plugin development. It has been split into the five packages below.
 
 ## Packages
 
-This repository is being split into five packages, and `obsidian-dev-utils` itself will be retired in favour of the two Obsidian ones. The new packages are not published yet; until they are, `obsidian-dev-utils` on npm stays the package to install.
-
 | Package | What it holds |
 | --- | --- |
-| [`@mnaoumov/typescript-lib`](packages/typescript-lib/README.md) | Generic TypeScript utilities for any project: async helpers, errors, disposables, strings, paths, debug logging. |
-| [`@mnaoumov/typescript-test-toolkit`](packages/typescript-test-toolkit/README.md) | Generic test support: Vitest/Jest setup, async-operation tracking, `strictProxy`, mock helpers. |
-| [`@mnaoumov/typescript-dev-toolkit`](packages/typescript-dev-toolkit/README.md) | Generic project tooling: build, lint, format, spellcheck, test, gate and release scripts. |
-| [`@mnaoumov/obsidian-lib`](packages/obsidian-lib/README.md) | The Obsidian plugin runtime library: plugin base classes, components, settings, modals, vault and metadata helpers. |
-| [`@mnaoumov/obsidian-dev-toolkit`](packages/obsidian-dev-toolkit/README.md) | Obsidian plugin tooling: the esbuild plugin builder, shared ESLint and Vitest configs, demo vaults, the plugin release script. |
+| [`@mnaoumov/obsidian-lib`](https://www.npmjs.com/package/@mnaoumov/obsidian-lib) | The Obsidian plugin runtime library: plugin base classes, components, settings, modals, vault and metadata helpers. |
+| [`@mnaoumov/obsidian-dev-toolkit`](https://www.npmjs.com/package/@mnaoumov/obsidian-dev-toolkit) | Obsidian plugin tooling: the esbuild plugin builder, shared ESLint and Vitest configs, demo vaults, the plugin release script. |
+| [`@mnaoumov/typescript-lib`](https://www.npmjs.com/package/@mnaoumov/typescript-lib) | Generic TypeScript utilities for any project: async helpers, errors, disposables, strings, paths, debug logging. |
+| [`@mnaoumov/typescript-test-toolkit`](https://www.npmjs.com/package/@mnaoumov/typescript-test-toolkit) | Generic test support: Vitest/Jest setup, async-operation tracking, `strictProxy`, mock helpers. |
+| [`@mnaoumov/typescript-dev-toolkit`](https://www.npmjs.com/package/@mnaoumov/typescript-dev-toolkit) | Generic project tooling: build, lint, format, spellcheck, test, gate and release scripts. |
+
+## Import map
+
+| `obsidian-dev-utils` import | New import |
+| --- | --- |
+| `obsidian-dev-utils/obsidian/<x>` | `@mnaoumov/obsidian-lib/<x>` (the `obsidian/` segment is gone) |
+| `obsidian-dev-utils/script-utils/<x>` | `@mnaoumov/obsidian-dev-toolkit/<x>` for the Obsidian-specific tooling (the esbuild plugin builder, demo vaults, the plugin release), otherwise `@mnaoumov/typescript-dev-toolkit/<x>` |
+| `obsidian-dev-utils/<x>` (generic runtime: `async`, `error`, `path`, `string`, ...) | `@mnaoumov/typescript-lib/<x>` |
+| `obsidian-dev-utils/setup`, `vitest-setup`, `jest-setup`, `strict-proxy` | `@mnaoumov/typescript-test-toolkit/<x>`, or `@mnaoumov/obsidian-dev-toolkit/vitest-setup` in an Obsidian plugin |
+| `waitForAllAsyncOperations` and the other async-operation tracking functions | `@mnaoumov/typescript-test-toolkit/async-operation-tracking` |
+
+The in-house ESLint rules moved too: `obsidian-dev-utils/<rule>` is now `typescript-dev-toolkit/<rule>` or `obsidian-dev-toolkit/<rule>`, so `eslint-disable` comments naming the old namespace need rewriting.
 
 ## What is Obsidian?
 
 [Obsidian](https://obsidian.md/) is a powerful knowledge base that works on top of a local folder of plain text Markdown files. It's a tool that lets you take notes and organize them, and it supports a rich plugin ecosystem that allows for extensive customization.
 
-## Who Should Use This Package?
-
-This package is ideal for developers who are building or maintaining plugins for Obsidian. It provides a range of tools to make the development process easier, including automated builds, linting, spellchecking, and more.
-
-## Plugin Generator
-
-There is a [Obsidian Plugin Yeoman Generator](https://github.com/mnaoumov/generator-obsidian-plugin) that sets up a new Obsidian plugin project with a basic structure and some useful scripts from this library.
-
 ## Installation
 
-To install the package, run the following command:
+Do not install `obsidian-dev-utils`. A plugin installs the new packages instead:
 
 ```bash
-npm install obsidian-dev-utils
+npm install @mnaoumov/obsidian-lib
+npm install --save-dev @mnaoumov/obsidian-dev-toolkit @mnaoumov/typescript-dev-toolkit
 ```
+
+Declare `@mnaoumov/typescript-lib` and `@mnaoumov/typescript-test-toolkit` too when the plugin imports them directly.
 
 ## Usage
 
