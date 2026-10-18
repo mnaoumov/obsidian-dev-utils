@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 107.5.0
+
+- docs: retire `obsidian-dev-utils` in favour of the `@mnaoumov/*` packages, with an import map in the README
+
 ## 107.4.1
 
 - fix(styles): merge scoping the tldraw button color workaround to the library UI

@@ -1,15 +1,20 @@
 name: Publish to NPM
 
-# Publishes every workspace package (`packages/*`, all at the one shared version) to the NPM registry
-# using npm trusted publishing (OIDC): the job trades its short-lived GitHub OIDC token for a publish
-# grant, so no NPM token exists anywhere -- not in the repo secrets, not on the maintainer's machine.
-# Provenance is generated automatically for a public package published this way, so nothing has to ask
-# for it. A package whose version is already on the registry is skipped, so a publish that failed half-way
-# is retried by re-running this workflow.
+# Two publishes live here, both using npm trusted publishing (OIDC): the job trades its short-lived GitHub
+# OIDC token for a publish grant, so no NPM token exists anywhere -- not in the repo secrets, not on the
+# maintainer's machine. Provenance is generated automatically for a public package published this way.
 #
-# EACH of the five packages needs its own trusted publisher on npmjs.com (Package settings -> Trusted
-# publisher), naming THIS file by its bare filename, `publish-npm.yml`; the match is case-sensitive, and
-# renaming or moving the file silently breaks publishing until every setting is updated to match.
+# - `publish-obsidian-dev-utils` (on a release, or a dispatch with `target: obsidian-dev-utils`) publishes
+#   the retired `obsidian-dev-utils` package. This workspace no longer builds it, so the job packs the
+#   version npm serves as `latest`, swaps in this repository's README, sets the version from the root
+#   `package.json` and publishes that. The code is byte-for-byte the previous release's.
+# - `publish-workspace` (a dispatch with `target: workspace` only) publishes the five workspace packages at
+#   the shared version, skipping any already on the registry. That was the one-off `1.0.0` publish; each
+#   package now releases from its own repository.
+#
+# Each package's trusted publisher on npmjs.com (Package settings -> Trusted publisher) names THIS file by
+# its bare filename, `publish-npm.yml`; the match is case-sensitive, and renaming or moving the file
+# silently breaks publishing until every setting is updated to match.
 #
 # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0, both satisfied by the Node version in
 # `.nvmrc`.
@@ -18,6 +23,14 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      target:
+        description: What to publish
+        type: choice
+        options:
+          - obsidian-dev-utils
+          - workspace
+        default: obsidian-dev-utils
 
 permissions:
   contents: read
@@ -25,7 +38,39 @@ permissions:
   id-token: write
 
 jobs:
-  publish:
+  publish-obsidian-dev-utils:
+    if: github.event_name == 'release' || inputs.target == 'obsidian-dev-utils'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+
+      - name: Publish
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          if npm view "obsidian-dev-utils@${version}" version >/dev/null 2>&1; then
+            echo "obsidian-dev-utils@${version} is already on the registry; nothing to publish."
+            exit 0
+          fi
+          base="$(npm view obsidian-dev-utils dist-tags.latest)"
+          work="$(mktemp -d)"
+          (cd "$work" && npm pack "obsidian-dev-utils@${base}" && tar -xzf "obsidian-dev-utils-${base}.tgz")
+          cp README.md "$work/package/README.md"
+          cd "$work/package"
+          npm pkg set "version=${version}"
+          # The packed manifest still carries the old build's lifecycle scripts; nothing here is built.
+          npm publish --ignore-scripts --tag latest
+
+  publish-workspace:
+    if: github.event_name == 'workflow_dispatch' && inputs.target == 'workspace'
     runs-on: ubuntu-latest
     env:
       # `npm ci` and `npm publish` both run the `prepare` script, which installs husky -- pointless in CI.
