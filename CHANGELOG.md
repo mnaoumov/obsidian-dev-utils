@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 107.5.1
+
+- docs: explain in the README why `obsidian-dev-utils` was retired and split into five packages
+
 ## 107.5.0
 
 - docs: retire `obsidian-dev-utils` in favour of the `@mnaoumov/*` packages, with an import map in the README

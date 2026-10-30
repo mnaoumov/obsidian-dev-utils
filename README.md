@@ -3,9 +3,21 @@
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/mnaoumov) [![NPM package](https://badge.fury.io/js/obsidian-dev-utils.svg)](https://www.npmjs.com/package/obsidian-dev-utils) [![GitHub release](https://img.shields.io/github/v/release/mnaoumov/obsidian-dev-utils)](https://github.com/mnaoumov/obsidian-dev-utils/releases) [![GitHub downloads](https://img.shields.io/github/downloads/mnaoumov/obsidian-dev-utils/total)](https://github.com/mnaoumov/obsidian-dev-utils/releases)
 
 > [!WARNING]
-> `obsidian-dev-utils` is retired and receives no further releases. Use [`@mnaoumov/obsidian-lib`](https://www.npmjs.com/package/@mnaoumov/obsidian-lib) for the plugin runtime and [`@mnaoumov/obsidian-dev-toolkit`](https://www.npmjs.com/package/@mnaoumov/obsidian-dev-toolkit) for the build, lint, test and release tooling. The import map below says where each module went.
+> `obsidian-dev-utils` is retired and receives no further code changes. Use [`@mnaoumov/obsidian-lib`](https://www.npmjs.com/package/@mnaoumov/obsidian-lib) for the plugin runtime and [`@mnaoumov/obsidian-dev-toolkit`](https://www.npmjs.com/package/@mnaoumov/obsidian-dev-toolkit) for the build, lint, test and release tooling. The import map below says where each module went.
 
 `Obsidian Dev Utils` was a collection of functions and utilities for Obsidian plugin development. It has been split into the five packages below.
+
+## Why it was retired
+
+`obsidian-dev-utils` grew into one package that held four different things: Obsidian plugin runtime code, generic TypeScript helpers, build and release tooling, and test support. Splitting it fixes three problems that a single package could not:
+
+1. **Most of it was not Obsidian-specific.** The async, error, path, string and debug helpers, and the build, lint and test tooling, are useful in any TypeScript project. Inside a package named `obsidian-dev-utils` they could not be used cleanly by projects that have nothing to do with Obsidian. They now live in `@mnaoumov/typescript-lib`, `@mnaoumov/typescript-dev-toolkit` and `@mnaoumov/typescript-test-toolkit`.
+2. **Runtime code and tooling were one dependency.** A plugin that only needed the runtime helpers still installed esbuild, ESLint and the rest of the tooling with them. Now the runtime (`@mnaoumov/obsidian-lib`) goes in `dependencies` and the tooling (`@mnaoumov/obsidian-dev-toolkit`) goes in `devDependencies`.
+3. **Test helpers could end up in a shipped plugin.** Helpers such as `strictProxy` and the async-operation tracking are for tests only. As a separate package that you install as a dev dependency, they cannot be imported into production code by mistake.
+
+Keeping `obsidian-dev-utils` as a thin package that re-exports the new ones was considered and dropped: it would have kept the old, misleading name alive and hidden the runtime/tooling split. So the last release, `107.5.0`, re-exports nothing. Existing plugins keep working on the version they pin. To move, follow the import map below.
+
+Nothing was lost in the move: the code, its history and its tests continue in the new repositories.
 
 ## Packages
 
