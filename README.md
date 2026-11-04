@@ -131,6 +131,21 @@ The documentation moved to one site per package. Every page the old site at [mna
 - [`@mnaoumov/typescript-test-toolkit`](https://mnaoumov.dev/typescript-test-toolkit/) — the generic test setup.
 - [`@mnaoumov/typescript-dev-toolkit`](https://mnaoumov.dev/typescript-dev-toolkit/) — the generic build, lint and release tooling.
 
+## See also
+
+[My other Obsidian resources](https://mnaoumov.dev/obsidian/)
+
+| Library | Features | How `obsidian-dev-utils` differs |
+| --- | --- | --- |
+| [`@javalent/utilities`](https://github.com/javalent/utilities) | File and folder suggesters; settings helpers | Broader: adds plugin base classes, modals, vault and metadata helpers, and build, lint, test and release tooling; omits ready-made file and folder suggesters |
+| [`@polyipseity/obsidian-plugin-library`](https://github.com/polyipseity/obsidian-plugin-library) | Plugin context; settings managers and settings-tab widgets; i18n; modals; status bar; icons; patching helpers | Same goal: a runtime library for plugins; adds build, lint, test and release tooling and test helpers in the same package |
+| [`@vrtmrz/obsidian-plugin-kit`](https://github.com/vrtmrz/fancy-kit/tree/main/packages/obsidian-plugin-kit) | Prompt, selection and confirmation dialogs; keyed and progress notices; vault and command helpers; App-free test harness; secret and local-storage adapters | Overlaps on dialogs, notices and vault helpers; adds plugin base classes, settings, and build, lint and release tooling; omits secret and local-storage adapters |
+| [`obsidian-community-lib`](https://github.com/community-archive/obsidian-community-lib) | Note creation and opening; link resolution checks; hover preview; rendered-Markdown modal; icons | Same goal: commonly used plugin functions; adds plugin base classes, settings, and build, lint, test and release tooling |
+| [`obsidian-extra`](https://github.com/eth-p/obsidian-extra) | Version-agnostic wrappers for undocumented APIs: installed and enabled plugins, themes, CSS snippets, view registry | Covers part of its plugin-internals ground; adds vault, metadata, settings and modal helpers and tooling; omits theme and CSS-snippet helpers |
+| [`obsidian-tools`](https://github.com/obsidian-tools/obsidian-tools) | Project scaffolder; plugin development CLI; installed and registry plugin information; release automation | Overlaps on build and release tooling; adds the plugin runtime library and test helpers; omits a project scaffolder |
+
+Last searched for similar libraries on 2026-11-04.
+
 ## Support
 
 <!-- markdownlint-disable MD033 -->
@@ -138,10 +153,6 @@ The documentation moved to one site per package. Every page the old site at [mna
 <a href="https://www.buymeacoffee.com/mnaoumov" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="60" width="217"></a>
 
 <!-- markdownlint-enable MD033 -->
-
-## My other Obsidian resources
-
-[See my other Obsidian resources](https://github.com/mnaoumov/obsidian-resources).
 
 ## License
 
