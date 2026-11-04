@@ -146,6 +146,10 @@ The documentation moved to one site per package. Every page the old site at [mna
 
 Last searched for similar libraries on 2026-11-04.
 
+## Changelog
+
+All notable changes to this project will be documented in the [CHANGELOG](./CHANGELOG.md).
+
 ## Support
 
 <!-- markdownlint-disable MD033 -->
